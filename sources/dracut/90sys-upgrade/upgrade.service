@@ -1,0 +1,20 @@
+[Unit]
+Description=System Upgrade
+Documentation=man:upgrade.service(8)
+DefaultDependencies=no
+After=upgrade.target
+Requires=upgrade.target
+OnFailure=emergency.target
+OnFailureIsolate=yes
+
+[Service]
+Type=oneshot
+ExecStart=/bin/upgrade
+# everything else will be handled inside the upgrade hook (unless will be
+# decided otherwise)
+ExecStopPost=-/usr/bin/systemctl --no-block isolate reboot.target
+StandardInput=null
+StandardOutput=journal+console
+StandardError=journal+console
+KillMode=process
+KillSignal=SIGHUP

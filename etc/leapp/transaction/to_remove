@@ -1,0 +1,10 @@
+redhat-support-tool
+sysvinit-tools
+yum-rhn-plugin
+python-schedutils
+python-ethtool
+python-linux-procfs
+python-jsonpointer
+yum
+pycairo
+redhat-rpm-config

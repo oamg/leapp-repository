@@ -1,0 +1,8 @@
+### Additional requirements
+
+# pytest is fixed at 3.6.4 because never version (3.7.*) requires scandir, which depends on gcc
+pytest==3.6.4
+pytest-ordering==0.5
+funcsigs==1.0.2
+mock==2.0.0
+git+https://github.com/leapp-to/leapp

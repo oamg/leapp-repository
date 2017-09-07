@@ -1,0 +1,9 @@
+[Unit]
+Description=Temporary Leapp service which resumes execution after reboot
+After=default.target
+DefaultDependencies=no
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/leapp upgrade --resume
+StandardOutput=journal+console

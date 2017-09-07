@@ -1,0 +1,9 @@
+#!/bin/sh
+
+
+[ -d "$2" ] || {
+  # ignore me - blind branch for us :P or die by terrible death
+  exit 1
+}
+ln -sf /etc/systemd/system/upgrade.target "$2/default.target"
+
