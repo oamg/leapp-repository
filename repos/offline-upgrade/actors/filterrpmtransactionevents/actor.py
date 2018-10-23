@@ -1,19 +1,18 @@
 from leapp.actors import Actor
-from leapp.models import RpmTransactionTasks, FilteredRpmTransactionTasks, InstalledRPM
+from leapp.models import RpmTransactionTasks, FilteredRpmTransactionTasks, InstalledRedHatSignedRPM
 from leapp.tags import IPUWorkflowTag, FactsPhaseTag
 
 
 class FilterRpmTransactionTasks(Actor):
     name = 'check_rpm_transaction_events'
     description = 'Filters RPM transaction events to only include relevant events based on installed RPM'
-    # TODO: Update to use Signed RPMs only
-    consumes = (RpmTransactionTasks, InstalledRPM,)
+    consumes = (RpmTransactionTasks, InstalledRedHatSignedRPM,)
     produces = (FilteredRpmTransactionTasks,)
     tags = (IPUWorkflowTag, FactsPhaseTag)
 
     def process(self):
         installed_pkgs = set()
-        for rpm_pkgs in self.consume(InstalledRPM):
+        for rpm_pkgs in self.consume(InstalledRedHatSignedRPM):
             installed_pkgs.update([pkg.name for pkg in rpm_pkgs.items])
 
         to_install = set()

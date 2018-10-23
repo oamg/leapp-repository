@@ -1,7 +1,7 @@
 import json
 
 from leapp.actors import Actor
-from leapp.models import RpmTransactionTasks, InstalledRPM
+from leapp.models import RpmTransactionTasks, InstalledRedHatSignedRPM
 from leapp.tags import IPUWorkflowTag, FactsPhaseTag, ExperimentalTag
 
 
@@ -11,8 +11,7 @@ EVENTS = ('Present', 'Removed', 'Deprecated', 'Replaced', 'Split', 'Merged', 'Mo
 class PesEventsScanner(Actor):
     name = 'pes_events_scanner'
     description = 'Retrieve all events provided by Package Evolution Service API'
-    # TODO: Update to use Signed RPMs only
-    consumes = (InstalledRPM,)
+    consumes = (InstalledRedHatSignedRPM,)
     produces = (RpmTransactionTasks,)
     tags = (IPUWorkflowTag, FactsPhaseTag, ExperimentalTag)
 
@@ -25,7 +24,7 @@ class PesEventsScanner(Actor):
 
     def process(self):
         installed_pkgs = set()
-        for rpm_pkgs in self.consume(InstalledRPM):
+        for rpm_pkgs in self.consume(InstalledRedHatSignedRPM):
             installed_pkgs.update([pkg.name for pkg in rpm_pkgs.items])
 
         to_install = set()

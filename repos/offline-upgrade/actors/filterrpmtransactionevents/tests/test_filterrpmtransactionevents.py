@@ -1,5 +1,5 @@
 from leapp.snactor.fixture import current_actor_context
-from leapp.models import RPM, InstalledRPM, FilteredRpmTransactionTasks, RpmTransactionTasks
+from leapp.models import RPM, InstalledRedHatSignedRPM, FilteredRpmTransactionTasks, RpmTransactionTasks
 
 
 def test_actor_execution(current_actor_context):
@@ -11,7 +11,7 @@ def test_actor_execution_with_sample_data(current_actor_context):
     installed_rpm = [
         RPM(name='sample01', version='0.1', release='1.sm01', epoch='1', arch='noarch', pgpsig='SOME_PGP_SIG'),
         RPM(name='sample02', version='0.1', release='1.sm01', epoch='1', arch='noarch', pgpsig='SOME_PGP_SIG')]
-    current_actor_context.feed(InstalledRPM(items=installed_rpm))
+    current_actor_context.feed(InstalledRedHatSignedRPM(items=installed_rpm))
     current_actor_context.feed(RpmTransactionTasks(
         to_remove=[rpm.name for rpm in installed_rpm],
         to_keep=[installed_rpm[0].name]
