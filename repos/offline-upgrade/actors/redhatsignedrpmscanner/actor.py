@@ -48,7 +48,7 @@ class RedHatSignedRpmScanner(Actor):
                 severity='Error',
                 result='Fail',
                 summary='Packages not signed by Red Hat found in the system',
-                details='Following packages not signed by Red Hat were found in the system: ' + (',').join(unsigned_pkgs),
+                details='Following packages not signed by Red Hat were found in the system:\n' + ('\n').join(unsigned_pkgs),
                 solutions='Remove not signed by Red Hat packages from the system'
             ))
             return
