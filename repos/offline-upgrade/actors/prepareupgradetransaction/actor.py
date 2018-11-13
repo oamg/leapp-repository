@@ -19,6 +19,17 @@ class PrepareUpgradeTransaction(Actor):
     def produce_error(self, error):
         self.report_error('Error: %s: %s' % (error.summary, error.details))
 
+    def is_system_registered_and_attached(self):
+        # TODO: put this to different actor and process it already during check
+        # + phase
+        out = preparetransaction.call(['subscription-manager', 'list', '--consumed'], True)
+        for i in out:
+            if i.startswith('SKU'):
+                # if any SKU is consumed, return True; we cannot check more
+                # now.
+                return True
+        return False
+
     def update_rhel_subscription(self, overlayfs_info):
         sys_var = ""
         for msg in self.consume(OSReleaseFacts):
@@ -81,10 +92,12 @@ class PrepareUpgradeTransaction(Actor):
         # + or check that all required RHEL UIDs are available.
         if not available_target_uids or len(available_target_uids) < 2:
             return preparetransaction.ErrorData(
-                summary='Cannot find even basic RHEL repositories.',
+                summary='Cannot find required basic RHEL repositories.',
                 details=('It is required to have RHEL repository on the system'
                          ' provided by the subscription-manager. Possibly you'
-                         ' are missing a valid SKU for the target system.'))
+                         ' are missing a valid SKU for the target system or network'
+                         ' connection failed. Check whether you the system is attached'
+                         ' to the valid SKU providing target repositories.'))
         for target_repo in self.consume(TargetRepositories):
             for rhel_repo in target_repo.rhel_repos:
                 if rhel_repo.uid in available_target_uids:
@@ -178,6 +191,17 @@ class PrepareUpgradeTransaction(Actor):
 
     def process(self):
         container_root = os.getenv('LEAPP_CONTAINER_ROOT', '/tmp/leapp-overlay')
+        error_flag = False
+
+        if not self.is_system_registered_and_attached():
+            error = preparetransaction.ErrorData(
+                summary='The system is not registered or subscribed.',
+                details=('The system has to be registered and subscribed to be able'
+                         ' to proceed the upgrade. Register your system with the'
+                         ' subscription-manager tool and attach'
+                         ' it to proper SKUs to be able to proceed the upgrade.'))
+            self.produce_error(error)
+            return
 
         # TODO: Find a better place where to run this (perhaps even gate this behind user prompt/question)
         preparetransaction.call(['/usr/bin/dnf', 'clean', 'all'])
@@ -199,9 +223,7 @@ class PrepareUpgradeTransaction(Actor):
         if not error:
             error = self.dnf_shell_rpm_download(ofs_info)
 
-        if error:
-            self.produce_error(error)
-        else:
+        if not error:
             error = preparetransaction.copy_file_from_container(
                         ofs_info,
                         '/etc/yum.repos.d/redhat.repo',
@@ -211,13 +233,16 @@ class PrepareUpgradeTransaction(Actor):
 
         if error:
             self.produce_error(error)
+            error_flag = True
 
         # clean #
         error = preparetransaction.umount_overlayfs(ofs_info)
         if error:
             self.produce_error(error)
+            error_flag = True
 
         preparetransaction.remove_overlayfs_dirs(container_root)
 
         # produce msg for upgrading actor
-        self.produce_used_target_repos()
+        if not error_flag:
+            self.produce_used_target_repos()
