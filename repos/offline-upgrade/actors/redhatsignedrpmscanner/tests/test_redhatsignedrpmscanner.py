@@ -1,9 +1,11 @@
 from leapp.snactor.fixture import current_actor_context
 from leapp.models import RPM, InstalledRPM, InstalledRedHatSignedRPM, CheckResult
 
+
 def test_actor_execution(current_actor_context):
     current_actor_context.run()
     assert current_actor_context.consume(InstalledRedHatSignedRPM)
+
 
 def test_actor_execution_with_signed_unsigned_data(current_actor_context):
     installed_rpm = [

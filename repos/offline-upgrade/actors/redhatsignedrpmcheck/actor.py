@@ -4,6 +4,7 @@ from leapp.actors import Actor
 from leapp.models import CheckResult, InstalledUnsignedRPM, RPM
 from leapp.tags import IPUWorkflowTag, ChecksPhaseTag
 
+
 class RedHatSignedRpmCheck(Actor):
     name = 'red_hat_signed_rpm_check'
     description = 'Notify about unsupported RPM packages not signed by Red Hat.'
@@ -25,7 +26,7 @@ class RedHatSignedRpmCheck(Actor):
         unsigned_pkgs = next(self.consume(InstalledUnsignedRPM), InstalledUnsignedRPM())
 
         if len(unsigned_pkgs.items):
-            #FIXME: To avoid problems during tests, this is being reported as WARNING by now
+            # FIXME: To avoid problems during tests, this is being reported as WARNING by now
             self.produce(CheckResult(
                 severity='Warning',
                 result='Fail',

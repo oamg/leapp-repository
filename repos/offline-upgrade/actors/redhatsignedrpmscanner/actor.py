@@ -4,6 +4,7 @@ from leapp.actors import Actor
 from leapp.models import InstalledRedHatSignedRPM, InstalledUnsignedRPM, InstalledRPM, RPM
 from leapp.tags import IPUWorkflowTag, FactsPhaseTag
 
+
 class RedHatSignedRpmScanner(Actor):
     name = 'red_hat_signed_rpm_scanner'
     description = 'Scan from installed RPM packages those that were signed or not by Red Hat.'
