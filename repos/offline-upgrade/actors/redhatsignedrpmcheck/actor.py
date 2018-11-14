@@ -25,10 +25,11 @@ class RedHatSignedRpmCheck(Actor):
         unsigned_pkgs = next(self.consume(InstalledUnsignedRPM), InstalledUnsignedRPM())
 
         if len(unsigned_pkgs.items):
+            #FIXME: To avoid problems during tests, this is being reported as WARNING by now
             self.produce(CheckResult(
-                severity='Error',
+                severity='Warning',
                 result='Fail',
                 summary='Packages not signed by Red Hat found in the system',
-                details='Following packages not signed by Red Hat were found in the system:\n' + ('\n').join(unsigned_pkgs),
-                solutions='Remove not signed by Red Hat packages from the system'
+                details='Following packages not signed by Red Hat were found in the system:\n' + ('\n').join([pkg.name for pkg in unsigned_pkgs.items]),
+                solutions='Consider removing not signed by Red Hat packages from the system. In future the presence of such packages will inhibit the upgrade process'
             ))
