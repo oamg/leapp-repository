@@ -1,5 +1,3 @@
-%global gittag master
-
 %global repositorydir %{_datadir}/leapp-repository/repositories
 %global custom_repositorydir %{_datadir}/leapp-repository/custom-repositories
 
@@ -10,7 +8,8 @@ Summary:    Repositories for leapp
 
 License:    AGPLv3+
 URL:        https://leapp-to.github.io
-Source0:    https://github.com/leapp-to/leapp-actors/archive/%{gittag}/leapp-repository-%{version}.tar.gz
+Source0:    https://github.com/leapp-to/leapp-actors/archive/leapp-repository-%{version}.tar.gz
+Source1:    leapp-repository-initrd.tar.gz
 BuildArch:  noarch
 Requires:   dnf >= 2.7.5
 %if 0%{?fedora} || 0%{?rhel} > 7
@@ -20,11 +19,15 @@ Requires:   systemd-container
 Repositories for leapp
 
 %prep
-%autosetup -n leapp-repository-%{gittag}
+%autosetup -n %{name}-%{version}
+%setup -q  -n %{name}-%{version} -D -T -a 1
 
 
 %build
+# ??? what is supposed to be this? we do not have any build target in the makefile
 make build
+cp -a leapp-repository-initrd*/vmlinuz-upgrade.x86_64 repos/offline-upgrade/files/
+cp -a leapp-repository-initrd*/initramfs-upgrade.x86_64.img repos/offline-upgrade/files/
 
 %install
 install -m 0755 -d %{buildroot}%{custom_repositorydir}

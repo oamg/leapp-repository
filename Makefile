@@ -1,4 +1,5 @@
-PKGNAME="leapp-repository"
+__PKGNAME=$${_PKGNAME:-leapp-repository}
+PKGNAME=leapp-repository
 VERSION=`grep -m1 "^Version:" packaging/$(PKGNAME).spec | grep -om1 "[0-9].[0-9.]**"`
 
 # by default use values you can see below, but in case the COPR_* var is defined
@@ -61,7 +62,7 @@ help:
 
 clean:
 	@echo "--- Clean repo ---"
-	@rm -rf packaging/{sources,SRPMS}/
+	@rm -rf packaging/{sources,SRPMS,tmp}/
 	@rm -rf build/ dist/ *.egg-info
 	@find . -name '__pycache__' -exec rm -fr {} +
 	@find . -name '*.pyc' -exec rm -f {} +
@@ -71,10 +72,28 @@ prepare: clean
 	@echo "--- Prepare build directories ---"
 	@mkdir -p packaging/{sources,SRPMS}/
 
+list_builds:
+	@copr --config $(_COPR_CONFIG) get-package $(_COPR_REPO) \
+		--name $(__PKGNAME) --with-all-builds \
+		| grep -E '"(built_packages|id|state|pkg_version)"' | grep -B3 "succeeded" \
+		| sed 's/"state": "succeeded",/----------------------/' \
+		| grep -A1 -B2 '"pkg_version".*-[1-9]'
+
 source: prepare
 	@echo "--- Create source tarball ---"
 	@echo git archive --prefix "$(PKGNAME)-$(VERSION)/" -o "packaging/sources/$(PKGNAME)-$(VERSION).tar.gz" HEAD
 	@git archive --prefix "$(PKGNAME)-$(VERSION)/" -o "packaging/sources/$(PKGNAME)-$(VERSION).tar.gz" HEAD
+	@echo "--- Download $(PKGNAME)-initrd SRPM ---"
+	@copr --config $(_COPR_CONFIG) download-build -d packaging/tmp \
+		`_PKGNAME=$(PKGNAME)-initrd $(MAKE) list_builds | grep -m1 '"id"' | grep -o "[0-9][0-9]*"`
+	@echo "--- Get $(PKGNAME)-initrd  tarball---"
+	@rpm2cpio `find packaging/tmp | grep -m1 "src.rpm$$"` > packaging/tmp/$(PKGNAME)-initrd.cpio
+	@cpio -iv --no-absolute-filenames --to-stdout '$(PKGNAME)-initrd-*.tar.gz' \
+		<packaging/tmp/$(PKGNAME)-initrd.cpio \
+		>packaging/sources/$(PKGNAME)-initrd.tar.gz
+		# -- it is easier to use here static name ot the initrd tarball; the rest can be handled easier
+		# >packaging/sources/`cpio -t <packaging/tmp/$(PKGNAME)-initrd.cpio | grep '$(PKGNAME)-initrd.*tar.gz'`
+	@rm -rf packaging/tmp
 
 srpm: source
 	@echo "--- Build SRPM: $(PKGNAME)-$(VERSION)-$(RELEASE).. ---"
