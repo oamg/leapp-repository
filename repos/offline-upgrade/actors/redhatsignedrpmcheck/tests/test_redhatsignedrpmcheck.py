@@ -3,7 +3,7 @@ from leapp.models import RPM, InstalledUnsignedRPM, CheckResult
 
 
 def test_actor_execution(current_actor_context):
-    current_actor_context.feed(InstalledUnsginedRPM(items=[]))
+    current_actor_context.feed(InstalledUnsignedRPM(items=[]))
     current_actor_context.run()
     assert not current_actor_context.consume(CheckResult)
 

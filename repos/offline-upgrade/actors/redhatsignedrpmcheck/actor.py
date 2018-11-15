@@ -1,7 +1,7 @@
 import os
 
 from leapp.actors import Actor
-from leapp.models import CheckResult, InstalledUnsignedRPM, RPM
+from leapp.models import CheckResult, InstalledUnsignedRPM
 from leapp.tags import IPUWorkflowTag, ChecksPhaseTag
 
 
@@ -31,6 +31,8 @@ class RedHatSignedRpmCheck(Actor):
                 severity='Warning',
                 result='Fail',
                 summary='Packages not signed by Red Hat found in the system',
-                details='Following packages not signed by Red Hat were found in the system:\n' + ('\n').join([pkg.name for pkg in unsigned_pkgs.items]),
-                solutions='Consider removing not signed by Red Hat packages from the system. In future the presence of such packages will inhibit the upgrade process'
-            ))
+                details=('Following packages were not signed by Red Hat:\n    {}'
+                         .format('\n    '.join([pkg.name for pkg in unsigned_pkgs.items]))),
+                solutions=('Consider removing those packages from'
+                           ' the system. Such packages could have negative impact'
+                           ' on the whole upgrade process.')))

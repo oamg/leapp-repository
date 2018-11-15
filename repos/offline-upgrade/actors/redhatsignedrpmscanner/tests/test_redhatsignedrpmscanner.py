@@ -1,5 +1,5 @@
 from leapp.snactor.fixture import current_actor_context
-from leapp.models import RPM, InstalledRPM, InstalledRedHatSignedRPM, CheckResult
+from leapp.models import RPM, InstalledRPM, InstalledRedHatSignedRPM, InstalledUnsignedRPM, CheckResult
 
 
 def test_actor_execution(current_actor_context):
