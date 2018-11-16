@@ -26,7 +26,8 @@ class CreateSystemdResumeService(Actor):
         try:
             os.symlink(service_path, symlink_path)
         except OSError as e:
-            self.report_error('Could not create {} "enable" symlink', details=e)
+            self.report_error('Could not create a symlink to enable {}'.format(service_name), 
+                              details=str(e))
             return
 
         self.produce(FinalReport(
