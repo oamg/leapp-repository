@@ -8,7 +8,7 @@ Summary:    Repositories for leapp
 
 License:    AGPLv3+
 URL:        https://leapp-to.github.io
-Source0:    https://github.com/leapp-to/leapp-actors/archive/leapp-repository-%{version}.tar.gz
+Source0:    https://github.com/oamg/leapp-repository/archive/leapp-repository-%{version}.tar.gz
 Source1:    leapp-repository-initrd.tar.gz
 BuildArch:  noarch
 Requires:   dnf >= 2.7.5
