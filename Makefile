@@ -1,4 +1,5 @@
 __PKGNAME=$${_PKGNAME:-leapp-repository}
+__DATA_ORIG_PKGNAME=$${_DATA_ORIG_PKGNAME:-leapp-pes-data}
 PKGNAME=leapp-repository
 VERSION=`grep -m1 "^Version:" packaging/$(PKGNAME).spec | grep -om1 "[0-9].[0-9.]**"`
 
@@ -88,12 +89,22 @@ source: prepare
 		`_PKGNAME=$(PKGNAME)-initrd $(MAKE) list_builds | grep -m1 '"id"' | grep -o "[0-9][0-9]*"`
 	@echo "--- Get $(PKGNAME)-initrd  tarball---"
 	@rpm2cpio `find packaging/tmp | grep -m1 "src.rpm$$"` > packaging/tmp/$(PKGNAME)-initrd.cpio
-	@cpio -iv --no-absolute-filenames --to-stdout '$(PKGNAME)-initrd-*.tar.gz' \
+	@cpio -iv --no-absolute-filenames --to-stdout "$(PKGNAME)-initrd-*.tar.gz" \
 		<packaging/tmp/$(PKGNAME)-initrd.cpio \
 		>packaging/sources/$(PKGNAME)-initrd.tar.gz
 		# -- it is easier to use here static name ot the initrd tarball; the rest can be handled easier
 		# >packaging/sources/`cpio -t <packaging/tmp/$(PKGNAME)-initrd.cpio | grep '$(PKGNAME)-initrd.*tar.gz'`
-	@rm -rf packaging/tmp
+	@rm -rf packaging/tmp/*
+	@echo "--- Download $(__DATA_ORIG_PKGNAME) SRPM ---"
+	@copr --config $(_COPR_CONFIG) download-build -d packaging/tmp \
+		`_PKGNAME=$(__DATA_ORIG_PKGNAME) $(MAKE) list_builds | grep -m1 '"id"' | grep -o "[0-9][0-9]*"`
+	@echo "--- Get $(__DATA_ORIG_PKGNAME) tarball---"
+	@rpm2cpio `find packaging/tmp | grep -m1 "src.rpm$$"` > packaging/tmp/$(__DATA_ORIG_PKGNAME).cpio
+	@cpio -iv --no-absolute-filenames --to-stdout "$(__DATA_ORIG_PKGNAME)-*.tar.gz" \
+		<packaging/tmp/$(__DATA_ORIG_PKGNAME).cpio \
+		>packaging/sources/$(PKGNAME)-data.tar.gz
+		# yes - the final tarball rename to $(PKGNAME)-data
+	#@rm -rf packaging/tmp
 
 srpm: source
 	@echo "--- Build SRPM: $(PKGNAME)-$(VERSION)-$(RELEASE).. ---"

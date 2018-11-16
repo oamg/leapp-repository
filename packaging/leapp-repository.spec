@@ -10,17 +10,31 @@ License:    AGPLv3+
 URL:        https://leapp-to.github.io
 Source0:    https://github.com/oamg/leapp-repository/archive/leapp-repository-%{version}.tar.gz
 Source1:    leapp-repository-initrd.tar.gz
+Source2:    leapp-repository-data.tar.gz
 BuildArch:  noarch
 Requires:   dnf >= 2.7.5
+Requires:   %{name}-data = %{version}-%{release}
 %if 0%{?fedora} || 0%{?rhel} > 7
 Requires:   systemd-container
 %endif
+
 %description
 Repositories for leapp
+
+# leapp-repository-data subpackage
+%package data
+License: Red Hat Enterprise Agreement
+Summary: Package evolution data for leapp
+Requires: %{name} = %{version}-%{release}
+
+%description data
+Package evolution data for leapp.
+
 
 %prep
 %autosetup -n %{name}-%{version}
 %setup -q  -n %{name}-%{version} -D -T -a 1
+%setup -q  -n %{name}-%{version} -D -T -a 2
 
 
 %build
@@ -28,6 +42,8 @@ Repositories for leapp
 make build
 cp -a leapp-repository-initrd*/vmlinuz-upgrade.x86_64 repos/offline-upgrade/files/
 cp -a leapp-repository-initrd*/initramfs-upgrade.x86_64.img repos/offline-upgrade/files/
+cp -a leapp-pes-data*/packaging/sources/pes-events.json repos/offline-upgrade/actors/peseventsscanner/files/
+
 
 %install
 install -m 0755 -d %{buildroot}%{custom_repositorydir}
@@ -56,6 +72,10 @@ done;
 %{_sysconfdir}/leapp/transaction/*
 %{repositorydir}/*
 %dir %{custom_repositorydir}
+%exclude %{repositorydir}/offline-upgrade/actors/peseventsscanner/files/pes-events.json
+
+%files data
+%{repositorydir}/offline-upgrade/actors/peseventsscanner/files/pes-events.json
 
 
 %changelog
