@@ -40,9 +40,9 @@ Package evolution data for leapp.
 %build
 # ??? what is supposed to be this? we do not have any build target in the makefile
 make build
-cp -a leapp-repository-initrd*/vmlinuz-upgrade.x86_64 repos/offline-upgrade/files/
-cp -a leapp-repository-initrd*/initramfs-upgrade.x86_64.img repos/offline-upgrade/files/
-cp -a leapp-pes-data*/packaging/sources/pes-events.json repos/offline-upgrade/actors/peseventsscanner/files/
+cp -a leapp-repository-initrd*/vmlinuz-upgrade.x86_64       repos/system_upgrade/el7toel8/files/
+cp -a leapp-repository-initrd*/initramfs-upgrade.x86_64.img repos/system_upgrade/el7toel8/files/
+cp -a leapp-pes-data*/packaging/sources/pes-events.json     repos/system_upgrade/el7toel8/actors/peseventsscanner/files/
 
 
 %install
@@ -72,10 +72,10 @@ done;
 %{_sysconfdir}/leapp/transaction/*
 %{repositorydir}/*
 %dir %{custom_repositorydir}
-%exclude %{repositorydir}/offline-upgrade/actors/peseventsscanner/files/pes-events.json
+%exclude %{repositorydir}/system_upgrade/el7toel8/actors/peseventsscanner/files/pes-events.json
 
 %files data
-%{repositorydir}/offline-upgrade/actors/peseventsscanner/files/pes-events.json
+%{repositorydir}/system_upgrade/el7toel8/actors/peseventsscanner/files/pes-events.json
 
 
 %changelog
