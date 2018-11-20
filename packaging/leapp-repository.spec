@@ -2,7 +2,7 @@
 %global custom_repositorydir %{_datadir}/leapp-repository/custom-repositories
 
 Name:       leapp-repository
-Version:    0.3.1
+Version:    0.3.2
 Release:    1%{?dist}
 Summary:    Repositories for leapp
 
