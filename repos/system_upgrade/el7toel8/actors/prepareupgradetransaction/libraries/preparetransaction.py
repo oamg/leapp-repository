@@ -10,27 +10,28 @@ OverlayfsInfo = namedtuple('OverlayfsInfo', ['upper', 'work', 'merged'])
 
 
 def create_overlayfs_dirs(overlayfs_path):
+
+    overlayfs_info = OverlayfsInfo(
+        upper=os.path.join(overlayfs_path, 'upper'),
+        work=os.path.join(overlayfs_path, 'work'),
+        merged=os.path.join(overlayfs_path, 'merged'))
+
     if os.path.isdir(overlayfs_path):
         # Ignoring any error when trying to umount preexisting Overlayfs
         # FIXME: handle errors caused by umount
-        umount_overlayfs(overlayfs_path)
+        umount_overlayfs(overlayfs_info)
         remove_overlayfs_dirs(overlayfs_path)
 
-    for d in ('upper', 'work', 'merged'):
-        p = os.path.join(overlayfs_path, d)
+    for d in overlayfs_info:
         try:
-            os.makedirs(p)
+            os.makedirs(d)
         except OSError as e:
             error = ErrorData(
                 summary='Error while trying to create Overlayfs directories',
                 details=str(e))
             return None, error
 
-    info = OverlayfsInfo(
-        upper=os.path.join(overlayfs_path, 'upper'),
-        work=os.path.join(overlayfs_path, 'work'),
-        merged=os.path.join(overlayfs_path, 'merged'))
-    return info, None
+    return overlayfs_info, None
 
 
 def remove_overlayfs_dirs(overlayfs_path):
