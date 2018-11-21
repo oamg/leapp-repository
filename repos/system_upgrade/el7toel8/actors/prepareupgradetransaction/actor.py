@@ -247,7 +247,7 @@ class PrepareUpgradeTransaction(Actor):
         rhsm_release = preparetransaction.call(['subscription-manager', 'release', '--unset'])
         if prev_rhsm_release != rhsm_release:
             error = preparetransaction.ErrorData(
-                summary='Subscription Manager Release was unexpected changed by actor.',
+                summary='Subscription Manager Release was unexpectedly changed by actor.',
                 details=('Current Subscription Manager Opearating System Release option was changed',
                          'by Leapp execution.'))
             error_flag = True
