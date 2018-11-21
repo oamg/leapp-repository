@@ -16,6 +16,10 @@ class DnfShellRpmUpgrade(Actor):
     tags = (RPMUpgradePhaseTag, IPUWorkflowTag)
 
     def process(self):
+        # Make sure Subscription Manager OS Release is unset
+        cmd = ['subscription-manager', 'release', '--unset']
+        check_call(cmd)
+
         dnf_command = [
             '/usr/bin/dnf',
             'shell',
