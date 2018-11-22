@@ -227,7 +227,7 @@ class PrepareUpgradeTransaction(Actor):
             return
 
         # switch EngID to use RHEL 8 subscriptions #
-        prev_rhsm_release = preparetransaction.call(['subscription-manager', 'release'])
+        prev_rhsm_release = preparetransaction.call(['subscription-manager', 'release'])[0]
         error = self.update_rhel_subscription(ofs_info)
         if not error:
             error = self.dnf_shell_rpm_download(ofs_info)
@@ -244,13 +244,13 @@ class PrepareUpgradeTransaction(Actor):
             self.produce_error(error)
             error_flag = True
 
-        rhsm_release = preparetransaction.call(['subscription-manager', 'release'])
-        if prev_rhsm_release != rhsm_release:
-            error = preparetransaction.ErrorData(
-                summary='Subscription Manager Release was unexpectedly changed by actor.',
-                details=('Current Subscription Manager Opearating System Release option was changed',
-                         'by Leapp execution.'))
-            error_flag = True
+        # If Subscription Manager OS Release was set before, make sure we do not change it
+        if 'Release:' in prev_rhsm_release:
+            release = prev_rhsm_release.split(':')[1].strip()
+            error = preparetransaction.check_cmd_call(['subscription-manager', 'release', '--set', release])
+            if error:
+                self.produce_error(error)
+                error_flag = True
 
         # clean #
         error = preparetransaction.umount_overlayfs(ofs_info)
