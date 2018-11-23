@@ -4,9 +4,9 @@ from leapp.topics import SystemInfoTopic
 
 class InstalledRedHatSignedRPM(Model):
     topic = SystemInfoTopic
-    items = fields.List(fields.Model(RPM), required=True, default=[])
+    items = fields.List(fields.Model(RPM), default=[])
 
 
 class InstalledUnsignedRPM(Model):
     topic = SystemInfoTopic
-    items = fields.List(fields.Model(RPM), required=True, default=[])
+    items = fields.List(fields.Model(RPM), default=[])

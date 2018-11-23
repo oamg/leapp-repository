@@ -14,9 +14,9 @@ class Report(Model):
                                         'Pass',
                                         'Fail'])
 
-    summary = fields.String(required=True)
-    details = fields.String(required=True)
-    solutions = fields.String(allow_null=True)
+    summary = fields.String()
+    details = fields.String()
+    solutions = fields.Nullable(fields.String())
 
 
 class CheckResult(Report):
