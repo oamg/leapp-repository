@@ -25,7 +25,7 @@ class RepositoryData(Model):
     name = fields.String()
     baseurl = fields.String()
     enabled = fields.Boolean(default=True)
-    additional_fields = fields.String(allow_null=True)
+    additional_fields = fields.Nullable(fields.String())
 
 
 class Repositories(Model):
@@ -54,7 +54,7 @@ class ActiveKernelModule(Model):
 
     filename = fields.String()
     parameters = fields.List(fields.Model(KernelModuleParameter))
-    signature = fields.String(allow_null=True)
+    signature = fields.Nullable(fields.String())
 
 
 class SELinux(Model):

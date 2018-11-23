@@ -6,5 +6,5 @@ class FirewallDecisionM(Model):
     topic = SystemInfoTopic
 
     # Yes, No, Skip
-    disable_choice = fields.StringEnum(choices=['Y', 'N', 'S'], required=True)
+    disable_choice = fields.StringEnum(choices=['Y', 'N', 'S'])
 
