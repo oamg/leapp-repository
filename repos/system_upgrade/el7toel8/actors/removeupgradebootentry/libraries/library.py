@@ -1,0 +1,28 @@
+from leapp.exceptions import StopActorExecutionError
+from leapp.libraries import stdlib
+from leapp.models import BootContent
+
+
+def remove_boot_entry():
+    kernel_filepath = get_upgrade_kernel_filepath()
+    stdlib.call([
+        '/usr/sbin/grubby',
+        '--remove-kernel={0}'.format(kernel_filepath)
+    ])
+    # TODO: Move calling `mount -a` to a separate actor as it is not really related to removing the upgrade boot entry.
+    #       It's worth to call it after removing the boot entry to avoid boot loop in case mounting fails.
+    stdlib.call([
+        '/bin/mount', '-a'
+    ])
+
+
+def get_upgrade_kernel_filepath():
+    boot_content_msgs = stdlib.api.consume(BootContent)
+    boot_content = next(boot_content_msgs, None)
+    if list(boot_content_msgs):
+        stdlib.api.current_logger().warning('Unexpectedly received more than one BootContent message.')
+    if not boot_content:
+        raise StopActorExecutionError('Could not create a GRUB boot entry for the upgrade initramfs',
+                                      details={'details': 'Did not receive a message about the leapp-provided'
+                                                          'kernel and initramfs'})
+    return boot_content.kernel_path
