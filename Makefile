@@ -17,7 +17,7 @@ MASTER_BRANCH=master
 # upstream solution). For upstream builds N_REL=1;
 N_REL=`_NR=$${PR:+0}; if test "$${_NR:-1}" == "1"; then _NR=$${MR:+0}; fi; git rev-parse --abbrev-ref HEAD | grep -qE "^($(MASTER_BRANCH)|stable)$$" || _NR=0;  echo $${_NR:-1}`
 
-TIMESTAMP=`date +%Y%m%d%H%MZ -u`
+TIMESTAMP:=$${__TIMESTAMP:-$(shell /bin/date "+%Y%m%d%H%MZ" -u)}
 SHORT_SHA=`git rev-parse --short HEAD`
 BRANCH=`git rev-parse --abbrev-ref HEAD | tr '-' '_'`
 
@@ -86,7 +86,7 @@ source: prepare
 	@git archive --prefix "$(PKGNAME)-$(VERSION)/" -o "packaging/sources/$(PKGNAME)-$(VERSION).tar.gz" HEAD
 	@echo "--- Download $(PKGNAME)-initrd SRPM ---"
 	@copr --config $(_COPR_CONFIG) download-build -d packaging/tmp \
-		`_PKGNAME=$(PKGNAME)-initrd $(MAKE) list_builds | grep -m1 '"id"' | grep -o "[0-9][0-9]*"`
+		`_PKGNAME=$(PKGNAME)-initrd __TIMESTAMP=$(TIMESTAMP) $(MAKE) list_builds | grep -m1 '"id"' | grep -o "[0-9][0-9]*"`
 	@echo "--- Get $(PKGNAME)-initrd  tarball---"
 	@rpm2cpio `find packaging/tmp | grep -m1 "src.rpm$$"` > packaging/tmp/$(PKGNAME)-initrd.cpio
 	@cpio -iv --no-absolute-filenames --to-stdout "$(PKGNAME)-initrd-*.tar.gz" \
@@ -97,7 +97,7 @@ source: prepare
 	@rm -rf packaging/tmp/*
 	@echo "--- Download $(__DATA_ORIG_PKGNAME) SRPM ---"
 	@copr --config $(_COPR_CONFIG) download-build -d packaging/tmp \
-		`_PKGNAME=$(__DATA_ORIG_PKGNAME) $(MAKE) list_builds | grep -m1 '"id"' | grep -o "[0-9][0-9]*"`
+		`_PKGNAME=$(__DATA_ORIG_PKGNAME) __TIMESTAMP=$(TIMESTAMP) $(MAKE) list_builds | grep -m1 '"id"' | grep -o "[0-9][0-9]*"`
 	@echo "--- Get $(__DATA_ORIG_PKGNAME) tarball---"
 	@rpm2cpio `find packaging/tmp | grep -m1 "src.rpm$$"` > packaging/tmp/$(__DATA_ORIG_PKGNAME).cpio
 	@cpio -iv --no-absolute-filenames --to-stdout "$(__DATA_ORIG_PKGNAME)-*.tar.gz" \
