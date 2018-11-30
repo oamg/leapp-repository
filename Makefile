@@ -17,7 +17,7 @@ MASTER_BRANCH=master
 # upstream solution). For upstream builds N_REL=1;
 N_REL=`_NR=$${PR:+0}; if test "$${_NR:-1}" == "1"; then _NR=$${MR:+0}; fi; git rev-parse --abbrev-ref HEAD | grep -qE "^($(MASTER_BRANCH)|stable)$$" || _NR=0;  echo $${_NR:-1}`
 
-_TIMESTAMP=$${TIMESTAMP:-`date +%Y%m%d%H%MZ -u`}
+TIMESTAMP=$${__TIMESTAMP:-$(shell /bin/date "+%Y%m%d%H%MZ" -u)}
 SHORT_SHA=`git rev-parse --short HEAD`
 BRANCH=`git rev-parse --abbrev-ref HEAD | tr '-' '_'`
 
@@ -33,7 +33,7 @@ REQUEST=`if test -n "$$PR"; then echo ".PR$${PR}"; elif test -n "$$MR"; then ech
 #    0.201810080027Z.4078402.packaging
 #    0.201810080027Z.4078402.master.MR2
 #    1.201810080027Z.4078402.master
-RELEASE="$(N_REL).$(_TIMESTAMP).$(SHORT_SHA).$(BRANCH)$(REQUEST)$(_SUFFIX)"
+RELEASE="$(N_REL).$(TIMESTAMP).$(SHORT_SHA).$(BRANCH)$(REQUEST)$(_SUFFIX)"
 
 all: help
 
@@ -61,13 +61,7 @@ help:
 	@echo "  MR=6 COPR_CONFIG='path/to/the/config/copr/file' <target>"
 	@echo ""
 
-# To ensure the TIMESTAMP will be same during the whole process, call the make
-# again with the expected parameters and with the set TIMESTAMP. By this magic
-# the TIMESTAMP will not be changed, even when some commands takes minutes.
-_remake:
-	@if test -z "$$TIMESTAMP"; then TIMESTAMP=$(_TIMESTAMP) $(MAKE) $@; exit 0; fi
-
-clean: _remake
+clean:
 	@echo "--- Clean repo ---"
 	@rm -rf packaging/{sources,SRPMS,tmp}/
 	@rm -rf build/ dist/ *.egg-info
@@ -92,7 +86,7 @@ source: prepare
 	@git archive --prefix "$(PKGNAME)-$(VERSION)/" -o "packaging/sources/$(PKGNAME)-$(VERSION).tar.gz" HEAD
 	@echo "--- Download $(PKGNAME)-initrd SRPM ---"
 	@copr --config $(_COPR_CONFIG) download-build -d packaging/tmp \
-		`_PKGNAME=$(PKGNAME)-initrd $(MAKE) list_builds | grep -m1 '"id"' | grep -o "[0-9][0-9]*"`
+		`_PKGNAME=$(PKGNAME)-initrd __TIMESTAMP=$(TIMESTAMP) $(MAKE) list_builds | grep -m1 '"id"' | grep -o "[0-9][0-9]*"`
 	@echo "--- Get $(PKGNAME)-initrd  tarball---"
 	@rpm2cpio `find packaging/tmp | grep -m1 "src.rpm$$"` > packaging/tmp/$(PKGNAME)-initrd.cpio
 	@cpio -iv --no-absolute-filenames --to-stdout "$(PKGNAME)-initrd-*.tar.gz" \
@@ -103,7 +97,7 @@ source: prepare
 	@rm -rf packaging/tmp/*
 	@echo "--- Download $(__DATA_ORIG_PKGNAME) SRPM ---"
 	@copr --config $(_COPR_CONFIG) download-build -d packaging/tmp \
-		`_PKGNAME=$(__DATA_ORIG_PKGNAME) $(MAKE) list_builds | grep -m1 '"id"' | grep -o "[0-9][0-9]*"`
+		`_PKGNAME=$(__DATA_ORIG_PKGNAME) __TIMESTAMP=$(TIMESTAMP) $(MAKE) list_builds | grep -m1 '"id"' | grep -o "[0-9][0-9]*"`
 	@echo "--- Get $(__DATA_ORIG_PKGNAME) tarball---"
 	@rpm2cpio `find packaging/tmp | grep -m1 "src.rpm$$"` > packaging/tmp/$(__DATA_ORIG_PKGNAME).cpio
 	@cpio -iv --no-absolute-filenames --to-stdout "$(__DATA_ORIG_PKGNAME)-*.tar.gz" \
@@ -131,7 +125,7 @@ copr_build: srpm
 	@copr --config $(_COPR_CONFIG) build $(_COPR_REPO) \
 		packaging/SRPMS/${PKGNAME}-${VERSION}-${RELEASE}*.src.rpm
 
-print_release: _remake
+print_release:
 	@echo $(RELEASE)
 
 # Before doing anything, it is good idea to register repos to ensure everything
