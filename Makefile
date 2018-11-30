@@ -17,7 +17,7 @@ MASTER_BRANCH=master
 # upstream solution). For upstream builds N_REL=1;
 N_REL=`_NR=$${PR:+0}; if test "$${_NR:-1}" == "1"; then _NR=$${MR:+0}; fi; git rev-parse --abbrev-ref HEAD | grep -qE "^($(MASTER_BRANCH)|stable)$$" || _NR=0;  echo $${_NR:-1}`
 
-_TIMESTAMP=$${TIMESTAMP:-`date +%Y%m%d%H%MZ -u`}
+TIMESTAMP=`cat packaging/.TIMESTAMP`
 SHORT_SHA=`git rev-parse --short HEAD`
 BRANCH=`git rev-parse --abbrev-ref HEAD | tr '-' '_'`
 
@@ -33,7 +33,7 @@ REQUEST=`if test -n "$$PR"; then echo ".PR$${PR}"; elif test -n "$$MR"; then ech
 #    0.201810080027Z.4078402.packaging
 #    0.201810080027Z.4078402.master.MR2
 #    1.201810080027Z.4078402.master
-RELEASE="$(N_REL).$(_TIMESTAMP).$(SHORT_SHA).$(BRANCH)$(REQUEST)$(_SUFFIX)"
+RELEASE="$(N_REL).$(TIMESTAMP).$(SHORT_SHA).$(BRANCH)$(REQUEST)$(_SUFFIX)"
 
 all: help
 
@@ -61,15 +61,10 @@ help:
 	@echo "  MR=6 COPR_CONFIG='path/to/the/config/copr/file' <target>"
 	@echo ""
 
-# To ensure the TIMESTAMP will be same during the whole process, call the make
-# again with the expected parameters and with the set TIMESTAMP. By this magic
-# the TIMESTAMP will not be changed, even when some commands takes minutes.
-_remake:
-	@if test -z "$$TIMESTAMP"; then TIMESTAMP=$(_TIMESTAMP) $(MAKE) $@; exit 0; fi
-
-clean: _remake
+clean:
 	@echo "--- Clean repo ---"
 	@rm -rf packaging/{sources,SRPMS,tmp}/
+	@rm -f  packaging/.TIMESTAMP
 	@rm -rf build/ dist/ *.egg-info
 	@find . -name '__pycache__' -exec rm -fr {} +
 	@find . -name '*.pyc' -exec rm -f {} +
@@ -78,6 +73,7 @@ clean: _remake
 prepare: clean
 	@echo "--- Prepare build directories ---"
 	@mkdir -p packaging/{sources,SRPMS}/
+	@date "+%Y%m%d%H%MZ" -u > packaging/.TIMESTAMP
 
 list_builds:
 	@copr --config $(_COPR_CONFIG) get-package $(_COPR_REPO) \
@@ -131,7 +127,7 @@ copr_build: srpm
 	@copr --config $(_COPR_CONFIG) build $(_COPR_REPO) \
 		packaging/SRPMS/${PKGNAME}-${VERSION}-${RELEASE}*.src.rpm
 
-print_release: _remake
+print_release:
 	@echo $(RELEASE)
 
 # Before doing anything, it is good idea to register repos to ensure everything
@@ -151,5 +147,5 @@ test:
 	. tut/bin/activate; \
 	python utils/run_pytest.py --actor=$(ACTOR) --report=$(REPORT)
 
-.PHONY: clean test install-deps build srpm
+.PHONY: test install-deps list_builds clean prepare source srpm copr_build print_release build
 
