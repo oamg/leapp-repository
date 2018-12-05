@@ -1,22 +1,7 @@
 from leapp.actors import Actor
 from leapp.models import FirewallDecisionM, CheckResult, FirewallsFacts
 from leapp.tags import IPUWorkflowTag, ApplicationsPhaseTag
-import six
-import subprocess
-import os
-
-
-def call(args, split=True):
-    ''' Call external processes with some additional sugar '''
-    r = None
-    with open(os.devnull, mode='w') as err:
-        if six.PY3:
-            r = subprocess.check_output(args, stderr=err, encoding='utf-8')
-        else:
-            r = subprocess.check_output(args, stderr=err).decode('utf-8')
-    if split:
-        return r.splitlines()
-    return r
+from leapp.libraries.stdlib import call
 
 
 class FirewallDisable(Actor):
@@ -28,16 +13,16 @@ class FirewallDisable(Actor):
     tags = (IPUWorkflowTag, ApplicationsPhaseTag,)
 
     def stop_firewalld(self):
-        ''' Stops FirewallD '''
+        ''' Stop FirewallD '''
         call(['systemctl', 'stop', 'firewalld'])
 
     def disable_firewalld(self):
-        ''' Disables FirewallD '''
+        ''' Disable FirewallD '''
         self.stop_firewalld()
         call(['systemctl', 'disable', 'firewalld'])
 
     def save_iptables(self):
-        ''' Saves IPTables '''
+        ''' Save IPTables '''
         f = open('iptables_bck_workfile', 'w')
         ret = call(['iptables-save'])
         for line in ret:
@@ -45,15 +30,15 @@ class FirewallDisable(Actor):
         f.close()
 
     def stop_iptables(self):
-        ''' Stops IPTables '''
+        ''' Stop IPTables '''
         call(['systemctl', 'stop', 'iptables'])
 
     def flush_iptables(self):
-        ''' Flushes rules '''
+        ''' Flush rules '''
         call(['iptables', '-F'])
 
     def disable_iptables(self):
-        ''' Saves, stops and disables IPTables '''
+        ''' Save, stop and disable IPTables '''
         self.save_iptables()
         self.flush_iptables()
         self.stop_iptables()

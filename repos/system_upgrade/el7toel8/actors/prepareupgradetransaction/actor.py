@@ -7,8 +7,8 @@ from leapp.models import FilteredRpmTransactionTasks, OSReleaseFacts, TargetRepo
 from leapp.models import UsedTargetRepositories, UsedTargetRepository
 from leapp.tags import IPUWorkflowTag, DownloadPhaseTag
 
-from subprocess import CalledProcessError, call
-
+from subprocess import CalledProcessError
+from leapp.libraries.stdlib import call
 
 class PrepareUpgradeTransaction(Actor):
     name = 'prepare_upgrade_transaction'
@@ -23,7 +23,7 @@ class PrepareUpgradeTransaction(Actor):
     def is_system_registered_and_attached(self):
         # TODO: put this to different actor and process it already during check
         # + phase
-        out = preparetransaction.call(['subscription-manager', 'list', '--consumed'], True)
+        out = call(['subscription-manager', 'list', '--consumed'], True)
         for i in out:
             if i.startswith('SKU'):
                 # if any SKU is consumed, return True; we cannot check more
@@ -216,7 +216,7 @@ class PrepareUpgradeTransaction(Actor):
             return
 
         # TODO: Find a better place where to run this (perhaps even gate this behind user prompt/question)
-        preparetransaction.call(['/usr/bin/dnf', 'clean', 'all'])
+        call(['/usr/bin/dnf', 'clean', 'all'])
 
         # prepare container #
         ofs_info, error = preparetransaction.create_overlayfs_dirs(container_root)

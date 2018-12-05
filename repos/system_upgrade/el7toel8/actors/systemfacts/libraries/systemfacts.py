@@ -8,6 +8,7 @@ import re
 import six
 import logging
 from subprocess import CalledProcessError
+from leapp.libraries.stdlib import call
 
 
 try:
