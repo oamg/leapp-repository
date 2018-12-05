@@ -1,8 +1,8 @@
 import os
 import shutil
-import six
 import subprocess
 from collections import namedtuple
+from leapp.libraries.stdlib import call
 
 
 ErrorData = namedtuple('ErrorData', ['summary', 'details'])
@@ -53,21 +53,6 @@ def get_list_of_available_repo_uids(overlayfs_info):
 def container_call(overlayfs_info, cmd, split):
     container_cmd = ['systemd-nspawn', '--register=no', '-D', overlayfs_info.merged]
     return call(container_cmd + cmd, split)
-
-
-# NOTE: The function is used in several actors, should be moved to the library
-# NOTE: It really ugly to have something like this here, I know...
-def call(args, split=True):
-    ''' Call external processes with some additional sugar '''
-    r = None
-    with open(os.devnull, mode='w') as err:
-        if six.PY3:
-            r = subprocess.check_output(args, stderr=err, encoding='utf-8')
-        else:
-            r = subprocess.check_output(args, stderr=err).decode('utf-8')
-    if split:
-        return r.splitlines()
-    return r
 
 
 def check_cmd_call(cmd):

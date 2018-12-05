@@ -1,25 +1,7 @@
-import subprocess
-import os
-import six
-
 import pytest
 
 from leapp.snactor.fixture import current_actor_context
 from leapp.models import SelinuxPermissiveDecision
-
-
-
-def call(args, split=True):
-    """ Call external processes with some additional sugar """
-    r = None
-    with open(os.devnull, mode='w') as err:
-        if six.PY3:
-            r = subprocess.check_output(args, stderr=err, encoding='utf-8')
-        else:
-            r = subprocess.check_output(args, stderr=err).decode('utf-8')
-    if split:
-        return r.splitlines()
-    return r
 
 
 def check_permissive_in_conf():

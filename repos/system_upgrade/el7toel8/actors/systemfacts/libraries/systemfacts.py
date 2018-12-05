@@ -9,6 +9,7 @@ import six
 import subprocess
 import logging
 from subprocess import CalledProcessError
+from leapp.libraries.stdlib import call
 
 
 try:
@@ -26,19 +27,6 @@ def aslist(f):
     def inner(*args, **kwargs):
         return list(f(*args, **kwargs))
     return inner
-
-
-def call(args, split=True):
-    ''' Call external processes with some additional sugar '''
-    r = None
-    with open(os.devnull, mode='w') as err:
-        if six.PY3:
-            r = subprocess.check_output(args, stderr=err, encoding='utf-8')
-        else:
-            r = subprocess.check_output(args, stderr=err).decode('utf-8')
-    if split:
-        return r.splitlines()
-    return r
 
 
 def anyendswith(value, ends):
