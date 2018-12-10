@@ -3,6 +3,7 @@ __DATA_ORIG_PKGNAME=$${_DATA_ORIG_PKGNAME:-leapp-pes-data}
 PKGNAME=leapp-repository
 VERSION=`grep -m1 "^Version:" packaging/$(PKGNAME).spec | grep -om1 "[0-9].[0-9.]**"`
 
+#ADDED USELESS COMMIT
 # by default use values you can see below, but in case the COPR_* var is defined
 # use it instead of the default
 _COPR_REPO=$${COPR_REPO:-leapp}
