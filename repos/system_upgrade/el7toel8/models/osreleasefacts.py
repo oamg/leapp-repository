@@ -10,5 +10,5 @@ class OSReleaseFacts(Model):
     pretty_name = fields.String()
     version = fields.String()
     version_id = fields.String()
-    variant = fields.String()
-    variant_id = fields.String()
+    variant = fields.Nullable(fields.String()) # isn't specified on some systems
+    variant_id = fields.Nullable(fields.String()) # same as above
