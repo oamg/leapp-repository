@@ -33,6 +33,6 @@ class OSReleaseCollector(Actor):
             pretty_name=os_data.get('PRETTY_NAME', '').strip('"'),
             version=os_data.get('VERSION', '').strip('"'),
             version_id=os_data.get('VERSION_ID', '').strip('"'),
-            variant=os_data.get('VARIANT', '').strip('"'),
-            variant_id=os_data.get('VARIANT_ID', '').strip('"')
+            variant=os_data.get('VARIANT', '').strip('"') or None,
+            variant_id=os_data.get('VARIANT_ID', '').strip('"') or None
         ))

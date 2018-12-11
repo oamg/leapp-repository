@@ -60,7 +60,9 @@ class ActiveKernelModule(Model):
 class SELinux(Model):
     topic = SystemInfoTopic
 
-    runtime_mode = fields.StringEnum(['enforcing', 'permissive'])
+    # FIXME: fixme properly regarding the issue:
+    # # https://github.com/oamg/leapp-repository/issues/20
+    runtime_mode = fields.Nullable(fields.StringEnum(['enforcing', 'permissive']))
     static_mode = fields.StringEnum(['enforcing', 'permissive', 'disabled'])
     enabled = fields.Boolean()
     policy = fields.String()
