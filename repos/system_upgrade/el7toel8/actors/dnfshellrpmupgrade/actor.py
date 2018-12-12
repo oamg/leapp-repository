@@ -16,9 +16,13 @@ class DnfShellRpmUpgrade(Actor):
     tags = (RPMUpgradePhaseTag, IPUWorkflowTag)
 
     def process(self):
+        # FIXME: we hitting issue now because the network is down and rhsm
+        # # is trying to connect to the server. Commenting this out for now
+        # # so people will not be affected in case they do not have set a
+        # # release and we will have time to fix it properly.
         # Make sure Subscription Manager OS Release is unset
-        cmd = ['subscription-manager', 'release', '--unset']
-        check_call(cmd)
+        #cmd = ['subscription-manager', 'release', '--unset']
+        #check_call(cmd)
 
         dnf_command = [
             '/usr/bin/dnf',
