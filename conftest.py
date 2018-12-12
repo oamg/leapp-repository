@@ -1,5 +1,5 @@
 import os
-
+from leapp.utils.repository import find_repository_basedir
 from leapp.repository.scan import find_and_scan_repositories
 
 
@@ -7,13 +7,13 @@ def pytest_sessionstart(session):
     actor_path = os.environ.get('LEAPP_TESTED_ACTOR', None)
     if not actor_path:
         return
-    repo = find_and_scan_repositories(('/'.join(actor_path.split('/')[:-2])), include_locals=True)
+    repo = find_and_scan_repositories(find_repository_basedir(actor_path), include_locals=True)
     repo.load()
 
     actor = None
     # find which actor is being tested
     for a in repo.actors:
-        if a.full_path == actor_path:
+        if a.full_path == actor_path.rstrip('/'):
             actor = a
             break
 
