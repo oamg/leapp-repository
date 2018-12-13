@@ -3,11 +3,10 @@ from leapp.workflows.phases import Phase
 from leapp.workflows.flags import Flags
 from leapp.workflows.tagfilters import TagFilter
 from leapp.workflows.policies import Policies
-from leapp.tags import IPUWorkflowTag, FactsPhaseTag, ChecksPhaseTag, AttachPackageReposPhaseTag, PlanningPhaseTag, \
-    DownloadPhaseTag, InterimPreparationPhaseTag, InitRamStartPhaseTag, NetworkPhaseTag, StoragePhaseTag, \
+from leapp.tags import IPUWorkflowTag, FactsPhaseTag, ChecksPhaseTag, \
+    DownloadPhaseTag, InterimPreparationPhaseTag, InitRamStartPhaseTag, \
     LateTestsPhaseTag, PreparationPhaseTag, RPMUpgradePhaseTag, ApplicationsPhaseTag, ThirdPartyApplicationsPhaseTag, \
     FinalizationPhaseTag, FirstBootPhaseTag, ReportPhaseTag
-
 
 class IPUWorkflow(Workflow):
     name = 'InplaceUpgrade'
@@ -36,19 +35,21 @@ class IPUWorkflow(Workflow):
                             Policies.Retry.Phase)
         flags = Flags()
 
-    class AttachPackageReposPhase(Phase):
-        name = 'AttachPackageRepos'
-        filter = TagFilter(AttachPackageReposPhaseTag)
-        policies = Policies(Policies.Errors.FailPhase,
-                            Policies.Retry.Phase)
-        flags = Flags()
+    #class AttachPackageReposPhase(Phase):
+    #    name = 'AttachPackageRepos'
+    #    #NOTE: in case of use the AttachPackageReposPhaseTag tag has to be created
+    #    filter = TagFilter(AttachPackageReposPhaseTag)
+    #    policies = Policies(Policies.Errors.FailPhase,
+    #                        Policies.Retry.Phase)
+    #    flags = Flags()
 
-    class PlanningPhase(Phase):
-        name = 'Planning'
-        filter = TagFilter(PlanningPhaseTag)
-        policies = Policies(Policies.Errors.FailPhase,
-                            Policies.Retry.Phase)
-        flags = Flags()
+    #class PlanningPhase(Phase):
+    #    name = 'Planning'
+    #    #NOTE: in case of use the PlanningPhaseTag tag has to be created
+    #    filter = TagFilter(PlanningPhaseTag)
+    #    policies = Policies(Policies.Errors.FailPhase,
+    #                        Policies.Retry.Phase)
+    #    flags = Flags()
 
     class DownloadPhase(Phase):
         name = 'Download'
@@ -71,19 +72,21 @@ class IPUWorkflow(Workflow):
                             Policies.Retry.Phase)
         flags = Flags()
 
-    class NetworkPhase(Phase):
-        name = 'Network'
-        filter = TagFilter(NetworkPhaseTag)
-        policies = Policies(Policies.Errors.FailPhase,
-                            Policies.Retry.Phase)
-        flags = Flags()
+    #class NetworkPhase(Phase):
+    #    name = 'Network'
+    #    #NOTE: in case of use the NetworkPhaseTag tag has to be created
+    #    filter = TagFilter(NetworkPhaseTag)
+    #    policies = Policies(Policies.Errors.FailPhase,
+    #                        Policies.Retry.Phase)
+    #    flags = Flags()
 
-    class StoragePhase(Phase):
-        name = 'Storage'
-        filter = TagFilter(StoragePhaseTag)
-        policies = Policies(Policies.Errors.FailPhase,
-                            Policies.Retry.Phase)
-        flags = Flags()
+    #class StoragePhase(Phase):
+    #    name = 'Storage'
+    #    #NOTE: in case of use the StoragePhaseTag tag has to be created
+    #    filter = TagFilter(StoragePhaseTag)
+    #    policies = Policies(Policies.Errors.FailPhase,
+    #                        Policies.Retry.Phase)
+    #    flags = Flags()
 
     class LateTestsPhase(Phase):
         name = 'LateTests'
