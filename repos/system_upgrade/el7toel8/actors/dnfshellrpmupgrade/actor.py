@@ -1,3 +1,4 @@
+import json
 import os
 from tempfile import NamedTemporaryFile
 from subprocess import check_call
@@ -21,30 +22,20 @@ class DnfShellRpmUpgrade(Actor):
         # # so people will not be affected in case they do not have set a
         # # release and we will have time to fix it properly.
         # Make sure Subscription Manager OS Release is unset
-        #cmd = ['subscription-manager', 'release', '--unset']
-        #check_call(cmd)
+        # cmd = ['subscription-manager', 'release', '--unset']
+        # check_call(cmd)
 
-        dnf_command = [
-            '/usr/bin/dnf',
-            'shell',
-            '-y',
-            '--setopt=protected_packages=',
-            '--disablerepo', '\'*\'',
-            '--releasever', '8',
-            '--allowerasing',
-            '--best',
-            '--nogpgcheck',
-            '-C'
-        ]
+        shutil.copyfile(
+            self.get_file_path('rhel_upgrade.py'), '/lib/python2.7/site-packages/dnf-plugins/rhel_upgrade.py')
+
+        dnf_command = ['/usr/bin/dnf', 'rhel-upgrade', 'upgrade']
 
         target_uids = []
         for target_repos in self.consume(UsedTargetRepositories):
             for repo in target_repos.repos:
                 target_uids.append(repo.uid)
-        dnf_command += ['--enablerepo', ','.join(target_uids)]
 
-        if os.environ.get('LEAPP_DEBUG', '0') == '1':
-            dnf_command.append('--debugsolver')
+        debugsolver = True if os.environ.get('LEAPP_DEBUG', '0') == '1' else False
 
         shutil.copyfile(
             '/etc/yum.repos.d/redhat.repo.upgrade',
@@ -57,11 +48,29 @@ class DnfShellRpmUpgrade(Actor):
         check_call(cmd)
 
         data = next(self.consume(FilteredRpmTransactionTasks), FilteredRpmTransactionTasks())
-        with NamedTemporaryFile() as script:
-            cmds = ['distro-sync']
-            cmds += ['remove ' + pkg for pkg in data.to_remove if pkg]
-            cmds += ['install ' + pkg for pkg in data.to_install if pkg]
 
-            script.write('\n'.join(cmds))
-            script.flush()
-            check_call(dnf_command + [script.name])
+        plugin_data = {
+            'pkgs_info':
+                {
+                    'local_rpms': [pkg for pkg in data.local_rpms],
+                    'to_install': [pkg for pkg in data.to_install],
+                    'to_remove': [pkg for pkg in data.to_remove]
+                },
+            'dnf_conf':
+                {
+                     'allow_erasing': True,
+                     'best': True,
+                     'debugsolver': debugsolver,
+                     'disable_repos': True,
+                     'enable_repos': target_uids,
+                     'gpgcheck': False,
+                     'platform_id': 'platform:el8',
+                     'releasever': '8',
+                     'test_flag': False,
+                }
+            }
+
+        with NamedTemporaryFile() as data:
+            json.dump(plugin_data, data)
+            data.flush()
+            check_call(dnf_command + [data.name])
