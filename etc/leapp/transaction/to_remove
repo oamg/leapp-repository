@@ -1,11 +1,1 @@
-pycairo
-python-ethtool
-python-inotify
-python-jsonpointer
-python-linux-procfs
-python-schedutils
-redhat-rpm-config
-redhat-support-tool
-sysvinit-tools
 yum
-yum-rhn-plugin

@@ -1,4 +1,5 @@
 import os
+import json
 
 from leapp.actors import Actor
 from leapp.libraries.actor import preparetransaction
@@ -136,19 +137,8 @@ class PrepareUpgradeTransaction(Actor):
             repos=used_repos
         ))
 
-    def dnf_shell_rpm_download(self, overlayfs_info):
-        dnf_command = [
-            '/usr/bin/dnf',
-            'shell',
-            '-y',
-            '--setopt=protected_packages=',
-            '--disablerepo', '\'*\'',
-            '--releasever', '8',
-            '--allowerasing',
-            '--best',
-            '--nogpgcheck',
-            '--setopt=tsflags=test'
-        ]
+    def dnf_plugin_rpm_download(self, overlayfs_info):
+        dnf_command = ['/usr/bin/dnf', 'rhel-upgrade', 'download']
 
         # get list of UIDs of target repositories that should be used for upgrade
         error = self._setup_target_repos(overlayfs_info)
@@ -160,30 +150,44 @@ class PrepareUpgradeTransaction(Actor):
                 details='The list of available required repositories is empty.'
                 )
 
-        # enable repositores for upgrade
-        dnf_command += ['--enablerepo', ','.join(self.target_uids)]
-
-        if os.environ.get('LEAPP_DEBUG', '0') == '1':
-            dnf_command.append('--debugsolver')
+        debugsolver = True if os.environ.get('LEAPP_DEBUG', '0') == '1' else False
 
         error = preparetransaction.mount_dnf_cache(overlayfs_info)
         if error:
             return error
 
         data = next(self.consume(FilteredRpmTransactionTasks), FilteredRpmTransactionTasks())
-        with open(os.path.join(overlayfs_info.merged, 'var', 'lib', 'leapp', 'dnf-script.txt'), 'w+') as script:
-            cmds = ['distro-sync']
-            cmds += ['remove ' + pkg for pkg in data.to_remove if pkg]
-            cmds += ['install ' + pkg for pkg in data.to_install if pkg]
 
-            script.write('\n'.join(cmds))
-            script.flush()
+        plugin_data = {
+            'pkgs_info':
+                {
+                    'local_rpms': [pkg for pkg in data.local_rpms],
+                    'to_install': [pkg for pkg in data.to_install],
+                    'to_remove': [pkg for pkg in data.to_remove]
+                    },
+            'dnf_conf':
+                {
+                    'allow_erasing': True,
+                    'best': True,
+                    'debugsolver': debugsolver,
+                    'disable_repos': True,
+                    'enable_repos': self.target_uids,
+                    'gpgcheck': False,
+                    'platform_id': 'platform:el8',
+                    'releasever': '8',
+                    'test_flag': True,
+                    }
+                }
+
+        with open(os.path.join(overlayfs_info.merged, 'var', 'lib', 'leapp', 'dnf-plugin-data.txt'), 'w+') as data:
+            json.dump(plugin_data, data)
+            data.flush()
 
         error = preparetransaction.check_container_call(overlayfs_info, [
             '--',
             '/bin/bash',
             '-c',
-            ' '.join(dnf_command + ['/var/lib/leapp/dnf-script.txt'])])
+            ' '.join(dnf_command + ['/var/lib/leapp/dnf-plugin-data.txt'])])
 
         if os.environ.get('LEAPP_DEBUG', '0') == '1':
             # We want the debug data available where we would expect it usually.
@@ -229,8 +233,16 @@ class PrepareUpgradeTransaction(Actor):
         # switch EngID to use RHEL 8 subscriptions #
         prev_rhsm_release = preparetransaction.call(['subscription-manager', 'release'])[0]
         error = self.update_rhel_subscription(ofs_info)
+
         if not error:
-            error = self.dnf_shell_rpm_download(ofs_info)
+            dnfplugin_spath = self.get_file_path('rhel_upgrade.py')
+            dnfplugin_dpath = '/lib/python2.7/site-packages/dnf-plugins'
+
+            error = preparetransaction.copy_file_to_container(ofs_info, dnfplugin_spath, dnfplugin_dpath)
+            if error:
+                return error
+
+        error = self.dnf_plugin_rpm_download(ofs_info)
 
         if not error:
             error = preparetransaction.copy_file_from_container(
