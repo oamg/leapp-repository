@@ -1,5 +1,6 @@
-%global repositorydir %{_datadir}/leapp-repository/repositories
-%global custom_repositorydir %{_datadir}/leapp-repository/custom-repositories
+%global leapp_datadir %{_datadir}/leapp-repository
+%global repositorydir %{leapp_datadir}/repositories
+%global custom_repositorydir %{leapp_datadir}/custom-repositories
 
 Name:       leapp-repository
 Version:    0.4.0
@@ -57,6 +58,12 @@ install -m 0644 etc/leapp/transaction/* %{buildroot}%{_sysconfdir}/leapp/transac
 rm -rf %{buildroot}%{repositorydir}/containerization
 rm -rf %{buildroot}%{repositorydir}/test
 
+# remove component/unit tests, Makefiles, ... stuff that related to testing only
+rm -rf %{buildroot}%{repositorydir}/common/actors/testactor
+find %{buildroot}%{repositorydir}/common -name "test.py" -delete
+rm -rf `find %{buildroot}%{repositorydir} -name "tests" -type d`
+find %{buildroot}%{repositorydir} -name "Makefile" -delete
+
 for DIRECTORY in $(find  %{buildroot}%{repositorydir}/  -mindepth 1 -maxdepth 1 -type d);
 do
     REPOSITORY=$(basename $DIRECTORY)
@@ -68,10 +75,13 @@ done;
 %files
 %doc README.md
 %license LICENSE
+%dir %{_sysconfdir}/leapp/transaction
+%dir %{leapp_datadir}
+%dir %{repositorydir}
+%dir %{custom_repositorydir}
 %{_sysconfdir}/leapp/repos.d/*
 %{_sysconfdir}/leapp/transaction/*
 %{repositorydir}/*
-%dir %{custom_repositorydir}
 %exclude %{repositorydir}/system_upgrade/el7toel8/actors/peseventsscanner/files/pes-events.json
 
 %files data
