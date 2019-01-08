@@ -63,16 +63,11 @@ Sources of external functionality to be used in your actor in order of preferenc
 3. shell commands
 
 Examples:
-- Prefer `os.symlink` over `/bin/ls -s`
-- Prefer `os.remove` over `/bin/rm`
+- Prefer `os.symlink` over `ls -s`
+- Prefer `os.remove` over `rm`
 
-### Shell commands
-
-There might be a valid reason for calling the shell commands instead of standard library functions, e.g. the
-`shutil.copyfile` is not able to retain all of the file attributes.
-
-Full path to shell commands is preferred over executable name only. It is safer as no alias is executed instead of the
-expected command, and you don't need to rely on the content of PATH. As an example, prefer `/bin/rm` over `rm`.
+There might be a valid reason for calling a shell command instead of a standard library function, e.g. the Python's
+`shutil.copyfile` is not able to retain all of the file attributes, as opposed to shell's `cp --preserve`.
 
 
 ## Utilize messages produced by existing actors
@@ -122,7 +117,7 @@ For more about unit testing, see the [tutorial](https://leapp.readthedocs.io/en/
 ## Do not introduce new dependencies
 
 Ideally, actors shouldn't require any additional dependency on top of the dependencies already in the
-[leap](https://github.com/oamg/leapp/blob/master/packaging/leapp.spec) and
+[leapp](https://github.com/oamg/leapp/blob/master/packaging/leapp.spec) and
 [leapp-repository](https://github.com/oamg/leapp-repository/blob/master/packaging/leapp-repository.spec) spec files,
 which are, as of December 2018, just these:
 - dnf
