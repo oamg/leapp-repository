@@ -1,9 +1,8 @@
 import functools
 import os
 import shlex
-import six
 import subprocess
-from subprocess import CalledProcessError
+import six
 
 from leapp.models import PCIDevice
 
@@ -63,12 +62,12 @@ def get_pci_devices():
                 progif = o.lstrip('-p')
 
         yield PCIDevice(
-            slot = get_from_list(params, 0),
-            cls = get_from_list(params, 1),
-            vendor = get_from_list(params, 2),
-            name = get_from_list(params, 3),
-            subsystem_vendor = get_from_list(params, 4),
-            subsystem_name = get_from_list(params, 5),
-            rev = rev,
-            progif = progif
+            slot=get_from_list(params, 0),
+            cls=get_from_list(params, 1),
+            vendor=get_from_list(params, 2),
+            name=get_from_list(params, 3),
+            subsystem_vendor=get_from_list(params, 4),
+            subsystem_name=get_from_list(params, 5),
+            rev=rev,
+            progif=progif
         )
