@@ -13,12 +13,12 @@ def create_pcidevices(items):
         'rev',
         'progif']
 
-    pcidevices = PCIDevices()
+    pcidevices = PCIDevices(devices=[])
     for i in items:
-        d = PCIDevice()
-        for attr in attrs:
-            setattr(d, attr, i.get(attr, ''))
-        pcidevices.append(d)
+        data = {}
+        for a in attrs:
+            data[a] = i.get(a, '')
+        pcidevices.devices.append(PCIDevice(**data))
 
     return pcidevices
 
