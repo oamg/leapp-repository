@@ -13,8 +13,9 @@ In addition to the [Leapp project contribution guidelines](https://github.com/oa
 1. Follow [PEP 257 - Docstring Conventions](https://www.python.org/dev/peps/pep-0257)
 1. All Python code must be Python 2.7+/3.6+ compatible.
 1. New folders and/or Python files must use lowercase without underscores.
+   - with the exception of test file names, which need to be named `test_*.py` or `*_test.py`
 1. Do not use _actor_ in the actor's name, neither _model/topic/tag/phase_ in the model/topic/tag/phase name, as these things are implicit.
-1. The actor's main file must be named "actor.py".
+1. The actor's main file must be named `actor.py`.
 1. Use of Python language for the actor's logic is preferred, even though you can call a script in any language from the actor's Python skeleton.
 1. The code should follow these documents as much as feasible:
    - the [Leapp project Python coding guidelines](https://github.com/oamg/leapp-guidelines/blob/master/python-coding-guidelines.md).
