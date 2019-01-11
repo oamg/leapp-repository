@@ -13,7 +13,7 @@ Source0:    https://github.com/oamg/leapp-repository/archive/leapp-repository-%{
 Source1:    leapp-repository-initrd.tar.gz
 Source2:    leapp-repository-data.tar.gz
 BuildArch:  noarch
-Requires:   dnf >= 2.7.5-19
+Requires:   dnf >= 4
 Requires:   %{name}-data = %{version}-%{release}
 %if 0%{?fedora} || 0%{?rhel} > 7
 Requires:   systemd-container
@@ -89,5 +89,8 @@ done;
 
 
 %changelog
+* Fri Jan 11 2019 Michal Reznik <mreznik@redhat.com> - %{version}-%{release}
+- Bump dnf requires version
+
 * Mon Apr 16 2018 Vinzenz Feenstra <evilissimo@redhat.com> - %{version}-%{release}
 - Initial RPM
