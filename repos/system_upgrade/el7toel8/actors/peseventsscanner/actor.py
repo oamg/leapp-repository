@@ -13,7 +13,7 @@ class PesEventsScanner(Actor):
     description = 'Retrieve all events provided by Package Evolution Service API'
     consumes = (InstalledRedHatSignedRPM,)
     produces = (RpmTransactionTasks,)
-    tags = (IPUWorkflowTag, FactsPhaseTag, ExperimentalTag)
+    tags = (IPUWorkflowTag, FactsPhaseTag)
 
     @staticmethod
     def get_packages(event, name):
