@@ -4,6 +4,8 @@ from leapp.topics import TransactionTopic
 
 class RpmTransactionTasks(Model):
     topic = TransactionTopic
+
+    local_rpms = fields.List(fields.String(), default=[])
     to_install = fields.List(fields.String(), default=[])
     to_keep = fields.List(fields.String(), default=[])
     to_remove = fields.List(fields.String(), default=[])
