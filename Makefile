@@ -6,6 +6,7 @@ VERSION=`grep -m1 "^Version:" packaging/$(PKGNAME).spec | grep -om1 "[0-9].[0-9.
 # by default use values you can see below, but in case the COPR_* var is defined
 # use it instead of the default
 _COPR_REPO=$${COPR_REPO:-leapp}
+_COPR_DATA_REPO=$${COPR_DATA_REPO:-leapp-pes-data}
 _COPR_CONFIG=$${COPR_CONFIG:-~/.config/copr_rh_oamg.conf}
 
 # just to reduce number of unwanted builds mark as the upstream one when
@@ -97,7 +98,7 @@ source: prepare
 	@rm -rf packaging/tmp/*
 	@echo "--- Download $(__DATA_ORIG_PKGNAME) SRPM ---"
 	@copr --config $(_COPR_CONFIG) download-build -d packaging/tmp \
-		`_PKGNAME=$(__DATA_ORIG_PKGNAME) __TIMESTAMP=$(TIMESTAMP) $(MAKE) list_builds | grep -m1 '"id"' | grep -o "[0-9][0-9]*"`
+		`COPR_REPO=$(_COPR_DATA_REPO) _PKGNAME=$(__DATA_ORIG_PKGNAME) __TIMESTAMP=$(TIMESTAMP) $(MAKE) list_builds | grep -m1 '"id"' | grep -o "[0-9][0-9]*"`
 	@echo "--- Get $(__DATA_ORIG_PKGNAME) tarball---"
 	@rpm2cpio `find packaging/tmp | grep -m1 "src.rpm$$"` > packaging/tmp/$(__DATA_ORIG_PKGNAME).cpio
 	@cpio -iv --no-absolute-filenames --to-stdout "$(__DATA_ORIG_PKGNAME)-*.tar.gz" \
