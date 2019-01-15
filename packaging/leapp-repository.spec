@@ -18,7 +18,7 @@ Requires:   %{name}-data = %{version}-%{release}
 
 # IMPORTANT: everytime the requirements are changed, increment number by one
 # - same for Provides in deps subpackage
-Requires:   leapp-repository-dependencies = 1
+Requires:   leapp-repository-dependencies = 2
 
 %description
 Repositories for leapp

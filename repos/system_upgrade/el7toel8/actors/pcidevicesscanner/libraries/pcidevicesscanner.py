@@ -4,7 +4,8 @@ import shlex
 import subprocess
 import six
 
-from leapp.models import PCIDevice
+from leapp.libraries.stdlib import call
+from leapp.models import PCIDevices, PCIDevice
 
 
 def aslist(f):
@@ -13,19 +14,6 @@ def aslist(f):
     def inner(*args, **kwargs):
         return list(f(*args, **kwargs))
     return inner
-
-
-def call(args, split=True):
-    ''' Call external processes with some additional sugar '''
-    r = None
-    with open(os.devnull, mode='w') as err:
-        if six.PY3:
-            r = subprocess.check_output(args, stderr=err, encoding='utf-8')
-        else:
-            r = subprocess.check_output(args, stderr=err).decode('utf-8')
-    if split:
-        return r.splitlines()
-    return r
 
 
 def get_from_list(l, idx, default=''):
@@ -71,3 +59,9 @@ def get_pci_devices():
             rev=rev,
             progif=progif
         )
+
+def produce_pci_devices(producer):
+    ''' Produce a Leapp message with all PCI devices '''
+    producer(PCIDevices(
+        devices=get_pci_devices()
+    ))

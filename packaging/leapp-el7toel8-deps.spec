@@ -18,10 +18,11 @@ URL:        https://leapp-to.github.io
 ##################################################
 %package -n %{lrdname}
 Summary:    Meta-package with system dependencies for leapp repository
-Provides:   leapp-repository-dependencies = 1
+Provides:   leapp-repository-dependencies = 2
 Obsoletes:  leapp-repository-deps
 
 Requires:   dnf >= 4
+Requires:   pciutils
 
 %description -n %{lrdname}
 %{summary}
