@@ -23,7 +23,9 @@ class RepositoryData(Model):
     topic = SystemInfoTopic
 
     name = fields.String()
-    baseurl = fields.String()
+    baseurl = fields.Nullable(fields.String())
+    metalink = fields.Nullable(fields.String())
+    mirrorlist = fields.Nullable(fields.String())
     enabled = fields.Boolean(default=True)
     additional_fields = fields.Nullable(fields.String())
 
