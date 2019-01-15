@@ -1,4 +1,4 @@
-# Contributing guidelines for writing actors
+# Contribution guidelines for writing actors
 
 In addition to the [Leapp project contribution guidelines](https://github.com/oamg/leapp-guidelines/blob/master/contributing-guidelines.rst), please follow also these rules:
 
