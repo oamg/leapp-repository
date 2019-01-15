@@ -1,8 +1,8 @@
 # Best practices for writing actors
 
-## Follow the coding guidelines
+## Follow the contribution guidelines
 
-See the [Python coding guidelines for leapp-repository](CONTRIBUTING.md#coding-guidelines).
+See the [contribution guidelines for leapp-repository](../CONTRIBUTING.md).
 
 ## Avoid running code on a module level
 
