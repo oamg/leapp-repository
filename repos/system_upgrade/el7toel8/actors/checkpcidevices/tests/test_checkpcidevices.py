@@ -11,7 +11,8 @@ def create_pcidevices(items):
         'subsystem_vendor',
         'subsystem_name',
         'rev',
-        'progif']
+        'progif'
+    ]
 
     pcidevices = PCIDevices(devices=[])
     for i in items:
