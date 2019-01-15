@@ -1,4 +1,4 @@
-repos/*/.leapp/leapp.db
+repos/**/.leapp/leapp.db
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
