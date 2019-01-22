@@ -23,7 +23,7 @@ class PrepareUpgradeTransaction(Actor):
     def is_system_registered_and_attached(self):
         # TODO: put this to different actor and process it already during check
         # + phase
-        out = call(['subscription-manager', 'list', '--consumed'], True)
+        out = call(['subscription-manager', 'list', '--consumed'], split=True)
         for i in out:
             if i.startswith('SKU'):
                 # if any SKU is consumed, return True; we cannot check more
@@ -216,7 +216,7 @@ class PrepareUpgradeTransaction(Actor):
             return
 
         # TODO: Find a better place where to run this (perhaps even gate this behind user prompt/question)
-        call(['/usr/bin/dnf', 'clean', 'all'])
+        call(['/usr/bin/dnf', 'clean', 'all'], split=False)
 
         # prepare container #
         ofs_info, error = preparetransaction.create_overlayfs_dirs(container_root)
