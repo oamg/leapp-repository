@@ -1,11 +1,14 @@
 __PKGNAME=$${_PKGNAME:-leapp-repository}
 __DATA_ORIG_PKGNAME=$${_DATA_ORIG_PKGNAME:-leapp-pes-data}
 PKGNAME=leapp-repository
+DEPS_PKGNAME=leapp-el7toel8-deps
 VERSION=`grep -m1 "^Version:" packaging/$(PKGNAME).spec | grep -om1 "[0-9].[0-9.]**"`
+DEPS_VERSION=`grep -m1 "^Version:" packaging/$(DEPS_PKGNAME).spec | grep -om1 "[0-9].[0-9.]**"`
 
 # by default use values you can see below, but in case the COPR_* var is defined
 # use it instead of the default
 _COPR_REPO=$${COPR_REPO:-leapp}
+_COPR_REPO_TMP=$${COPR_REPO_TMP:-leapp-tmp}
 _COPR_CONFIG=$${COPR_CONFIG:-~/.config/copr_rh_oamg.conf}
 
 # just to reduce number of unwanted builds mark as the upstream one when
@@ -73,20 +76,38 @@ prepare: clean
 	@echo "--- Prepare build directories ---"
 	@mkdir -p packaging/{sources,SRPMS}/
 
-list_builds:
+_list_approved_builds:
 	@copr --config $(_COPR_CONFIG) get-package $(_COPR_REPO) \
 		--name $(__PKGNAME) --with-all-builds \
 		| grep -E '"(built_packages|id|state|pkg_version)"' | grep -B3 "succeeded" \
 		| sed 's/"state": "succeeded",/----------------------/' \
 		| grep -A1 -B2 '"pkg_version".*-[1-9]'
 
+_list_all_builds:
+	@copr --config $(_COPR_CONFIG) get-package $(_COPR_REPO) \
+		--name $(__PKGNAME) --with-all-builds \
+		| grep -E '"(built_packages|id|state|pkg_version)"' | grep -B3 "succeeded" \
+		| sed 's/"state": "succeeded",/----------------------/'
+
+
 source: prepare
 	@echo "--- Create source tarball ---"
 	@echo git archive --prefix "$(PKGNAME)-$(VERSION)/" -o "packaging/sources/$(PKGNAME)-$(VERSION).tar.gz" HEAD
 	@git archive --prefix "$(PKGNAME)-$(VERSION)/" -o "packaging/sources/$(PKGNAME)-$(VERSION).tar.gz" HEAD
+	@echo "--- PREPARE DEPS PKGS ---"
+	mkdir -p packaging/tmp/
+	@__TIMESTAMP=$(TIMESTAMP) $(MAKE) _copr_build_deps_subpkg
+	@# THIS IS NOT TYPO! COPR_REPO=_COPR_REPO_TMP!!
+	@__TIMESTAMP=$(TIMESTAMP) _PKGNAME=$(DEPS_PKGNAME) COPR_REPO=$(_COPR_REPO_TMP) $(MAKE) _list_all_builds \
+		| grep -EB3 "pkg_version.*-$(RELEASE)" \
+		| grep -m1 '"id"' | grep -o "[0-9][0-9]*" > packaging/tmp/deps_build_id
+	@copr --config $(_COPR_CONFIG) download-build -d packaging/tmp `cat packaging/tmp/deps_build_id`
+	@mv `find packaging/tmp/ | grep "rpm$$" | grep -v "src"` packaging/tmp
+	@tar -czf packaging/sources/deps-pkgs.tar.gz -C packaging/tmp/ `ls packaging/tmp | grep -o "[^/]*rpm$$"`
+	@rm -rf packaging/tmp/*
 	@echo "--- Download $(PKGNAME)-initrd SRPM ---"
 	@copr --config $(_COPR_CONFIG) download-build -d packaging/tmp \
-		`_PKGNAME=$(PKGNAME)-initrd __TIMESTAMP=$(TIMESTAMP) $(MAKE) list_builds | grep -m1 '"id"' | grep -o "[0-9][0-9]*"`
+		`_PKGNAME=$(PKGNAME)-initrd __TIMESTAMP=$(TIMESTAMP) $(MAKE) _list_approved_builds | grep -m1 '"id"' | grep -o "[0-9][0-9]*"`
 	@echo "--- Get $(PKGNAME)-initrd  tarball---"
 	@rpm2cpio `find packaging/tmp | grep -m1 "src.rpm$$"` > packaging/tmp/$(PKGNAME)-initrd.cpio
 	@cpio -iv --no-absolute-filenames --to-stdout "$(PKGNAME)-initrd-*.tar.gz" \
@@ -97,7 +118,7 @@ source: prepare
 	@rm -rf packaging/tmp/*
 	@echo "--- Download $(__DATA_ORIG_PKGNAME) SRPM ---"
 	@copr --config $(_COPR_CONFIG) download-build -d packaging/tmp \
-		`_PKGNAME=$(__DATA_ORIG_PKGNAME) __TIMESTAMP=$(TIMESTAMP) $(MAKE) list_builds | grep -m1 '"id"' | grep -o "[0-9][0-9]*"`
+		`_PKGNAME=$(__DATA_ORIG_PKGNAME) __TIMESTAMP=$(TIMESTAMP) $(MAKE) _list_approved_builds | grep -m1 '"id"' | grep -o "[0-9][0-9]*"`
 	@echo "--- Get $(__DATA_ORIG_PKGNAME) tarball---"
 	@rpm2cpio `find packaging/tmp | grep -m1 "src.rpm$$"` > packaging/tmp/$(__DATA_ORIG_PKGNAME).cpio
 	@cpio -iv --no-absolute-filenames --to-stdout "$(__DATA_ORIG_PKGNAME)-*.tar.gz" \
@@ -117,6 +138,26 @@ srpm: source
 		--define 'dist .el7' \
 		--define 'el7 1' || FAILED=1
 	@mv packaging/$(PKGNAME).spec.bak packaging/$(PKGNAME).spec
+
+_srpm_subpkg:
+	@echo "--- Build RPM: $(DEPS_PKGNAME)-$(DEPS_VERSION)-$(RELEASE).. ---"
+	@cp packaging/$(DEPS_PKGNAME).spec packaging/$(DEPS_PKGNAME).spec.bak
+	@sed -i "s/1%{?dist}/$(RELEASE)%{?dist}/g" packaging/$(DEPS_PKGNAME).spec
+	@rpmbuild -bs packaging/$(DEPS_PKGNAME).spec \
+		--define "_sourcedir `pwd`/packaging/sources"  \
+		--define "_srcrpmdir `pwd`/packaging/SRPMS" \
+		--define "rhel 8" \
+		--define 'dist .el8' \
+		--define 'el7 8' || FAILED=1
+	@mv packaging/$(DEPS_PKGNAME).spec.bak packaging/$(DEPS_PKGNAME).spec
+
+_copr_build_deps_subpkg: _srpm_subpkg
+	@echo "--- Build RPM ${DEPS_PKGNAME}-${DEPS_VERSION}-${RELEASE} in TMP CORP ---"
+	@echo copr --config $(_COPR_CONFIG) build $(_COPR_REPO_TMP) \
+		packaging/SRPMS/${DEPS_PKGNAME}-${DEPS_VERSION}-${RELEASE}*.src.rpm
+	@copr --config $(_COPR_CONFIG) build $(_COPR_REPO_TMP) \
+		packaging/SRPMS/${DEPS_PKGNAME}-${DEPS_VERSION}-${RELEASE}*.src.rpm
+
 
 copr_build: srpm
 	@echo "--- Build RPM ${PKGNAME}-${VERSION}-${RELEASE}.el6.rpm in COPR ---"
