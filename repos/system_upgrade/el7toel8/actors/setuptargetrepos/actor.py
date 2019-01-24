@@ -1,6 +1,6 @@
 from leapp.actors import Actor
 from leapp.models import RHELTargetRepository, TargetRepositories
-from leapp.models import CustomTargetRepository, SystemFacts
+from leapp.models import CustomTargetRepository
 from leapp.tags import IPUWorkflowTag, ChecksPhaseTag
 
 
@@ -11,7 +11,7 @@ class SetupTargetRepos(Actor):
                    ' the current set of RHEL repositories. Additionaly'
                    ' process request to use custom repositories during the'
                    ' upgrade transaction')
-    consumes = (SystemFacts, CustomTargetRepository,)
+    consumes = (CustomTargetRepository,)
     produces = (TargetRepositories,)
     tags = (IPUWorkflowTag, ChecksPhaseTag)
 

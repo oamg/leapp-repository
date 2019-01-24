@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.models import SystemFacts, FirewallDecisionM, CheckResult
+from leapp.models import FirewallsFacts, FirewallDecisionM, CheckResult
 from leapp.tags import IPUWorkflowTag, ChecksPhaseTag, ExperimentalTag
 from leapp.dialogs import Dialog
 from leapp.dialogs.components import BooleanComponent
@@ -8,7 +8,7 @@ from leapp.dialogs.components import BooleanComponent
 class FirewallDecision(Actor):
     name = 'firewalld_decision'
     description = 'Firewall disable decision maker actor (pre-reboot) (check phase).'
-    consumes = (SystemFacts,)
+    consumes = (FirewallsFacts,)
     produces = (FirewallDecisionM, CheckResult,)
     tags = (IPUWorkflowTag, ChecksPhaseTag, ExperimentalTag,)
     dialogs = (Dialog(
@@ -27,7 +27,7 @@ class FirewallDecision(Actor):
 
     def process(self):
         self.log.info("Starting to get FirewallD decision.")
-        for facts in self.consume(SystemFacts):
+        for facts in self.consume(FirewallsFacts):
             # FIXME: checked only whether services are disabled. But in case
             # + there is another service/proces/... that starts firewalls during
             # + boot we will not catch it in this way. Shouldn't we check and
@@ -35,7 +35,7 @@ class FirewallDecision(Actor):
             # + services are disabled? To reflect possible risk, e.g. that user
             # + will not be able to connect to the upgraded system through ssh.
             # + Fix it later.
-            if facts.firewalls.firewalld.enabled or facts.firewalls.iptables.enabled:
+            if facts.firewalld.enabled or facts.iptables.enabled:
                 answer = self.request_answers(self.dialogs[0]).get('continue_fw', False)
                 self.produce(FirewallDecisionM(disable_choice='Y' if answer else 'N'))
                 if not answer:
