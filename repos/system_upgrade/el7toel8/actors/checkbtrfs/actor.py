@@ -1,17 +1,17 @@
 from leapp.actors import Actor
-from leapp.models import CheckResult, SystemFacts
+from leapp.models import CheckResult, ActiveKernelModulesFacts
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
 class CheckBtrfs(Actor):
     name = 'check_btrfs'
     description = 'Check if Btrfs filesystem is in use. If yes, inhibit the upgrade process'
-    consumes = (SystemFacts,)
+    consumes = (ActiveKernelModulesFacts,)
     produces = (CheckResult,)
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 
     def process(self):
-        for fact in self.consume(SystemFacts):
+        for fact in self.consume(ActiveKernelModulesFacts):
             for active_module in fact.kernel_modules:
                 if active_module.filename == 'btrfs':
                     self.produce(CheckResult(

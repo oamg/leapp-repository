@@ -1,12 +1,12 @@
 from leapp.actors import Actor
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
-from leapp.models import SystemFacts, CheckResult, SelinuxPermissiveDecision, SelinuxRelabelDecision
+from leapp.models import SELinuxFacts, CheckResult, SelinuxPermissiveDecision, SelinuxRelabelDecision
 
 
 class CheckSelinux(Actor):
     name = 'check_se_linux'
     description = 'Check SElinux status and produce decision messages for further action'
-    consumes = (SystemFacts,)
+    consumes = (SELinuxFacts,)
     produces = (CheckResult, SelinuxPermissiveDecision, SelinuxRelabelDecision)
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 
@@ -19,9 +19,9 @@ class CheckSelinux(Actor):
              solutions=solution))
 
     def process(self):
-        for fact in self.consume(SystemFacts):
-            enabled = fact.selinux.enabled
-            conf_status = fact.selinux.static_mode
+        for fact in self.consume(SELinuxFacts):
+            enabled = fact.enabled
+            conf_status = fact.static_mode
 
         if conf_status == 'disabled':
             if enabled:
