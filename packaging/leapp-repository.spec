@@ -40,11 +40,12 @@ Summary:    Meta-package with system dependencies of %{name} package
 
 # IMPORTANT: everytime the requirements are changed, increment number by one
 # - same for Requires in main package
-Provides:  leapp-repository-dependencies = 1
+Provides:  leapp-repository-dependencies = 2
 ##################################################
 # Real requirements for the leapp-repository HERE
 ##################################################
 Requires:   dnf >= 4
+Requires:   pciutils
 %if 0%{?rhel} && 0%{?rhel} == 7
 # Required to gather system facts about SELinux
 Requires:   libselinux-python
