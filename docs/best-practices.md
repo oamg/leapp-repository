@@ -132,3 +132,16 @@ the package if they want to experience as smooth upgrade as possible.
 If you're writing an actor for the RHEL 7 to RHEL 8 in-place upgrade workflow and you really need to have some package
 installed, then the only acceptable packages to depend on are the the ones available in the minimal installation of
 RHEL 7 (packages from the @core group + their dependencies).
+
+## When something goes wrong stop the execution of your actor in the right way
+
+If your actor get unexpected input or result of some operation, you must notify the framework about it. For that use these exceptions with a descriptive message:
+- [StopActorExecution](https://leapp.readthedocs.io/en/latest/pydoc/leapp.html#leapp.exceptions.StopActorExecution) - will stop the current actor execution
+- [StopActorExecutionError](https://leapp.readthedocs.io/en/latest/pydoc/leapp.html#leapp.exceptions.StopActorExecutionError) - will stop the current actor execution, but also notify the framework that an error has occurred and can influence the result of the upgrade process.
+
+In case of [StopActorExecutionError](https://leapp.readthedocs.io/en/latest/pydoc/leapp.html#leapp.exceptions.StopActorExecutionError) the execution will stop or not according to the [policy](https://leapp.readthedocs.io/en/latest/pydoc/leapp.workflows.html?highlight=FailPhase#module-leapp.workflows.policies) defined in the workflow, there are three possibilities:
+
+- [FailImmediately](https://leapp.readthedocs.io/en/latest/pydoc/leapp.workflows.html?highlight=FailPhase#leapp.workflows.policies.Policies.Errors.FailImmediately) - end the upgrade process right away
+- [FailPhase](https://leapp.readthedocs.io/en/latest/pydoc/leapp.workflows.html?highlight=FailPhase#leapp.workflows.policies.Policies.Errors.FailPhase) - end the upgrade process after finishing the current phase
+- [ReportOnly](https://leapp.readthedocs.io/en/latest/pydoc/leapp.workflows.html?highlight=FailPhase#leapp.workflows.policies.Policies.Errors.ReportOnly) - do not end the upgrade process at all and continue with logging the issue only
+
