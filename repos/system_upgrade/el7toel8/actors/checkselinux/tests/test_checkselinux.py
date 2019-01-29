@@ -16,7 +16,7 @@ def create_selinuxfacts(static_mode, enabled, policy='targeted', mls_enabled=Tru
             static_mode=static_mode,
             enabled=enabled,
             policy=policy,
-            mls_enabled=mls_enabled,
+            mls_enabled=mls_enabled
         )
 
 

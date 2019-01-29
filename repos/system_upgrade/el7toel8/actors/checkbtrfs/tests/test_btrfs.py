@@ -3,7 +3,7 @@ from leapp.models import ActiveKernelModule, ActiveKernelModulesFacts, CheckResu
 
 
 def create_modulesfacts(kernel_modules):
-    return ActiveKernelModulesFacts(kernel_modules=kernel_modules,)
+    return ActiveKernelModulesFacts(kernel_modules=kernel_modules)
 
 
 def test_actor_with_btrfs_module(current_actor_context):

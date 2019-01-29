@@ -15,7 +15,7 @@ class SystemFactsActor(Actor):
                 GroupsFacts,
                 RepositoriesFacts,
                 SELinuxFacts,
-                FirewallsFacts,)
+                FirewallsFacts)
     tags = (IPUWorkflowTag, FactsPhaseTag,)
 
     def process(self):
