@@ -133,15 +133,17 @@ If you're writing an actor for the RHEL 7 to RHEL 8 in-place upgrade workflow an
 installed, then the only acceptable packages to depend on are the the ones available in the minimal installation of
 RHEL 7 (packages from the @core group + their dependencies).
 
-## When something goes wrong stop the execution of your actor in the right way
+## Use convenience exceptions to stop the actor's execution
 
-If your actor get unexpected input or result of some operation, you must notify the framework about it. For that use these exceptions with a descriptive message:
-- [StopActorExecution](https://leapp.readthedocs.io/en/latest/pydoc/leapp.html#leapp.exceptions.StopActorExecution) - will stop the current actor execution
-- [StopActorExecutionError](https://leapp.readthedocs.io/en/latest/pydoc/leapp.html#leapp.exceptions.StopActorExecutionError) - will stop the current actor execution, but also notify the framework that an error has occurred and can influence the result of the upgrade process.
+If you encounter unexpected input or any other error during execution of an actor and want to stop it, use these exceptions:
 
-In case of [StopActorExecutionError](https://leapp.readthedocs.io/en/latest/pydoc/leapp.html#leapp.exceptions.StopActorExecutionError) the execution will stop or not according to the [policy](https://leapp.readthedocs.io/en/latest/pydoc/leapp.workflows.html?highlight=FailPhase#module-leapp.workflows.policies) defined in the workflow, there are three possibilities:
+- [StopActorExecution](https://leapp.readthedocs.io/en/latest/pydoc/leapp.html#leapp.exceptions.StopActorExecution) - raising this exception is a convenient to stop actor's execution with no side effect - it has the same effect as returning `None` from the main `process()` method in the `actor.py`
+- [StopActorExecutionError](https://leapp.readthedocs.io/en/latest/pydoc/leapp.html#leapp.exceptions.StopActorExecutionError) - raising this exception will stop actor's execution and notify the framework that an error has occurred and can influence the result of the workflow execution.
 
-- [FailImmediately](https://leapp.readthedocs.io/en/latest/pydoc/leapp.workflows.html?highlight=FailPhase#leapp.workflows.policies.Policies.Errors.FailImmediately) - end the upgrade process right away
-- [FailPhase](https://leapp.readthedocs.io/en/latest/pydoc/leapp.workflows.html?highlight=FailPhase#leapp.workflows.policies.Policies.Errors.FailPhase) - end the upgrade process after finishing the current phase
-- [ReportOnly](https://leapp.readthedocs.io/en/latest/pydoc/leapp.workflows.html?highlight=FailPhase#leapp.workflows.policies.Policies.Errors.ReportOnly) - do not end the upgrade process at all and continue with logging the issue only
+In case of [StopActorExecutionError](https://leapp.readthedocs.io/en/latest/pydoc/leapp.html#leapp.exceptions.StopActorExecutionError) the execution of the workflow will stop or not according to the [policy](https://leapp.readthedocs.io/en/latest/pydoc/leapp.workflows.html?highlight=FailPhase#module-leapp.workflows.policies) defined in the workflow, there are three possibilities:
 
+- [FailImmediately](https://leapp.readthedocs.io/en/latest/pydoc/leapp.workflows.html?highlight=FailPhase#leapp.workflows.policies.Policies.Errors.FailImmediately) - end the workflow execution right away
+- [FailPhase](https://leapp.readthedocs.io/en/latest/pydoc/leapp.workflows.html?highlight=FailPhase#leapp.workflows.policies.Policies.Errors.FailPhase) - end the workflow execution after finishing the current phase
+- [ReportOnly](https://leapp.readthedocs.io/en/latest/pydoc/leapp.workflows.html?highlight=FailPhase#leapp.workflows.policies.Policies.Errors.ReportOnly) - do not end the workflow execution at all and continue with logging the issue only
+
+You can also use the [StopActorExecution](https://leapp.readthedocs.io/en/latest/pydoc/leapp.html#leapp.exceptions.StopActorExecution) and [StopActorExecutionError](https://leapp.readthedocs.io/en/latest/pydoc/leapp.html#leapp.exceptions.StopActorExecutionError) exceptions inside a private or shared library.
