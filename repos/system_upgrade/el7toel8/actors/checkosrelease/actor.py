@@ -1,7 +1,7 @@
 import os
 
 from leapp.actors import Actor
-from leapp.models import CheckResult, OSReleaseFacts
+from leapp.models import CheckResult, OSReleaseFacts, Inhibitor
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
@@ -9,7 +9,7 @@ class CheckOSRelease(Actor):
     name = 'check_os_release'
     description = 'Verify if system has a supported OS release.'
     consumes = (OSReleaseFacts,)
-    produces = (CheckResult,)
+    produces = (CheckResult, Inhibitor)
     tags = (ChecksPhaseTag, IPUWorkflowTag,)
 
     def process(self):
@@ -30,9 +30,7 @@ class CheckOSRelease(Actor):
 
         for facts in self.consume(OSReleaseFacts):
             if facts.id not in min_supported_version.keys():
-                self.produce(CheckResult(
-                    severity='Error',
-                    result='Fail',
+                self.produce(Inhibitor(
                     summary='Unsupported OS id',
                     details='Supported OS ids for upgrade process: ' + ','.join(min_supported_version.keys()),
                     solutions=None
@@ -47,9 +45,7 @@ class CheckOSRelease(Actor):
                     break
 
                 if current < minimal:
-                    self.produce(CheckResult(
-                        severity='Error',
-                        result='Fail',
+                    self.produce(Inhibitor(
                         summary='Unsupported OS version',
                         details='Minimal supported OS version for upgrade process: ' + min_supported_version[facts.id],
                         solutions=None

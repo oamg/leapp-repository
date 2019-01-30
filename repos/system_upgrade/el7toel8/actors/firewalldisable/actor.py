@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.models import FirewallDecisionM, CheckResult, FirewallsFacts
+from leapp.models import FirewallDecisionM, CheckResult, FirewallsFacts, Inhibitor
 from leapp.tags import IPUWorkflowTag, ApplicationsPhaseTag
 import six
 import subprocess
@@ -24,7 +24,7 @@ class FirewallDisable(Actor):
     description = ('Disables and stops FirewallD and IPTables, so the daemons'
                    'are not started after the boot into RHEL8 (stage Before).')
     consumes = (FirewallDecisionM, FirewallsFacts)
-    produces = (CheckResult,)
+    produces = (CheckResult, Inhibitor)
     tags = (IPUWorkflowTag, ApplicationsPhaseTag,)
 
     def stop_firewalld(self):
@@ -96,9 +96,7 @@ class FirewallDisable(Actor):
         else:
             self.log.info("Interrupting: There was nothing to consume regarding the Firewall decision.")
             self.produce(
-                CheckResult(
-                    severity='Error',
-                    result='Fail',
+                Inhibitor(
                     summary='No message to consume',
                     details='No decision message to consume.',
                     solutions=None

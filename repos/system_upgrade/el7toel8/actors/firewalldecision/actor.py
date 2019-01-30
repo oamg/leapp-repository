@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.models import FirewallsFacts, FirewallDecisionM, CheckResult
+from leapp.models import FirewallsFacts, FirewallDecisionM, CheckResult, Inhibitor
 from leapp.tags import IPUWorkflowTag, ChecksPhaseTag, ExperimentalTag
 from leapp.dialogs import Dialog
 from leapp.dialogs.components import BooleanComponent
@@ -9,7 +9,7 @@ class FirewallDecision(Actor):
     name = 'firewalld_decision'
     description = 'Firewall disable decision maker actor (pre-reboot) (check phase).'
     consumes = (FirewallsFacts,)
-    produces = (FirewallDecisionM, CheckResult,)
+    produces = (FirewallDecisionM, CheckResult, Inhibitor)
     tags = (IPUWorkflowTag, ChecksPhaseTag, ExperimentalTag,)
     dialogs = (Dialog(
                 scope='continue_fw',
@@ -40,9 +40,7 @@ class FirewallDecision(Actor):
                 self.produce(FirewallDecisionM(disable_choice='Y' if answer else 'N'))
                 if not answer:
                     self.produce(
-                        CheckResult(
-                            severity='Error',
-                            result='Fail',
+                        Inhibitor(
                             summary='Firewall interrupts upgrade process request',
                             details='SA user chose to interrupt the upgrade.',
                             solutions=None

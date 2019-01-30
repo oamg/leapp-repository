@@ -1,5 +1,5 @@
 from leapp.snactor.fixture import current_actor_context
-from leapp.models import StorageInfo, LsblkEntry, CheckResult
+from leapp.models import StorageInfo, LsblkEntry, Inhibitor
 
 
 def test_actor_with_luks(current_actor_context):
@@ -7,10 +7,9 @@ def test_actor_with_luks(current_actor_context):
                             size='10G', ro='0', tp='crypt', mountpoint=''
                             )]
 
-
     current_actor_context.feed(StorageInfo(lsblk=with_luks))
     current_actor_context.run()
-    assert current_actor_context.consume(CheckResult)
+    assert current_actor_context.consume(Inhibitor)
 
 
 def test_actor_without_luks(current_actor_context):
@@ -20,4 +19,4 @@ def test_actor_without_luks(current_actor_context):
 
     current_actor_context.feed(StorageInfo(lsblk=without_luks))
     current_actor_context.run()
-    assert not current_actor_context.consume(CheckResult)
+    assert not current_actor_context.consume(Inhibitor)

@@ -25,3 +25,11 @@ class CheckResult(Report):
 
 class FinalReport(Report):
     pass
+
+
+class Inhibitor(Report):
+    """
+    Use this model to inhibit the upgrade in the Report phase.
+    """
+    severity = fields.StringEnum(choices=['Error'], default='Error')
+    result = fields.StringEnum(choices=['Fail'], default='Fail')
