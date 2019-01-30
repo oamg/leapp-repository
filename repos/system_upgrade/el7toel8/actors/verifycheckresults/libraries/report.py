@@ -1,5 +1,4 @@
 import json
-from leapp.models import CheckResult
 
 
 class PlainTextReport:
