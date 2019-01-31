@@ -5,10 +5,8 @@ import json
 import os
 import pwd
 import re
-import six
 import logging
 from subprocess import CalledProcessError
-from leapp.libraries.stdlib import call
 
 
 try:
@@ -20,6 +18,8 @@ from leapp.libraries.stdlib import call
 from leapp.models import SysctlVariablesFacts, SysctlVariable, ActiveKernelModulesFacts, ActiveKernelModule, \
     KernelModuleParameter, UsersFacts, User, GroupsFacts, Group, RepositoriesFacts, RepositoryFile, RepositoryData, \
     SELinuxFacts, fields, FirewallStatus, FirewallsFacts
+
+import six
 
 
 def aslist(f):
@@ -113,7 +113,7 @@ def _get_active_kernel_modules(logger):
                     parameter_dict[param] = fp.read().strip()
             except IOError as exc:
                 # Some parameters are write-only, in that case we just log the name of parameter
-                # and the module and continue 
+                # and the module and continue
                 if exc.errno in (errno.EACCES, errno.EPERM):
                     msg = 'Unable to read parameter "{param}" of kernel module "{name}"'
                     logger.warning(msg.format(param=param, name=name))
@@ -214,23 +214,30 @@ def get_repositories_status():
 
 def get_selinux_status():
     ''' Get SELinux status information '''
-    def asbool(x):
-        return x == 'enabled'
 
-    def identity(x):
-        return x
+    try:
+        import selinux
+    except ImportError:
+        api.report_error("SELinux Import Error", details="libselinux-python package must be installed.")
+        return
 
-    key_mapping = (('SELinux status', 'enabled', asbool),
-                   ('Policy MLS status', 'mls_enabled', asbool),
-                   ('Loaded policy name', 'policy', identity),
-                   ('Current mode', 'runtime_mode', identity),
-                   ('Mode from config file', 'static_mode', identity),)
+    outdata = dict({'enabled': selinux.is_selinux_enabled() == 1})
+    outdata['mls_enabled'] = selinux.is_selinux_mls_enabled == 1
 
-    outdata = {}
-    for item in call(['sestatus']):
-        for (key, mapped, cast) in key_mapping:
-            if item.startswith(key):
-                outdata[mapped] = cast(item[len(key)+1:].strip())
+    try:
+        outdata['runtime_mode'] = "enforcing" if selinux.security_getenforce() == 1 else "permissive"
+        enforce_mode = selinux.selinux_getenforcemode()
+        if enforce_mode >= 0:
+            outdata['static_mode'] = "enforcing" if enforce_mode == 1 else "permissive"
+        else:
+            outdata['static_mode'] = "disabled"
+        outdata['policy'] = selinux.selinux_getpolicytype()[1]
+    except OSError:
+        # This happens when SELinux is disabled
+        # [Errno 2] No such file or directory
+        outdata['runtime_mode'] = 'permissive'
+        outdata['static_mode'] = 'disabled'
+        outdata['policy'] = 'targeted'
 
     return SELinuxFacts(**outdata)
 
@@ -255,11 +262,11 @@ def get_firewalls_status():
             logger.debug('The %s service is likely not enabled nor running' % service_name)
 
         return FirewallStatus(
-                    active=active,
-                    enabled=enabled,
-                    )
+            active=active,
+            enabled=enabled,
+            )
 
     return FirewallsFacts(
-            firewalld=_get_firewall_status('firewalld'),
-            iptables=_get_firewall_status('iptables')
-            )
+        firewalld=_get_firewall_status('firewalld'),
+        iptables=_get_firewall_status('iptables'),
+        )
