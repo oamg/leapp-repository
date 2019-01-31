@@ -212,7 +212,8 @@ class PrepareUpgradeTransaction(Actor):
         return preparetransaction.umount_dnf_cache(overlayfs_info)
 
     def process(self):
-        container_root = os.getenv('LEAPP_CONTAINER_ROOT', '/tmp/leapp-overlay')
+        mounts_dir = os.getenv('LEAPP_CONTAINER_ROOT', '/var/lib/leapp/scratch')
+        container_root = os.path.join(mounts_dir, 'mounts')
         error_flag = False
 
         if not self.is_system_registered_and_attached():
@@ -236,6 +237,10 @@ class PrepareUpgradeTransaction(Actor):
         # prepare container #
         # TODO: wrap in one function (create ofs dirs, mount), or even context
         #       manager (enter -> create dirs, mount; exit -> umount)?
+        error = preparetransaction.create_disk_image(mounts_dir)
+        if error:
+            self.produce_error(error)
+
         ofs_info, error = preparetransaction.create_overlayfs_dirs(container_root)
         if not ofs_info:
             preparetransaction.produce_error(error)
@@ -245,6 +250,7 @@ class PrepareUpgradeTransaction(Actor):
         if error:
             preparetransaction.produce_error(error)
             preparetransaction.remove_overlayfs_dirs(container_root)
+            preparetransaction.remove_disk_image(mounts_dir)
             return
 
         # switch EngID to use RHEL 8 subscriptions #
@@ -296,6 +302,7 @@ class PrepareUpgradeTransaction(Actor):
             error_flag = True
 
         preparetransaction.remove_overlayfs_dirs(container_root)
+        preparetransaction.remove_disk_image(mounts_dir)
 
         # produce msg for upgrading actor
         if not error_flag:
