@@ -8,7 +8,6 @@ from six.moves.urllib.request import urlopen
 
 from leapp.libraries.stdlib import api
 from leapp.libraries.stdlib import call
-from leapp.models.error_severity import ErrorSeverity
 
 
 OverlayfsInfo = namedtuple('OverlayfsInfo', ['upper', 'work', 'merged'])
@@ -231,3 +230,33 @@ def umount_dnf_cache(overlayfs_info):
     if error:
         error.summary = 'Failed to unmount dnf cache.'
     return error
+
+
+def create_disk_image(path):
+    diskimage_path = os.path.join(path, 'diskimage')
+    mounts_path = os.path.join(path, 'mounts')
+
+    if os.path.isdir(mounts_path):
+        remove_disk_image(path)
+
+    try:
+        os.makedirs(mounts_path)
+    except OSError as e:
+        return ErrorData(
+            summary='Error while trying to create destination path on the host system.',
+            details=str(e))
+
+    cmds = [['/bin/dd', 'if=/dev/zero', 'of={}'.format(diskimage_path), 'bs=1M', 'count=1500'],
+            ['/sbin/mkfs.ext4', '-F', diskimage_path],
+            ['/bin/mount', '-o', 'loop', diskimage_path, mounts_path]]
+
+    for cmd in cmds:
+        _unused, err = guard_call(cmd)
+        if err:
+            return err
+    return None
+
+
+def remove_disk_image(path):
+    guard_call(['/bin/umount', '-fl', os.path.join(path, 'mounts')])
+    shutil.rmtree(path, ignore_errors=True)
