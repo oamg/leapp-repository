@@ -1,8 +1,8 @@
 from leapp.models import PCIDevices, PCIDevice
+from leapp.libraries.actor.pcidevicesscanner import parse_pci_devices, produce_pci_devices
 
 
 def test_parse_pci_devices(current_actor_libraries):
-    from leapp.libraries.actor.pcidevicesscanner import parse_pci_devices
     devices = [
         '00:00.0 "Host bridge" "Intel Corporation" "440FX - 82441FX PMC [Natoma]" -r02 "Red Hat, Inc." "Qemu virtual machine"',
         '00:01.0 "ISA bridge" "Intel Corporation" "82371SB PIIX3 ISA [Natoma/Triton II]" "Red Hat, Inc." "Qemu virtual machine"',
@@ -40,14 +40,12 @@ def test_parse_pci_devices(current_actor_libraries):
 
 
 def test_parse_empty_list(current_actor_libraries):
-    from leapp.libraries.actor.pcidevicesscanner import parse_pci_devices
     output = parse_pci_devices([])
     assert isinstance(output, list)
     assert not output
 
 
 def test_parse_unknown_optional_parameter(current_actor_libraries):
-    from leapp.libraries.actor.pcidevicesscanner import parse_pci_devices
     devices = ['00:01.1 -a01 "IDE interface" -b02 "Intel Corporation" -c03 "82371SB PIIX3 IDE [Natoma/Triton II]" -p80 "Red Hat, Inc." -d04 "Qemu virtual machine"']
 
     output = parse_pci_devices(devices)
@@ -65,7 +63,6 @@ def test_parse_unknown_optional_parameter(current_actor_libraries):
 
 
 def test_produce_pci_devices(current_actor_libraries):
-    from leapp.libraries.actor.pcidevicesscanner import produce_pci_devices
     output = []
 
     def fake_producer(*args):
@@ -104,7 +101,6 @@ def test_produce_pci_devices(current_actor_libraries):
 
 
 def test_produce_no_devices(current_actor_libraries):
-    from leapp.libraries.actor.pcidevicesscanner import produce_pci_devices
     output = []
 
     def fake_producer(*args):
