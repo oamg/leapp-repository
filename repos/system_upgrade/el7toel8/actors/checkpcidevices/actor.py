@@ -26,7 +26,7 @@ class CheckPCIDevices(Actor):
     def process(self):
         for data in self.consume(PCIDevices):
             for device in data.devices:
-                if 'SCSI' in device.cls and 'LSI Logic' in device.vendor:
+                if 'SCSI' in device.dev_cls and 'LSI Logic' in device.vendor:
                     self.produce(CheckResult(
                         severity='Error',
                         result='Fail',

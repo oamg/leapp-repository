@@ -13,4 +13,4 @@ class PCIDevicesScanner(Actor):
 
 
     def process(self):
-        pcidevicesscanner.produce_pci_devices(self.produce)
+        pcidevicesscanner.scan_pci_devices(self.produce)

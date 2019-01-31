@@ -27,15 +27,10 @@ def get_from_list(l, idx, default=''):
 
 
 @aslist
-def get_pci_devices():
-    ''' Get all PCI devices from system '''
-    try:
-        items = call(['lspci', '-mm'])
-    except subprocess.CalledProcessError:
-        items = []
-
-    for i in items:
-        raw = shlex.split(i)
+def parse_pci_devices(devices):
+    ''' Parse lspci output and return a list of PCI devices '''
+    for d in devices:
+        raw = shlex.split(d)
 
         params = [r for r in raw if not r.startswith('-')]
         optionals = [r for r in raw if r.startswith('-')]
@@ -51,7 +46,7 @@ def get_pci_devices():
 
         yield PCIDevice(
             slot=get_from_list(params, 0),
-            cls=get_from_list(params, 1),
+            dev_cls=get_from_list(params, 1),
             vendor=get_from_list(params, 2),
             name=get_from_list(params, 3),
             subsystem_vendor=get_from_list(params, 4),
@@ -60,8 +55,17 @@ def get_pci_devices():
             progif=progif
         )
 
-def produce_pci_devices(producer):
+def produce_pci_devices(producer, devices):
     ''' Produce a Leapp message with all PCI devices '''
-    producer(PCIDevices(
-        devices=get_pci_devices()
-    ))
+    producer(PCIDevices(devices=devices))
+
+
+def scan_pci_devices(producer):
+    ''' Scan system PCI Devices '''
+    try:
+        output = call(['lspci', '-mm'])
+    except subprocess.CalledProcessError:
+        output = []
+
+    devices = parse_pci_devices(output)
+    produce_pci_devices(producer, devices)
