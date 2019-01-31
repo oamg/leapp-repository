@@ -2,7 +2,7 @@ import os
 import subprocess
 
 from leapp.actors import Actor
-from leapp.models import StorageInfo, PartitionEntry, FstabEntry, MountEntry, LsblkEntry, PvsEntry, VgsEntry, LvdisplayEntry
+from leapp.models import StorageInfo, PartitionEntry, FstabEntry, MountEntry, LsblkEntry, PvsEntry, VgsEntry, LvdisplayEntry, SystemdMountEntry
 from leapp.tags import IPUWorkflowTag, FactsPhaseTag
 
 
@@ -141,5 +141,21 @@ class StorageScanner(Actor):
                 log=log,
                 cpy_sync=cpy_sync,
                 convert=convert))
+
+        for entry in self.get_cmd_output(['systemd-mount', '--list'], ' ', 7):
+            # We need to filter the entry because there is a ton of whitespace.
+            node, path, model, wwn, fs_type, label, uuid = list(filter(lambda x: x != '', entry))
+            if node == "NODE":
+                # First row of the "systemd-mount --list" output is a header.
+                # Just skip it.
+                continue
+            result.systemdmount.append(SystemdMountEntry(
+                node=node,
+                path=path,
+                model=model,
+                wwn=wwn,
+                fs_type=fs_type,
+                label=label,
+                uuid=uuid))
 
         self.produce(result)
