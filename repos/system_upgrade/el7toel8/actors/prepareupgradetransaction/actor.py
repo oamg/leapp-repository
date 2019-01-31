@@ -7,8 +7,6 @@ from leapp.models import FilteredRpmTransactionTasks, OSReleaseFacts, TargetRepo
 from leapp.models import UsedTargetRepositories, UsedTargetRepository
 from leapp.tags import IPUWorkflowTag, DownloadPhaseTag
 
-from subprocess import CalledProcessError
-from leapp.libraries.stdlib import call
 
 class PrepareUpgradeTransaction(Actor):
     name = 'prepare_upgrade_transaction'
@@ -17,13 +15,11 @@ class PrepareUpgradeTransaction(Actor):
     produces = (UsedTargetRepositories,)
     tags = (IPUWorkflowTag, DownloadPhaseTag,)
 
-    def produce_error(self, error):
-        self.report_error('Error: %s: %s' % (error.summary, error.details))
-
     def is_system_registered_and_attached(self):
         # TODO: put this to different actor and process it already during check
         # + phase
-        out = call(['subscription-manager', 'list', '--consumed'], split=True)
+        # FIXME: no exception is caught, retcode is not checked
+        out = preparetransaction.call(['subscription-manager', 'list', '--consumed'], split=True)
         for i in out:
             if i.startswith('SKU'):
                 # if any SKU is consumed, return True; we cannot check more
@@ -39,18 +35,21 @@ class PrepareUpgradeTransaction(Actor):
                 break
 
         # Make sure Subscription Manager OS Release is unset
-        error = preparetransaction.check_container_call(overlayfs_info,
-                                                        ['subscription-manager',
-                                                         'release',
-                                                         '--unset'])
+        cmd = ['subscription-manager', 'release', '--unset']
+        _unused, error = preparetransaction.guard_container_call(
+            overlayfs_info,
+            cmd,
+            guards=(preparetransaction.connection_guard(),)
+        )
         if error:
+            error.summary = 'Cannot remove version preference.'
             return error
 
         var_prodcert = {'server': '230.pem'}
         if sys_var not in var_prodcert:
             return preparetransaction.ErrorData(
-                summary="Error while trying to retrieve Product Cert file",
-                details="Product cert file not available for System Variant '{}'".format(sys_var))
+                summary="Failed to to retrieve Product Cert file.",
+                details="Product cert file not available for System Variant '{}'.".format(sys_var))
 
         prod_cert_path = self.get_file_path(var_prodcert[sys_var])
         for path in ('/etc/pki/product-default', '/etc/pki/product'):
@@ -71,11 +70,19 @@ class PrepareUpgradeTransaction(Actor):
             # + would be problem later). Needs a little investigation here about the impact, even
             # + in the container.
             for cert in existing_certs:
-                error = preparetransaction.check_container_call(overlayfs_info, ['rm', '-f', cert])
+                # FIXME: fails on insufficient permissions
+                cmd = ['rm', '-f', cert]
+                _unused, error = preparetransaction.guard_container_call(overlayfs_info, cmd)
                 if error:
                     return error
 
-        return preparetransaction.check_container_call(overlayfs_info, ['subscription-manager', 'refresh'])
+        cmd = ['subscription-manager', 'refresh']
+        _unused, error = preparetransaction.guard_container_call(
+            overlayfs_info,
+            cmd,
+            guards=(preparetransaction.connection_guard(),)
+        )
+        return error
 
     def _setup_target_repos(self, overlayfs_info):
         """
@@ -90,12 +97,10 @@ class PrepareUpgradeTransaction(Actor):
         Return ErrorData or None.
         """
         self.target_uids = []
-        try:
-            available_target_uids = set(preparetransaction.get_list_of_available_repo_uids(overlayfs_info))
-        except CalledProcessError as e:
-            return preparetransaction.ErrorData(
-                summary='Error while trying to get list of available RHEL repositories',
-                details=str(e))
+
+        available_target_uids, error = preparetransaction.get_list_of_available_repo_uids(overlayfs_info)
+        if error:
+            return error
 
         # FIXME: check that required UIDs (baseos, appstream)
         # + or check that all required RHEL UIDs are available.
@@ -147,8 +152,7 @@ class PrepareUpgradeTransaction(Actor):
         if not self.target_uids:
             return preparetransaction.ErrorData(
                 summary='Cannot find any required target repository.',
-                details='The list of available required repositories is empty.'
-                )
+                details='The list of available required repositories is empty.')
 
         debugsolver = True if os.environ.get('LEAPP_DEBUG', '0') == '1' else False
 
@@ -159,44 +163,50 @@ class PrepareUpgradeTransaction(Actor):
         data = next(self.consume(FilteredRpmTransactionTasks), FilteredRpmTransactionTasks())
 
         plugin_data = {
-            'pkgs_info':
-                {
-                    'local_rpms': [pkg for pkg in data.local_rpms],
-                    'to_install': [pkg for pkg in data.to_install],
-                    'to_remove': [pkg for pkg in data.to_remove]
-                    },
-            'dnf_conf':
-                {
-                    'allow_erasing': True,
-                    'best': True,
-                    'debugsolver': debugsolver,
-                    'disable_repos': True,
-                    'enable_repos': self.target_uids,
-                    'gpgcheck': False,
-                    'platform_id': 'platform:el8',
-                    'releasever': '8',
-                    'test_flag': True,
-                    }
-                }
+            'pkgs_info': {
+                'local_rpms': [pkg for pkg in data.local_rpms],
+                'to_install': [pkg for pkg in data.to_install],
+                'to_remove': [pkg for pkg in data.to_remove]
+            },
+            'dnf_conf': {
+                'allow_erasing': True,
+                'best': True,
+                'debugsolver': debugsolver,
+                'disable_repos': True,
+                'enable_repos': self.target_uids,
+                'gpgcheck': False,
+                'platform_id': 'platform:el8',
+                'releasever': '8',
+                'test_flag': True,
+            }
+        }
 
         with open(os.path.join(overlayfs_info.merged, 'var', 'lib', 'leapp', 'dnf-plugin-data.txt'), 'w+') as data:
             json.dump(plugin_data, data)
             data.flush()
 
-        error = preparetransaction.check_container_call(overlayfs_info, [
-            '--',
-            '/bin/bash',
-            '-c',
-            ' '.join(dnf_command + ['/var/lib/leapp/dnf-plugin-data.txt'])])
+        # FIXME: fails on insufficient permissions
+        cmd = ['--', '/bin/bash', '-c', ' '.join(dnf_command + ['/var/lib/leapp/dnf-plugin-data.txt'])]
+        _unused, error = preparetransaction.guard_container_call(
+            overlayfs_info, cmd,
+            guards=(preparetransaction.connection_guard(), preparetransaction.space_guard()))
 
         if os.environ.get('LEAPP_DEBUG', '0') == '1':
             # We want the debug data available where we would expect it usually.
-            call(['rm', '-rf', os.path.join('/tmp', 'download-debugdata')])
-            call(['cp', '-a', os.path.join(overlayfs_info.merged, 'debugdata'), '/tmp/download-debugdata'])
+            cmd = ['rm', '-rf', os.path.join('/tmp', 'download-debugdata')]
+            _unused, dbg_error = preparetransaction.guard_call(cmd)
+            if dbg_error:
+                preparetransaction.produce_warning(dbg_error, summary='Cannot remove old debugdata.')
+
+            cmd = ['cp', '-a', os.path.join(overlayfs_info.merged, 'debugdata'), '/tmp/download-debugdata']
+            _unused, dbg_error = preparetransaction.guard_call(cmd)
+            if dbg_error:
+                preparetransaction.produce_warning(dbg_error, summary='Cannot copy new debugdata.')
 
         if error:
-            # FIXME: Do not swallow errors from umount
-            preparetransaction.umount_dnf_cache(overlayfs_info)
+            umount_error = preparetransaction.umount_dnf_cache(overlayfs_info)
+            if umount_error:
+                preparetransaction.produce_error(umount_error)
             return error
 
         return preparetransaction.umount_dnf_cache(overlayfs_info)
@@ -212,26 +222,40 @@ class PrepareUpgradeTransaction(Actor):
                          ' to proceed the upgrade. Register your system with the'
                          ' subscription-manager tool and attach'
                          ' it to proper SKUs to be able to proceed the upgrade.'))
-            self.produce_error(error)
+            preparetransaction.produce_error(error)
             return
 
         # TODO: Find a better place where to run this (perhaps even gate this behind user prompt/question)
-        call(['/usr/bin/dnf', 'clean', 'all'], split=False)
+        # FIXME: fails on insufficient permissions
+        cmd = ['/usr/bin/dnf', 'clean', 'all']
+        _unused, error = preparetransaction.guard_call(cmd)
+        if error:
+            preparetransaction.produce_error(error, summary='Cannot perform dnf cleanup.')
+            return
 
         # prepare container #
+        # TODO: wrap in one function (create ofs dirs, mount), or even context
+        #       manager (enter -> create dirs, mount; exit -> umount)?
         ofs_info, error = preparetransaction.create_overlayfs_dirs(container_root)
         if not ofs_info:
-            self.produce_error(error)
+            preparetransaction.produce_error(error)
             return
 
         error = preparetransaction.mount_overlayfs(ofs_info)
         if error:
-            self.produce_error(error)
+            preparetransaction.produce_error(error)
             preparetransaction.remove_overlayfs_dirs(container_root)
             return
 
         # switch EngID to use RHEL 8 subscriptions #
-        prev_rhsm_release = preparetransaction.call(['subscription-manager', 'release'])[0]
+        cmd = ['subscription-manager', 'release']
+        prev_rhsm_release, error = preparetransaction.guard_call(
+            cmd, guards=(preparetransaction.connection_guard(),))
+        if error:
+            preparetransaction.produce_error(error, summary='Cannot get release setting.')
+            return
+        prev_rhsm_release = prev_rhsm_release[0]
+
         error = self.update_rhel_subscription(ofs_info)
 
         if not error:
@@ -246,28 +270,29 @@ class PrepareUpgradeTransaction(Actor):
 
         if not error:
             error = preparetransaction.copy_file_from_container(
-                        ofs_info,
-                        '/etc/yum.repos.d/redhat.repo',
-                        '/etc/yum.repos.d/',
-                        'redhat.repo.upgrade',
-                        )
+                ofs_info,
+                '/etc/yum.repos.d/redhat.repo',
+                '/etc/yum.repos.d/',
+                'redhat.repo.upgrade',
+            )
 
         if error:
-            self.produce_error(error)
+            preparetransaction.produce_error(error)
             error_flag = True
 
         # If Subscription Manager OS Release was set before, make sure we do not change it
         if 'Release:' in prev_rhsm_release:
             release = prev_rhsm_release.split(':')[1].strip()
-            error = preparetransaction.check_cmd_call(['subscription-manager', 'release', '--set', release])
+            cmd = ['subscription-manager', 'release', '--set', release]
+            _unused, error = preparetransaction.guard_call(cmd, guards=(preparetransaction.connection_guard(),))
             if error:
-                self.produce_error(error)
+                preparetransaction.produce_error(error, summary='Cannot set minor release version.')
                 error_flag = True
 
         # clean #
         error = preparetransaction.umount_overlayfs(ofs_info)
         if error:
-            self.produce_error(error)
+            preparetransaction.produce_error(error)
             error_flag = True
 
         preparetransaction.remove_overlayfs_dirs(container_root)
