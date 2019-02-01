@@ -6,8 +6,13 @@ from leapp.tags import IPUWorkflowTag, FactsPhaseTag
 
 
 class TransactionWorkarounds(Actor):
+    """
+    Provides additional RPM transaction tasks based on bundled RPM packages.
+
+    After collecting bundled RPM packages, a message with relevant data will be produced.
+    """
+
     name = 'transaction_workarounds'
-    description = 'No description has been provided for the transaction_workarounds actor.'
     consumes = ()
     produces = (RpmTransactionTasks,)
     tags = (IPUWorkflowTag, FactsPhaseTag)

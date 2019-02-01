@@ -5,8 +5,13 @@ from leapp.tags import IPUWorkflowTag, FactsPhaseTag
 
 
 class PCIDevicesScanner(Actor):
+    """
+    Provides data about existing PCI Devices.
+
+    After collecting data from lspci, a message with relevant data will be produced.
+    """
+
     name = 'pci_devices_scanner'
-    description = 'Actor to provide information about all PCI devices.'
     consumes = ()
     produces = (PCIDevices,)
     tags = (IPUWorkflowTag, FactsPhaseTag,)

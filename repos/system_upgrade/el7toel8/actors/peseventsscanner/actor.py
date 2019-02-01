@@ -9,8 +9,14 @@ EVENTS = ('Present', 'Removed', 'Deprecated', 'Replaced', 'Split', 'Merged', 'Mo
 
 
 class PesEventsScanner(Actor):
+    """
+    Provides data about packages events from Package Evolution Service.
+
+    After collecting data from a provided JSON file containing Package Evolution Service events, a
+    message with relevant data will be produced to help DNF Upgrade transaction calculation.
+    """
+
     name = 'pes_events_scanner'
-    description = 'Retrieve all events provided by Package Evolution Service API'
     consumes = (InstalledRedHatSignedRPM,)
     produces = (RpmTransactionTasks,)
     tags = (IPUWorkflowTag, FactsPhaseTag)

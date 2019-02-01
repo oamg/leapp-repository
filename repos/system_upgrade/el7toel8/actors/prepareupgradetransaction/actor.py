@@ -9,8 +9,17 @@ from leapp.tags import IPUWorkflowTag, DownloadPhaseTag
 
 
 class PrepareUpgradeTransaction(Actor):
+    """
+    Actor responsible for executing multiple tasks to setup upgrade transaction.
+    
+    Between the necessary steps to calculate and prepare DNF upgrade transaction, this actor will
+    check if system has a valid subscription and move to inside a new created container using
+    overlayfs. Once inside this container, necessary changes will be done on existing subscription,
+    a DNF upgrade transaction will be calculated and all necessary packages will be downloaded to
+    be used on real upgrade.
+    """
+
     name = 'prepare_upgrade_transaction'
-    description = 'Actor for preparing upgrade transaction.'
     consumes = (OSReleaseFacts, FilteredRpmTransactionTasks, TargetRepositories)
     produces = (UsedTargetRepositories,)
     tags = (IPUWorkflowTag, DownloadPhaseTag,)
@@ -300,3 +309,4 @@ class PrepareUpgradeTransaction(Actor):
         # produce msg for upgrading actor
         if not error_flag:
             self.produce_used_target_repos()
+

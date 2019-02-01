@@ -4,8 +4,14 @@ from leapp.models import SELinuxFacts, CheckResult, SelinuxPermissiveDecision, S
 
 
 class CheckSelinux(Actor):
+    """
+    Check SELinux status and produce decision messages for further action.
+
+    Based on SELinux status produces decision messages to relabeling and changing status if
+    necessary
+    """
+
     name = 'check_se_linux'
-    description = 'Check SElinux status and produce decision messages for further action'
     consumes = (SELinuxFacts,)
     produces = (CheckResult, SelinuxPermissiveDecision, SelinuxRelabelDecision)
     tags = (ChecksPhaseTag, IPUWorkflowTag)

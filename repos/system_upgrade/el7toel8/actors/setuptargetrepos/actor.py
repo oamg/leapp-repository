@@ -5,12 +5,15 @@ from leapp.tags import IPUWorkflowTag, ChecksPhaseTag
 
 
 class SetupTargetRepos(Actor):
+    """
+    Produces list of repositories that should be available to be used by Upgrade process.
+
+    Based on current set of Red Hat Enterprise Linux repositories, produces the list of target
+    repositories. Additionaly process request to use custom repositories during the upgrade
+    transaction.
+    """
+
     name = 'setuptargetrepos'
-    description = ('Produces list of repositories that should be used and'
-                   ' available for upgrade to the target system, based on'
-                   ' the current set of RHEL repositories. Additionaly'
-                   ' process request to use custom repositories during the'
-                   ' upgrade transaction')
     consumes = (CustomTargetRepository,)
     produces = (TargetRepositories,)
     tags = (IPUWorkflowTag, ChecksPhaseTag)

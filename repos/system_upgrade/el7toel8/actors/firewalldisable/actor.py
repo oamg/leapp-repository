@@ -5,9 +5,14 @@ from leapp.libraries.stdlib import call
 
 
 class FirewallDisable(Actor):
+    """
+    Stops and Disable FirewallD and/or IPTables.
+
+    FirewallD and/or IPTables are services not supported during Upgrade process and they need to be
+    stopped and disabled, so the daemons are not started after boot into Leapp provided initramfs.
+    """
+
     name = 'firewalld_disable'
-    description = ('Disables and stops FirewallD and IPTables, so the daemons'
-                   'are not started after the boot into RHEL8 (stage Before).')
     consumes = (FirewallDecisionM, FirewallsFacts)
     produces = (CheckResult, Inhibitor)
     tags = (IPUWorkflowTag, ApplicationsPhaseTag,)

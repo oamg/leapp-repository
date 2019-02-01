@@ -6,8 +6,14 @@ from leapp.tags import IPUWorkflowTag, ChecksPhaseTag
 
 
 class RedHatSignedRpmCheck(Actor):
+    """
+    Check if there are packages not signed by Red Hat in use. If yes, warn user about it.
+
+    If any any installed RPM package does not contain a valid signature from Red Hat, a message
+    containing a warning is produced.
+    """
+
     name = 'red_hat_signed_rpm_check'
-    description = 'Notify about unsupported RPM packages not signed by Red Hat.'
     consumes = (InstalledUnsignedRPM,)
     produces = (CheckResult,)
     tags = (IPUWorkflowTag, ChecksPhaseTag)

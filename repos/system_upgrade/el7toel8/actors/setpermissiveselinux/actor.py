@@ -7,8 +7,14 @@ from leapp.libraries.actor.setpermissiveselinux import selinux_set_permissive
 
 
 class SetPermissiveSelinux(Actor):
+    """
+    Set SELinux mode.
+
+    In order to proceed with Upgrade process, SELinux should be set into permissive mode if it was
+    in enforcing mode.
+    """
+
     name = 'set_permissive_se_linux'
-    description = 'Set SElinux into permissive mode if it was in enforcing mode'
     consumes = (SelinuxPermissiveDecision,)
     produces = (FinalReport,)
     tags = (FinalizationPhaseTag, IPUWorkflowTag)

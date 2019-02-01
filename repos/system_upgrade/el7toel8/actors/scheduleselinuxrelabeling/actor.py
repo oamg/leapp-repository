@@ -6,8 +6,13 @@ from leapp.models import SelinuxRelabelDecision, FinalReport
 
 
 class ScheduleSeLinuxRelabeling(Actor):
+    """
+    Schedule SELinux relabeling.
+
+    If SELinux status was set to permissive or enforcing, a relabeling is necessary.
+    """
+
     name = 'schedule_se_linux_relabelling'
-    description = 'Schedule SElinux relabeling if status was permissive/enforcing'
     consumes = (SelinuxRelabelDecision,)
     produces = (FinalReport,)
     tags = (FinalizationPhaseTag, IPUWorkflowTag)
