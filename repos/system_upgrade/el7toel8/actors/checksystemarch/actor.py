@@ -6,8 +6,14 @@ from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
 class CheckSystemArch(Actor):
+    """
+    Check if system is running at a supported archtecture. If no, inhibit the upgrade process.
+
+    Base on collected system facts, verify if current archtecture is supported, otherwise produces
+    a message to inhibit upgrade process
+    """
+
     name = 'check_system_arch'
-    description = 'Verify if system has a supported arch.'
     consumes = ()
     produces = (Inhibitor,)
     tags = (ChecksPhaseTag, IPUWorkflowTag)

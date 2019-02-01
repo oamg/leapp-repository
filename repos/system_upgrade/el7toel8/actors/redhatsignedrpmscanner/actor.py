@@ -6,8 +6,14 @@ from leapp.tags import IPUWorkflowTag, FactsPhaseTag
 
 
 class RedHatSignedRpmScanner(Actor):
+    """
+    Provides data about installed RPM Packages signed by Red Hat.
+
+    After filtering the list of installed RPM packages by signature, a message with relevant data
+    will be produced.
+    """
+
     name = 'red_hat_signed_rpm_scanner'
-    description = 'Scan from installed RPM packages those that were signed or not by Red Hat.'
     consumes = (InstalledRPM,)
     produces = (InstalledRedHatSignedRPM, InstalledUnsignedRPM,)
     tags = (IPUWorkflowTag, FactsPhaseTag)

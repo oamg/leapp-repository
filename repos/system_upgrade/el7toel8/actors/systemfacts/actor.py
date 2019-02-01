@@ -6,8 +6,21 @@ from leapp.tags import IPUWorkflowTag, FactsPhaseTag
 
 
 class SystemFactsActor(Actor):
+    """
+    Provides data about many facts from system.
+
+    After collecting data from multiple tools, messages with relevant data will be produced to
+    describe:
+      - Sysctl variables;
+      - Active Linux Kernel Modules;
+      - Users;
+      - Groups;
+      - Package repositories;
+      - SELinux status;
+      - Firewalls status.
+    """
+
     name = 'system_facts'
-    description = 'Actor collecting facts about the system like Kernel Modules, Sysctl variables, Users, etc.'
     consumes = ()
     produces = (SysctlVariablesFacts,
                 ActiveKernelModulesFacts,

@@ -4,8 +4,13 @@ from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
 class InhibitWhenLuks(Actor):
+    """
+    Check if any encrypted partitions is in use. If yes, inhibit the upgrade process.
+
+    Upgrading system with encrypted partition is not supported.
+    """
+
     name = 'check_luks_and_inhibit'
-    description = 'Inhibit upgrade process if encrypted partition is detected'
     consumes = (StorageInfo,)
     produces = (Inhibitor,)
     tags = (ChecksPhaseTag, IPUWorkflowTag)

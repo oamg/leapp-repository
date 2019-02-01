@@ -7,17 +7,19 @@ from leapp.tags import ApplicationsPhaseTag, IPUWorkflowTag
 
 
 class NetworkManagerUpdateService(Actor):
-    name = 'network_manager_update_service'
-    description = """
-        This actor updates NetworkManager services status. On RHEL7 if
-        the NetworkManager service was disabled and
-        NetworkManager-wait-online enabled, the former would not be
-        started. This changed on RHEL8, where NM-w-o 'Requires' NM and
-        so NM can be started even if disabled. Upon upgrade, to keep
-        the previous behavior we must disable NM-w-o when NM is
-        disabled. See also:
-        https://bugzilla.redhat.com/show_bug.cgi?id=1520865
     """
+    Updates NetworkManager services status.
+    
+    On Red Hat Enterprise Linux 7 if the NetworkManager service was disabled and
+    NetworkManager-wait-online enabled, the former would not be started. This changed on Red Hat
+    Enterprise Linux 8, where NM-w-o 'Requires' NM and so NM can be started even if disabled. Upon
+    upgrade, to keep the previous behavior we must disable NM-w-o when NM is disabled.
+    
+    See also:
+      https://bugzilla.redhat.com/show_bug.cgi?id=1520865
+    """
+
+    name = 'network_manager_update_service'
     consumes = ()
     produces = ()
     tags = (ApplicationsPhaseTag, IPUWorkflowTag)

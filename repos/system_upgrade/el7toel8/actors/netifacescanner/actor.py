@@ -8,8 +8,14 @@ import sys
 
 
 class NetIfaceScanner(Actor):
+    """
+    Provides data about network interfaces settings.
+
+    After collecting data from tools like ethtool and relevant files under /sys/devices, a message
+    with relevant data will be produced.
+    """
+
     name = 'net_iface_scanner'
-    description = 'This actor provides a basic info about network interfaces settings.'
     consumes = ()
     produces = (IfaceResult,)
     tags = (FactsPhaseTag,)

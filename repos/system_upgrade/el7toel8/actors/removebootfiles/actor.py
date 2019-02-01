@@ -5,11 +5,14 @@ from leapp.tags import IPUWorkflowTag, PreparationPhaseTag
 
 
 class RemoveBootFiles(Actor):
+    """
+    Remove Leapp provided initramfs from boot partition.
+
+    Since Leapp provided initramfs and kernel are already loaded into RAM at this phase, remove
+    them to have as little space requirements for boot partition as possible.
+    """
+
     name = 'remove_boot_files'
-    description = '''
-        Remove the Leapp-provided kernel and initramfs as they are already loaded in RAM at this phase
-        and we want to have as little space requirements for /boot as possible.
-    '''
     consumes = (BootContent,)
     produces = ()
     tags = (IPUWorkflowTag, PreparationPhaseTag)

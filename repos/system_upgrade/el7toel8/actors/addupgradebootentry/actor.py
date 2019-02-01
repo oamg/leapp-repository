@@ -5,12 +5,13 @@ from leapp.tags import InterimPreparationPhaseTag, IPUWorkflowTag
 
 
 class AddUpgradeBootEntry(Actor):
-    name = 'add_upgrade_boot_entry'
-    description = '''
-        Add new boot entry for the leapp-provided initramfs so that leapp can continue with the upgrade
-        process in the initramfs after reboot.
-    '''
+    """
+    Add new boot entry for Leapp provided initramfs.
 
+    Using new boot entry, Leapp can continue the upgrade process in the initramfs after reboot
+    """
+
+    name = 'add_upgrade_boot_entry'
     consumes = (BootContent,)
     produces = ()
     tags = (IPUWorkflowTag, InterimPreparationPhaseTag)

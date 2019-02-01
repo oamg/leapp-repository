@@ -4,8 +4,13 @@ from leapp.tags import IPUWorkflowTag, FactsPhaseTag
 
 
 class OSReleaseCollector(Actor):
+    """
+    Provides data about System OS release.
+
+    After collecting data from /etc/os-release file, a message with relevant data will be produced.
+    """
+
     name = 'os_release_collector'
-    description = 'Actor collecting facts about system OS'
     consumes = ()
     produces = (Inhibitor, OSReleaseFacts,)
     tags = (IPUWorkflowTag, FactsPhaseTag,)

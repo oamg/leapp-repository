@@ -5,8 +5,13 @@ from leapp.tags import InitRamStartPhaseTag, IPUWorkflowTag
 
 
 class RemoveUpgradeBootEntry(Actor):
+    """
+    Remove boot entry for Leapp provided initramfs.
+
+    After upgrade process used initramfs after reboot, this entry is not necessary anymore.
+    """
+
     name = 'remove_upgrade_boot_entry'
-    description = 'Remove the boot entry added by Leapp.'
     consumes = (BootContent,)
     produces = ()
     tags = (IPUWorkflowTag, InitRamStartPhaseTag)

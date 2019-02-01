@@ -4,8 +4,14 @@ from leapp.tags import PreparationPhaseTag, IPUWorkflowTag
 from subprocess import check_call
 
 class UpdateEtcSysconfigKernel(Actor):
+    """
+    Update /etc/sysconfig/kernel file.
+
+    In order to proceed with Upgrade process, DEFAULTKERNEL entry should be updated from kernel to
+    kernel-core.
+    """
+
     name = 'update_etc_sysconfig_kernel'
-    description = 'Updates /etc/sysconfig/kernel DEFAULTKERNEL entry from kernel to kernel-core.'
     consumes = ()
     produces = ()
     tags = (PreparationPhaseTag, IPUWorkflowTag)

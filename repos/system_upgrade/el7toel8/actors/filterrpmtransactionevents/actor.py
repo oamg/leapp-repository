@@ -4,8 +4,15 @@ from leapp.tags import IPUWorkflowTag, FactsPhaseTag
 
 
 class FilterRpmTransactionTasks(Actor):
+    """
+    Filter RPM transaction events based on installed RPM packages
+
+    In order to calculate a working DNF Upgrade transaction, Leapp can collect data from multiple
+    sources and find workarounds for possible problems. This actor will filter all collected
+    workarounds and keep only those relevants to current system based on installed packages.
+    """
+
     name = 'check_rpm_transaction_events'
-    description = 'Filters RPM transaction events to only include relevant events based on installed RPM'
     consumes = (RpmTransactionTasks, InstalledRedHatSignedRPM,)
     produces = (FilteredRpmTransactionTasks,)
     tags = (IPUWorkflowTag, FactsPhaseTag)

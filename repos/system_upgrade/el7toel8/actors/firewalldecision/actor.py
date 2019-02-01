@@ -6,8 +6,14 @@ from leapp.dialogs.components import BooleanComponent
 
 
 class FirewallDecision(Actor):
+    """
+    Request user decision about disabling FirewallD and/or IPTables during Upgrade process.
+
+    In case Leapp verified that FirewallD and/or IPTables are enabled on the system, asks user if
+    those services can be disabled. If not, Upgrade process will be inhibited.
+    """
+
     name = 'firewalld_decision'
-    description = 'Firewall disable decision maker actor (pre-reboot) (check phase).'
     consumes = (FirewallsFacts,)
     produces = (FirewallDecisionM, CheckResult, Inhibitor)
     tags = (IPUWorkflowTag, ChecksPhaseTag, ExperimentalTag,)

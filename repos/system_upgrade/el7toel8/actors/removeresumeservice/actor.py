@@ -7,8 +7,13 @@ from leapp.tags import FirstBootPhaseTag, IPUWorkflowTag
 from leapp.models import FinalReport
 
 class RemoveSystemdResumeService(Actor):
+    """
+    Remove systemd service to launch Leapp.
+
+    After system was rebooted and process resumed, this service is not necessary anymore.
+    """
+
     name = 'remove_systemd_resume_service'
-    description = 'Remove Leapp resume upgrade systemd service'
     consumes = ()
     produces = (FinalReport,)
     tags = (FirstBootPhaseTag, IPUWorkflowTag)

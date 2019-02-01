@@ -10,8 +10,14 @@ from leapp.tags import RPMUpgradePhaseTag, IPUWorkflowTag
 
 
 class DnfShellRpmUpgrade(Actor):
+    """
+    Setup and call DNF upgrade command
+
+    Based on previously calculated RPM transaction data, this actor will setup and call
+    rhel-upgrade DNF plugin with necessary parameters
+    """
+
     name = 'dnf_shell_rpm_upgrade'
-    description = 'No description has been provided for the dnf_shell_rpm_upgrade actor.'
     consumes = (FilteredRpmTransactionTasks, UsedTargetRepositories)
     produces = ()
     tags = (RPMUpgradePhaseTag, IPUWorkflowTag)

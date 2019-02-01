@@ -5,8 +5,14 @@ from leapp.tags import ReportPhaseTag, IPUWorkflowTag
 
 
 class VerifyCheckResults(Actor):
+    """
+    Check all generated results messages and notify user about them.
+
+    A report file containing all messages will be generated, together with log messages displayed
+    to the user.
+    """
+
     name = 'verify_check_results'
-    description = 'Verify results, stop process if error and generate report.'
     consumes = (CheckResult, Inhibitor)
     produces = ()
     tags = (ReportPhaseTag, IPUWorkflowTag)

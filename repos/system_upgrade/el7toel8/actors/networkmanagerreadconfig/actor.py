@@ -9,8 +9,13 @@ from six.moves.configparser import ConfigParser, ParsingError
 
 
 class NetworkManagerReadConfig(Actor):
+    """
+    Provides data about NetworkManager configuration.
+
+    After collecting data from NetworkManager tool, a message with relevant data will be produced.
+    """
+
     name = 'network_manager_read_config'
-    description = 'This actor reads NetworkManager configuration.'
     consumes = ()
     produces = (NetworkManagerConfig,)
     tags = (IPUWorkflowTag, FactsPhaseTag,)

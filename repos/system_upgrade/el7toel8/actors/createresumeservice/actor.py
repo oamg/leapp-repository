@@ -7,9 +7,13 @@ from leapp.models import FinalReport
 
 
 class CreateSystemdResumeService(Actor):
+    """
+    Add a systemd service to launch Leapp.
+
+    Create a systemd service which will resume Leapp upgrade after the first reboot.
+    """
+
     name = 'create_systemd_service'
-    description = ('Create a systemd service which will resume leapp '
-                  'upgrade after the first reboot')
     consumes = ()
     produces = (FinalReport,)
     tags = (FinalizationPhaseTag, IPUWorkflowTag)

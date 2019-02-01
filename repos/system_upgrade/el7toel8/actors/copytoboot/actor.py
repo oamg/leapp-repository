@@ -5,8 +5,14 @@ from leapp.tags import InterimPreparationPhaseTag, IPUWorkflowTag
 
 
 class CopyToBoot(Actor):
+    """
+    Copy Leapp provided initramfs to boot partition.
+
+    In order to execute upgrade, Leapp provides a special initramfs and kernel to be used during
+    the process. Such artifacts need to be placed inside boot partition.
+    """
+
     name = 'copy_to_boot'
-    description = 'Copy initramfs, which was specially prepared for the upgrade, together with its kernel to /boot/.'
     consumes = ()
     produces = (BootContent,)
     tags = (IPUWorkflowTag, InterimPreparationPhaseTag)

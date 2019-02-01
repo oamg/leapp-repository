@@ -7,8 +7,14 @@ from leapp.tags import IPUWorkflowTag, FactsPhaseTag
 
 
 class StorageScanner(Actor):
+    """
+    Provides data about storage settings.
+
+    After collecting data from tools like mount, lsblk, pvs, vgs and lvdisplay, and relevant files
+    under /proc/partitions and /etc/fstab, a message with relevant data will be produced.
+    """
+
     name = 'storage_scanner'
-    description = 'Retrieve storage information from the system.'
     consumes = ()
     produces = (StorageInfo, PartitionEntry,)
     tags = (IPUWorkflowTag, FactsPhaseTag,)
