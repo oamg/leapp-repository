@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.models import CheckResult, PCIDevices
+from leapp.models import Inhibitor, PCIDevices
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
@@ -20,16 +20,14 @@ class CheckPCIDevices(Actor):
         +---------------------------++-----------------+
     """
     consumes = (PCIDevices,)
-    produces = (CheckResult,)
+    produces = (Inhibitor,)
     tags = (IPUWorkflowTag, ChecksPhaseTag)
 
     def process(self):
         for data in self.consume(PCIDevices):
             for device in data.devices:
                 if 'SCSI' in device.dev_cls and 'LSI Logic' in device.vendor:
-                    self.produce(CheckResult(
-                        severity='Error',
-                        result='Fail',
+                    self.produce(Inhibitor(
                         summary='LSI Logic SCSI Controller is not supported',
                         details='Kernel driver necessary for LSI Logic SCSI Controller (mpt*) '
                                 'is not available in Red Hat Enterprise Linux 8. Since this '

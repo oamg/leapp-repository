@@ -1,4 +1,4 @@
-from leapp.models import CheckResult, PCIDevices, PCIDevice
+from leapp.models import Inhibitor, PCIDevices, PCIDevice
 
 
 def test_no_unsupported_devices(current_actor_context):
@@ -15,7 +15,7 @@ def test_no_unsupported_devices(current_actor_context):
 
     current_actor_context.feed(PCIDevices(devices=map(lambda x: PCIDevice(**x), devices)))
     current_actor_context.run()
-    assert not current_actor_context.consume(CheckResult)
+    assert not current_actor_context.consume(Inhibitor)
 
 
 def test_unsupported_lsi_scsi(current_actor_context):
@@ -50,11 +50,10 @@ def test_unsupported_lsi_scsi(current_actor_context):
 
     current_actor_context.feed(PCIDevices(devices=map(lambda x: PCIDevice(**x), devices)))
     current_actor_context.run()
-    assert current_actor_context.consume(CheckResult)
-    assert current_actor_context.consume(CheckResult)[0].summary == error_summary
+    assert current_actor_context.consume(Inhibitor)
 
 
 def test_no_devices(current_actor_context):
     current_actor_context.feed(PCIDevices(devices=[]))
     current_actor_context.run()
-    assert not current_actor_context.consume(CheckResult)
+    assert not current_actor_context.consume(Inhibitor)
