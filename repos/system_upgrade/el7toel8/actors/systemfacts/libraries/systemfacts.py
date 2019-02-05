@@ -222,7 +222,7 @@ def get_selinux_status():
         return
 
     outdata = dict({'enabled': selinux.is_selinux_enabled() == 1})
-    outdata['mls_enabled'] = selinux.is_selinux_mls_enabled == 1
+    outdata['mls_enabled'] = selinux.is_selinux_mls_enabled() == 1
 
     try:
         outdata['runtime_mode'] = "enforcing" if selinux.security_getenforce() == 1 else "permissive"
