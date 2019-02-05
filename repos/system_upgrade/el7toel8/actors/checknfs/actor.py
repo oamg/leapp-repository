@@ -10,25 +10,36 @@ class CheckNfs(Actor):
     produces = (Inhibitor,)
     tags = (ChecksPhaseTag, IPUWorkflowTag,)
 
-    def inhibit(self, details):
-        self.produce(Inhibitor(
-            summary="NFS is not supported.",
-            details=details,
-            solutions="Please consider not using NFS."))
-
     def process(self):
+        details = "NFS is currently not supported by the inplace upgrade.\n" \
+                  "We have found NFS usage at the following locations:\n"
+        nfs_found = False
+
         for storage in self.consume(StorageInfo):
             # Check fstab
             for fstab in storage.fstab:
                 if fstab.fs_vfstype == "nfs":
-                    self.inhibit("Discovered NFS entry in the fstab.")
+                    nfs_found = True
+                    details += "- One or more NFS entries in /etc/fstab\n"
+                    break
 
             # Check mount
             for mount in storage.mount:
                 if mount.tp == "nfs":
-                    self.inhibit("Discovered NFS entry in the mount.")
+                    nfs_found = True
+                    details += "- Currently mounted NFS shares\n"
+                    break
 
             # Check selinux-mount
             for systemdmount in storage.systemdmount:
                 if systemdmount.fs_type == "nfs":
-                    self.inhibit("Discovered NFS entry in the systemd-mount.")
+                    nfs_found = True
+                    details += "- One or more configured NFS mounts in systemd-mount\n"
+                    break
+
+        if nfs_found:
+            self.produce(Inhibitor(
+                summary="Unsupported NFS usage found.",
+                details=details,
+                solutions="Please consider not using NFS."))
+
