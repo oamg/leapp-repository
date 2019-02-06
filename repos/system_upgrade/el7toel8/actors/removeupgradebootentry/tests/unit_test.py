@@ -17,11 +17,11 @@ def test_remove_boot_entry(monkeypatch):
     def get_upgrade_kernel_filepath_mocked():
         return '/abc'
     monkeypatch.setattr(library, 'get_upgrade_kernel_filepath', get_upgrade_kernel_filepath_mocked)
-    monkeypatch.setattr(stdlib, 'call', call_mocked())
+    monkeypatch.setattr(library, 'call', call_mocked())
 
     library.remove_boot_entry()
 
-    assert stdlib.call.args == [['/usr/sbin/grubby', '--remove-kernel=/abc'], ['/bin/mount', '-a']]
+    assert library.call.args == [['/usr/sbin/grubby', '--remove-kernel=/abc'], ['/bin/mount', '-a']]
 
 
 def test_get_upgrade_kernel_filepath(monkeypatch):
