@@ -21,7 +21,8 @@ def test_remove_boot_entry(monkeypatch):
 
     library.remove_boot_entry()
 
-    assert library.call.args == [['/usr/sbin/grubby', '--remove-kernel=/abc'], ['/bin/mount', '-a']]
+    assert library.call.args == [['/bin/mount', '/boot'],
+                                 ['/usr/sbin/grubby', '--remove-kernel=/abc'], ['/bin/mount', '-a']]
 
 
 def test_get_upgrade_kernel_filepath(monkeypatch):
