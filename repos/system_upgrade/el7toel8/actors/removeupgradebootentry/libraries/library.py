@@ -1,9 +1,19 @@
+from subprocess import CalledProcessError
+
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.stdlib import api, call
 from leapp.models import BootContent
 
 
 def remove_boot_entry():
+    # we need to make sure /boot is mounted before trying to remove the boot entry
+    try:
+        call([
+            '/bin/mount', '/boot'
+        ])
+    except CalledProcessError:
+        # /boot has been most likely already mounted
+        pass
     kernel_filepath = get_upgrade_kernel_filepath()
     call([
         '/usr/sbin/grubby',
