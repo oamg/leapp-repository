@@ -176,10 +176,10 @@ register:
 	snactor repo find --path repos
 
 install-deps:
-	virtualenv -p /usr/bin/python2.7 tut; \
+	virtualenv --system-site-packages -p /usr/bin/python2.7 tut; \
 	. tut/bin/activate; \
 	pip install --upgrade setuptools; \
-	pip install -r requirements.txt
+	pip install --upgrade -r requirements.txt
 	python utils/install_actor_deps.py --actor=$(ACTOR)
 
 test:
