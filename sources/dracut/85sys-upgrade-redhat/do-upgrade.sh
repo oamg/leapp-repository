@@ -57,11 +57,11 @@ save_journal() {
 
     local logfile="$NEWROOT/var/log/upgrade.log"
 
-    # back up old logfile, if present
-    [ -e $logfile ] && rm -rf $logfile.old && mv $logfile $logfile.old
+    # Add a separator if file exists
+    [ -e $logfile ] && echo "### LEAPP reboot ###" >> $logfile
 
     # write out the logfile
-    journalctl -a -m > $logfile
+    journalctl -a -m >> $logfile
 }
 
 
