@@ -1,15 +1,15 @@
-"""
-Check if NFS filesystem is in use. If yes, inhibit the upgrade process.
-
-Actor looks for NFS in the following sources: /ets/fstab, mount and systemd-mount.
-If there is NFS in any of the mentioned sources, actors inhibits the upgrade.
-"""
 from leapp.actors import Actor
 from leapp.models import StorageInfo, Inhibitor
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
 class CheckNfs(Actor):
+    """
+    Check if NFS filesystem is in use. If yes, inhibit the upgrade process.
+
+    Actor looks for NFS in the following sources: /ets/fstab, mount and systemd-mount.
+    If there is NFS in any of the mentioned sources, actors inhibits the upgrade.
+    """
     name = "check_nfs"
     consumes = (StorageInfo,)
     produces = (Inhibitor,)
