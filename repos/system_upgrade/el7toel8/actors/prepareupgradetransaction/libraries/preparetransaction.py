@@ -11,7 +11,6 @@ from leapp.libraries.stdlib import api
 from leapp.libraries.stdlib import call, run
 from leapp.libraries.stdlib.call import STDOUT
 
-
 OverlayfsInfo = namedtuple('OverlayfsInfo', ['upper', 'work', 'merged'])
 
 
@@ -282,3 +281,26 @@ def create_disk_image(path):
 def remove_disk_image(path):
     guard_call(['/bin/umount', '-fl', os.path.join(path, 'mounts')])
     shutil.rmtree(path, ignore_errors=True)
+
+
+def yum2dnf_configuration(overlayfs_info):
+    """
+    Secure yum upgradability.
+
+     (workaround)
+
+    :return:
+    """
+    cmds = [
+        ['mkdir', '-p', '/etc/dnf'],
+        ['cp', '-af', '/etc/yum/*', '/etc/dnf/'],
+        ['rm', '-rf', '/etc/yum/pluginconf.d', '/etc/yum/protected.d', '/etc/yum/vars'],
+        ['ln', '-s', '/etc/dnf/plugins/', '/etc/yum/pluginconf.d'],
+        ['ln', '-s', '/etc/dnf/protected.d/', '/etc/yum/protected.d'],
+        ['ln', '-s', '/etc/dnf/vars/', '/etc/yum/vars']
+    ]
+
+    for cmd in cmds:
+        _unused, error = guard_container_call(overlayfs_info, cmd)
+        if error:
+            produce_warning(error, summary='Yum upgradability may be affected.')

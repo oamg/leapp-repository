@@ -194,6 +194,9 @@ class PrepareUpgradeTransaction(Actor):
             json.dump(plugin_data, data)
             data.flush()
 
+        # secure yum upgradability (workaround)
+        preparetransaction.yum2dnf_configuration(overlayfs_info)
+
         # FIXME: fails on insufficient permissions
         cmd = ['--', '/bin/bash', '-c', ' '.join(dnf_command + ['/var/lib/leapp/dnf-plugin-data.txt'])]
         _unused, error = preparetransaction.guard_container_call(
@@ -283,7 +286,11 @@ class PrepareUpgradeTransaction(Actor):
 
             error = preparetransaction.copy_file_to_container(ofs_info, dnfplugin_spath, dnfplugin_dpath)
             if error:
-                return error
+                preparetransaction.produce_error(error, summary='Cannot copy rhel_upgrade.py to container.')
+                return
+        else:
+            preparetransaction.produce_error(error)
+            return
 
         error = self.dnf_plugin_rpm_download(ofs_info)
 
