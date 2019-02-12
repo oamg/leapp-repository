@@ -1,6 +1,7 @@
 from subprocess import CalledProcessError
 
 from leapp.actors import Actor
+from leapp.libraries.actor import networkmanagerupdateclientid
 from leapp.libraries.stdlib import call
 from leapp.models import NetworkManagerConfig
 from leapp.tags import ApplicationsPhaseTag, IPUWorkflowTag
@@ -27,12 +28,8 @@ class NetworkManagerUpdateClientId(Actor):
                 self.log.info('DHCP client is {}, nothing to do'.format(nm_config.dhcp))
                 return
 
-            try:
-                r = call(['nm-update-client-ids.py'])
-            except (OSError, CalledProcessError) as e:
-                self.log.warning('Error calling script: {}'.format(e))
-                return
+            networkmanagerupdateclientid.update_client_ids(self.log)
 
-            self.log.info('Updated client-ids: {}'.format(r))
+            break
 
 
