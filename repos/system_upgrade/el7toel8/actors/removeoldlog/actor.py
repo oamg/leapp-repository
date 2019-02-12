@@ -5,9 +5,11 @@ from leapp.tags import IPUWorkflowTag, FactsPhaseTag
 
 class RemoveOldLog(Actor):
     """
-    Removes the old log from the previous Leapp run
-    to ensure that you have only valid and updated logs for debugging.
+    Remove old log from previous Leapp run.
+     
+    This is necessary to ensure that you have only valid and updated logs for debugging.
     """
+
 
     name = 'remove_old_log'
     consumes = ()
