@@ -1,6 +1,6 @@
 from leapp.actors import Actor
 from leapp.models import RpmTransactionTasks, FilteredRpmTransactionTasks, InstalledRedHatSignedRPM
-from leapp.tags import IPUWorkflowTag, FactsPhaseTag
+from leapp.tags import IPUWorkflowTag, ChecksPhaseTag
 
 
 class FilterRpmTransactionTasks(Actor):
@@ -15,7 +15,7 @@ class FilterRpmTransactionTasks(Actor):
     name = 'check_rpm_transaction_events'
     consumes = (RpmTransactionTasks, InstalledRedHatSignedRPM,)
     produces = (FilteredRpmTransactionTasks,)
-    tags = (IPUWorkflowTag, FactsPhaseTag)
+    tags = (IPUWorkflowTag, ChecksPhaseTag)
 
     def process(self):
         installed_pkgs = set()
