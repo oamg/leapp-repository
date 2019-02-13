@@ -1,49 +1,66 @@
-from leapp.actors import Actor
-from leapp.models import SELinuxModules, SELinuxModule, SELinuxCustom, SystemFacts
-from leapp.tags import FactsPhaseTag, IPUWorkflowTag
-from leapp.libraries.stdlib import call
-import subprocess
-import re
 import os
+import re
 from shutil import rmtree
+
+from leapp.actors import Actor
+from leapp.models import SELinuxModules, SELinuxModule, SELinuxCustom, SELinuxFacts, SELinuxRequestRPMs, RpmTransactionTasks
+from leapp.tags import FactsPhaseTag, IPUWorkflowTag
+from leapp.libraries.stdlib import run, CalledProcessError
 
 WORKING_DIRECTORY = '/tmp/selinux/'
 
 # types and attributes that where removed between RHEL 7 and 8
 REMOVED_TYPES_=["base_typeattr_15","direct_run_init","gpgdomain","httpd_exec_scripts","httpd_user_script_exec_type","ibendport_type","ibpkey_type","pcmcia_typeattr_2","pcmcia_typeattr_3","pcmcia_typeattr_4","pcmcia_typeattr_5","pcmcia_typeattr_6","pcmcia_typeattr_7","sandbox_caps_domain","sandbox_typeattr_2","sandbox_typeattr_3","sandbox_typeattr_4","server_ptynode","systemctl_domain","user_home_content_type","userhelper_type","cgdcbxd_exec_t","cgdcbxd_t","cgdcbxd_unit_file_t","cgdcbxd_var_run_t","ganesha_use_fusefs","ganesha_exec_t","ganesha_t","ganesha_tmp_t","ganesha_unit_file_t","ganesha_var_log_t","ganesha_var_run_t","ganesha_use_fusefs"]
-# to be used with grep
-REMOVED_TYPES="|".join(REMOVED_TYPES_)
-# to be used with sed
-SED_COMMAND='/' + '\|'.join(REMOVED_TYPES_) + '/s/^/;/g'
 
 # types, attributes and boolean contained in container-selinux
-CONTAINER_TYPES="|".join(["container_connect_any","container_runtime_t","container_runtime_exec_t","spc_t","container_auth_t","container_auth_exec_t","spc_var_run_t","container_var_lib_t","container_home_t","container_config_t","container_lock_t","container_log_t","container_runtime_tmp_t","container_runtime_tmpfs_t","container_var_run_t","container_plugin_var_run_t","container_unit_file_t","container_devpts_t","container_share_t","container_port_t","container_build_t","container_logreader_t","docker_log_t","docker_tmpfs_t","docker_share_t","docker_t","docker_lock_t","docker_home_t","docker_exec_t","docker_unit_file_t","docker_devpts_t","docker_config_t","docker_tmp_t","docker_auth_exec_t","docker_plugin_var_run_t","docker_port_t","docker_auth_t","docker_var_run_t","docker_var_lib_t","container_domain","container_net_domain"])
+CONTAINER_TYPES=["container_connect_any","container_runtime_t","container_runtime_exec_t","spc_t","container_auth_t","container_auth_exec_t","spc_var_run_t","container_var_lib_t","container_home_t","container_config_t","container_lock_t","container_log_t","container_runtime_tmp_t","container_runtime_tmpfs_t","container_var_run_t","container_plugin_var_run_t","container_unit_file_t","container_devpts_t","container_share_t","container_port_t","container_build_t","container_logreader_t","docker_log_t","docker_tmpfs_t","docker_share_t","docker_t","docker_lock_t","docker_home_t","docker_exec_t","docker_unit_file_t","docker_devpts_t","docker_config_t","docker_tmp_t","docker_auth_exec_t","docker_plugin_var_run_t","docker_port_t","docker_auth_t","docker_var_run_t","docker_var_lib_t","container_domain","container_net_domain"]
 
 
 class SELinuxContentScanner(Actor):
+    '''
+    Scan the system for any SELinux customizations
+
+    Find SELinux policy customizations (custom policy modules and changes
+    introduced by semanage) and save them in SELinuxModules and SELinuxCustom
+    models. Customizations that are incompatible with SELinux policy on RHEL-8
+    are removed.
+    '''
     name = 'selinuxcontentscanner'
-    description = 'No description has been provided for the selinuxcontentscanner actor.'
-    consumes = (SystemFacts, )
-    produces = (SELinuxModules, SELinuxCustom, )
-    tags = (FactsPhaseTag, IPUWorkflowTag, )
+    consumes = (SELinuxFacts,)
+    produces = (SELinuxModules, SELinuxCustom, SELinuxRequestRPMs, RpmTransactionTasks)
+    tags = (FactsPhaseTag, IPUWorkflowTag)
 
     def process(self):
         # exit if SELinux is disabled
-        for fact in self.consume(SystemFacts):
-            if fact.selinux.enabled is False:
+        for fact in self.consume(SELinuxFacts):
+            if not fact.enabled:
                 return
 
-        semodule_list = self.getSELinuxModules()
+        (semodule_list, rpms_to_keep, rpms_to_install) = self.getSELinuxModules()
 
         self.produce(SELinuxModules(modules=semodule_list))
+        self.produce(
+            RpmTransactionTasks(
+                to_install = rpms_to_install,
+                # possibly not necessary - dnf should not remove RPMs (that exist in both RHEL 7 and 8) durign update
+                to_keep = rpms_to_keep
+            )
+        )
+        # this is produced so that we can later verify that the RPMs are present after upgrade
+        self.produce(
+            SELinuxRequestRPMs(
+                to_install = rpms_to_install,
+                to_keep = rpms_to_keep
+            )
+        )
 
         semanage_removed = []
         semanage_valid = []
         try:
             # Collect SELinux customizations and select the ones that
             # can be reapplied after the upgrade
-            semanage = call(['semanage', 'export'], split=True)
-            for line in semanage:
+            semanage = run(['semanage', 'export'], split=True)
+            for line in semanage.get("stdout", []):
                 for setype in REMOVED_TYPES_:
                     if setype in line:
                         semanage_removed.append(line)
@@ -51,7 +68,8 @@ class SELinuxContentScanner(Actor):
                 else:
                     semanage_valid.append(line)
 
-        except subprocess.CalledProcessError:
+        except CalledProcessError as e:
+            self.log.info("Failed to export SELinux customizations: %s", str(e))
             return
 
         self.produce(
@@ -61,82 +79,101 @@ class SELinuxContentScanner(Actor):
             )
         )
 
-        #cmd = [ 'semanage', 'export' ]
-        #stdout = call(cmd, split=False)
-        #semodules = SELinuxModules(
-        #    modules=[SELinuxModule(
-        #        name="nn",
-        #        priority=1,
-        #        content=stdout
-        #)],)
-        #self.produce(semodules)
-
-
-
     def checkModule(self, name):
-        """ Check if module contains one of removed types.
-            If so, comment out corresponding lines and return them.
-        """
+        '''
+        Check if given module contains one of removed types.
+
+        If so, comment out corresponding lines and return them.
+        The function expects a text file "$name" containing cil policy
+        to be present in the current directory.
+        '''
         try:
-            removed = call(['grep', '-w', '-E', REMOVED_TYPES, name], split=True)
-            call(['sed', '-i', SED_COMMAND, name])
-            return removed
-        except subprocess.CalledProcessError:
+            removed = run(['grep', '-w', '-E', "|".join(REMOVED_TYPES_), name], split=True)
+            run(['sed', '-i', '/%s/s/^/;/g' % '\|'.join(REMOVED_TYPES_), name])
+            return removed.get("stdout", [])
+        except CalledProcessError:
             return []
 
-    def parseSemodule(self, modules_str):
-        """Parse list of modules into list of tuples (name,priority)"""
+
+    def listSELinuxModules(self):
+        '''
+        Produce list of SELinux policy modules
+
+        Returns list of tuples (name,priority)
+        '''
+        try:
+            semodule = run(['semodule', '-lfull'], split=True)
+        except CalledProcessError:
+            return []
+
         modules = []
-        for module in modules_str:
+        for module in semodule.get("stdout", []):
             # Matching line such as "100 zebra             pp "
             # "<priority> <module name>    <module type - pp/cil> "
-            m = re.match('([0-9]+)\s+(\w+)\s+(\w+)\s*\Z', module)
+            m = re.match(r'([0-9]+)\s+([\w-]+)\s+([\w-]+)\s*\Z', module)
             if not m:
                 #invalid output of "semodule -lfull"
-                break
+                self.log.info('Invalid output of "semodule -lfull": %s', module)
+                continue
             modules.append((m.group(2), m.group(1)))
 
         return modules
 
-    def getSELinuxModules(self):
-        try:
-            semodule = call(['semodule', '-lfull'], split=True)
-        except subprocess.CalledProcessError:
-            return
 
-        modules = self.parseSemodule(semodule)
+    def getSELinuxModules(self):
+        '''
+        Read all custom SELinux policy modules from the system
+
+        Returns 3-tuple (modules, retain_rpms, install_rpms)
+        where "modules" is a list of "SELinuxModule" objects,
+        "retain_rpms" is a list of RPMs that should be retained 
+        during the upgrade and "install_rpms" is a list of RPMs
+        that should be installed during the upgrade
+
+        '''
+
+        modules = self.listSELinuxModules()
         semodule_list = []
+        # list of rpms containing policy modules to be installed on RHEL 8
+        retain_rpms = []
+        install_rpms = []
 
         # modules need to be extracted into cil files
         # cd to /tmp/selinux and save working directory so that we can return there
-        try:
-            # clear working directory
-            rmtree(WORKING_DIRECTORY)
-        except OSError:
-            #expected
-            pass
+
+        # clear working directory
+        rmtree(WORKING_DIRECTORY, ignore_errors=True)
+
         try:
             wd = os.getcwd()
             os.mkdir(WORKING_DIRECTORY)
             os.chdir(WORKING_DIRECTORY)
         except OSError:
             self.log.info("Failed to access working directory! Aborting.")
-            return []
+            return ([],[],[])
 
         for (name, priority) in modules:
             if priority == "200":
-                #TODO - request "name-selinux" to be installed
+                # Module on priority 200 was installed by an RPM
+                # Request $name-selinux to be installed on RHEL8
+                retain_rpms.append(name + "-selinux")
                 continue
             if priority == "100":
-                #module from selinux-policy-* package - skipping
+                # module from selinux-policy-* package - skipping
                 continue
             # extract custom module and save it to SELinuxModule object
             try:
-                call(['semodule', '-c', '-X', priority, '-E', name])
+                run(['semodule', '-c', '-X', priority, '-E', name])
                 # check if the module contains invalid types and remove them if so
                 removed = self.checkModule(name + ".cil")
+
                 # get content of the module
-                module_content = call(['cat', name + ".cil"], split=False)
+                try:
+                    with open(name + ".cil", 'r') as cil_file:
+                        module_content = cil_file.read()
+                except OSError as e:
+                    self.log.info("Error reading %s.cil : %s", name, str(e))
+                    continue
 
                 semodule_list.append(SELinuxModule(
                     name=name,
@@ -145,32 +182,37 @@ class SELinuxContentScanner(Actor):
                     removed=removed
                     )
                 )
-            except subprocess.CalledProcessError:
+            except CalledProcessError:
+                self.log.info("Module %s could not be extracted!", name)
                 continue
             # rename the cil module file so that it does not clash
             # with the same module on different priority
             try:
-                os.rename(name + ".cil", name + "_" + str(priority))
+                os.rename(name + ".cil",  "%s_%s" % (name, priority))
             except OSError:
+                # TODO leapp.libraries.stdlib.api.current_logger()
+                # and move the method to a library
                 self.log.info("Failed to rename module file.")
         # this is necessary for check if container-selinux needs to be installed
         try:
-            call(['semanage', 'export', '-f', 'semanage'])
-        except subprocess.CalledProcessError:
+            run(['semanage', 'export', '-f', 'semanage'])
+        except CalledProcessError:
             pass
         # Check if modules contain any type, attribute, or boolean contained in container-selinux and install it if so
         # This is necessary since container policy module is part of selinux-policy-targeted in RHEL 7 (but not in RHEL 8)
         try:
-            semodule = call(['grep', '-w', '-r', '-E', CONTAINER_TYPES], split=False)
-            #TODO - request "container-selinux" to be installed
-        except subprocess.CalledProcessError:
+            semodule = run(['grep', '-w', '-r', '-E', "|".join(CONTAINER_TYPES)], split=False)
+            # Request "container-selinux" to be installed since container types where used in local customizations
+            # and container-selinux policy was removed from selinux-policy-* packages
+            install_rpms.append("container-selinux")
+        except CalledProcessError:
             # expected, ignore exception
             pass
 
         try:
-            rmtree(WORKING_DIRECTORY)
             os.chdir(wd)
         except OSError:
             pass
+        rmtree(WORKING_DIRECTORY, ignore_errors=True)
 
-        return semodule_list
+        return (semodule_list, retain_rpms, install_rpms)
