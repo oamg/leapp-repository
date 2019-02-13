@@ -1,5 +1,5 @@
 from leapp.models import Model, fields
-from leapp.topics import SystemInfoTopic
+from leapp.topics import SystemInfoTopic, TransactionTopic
 
 class SELinuxModule(Model):
     """SELinux module in cil including priority"""
@@ -21,3 +21,15 @@ class SELinuxCustom(Model):
     commands = fields.List(fields.String())
     removed = fields.List(fields.String())
 
+class SELinuxRequestRPMs(Model):
+    """
+    SELinux related RPM packages that need to be present after upgrade
+
+    Listed packages provide types that where used in policy
+    customizations (to_install), or the corresponding policy 
+    was installed on RHEL-7 installation with priority 200
+    (to_keep).
+    """
+    topic = TransactionTopic
+    to_keep = fields.List(fields.String(), default=[])
+    to_install = fields.List(fields.String(), default=[])
