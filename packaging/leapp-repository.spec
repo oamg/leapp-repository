@@ -2,23 +2,35 @@
 %global repositorydir %{leapp_datadir}/repositories
 %global custom_repositorydir %{leapp_datadir}/custom-repositories
 
-Name:       leapp-repository
-Version:    0.5.0
-Release:    1%{?dist}
-Summary:    Repositories for leapp
+# Defining py_byte_compile macro because it is not defined in old rpm (el7)
+# Only defined to python2 since python3 is not used in RHEL7
+%{!?py_byte_compile: %global py_byte_compile py2_byte_compile() {\
+    python_binary="%1"\
+    bytecode_compilation_path="%2"\
+    find $bytecode_compilation_path -type f -a -name "*.py" -print0 | xargs -0 $python_binary -c 'import py_compile, sys; [py_compile.compile(f, dfile=f.partition("$RPM_BUILD_ROOT")[2]) for f in sys.argv[1:]]' || :\
+    find $bytecode_compilation_path -type f -a -name "*.py" -print0 | xargs -0 $python_binary -O -c 'import py_compile, sys; [py_compile.compile(f, dfile=f.partition("$RPM_BUILD_ROOT")[2]) for f in sys.argv[1:]]' || :\
+}\
+py2_byte_compile "%1" "%2"}
 
-License:    AGPLv3+
-URL:        https://leapp-to.github.io
-Source0:    https://github.com/oamg/leapp-repository/archive/leapp-repository-%{version}.tar.gz
-Source1:    leapp-repository-initrd.tar.gz
-Source2:    leapp-repository-data.tar.gz
-Source3:    deps-pkgs.tar.gz
-BuildArch:  noarch
-Requires:   %{name}-data = %{version}-%{release}
+
+Name:           leapp-repository
+Version:        0.5.0
+Release:        1%{?dist}
+Summary:        Repositories for leapp
+
+License:        AGPLv3+
+URL:            https://leapp-to.github.io
+Source0:        https://github.com/oamg/leapp-repository/archive/leapp-repository-%{version}.tar.gz
+Source1:        leapp-repository-initrd.tar.gz
+Source2:        leapp-repository-data.tar.gz
+Source3:        deps-pkgs.tar.gz
+BuildArch:      noarch
+Requires:       %{name}-data = %{version}-%{release}
+BuildRequires:  python-devel
 
 # IMPORTANT: everytime the requirements are changed, increment number by one
 # - same for Provides in deps subpackage
-Requires:   leapp-repository-dependencies = 2
+Requires:       leapp-repository-dependencies = 2
 
 %description
 Repositories for leapp
@@ -98,6 +110,8 @@ do
     echo "Enabling repository $REPOSITORY"
     ln -s  %{repositorydir}/$REPOSITORY  %{buildroot}%{_sysconfdir}/leapp/repos.d/$REPOSITORY
 done;
+
+%py_byte_compile %{__python} %{buildroot}%{repositorydir}/*
 
 
 %files
