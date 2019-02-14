@@ -188,7 +188,7 @@ def _get_repositories():
             cp = configparser.ConfigParser()
             cp.readfp(fp)
             for section in cp.sections():
-                prepared = {'additional_fields': {}}
+                prepared = {'repoid': section, 'additional_fields': {}}
                 data = dict(cp.items(section))
                 for key in data.keys():
                     if key in RepositoryData.fields:
