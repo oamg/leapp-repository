@@ -1,6 +1,8 @@
+import platform
+
 from leapp.actors import Actor
-from leapp.models import RHELTargetRepository, TargetRepositories
-from leapp.models import CustomTargetRepository
+from leapp.models import RHELTargetRepository, TargetRepositories, RepositoriesMap, \
+    RepositoriesFacts, CustomTargetRepository
 from leapp.tags import IPUWorkflowTag, ChecksPhaseTag
 
 
@@ -14,15 +16,11 @@ class SetupTargetRepos(Actor):
     """
 
     name = 'setuptargetrepos'
-    consumes = (CustomTargetRepository,)
+    consumes = (CustomTargetRepository, RepositoriesMap, RepositoriesFacts,)
     produces = (TargetRepositories,)
     tags = (IPUWorkflowTag, ChecksPhaseTag)
 
     def process(self):
-        # FIXME: currently we will use always only two repositories, unaffected
-        # + by the current list of enabled repositories.
-        # TODO: Should use CSV file as the source of information for upgrade
-        # + from source system to the target system
         # TODO: Think about Beta and Alpha repositories. How will we tell we
         # + want to go to GA, Alpha, Beta, ... repos?
 
@@ -30,9 +28,21 @@ class SetupTargetRepos(Actor):
         for repo in self.consume(CustomTargetRepository):
             custom_repos.append(repo)
 
+        enabled_repos = []
+        for repos in self.consume(RepositoriesFacts):
+            for repo_file in repos.repositories:
+                for repo in repo_file.data:
+                    enabled_repos.append(repo.repoid)
+
         rhel_repos = []
-        for repo_uid in ("rhel-8-for-x86_64-baseos-htb-rpms", "rhel-8-for-x86_64-appstream-htb-rpms"):
-            rhel_repos.append(RHELTargetRepository(uid=repo_uid))
+        for repos_map in self.consume(RepositoriesMap):
+            for repo_map in repos_map.repositories:
+                # Check if repository map architecture matches system architecture
+                if platform.machine() != repo_map.arch:
+                    continue
+
+                if repo_map.from_id in enabled_repos:
+                    rhel_repos.append(RHELTargetRepository(uid=repo_map.to_id))
 
         self.produce(TargetRepositories(
             rhel_repos=rhel_repos,

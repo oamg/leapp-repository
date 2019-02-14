@@ -5,6 +5,7 @@ from leapp.topics import SystemFactsTopic
 class RepositoryData(Model):
     topic = SystemFactsTopic
 
+    repoid = fields.String()
     name = fields.String()
     baseurl = fields.Nullable(fields.String())
     metalink = fields.Nullable(fields.String())
