@@ -35,7 +35,7 @@ class CheckNfs(Actor):
                     details += "- Currently mounted NFS shares\n"
                     break
 
-            # Check selinux-mount
+            # Check systemd-mount
             for systemdmount in storage.systemdmount:
                 if systemdmount.fs_type == "nfs":
                     nfs_found = True
