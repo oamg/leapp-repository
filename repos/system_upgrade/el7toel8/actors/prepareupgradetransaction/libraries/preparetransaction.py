@@ -246,7 +246,16 @@ def create_disk_image(path):
             summary='Error while trying to create destination path on the host system.',
             details=str(e))
 
-    cmds = [['/bin/dd', 'if=/dev/zero', 'of={}'.format(diskimage_path), 'bs=1M', 'count=1500'],
+    disk_size = os.getenv('LEAPP_OVL_SIZE', default='2048')
+
+    try:
+        int(disk_size)
+    except ValueError:
+        disk_size = '2048'
+        api.current_logger().warn(
+            'Invalid "LEAPP_OVL_SIZE" environment variable. Setting default "{}" value'.format(disk_size))
+
+    cmds = [['/bin/dd', 'if=/dev/zero', 'of={}'.format(diskimage_path), 'bs=1M', 'count={}'.format(disk_size)],
             ['/sbin/mkfs.ext4', '-F', diskimage_path],
             ['/bin/mount', '-o', 'loop', diskimage_path, mounts_path]]
 
