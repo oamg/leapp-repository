@@ -8,7 +8,7 @@ class CheckBtrfs(Actor):
     Check if Btrfs filesystem is in use. If yes, inhibit the upgrade process.
 
     Btrfs filesystem was introduced as Technology Preview with initial releases of RHEL 6 and 7. It
-    was deprecated on versions 6.6 and 7.4 and will not be ṕresent in next major version.
+    was deprecated on versions 6.6 and 7.4 and will not be present in next major version.
     """
 
     name = 'check_btrfs'
