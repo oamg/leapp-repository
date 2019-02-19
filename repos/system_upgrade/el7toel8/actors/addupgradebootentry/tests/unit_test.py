@@ -1,7 +1,6 @@
 import pytest
 
 from leapp.exceptions import StopActorExecutionError
-from leapp.libraries import stdlib
 from leapp.libraries.actor import library
 from leapp.models import BootContent
 
@@ -42,3 +41,13 @@ def test_get_boot_file_paths(monkeypatch):
 
     with pytest.raises(StopActorExecutionError):
         library.get_boot_file_paths()
+
+
+def test_fix_grub_config_error(monkeypatch):
+    def write_to_file_mocked(filename, content):
+        return content
+    monkeypatch.setattr(library, 'write_to_file', write_to_file_mocked)
+    fixed = library.fix_grub_config_error('files/grub_test.wrong')
+
+    with open('files/grub_test.fixed') as f:
+        assert fixed == f.read()
