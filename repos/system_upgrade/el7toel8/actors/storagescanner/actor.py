@@ -30,7 +30,9 @@ class StorageScanner(Actor):
             raise StopIteration()
 
         try:
-            output = subprocess.check_output(cmd)
+            # when there is any fd except 0,1,2 open, lvm closes the fd and prints a warning.
+            # In our case /dev/urandom has other fd opened, probably for caching purposes.
+            output = subprocess.check_output(cmd, env={'LVM_SUPPRESS_FD_WARNINGS': '1', 'PATH': os.environ['PATH']})
         except subprocess.CalledProcessError as e:
             self.log.warning("Command '%s' return non-zero exit status: %s" % (" ".join(cmd), e.returncode))
             raise StopIteration()
