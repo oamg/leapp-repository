@@ -82,6 +82,7 @@ class LvdisplayEntry(Model):
     cpy_sync = fields.String()
     convert = fields.String()
 
+
 class SystemdMountEntry(Model):
     topic = SystemInfoTopic
 
@@ -92,6 +93,7 @@ class SystemdMountEntry(Model):
     fs_type = fields.String()
     label = fields.String()
     uuid = fields.String()
+
 
 class StorageInfo(Model):
     topic = SystemInfoTopic

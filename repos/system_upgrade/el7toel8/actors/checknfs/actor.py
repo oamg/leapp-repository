@@ -44,7 +44,7 @@ class CheckNfs(Actor):
 
         if nfs_found:
             self.produce(Inhibitor(
-                summary="Unsupported NFS usage found.",
+                summary="Use of NFS detected. Upgrade can't proceed.",
                 details=details,
-                solutions="Please consider not using NFS."))
+                solutions="Disable NFS temporarily for the upgrade if possible."))
 
