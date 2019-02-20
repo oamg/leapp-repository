@@ -119,12 +119,12 @@ def remove_overlayfs_dirs(overlayfs_path):
     shutil.rmtree(overlayfs_path, ignore_errors=True)
 
 
-def get_list_of_available_repo_uids(overlayfs_info):
+def get_list_of_available_repoids(overlayfs_info):
     # TODO: create later library function in this repository that would be
     # + available even for the systemfacts (to get info about orig RHEL
     # + repos)
     cmd = ['subscription-manager', 'repos']
-    uids = []
+    repoids = []
 
     repos, error = guard_container_call(overlayfs_info, cmd)
     if error:
@@ -133,8 +133,8 @@ def get_list_of_available_repo_uids(overlayfs_info):
 
     for line in repos:
         if line.startswith('Repo ID'):
-            uids.append(line.split(':')[1].strip())
-    return set(uids), None
+            repoids.append(line.split(':')[1].strip())
+    return set(repoids), None
 
 
 def mount_overlayfs(overlayfs_info):

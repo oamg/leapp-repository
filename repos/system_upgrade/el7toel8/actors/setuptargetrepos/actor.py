@@ -42,7 +42,7 @@ class SetupTargetRepos(Actor):
                     continue
 
                 if repo_map.from_id in enabled_repos:
-                    rhel_repos.append(RHELTargetRepository(uid=repo_map.to_id))
+                    rhel_repos.append(RHELTargetRepository(repoid=repo_map.to_id))
 
         self.produce(TargetRepositories(
             rhel_repos=rhel_repos,

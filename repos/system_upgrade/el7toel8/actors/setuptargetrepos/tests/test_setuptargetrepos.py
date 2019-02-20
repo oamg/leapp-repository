@@ -7,7 +7,7 @@ def test_minimal_execution(current_actor_context):
 
 
 def test_custom_repos(current_actor_context):
-    custom = CustomTargetRepository(uid='rhel-8-server-rpms',
+    custom = CustomTargetRepository(repoid='rhel-8-server-rpms',
                                     name='RHEL 8 Server (RPMs)',
                                     baseurl='https://.../dist/rhel/server/8/os',
                                     enabled=True)
