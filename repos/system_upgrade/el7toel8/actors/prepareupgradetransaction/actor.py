@@ -97,7 +97,7 @@ class PrepareUpgradeTransaction(Actor):
         """
         Setup target repositories.
 
-        Set the list of UIDs that should be used for the upgrade of the system.
+        Set the list of repos IDs that should be used for the upgrade of the system.
         In addition, it prepare repo file with custom repositories (in case
         they don't exist on the system already) and use them for the upgrade
         as well. The custom repositories should be persistent and enabled
@@ -105,15 +105,15 @@ class PrepareUpgradeTransaction(Actor):
 
         Return ErrorData or None.
         """
-        self.target_uids = []
+        self.target_repoids = []
 
-        available_target_uids, error = preparetransaction.get_list_of_available_repo_uids(overlayfs_info)
+        available_target_repoids, error = preparetransaction.get_list_of_available_repoids(overlayfs_info)
         if error:
             return error
 
-        # FIXME: check that required UIDs (baseos, appstream)
-        # + or check that all required RHEL UIDs are available.
-        if not available_target_uids or len(available_target_uids) < 2:
+        # FIXME: check that required repo IDs (baseos, appstream)
+        # + or check that all required RHEL repo IDs are available.
+        if not available_target_repoids or len(available_target_repoids) < 2:
             return preparetransaction.ErrorData(
                 summary='Cannot find required basic RHEL repositories.',
                 details=('It is required to have RHEL repository on the system'
@@ -123,16 +123,16 @@ class PrepareUpgradeTransaction(Actor):
                          ' to the valid SKU providing target repositories.'))
         for target_repo in self.consume(TargetRepositories):
             for rhel_repo in target_repo.rhel_repos:
-                if rhel_repo.uid in available_target_uids:
-                    self.target_uids.append(rhel_repo.uid)
+                if rhel_repo.repoid in available_target_repoids:
+                    self.target_repoids.append(rhel_repo.repoid)
             for custom_repo in target_repo.custom_repos:
                 # TODO: complete processing of custom repositories
                 # HINT: now it will work only for custom repos that exist
                 # + already on the system in a repo file
-                # TODO: should check available_target_uids + additional custom repos
+                # TODO: should check available_target_repoids + additional custom repos
                 # + outside of rhsm..
-                # #if custom_repo.uid in available_target_uids:
-                self.target_uids.append(custom_repo.uid)
+                # #if custom_repo.repoid in available_target_repoids:
+                self.target_repoids.append(custom_repo.repoid)
         return None
 
     def produce_used_target_repos(self):
@@ -141,12 +141,12 @@ class PrepareUpgradeTransaction(Actor):
 
         We need to know exactly which repositories should be used inside
         the initramdisk. For this purpose, produce list of used repositories
-        (just uids) to use same setup of the upgrade transaction as during
+        (just repoids) to use same setup of the upgrade transaction as during
         this precalculation.
         """
         used_repos = []
-        for used_uid in self.target_uids:
-            used_repos.append(UsedTargetRepository(uid=used_uid))
+        for used_repoid in self.target_repoids:
+            used_repos.append(UsedTargetRepository(repoid=used_repoid))
         self.produce(UsedTargetRepositories(
             repos=used_repos
         ))
@@ -154,11 +154,11 @@ class PrepareUpgradeTransaction(Actor):
     def dnf_plugin_rpm_download(self, overlayfs_info):
         dnf_command = ['/usr/bin/dnf', 'rhel-upgrade', 'download']
 
-        # get list of UIDs of target repositories that should be used for upgrade
+        # get list of repo IDs of target repositories that should be used for upgrade
         error = self._setup_target_repos(overlayfs_info)
         if error:
             return error
-        if not self.target_uids:
+        if not self.target_repoids:
             return preparetransaction.ErrorData(
                 summary='Cannot find any required target repository.',
                 details='The list of available required repositories is empty.')
@@ -182,7 +182,7 @@ class PrepareUpgradeTransaction(Actor):
                 'best': True,
                 'debugsolver': debugsolver,
                 'disable_repos': True,
-                'enable_repos': self.target_uids,
+                'enable_repos': self.target_repoids,
                 'gpgcheck': False,
                 'platform_id': 'platform:el8',
                 'releasever': '8',

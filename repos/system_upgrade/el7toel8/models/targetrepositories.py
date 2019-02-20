@@ -4,7 +4,7 @@ from leapp.topics import TransactionTopic
 
 class TargetRepositoryBase(Model):
     topic = TransactionTopic
-    uid = fields.String()
+    repoid = fields.String()
 
 
 class UsedTargetRepository(TargetRepositoryBase):

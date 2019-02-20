@@ -36,10 +36,10 @@ class DnfShellRpmUpgrade(Actor):
 
         dnf_command = ['/usr/bin/dnf', 'rhel-upgrade', 'upgrade']
 
-        target_uids = []
+        target_repoids = []
         for target_repos in self.consume(UsedTargetRepositories):
             for repo in target_repos.repos:
-                target_uids.append(repo.uid)
+                target_repoids.append(repo.repoid)
 
         debugsolver = True if os.environ.get('LEAPP_DEBUG', '0') == '1' else False
 
@@ -68,7 +68,7 @@ class DnfShellRpmUpgrade(Actor):
                      'best': True,
                      'debugsolver': debugsolver,
                      'disable_repos': True,
-                     'enable_repos': target_uids,
+                     'enable_repos': target_repoids,
                      'gpgcheck': False,
                      'platform_id': 'platform:el8',
                      'releasever': '8',
