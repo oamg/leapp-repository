@@ -1,5 +1,7 @@
 from leapp.actors import Actor
-from leapp.models import StorageInfo, Inhibitor
+from leapp.models import StorageInfo
+from leapp.reporting import Report
+from leapp.libraries.common.reporting import report_with_remediation
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
@@ -12,7 +14,7 @@ class CheckNfs(Actor):
     """
     name = "check_nfs"
     consumes = (StorageInfo,)
-    produces = (Inhibitor,)
+    produces = (Report,)
     tags = (ChecksPhaseTag, IPUWorkflowTag,)
 
     def process(self):
@@ -43,8 +45,9 @@ class CheckNfs(Actor):
                     break
 
         if nfs_found:
-            self.produce(Inhibitor(
-                summary="Use of NFS detected. Upgrade can't proceed.",
-                details=details,
-                solutions="Disable NFS temporarily for the upgrade if possible."))
+            report_with_remediation(title="Use of NFS detected. Upgrade can't proceed",
+                                    summary=details,
+                                    remediation="Disable NFS temporarily for the upgrade if possible.",
+                                    severity='high',
+                                    flags=['inhibitor'])
 

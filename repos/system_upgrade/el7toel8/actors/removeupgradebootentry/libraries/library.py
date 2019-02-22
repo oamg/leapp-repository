@@ -32,7 +32,7 @@ def get_upgrade_kernel_filepath():
     if list(boot_content_msgs):
         api.current_logger().warning('Unexpectedly received more than one BootContent message.')
     if not boot_content:
-        raise StopActorExecutionError('Could not create a GRUB boot entry for the upgrade initramfs',
+        raise StopActorExecutionError('Could not create a GRUB boot entry for the upgrade initramfs.',
                                       details={'details': 'Did not receive a message about the leapp-provided'
-                                                          'kernel and initramfs'})
+                                                          'kernel and initramfs.'})
     return boot_content.kernel_path

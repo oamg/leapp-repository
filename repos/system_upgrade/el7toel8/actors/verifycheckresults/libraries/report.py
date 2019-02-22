@@ -7,11 +7,10 @@ class PlainTextReport:
 
     def write(self, result, report_file):
         report_file.write('Severity: ' + result.severity + '\n')
-        report_file.write('Result: ' + result.result + '\n')
-        report_file.write('Summary: ' + result.summary + '\n')
-        report_file.write('Details: ' + result.details + '\n')
-        if result.solutions:
-            report_file.write('Solutions: ' + result.solutions + '\n')
+        report_file.write('Title: ' + result.title + '\n')
+        report_file.write('Summary: ' + result.detail['summary'] + '\n')
+        if result.detail.get('remediation'):
+            report_file.write('Remediation: ' + result.detail['remediation'] + '\n')
         report_file.write('-' * 40 + '\n')
 
     def footer(self, report_file):
@@ -48,7 +47,7 @@ def generate_report(results, path):
         reporter = JSONReport()
 
     if not reporter:
-        return 'Report format not supported'
+        return 'Report format not supported.'
 
     with open(path, 'w') as report_file:
         reporter.header(report_file)

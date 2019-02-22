@@ -1,5 +1,7 @@
 from leapp.actors import Actor
-from leapp.models import FirewallsFacts, FirewallDecisionM, CheckResult, Inhibitor
+from leapp.models import FirewallsFacts, FirewallDecisionM
+from leapp.reporting import Report
+from leapp.libraries.common.reporting import report_generic
 from leapp.tags import IPUWorkflowTag, ChecksPhaseTag, ExperimentalTag
 from leapp.dialogs import Dialog
 from leapp.dialogs.components import BooleanComponent
@@ -15,7 +17,7 @@ class FirewallDecision(Actor):
 
     name = 'firewalld_decision'
     consumes = (FirewallsFacts,)
-    produces = (FirewallDecisionM, CheckResult, Inhibitor)
+    produces = (FirewallDecisionM, Report)
     tags = (IPUWorkflowTag, ChecksPhaseTag, ExperimentalTag,)
     dialogs = (Dialog(
                 scope='continue_fw',
@@ -45,25 +47,18 @@ class FirewallDecision(Actor):
                 answer = self.request_answers(self.dialogs[0]).get('continue_fw', False)
                 self.produce(FirewallDecisionM(disable_choice='Y' if answer else 'N'))
                 if not answer:
-                    self.produce(
-                        Inhibitor(
-                            summary='Firewall interrupts upgrade process request',
-                            details='SA user chose to interrupt the upgrade.',
-                            solutions=None
-                            ))
+                    report_generic(
+                        title='Firewall interrupts upgrade process request',
+                        summary='SA user chose to interrupt the upgrade.',
+                        flags=['inhibitor'])
                 return
             else:
                 # FIXME: See the fixme above
                 self.log.info("Firewall is disabled. Nothing to decide.")
                 self.produce(FirewallDecisionM(disable_choice='S'))
-                self.produce(
-                     CheckResult(
-                        severity='Info',
-                        result='Pass',
-                        summary='Firewall disabled',
-                        details='Firewall service is disabled.',
-                        solutions=None
-                        ))
+                report_generic(
+                    title='Firewall disabled',
+                    summary='Firewall service is disabled.')
                 return
         else:
             self.log.info("No message to consume for the Firewall decision. Quitting..")

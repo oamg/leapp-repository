@@ -1,6 +1,8 @@
 from leapp.actors import Actor
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
-from leapp.models import SELinuxFacts, CheckResult, SelinuxPermissiveDecision, SelinuxRelabelDecision
+from leapp.models import SELinuxFacts, SelinuxPermissiveDecision, SelinuxRelabelDecision
+from leapp.reporting import Report
+from leapp.libraries.common.reporting import report_generic
 
 
 class CheckSelinux(Actor):
@@ -13,38 +15,44 @@ class CheckSelinux(Actor):
 
     name = 'check_se_linux'
     consumes = (SELinuxFacts,)
-    produces = (CheckResult, SelinuxPermissiveDecision, SelinuxRelabelDecision)
+    produces = (Report, SelinuxPermissiveDecision, SelinuxRelabelDecision)
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 
-    def produce_info(self, result, summary, details, solution=None):
-        self.produce(CheckResult(
-             severity='Info',
-             result=result,
-             summary=summary,
-             details=details,
-             solutions=solution))
 
     def process(self):
-        for fact in self.consume(SELinuxFacts):
-            enabled = fact.enabled
-            conf_status = fact.static_mode
+
+        fact = next(self.consume(SELinuxFacts), None)
+        if not fact:
+            return
+
+        enabled = fact.enabled
+        conf_status = fact.static_mode
 
         if conf_status == 'disabled':
             if enabled:
-                self.produce_info('Pass', 'SElinux disabled in configuration file but currently enabled',
-                                  'This message is to inform user about non-standard SElinux configuration')
-            self.produce_info('Pass', 'SElinux disabled', 'SElinux disabled, continuing...')
+                report_generic(
+                    title='SElinux disabled in configuration file but currently enabled',
+                    summary='This message is to inform user about non-standard SElinux configuration.',
+                    severity='low')
+            report_generic(
+                title='SElinux disabled',
+                summary='SElinux disabled, continuing...',
+                severity='low')
             return
 
         if conf_status in ('enforcing', 'permissive'):
             self.produce(SelinuxRelabelDecision(
                 set_relabel=True))
-            self.produce_info('Fixed', 'Schedule SElinux relabeling',
-                              'Schedule SElinux relabeling as the status was permissive/enforcing')
+            report_generic(
+                title='Schedule SElinux relabeling',
+                summary='Schedule SElinux relabeling as the status was permissive/enforcing.',
+                severity='low')
 
         if conf_status == 'enforcing':
             self.produce(SelinuxPermissiveDecision(
                 set_permissive=True))
-            self.produce_info('Fixed', 'SElinux will be set to permissive mode',
-                              'SElinux will be set to permissive mode as it was in enforcing mode')
+            report_generic(
+                title='SElinux will be set to permissive mode',
+                summary='SElinux will be set to permissive mode as it was in enforcing mode.',
+                severity='low')
 

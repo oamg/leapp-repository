@@ -1,5 +1,7 @@
 from leapp.actors import Actor
-from leapp.models import FirewallDecisionM, CheckResult, FirewallsFacts, Inhibitor
+from leapp.models import FirewallDecisionM, FirewallsFacts
+from leapp.reporting import Report
+from leapp.libraries.common.reporting import report_generic
 from leapp.tags import IPUWorkflowTag, ApplicationsPhaseTag
 from leapp.libraries.stdlib import call
 
@@ -14,7 +16,7 @@ class FirewallDisable(Actor):
 
     name = 'firewalld_disable'
     consumes = (FirewallDecisionM, FirewallsFacts)
-    produces = (CheckResult, Inhibitor)
+    produces = (Report,)
     tags = (IPUWorkflowTag, ApplicationsPhaseTag,)
 
     def stop_firewalld(self):
@@ -68,14 +70,9 @@ class FirewallDisable(Actor):
                         continue
 
                 self.log.info("Firewalls are disabled.")
-                self.produce(
-                   CheckResult(
-                       severity='Info',
-                       result='Pass',
-                       summary='Firewalls are disabled',
-                       details='FirewallD and/or IPTables services are disabled.',
-                       solutions=None
-                       ))
+                report_generic(
+                    title='Firewalls are disabled',
+                    summary='FirewallD and/or IPTables services are disabled.')
                 return
             elif decision.disable_choice == 'N':
                 self.log.info("Interrupting the upgrade process due the current user choice to take care for Firewall manually.")
@@ -85,10 +82,9 @@ class FirewallDisable(Actor):
                 return
         else:
             self.log.info("Interrupting: There was nothing to consume regarding the Firewall decision.")
-            self.produce(
-                Inhibitor(
-                    summary='No message to consume',
-                    details='No decision message to consume.',
-                    solutions=None
-                    ))
+            report_generic(
+                title='No message to consume',
+                summary='No decision message to consume.',
+                severity='low',
+                flags=['inhibitor'])
             return

@@ -1,6 +1,6 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import report
-from leapp.models import CheckResult, Inhibitor
+from leapp.reporting import Report
 from leapp.tags import ReportPhaseTag, IPUWorkflowTag
 
 
@@ -13,24 +13,26 @@ class VerifyCheckResults(Actor):
     """
 
     name = 'verify_check_results'
-    consumes = (CheckResult, Inhibitor)
+    consumes = (Report,)
     produces = ()
     tags = (ReportPhaseTag, IPUWorkflowTag)
 
     def process(self):
-        results = list(self.consume(CheckResult, Inhibitor))
-        errors = [msg for msg in results if msg.severity == 'Error']
+        results = list(self.consume(Report))
+        inhibitors = [msg for msg in results if 'inhibitor' in msg.flags]
+        high_sev_msgs = [msg for msg in results if msg.severity == 'high' and 'inhibitor' not in msg.flags]
+        msgs_to_report = inhibitors+high_sev_msgs
 
         report_file = '/tmp/leapp-report.txt'
-        error = report.generate_report(results, report_file)
+        error = report.generate_report(msgs_to_report, report_file)
         if error:
             self.report_error('Report Error: ' + error)
         else:
             self.log.info('Generated report at ' + report_file)
 
-        if errors:
-            for e in errors:
-                self.report_error('%s: %s: %s' % (e.severity, e.result, e.summary))
+        if inhibitors:
+            for e in inhibitors:
+                self.report_error('%s: %s: %s' % (e.title, e.severity, e.detail['summary']))
 
-            self.report_error('Ending process due to errors found during checks, see {} for detailed report'
+            self.report_error('Ending process due to errors found during checks, see {} for detailed report.'
                               .format(report_file))

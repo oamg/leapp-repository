@@ -2,7 +2,9 @@ import sys
 
 from leapp.actors import Actor
 from leapp.tags import FinalizationPhaseTag, IPUWorkflowTag
-from leapp.models import SelinuxPermissiveDecision, FinalReport
+from leapp.models import SelinuxPermissiveDecision
+from leapp.reporting import Report
+from leapp.libraries.common.reporting import report_with_remediation
 from leapp.libraries.actor.setpermissiveselinux import selinux_set_permissive
 
 
@@ -16,7 +18,7 @@ class SetPermissiveSelinux(Actor):
 
     name = 'set_permissive_se_linux'
     consumes = (SelinuxPermissiveDecision,)
-    produces = (FinalReport,)
+    produces = (Report,)
     tags = (FinalizationPhaseTag, IPUWorkflowTag)
 
     def process(self):
@@ -24,9 +26,11 @@ class SetPermissiveSelinux(Actor):
             if decision.set_permissive:
                 success, err_msg = selinux_set_permissive()
                 if not success:
-                    self.produce(FinalReport(
-                        severity='Error',
-                        result='Fail',
-                        summary='Could not set SElinux into permissive mode',
-                        details=err_msg,))
-                    self.log.critical('Could not set SElinux into permissive mode: %s' % err_msg)
+                    # FIXME: add an "action required" flag later
+                    report_with_remediation(
+                        title='Could not set SElinux into permissive mode',
+                        summary='{}'.format(err_msg),
+                        remediation='Please set SElinux into permissive mode manually.',
+                        severity='high',
+                        )
+                    self.log.critical('Could not set SElinux into permissive mode: %s.' % err_msg)

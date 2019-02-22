@@ -4,7 +4,8 @@ import errno
 
 from leapp.actors import Actor
 from leapp.tags import FirstBootPhaseTag, IPUWorkflowTag
-from leapp.models import FinalReport
+from leapp.reporting import Report
+from leapp.libraries.common.reporting import report_generic
 
 class RemoveSystemdResumeService(Actor):
     """
@@ -15,7 +16,7 @@ class RemoveSystemdResumeService(Actor):
 
     name = 'remove_systemd_resume_service'
     consumes = ()
-    produces = (FinalReport,)
+    produces = (Report,)
     tags = (FirstBootPhaseTag, IPUWorkflowTag)
 
     def process(self):
@@ -29,9 +30,9 @@ class RemoveSystemdResumeService(Actor):
                 if e.errno != errno.ENOENT:
                     raise
 
-        self.produce(FinalReport(
-            severity='Info',
-            result='Pass',
-            summary='"{}" service deleted'.format(service_name),
-            details='"{}" was taking care of resuming upgrade process '
-                    'after the first reboot'.format(service_name)))
+        report_generic(
+            title='"{}" service deleted'.format(service_name),
+            summary='"{}" was taking care of resuming upgrade process '
+                    'after the first reboot.'.format(service_name),
+            severity='low'
+            )

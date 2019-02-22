@@ -1,5 +1,5 @@
 from leapp.snactor.fixture import current_actor_context
-from leapp.models import (CheckResult, SELinuxFacts, SelinuxPermissiveDecision,
+from leapp.models import (Report, SELinuxFacts, SelinuxPermissiveDecision,
                           SelinuxRelabelDecision)
 
 # import needed just to be able to create valid model, but not important for test
@@ -27,7 +27,7 @@ def test_actor_schedule_relabelling(current_actor_context):
     for fact in facts:
         current_actor_context.feed(fact)
         current_actor_context.run()
-        assert current_actor_context.consume(CheckResult)
+        assert current_actor_context.consume(Report)
         assert current_actor_context.consume(SelinuxRelabelDecision)[0].set_relabel
 
 
@@ -36,7 +36,7 @@ def test_actor_set_permissive(current_actor_context):
 
     current_actor_context.feed(relabel)
     current_actor_context.run()
-    assert current_actor_context.consume(CheckResult)
+    assert current_actor_context.consume(Report)
     assert current_actor_context.consume(SelinuxPermissiveDecision)[0].set_permissive
 
 

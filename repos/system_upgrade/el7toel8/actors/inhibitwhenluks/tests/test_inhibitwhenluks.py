@@ -1,5 +1,6 @@
 from leapp.snactor.fixture import current_actor_context
-from leapp.models import StorageInfo, LsblkEntry, Inhibitor
+from leapp.models import StorageInfo, LsblkEntry
+from leapp.reporting import Report
 
 
 def test_actor_with_luks(current_actor_context):
@@ -9,8 +10,8 @@ def test_actor_with_luks(current_actor_context):
 
     current_actor_context.feed(StorageInfo(lsblk=with_luks))
     current_actor_context.run()
-    assert current_actor_context.consume(Inhibitor)
-
+    assert current_actor_context.consume(Report)
+    assert 'inhibitor' in current_actor_context.consume(Report)[0].flags
 
 def test_actor_without_luks(current_actor_context):
     without_luks = [LsblkEntry(name='sda1', maj_min='8:0', rm='0',
@@ -19,4 +20,4 @@ def test_actor_without_luks(current_actor_context):
 
     current_actor_context.feed(StorageInfo(lsblk=without_luks))
     current_actor_context.run()
-    assert not current_actor_context.consume(Inhibitor)
+    assert not current_actor_context.consume(Report)

@@ -1,7 +1,9 @@
 import os
 
 from leapp.actors import Actor
-from leapp.models import CheckResult, OSReleaseFacts, Inhibitor
+from leapp.models import OSReleaseFacts
+from leapp.reporting import Report
+from leapp.libraries.common.reporting import report_generic
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
@@ -16,19 +18,17 @@ class CheckOSRelease(Actor):
 
     name = 'check_os_release'
     consumes = (OSReleaseFacts,)
-    produces = (CheckResult, Inhibitor)
+    produces = (Report,)
     tags = (ChecksPhaseTag, IPUWorkflowTag,)
 
     def process(self):
         skip_check = os.getenv('LEAPP_SKIP_CHECK_OS_RELEASE')
         if skip_check:
-            self.produce(CheckResult(
-                severity='Warning',
-                result='Not Applicable',
-                summary='Skipped OS release check',
-                details='OS release check skipped via LEAPP_SKIP_CHECK_OS_RELEASE env var',
-                solutions=None
-            ))
+            report_generic(
+                title='Skipped OS release check',
+                summary='OS release check skipped via LEAPP_SKIP_CHECK_OS_RELEASE env var.',
+                severity='low'
+            )
             return
 
         min_supported_version = {
@@ -37,11 +37,11 @@ class CheckOSRelease(Actor):
 
         for facts in self.consume(OSReleaseFacts):
             if facts.id not in min_supported_version.keys():
-                self.produce(Inhibitor(
-                    summary='Unsupported OS id',
-                    details='Supported OS ids for upgrade process: ' + ','.join(min_supported_version.keys()),
-                    solutions=None
-                ))
+                report_generic(
+                    title='Unsupported OS id',
+                    summary='Supported OS ids for upgrade process: ' + ','.join(min_supported_version.keys()),
+                    flags=['inhibitor']
+                )
                 return
 
             min_version = [int(x) for x in min_supported_version[facts.id].split('.')]
@@ -52,9 +52,9 @@ class CheckOSRelease(Actor):
                     break
 
                 if current < minimal:
-                    self.produce(Inhibitor(
-                        summary='Unsupported OS version',
-                        details='Minimal supported OS version for upgrade process: ' + min_supported_version[facts.id],
-                        solutions=None
-                    ))
+                    report_generic(
+                        title='Unsupported OS version',
+                        summary='Minimal supported OS version for upgrade process: ' + min_supported_version[facts.id],
+                        flags=['inhibitor']
+                    )
                     return

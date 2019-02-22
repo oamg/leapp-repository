@@ -3,7 +3,8 @@ import os
 
 from leapp.actors import Actor
 from leapp.tags import FinalizationPhaseTag, IPUWorkflowTag
-from leapp.models import FinalReport
+from leapp.reporting import Report
+from leapp.libraries.common.reporting import report_generic
 
 
 class CreateSystemdResumeService(Actor):
@@ -15,7 +16,7 @@ class CreateSystemdResumeService(Actor):
 
     name = 'create_systemd_service'
     consumes = ()
-    produces = (FinalReport,)
+    produces = (Report,)
     tags = (FinalizationPhaseTag, IPUWorkflowTag)
 
     def process(self):
@@ -34,9 +35,8 @@ class CreateSystemdResumeService(Actor):
                               details=str(e))
             return
 
-        self.produce(FinalReport(
-            severity='Info',
-            result='Pass',
-            summary='Leapp resume systemd service enabled',
-            details='{} enabled as oneshot systemd service to resume Leapp execution '
-                    'after reboot'.format(service_name)))
+        report_generic(
+            title='Leapp resume systemd service enabled',
+            summary='{} enabled as oneshot systemd service to resume Leapp execution '
+                    'after reboot.'.format(service_name),
+            severity='low')

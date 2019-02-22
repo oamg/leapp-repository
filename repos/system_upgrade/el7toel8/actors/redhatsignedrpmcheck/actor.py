@@ -1,9 +1,10 @@
 import os
 
 from leapp.actors import Actor
-from leapp.models import CheckResult, InstalledUnsignedRPM
+from leapp.models import InstalledUnsignedRPM
 from leapp.tags import IPUWorkflowTag, ChecksPhaseTag
-
+from leapp.reporting import Report
+from leapp.libraries.common.reporting import report_generic, report_with_remediation
 
 class RedHatSignedRpmCheck(Actor):
     """
@@ -15,30 +16,26 @@ class RedHatSignedRpmCheck(Actor):
 
     name = 'red_hat_signed_rpm_check'
     consumes = (InstalledUnsignedRPM,)
-    produces = (CheckResult,)
+    produces = (Report,)
     tags = (IPUWorkflowTag, ChecksPhaseTag)
 
     def process(self):
         skip_check = os.getenv('LEAPP_SKIP_CHECK_SIGNED_PACKAGES')
         if skip_check:
-            self.produce(CheckResult(
-                severity='Warning',
-                result='Not Applicable',
-                summary='Skipped signed packages check',
-                details='Signed packages check skipped via LEAPP_SKIP_CHECK_SIGNED_PACKAGES env var'
-            ))
+            report_generic(title='Skipped signed packages check', 
+                           severity='low',
+                           summary='Signed packages check skipped via LEAPP_SKIP_CHECK_SIGNED_PACKAGES env var')
             return
 
         unsigned_pkgs = next(self.consume(InstalledUnsignedRPM), InstalledUnsignedRPM())
 
         if len(unsigned_pkgs.items):
-            # FIXME: To avoid problems during tests, this is being reported as WARNING by now
-            self.produce(CheckResult(
-                severity='Warning',
-                result='Fail',
-                summary='Packages not signed by Red Hat found in the system',
-                details=('Following packages were not signed by Red Hat:\n    {}'
-                         .format('\n    '.join([pkg.name for pkg in unsigned_pkgs.items]))),
-                solutions=('Consider removing those packages from'
-                           ' the system. Such packages could have negative impact'
-                           ' on the whole upgrade process.')))
+            unsigned_packages_new_line = '\n'.join([pkg.name for pkg in unsigned_pkgs.items])
+            unsigned_packages = ' '.join([pkg.name for pkg in unsigned_pkgs.items])
+            remediation = 'yum remove {}'.format(unsigned_packages)
+            report_with_remediation(
+                title='Packages not signed by Red Hat found in the system',
+                summary='Following packages were not signed by Red Hat:\n    {}.'.format(unsigned_packages_new_line),
+                remediation=remediation,
+                severity='high',
+                )
