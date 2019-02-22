@@ -1,4 +1,5 @@
-from leapp.models import Inhibitor, OSReleaseFacts
+from leapp.models import OSReleaseFacts
+from leapp.reporting import Report
 from leapp.snactor.fixture import current_actor_context
 
 
@@ -18,37 +19,39 @@ def create_osrelease(id, version_id=None):
 def test_not_supported_id(current_actor_context):
     current_actor_context.feed(create_osrelease(id='not_supported_id'))
     current_actor_context.run()
-    assert current_actor_context.consume(Inhibitor)
-    assert current_actor_context.consume(Inhibitor)[0].summary == 'Unsupported OS id'
-
+    assert current_actor_context.consume(Report)
+    assert current_actor_context.consume(Report)[0].title == 'Unsupported OS id'
+    assert 'inhibitor' in current_actor_context.consume(Report)[0].flags
 
 def test_not_supported_major_version(current_actor_context):
     current_actor_context.feed(create_osrelease(id='rhel', version_id='6.6'))
     current_actor_context.run()
-    assert current_actor_context.consume(Inhibitor)
-    assert current_actor_context.consume(Inhibitor)[0].summary == 'Unsupported OS version'
+    assert current_actor_context.consume(Report)
+    assert current_actor_context.consume(Report)[0].title == 'Unsupported OS version'
+    assert 'inhibitor' in current_actor_context.consume(Report)[0].flags
 
 
 def test_not_supported_minor_version(current_actor_context):
     current_actor_context.feed(create_osrelease(id='rhel', version_id='7.5'))
     current_actor_context.run()
-    assert current_actor_context.consume(Inhibitor)
-    assert current_actor_context.consume(Inhibitor)[0].summary == 'Unsupported OS version'
+    assert current_actor_context.consume(Report)
+    assert current_actor_context.consume(Report)[0].title == 'Unsupported OS version'
+    assert 'inhibitor' in current_actor_context.consume(Report)[0].flags
 
 
 def test_supported_major_version(current_actor_context):
     current_actor_context.feed(create_osrelease(id='rhel', version_id='8.5'))
     current_actor_context.run()
-    assert not current_actor_context.consume(Inhibitor)
+    assert not current_actor_context.consume(Report)
 
 
 def test_supported_minor_version(current_actor_context):
     current_actor_context.feed(create_osrelease(id='rhel', version_id='7.7'))
     current_actor_context.run()
-    assert not current_actor_context.consume(Inhibitor)
+    assert not current_actor_context.consume(Report)
 
 
 def test_same_supported_release(current_actor_context):
     current_actor_context.feed(create_osrelease(id='rhel', version_id='7.6'))
     current_actor_context.run()
-    assert not current_actor_context.consume(Inhibitor)
+    assert not current_actor_context.consume(Report)

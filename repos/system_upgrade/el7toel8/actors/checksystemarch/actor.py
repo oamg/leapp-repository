@@ -1,7 +1,8 @@
 import platform
 
 from leapp.actors import Actor
-from leapp.models import Inhibitor
+from leapp.reporting import Report
+from leapp.libraries.common.reporting import report_generic
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
@@ -15,12 +16,13 @@ class CheckSystemArch(Actor):
 
     name = 'check_system_arch'
     consumes = ()
-    produces = (Inhibitor,)
+    produces = (Report,)
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 
     def process(self):
         if platform.machine() != 'x86_64':
-            self.produce(Inhibitor(
-                summary='Unsupported arch',
-                details='Upgrade process is only supported on x86_64 systems',
-                solutions='There is no current solution for this problem'))
+            report_generic(
+                title='Unsupported arch',
+                summary='Upgrade process is only supported on x86_64 systems.',
+                severity='high',
+                flags=['inhibitor'])

@@ -1,7 +1,7 @@
 from leapp.actors import Actor
 from leapp.libraries.actor.library import scan_events
 from leapp.models import RpmTransactionTasks, RepositoriesSetupTasks, InstalledRedHatSignedRPM
-from leapp.tags import IPUWorkflowTag, FactsPhaseTag, ExperimentalTag
+from leapp.tags import IPUWorkflowTag, FactsPhaseTag
 
 
 class PesEventsScanner(Actor):

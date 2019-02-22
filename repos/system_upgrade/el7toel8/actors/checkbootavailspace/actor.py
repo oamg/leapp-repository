@@ -1,7 +1,7 @@
 from leapp.actors import Actor
 from leapp.libraries.actor.library import (check_avail_space_on_boot,
                                            get_avail_bytes_on_boot)
-from leapp.models import Inhibitor
+from leapp.reporting import Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
@@ -22,7 +22,7 @@ class CheckBootAvailSpace(Actor):
 
     name = 'check_boot_avail_space'
     consumes = ()
-    produces = (Inhibitor,)
+    produces = (Report,)
     tags = (IPUWorkflowTag, ChecksPhaseTag)
 
     def process(self):

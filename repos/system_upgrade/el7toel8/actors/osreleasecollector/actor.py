@@ -1,5 +1,7 @@
 from leapp.actors import Actor
-from leapp.models import Inhibitor, OSReleaseFacts
+from leapp.models import OSReleaseFacts
+from leapp.reporting import Report
+from leapp.libraries.common.reporting import report_generic
 from leapp.tags import IPUWorkflowTag, FactsPhaseTag
 
 
@@ -12,7 +14,7 @@ class OSReleaseCollector(Actor):
 
     name = 'os_release_collector'
     consumes = ()
-    produces = (Inhibitor, OSReleaseFacts,)
+    produces = (Report, OSReleaseFacts,)
     tags = (IPUWorkflowTag, FactsPhaseTag,)
 
     def process(self):
@@ -23,11 +25,11 @@ class OSReleaseCollector(Actor):
             with open(os_data_file) as f:
                 os_data = dict(l.strip().split('=', 1) for l in f.readlines() if '=' in l)
         except IOError as e:
-            self.produce(Inhibitor(
-                summary='Error while collecting system OS facts',
-                details=str(e),
-                solutions=None
-            ))
+            report_generic(
+                title='Error while collecting system OS facts',
+                summary=str(e),
+                severity='high',
+                flags=['inhibitor'])
             return
 
         self.produce(OSReleaseFacts(

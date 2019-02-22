@@ -1,5 +1,6 @@
 from leapp.snactor.fixture import current_actor_context
-from leapp.models import RPM, InstalledUnsignedRPM, CheckResult
+from leapp.models import RPM, InstalledUnsignedRPM
+from leapp.reporting import Report
 
 
 RH_PACKAGER = 'Red Hat, Inc. <http://bugzilla.redhat.com/bugzilla>'
@@ -8,7 +9,7 @@ RH_PACKAGER = 'Red Hat, Inc. <http://bugzilla.redhat.com/bugzilla>'
 def test_actor_execution(current_actor_context):
     current_actor_context.feed(InstalledUnsignedRPM(items=[]))
     current_actor_context.run()
-    assert not current_actor_context.consume(CheckResult)
+    assert not current_actor_context.consume(Report)
 
 
 def test_actor_execution_with_unsigned_data(current_actor_context):
@@ -24,4 +25,4 @@ def test_actor_execution_with_unsigned_data(current_actor_context):
 
     current_actor_context.feed(InstalledUnsignedRPM(items=installed_rpm))
     current_actor_context.run()
-    assert current_actor_context.consume(CheckResult)
+    assert current_actor_context.consume(Report)
