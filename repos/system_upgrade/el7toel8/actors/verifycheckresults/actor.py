@@ -32,4 +32,5 @@ class VerifyCheckResults(Actor):
             for e in errors:
                 self.report_error('%s: %s: %s' % (e.severity, e.result, e.summary))
 
-            self.report_error('Ending process due to errors found during checks')
+            self.report_error('Ending process due to errors found during checks, see {} for detailed report'
+                              .format(report_file))
