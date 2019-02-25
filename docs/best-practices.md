@@ -44,37 +44,38 @@ to a shared library function. You can introduce it in one of these two places:
   folder. In this case, we welcome your proposals under the
   [leapp-repository on GitHub](https://github.com/oamg/leapp-repository).
 
-
 ## Discover standard library functions
 
 Before implementing functionality for your actor, browse through the available functionality provided by:
+
 - the [Leapp Standard Library](https://github.com/oamg/leapp/tree/master/leapp/libraries/stdlib/),
 - the shared library of your Leapp repository (`<Leapp repository>/libraries` folder).
 
 These libraries contain functions that may satisfy your needs. Using them can save you time, lower code complexity and
 help avoiding duplicate code. Improvement proposals for the library functions are welcome.
 
-
 ## Prefer using stdlib functions over shell commands
 
 Sources of external functionality to be used in your actor in order of preference:
+
 1. the [Leapp Standard Library](https://github.com/oamg/leapp/tree/master/leapp/libraries/stdlib/)
 2. the [Python Standard Library](https://docs.python.org/3/library/index.html)
 3. shell commands
 
 Examples:
+
 - Prefer `os.symlink` over `ls -s`
 - Prefer `os.remove` over `rm`
 
 There might be a valid reason for calling a shell command instead of a standard library function, e.g. the Python's
 `shutil.copyfile` is not able to retain all of the file attributes, as opposed to shell's `cp --preserve`.
 
-
 ## Utilize messages produced by existing actors
 
 As with the Leapp Standard Library mentioned above, it may be beneficial for you to skim through the actors already in
 place in the [leapp-repository](https://github.com/oamg/leapp-repository). You might be interested in the messages they
 produce, for example:
+
 - [SystemFactsActor](https://github.com/oamg/leapp-repository/blob/master/repos/system_upgrade/el7toel8/actors/systemfacts/actor.py) -
   information about kernel modules, yum repos, sysctl variables, users, firewall, SELinux, etc.
 - [NetIfaceScanner](https://github.com/oamg/leapp-repository/blob/master/repos/system_upgrade/el7toel8/actors/netifacescanner/actor.py) -
@@ -97,6 +98,7 @@ function. It is not currently possible to unit test any method or function in th
 create _libraries_ folder in the actor’s folder and in there create an arbitrarily named python file, e.g. _library.py_.
 
 _myactor/actor.py_:
+
 ```python
 from leapp.libraries.actor.library import do_the_actor_thingy
 
@@ -107,6 +109,7 @@ class MyActor(Actor):
 ```
 
 _myactor/libraries/library.py_:
+
 ```python
 def do_the_actor_thingy(actor):
     actor.log.debug("All the actor’s logic shall be outside actor.py")
@@ -120,6 +123,7 @@ Ideally, actors shouldn't require any additional dependency on top of the depend
 [leapp](https://github.com/oamg/leapp/blob/master/packaging/leapp.spec) and
 [leapp-repository](https://github.com/oamg/leapp-repository/blob/master/packaging/leapp-repository.spec) spec files,
 which are, as of December 2018, just these:
+
 - dnf
 - python-six
 - python-setuptools
@@ -132,6 +136,8 @@ the package if they want to experience as smooth upgrade as possible.
 If you're writing an actor for the RHEL 7 to RHEL 8 in-place upgrade workflow and you really need to have some package
 installed, then the only acceptable packages to depend on are the the ones available in the minimal installation of
 RHEL 7 (packages from the @core group + their dependencies).
+
+For more details about dependencies and how to modify them, see the [How to deal with dependencies](https://github.com/oamg/leapp-repository/blob/master/docs/dependencies.md)
 
 ## Use convenience exceptions to stop the actor's execution
 
