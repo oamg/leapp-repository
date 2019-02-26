@@ -1,4 +1,5 @@
 import os
+from leapp.actors import Actor
 from leapp.utils.repository import find_repository_basedir
 from leapp.repository.scan import find_and_scan_repositories
 
@@ -22,5 +23,10 @@ def pytest_sessionstart(session):
 
     # load actor context so libraries can be imported on module level
     session.leapp_repository = repo
+    Actor.current_instance = actor
     session.actor_context = actor.injected_context()
     session.actor_context.__enter__()
+
+
+def pytest_sessionfinish(session, exitstatus):
+    Actor.current_instance = None
