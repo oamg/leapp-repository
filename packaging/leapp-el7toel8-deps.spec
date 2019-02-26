@@ -32,11 +32,12 @@ Requires:   pciutils
 ##################################################
 %package -n %{ldname}
 Summary:    Meta-package with system dependencies for leapp framework
-Provides:   leapp-framework-dependencies = 1
+Provides:   leapp-framework-dependencies = 2
 Obsoletes:  leapp-deps
 
 Requires:   python2-six
 Requires:   python2-setuptools
+Requires:   python2-jinja2
 Requires:   findutils
 
 %description -n %{ldname}
