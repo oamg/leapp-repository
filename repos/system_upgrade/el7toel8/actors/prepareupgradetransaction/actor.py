@@ -4,7 +4,7 @@ import json
 from leapp.actors import Actor
 from leapp.libraries.actor import preparetransaction
 from leapp.models import FilteredRpmTransactionTasks, OSReleaseFacts, TargetRepositories
-from leapp.models import UsedTargetRepositories, UsedTargetRepository
+from leapp.models import XFSPresence, UsedTargetRepositories, UsedTargetRepository
 from leapp.tags import IPUWorkflowTag, DownloadPhaseTag
 
 
@@ -20,7 +20,7 @@ class PrepareUpgradeTransaction(Actor):
     """
 
     name = 'prepare_upgrade_transaction'
-    consumes = (OSReleaseFacts, FilteredRpmTransactionTasks, TargetRepositories)
+    consumes = (OSReleaseFacts, FilteredRpmTransactionTasks, TargetRepositories, XFSPresence)
     produces = (UsedTargetRepositories,)
     tags = (IPUWorkflowTag, DownloadPhaseTag,)
 
@@ -248,9 +248,11 @@ class PrepareUpgradeTransaction(Actor):
         # prepare container #
         # TODO: wrap in one function (create ofs dirs, mount), or even context
         #       manager (enter -> create dirs, mount; exit -> umount)?
-        error = preparetransaction.create_disk_image(mounts_dir)
-        if error:
-            self.produce_error(error)
+        xfs_presence = next(self.consume(XFSPresence), XFSPresence())
+        if xfs_presence.present and xfs_presence.without_ftype:
+            error = preparetransaction.create_disk_image(mounts_dir)
+            if error:
+                self.produce_error(error)
 
         ofs_info, error = preparetransaction.create_overlayfs_dirs(container_root)
         if not ofs_info:
