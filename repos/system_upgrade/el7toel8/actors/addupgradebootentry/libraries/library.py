@@ -1,4 +1,5 @@
 import os
+import re
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.stdlib import api, call
@@ -30,3 +31,24 @@ def get_boot_file_paths():
                                       details={'details': 'Did not receive a message about the leapp-provided'
                                                           'kernel and initramfs'})
     return boot_content.kernel_path, boot_content.initram_path
+
+
+def write_to_file(filename, content):
+    with open(filename, 'w') as f:
+        f.write(content)
+
+
+def fix_grub_config_error(conf_file):
+    with open(conf_file, 'r') as f:
+        config = f.read()
+
+    # move misplaced '"' to the end
+    pattern = r'GRUB_CMDLINE_LINUX=.+?(?=GRUB|\Z)'
+    original_value = re.search(pattern, config, re.DOTALL).group()
+    parsed_value = original_value.split('"')
+    new_value = '{KEY}"{VALUE}"{END}'.format(KEY=parsed_value[0], VALUE=''.join(parsed_value[1:]).rstrip(),
+                                             END=original_value[-1])
+
+    config = config.replace(original_value, new_value)
+
+    write_to_file(conf_file, config)

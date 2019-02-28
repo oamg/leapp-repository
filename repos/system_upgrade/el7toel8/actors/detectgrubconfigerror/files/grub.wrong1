@@ -1,0 +1,1 @@
+GRUB_TERMINAL_OUTPUT="console" GRUB_CMDLINE_LINUX="vconsole.font=latarcyrheb-sun16 vconsole.keymap=us "rhgb quiet GRUB_DISABLE_RECOVERY="true"
