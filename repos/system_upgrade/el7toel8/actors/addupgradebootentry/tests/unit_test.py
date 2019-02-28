@@ -10,6 +10,11 @@ class call_mocked(object):
         self.args = args
 
 
+class write_to_file_mocked(object):
+    def __call__(self, filename, content):
+        self.content = content
+
+
 def test_add_boot_entry(monkeypatch):
     def get_boot_file_paths_mocked():
         return '/abc', '/def'
@@ -44,10 +49,8 @@ def test_get_boot_file_paths(monkeypatch):
 
 
 def test_fix_grub_config_error(monkeypatch):
-    def write_to_file_mocked(filename, content):
-        return content
-    monkeypatch.setattr(library, 'write_to_file', write_to_file_mocked)
-    fixed = library.fix_grub_config_error('files/grub_test.wrong')
+    monkeypatch.setattr(library, 'write_to_file', write_to_file_mocked())
+    library.fix_grub_config_error('files/grub_test.wrong')
 
     with open('files/grub_test.fixed') as f:
-        assert fixed == f.read()
+        assert library.write_to_file.content == f.read()

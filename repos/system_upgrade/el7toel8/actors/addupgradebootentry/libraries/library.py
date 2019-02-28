@@ -51,4 +51,4 @@ def fix_grub_config_error(conf_file):
 
     config = config.replace(original_value, new_value)
 
-    return write_to_file(conf_file, config)
+    write_to_file(conf_file, config)
