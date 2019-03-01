@@ -30,7 +30,9 @@ class RedHatSignedRpmScanner(Actor):
 
         for rpm_pkgs in self.consume(InstalledRPM):
             for pkg in rpm_pkgs.items:
-                if any(key in pkg.pgpsig for key in RH_SIGS):
+                # "gpg-pubkey" is not signed as it would require another package to verify its signature
+                if any(key in pkg.pgpsig for key in RH_SIGS) or \
+                        (pkg.name == 'gpg-pubkey' and pkg.packager.startswith('Red Hat, Inc.')):
                     signed_pkgs.items.append(pkg)
                     continue
 
