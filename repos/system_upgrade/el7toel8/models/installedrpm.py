@@ -5,6 +5,7 @@ class RPM(Model):
     topic = SystemInfoTopic
     name = fields.String()
     epoch = fields.String()
+    packager = fields.String()
     version = fields.String()
     release = fields.String()
     arch = fields.String()
