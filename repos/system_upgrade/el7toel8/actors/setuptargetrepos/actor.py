@@ -2,7 +2,7 @@ import platform
 
 from leapp.actors import Actor
 from leapp.models import RHELTargetRepository, TargetRepositories, RepositoriesMap, \
-    RepositoriesFacts, CustomTargetRepository
+    RepositoriesFacts, RepositoriesSetupTasks, CustomTargetRepository
 from leapp.tags import IPUWorkflowTag, ChecksPhaseTag
 
 
@@ -16,7 +16,7 @@ class SetupTargetRepos(Actor):
     """
 
     name = 'setuptargetrepos'
-    consumes = (CustomTargetRepository, RepositoriesMap, RepositoriesFacts,)
+    consumes = (CustomTargetRepository, RepositoriesSetupTasks, RepositoriesMap, RepositoriesFacts,)
     produces = (TargetRepositories,)
     tags = (IPUWorkflowTag, ChecksPhaseTag)
 
@@ -43,6 +43,10 @@ class SetupTargetRepos(Actor):
 
                 if repo_map.from_id in enabled_repos:
                     rhel_repos.append(RHELTargetRepository(repoid=repo_map.to_id))
+
+        for task in self.consume(RepositoriesSetupTasks):
+            for repo in task.to_enable:
+                rhel_repos.append(RHELTargetRepository(repoid=repo))
 
         self.produce(TargetRepositories(
             rhel_repos=rhel_repos,

@@ -1,5 +1,5 @@
 from leapp.models import CustomTargetRepository, TargetRepositories, RepositoryData, \
-    RepositoryFile, RepositoriesFacts, RepositoryMap, RepositoriesMap
+    RepositoryFile, RepositoriesFacts, RepositoryMap, RepositoriesMap, RepositoriesSetupTasks
 
 
 def test_minimal_execution(current_actor_context):
@@ -16,6 +16,14 @@ def test_custom_repos(current_actor_context):
     current_actor_context.run()
     assert current_actor_context.consume(TargetRepositories)
     assert len(current_actor_context.consume(TargetRepositories)[0].custom_repos) == 1
+
+
+def test_repositories_setup_tasks(current_actor_context):
+    repositories_setup_tasks = RepositoriesSetupTasks(to_enable=['rhel-8-server-rpms'])
+    current_actor_context.feed(repositories_setup_tasks)
+    current_actor_context.run()
+    assert current_actor_context.consume(TargetRepositories)
+    assert len(current_actor_context.consume(TargetRepositories)[0].rhel_repos) == 1
 
 
 def test_repos_mapping(current_actor_context):
