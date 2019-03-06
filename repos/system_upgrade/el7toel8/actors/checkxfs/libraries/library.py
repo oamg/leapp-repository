@@ -57,10 +57,12 @@ def check_xfs():
     
     xfs_presence = XFSPresence()
     # By now, we only care for XFS without ftype in use for /var
+    has_xfs_without_ftype = False
     for mp in ('/var', '/'):
         if mp in mountpoints:
             xfs_presence.present = True
-            xfs_presence.without_ftype = is_xfs_without_ftype(mp)
-            break
+            if is_xfs_without_ftype(mp):
+                has_xfs_without_ftype = True
 
+    xfs_presence.without_ftype = has_xfs_without_ftype
     api.produce(xfs_presence)
