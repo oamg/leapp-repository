@@ -34,7 +34,7 @@ do_upgrade() {
     # NOTE: in case we would need to run leapp before pivot, we would need to
     #       specify where the root is, e.g. --root=/sysroot
     # TODO: update: systemd-nspawn
-    $NEWROOT/bin/systemd-nspawn --capability=all --bind=/sys --bind=/dev --bind=/proc --keep-unit --register=no -D $NEWROOT $LEAPPBIN upgrade --resume $args
+    $NEWROOT/bin/systemd-nspawn --capability=all --bind=/sys --bind=/dev --bind=/proc --bind=/run/udev --keep-unit --register=no -D $NEWROOT $LEAPPBIN upgrade --resume $args
     rv=$?
 
     # NOTE: THIS SHOULD BE AGAIN PART OF LEAPP IDEALLY
