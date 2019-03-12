@@ -36,6 +36,18 @@ class PrepareUpgradeTransaction(Actor):
                 return True
         return False
 
+    def get_rhsm_system_release(self):
+        """
+        Get system release set by RHSM or None on error.
+        """
+        cmd = ['subscription-manager', 'release']
+        prev_rhsm_release, error = preparetransaction.guard_call(
+            cmd, guards=(preparetransaction.connection_guard(),))
+        if error:
+            preparetransaction.produce_error(error, summary='Cannot get release setting.')
+            return None
+        return prev_rhsm_release[0]
+
     def update_rhel_subscription(self, overlayfs_info):
         sys_var = ""
         for msg in self.consume(OSReleaseFacts):
@@ -106,21 +118,25 @@ class PrepareUpgradeTransaction(Actor):
         Return ErrorData or None.
         """
         self.target_repoids = []
+        skip_rhsm = os.getenv('LEAPP_DEVEL_SKIP_RHSM', '0') == '1'
 
-        available_target_repoids, error = preparetransaction.get_list_of_available_repoids(overlayfs_info)
-        if error:
-            return error
+        # TODO: skip_rhsm will work for now, but later it should be refactored better
+        available_target_repoids = set()
+        if not skip_rhsm:
+            available_target_repoids, error = preparetransaction.get_list_of_available_repoids(overlayfs_info)
+            if error:
+                return error
 
-        # FIXME: check that required repo IDs (baseos, appstream)
-        # + or check that all required RHEL repo IDs are available.
-        if not available_target_repoids or len(available_target_repoids) < 2:
-            return preparetransaction.ErrorData(
-                summary='Cannot find required basic RHEL repositories.',
-                details=('It is required to have RHEL repository on the system'
-                         ' provided by the subscription-manager. Possibly you'
-                         ' are missing a valid SKU for the target system or network'
-                         ' connection failed. Check whether you the system is attached'
-                         ' to the valid SKU providing target repositories.'))
+            # FIXME: check that required repo IDs (baseos, appstream)
+            # + or check that all required RHEL repo IDs are available.
+            if not available_target_repoids or len(available_target_repoids) < 2:
+                return preparetransaction.ErrorData(
+                    summary='Cannot find required basic RHEL repositories.',
+                    details=('It is required to have RHEL repository on the system'
+                             ' provided by the subscription-manager. Possibly you'
+                             ' are missing a valid SKU for the target system or network'
+                             ' connection failed. Check whether you the system is attached'
+                             ' to the valid SKU providing target repositories.'))
         for target_repo in self.consume(TargetRepositories):
             for rhel_repo in target_repo.rhel_repos:
                 if rhel_repo.repoid in available_target_repoids:
@@ -223,11 +239,15 @@ class PrepareUpgradeTransaction(Actor):
         return preparetransaction.umount_dnf_cache(overlayfs_info)
 
     def process(self):
+        skip_rhsm = os.getenv('LEAPP_DEVEL_SKIP_RHSM', '0') == '1'
         mounts_dir = os.getenv('LEAPP_CONTAINER_ROOT', '/var/lib/leapp/scratch')
         container_root = os.path.join(mounts_dir, 'mounts')
         error_flag = False
 
-        if not self.is_system_registered_and_attached():
+        if skip_rhsm:
+            self.log.warning("LEAPP_DEVEL_SKIP_RHSM has been used. The upgrade is unsupported.")
+
+        if not skip_rhsm and not self.is_system_registered_and_attached():
             error = preparetransaction.ErrorData(
                 summary='The system is not registered or subscribed.',
                 details=('The system has to be registered and subscribed to be able'
@@ -266,16 +286,15 @@ class PrepareUpgradeTransaction(Actor):
             preparetransaction.remove_disk_image(mounts_dir)
             return
 
-        # switch EngID to use RHEL 8 subscriptions #
-        cmd = ['subscription-manager', 'release']
-        prev_rhsm_release, error = preparetransaction.guard_call(
-            cmd, guards=(preparetransaction.connection_guard(),))
-        if error:
-            preparetransaction.produce_error(error, summary='Cannot get release setting.')
-            return
-        prev_rhsm_release = prev_rhsm_release[0]
-
-        error = self.update_rhel_subscription(ofs_info)
+        prev_rhsm_release = None
+        if not skip_rhsm:
+            prev_rhsm_release = self.get_rhsm_system_release()
+            if prev_rhsm_release is None:
+                # TODO: error is produced inside - will be refactored later
+                # with the whole actor
+                return
+            # switch EngID to use RHEL 8 subscriptions #
+            error = self.update_rhel_subscription(ofs_info)
 
         if not error:
             dnfplugin_spath = self.get_file_path('rhel_upgrade.py')
@@ -286,7 +305,6 @@ class PrepareUpgradeTransaction(Actor):
                 return error
 
         error = self.dnf_plugin_rpm_download(ofs_info)
-
         if not error:
             error = preparetransaction.copy_file_from_container(
                 ofs_info,
@@ -300,7 +318,7 @@ class PrepareUpgradeTransaction(Actor):
             error_flag = True
 
         # If Subscription Manager OS Release was set before, make sure we do not change it
-        if 'Release:' in prev_rhsm_release:
+        if not skip_rhsm and 'Release:' in prev_rhsm_release:
             release = prev_rhsm_release.split(':')[1].strip()
             cmd = ['subscription-manager', 'release', '--set', release]
             _unused, error = preparetransaction.guard_call(cmd, guards=(preparetransaction.connection_guard(),))
