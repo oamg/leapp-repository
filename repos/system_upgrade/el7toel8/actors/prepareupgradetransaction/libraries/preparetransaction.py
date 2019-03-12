@@ -1,13 +1,15 @@
 import os
 import shutil
 import subprocess
+import sys
 
 from collections import namedtuple
 from six.moves.urllib.error import URLError
 from six.moves.urllib.request import urlopen
 
 from leapp.libraries.stdlib import api
-from leapp.libraries.stdlib import call
+from leapp.libraries.stdlib import call, run
+from leapp.libraries.stdlib.call import STDOUT
 
 
 OverlayfsInfo = namedtuple('OverlayfsInfo', ['upper', 'work', 'merged'])
@@ -52,9 +54,20 @@ def permission_guard():
     # FIXME: Not implemented yet. Is it even useful?
     raise NotImplementedError
 
+def _logging_handler(fd_info, buffer):
+    '''Custom log handler to always show DNF output, no matter if in VERBOSE or DEBUG_MODE'''
+    (_unused, fd_type) = fd_info
 
-def guard_call(cmd, guards=()):
+    if fd_type == STDOUT:
+        sys.stdout.write(buffer)
+    else:
+        if os.environ.get('LEAPP_VERBOSE', '0') == '1':
+            sys.stderr.write(buffer)
+
+def guard_call(cmd, guards=(), print_output=False):
     try:
+        if print_output:
+            return run(cmd, callback_raw=_logging_handler), None
         return call(cmd), None
     except subprocess.CalledProcessError as e:
         # return custom error if process failed
@@ -73,9 +86,9 @@ def guard_call(cmd, guards=()):
         return None, error
 
 
-def guard_container_call(overlayfs_info, cmd, guards=()):
+def guard_container_call(overlayfs_info, cmd, guards=(), print_output=False):
     container_cmd = ['systemd-nspawn', '--register=no', '--quiet', '-D', overlayfs_info.merged]
-    return guard_call(container_cmd + cmd, guards=guards)
+    return guard_call(container_cmd + cmd, guards=guards, print_output=print_output)
 
 
 def produce_error(error, summary=None):
