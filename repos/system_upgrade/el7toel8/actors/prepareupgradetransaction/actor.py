@@ -198,7 +198,7 @@ class PrepareUpgradeTransaction(Actor):
         cmd = ['--', '/bin/bash', '-c', ' '.join(dnf_command + ['/var/lib/leapp/dnf-plugin-data.txt'])]
         _unused, error = preparetransaction.guard_container_call(
             overlayfs_info, cmd,
-            guards=(preparetransaction.connection_guard(), preparetransaction.space_guard()))
+            guards=(preparetransaction.connection_guard(), preparetransaction.space_guard()), print_output=True)
 
         if os.environ.get('LEAPP_DEBUG', '0') == '1':
             # We want the debug data available where we would expect it usually.
