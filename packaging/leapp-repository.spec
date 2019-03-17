@@ -22,11 +22,9 @@ Summary:        Repositories for leapp
 License:        AGPLv3+
 URL:            https://leapp-to.github.io
 Source0:        https://github.com/oamg/leapp-repository/archive/leapp-repository-%{version}.tar.gz
-Source1:        leapp-repository-initrd.tar.gz
-Source2:        leapp-repository-data.tar.gz
-Source3:        deps-pkgs.tar.gz
+Source1:        deps-pkgs.tar.gz
+Source2:        leapp-repository-initrd.tar.gz
 BuildArch:      noarch
-Requires:       %{name}-data = %{version}-%{release}
 Requires:       %{name}-sos-plugin = %{version}-%{release}
 BuildRequires:  python-devel
 
@@ -34,8 +32,14 @@ BuildRequires:  python-devel
 # - same for Provides in deps subpackage
 Requires:       leapp-repository-dependencies = 2
 
+# That's temporary to ensure the obsoleted subpackage is not installed
+# and will be removed when the current version of leapp-repository is installed
+Obsoletes:      leapp-repository-data <= 0.5.1
+Provides:       leapp-repository-data <= 0.5.1
+
 %description
 Repositories for leapp
+
 
 %package sos-plugin
 License: Red Hat Enterprise Agreement
@@ -45,14 +49,6 @@ Requires: sos
 %description sos-plugin
 SOS report plugin for leapp.
 
-# leapp-repository-data subpackage
-%package data
-License: Red Hat Enterprise Agreement
-Summary: Package evolution data for leapp
-Requires:   %{name} = %{version}-%{release}
-
-%description data
-Package evolution data for leapp.
 
 # This metapackage should contain all RPM dependencies exluding deps on *leapp*
 # RPMs. This metapackage will be automatically replaced during the upgrade
@@ -77,14 +73,16 @@ Requires:   libselinux-python
 ##################################################
 # end requirement
 ##################################################
+
+
 %description deps
 %{summary}
+
 
 %prep
 %autosetup -n %{name}-%{version}
 %setup -q  -n %{name}-%{version} -D -T -a 1
 %setup -q  -n %{name}-%{version} -D -T -a 2
-%setup -q  -n %{name}-%{version} -D -T -a 3
 
 
 %build
@@ -92,7 +90,6 @@ Requires:   libselinux-python
 make build
 cp -a leapp-repository-initrd*/vmlinuz-upgrade.x86_64       repos/system_upgrade/el7toel8/files/
 cp -a leapp-repository-initrd*/initramfs-upgrade.x86_64.img repos/system_upgrade/el7toel8/files/
-cp -a leapp-pes-data*/packaging/sources/pes-events.json     repos/system_upgrade/el7toel8/actors/peseventsscanner/files/
 cp -a leapp*deps*rpm repos/system_upgrade/el7toel8/files/bundled-rpms/
 
 
@@ -127,12 +124,14 @@ install -m 0755 -d %{buildroot}%{sos_report_plugindir}
 install -m 0644 sources/sos-report/leapp.py %{buildroot}%{sos_report_plugindir}
 %py_byte_compile %{__python} %{buildroot}%{sos_report_plugindir}/leapp.py
 
+
 %post sos-plugin
 install -m 0755 -d %{py3_sos_report_plugindir}
 cp %{sos_report_plugindir}/leapp.py %{py3_sos_report_plugindir}/leapp.py
 
 %preun sos-plugin
 rm -f %{py3_sos_report_plugindir}/leapp.py*
+
 
 %files
 %doc README.md
@@ -144,21 +143,18 @@ rm -f %{py3_sos_report_plugindir}/leapp.py*
 %{_sysconfdir}/leapp/repos.d/*
 %{_sysconfdir}/leapp/transaction/*
 %{repositorydir}/*
-%exclude %{repositorydir}/system_upgrade/el7toel8/actors/peseventsscanner/files/pes-events.json
+
 
 %files sos-plugin
 %dir %{sos_report_plugindir}
 %{sos_report_plugindir}/leapp.py*
 
-%files data
-%{repositorydir}/system_upgrade/el7toel8/actors/peseventsscanner/files/pes-events.json
 
 %files deps
 # no files here
 
-%changelog
-* Fri Jan 11 2019 Michal Reznik <mreznik@redhat.com> - %{version}-%{release}
-- Bump dnf requires version
 
+# DO NOT TOUCH SECTION BELOW IN UPSTREAM
+%changelog
 * Mon Apr 16 2018 Vinzenz Feenstra <evilissimo@redhat.com> - %{version}-%{release}
 - Initial RPM
