@@ -1,5 +1,4 @@
 __PKGNAME=$${_PKGNAME:-leapp-repository}
-__DATA_ORIG_PKGNAME=$${_DATA_ORIG_PKGNAME:-leapp-pes-data}
 PKGNAME=leapp-repository
 DEPS_PKGNAME=leapp-el7toel8-deps
 VERSION=`grep -m1 "^Version:" packaging/$(PKGNAME).spec | grep -om1 "[0-9].[0-9.]**"`
@@ -76,6 +75,7 @@ prepare: clean
 	@echo "--- Prepare build directories ---"
 	@mkdir -p packaging/{sources,SRPMS}/
 
+# FIXME: incompatible with newer version of copr-cli
 _list_approved_builds:
 	@copr --config $(_COPR_CONFIG) get-package $(_COPR_REPO) \
 		--name $(__PKGNAME) --with-all-builds \
@@ -83,6 +83,7 @@ _list_approved_builds:
 		| sed 's/"state": "succeeded",/----------------------/' \
 		| grep -A1 -B2 '"pkg_version".*-[1-9]'
 
+# FIXME: incompatible with newer version of copr-cli
 _list_all_builds:
 	@copr --config $(_COPR_CONFIG) get-package $(_COPR_REPO) \
 		--name $(__PKGNAME) --with-all-builds \
@@ -115,17 +116,7 @@ source: prepare
 		>packaging/sources/$(PKGNAME)-initrd.tar.gz
 		# -- it is easier to use here static name ot the initrd tarball; the rest can be handled easier
 		# >packaging/sources/`cpio -t <packaging/tmp/$(PKGNAME)-initrd.cpio | grep '$(PKGNAME)-initrd.*tar.gz'`
-	@rm -rf packaging/tmp/*
-	@echo "--- Download $(__DATA_ORIG_PKGNAME) SRPM ---"
-	@copr --config $(_COPR_CONFIG) download-build -d packaging/tmp \
-		`_PKGNAME=$(__DATA_ORIG_PKGNAME) __TIMESTAMP=$(TIMESTAMP) $(MAKE) _list_approved_builds | grep -m1 '"id"' | grep -o "[0-9][0-9]*"`
-	@echo "--- Get $(__DATA_ORIG_PKGNAME) tarball---"
-	@rpm2cpio `find packaging/tmp | grep -m1 "src.rpm$$"` > packaging/tmp/$(__DATA_ORIG_PKGNAME).cpio
-	@cpio -iv --no-absolute-filenames --to-stdout "$(__DATA_ORIG_PKGNAME)-*.tar.gz" \
-		<packaging/tmp/$(__DATA_ORIG_PKGNAME).cpio \
-		>packaging/sources/$(PKGNAME)-data.tar.gz
-		# yes - the final tarball rename to $(PKGNAME)-data
-	#@rm -rf packaging/tmp
+	@rm -rf packaging/tmp
 
 srpm: source
 	@echo "--- Build SRPM: $(PKGNAME)-$(VERSION)-$(RELEASE).. ---"
