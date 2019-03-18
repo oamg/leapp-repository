@@ -1,7 +1,8 @@
 %global leapp_datadir %{_datadir}/leapp-repository
 %global repositorydir %{leapp_datadir}/repositories
 %global custom_repositorydir %{leapp_datadir}/custom-repositories
-
+%global sos_report_plugindir %{python2_sitelib}/sos/plugins/
+%global py3_sos_report_plugindir /usr/lib/python3.6/site-packages/sos/plugins/
 # Defining py_byte_compile macro because it is not defined in old rpm (el7)
 # Only defined to python2 since python3 is not used in RHEL7
 %{!?py_byte_compile: %global py_byte_compile py2_byte_compile() {\
@@ -26,6 +27,7 @@ Source2:        leapp-repository-data.tar.gz
 Source3:        deps-pkgs.tar.gz
 BuildArch:      noarch
 Requires:       %{name}-data = %{version}-%{release}
+Requires:       %{name}-sos-plugin = %{version}-%{release}
 BuildRequires:  python-devel
 
 # IMPORTANT: everytime the requirements are changed, increment number by one
@@ -34,6 +36,14 @@ Requires:       leapp-repository-dependencies = 2
 
 %description
 Repositories for leapp
+
+%package sos-plugin
+License: Red Hat Enterprise Agreement
+Summary: SOS report plugin for leapp
+Requires: sos
+
+%description sos-plugin
+SOS report plugin for leapp.
 
 # leapp-repository-data subpackage
 %package data
@@ -113,6 +123,16 @@ done;
 
 %py_byte_compile %{__python} %{buildroot}%{repositorydir}/*
 
+install -m 0755 -d %{buildroot}%{sos_report_plugindir}
+install -m 0644 sources/sos-report/leapp.py %{buildroot}%{sos_report_plugindir}
+%py_byte_compile %{__python} %{buildroot}%{sos_report_plugindir}/leapp.py
+
+%post sos-plugin
+install -m 0755 -d %{py3_sos_report_plugindir}
+cp %{sos_report_plugindir}/leapp.py %{py3_sos_report_plugindir}/leapp.py
+
+%preun sos-plugin
+rm -f %{py3_sos_report_plugindir}/leapp.py*
 
 %files
 %doc README.md
@@ -125,6 +145,10 @@ done;
 %{_sysconfdir}/leapp/transaction/*
 %{repositorydir}/*
 %exclude %{repositorydir}/system_upgrade/el7toel8/actors/peseventsscanner/files/pes-events.json
+
+%files sos-plugin
+%dir %{sos_report_plugindir}
+%{sos_report_plugindir}/leapp.py*
 
 %files data
 %{repositorydir}/system_upgrade/el7toel8/actors/peseventsscanner/files/pes-events.json
