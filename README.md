@@ -75,13 +75,15 @@ where `register` target will run `snactor repo find --path repos`
   - Leapp actors: [https://github.com/oamg/leapp-repository/issues/new/choose](https://github.com/oamg/leapp-repository/issues/new/choose)
 
 - When filing an issue, include:
-  - How to reproduce it
+  - Steps to reproduce the issue
   - The logs `/tmp/leapp-report.txt`, `/tmp/download-debugdata` and `/var/log/upgrade.log`
   - The `/var/lib/leapp/leapp.db` file
 
 ### Where can I seek help?
 We’ll gladly answer your questions and lead you to through any troubles with the
-actor development. You can reach us, [the OS and Application Modernization Group](https://mojo.redhat.com/groups/os-app-modernization/)
-by these means:
+actor development.
 
-IRC on freenode: `#leapp`
+You can reach us at:
+
+- IRC on freenode: `#leapp`
+- mailing list: leapp-devel@redhat.com
