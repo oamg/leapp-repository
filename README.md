@@ -83,7 +83,4 @@ where `register` target will run `snactor repo find --path repos`
 We’ll gladly answer your questions and lead you to through any troubles with the
 actor development.
 
-You can reach us at:
-
-- IRC on freenode: `#leapp`
-- mailing list: leapp-devel@redhat.com
+You can reach us at IRC: `#leapp` on freenode.
