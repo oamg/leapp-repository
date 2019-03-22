@@ -13,6 +13,7 @@ from leapp.libraries.actor.library import (Event,
                                            map_repositories,
                                            process_events,
                                            scan_events)
+from leapp.libraries.common import reporting
 from leapp.libraries.stdlib import api
 from leapp.models import InstalledRedHatSignedRPM, RPM, RpmTransactionTasks, RepositoriesSetupTasks
 
@@ -34,6 +35,15 @@ class produce_mocked(object):
     def __call__(self, *model_instances):
         self.called += 1
         self.model_instances.append(model_instances[0])
+
+
+class report_generic_mocked(object):
+    def __init__(self):
+        self.called = 0
+
+    def __call__(self, **report_fields):
+        self.called += 1
+        self.report_fields = report_fields
 
 
 def test_parse_action(current_actor_context):
@@ -194,6 +204,7 @@ def test_scan_events(monkeypatch):
 
     monkeypatch.setattr('leapp.libraries.stdlib.api.consume', consume_message_mocked)
     monkeypatch.setattr('leapp.libraries.stdlib.api.produce', produce_mocked())
+    monkeypatch.setattr(reporting, 'report_generic', report_generic_mocked())
     monkeypatch.setattr(library, 'REPOSITORIES_MAPPING', {'repo': 'mapped'})
 
     scan_events('files/tests/sample01.json')
@@ -210,3 +221,23 @@ def test_scan_events(monkeypatch):
 
     with pytest.raises(StopActorExecutionError):
         scan_events('files/tests/sample02.json')
+    assert reporting.report_generic.called == 1
+    assert 'inhibitor' in reporting.report_generic.report_fields['flags']
+
+    reporting.report_generic.called = 0
+    reporting.report_generic.model_instances = []
+    with pytest.raises(StopActorExecutionError):
+        scan_events('files/tests/sample03.json')
+    assert reporting.report_generic.called == 1
+    assert 'inhibitor' in reporting.report_generic.report_fields['flags']
+
+
+def test_pes_data_not_found(monkeypatch):
+    def file_not_exists(_filepath):
+        return False
+    monkeypatch.setattr('os.path.isfile', file_not_exists)
+    monkeypatch.setattr(reporting, 'report_generic', report_generic_mocked())
+    with pytest.raises(StopActorExecutionError):
+        scan_events('/etc/leapp/pes-data.json')
+    assert reporting.report_generic.called == 1
+    assert 'inhibitor' in reporting.report_generic.report_fields['flags']

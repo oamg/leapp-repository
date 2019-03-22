@@ -1,0 +1,5 @@
+from_id,to_id,from_minor_version,to_minor_version,arch,repo_type
+FromRepo01,ToRepo01,all,all,x86_64,rpm
+FromRepo02,ToRepo02,all,all,aarch64,rpm
+FromRepo03,ToRepo03,all,all,s390x,rpm
+FromRepo04,ToRepo04,all,all,ppc64le,srpm

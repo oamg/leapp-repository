@@ -1,3 +1,0 @@
-RHEL 7 repo ID,RHEL 8 repo id,RHEL 7 minor versions,RHEL 8 minor versions,architecture,type(rpm/srpm/debuginfo)
-rhel-7-server-rpms,rhel-8-for-x86_64-baseos-htb-rpms,all,all,x86_64,rpm
-rhel-7-server-rpms,rhel-8-for-x86_64-appstream-htb-rpms,all,all,x86_64,rpm
