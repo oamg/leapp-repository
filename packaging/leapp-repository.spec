@@ -99,6 +99,7 @@ install -m 0755 -d %{buildroot}%{repositorydir}
 cp -r repos/* %{buildroot}%{repositorydir}/
 install -m 0755 -d %{buildroot}%{_sysconfdir}/leapp/repos.d/
 install -m 0755 -d %{buildroot}%{_sysconfdir}/leapp/transaction/
+install -m 0755 -d %{buildroot}%{_sysconfdir}/leapp/files/
 install -m 0644 etc/leapp/transaction/* %{buildroot}%{_sysconfdir}/leapp/transaction
 
 # Remove irrelevant repositories - We don't want to ship them
@@ -137,6 +138,7 @@ rm -f %{py3_sos_report_plugindir}/leapp.py*
 %doc README.md
 %license LICENSE
 %dir %{_sysconfdir}/leapp/transaction
+%dir %{_sysconfdir}/leapp/files
 %dir %{leapp_datadir}
 %dir %{repositorydir}
 %dir %{custom_repositorydir}
