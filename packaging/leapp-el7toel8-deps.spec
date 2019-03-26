@@ -36,10 +36,19 @@ Summary:    Meta-package with system dependencies for leapp framework
 Provides:   leapp-framework-dependencies = 2
 Obsoletes:  leapp-deps
 
+Requires:   findutils
+
+# Keep currently these dependencies as maybe we would need them to finish the
+# RPMUpgradePhase phase correctly - and still the fate of the original leapp
+# RPM is unclear.
 Requires:   python2-six
 Requires:   python2-setuptools
 Requires:   python2-jinja2
-Requires:   findutils
+
+# Python3 deps
+Requires:   python3-six
+Requires:   python3-setuptools
+Requires:   python3-jinja2
 
 %description -n %{ldname}
 %{summary}
