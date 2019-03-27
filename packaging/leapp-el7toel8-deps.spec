@@ -7,8 +7,8 @@ Release:    1%{?dist}
 Summary:    Dependencies for *leapp* packages
 BuildArch:  noarch
 
-License:    AGPLv3+
-URL:        https://leapp-to.github.io
+License:    ASL 2.0
+URL:        https://oamg.github.io/leapp/
 
 %description
 %{summary}
