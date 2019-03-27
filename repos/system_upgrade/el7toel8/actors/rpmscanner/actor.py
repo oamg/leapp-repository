@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.libraries.stdlib import run
+from leapp.libraries.common.rpms import get_installed_rpms
 from leapp.models import InstalledRPM, RPM
 from leapp.tags import IPUWorkflowTag, FactsPhaseTag
 
@@ -17,13 +17,7 @@ class RpmScanner(Actor):
     tags = (IPUWorkflowTag, FactsPhaseTag)
 
     def process(self):
-        output = run([
-            '/bin/rpm',
-            '-qa',
-            '--queryformat',
-            r'%{NAME}|%{VERSION}|%{RELEASE}|%|EPOCH?{%{EPOCH}}:{(none)}||%|PACKAGER?{%{PACKAGER}}:{(none)}||%|'
-            r'ARCH?{%{ARCH}}:{}||%|DSAHEADER?{%{DSAHEADER:pgpsig}}:{%|RSAHEADER?{%{RSAHEADER:pgpsig}}:{(none)}|}|\n'
-        ], split=True)['stdout']
+        output = get_installed_rpms()
 
         result = InstalledRPM()
         for entry in output:
