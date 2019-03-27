@@ -1,6 +1,7 @@
 from leapp.models import Model, fields
 from leapp.topics import SystemInfoTopic
 
+
 class RPM(Model):
     topic = SystemInfoTopic
     name = fields.String()

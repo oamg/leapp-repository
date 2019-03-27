@@ -8,7 +8,7 @@ from leapp.actors import Actor
 from leapp.libraries.stdlib import run
 from leapp.libraries.stdlib.call import STDOUT
 from leapp.libraries.stdlib.config import is_debug
-from leapp.models import FilteredRpmTransactionTasks, UsedTargetRepositories
+from leapp.models import FilteredRpmTransactionTasks, UsedTargetRepositories, TransactionCompleted
 from leapp.tags import RPMUpgradePhaseTag, IPUWorkflowTag
 
 
@@ -33,7 +33,7 @@ class DnfShellRpmUpgrade(Actor):
 
     name = 'dnf_shell_rpm_upgrade'
     consumes = (FilteredRpmTransactionTasks, UsedTargetRepositories)
-    produces = ()
+    produces = (TransactionCompleted,)
     tags = (RPMUpgradePhaseTag, IPUWorkflowTag)
 
     def process(self):
@@ -94,3 +94,5 @@ class DnfShellRpmUpgrade(Actor):
             json.dump(plugin_data, data)
             data.flush()
             run(dnf_command + [data.name], callback_raw=_logging_handler)
+
+        self.produce(TransactionCompleted())
