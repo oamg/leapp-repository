@@ -1,6 +1,6 @@
 import pytest
 
-from leapp.exceptions import StopActorExecutionError
+from leapp.exceptions import StopActorExecution
 from leapp.libraries.actor import library
 from leapp.libraries.actor.library import (Event,
                                            parse_action,
@@ -219,14 +219,14 @@ def test_scan_events(monkeypatch):
     assert isinstance(api.produce.model_instances[1], RepositoriesSetupTasks)
     assert api.produce.model_instances[1].to_enable == ['mapped']
 
-    with pytest.raises(StopActorExecutionError):
+    with pytest.raises(StopActorExecution):
         scan_events('files/tests/sample02.json')
     assert reporting.report_generic.called == 1
     assert 'inhibitor' in reporting.report_generic.report_fields['flags']
 
     reporting.report_generic.called = 0
     reporting.report_generic.model_instances = []
-    with pytest.raises(StopActorExecutionError):
+    with pytest.raises(StopActorExecution):
         scan_events('files/tests/sample03.json')
     assert reporting.report_generic.called == 1
     assert 'inhibitor' in reporting.report_generic.report_fields['flags']
@@ -237,7 +237,7 @@ def test_pes_data_not_found(monkeypatch):
         return False
     monkeypatch.setattr('os.path.isfile', file_not_exists)
     monkeypatch.setattr(reporting, 'report_generic', report_generic_mocked())
-    with pytest.raises(StopActorExecutionError):
+    with pytest.raises(StopActorExecution):
         scan_events('/etc/leapp/pes-data.json')
     assert reporting.report_generic.called == 1
     assert 'inhibitor' in reporting.report_generic.report_fields['flags']

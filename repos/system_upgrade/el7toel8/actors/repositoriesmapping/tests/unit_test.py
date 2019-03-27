@@ -1,6 +1,6 @@
 import pytest
 
-from leapp.exceptions import StopActorExecutionError
+from leapp.exceptions import StopActorExecution
 from leapp.libraries.actor.library import scan_repositories
 from leapp.libraries.common import reporting
 from leapp.libraries.stdlib import api
@@ -47,7 +47,7 @@ def test_repository_mapping_file_not_found(monkeypatch):
         return False
     monkeypatch.setattr('os.path.isfile', file_not_exists)
     monkeypatch.setattr(reporting, 'report_generic', report_generic_mocked())
-    with pytest.raises(StopActorExecutionError):
+    with pytest.raises(StopActorExecution):
         scan_repositories('/etc/leapp/files/repomap.csv')
     assert reporting.report_generic.called == 1
     assert 'inhibitor' in reporting.report_generic.report_fields['flags']
@@ -56,7 +56,7 @@ def test_repository_mapping_file_not_found(monkeypatch):
 
 def test_scan_empty_file(monkeypatch):
     monkeypatch.setattr(reporting, 'report_generic', report_generic_mocked())
-    with pytest.raises(StopActorExecutionError):
+    with pytest.raises(StopActorExecution):
         scan_repositories('files/tests/sample02.csv')
     assert reporting.report_generic.called == 1
     assert 'inhibitor' in reporting.report_generic.report_fields['flags']
@@ -65,7 +65,7 @@ def test_scan_empty_file(monkeypatch):
 
 def test_scan_invalid_file_txt(monkeypatch):
     monkeypatch.setattr(reporting, 'report_generic', report_generic_mocked())
-    with pytest.raises(StopActorExecutionError):
+    with pytest.raises(StopActorExecution):
         scan_repositories('files/tests/sample03.csv')
     assert reporting.report_generic.called == 1
     assert 'inhibitor' in reporting.report_generic.report_fields['flags']
@@ -74,7 +74,7 @@ def test_scan_invalid_file_txt(monkeypatch):
 
 def test_scan_invalid_file_csv(monkeypatch):
     monkeypatch.setattr(reporting, 'report_generic', report_generic_mocked())
-    with pytest.raises(StopActorExecutionError):
+    with pytest.raises(StopActorExecution):
         scan_repositories('files/tests/sample04.csv')
     assert reporting.report_generic.called == 1
     assert 'inhibitor' in reporting.report_generic.report_fields['flags']

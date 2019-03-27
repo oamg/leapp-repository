@@ -2,7 +2,7 @@ import json
 import os
 from collections import namedtuple
 
-from leapp.exceptions import StopActorExecutionError
+from leapp.exceptions import StopActorExecution
 from leapp.libraries.common import reporting
 from leapp.libraries.stdlib import api
 from leapp.models import InstalledRedHatSignedRPM, RpmTransactionTasks, RepositoriesSetupTasks
@@ -143,11 +143,11 @@ def scan_events(path):
     """ Scan JSON file containing PES events """
     try:
         events = parse_file(path)
-    except (ValueError, KeyError) as error:
+    except (ValueError, KeyError):
         title = 'Missing/Invalid PES data file ({})'.format(path)
         summary = 'Read documentation at: https://access.redhat.com/articles/3664871 for more information ' \
             'about how to retrieve the files'
         reporting.report_generic(title=title, summary=summary, severity='high', flags=['inhibitor'])
-        raise StopActorExecutionError(message=title, details={'hint': summary, 'details': str(error)})
+        raise StopActorExecution()
 
     process_events(filter_events(events))
