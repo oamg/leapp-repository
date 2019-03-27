@@ -3,7 +3,7 @@ import pytest
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import library
 from leapp.libraries.stdlib import api
-from leapp.models import StorageInfo, FstabEntry, MountEntry, SystemdMountEntry, XFSPresence
+from leapp.models import StorageInfo, FstabEntry, MountEntry, XFSPresence
 
 
 class call_mocked(object):
@@ -13,7 +13,7 @@ class call_mocked(object):
     def __call__(self, args, split=True):
         self.called += 1
         self.args = args
-        
+
         with_ftype = [
             "meta-data=/dev/loop0             isize=512    agcount=4, agsize=131072 blks",
             "         =                       sectsz=512   attr=2, projid32bit=1",
@@ -93,32 +93,6 @@ def test_check_xfs_mount(monkeypatch):
 
     mountpoints = library.check_xfs_mount([MountEntry(**mount_data_xfs)])
     assert mountpoints == {"/boot"}
-
-
-def test_check_xfs_systemdmount(monkeypatch):
-    systemdmount_data_no_xfs = {
-        "node": "/dev/sda1",
-        "path": "pci-0000:00:17.0-ata-2",
-        "model": "TOSHIBA_THNSNJ512GDNU_A",
-        "wwn": "0x500080d9108e8753",
-        "fs_type": "ext4",
-        "label": "n/a",
-        "uuid": "5675d309-eff7-4eb1-9c27-58bc5880ec72"}
-
-    mountpoints = library.check_xfs_systemdmount([SystemdMountEntry(**systemdmount_data_no_xfs)])
-    assert len(mountpoints) == 0
-
-    systemdmount_data_xfs = {
-        "node": "/dev/sda1",
-        "path": "/var",
-        "model": "n/a",
-        "wwn": "n/a",
-        "fs_type": "xfs",
-        "label": "n/a",
-        "uuid": "n/a"}
-
-    mountpoints = library.check_xfs_systemdmount([SystemdMountEntry(**systemdmount_data_xfs)])
-    assert mountpoints == {"/var"}
 
 
 def test_is_xfs_without_ftype(monkeypatch):

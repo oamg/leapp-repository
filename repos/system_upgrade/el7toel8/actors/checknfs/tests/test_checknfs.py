@@ -1,27 +1,6 @@
 from leapp.snactor.fixture import current_actor_context
-from leapp.models import StorageInfo, SystemdMountEntry, FstabEntry, MountEntry
+from leapp.models import StorageInfo, FstabEntry, MountEntry
 from leapp.reporting import Report
-
-
-def test_actor_with_systemdmount_entry(current_actor_context):
-    with_systemdmount_entry = [SystemdMountEntry(node="nfs", path="n/a", model="n/a",
-                                                 wwn="n/a", fs_type="nfs", label="n/a",
-                                                 uuid="n/a")]
-    current_actor_context.feed(StorageInfo(systemdmount=with_systemdmount_entry))
-    current_actor_context.run()
-    assert 'inhibitor' in current_actor_context.consume(Report)[0].flags
-
-
-def test_actor_without_systemdmount_entry(current_actor_context):
-    without_systemdmount_entry = [SystemdMountEntry(node="/dev/sda1",
-                                                    path="pci-0000:00:17.0-ata-2",
-                                                    model="TOSHIBA_THNSNJ512GDNU_A",
-                                                    wwn="0x500080d9108e8753",
-                                                    fs_type="ext4", label="n/a",
-                                                    uuid="5675d309-eff7-4eb1-9c27-58bc5880ec72")]
-    current_actor_context.feed(StorageInfo(systemdmount=without_systemdmount_entry))
-    current_actor_context.run()
-    assert not current_actor_context.consume(Report)
 
 
 def test_actor_with_fstab_entry(current_actor_context):
@@ -42,6 +21,7 @@ def test_actor_without_fstab_entry(current_actor_context):
     current_actor_context.feed(StorageInfo(fstab=without_fstab_entry))
     current_actor_context.run()
     assert not current_actor_context.consume(Report)
+
 
 def test_actor_with_mount_share(current_actor_context):
     with_mount_share = [MountEntry(name="nfs", mount="/mnt/data", tp="nfs",

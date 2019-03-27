@@ -83,18 +83,6 @@ class LvdisplayEntry(Model):
     convert = fields.String()
 
 
-class SystemdMountEntry(Model):
-    topic = SystemInfoTopic
-
-    node = fields.String()
-    path = fields.String()
-    model = fields.String()
-    wwn = fields.String()
-    fs_type = fields.String()
-    label = fields.String()
-    uuid = fields.String()
-
-
 class StorageInfo(Model):
     topic = SystemInfoTopic
     partitions = fields.List(fields.Model(PartitionEntry), default=[])
@@ -104,5 +92,4 @@ class StorageInfo(Model):
     pvs = fields.List(fields.Model(PvsEntry), default=[])
     vgs = fields.List(fields.Model(VgsEntry), default=[])
     lvdisplay = fields.List(fields.Model(LvdisplayEntry), default=[])
-    systemdmount = fields.List(fields.Model(SystemdMountEntry), default=[])
 
