@@ -1,7 +1,7 @@
 import csv
 import os
 
-from leapp.exceptions import StopActorExecutionError
+from leapp.exceptions import StopActorExecution
 from leapp.libraries.common import reporting
 from leapp.libraries.stdlib import api
 from leapp.models import RepositoriesMap, RepositoryMap
@@ -12,7 +12,7 @@ def inhibit_upgrade(title):
     summary = 'Read documentation at: https://access.redhat.com/articles/3664871 for more information ' \
         'about how to retrieve the files'
     reporting.report_generic(title=title, summary=summary, severity='high', flags=['inhibitor'])
-    raise StopActorExecutionError(message=title, details={'details': summary})
+    raise StopActorExecution()
 
 
 def scan_repositories(path):
