@@ -19,8 +19,8 @@ Version:        0.5.0
 Release:        1%{?dist}
 Summary:        Repositories for leapp
 
-License:        AGPLv3+
-URL:            https://leapp-to.github.io
+License:        ASL 2.0
+URL:            https://oamg.github.io/leapp/
 Source0:        https://github.com/oamg/leapp-repository/archive/leapp-repository-%{version}.tar.gz
 Source1:        deps-pkgs.tar.gz
 Source2:        leapp-repository-initrd.tar.gz
