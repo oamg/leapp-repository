@@ -1,0 +1,34 @@
+#!/usr/bin/bash -e
+
+# just in case of hidden files.. not sure why would someone do that, it's more
+# like forgotten cache file possibility, but rather do that..
+shopt -s dotglob
+
+is_dir_empty() {
+  test -z "$(ls -A $1)"
+}
+
+handle_dir() {
+    # Move all files from $1 to $2 when the /etc/yum/$1 is not empty
+    # Then remove the $1 directory and relink it to $2
+    # param $1: dirname under /etc/yum path
+    # param $2: dirname under /etc/dnf path
+    if ! is_dir_empty "/etc/yum/$1"; then
+        mv /etc/yum/$1/* /etc/dnf/$2/
+    fi
+
+    # FIXME: do not care whether these were already symlinks for now
+    #        just remove it
+    rm -rf /etc/yum/$1
+
+    #relink
+    ln -s ../dnf/$2 /etc/yum/$1
+
+    return 0
+}
+
+
+# assume the directories are not removed by user..
+handle_dir pluginconf.d plugins
+handle_dir protected.d  protected.d
+handle_dir vars vars

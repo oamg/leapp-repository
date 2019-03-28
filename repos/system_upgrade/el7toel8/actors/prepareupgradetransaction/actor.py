@@ -181,6 +181,12 @@ class PrepareUpgradeTransaction(Actor):
 
         debugsolver = True if os.environ.get('LEAPP_DEBUG', '0') == '1' else False
 
+        yum_script_path = self.get_tool_path('handleyumconfig')
+        cmd = ['--', '/bin/bash', '-c', yum_script_path]
+        _unused, error = preparetransaction.guard_container_call(overlayfs_info, cmd)
+        if error:
+            return error
+
         error = preparetransaction.mount_dnf_cache(overlayfs_info)
         if error:
             return error
