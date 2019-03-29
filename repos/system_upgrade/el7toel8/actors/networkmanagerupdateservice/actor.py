@@ -1,8 +1,7 @@
 import os
-from subprocess import CalledProcessError
 
 from leapp.actors import Actor
-from leapp.libraries.stdlib import call
+from leapp.libraries.stdlib import CalledProcessError, run
 from leapp.tags import ApplicationsPhaseTag, IPUWorkflowTag
 
 
@@ -33,7 +32,7 @@ class NetworkManagerUpdateService(Actor):
             self.log.info('Disabling NetworkManager-wait-online.service')
 
             try:
-                call(['systemctl', 'disable', 'NetworkManager-wait-online.service'])
+                run(['systemctl', 'disable', 'NetworkManager-wait-online.service'])
             except (OSError, CalledProcessError) as e:
                 self.log.warning('Error disabling NetworkManager-wait-online.service: {}'.format(e))
                 return

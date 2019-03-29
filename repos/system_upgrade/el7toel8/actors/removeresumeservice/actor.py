@@ -1,11 +1,11 @@
 import os
-import subprocess
 import errno
 
 from leapp.actors import Actor
-from leapp.tags import FirstBootPhaseTag, IPUWorkflowTag
-from leapp.reporting import Report
 from leapp.libraries.common.reporting import report_generic
+from leapp.libraries.stdlib import run
+from leapp.reporting import Report
+from leapp.tags import FirstBootPhaseTag, IPUWorkflowTag
 
 class RemoveSystemdResumeService(Actor):
     """
@@ -22,7 +22,7 @@ class RemoveSystemdResumeService(Actor):
     def process(self):
         service_name = 'leapp_resume.service'
         if os.path.isfile('/etc/systemd/system/{}'.format(service_name)):
-            subprocess.call(['systemctl', 'disable', service_name])
+            run(['systemctl', 'disable', service_name])
             try:
                 os.unlink('/etc/systemd/system/{}'.format(service_name))
                 os.unlink('/etc/systemd/system/default.target.wants/{}'.format(service_name))

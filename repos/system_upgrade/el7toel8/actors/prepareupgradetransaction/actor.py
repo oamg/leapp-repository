@@ -28,8 +28,8 @@ class PrepareUpgradeTransaction(Actor):
         # TODO: put this to different actor and process it already during check
         # + phase
         # FIXME: no exception is caught, retcode is not checked
-        out = preparetransaction.call(['subscription-manager', 'list', '--consumed'], split=True)
-        for i in out:
+        out = preparetransaction.run(['subscription-manager', 'list', '--consumed'], split=True)
+        for i in out['stdout']:
             if i.startswith('SKU'):
                 # if any SKU is consumed, return True; we cannot check more
                 # now.

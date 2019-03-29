@@ -1,9 +1,9 @@
 from leapp.actors import Actor
+from leapp.libraries.common.reporting import report_generic
+from leapp.libraries.stdlib import run
 from leapp.models import FirewallDecisionM, FirewallsFacts
 from leapp.reporting import Report
-from leapp.libraries.common.reporting import report_generic
 from leapp.tags import IPUWorkflowTag, ApplicationsPhaseTag
-from leapp.libraries.stdlib import call
 
 
 class FirewallDisable(Actor):
@@ -21,35 +21,35 @@ class FirewallDisable(Actor):
 
     def stop_firewalld(self):
         ''' Stop FirewallD '''
-        call(['systemctl', 'stop', 'firewalld'])
+        run(['systemctl', 'stop', 'firewalld'])
 
     def disable_firewalld(self):
         ''' Disable FirewallD '''
         self.stop_firewalld()
-        call(['systemctl', 'disable', 'firewalld'])
+        run(['systemctl', 'disable', 'firewalld'])
 
     def save_iptables(self):
         ''' Save IPTables '''
         f = open('iptables_bck_workfile', 'w')
-        ret = call(['iptables-save'])
+        ret = run(['iptables-save'], split='True')['stdout']
         for line in ret:
             f.write(line+'\n')
         f.close()
 
     def stop_iptables(self):
         ''' Stop IPTables '''
-        call(['systemctl', 'stop', 'iptables'])
+        run(['systemctl', 'stop', 'iptables'])
 
     def flush_iptables(self):
         ''' Flush rules '''
-        call(['iptables', '-F'])
+        run(['iptables', '-F'])
 
     def disable_iptables(self):
         ''' Save, stop and disable IPTables '''
         self.save_iptables()
         self.flush_iptables()
         self.stop_iptables()
-        call(['systemctl', 'disable', 'iptables'])
+        run(['systemctl', 'disable', 'iptables'])
 
     def process(self):
         ''' based on a decision maker Actor, it disables firewall services '''

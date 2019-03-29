@@ -1,10 +1,11 @@
-from leapp.actors import Actor
-from leapp.models import IfaceResult, IfacesInfo
-from leapp.tags import FactsPhaseTag
-import subprocess
 import os
 import re
 import sys
+
+from leapp.actors import Actor
+from leapp.libraries.stdlib import CalledProcessError, run
+from leapp.models import IfaceResult, IfacesInfo
+from leapp.tags import FactsPhaseTag
 
 
 class NetIfaceScanner(Actor):
@@ -31,13 +32,10 @@ class NetIfaceScanner(Actor):
         sys_command = ['find', '/sys/devices/', '-name', 'net', '-type', 'd']
         ifacepaths = []
         try:
-            dirs = subprocess.check_output((sys_command),
-                                           stderr=subprocess.STDOUT)
-        except subprocess.CalledProcessError as command_failed:
+            dirs = run(sys_command, split=True)['stdout']
+        except CalledProcessError as command_failed:
             self.log.warning("Could not get the interface names" + command_failed.output)
             sys.exit(1)
-        dirs = dirs.decode('utf-8')
-        dirs = dirs.splitlines()
         for direct in dirs:
             ifacelist = os.listdir(direct)
             for iface in ifacelist:
@@ -47,11 +45,12 @@ class NetIfaceScanner(Actor):
         return ifacepaths
 
     def get_net_driver(self, iface):
-        iface_stats = subprocess.Popen(('ethtool', '-i', iface),
-                                       stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        iface_stats, err = iface_stats.communicate()
-        driver = re.search(r"(driver):\s+(.*)$", iface_stats,
-                           flags=re.MULTILINE)
+        try:
+            iface_stats = run(['ethtool', '-i', iface])['stdout']
+        except CalledProcessError:
+            return "None"
+
+        driver = re.search(r"(driver):\s+(.*)$", iface_stats, flags=re.MULTILINE)
         if driver is not None:
             driver = driver.group(2)
         else:
@@ -59,18 +58,16 @@ class NetIfaceScanner(Actor):
         return driver
 
     def get_persistent_hwaddr(self, iface):
-        ethinf = subprocess.Popen(('ethtool', '-P', iface),
-                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        ethinf, err = ethinf.communicate()
-        if not err:
-            # return "Permanent address"
-            return ethinf.split()[2]
-        return "None"
+        try:
+            ethinf = run(['ethtool', '-P', iface])['stdout']
+        except CalledProcessError:
+            return "None"
+
+        return ethinf.split()[2]
 
     def return_ifs_info(self):
         if_paths = self.get_ifaces_names()
-        journal = subprocess.Popen(('journalctl', '-xe', '--no-tail'), stdout=subprocess.PIPE)
-        journal, err = journal.communicate()
+        journal = run(['journalctl', '-xe', '--no-tail'])['stdout']
         result = IfaceResult()
         # Getting info about bonding and bridges
         for if_path in if_paths:
@@ -160,8 +157,7 @@ class NetIfaceScanner(Actor):
             return protocol
 
     def get_runtime_hws(self, iface):
-        data = subprocess.Popen(('ip', 'addr', 'show', 'dev', iface), stdout=subprocess.PIPE)
-        data, err = data.communicate()
+        data = run(['ip', 'addr', 'show', 'dev', iface])['stdout']
         pattern = r"link\/ether\s(.*)\sbrd.*"
         match = re.search(pattern, data)
         if match:
@@ -169,7 +165,4 @@ class NetIfaceScanner(Actor):
             return match
 
     def get_route_info(self, if_name):
-        routeinfo = subprocess.Popen(('ip', 'route', 'show', 'dev', if_name),
-                                     stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        routeinfo, err = routeinfo.communicate()
-        return routeinfo
+        return run(['ip', 'route', 'show', 'dev', if_name])['stdout']

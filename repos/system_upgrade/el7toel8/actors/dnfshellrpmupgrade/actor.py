@@ -1,10 +1,10 @@
 import json
 import os
-from tempfile import NamedTemporaryFile
-from subprocess import check_call
 import shutil
+from tempfile import NamedTemporaryFile
 
 from leapp.actors import Actor
+from leapp.libraries.stdlib import run
 from leapp.models import FilteredRpmTransactionTasks, UsedTargetRepositories
 from leapp.tags import RPMUpgradePhaseTag, IPUWorkflowTag
 
@@ -29,7 +29,7 @@ class DnfShellRpmUpgrade(Actor):
         # # release and we will have time to fix it properly.
         # Make sure Subscription Manager OS Release is unset
         # cmd = ['subscription-manager', 'release', '--unset']
-        # check_call(cmd)
+        # run(cmd)
 
         shutil.copyfile(
             self.get_file_path('rhel_upgrade.py'), '/lib/python2.7/site-packages/dnf-plugins/rhel_upgrade.py')
@@ -51,7 +51,7 @@ class DnfShellRpmUpgrade(Actor):
         # FIXME: that's ugly hack, we should get info which file remove and
         # + do it more nicely..
         cmd = ['rm', '-f', '/etc/pki/product/69.pem']
-        check_call(cmd)
+        run(cmd)
 
         data = next(self.consume(FilteredRpmTransactionTasks), FilteredRpmTransactionTasks())
 
@@ -79,4 +79,4 @@ class DnfShellRpmUpgrade(Actor):
         with NamedTemporaryFile() as data:
             json.dump(plugin_data, data)
             data.flush()
-            check_call(dnf_command + [data.name])
+            run(dnf_command + [data.name])

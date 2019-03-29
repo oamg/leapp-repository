@@ -2,7 +2,7 @@ import os
 import re
 
 from leapp.exceptions import StopActorExecutionError
-from leapp.libraries.stdlib import api, call
+from leapp.libraries.stdlib import api, run
 from leapp.models import BootContent
 
 
@@ -10,7 +10,7 @@ def add_boot_entry():
     debug = 'debug' if os.getenv('LEAPP_DEBUG', '0') == '1' else ''
 
     kernel_dst_path, initram_dst_path = get_boot_file_paths()
-    call([
+    run([
         '/usr/sbin/grubby',
         '--add-kernel={0}'.format(kernel_dst_path),
         '--initrd={0}'.format(initram_dst_path),
