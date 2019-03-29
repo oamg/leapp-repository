@@ -6,7 +6,7 @@ from leapp.libraries.actor import library
 from leapp.models import BootContent
 
 
-class call_mocked(object):
+class run_mocked(object):
     args = []
 
     def __call__(self, args, split=True):
@@ -17,12 +17,12 @@ def test_remove_boot_entry(monkeypatch):
     def get_upgrade_kernel_filepath_mocked():
         return '/abc'
     monkeypatch.setattr(library, 'get_upgrade_kernel_filepath', get_upgrade_kernel_filepath_mocked)
-    monkeypatch.setattr(library, 'call', call_mocked())
+    monkeypatch.setattr(library, 'run', run_mocked())
 
     library.remove_boot_entry()
 
-    assert library.call.args == [['/bin/mount', '/boot'],
-                                 ['/usr/sbin/grubby', '--remove-kernel=/abc'], ['/bin/mount', '-a']]
+    assert library.run.args == [['/bin/mount', '/boot'],
+                                ['/usr/sbin/grubby', '--remove-kernel=/abc'], ['/bin/mount', '-a']]
 
 
 def test_get_upgrade_kernel_filepath(monkeypatch):

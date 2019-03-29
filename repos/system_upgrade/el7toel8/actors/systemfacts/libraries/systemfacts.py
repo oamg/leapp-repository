@@ -6,15 +6,13 @@ import os
 import pwd
 import re
 import logging
-from subprocess import CalledProcessError
-
 
 try:
     import ConfigParser as configparser
 except ImportError:
     import configparser
 
-from leapp.libraries.stdlib import call
+from leapp.libraries.stdlib import CalledProcessError, run
 from leapp.models import SysctlVariablesFacts, SysctlVariable, ActiveKernelModulesFacts, ActiveKernelModule, \
     KernelModuleParameter, UsersFacts, User, GroupsFacts, Group, RepositoriesFacts, RepositoryFile, RepositoryData, \
     SELinuxFacts, fields, FirewallStatus, FirewallsFacts
@@ -79,7 +77,7 @@ def get_system_groups_status():
 
 @aslist
 def _get_active_kernel_modules(logger):
-    lines = call(['lsmod'])
+    lines = run(['lsmod'], split=True)['stdout']
     for l in lines[1:]:
         name = l.split(' ')[0]
 
@@ -95,7 +93,7 @@ def _get_active_kernel_modules(logger):
         # Use `modinfo` to probe for signature information
         parameter_dict = {}
         try:
-            signature = call(['modinfo', '-F', 'signature', name], split=False)
+            signature = run(['modinfo', '-F', 'signature', name], split=False)['stdout']
         except CalledProcessError:
             signature = None
 
@@ -147,7 +145,7 @@ def _get_sysctls():
                 'dev.cdrom.info', 'kernel.pty.nr')
 
     variables = []
-    for sc in call(['sysctl', '-a']):
+    for sc in run(['sysctl', '-a'], split=True)['stdout']:
         name = sc.split(' ', 1)[0]
         # if the sysctl name has an unstable prefix, we skip
         if anyhasprefix(name, unstable):
@@ -200,9 +198,10 @@ def _get_repositories():
                 prepared['additional_fields'] = json.dumps(prepared['additional_fields'])
                 yield RepositoryData(**prepared)
 
-    repos = call(
-        ['find', '/etc/yum.repos.d/', '-type', 'f', '-name', '*.repo']
-    )
+    repos = run(
+        ['find', '/etc/yum.repos.d/', '-type', 'f', '-name', '*.repo'],
+        split=True
+    )['stdout']
     for repo in repos:
         yield RepositoryFile(file=repo, data=_parse(repo))
 
@@ -248,14 +247,14 @@ def get_firewalls_status():
 
     def _get_firewall_status(service_name):
         try:
-            ret_list = call(['systemctl', 'is-active', service_name])
+            ret_list = run(['systemctl', 'is-active', service_name], split=True)['stdout']
             active = ret_list[0] == 'active'
         except CalledProcessError:
             active = False
             logger.debug('The %s service is likely not active' % service_name)
 
         try:
-            ret_list = call(['systemctl', 'is-enabled', service_name])
+            ret_list = run(['systemctl', 'is-enabled', service_name], split=True)['stdout']
             enabled = ret_list[0] == 'enabled'
         except CalledProcessError:
             enabled = False

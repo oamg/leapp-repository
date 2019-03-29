@@ -3,10 +3,9 @@
 #
 
 from os.path import isfile
-from subprocess import CalledProcessError
 
 from leapp.libraries.actor import sctpdlm
-from leapp.libraries.stdlib import api, call
+from leapp.libraries.stdlib import CalledProcessError, api, run
 from leapp.models import ActiveKernelModulesFacts
 
 
@@ -78,7 +77,7 @@ def was_sctp_used():
     :rtype: bool
     """
     try:
-        call(['check_syslog_for_sctp.sh'])
+        run(['check_syslog_for_sctp.sh'])
     except CalledProcessError:
         api.current_logger().debug('Nothing regarding SCTP was found on journal.')
         return False

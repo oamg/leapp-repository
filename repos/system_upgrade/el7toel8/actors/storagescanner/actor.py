@@ -30,6 +30,7 @@ class StorageScanner(Actor):
             raise StopIteration()
 
         try:
+            # FIXME: Will keep call to subprocess until our stdlib supports "env" parameter
             # when there is any fd except 0,1,2 open, lvm closes the fd and prints a warning.
             # In our case /dev/urandom has other fd opened, probably for caching purposes.
             output = subprocess.check_output(cmd, env={'LVM_SUPPRESS_FD_WARNINGS': '1', 'PATH': os.environ['PATH']})

@@ -1,7 +1,5 @@
-from subprocess import CalledProcessError
-
 from leapp.actors import Actor
-from leapp.libraries.stdlib import call
+from leapp.libraries.stdlib import CalledProcessError, run
 from leapp.models import NetworkManagerConfig
 from leapp.tags import ApplicationsPhaseTag, IPUWorkflowTag
 
@@ -28,7 +26,7 @@ class NetworkManagerUpdateClientId(Actor):
                 return
 
             try:
-                r = call(['nm-update-client-ids.py'])
+                r = run(['nm-update-client-ids.py'], split=True)['stdout']
             except (OSError, CalledProcessError) as e:
                 self.log.warning('Error calling script: {}'.format(e))
                 return

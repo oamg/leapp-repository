@@ -1,4 +1,4 @@
-from leapp.libraries.stdlib import api, call
+from leapp.libraries.stdlib import api, run
 from leapp.models import SCTPConfig
 
 
@@ -8,9 +8,9 @@ def enable_sctp():
     """
 
     api.current_logger().info('Enabling SCTP.')
-    call(['/usr/bin/sed', '-i', 's/^\s*blacklist.*sctp/#&/',
-          '/etc/modprobe.d/sctp_diag-blacklist.conf',
-          '/etc/modprobe.d/sctp-blacklist.conf'])
+    run(['/usr/bin/sed', '-i', 's/^\s*blacklist.*sctp/#&/',
+         '/etc/modprobe.d/sctp_diag-blacklist.conf',
+         '/etc/modprobe.d/sctp-blacklist.conf'])
     api.current_logger().info('Enabled SCTP.')
 
 

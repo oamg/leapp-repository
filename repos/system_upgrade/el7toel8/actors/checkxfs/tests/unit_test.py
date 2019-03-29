@@ -6,7 +6,7 @@ from leapp.libraries.stdlib import api
 from leapp.models import StorageInfo, FstabEntry, MountEntry, SystemdMountEntry, XFSPresence
 
 
-class call_mocked(object):
+class run_mocked(object):
     def __init__(self):
         self.called = 0
 
@@ -14,7 +14,7 @@ class call_mocked(object):
         self.called += 1
         self.args = args
         
-        with_ftype = [
+        with_ftype = {'stdout': [
             "meta-data=/dev/loop0             isize=512    agcount=4, agsize=131072 blks",
             "         =                       sectsz=512   attr=2, projid32bit=1",
             "         =                       crc=1        finobt=0 spinodes=0",
@@ -23,9 +23,9 @@ class call_mocked(object):
             "naming   =version 2              bsize=4096   ascii-ci=0 ftype=1",
             "log      =internal               bsize=4096   blocks=2560, version=2",
             "         =                       sectsz=512   sunit=0 blks, lazy-count=1",
-            "realtime =none                   extsz=4096   blocks=0, rtextents=0"]
+            "realtime =none                   extsz=4096   blocks=0, rtextents=0"]}
 
-        without_ftype = [
+        without_ftype = {'stdout': [
             "meta-data=/dev/loop0             isize=512    agcount=4, agsize=131072 blks",
             "         =                       sectsz=512   attr=2, projid32bit=1",
             "         =                       crc=1        finobt=0 spinodes=0",
@@ -34,7 +34,7 @@ class call_mocked(object):
             "naming   =version 2              bsize=4096   ascii-ci=0 ftype=0",
             "log      =internal               bsize=4096   blocks=2560, version=2",
             "         =                       sectsz=512   sunit=0 blks, lazy-count=1",
-            "realtime =none                   extsz=4096   blocks=0, rtextents=0"]
+            "realtime =none                   extsz=4096   blocks=0, rtextents=0"]}
 
         if "/var" in self.args:
             return without_ftype
@@ -122,17 +122,17 @@ def test_check_xfs_systemdmount(monkeypatch):
 
 
 def test_is_xfs_without_ftype(monkeypatch):
-    monkeypatch.setattr(library, "call", call_mocked())
+    monkeypatch.setattr(library, "run", run_mocked())
 
     assert library.is_xfs_without_ftype("/var")
-    assert ' '.join(library.call.args) == "/usr/sbin/xfs_info /var"
+    assert ' '.join(library.run.args) == "/usr/sbin/xfs_info /var"
 
     assert not library.is_xfs_without_ftype("/boot")
-    assert ' '.join(library.call.args) == "/usr/sbin/xfs_info /boot"
+    assert ' '.join(library.run.args) == "/usr/sbin/xfs_info /boot"
 
 
 def test_check_xfs(monkeypatch):
-    monkeypatch.setattr(library, "call", call_mocked())
+    monkeypatch.setattr(library, "run", run_mocked())
     monkeypatch.setattr(api, "produce", produce_mocked())
 
     def consume_no_xfs_message_mocked(*models):

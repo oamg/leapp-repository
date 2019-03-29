@@ -5,8 +5,8 @@ from leapp.libraries.actor import library
 from leapp.models import BootContent
 
 
-class call_mocked(object):
-    def __call__(self, args, split=True):
+class run_mocked(object):
+    def __call__(self, args, split=False):
         self.args = args
 
 
@@ -20,13 +20,13 @@ def test_add_boot_entry(monkeypatch):
         return '/abc', '/def'
     monkeypatch.setattr(library, 'get_boot_file_paths', get_boot_file_paths_mocked)
     monkeypatch.setenv('LEAPP_DEBUG', '1')
-    monkeypatch.setattr(library, 'call', call_mocked())
+    monkeypatch.setattr(library, 'run', run_mocked())
 
     library.add_boot_entry()
 
-    assert ' '.join(library.call.args) == ('/usr/sbin/grubby --add-kernel=/abc --initrd=/def --title=RHEL'
-                                           ' Upgrade Initramfs --copy-default --make-default --args="debug'
-                                           ' enforcing=0 rd.plymouth=0 plymouth.enable=0"')
+    assert ' '.join(library.run.args) == ('/usr/sbin/grubby --add-kernel=/abc --initrd=/def --title=RHEL'
+                                          ' Upgrade Initramfs --copy-default --make-default --args="debug'
+                                          ' enforcing=0 rd.plymouth=0 plymouth.enable=0"')
 
 
 def test_get_boot_file_paths(monkeypatch):

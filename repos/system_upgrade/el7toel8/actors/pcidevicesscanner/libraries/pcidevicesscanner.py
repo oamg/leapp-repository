@@ -1,10 +1,9 @@
 import functools
 import os
 import shlex
-import subprocess
 import six
 
-from leapp.libraries.stdlib import call
+from leapp.libraries.stdlib import CalledProcessError, run
 from leapp.models import PCIDevices, PCIDevice
 
 
@@ -63,8 +62,8 @@ def produce_pci_devices(producer, devices):
 def scan_pci_devices(producer):
     ''' Scan system PCI Devices '''
     try:
-        output = call(['lspci', '-mm'])
-    except subprocess.CalledProcessError:
+        output = run(['lspci', '-mm'], split=True)['stdout']
+    except CalledProcessError:
         output = []
 
     devices = parse_pci_devices(output)

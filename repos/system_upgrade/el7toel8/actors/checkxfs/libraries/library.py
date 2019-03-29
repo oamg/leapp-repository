@@ -1,5 +1,5 @@
 from leapp.exceptions import StopActorExecutionError
-from leapp.libraries.stdlib import api, call
+from leapp.libraries.stdlib import api, run
 from leapp.models import StorageInfo, XFSPresence
 
 
@@ -31,7 +31,7 @@ def check_xfs_systemdmount(data):
 
 
 def is_xfs_without_ftype(mp):
-    for l in call(['/usr/sbin/xfs_info', '{}'.format(mp)]):
+    for l in run(['/usr/sbin/xfs_info', '{}'.format(mp)], split=True)['stdout']:
         if 'ftype=0' in l:
             return True
     

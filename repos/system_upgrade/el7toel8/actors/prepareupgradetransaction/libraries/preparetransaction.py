@@ -1,14 +1,12 @@
 import os
 import shutil
-import subprocess
 import sys
 
 from collections import namedtuple
 from six.moves.urllib.error import URLError
 from six.moves.urllib.request import urlopen
 
-from leapp.libraries.stdlib import api
-from leapp.libraries.stdlib import call, run
+from leapp.libraries.stdlib import CalledProcessError, api, run
 from leapp.libraries.stdlib.call import STDOUT
 
 
@@ -68,8 +66,8 @@ def guard_call(cmd, guards=(), print_output=False):
     try:
         if print_output:
             return run(cmd, callback_raw=_logging_handler), None
-        return call(cmd), None
-    except subprocess.CalledProcessError as e:
+        return run(cmd, split=True)['stdout'], None
+    except CalledProcessError as e:
         # return custom error if process failed
         error = ErrorData(details=str(e))
 
