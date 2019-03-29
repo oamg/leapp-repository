@@ -10,6 +10,7 @@ from six.moves.urllib.request import urlopen
 from leapp.libraries.stdlib import api
 from leapp.libraries.stdlib import call, run
 from leapp.libraries.stdlib.call import STDOUT
+from leapp.libraries.stdlib.config import is_debug
 
 
 OverlayfsInfo = namedtuple('OverlayfsInfo', ['upper', 'work', 'merged'])
@@ -54,15 +55,17 @@ def permission_guard():
     # FIXME: Not implemented yet. Is it even useful?
     raise NotImplementedError
 
+
 def _logging_handler(fd_info, buffer):
-    '''Custom log handler to always show DNF output, no matter if in VERBOSE or DEBUG_MODE'''
+    '''Custom log handler to always show DNF stdout to console and stderr only in DEBUG mode'''
     (_unused, fd_type) = fd_info
 
     if fd_type == STDOUT:
         sys.stdout.write(buffer)
     else:
-        if os.environ.get('LEAPP_VERBOSE', '0') == '1':
+        if is_debug():
             sys.stderr.write(buffer)
+
 
 def guard_call(cmd, guards=(), print_output=False):
     try:
