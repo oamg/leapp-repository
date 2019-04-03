@@ -78,8 +78,6 @@ produce, for example:
 
 - [SystemFactsActor](https://github.com/oamg/leapp-repository/blob/master/repos/system_upgrade/el7toel8/actors/systemfacts/actor.py) -
   information about kernel modules, yum repos, sysctl variables, users, firewall, SELinux, etc.
-- [NetIfaceScanner](https://github.com/oamg/leapp-repository/blob/master/repos/system_upgrade/el7toel8/actors/netifacescanner/actor.py) -
-  network information
 - [OSReleaseCollector](https://github.com/oamg/leapp-repository/blob/master/repos/system_upgrade/el7toel8/actors/osreleasecollector/actor.py) -
   system release information
 - [RpmScanner](https://github.com/oamg/leapp-repository/blob/master/repos/system_upgrade/el7toel8/actors/rpmscanner/actor.py) -
