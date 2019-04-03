@@ -1,10 +1,9 @@
-import os
-
 from leapp.actors import Actor
+from leapp.libraries.actor.library import check_unsigned_packages, skip_check
 from leapp.models import InstalledUnsignedRPM
-from leapp.tags import IPUWorkflowTag, ChecksPhaseTag
 from leapp.reporting import Report
-from leapp.libraries.common.reporting import report_generic, report_with_remediation
+from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
+
 
 class RedHatSignedRpmCheck(Actor):
     """
@@ -20,22 +19,5 @@ class RedHatSignedRpmCheck(Actor):
     tags = (IPUWorkflowTag, ChecksPhaseTag)
 
     def process(self):
-        skip_check = os.getenv('LEAPP_SKIP_CHECK_SIGNED_PACKAGES')
-        if skip_check:
-            report_generic(title='Skipped signed packages check', 
-                           severity='low',
-                           summary='Signed packages check skipped via LEAPP_SKIP_CHECK_SIGNED_PACKAGES env var')
-            return
-
-        unsigned_pkgs = next(self.consume(InstalledUnsignedRPM), InstalledUnsignedRPM())
-
-        if len(unsigned_pkgs.items):
-            unsigned_packages_new_line = '\n'.join([pkg.name for pkg in unsigned_pkgs.items])
-            unsigned_packages = ' '.join([pkg.name for pkg in unsigned_pkgs.items])
-            remediation = 'yum remove {}'.format(unsigned_packages)
-            report_with_remediation(
-                title='Packages not signed by Red Hat found in the system',
-                summary='Following packages were not signed by Red Hat:\n    {}.'.format(unsigned_packages_new_line),
-                remediation=remediation,
-                severity='high',
-                )
+        skip_check()
+        check_unsigned_packages()
