@@ -35,7 +35,7 @@ class StorageScanner(Actor):
             # In our case /dev/urandom has other fd opened, probably for caching purposes.
             output = subprocess.check_output(cmd, env={'LVM_SUPPRESS_FD_WARNINGS': '1', 'PATH': os.environ['PATH']})
         except subprocess.CalledProcessError as e:
-            self.log.warning("Command '%s' return non-zero exit status: %s" % (" ".join(cmd), e.returncode))
+            self.log.debug("Command '%s' return non-zero exit status: %s" % (" ".join(cmd), e.returncode))
             raise StopIteration()
 
         for entry in output.split('\n'):
