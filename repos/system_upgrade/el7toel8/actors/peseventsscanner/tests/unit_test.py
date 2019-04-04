@@ -1,4 +1,5 @@
 import pytest
+import os
 
 from leapp.exceptions import StopActorExecution
 from leapp.libraries.actor import library
@@ -8,7 +9,7 @@ from leapp.libraries.actor.library import (Event,
                                            parse_entry,
                                            parse_file,
                                            filter_events,
-                                           notify_skipped_packages,
+                                           report_skipped_packages,
                                            filter_by_repositories,
                                            map_repositories,
                                            process_events,
@@ -125,17 +126,40 @@ def test_filter_events(monkeypatch):
     assert filtered[0].out_pkgs == {'split01': 'repo', 'split02': 'repo'}
 
 
-def test_notify_skipped_packages(monkeypatch):
+def test_report_skipped_packages(monkeypatch):
+    monkeypatch.setattr(api, 'produce', produce_mocked())
     monkeypatch.setattr(api, 'show_message', show_message_mocked())
-    notify_skipped_packages('packages will not be installed:', ['skipped01', 'skipped02'])
+    monkeypatch.setattr(reporting, 'report_generic', report_generic_mocked())
+    monkeypatch.setenv('LEAPP_VERBOSE', '1')
+    report_skipped_packages('packages will not be installed:', ['skipped01', 'skipped02'])
 
+    message = '2 packages will not be installed:\n- skipped01\n- skipped02'
     assert api.show_message.called == 1
-    assert api.show_message.msg == '2 packages will not be installed:\n- skipped01\n- skipped02'
+    assert api.show_message.msg == message
+    assert reporting.report_generic.called == 1
+    assert reporting.report_generic.report_fields['title'] == 'Packages will not be installed'
+    assert reporting.report_generic.report_fields['summary'] == message
+
+
+def test_report_skipped_packages_no_verbose_mode(monkeypatch):
+    monkeypatch.setattr(api, 'produce', produce_mocked())
+    monkeypatch.setattr(api, 'show_message', show_message_mocked())
+    monkeypatch.setattr(reporting, 'report_generic', report_generic_mocked())
+    monkeypatch.setenv('LEAPP_VERBOSE', '0')
+    report_skipped_packages('packages will not be installed:', ['skipped01', 'skipped02'])
+
+    message = '2 packages will not be installed:\n- skipped01\n- skipped02'
+    assert api.show_message.called == 0
+    assert reporting.report_generic.called == 1
+    assert reporting.report_generic.report_fields['title'] == 'Packages will not be installed'
+    assert reporting.report_generic.report_fields['summary'] == message
 
 
 def test_filter_by_repositories(monkeypatch):
     monkeypatch.setattr(api, 'show_message', show_message_mocked())
     monkeypatch.setattr(library, 'REPOSITORIES_BLACKLIST', ['blacklisted'])
+    monkeypatch.setattr(reporting, 'report_generic', report_generic_mocked())
+    monkeypatch.setenv('LEAPP_VERBOSE', '1')
 
     to_install = {
         'pkg01': 'repo01',
@@ -150,6 +174,9 @@ def test_filter_by_repositories(monkeypatch):
         '- skipped02']
     assert api.show_message.called == 1
     assert api.show_message.msg == '\n'.join(msgs)
+    assert reporting.report_generic.called == 1
+    assert reporting.report_generic.report_fields['summary'] == '\n'.join(msgs)
+    assert reporting.report_generic.report_fields['title'] == 'Packages will not be installed'
 
     assert to_install == {'pkg01': 'repo01', 'pkg02': 'repo02'}
 
@@ -157,6 +184,8 @@ def test_filter_by_repositories(monkeypatch):
 def test_map_repositories(monkeypatch):
     monkeypatch.setattr(api, 'show_message', show_message_mocked())
     monkeypatch.setattr(library, 'REPOSITORIES_MAPPING', {'repo': 'mapped'})
+    monkeypatch.setattr(reporting, 'report_generic', report_generic_mocked())
+    monkeypatch.setenv('LEAPP_VERBOSE', '1')
 
     to_install = {
         'pkg01': 'repo',
@@ -171,6 +200,9 @@ def test_map_repositories(monkeypatch):
         '- skipped02']
     assert api.show_message.called == 1
     assert api.show_message.msg == '\n'.join(msgs)
+    assert reporting.report_generic.called == 1
+    assert reporting.report_generic.report_fields['title'] == 'Packages will not be installed'
+    assert reporting.report_generic.report_fields['summary'] == '\n'.join(msgs)
 
     assert to_install == {'pkg01': 'mapped', 'pkg02': 'mapped'}
 
