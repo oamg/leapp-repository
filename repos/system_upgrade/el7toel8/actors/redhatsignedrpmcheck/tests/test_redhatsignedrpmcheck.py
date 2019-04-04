@@ -52,6 +52,7 @@ def test_actor_execution_without_unsigned_data(monkeypatch):
         yield InstalledUnsignedRPM(items=installed_rpm)
     monkeypatch.setattr(api, "consume", consume_unsigned_message_mocked)
     monkeypatch.setattr(api, "produce", produce_mocked())
+    monkeypatch.setattr(api, "show_message", lambda x: True)
     monkeypatch.setattr(reporting, "report_with_remediation", report_generic_mocked())
 
     packages = library.get_unsigned_packages()
@@ -75,6 +76,7 @@ def test_actor_execution_with_unsigned_data(monkeypatch):
 
     monkeypatch.setattr(api, "consume", consume_unsigned_message_mocked)
     monkeypatch.setattr(api, "produce", produce_mocked())
+    monkeypatch.setattr(api, "show_message", lambda x: True)
     monkeypatch.setattr(reporting, "report_with_remediation", report_generic_mocked())
 
     packages = library.get_unsigned_packages()
