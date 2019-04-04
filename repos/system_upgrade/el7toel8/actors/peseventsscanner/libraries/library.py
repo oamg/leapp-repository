@@ -5,6 +5,7 @@ from collections import namedtuple
 from leapp.exceptions import StopActorExecution
 from leapp.libraries.common import reporting
 from leapp.libraries.stdlib import api
+from leapp.libraries.stdlib.config import is_verbose
 from leapp.models import InstalledRedHatSignedRPM, RpmTransactionTasks, RepositoriesSetupTasks
 
 
@@ -71,12 +72,13 @@ def filter_events(events):
     return filtered
 
 
-def notify_skipped_packages(msg, pkgs):
-    """ Show message about skipped packages """
-    msgs = []
-    msgs.append('{} {}'.format(len(pkgs), msg))
-    msgs.append('\n'.join(['- ' + p for p in pkgs]))
-    api.show_message('\n'.join(msgs))
+def report_skipped_packages(message, packages):
+    """ Generate report about skipped packages """
+    title = 'Packages will not be installed'
+    summary = '{} {}\n{}'.format(len(packages), message, '\n'.join(['- ' + p for p in packages]))
+    reporting.report_generic(title=title, summary=summary, severity='high')
+    if is_verbose():
+        api.show_message(summary)
 
 
 def filter_by_repositories(to_install):
@@ -88,7 +90,7 @@ def filter_by_repositories(to_install):
             del to_install[pkg]
 
     if blacklisted_pkgs:
-        notify_skipped_packages('packages will not be installed due to blacklisted repositories:',
+        report_skipped_packages('packages will not be installed due to blacklisted repositories:',
                                 blacklisted_pkgs)
 
 
@@ -104,7 +106,7 @@ def map_repositories(to_install):
         to_install[pkg] = REPOSITORIES_MAPPING[repo]
 
     if repo_not_mapped_pkgs:
-        notify_skipped_packages('packages will not be installed due to not mapped repositories:',
+        report_skipped_packages('packages will not be installed due to not mapped repositories:',
                                 repo_not_mapped_pkgs)
 
 
