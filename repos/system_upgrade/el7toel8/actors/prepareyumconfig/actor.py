@@ -1,6 +1,5 @@
 from leapp.actors import Actor
-from leapp.exceptions import StopActorExecutionError
-from leapp.libraries.stdlib import run, CalledProcessError
+from leapp.libraries.actor import library
 from leapp.tags import IPUWorkflowTag, PreparationPhaseTag
 
 
@@ -20,9 +19,4 @@ class Prepareyumconfig(Actor):
     tags = (IPUWorkflowTag, PreparationPhaseTag)
 
     def process(self):
-        try:
-            run(['handleyumconfig'])
-        except CalledProcessError as e:
-            raise StopActorExecutionError(
-                    'Migration of yum configuration failed.',
-                    details={'details': str(e)})
+        library.prepare_yum_config()

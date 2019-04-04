@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.libraries.stdlib import run
+from leapp.libraries.actor import library
 from leapp.tags import PreparationPhaseTag, IPUWorkflowTag
 
 
@@ -17,7 +17,4 @@ class UpdateEtcSysconfigKernel(Actor):
     tags = (PreparationPhaseTag, IPUWorkflowTag)
 
     def process(self):
-        run(['/bin/sed',
-             '-i',
-             's/^DEFAULTKERNEL=kernel$/DEFAULTKERNEL=kernel-core/g',
-             '/etc/sysconfig/kernel'])
+        library.update_kernel_config('/etc/sysconfig/kernel')
