@@ -36,7 +36,7 @@ def install_actor_deps(actor, directory):
             if os.path.isfile(makefile_path):
                 install(makefile_path)
             else:
-                sys.stderr.write("Actor '{}' doesn't have Makefile!\n")
+                sys.stderr.write("Actor '{}' doesn't have Makefile!\n".format(actor))
             return
     error("Actor '{}' doesn't exist!\n".format(actor), 1)
 
