@@ -130,7 +130,7 @@ class IPUWorkflow(Workflow):
         filter = TagFilter(RPMUpgradePhaseTag)
         policies = Policies(Policies.Errors.FailPhase,
                             Policies.Retry.Phase)
-        flags = Flags()
+        flags = Flags(is_checkpoint=True)
 
     class ApplicationsPhase(Phase):
         '''Perform the neccessary steps to finish upgrade of applications provided by Red Hat.

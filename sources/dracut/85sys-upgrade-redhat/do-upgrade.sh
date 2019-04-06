@@ -8,6 +8,8 @@ fi
 type getarg >/dev/null 2>&1 || . /lib/dracut-lib.sh
 
 export LEAPPBIN=/usr/bin/leapp
+export LEAPPHOME=/root/tmp_leapp_py3
+export LEAPP3_BIN=$LEAPPHOME/leapp3
 
 do_upgrade() {
     local args="" rv=0
@@ -34,8 +36,21 @@ do_upgrade() {
     # NOTE: in case we would need to run leapp before pivot, we would need to
     #       specify where the root is, e.g. --root=/sysroot
     # TODO: update: systemd-nspawn
-    $NEWROOT/bin/systemd-nspawn --capability=all --bind=/sys --bind=/dev --bind=/proc --bind=/run/udev --keep-unit --register=no -D $NEWROOT $LEAPPBIN upgrade --resume $args
+    nspawn_opts="--capability=all --bind=/sys --bind=/dev --bind=/proc --bind=/run/udev --keep-unit --register=no"
+    $NEWROOT/bin/systemd-nspawn $nspawn_opts -D $NEWROOT $LEAPPBIN upgrade --resume $args
     rv=$?
+
+    #FIXME: for debugging purposes; this will be removed or redefined in future
+    getarg 'rd.upgrade.break=leapp-upgrade' 'rd.break=leapp-upgrade' && \
+        emergency_shell -n upgrade "Break after LEAPP upgrade stop"
+
+    if [ "$rv" -eq 0 ]; then
+        # run leapp to proceed phases after the upgrade with Python3
+        #PY_LEAPP_PATH=/usr/lib/python2.7/site-packages/leapp/
+        #$NEWROOT/bin/systemd-nspawn $nspawn_opts -D $NEWROOT -E PYTHONPATH="${PYTHONPATH}:${PY_LEAPP_PATH}" /usr/bin/python3 $LEAPPBIN upgrade --resume $args
+        $NEWROOT/bin/systemd-nspawn $nspawn_opts -D $NEWROOT /usr/bin/python3 $LEAPP3_BIN upgrade --resume $args
+        rv=$?
+    fi
 
     # NOTE: THIS SHOULD BE AGAIN PART OF LEAPP IDEALLY
     ## backup old product id certificates
