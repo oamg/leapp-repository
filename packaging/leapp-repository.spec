@@ -30,7 +30,7 @@ BuildRequires:  python-devel
 
 # IMPORTANT: everytime the requirements are changed, increment number by one
 # - same for Provides in deps subpackage
-Requires:       leapp-repository-dependencies = 2
+Requires:       leapp-repository-dependencies = 3
 
 # That's temporary to ensure the obsoleted subpackage is not installed
 # and will be removed when the current version of leapp-repository is installed
@@ -57,7 +57,7 @@ Summary:    Meta-package with system dependencies of %{name} package
 
 # IMPORTANT: everytime the requirements are changed, increment number by one
 # - same for Requires in main package
-Provides:  leapp-repository-dependencies = 2
+Provides:  leapp-repository-dependencies = 3
 ##################################################
 # Real requirements for the leapp-repository HERE
 ##################################################
