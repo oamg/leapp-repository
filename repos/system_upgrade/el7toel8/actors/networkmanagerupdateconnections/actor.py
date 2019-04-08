@@ -4,9 +4,9 @@ from leapp.models import NetworkManagerConfig
 from leapp.tags import ApplicationsPhaseTag, IPUWorkflowTag
 
 
-class NetworkManagerUpdateClientId(Actor):
+class NetworkManagerUpdateConnections(Actor):
     """
-    Updates DHCP client-ids during Upgrade process.
+    Update NetworkManager connections.
     
     When using dhcp=dhclient on Red Hat Enterprise Linux 7, a non-hexadecimal client-id (a string)
     is sent on the wire as is (i.e. the first character is the 'type' as per RFC 2132 section
@@ -14,7 +14,7 @@ class NetworkManagerUpdateClientId(Actor):
     preserve behavior on upgrade, we convert client-ids to the hexadecimal form.
     """
 
-    name = 'network_manager_update_client_id'
+    name = 'network_manager_update_connections'
     consumes = (NetworkManagerConfig,)
     produces = ()
     tags = (ApplicationsPhaseTag, IPUWorkflowTag)
