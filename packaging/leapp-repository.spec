@@ -15,7 +15,7 @@ py2_byte_compile "%1" "%2"}
 
 
 Name:           leapp-repository
-Version:        0.5.0
+Version:        0.6.0
 Release:        1%{?dist}
 Summary:        Repositories for leapp
 
@@ -34,8 +34,8 @@ Requires:       leapp-repository-dependencies = 2
 
 # That's temporary to ensure the obsoleted subpackage is not installed
 # and will be removed when the current version of leapp-repository is installed
-Obsoletes:      leapp-repository-data <= 0.5.1
-Provides:       leapp-repository-data <= 0.5.1
+Obsoletes:      leapp-repository-data <= 0.6.1
+Provides:       leapp-repository-data <= 0.6.1
 
 %description
 Repositories for leapp
