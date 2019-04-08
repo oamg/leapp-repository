@@ -1,12 +1,26 @@
 import json
 import os
 import shutil
+import sys
 from tempfile import NamedTemporaryFile
 
 from leapp.actors import Actor
 from leapp.libraries.stdlib import run
+from leapp.libraries.stdlib.call import STDOUT
+from leapp.libraries.stdlib.config import is_debug
 from leapp.models import FilteredRpmTransactionTasks, UsedTargetRepositories
 from leapp.tags import RPMUpgradePhaseTag, IPUWorkflowTag
+
+
+def _logging_handler(fd_info, buffer):
+    '''Custom log handler to always show DNF stdout to console and stderr only in DEBUG mode'''
+    (_unused, fd_type) = fd_info
+
+    if fd_type == STDOUT:
+        sys.stdout.write(buffer)
+    else:
+        if is_debug():
+            sys.stderr.write(buffer)
 
 
 class DnfShellRpmUpgrade(Actor):
@@ -79,4 +93,4 @@ class DnfShellRpmUpgrade(Actor):
         with NamedTemporaryFile() as data:
             json.dump(plugin_data, data)
             data.flush()
-            run(dnf_command + [data.name])
+            run(dnf_command + [data.name], callback_raw=_logging_handler)
