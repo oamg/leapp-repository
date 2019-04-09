@@ -1,6 +1,8 @@
 from leapp.actors import Actor
-from leapp.models import RpmTransactionTasks, FilteredRpmTransactionTasks, InstalledRedHatSignedRPM
-from leapp.tags import IPUWorkflowTag, ChecksPhaseTag
+from leapp.models import (FilteredRpmTransactionTasks,
+                          InstalledRedHatSignedRPM, PESRpmTransactionTasks,
+                          RpmTransactionTasks)
+from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
 class FilterRpmTransactionTasks(Actor):
@@ -13,7 +15,7 @@ class FilterRpmTransactionTasks(Actor):
     """
 
     name = 'check_rpm_transaction_events'
-    consumes = (RpmTransactionTasks, InstalledRedHatSignedRPM,)
+    consumes = (PESRpmTransactionTasks, RpmTransactionTasks, InstalledRedHatSignedRPM,)
     produces = (FilteredRpmTransactionTasks,)
     tags = (IPUWorkflowTag, ChecksPhaseTag)
 
@@ -26,7 +28,7 @@ class FilterRpmTransactionTasks(Actor):
         to_install = set()
         to_remove = set()
         to_keep = set()
-        for event in self.consume(RpmTransactionTasks):
+        for event in self.consume(RpmTransactionTasks, PESRpmTransactionTasks):
             local_rpms.update(event.local_rpms)
             to_install.update(event.to_install)
             to_remove.update(installed_pkgs.intersection(event.to_remove))

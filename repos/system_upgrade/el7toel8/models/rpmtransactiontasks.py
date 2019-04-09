@@ -13,3 +13,9 @@ class RpmTransactionTasks(Model):
 
 class FilteredRpmTransactionTasks(RpmTransactionTasks):
     pass
+
+
+class PESRpmTransactionTasks(RpmTransactionTasks):
+    # Introduced because the framework struggles with solving dependency order of actors:
+    # https://github.com/oamg/leapp/issues/491
+    pass
