@@ -66,7 +66,7 @@ class PrepareUpgradeTransaction(Actor):
             error.summary = 'Cannot remove version preference.'
             return error
 
-        var_prodcert = {'server': '230.pem'}
+        var_prodcert = {'server': '479.pem'}
         if sys_var not in var_prodcert:
             return preparetransaction.ErrorData(
                 summary="Failed to to retrieve Product Cert file.",

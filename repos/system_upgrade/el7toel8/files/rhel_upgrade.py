@@ -26,6 +26,8 @@ class RhelUpgradeCommand(dnf.cli.Command):
     def pre_configure(self):
         with open(self.opts.filename) as fo:
             self.plugin_data = json.load(fo)
+        # There is an issue that ignores releasever value if it is set at configure
+        self.base.conf.releasever = self.plugin_data['dnf_conf']['releasever']
 
     def configure(self):
         self.cli.demands.root_user = True
@@ -40,7 +42,6 @@ class RhelUpgradeCommand(dnf.cli.Command):
         self.base.conf.gpgcheck = self.plugin_data['dnf_conf']['gpgcheck']
         self.base.conf.debug_solver = self.plugin_data['dnf_conf']['debugsolver']
         self.base.conf.module_platform_id = self.plugin_data['dnf_conf']['platform_id']
-        self.base.conf.releasever = self.plugin_data['dnf_conf']['releasever']
         if self.plugin_data['dnf_conf']['test_flag'] and self.opts.tid[0] == 'download':
             self.base.conf.tsflags.append("test")
 
