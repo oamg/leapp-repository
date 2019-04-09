@@ -42,7 +42,6 @@ Repositories for leapp
 
 
 %package sos-plugin
-License: Red Hat Enterprise Agreement
 Summary: SOS report plugin for leapp
 Requires: sos
 
