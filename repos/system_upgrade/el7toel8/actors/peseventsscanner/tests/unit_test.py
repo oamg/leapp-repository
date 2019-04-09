@@ -1,22 +1,22 @@
-import pytest
 import os
+
+import pytest
 
 from leapp.exceptions import StopActorExecution
 from leapp.libraries.actor import library
 from leapp.libraries.actor.library import (Event,
-                                           parse_action,
-                                           parse_packageset,
-                                           parse_entry,
-                                           parse_file,
-                                           filter_events,
-                                           report_skipped_packages,
-                                           filter_by_repositories,
-                                           map_repositories,
+                                           filter_out_pkgs_in_blacklisted_repos,
+                                           get_events,
+                                           get_events_for_installed_pkgs_only,
+                                           map_repositories, parse_action,
+                                           parse_entry, parse_packageset,
+                                           parse_pes_events_file,
                                            process_events,
-                                           scan_events)
+                                           report_skipped_packages)
 from leapp.libraries.common import reporting
 from leapp.libraries.stdlib import api
-from leapp.models import InstalledRedHatSignedRPM, RPM, RpmTransactionTasks, RepositoriesSetupTasks
+from leapp.models import (RPM, InstalledRedHatSignedRPM,
+                          RepositoriesSetupTasks, RpmTransactionTasks)
 
 
 class show_message_mocked(object):
@@ -105,8 +105,8 @@ def test_parse_entry(current_actor_context):
     assert event.out_pkgs == {}
 
 
-def test_parse_file(current_actor_context):
-    events = parse_file('files/tests/sample01.json')
+def test_parse_pes_events_file(current_actor_context):
+    events = parse_pes_events_file('files/tests/sample01.json')
     assert len(events) == 2
     assert events[0].action == 'Split'
     assert events[0].in_pkgs == {'original': 'repo'}
@@ -116,17 +116,11 @@ def test_parse_file(current_actor_context):
     assert events[1].out_pkgs == {}
 
 
-def test_filter_events(monkeypatch):
-    def consume_message_mocked(*models):
-        pkgs = [
-            RPM(name='original', epoch='', packager='', version='', release='', arch='', pgpsig='')]
-        yield InstalledRedHatSignedRPM(items=pkgs)
-
-    monkeypatch.setattr('leapp.libraries.stdlib.api.consume', consume_message_mocked)
+def test_get_events_for_installed_pkgs_only(monkeypatch):
     events = [
         Event('Split', {'original': 'repo'}, {'split01': 'repo', 'split02': 'repo'}),
         Event('Removed', {'removed': 'repo'}, {})]
-    filtered = filter_events(events)
+    filtered = get_events_for_installed_pkgs_only(events, {'original'})
 
     assert len(filtered) == 1
     assert filtered[0].action == 'Split'
@@ -163,7 +157,7 @@ def test_report_skipped_packages_no_verbose_mode(monkeypatch):
     assert reporting.report_generic.report_fields['summary'] == message
 
 
-def test_filter_by_repositories(monkeypatch):
+def test_filter_out_pkgs_in_blacklisted_repos(monkeypatch):
     monkeypatch.setattr(api, 'show_message', show_message_mocked())
     monkeypatch.setattr(reporting, 'report_generic', report_generic_mocked())
     monkeypatch.setattr(library, 'get_repositories_blacklisted', get_repos_blacklisted_mocked(set(['blacklisted'])))
@@ -174,7 +168,7 @@ def test_filter_by_repositories(monkeypatch):
         'pkg02': 'repo02',
         'skipped01': 'blacklisted',
         'skipped02': 'blacklisted'}
-    filter_by_repositories(to_install)
+    filter_out_pkgs_in_blacklisted_repos(to_install)
 
     msgs = [
         '2 packages will not be installed due to blacklisted repositories:',
@@ -216,60 +210,32 @@ def test_map_repositories(monkeypatch):
 
 
 def test_process_events(monkeypatch):
-    monkeypatch.setattr('leapp.libraries.stdlib.api.produce', produce_mocked())
     monkeypatch.setattr(library, 'REPOSITORIES_MAPPING', {'repo': 'mapped'})
     monkeypatch.setattr(library, 'get_repositories_blacklisted', get_repos_blacklisted_mocked(set()))
 
     events = [
         Event('Split', {'original': 'repo'}, {'split01': 'repo', 'split02': 'repo'}),
         Event('Removed', {'removed': 'repo'}, {})]
-    process_events(events)
+    to_install, to_remove = process_events(events, {})
 
-    assert api.produce.called == 2
-    assert len(api.produce.model_instances) == 2
-    assert isinstance(api.produce.model_instances[0], RpmTransactionTasks)
-    assert len(api.produce.model_instances[0].to_install) == 2
-    assert api.produce.model_instances[0].to_install == ['split02', 'split01']
-    assert len(api.produce.model_instances[0].to_remove) == 2
-    assert api.produce.model_instances[0].to_remove == ['removed', 'original']
-    assert isinstance(api.produce.model_instances[1], RepositoriesSetupTasks)
-    assert api.produce.model_instances[1].to_enable == ['mapped']
+    assert len(to_install) == 2
+    assert to_install == {'split02': 'mapped', 'split01': 'mapped'}
+    assert len(to_remove) == 2
+    assert to_remove == {'removed': 'repo', 'original': 'repo'}
 
 
-def test_scan_events(monkeypatch):
-    def consume_message_mocked(*models):
-        pkgs = [
-            RPM(name='original', epoch='', packager='', version='', release='', arch='', pgpsig=''),
-            RPM(name='removed', epoch='', packager='', version='', release='', arch='', pgpsig='')]
-        yield InstalledRedHatSignedRPM(items=pkgs)
-
-    monkeypatch.setattr('leapp.libraries.stdlib.api.consume', consume_message_mocked)
-    monkeypatch.setattr('leapp.libraries.stdlib.api.produce', produce_mocked())
+def test_get_events(monkeypatch):
     monkeypatch.setattr(reporting, 'report_generic', report_generic_mocked())
-    monkeypatch.setattr(library, 'REPOSITORIES_MAPPING', {'repo': 'mapped'})
-    monkeypatch.setattr(library, 'get_repositories_blacklisted', get_repos_blacklisted_mocked(set()))
-
-    scan_events('files/tests/sample01.json')
-
-    assert api.produce.called == 2
-    assert len(api.produce.model_instances) == 2
-    assert isinstance(api.produce.model_instances[0], RpmTransactionTasks)
-    assert len(api.produce.model_instances[0].to_install) == 2
-    assert api.produce.model_instances[0].to_install == ['split02', 'split01']
-    assert len(api.produce.model_instances[0].to_remove) == 2
-    assert api.produce.model_instances[0].to_remove == ['removed', 'original']
-    assert isinstance(api.produce.model_instances[1], RepositoriesSetupTasks)
-    assert api.produce.model_instances[1].to_enable == ['mapped']
 
     with pytest.raises(StopActorExecution):
-        scan_events('files/tests/sample02.json')
+        get_events('files/tests/sample02.json')
     assert reporting.report_generic.called == 1
     assert 'inhibitor' in reporting.report_generic.report_fields['flags']
 
     reporting.report_generic.called = 0
     reporting.report_generic.model_instances = []
     with pytest.raises(StopActorExecution):
-        scan_events('files/tests/sample03.json')
+        get_events('files/tests/sample03.json')
     assert reporting.report_generic.called == 1
     assert 'inhibitor' in reporting.report_generic.report_fields['flags']
 
@@ -280,6 +246,6 @@ def test_pes_data_not_found(monkeypatch):
     monkeypatch.setattr('os.path.isfile', file_not_exists)
     monkeypatch.setattr(reporting, 'report_generic', report_generic_mocked())
     with pytest.raises(StopActorExecution):
-        scan_events('/etc/leapp/pes-data.json')
+        get_events('/etc/leapp/pes-data.json')
     assert reporting.report_generic.called == 1
     assert 'inhibitor' in reporting.report_generic.report_fields['flags']
