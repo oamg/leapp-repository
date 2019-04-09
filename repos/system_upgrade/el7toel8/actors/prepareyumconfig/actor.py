@@ -1,12 +1,13 @@
 from leapp.actors import Actor
-from leapp.tags import IPUWorkflowTag, PreparationPhaseTag
+from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.stdlib import run, CalledProcessError
+from leapp.tags import IPUWorkflowTag, PreparationPhaseTag
 
 
 class Prepareyumconfig(Actor):
     """
-    Handle migration of the yum configuration files
-    
+    Handle migration of the yum configuration files.
+
     RPM cannot handle replacement of directories by symlinks by default
     without the %pretrans scriptlet. As yum package is packaged wrong,
     we have to workround that by migration of the yum configuration files
