@@ -21,7 +21,7 @@ class VerifyCheckResults(Actor):
         results = list(self.consume(Report))
         inhibitors = [msg for msg in results if 'inhibitor' in msg.flags]
         high_sev_msgs = [msg for msg in results if msg.severity == 'high' and 'inhibitor' not in msg.flags]
-        msgs_to_report = inhibitors+high_sev_msgs
+        msgs_to_report = inhibitors + high_sev_msgs
 
         report_file = '/tmp/leapp-report.txt'
         error = report.generate_report(msgs_to_report, report_file)
@@ -32,7 +32,7 @@ class VerifyCheckResults(Actor):
 
         if inhibitors:
             for e in inhibitors:
-                self.report_error('%s: %s: %s' % (e.title, e.severity, e.detail['summary']))
+                self.report_error(e.title)
 
             self.report_error('Ending process due to errors found during checks, see {} for detailed report.'
                               .format(report_file))
