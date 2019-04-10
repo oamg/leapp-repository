@@ -281,5 +281,6 @@ def create_disk_image(path):
 
 
 def remove_disk_image(path):
-    guard_call(['/bin/umount', '-fl', os.path.join(path, 'mounts')])
+    if os.path.ismount(os.path.join(path, 'mounts')):
+        guard_call(['/bin/umount', '-fl', os.path.join(path, 'mounts')])
     shutil.rmtree(path, ignore_errors=True)
