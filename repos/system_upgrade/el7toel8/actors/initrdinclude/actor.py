@@ -48,7 +48,7 @@ class InitrdInclude(Actor):
                        "Cannot get info about the installed kernel.",
                        details={"details": str(e)})
         try:
-            cmd = ["dracut", "--install", " ".join(files), "-f", "-k", kernel_version]
+            cmd = ["dracut", "--install", " ".join(files), "-f", "--kver", kernel_version]
             run(cmd)
         except CalledProcessError as e:
             # NOTE(pstodulk) same note as above
