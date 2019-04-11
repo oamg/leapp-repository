@@ -6,10 +6,10 @@ from leapp.exceptions import StopActorExecution
 from leapp.libraries.common import reporting
 from leapp.libraries.stdlib import api
 from leapp.libraries.stdlib.config import is_verbose
-from leapp.models import InstalledRedHatSignedRPM, RpmTransactionTasks, RepositoriesSetupTasks
+from leapp.models import InstalledRedHatSignedRPM, RepositoriesBlacklisted, RepositoriesSetupTasks,\
+    RpmTransactionTasks
 
 
-REPOSITORIES_BLACKLIST = ('rhel8-buildroot', 'rhel8-crb')
 # FIXME: this mapping is not complete and will need to be manually updated frequently
 REPOSITORIES_MAPPING = {
     'rhel8-appstream': 'rhel-8-for-x86_64-appstream-rpms',
@@ -81,11 +81,19 @@ def report_skipped_packages(message, packages):
         api.show_message(summary)
 
 
+def get_repositories_blacklisted():
+    """ Consumes message and returns a set of repositories blacklisted """
+    repos_blacklisted = set()
+    for blacklist in api.consume(RepositoriesBlacklisted):
+        repos_blacklisted.update(blacklist.repoids)
+    return repos_blacklisted
+
+
 def filter_by_repositories(to_install):
     """ Filter packages to be installed based on repositories"""
     blacklisted_pkgs = set()
     for pkg, repo in to_install.items():
-        if repo in REPOSITORIES_BLACKLIST:
+        if repo in get_repositories_blacklisted():
             blacklisted_pkgs.add(pkg)
             del to_install[pkg]
 
