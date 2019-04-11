@@ -1,8 +1,8 @@
 import platform
 
 from leapp.actors import Actor
-from leapp.models import RHELTargetRepository, TargetRepositories, RepositoriesMap, \
-    RepositoriesFacts, RepositoriesSetupTasks, CustomTargetRepository
+from leapp.models import CustomTargetRepository, RHELTargetRepository, RepositoriesBlacklisted, \
+    RepositoriesFacts, RepositoriesMap, RepositoriesSetupTasks, TargetRepositories
 from leapp.tags import IPUWorkflowTag, ChecksPhaseTag
 
 
@@ -16,7 +16,7 @@ class SetupTargetRepos(Actor):
     """
 
     name = 'setuptargetrepos'
-    consumes = (CustomTargetRepository, RepositoriesSetupTasks, RepositoriesMap, RepositoriesFacts,)
+    consumes = (CustomTargetRepository, RepositoriesSetupTasks, RepositoriesMap, RepositoriesFacts, RepositoriesBlacklisted)
     produces = (TargetRepositories,)
     tags = (IPUWorkflowTag, ChecksPhaseTag)
 
@@ -47,6 +47,12 @@ class SetupTargetRepos(Actor):
         for task in self.consume(RepositoriesSetupTasks):
             for repo in task.to_enable:
                 rhel_repos.append(RHELTargetRepository(repoid=repo))
+
+        repos_blacklisted = set()
+        for blacklist in self.consume(RepositoriesBlacklisted):
+            repos_blacklisted.update(blacklist.repoids)
+        rhel_repos = [repo for repo in rhel_repos if repo.repoid not in repos_blacklisted]
+        custom_repos = [repo for repo in custom_repos if repo.repoid not in repos_blacklisted]
 
         self.produce(TargetRepositories(
             rhel_repos=rhel_repos,

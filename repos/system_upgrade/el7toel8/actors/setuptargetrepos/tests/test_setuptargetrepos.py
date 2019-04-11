@@ -1,5 +1,6 @@
 from leapp.models import CustomTargetRepository, TargetRepositories, RepositoryData, \
-    RepositoryFile, RepositoriesFacts, RepositoryMap, RepositoriesMap, RepositoriesSetupTasks
+    RepositoryFile, RepositoriesFacts, RepositoryMap, RepositoriesMap, RepositoriesSetupTasks, \
+    RepositoriesBlacklisted
 
 
 def test_minimal_execution(current_actor_context):
@@ -12,22 +13,45 @@ def test_custom_repos(current_actor_context):
                                     baseurl='https://.../dist/rhel/server/8/os',
                                     enabled=True)
     
+    blacklisted = CustomTargetRepository(repoid='rhel-8-blacklisted-rpms',
+                                         name='RHEL 8 Blacklisted (RPMs)',
+                                         baseurl='https://.../dist/rhel/blacklisted/8/os',
+                                         enabled=True)
+
+    repos_blacklisted = RepositoriesBlacklisted(repoids=['rhel-8-blacklisted-rpms'])
+
     current_actor_context.feed(custom)
+    current_actor_context.feed(blacklisted)
+    current_actor_context.feed(repos_blacklisted)
     current_actor_context.run()
+
     assert current_actor_context.consume(TargetRepositories)
-    assert len(current_actor_context.consume(TargetRepositories)[0].custom_repos) == 1
+
+    custom_repos = current_actor_context.consume(TargetRepositories)[0].custom_repos
+    assert len(custom_repos) == 1
+    assert custom_repos[0].repoid == 'rhel-8-server-rpms'
 
 
 def test_repositories_setup_tasks(current_actor_context):
-    repositories_setup_tasks = RepositoriesSetupTasks(to_enable=['rhel-8-server-rpms'])
+    repositories_setup_tasks = RepositoriesSetupTasks(to_enable=['rhel-8-server-rpms',
+                                                                 'rhel-8-blacklisted-rpms'])
+
+    repos_blacklisted = RepositoriesBlacklisted(repoids=['rhel-8-blacklisted-rpms'])
+
     current_actor_context.feed(repositories_setup_tasks)
+    current_actor_context.feed(repos_blacklisted)
     current_actor_context.run()
     assert current_actor_context.consume(TargetRepositories)
-    assert len(current_actor_context.consume(TargetRepositories)[0].rhel_repos) == 1
+
+    rhel_repos = current_actor_context.consume(TargetRepositories)[0].rhel_repos
+    assert len(rhel_repos) == 1
+    assert rhel_repos[0].repoid == 'rhel-8-server-rpms'
 
 
 def test_repos_mapping(current_actor_context):
-    repos_data = [RepositoryData(repoid='rhel-7-server-rpms', name='RHEL 7 Server')]
+    repos_data = [
+        RepositoryData(repoid='rhel-7-server-rpms', name='RHEL 7 Server'),
+        RepositoryData(repoid='rhel-7-blacklisted-rpms', name='RHEL 7 Blacklisted')]
     repos_files = [RepositoryFile(file='/etc/yum.repos.d/redhat.repo', data=repos_data)]    
     facts = RepositoriesFacts(repositories=repos_files)
 
@@ -42,11 +66,24 @@ def test_repos_mapping(current_actor_context):
                            from_minor_version='all',
                            to_minor_version='all',
                            arch='x86_64',
+                           repo_type='rpm'),
+             RepositoryMap(from_id='rhel-7-blacklist-rpms',
+                           to_id='rhel-8-blacklist-rpms',
+                           from_minor_version='all',
+                           to_minor_version='all',
+                           arch='x86_64',
                            repo_type='rpm')]
     repos_map = RepositoriesMap(repositories=mapping)
 
+    repos_blacklisted = RepositoriesBlacklisted(repoids=['rhel-8-blacklisted-rpms'])
+
     current_actor_context.feed(facts)
     current_actor_context.feed(repos_map)
+    current_actor_context.feed(repos_blacklisted)
     current_actor_context.run()
     assert current_actor_context.consume(TargetRepositories)
-    assert len(current_actor_context.consume(TargetRepositories)[0].rhel_repos) == 2
+
+    rhel_repos = current_actor_context.consume(TargetRepositories)[0].rhel_repos
+    assert len(rhel_repos) == 2
+    assert set([repo.repoid for repo in rhel_repos]) == set(['rhel-8-for-x86_64-baseos-htb-rpms',
+                                                             'rhel-8-for-x86_64-appstream-htb-rpms'])

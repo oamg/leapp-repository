@@ -1,6 +1,7 @@
 from leapp.actors import Actor
 from leapp.libraries.actor.library import scan_events
-from leapp.models import RpmTransactionTasks, RepositoriesSetupTasks, InstalledRedHatSignedRPM
+from leapp.models import InstalledRedHatSignedRPM, RepositoriesBlacklisted, RepositoriesSetupTasks, \
+RpmTransactionTasks
 from leapp.reporting import Report
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
@@ -14,7 +15,7 @@ class PesEventsScanner(Actor):
     """
 
     name = 'pes_events_scanner'
-    consumes = (InstalledRedHatSignedRPM,)
+    consumes = (InstalledRedHatSignedRPM, RepositoriesBlacklisted,)
     produces = (RpmTransactionTasks, RepositoriesSetupTasks, Report,)
     tags = (IPUWorkflowTag, FactsPhaseTag)
 

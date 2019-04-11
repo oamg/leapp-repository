@@ -47,6 +47,14 @@ class report_generic_mocked(object):
         self.report_fields = report_fields
 
 
+class get_repos_blacklisted_mocked():
+    def __init__(self, blacklisted):
+        self.blacklisted = blacklisted
+
+    def __call__(self):
+        return self.blacklisted
+
+
 def test_parse_action(current_actor_context):
     assert parse_action(0) == 'Present'
     assert parse_action(1) == 'Removed'
@@ -157,8 +165,8 @@ def test_report_skipped_packages_no_verbose_mode(monkeypatch):
 
 def test_filter_by_repositories(monkeypatch):
     monkeypatch.setattr(api, 'show_message', show_message_mocked())
-    monkeypatch.setattr(library, 'REPOSITORIES_BLACKLIST', ['blacklisted'])
     monkeypatch.setattr(reporting, 'report_generic', report_generic_mocked())
+    monkeypatch.setattr(library, 'get_repositories_blacklisted', get_repos_blacklisted_mocked(set(['blacklisted'])))
     monkeypatch.setenv('LEAPP_VERBOSE', '1')
 
     to_install = {
@@ -210,6 +218,7 @@ def test_map_repositories(monkeypatch):
 def test_process_events(monkeypatch):
     monkeypatch.setattr('leapp.libraries.stdlib.api.produce', produce_mocked())
     monkeypatch.setattr(library, 'REPOSITORIES_MAPPING', {'repo': 'mapped'})
+    monkeypatch.setattr(library, 'get_repositories_blacklisted', get_repos_blacklisted_mocked(set()))
 
     events = [
         Event('Split', {'original': 'repo'}, {'split01': 'repo', 'split02': 'repo'}),
@@ -238,6 +247,7 @@ def test_scan_events(monkeypatch):
     monkeypatch.setattr('leapp.libraries.stdlib.api.produce', produce_mocked())
     monkeypatch.setattr(reporting, 'report_generic', report_generic_mocked())
     monkeypatch.setattr(library, 'REPOSITORIES_MAPPING', {'repo': 'mapped'})
+    monkeypatch.setattr(library, 'get_repositories_blacklisted', get_repos_blacklisted_mocked(set()))
 
     scan_events('files/tests/sample01.json')
 
