@@ -12,8 +12,8 @@ from leapp.models import InstalledRedHatSignedRPM, RpmTransactionTasks, Reposito
 REPOSITORIES_BLACKLIST = ('rhel8-buildroot', 'rhel8-crb')
 # FIXME: this mapping is not complete and will need to be manually updated frequently
 REPOSITORIES_MAPPING = {
-    'rhel8-appstream': 'rhel-8-for-x86_64-appstream-htb-rpms',
-    'rhel8-baseos': 'rhel-8-for-x86_64-baseos-htb-rpms'}
+    'rhel8-appstream': 'rhel-8-for-x86_64-appstream-rpms',
+    'rhel8-baseos': 'rhel-8-for-x86_64-baseos-rpms'}
 
 
 Event = namedtuple('Event', ['action', 'in_pkgs', 'out_pkgs'])
