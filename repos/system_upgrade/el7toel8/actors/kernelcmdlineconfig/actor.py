@@ -28,7 +28,7 @@ class KernelCmdlineConfig(Actor):
     def process(self):
         kernel_version = self.get_rhel8_kernel_version()
         for arg in self.consume(KernelCmdlineArg):
-            cmd = ['grubby', '--update-kernel=/boot/vmlinuz-{}'.format(kernel_version), '--args="{}={}"'.format(arg.key, arg.value)]
+            cmd = ['grubby', '--update-kernel=/boot/vmlinuz-{}'.format(kernel_version), '--args={}={}'.format(arg.key, arg.value)]
             try:
                 run(cmd)
             except CalledProcessError as e:
