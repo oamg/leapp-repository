@@ -49,8 +49,8 @@ class RhelUpgradeCommand(dnf.cli.Command):
         self.base.repos.all().disable()
         for repo in self.base.repos.all():
             if repo.id in enabled_repos:
+                repo.skip_if_unavailable = False
                 repo.enable()
-
 
     def run(self):
         self.base.add_remote_rpms(self.plugin_data['pkgs_info']['local_rpms'])
@@ -82,4 +82,3 @@ class RhelUpgradePlugin(dnf.Plugin):
         super(RhelUpgradePlugin, self).__init__(base, cli)
         if cli:
             cli.register_command(RhelUpgradeCommand)
-
