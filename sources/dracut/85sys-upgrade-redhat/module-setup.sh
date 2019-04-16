@@ -69,7 +69,10 @@ install() {
     # probably not so easy to decide & realize how we will resolve that. Let's
     # keep that for discussion
     # Q: Would we hack that in way of copy whole initramfs into the root, mount
-    #    mount it and set envars 
+    #    mount it and set envars
+
+    # install this one to ensure we are able to sync write
+    inst_binary sync
 
     # script to actually run the upgrader binary
     inst_hook upgrade 50 "$moddir/do-upgrade.sh"

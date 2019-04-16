@@ -40,6 +40,9 @@ do_upgrade() {
     $NEWROOT/bin/systemd-nspawn $nspawn_opts -D $NEWROOT $LEAPPBIN upgrade --resume $args
     rv=$?
 
+    # NOTE: flush the cached content to disk to ensure everything is written
+    sync
+
     #FIXME: for debugging purposes; this will be removed or redefined in future
     getarg 'rd.upgrade.break=leapp-upgrade' 'rd.break=leapp-upgrade' && \
         emergency_shell -n upgrade "Break after LEAPP upgrade stop"
@@ -112,6 +115,9 @@ result=$?
 
 ##### safe the data and remount $NEWROOT as it was previously mounted #####
 save_journal
+
+# NOTE: flush the cached content to disk to ensure everything is written
+sync
 mount -o "remount,$old_opts" $NEWROOT
 exit $result
 
