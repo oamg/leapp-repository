@@ -51,7 +51,14 @@ do_upgrade() {
         # run leapp to proceed phases after the upgrade with Python3
         #PY_LEAPP_PATH=/usr/lib/python2.7/site-packages/leapp/
         #$NEWROOT/bin/systemd-nspawn $nspawn_opts -D $NEWROOT -E PYTHONPATH="${PYTHONPATH}:${PY_LEAPP_PATH}" /usr/bin/python3 $LEAPPBIN upgrade --resume $args
-        $NEWROOT/bin/systemd-nspawn $nspawn_opts -D $NEWROOT /usr/bin/python3 $LEAPP3_BIN upgrade --resume $args
+
+        # NOTE:
+        # mount everything from FSTAB before run of the leapp as mount inside
+        # the container is not persistent and we need to have mounted /boot
+        # all FSTAB partitions. As mount was working before, hopefully will
+        # work now as well. Later this should be probably modified as we will
+        # need to handle more stuff around storage at all.
+        $NEWROOT/bin/systemd-nspawn $nspawn_opts -D $NEWROOT /usr/bin/bash -c "mount -a; /usr/bin/python3 $LEAPP3_BIN upgrade --resume $args"
         rv=$?
     fi
 
