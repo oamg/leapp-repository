@@ -23,7 +23,7 @@ class VerifyCheckResults(Actor):
         high_sev_msgs = [msg for msg in results if msg.severity == 'high' and 'inhibitor' not in msg.flags]
         msgs_to_report = inhibitors + high_sev_msgs
 
-        report_file = '/tmp/leapp-report.txt'
+        report_file = '/var/log/leapp/leapp-report.txt'
         error = report.generate_report(msgs_to_report, report_file)
         if error:
             self.report_error('Report Error: ' + error)

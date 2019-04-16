@@ -80,7 +80,7 @@ save_journal() {
     # Q: would it be possible that journal will not be flushed completely yet?
     echo "writing logs to disk and rebooting"
 
-    local logfile="$NEWROOT/var/log/upgrade.log"
+    local logfile="$NEWROOT/var/log/leapp/leapp-upgrade.log"
 
     # Add a separator if file exists
     [ -e $logfile ] && echo "### LEAPP reboot ###" >> $logfile
