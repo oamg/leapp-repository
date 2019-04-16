@@ -72,7 +72,6 @@ class DnfShellRpmUpgrade(Actor):
         plugin_data = {
             'pkgs_info':
                 {
-                    'local_rpms': [pkg for pkg in data.local_rpms],
                     'to_install': [pkg for pkg in data.to_install],
                     'to_remove': [pkg for pkg in data.to_remove]
                 },

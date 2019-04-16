@@ -19,9 +19,8 @@ class TransactionWorkarounds(Actor):
 
     def process(self):
         location = self.get_folder_path('bundled-rpms')
-        local_rpms = []
+        to_install = []
         for name in os.listdir(location):
-            if name.endswith('.rpm'):
-                local_rpms.append(os.path.join(location, name))
-        if local_rpms:
-            self.produce(RpmTransactionTasks(local_rpms=local_rpms))
+            to_install.append(os.path.join(location, name))
+        if to_install:
+            self.produce(RpmTransactionTasks(to_install=to_install))

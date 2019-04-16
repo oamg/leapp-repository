@@ -39,6 +39,10 @@ class RhelUpgradeCommand(dnf.cli.Command):
         self.base.conf.protected_packages = []
         self.base.conf.best = self.plugin_data['dnf_conf']['best']
         self.base.conf.assumeyes = True
+        # we set keepcache=True just for download phase as we do not want the packages 
+        # to be cached after the actual upgrade.
+        if self.opts.tid[0] == 'download':
+            self.base.conf.keepcache = True
         self.base.conf.gpgcheck = self.plugin_data['dnf_conf']['gpgcheck']
         self.base.conf.debug_solver = self.plugin_data['dnf_conf']['debugsolver']
         self.base.conf.module_platform_id = self.plugin_data['dnf_conf']['platform_id']
@@ -53,23 +57,43 @@ class RhelUpgradeCommand(dnf.cli.Command):
                 repo.enable()
 
     def run(self):
-        self.base.add_remote_rpms(self.plugin_data['pkgs_info']['local_rpms'])
 
-        for pkg_spec in self.plugin_data['pkgs_info']['to_remove']:
+        to_install_remote = []
+        to_install = []
+        to_remove = self.plugin_data['pkgs_info']['to_remove']
+
+        for pkg_spec in self.plugin_data['pkgs_info']['to_install']:
+            if pkg_spec.endswith('.rpm'):
+                to_install_remote.append(pkg_spec)
+            else:
+                to_install.append(pkg_spec)
+
+        # Local (on filesystem) amd remote (with url) packages to be installed
+        # add_remote_rpms() accepts list of packages
+
+        self.base.add_remote_rpms(to_install_remote)
+
+        # Packages to be removed
+
+        for pkg_spec in to_remove:
             try:
                 self.base.remove(pkg_spec)
             except dnf.exceptions.MarkingError:
                 self.pkgs_notfound.append(pkg_spec)
 
-        for pkg_spec in self.plugin_data['pkgs_info']['to_install']:
+        # Packages to be installed
+
+        for pkg_spec in to_install:
             try:
                 self.base.install(pkg_spec)
             except dnf.exceptions.MarkingError:
                 self.pkgs_notfound.append(pkg_spec)
 
+        # Packages to be upgraded
+
         q = self.base.sack.query().installed()
         for pkg in q:
-            if pkg.name not in self.plugin_data['pkgs_info']['to_install'] + self.plugin_data['pkgs_info']['to_remove']:
+            if pkg.name not in to_install + to_remove:
                 self.base.upgrade(pkg.name)
 
         self.base.distro_sync()
