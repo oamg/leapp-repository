@@ -13,7 +13,8 @@ class Leapp(Plugin, RedHatPlugin):
     def setup(self):
         self.add_copy_spec([
             '/var/lib/leapp/leapp.db',
-            '/tmp/download-debugdata',
-            '/var/log/upgrade.log',
-            '/tmp/leapp-report.txt'
+            '/var/log/leapp/dnf-debugdata/',
+            '/var/log/leapp/leapp-upgrade.log',
+            '/var/log/leapp/leapp-report.txt',
+            '/var/log/leapp/dnf-plugin-data.txt'
         ])
