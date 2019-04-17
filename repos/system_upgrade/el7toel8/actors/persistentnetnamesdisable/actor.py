@@ -2,7 +2,8 @@ import re
 
 from leapp.actors import Actor
 from leapp.libraries.common import reporting
-from leapp.models import PersistentNetNamesFacts, KernelCmdlineArg
+from leapp.models import KernelCmdlineArg, PersistentNetNamesFacts
+from leapp.reporting import Report
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 
@@ -13,7 +14,7 @@ class PersistentNetNamesDisable(Actor):
 
     name = 'persistentnetnamesdisable'
     consumes = (PersistentNetNamesFacts,)
-    produces = (KernelCmdlineArg,)
+    produces = (KernelCmdlineArg, Report)
     tags = (FactsPhaseTag, IPUWorkflowTag)
 
     def ethX_count(self, interfaces):
@@ -37,7 +38,7 @@ class PersistentNetNamesDisable(Actor):
 
         if self.single_eth0(interfaces):
             self.disable_persistent_naming()
-        elif self.ethX_count(interfaces) > 1:
+        elif len(interfaces) > 1 and self.ethX_count(interfaces) > 0:
             reporting.report_generic(
                 title='Unsupported network configuration',
                 summary='Detected multiple network interfaces using unstable kernel names (e.g. eth0, eth1). '
