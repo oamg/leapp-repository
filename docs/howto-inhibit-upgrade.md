@@ -7,7 +7,7 @@ message when a problem is found. The message model to use in this case is
 If there is at least one Report message produced before the Report phase,
 the upgrade will be stopped in the Reports phase, in which the messages are
 being collected. It means that any Report message produced **after** the
-Report phase will have **no** inhibiting effect. The details mentioned in the
+Report phase will **not** have inhibiting effect. The details mentioned in the
 Report messages will be part of the report available to the user to review.
 
 
