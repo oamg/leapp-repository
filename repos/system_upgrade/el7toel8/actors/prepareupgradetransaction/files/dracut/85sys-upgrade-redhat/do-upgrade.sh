@@ -11,6 +11,8 @@ export LEAPPBIN=/usr/bin/leapp
 export LEAPPHOME=/root/tmp_leapp_py3
 export LEAPP3_BIN=$LEAPPHOME/leapp3
 
+export NEWROOT=${NEWROOT:-"/sysroot"}
+
 do_upgrade() {
     local args="" rv=0
     #FIXME: set here params we would like to possible use...
