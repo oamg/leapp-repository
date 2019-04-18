@@ -3,6 +3,7 @@ import os
 from leapp.exceptions import StopActorExecution
 from leapp.libraries.common import reporting
 from leapp.libraries.stdlib import api
+from leapp.libraries.stdlib.config import is_verbose
 from leapp.models import InstalledUnsignedRPM
 
 
@@ -19,7 +20,7 @@ def generate_report(packages):
     """ Generate a report if exists packages unsigned in the system """
     if not len(packages):
         return
-    unsigned_packages_new_line = '\n'.join(packages)
+    unsigned_packages_new_line = '\n'.join(['- ' + p for p in packages])
     unsigned_packages = ' '.join(packages)
     remediation = 'yum remove {}'.format(unsigned_packages)
     summary = 'The following packages have not been signed by Red Hat ' \
@@ -30,6 +31,8 @@ def generate_report(packages):
         remediation=remediation,
         severity='high',
     )
+    if is_verbose():
+        api.show_message(summary)
 
 
 def get_unsigned_packages():
