@@ -21,7 +21,7 @@ Summary:        Repositories for leapp
 
 License:        ASL 2.0
 URL:            https://oamg.github.io/leapp/
-Source0:        https://github.com/oamg/leapp-repository/archive/leapp-repository-%{version}.tar.gz
+Source0:        https://github.com/oamg/%{name}/archive/v%{version}.tar.gz#/%{name}-%{version}.tar.gz
 Source1:        deps-pkgs.tar.gz
 Source2:        leapp-repository-initrd.tar.gz
 BuildArch:      noarch
