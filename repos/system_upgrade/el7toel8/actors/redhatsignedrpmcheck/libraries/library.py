@@ -23,21 +23,21 @@ def skip_check():
 
 
 def generate_report(packages):
-    """ Generate a report if exists packages unsigned in the system """
+    """ Generate a report if there are unsigned packages installed on the system """
     if not packages:
         return
     unsigned_packages_new_line = '\n'.join(['- ' + p for p in packages])
     unsigned_packages = ' '.join(packages)
-    remediation = ['yum', 'remove', '{}'.format(unsigned_packages)]
-    title = 'Packages not signed by Red Hat found in the system'
-    summary = 'The following packages have not been signed by Red Hat ' \
-              'and may be removed in the upgrade process:\n{}'.format(unsigned_packages_new_line)
+    title = 'Packages not signed by Red Hat found on the system'
+    summary = ('The following packages have not been signed by Red Hat'
+               ' and may be removed during the upgrade process in case Red Hat-signed'
+               ' packages to be removed during the upgrade depend on them:\n{}'
+               .format(unsigned_packages_new_line))
     reporting.create_report([
         reporting.Title(title),
         reporting.Summary(summary),
         reporting.Severity(reporting.Severity.HIGH),
-        reporting.Tags(COMMON_REPORT_TAGS),
-        reporting.Remediation(commands=[remediation])
+        reporting.Tags(COMMON_REPORT_TAGS)
     ])
 
     if is_verbose():
