@@ -150,7 +150,7 @@ $ leapp upgrade
 2019-04-16 15:36:54.715 INFO     PID: 7455 leapp.workflow.Reports: Starting stage Before of phase Reports
 2019-04-16 15:36:54.764 INFO     PID: 7455 leapp.workflow.Reports: Starting stage Main of phase Reports
 2019-04-16 15:36:54.788 INFO     PID: 7455 leapp.workflow.Reports: Executing actor verify_check_results
-2019-04-16 15:36:54.854 INFO     PID: 8510 leapp.workflow.Reports.verify_check_results: Generated report at /tmp/leapp-report.txt
+2019-04-16 15:36:54.854 INFO     PID: 8510 leapp.workflow.Reports.verify_check_results: Generated report at /var/log/leapp-report.txt
 2019-04-16 15:36:54.923 INFO     PID: 7455 leapp.workflow.Reports: Starting stage After of phase Reports
 2019-04-16 15:36:54.970 INFO     PID: 7455 leapp.workflow: Workflow interrupted due to the FailPhase error policy
 
@@ -159,7 +159,7 @@ $ leapp upgrade
 ============================================================
 
 2019-04-16 15:36:54.871634 [ERROR] Actor: verify_check_results Message: Unsupported arch
-2019-04-16 15:36:54.888818 [ERROR] Actor: verify_check_results Message: Ending process due to errors found during checks, see /tmp/leapp-report.txt for detailed report.
+2019-04-16 15:36:54.888818 [ERROR] Actor: verify_check_results Message: Ending process due to errors found during checks, see /var/log/leapp-report.txt for detailed report.
 
 ============================================================
                      END OF ERRORS
