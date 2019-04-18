@@ -415,7 +415,7 @@ def filter_out_pkgs_in_blacklisted_repos(to_install):
     setuptargetrepos actor. So even if they fall into the 'yum upgrade' bucket, they won't be available thus upgraded.
     """
     # FIXME The to_install contains just a limited subset of packages - those that are *not* currently installed and
-    # are to be installed. But we should also warn about the packages that *are* installed.
+    #   are to be installed. But we should also warn about the packages that *are* installed.
     blacklisted_pkgs = set()
     blacklisted_repos = get_repositories_blacklisted()
     for pkg, repo in to_install.items():
@@ -426,7 +426,10 @@ def filter_out_pkgs_in_blacklisted_repos(to_install):
         del to_install[pkg]
 
     if blacklisted_pkgs:
-        report_skipped_packages('packages will not be installed due to blacklisted repositories:',
+        # TODO: Describe why they should be installed in the first place (replacement, etc.)
+        report_skipped_packages('packages will not be installed because they are available only in '
+                                'repositories which are either disabled or optional on RHEL8. '
+                                'The list of these packages (repositories: {}):'.format(', '.join(blacklisted_repos)),
                                 blacklisted_pkgs)
 
 
@@ -475,27 +478,33 @@ def map_repositories(packages):
 
     if repo_without_mapping:
         report_skipped_packages('packages will not be installed or upgraded due to repositories unknown to leapp:',
-                                repo_without_mapping)
+                                repo_without_mapping,
+                                "Please file a bug in http://bugzilla.redhat.com/ for leapp-repository component of"
+                                "the Red Hat Enterprise Linux 7 product.")
 
 
-def report_skipped_packages(message, packages):
+def report_skipped_packages(message, packages, remediation=None):
     """Generate report message about skipped packages"""
     packages = sorted(packages)
     title = 'Packages will not be installed'
     summary = '{} {}\n{}'.format(len(packages), message, '\n'.join(['- ' + p for p in packages]))
-    reporting.create_report([
+    report_content = [
         reporting.Title(title),
         reporting.Summary(summary),
         reporting.Severity(reporting.Severity.HIGH),
         reporting.Tags([reporting.Tags.REPOSITORY]),
-    ] + [reporting.RelatedResource('package', p) for p in packages])
+    ]
+    if remediation:
+        report_content += [reporting.Remediation(hint=remediation)]
+    report_content += [reporting.RelatedResource('package', p) for p in packages]
+    reporting.create_report(report_content)
     if is_verbose():
-        api.show_message(summary)
+        api.current_logger().info(summary)
 
 
 def add_output_pkgs_to_transaction_conf(transaction_configuration, events):
     """
-    Add more packages for removal to transaction configuration if they can be derived as outputs of PES events.
+    Filter out those PES events that conflict with the higher priority transaction configuration files.
 
     Output packages from an event are added to packages for removal only if all input packages are already there.
 
@@ -503,16 +512,21 @@ def add_output_pkgs_to_transaction_conf(transaction_configuration, events):
                                       on the user configuration files
     :param events: List of Event tuples, where each event contains event type and input/output pkgs
     """
-    message = 'Marking packages for removal:\n'
+    message = 'The following RHEL 8 packages will not be installed:\n'
 
     for event in events:
         if event.action in (Action.split, Action.merged, Action.replaced, Action.renamed):
             if all([pkg in transaction_configuration.to_remove for pkg in event.in_pkgs]):
                 transaction_configuration.to_remove.extend(event.out_pkgs)
-                message += '- [{action}] {ins} -> {outs}\n'.format(
-                    action=event.action.name,
-                    ins=', '.join(sorted(event.in_pkgs.keys())),
-                    outs=', '.join(sorted(event.out_pkgs.keys()))
+                message += (
+                    '- {outs}\n - Reason: {ins} being {action} {to_or_by} {outs} {is_or_are} mentioned in the'
+                    ' transaction configuration file /etc/leapp/transaction/to_remove\n'.format(
+                        outs=', '.join(event.out_pkgs.keys()),
+                        ins=', '.join(event.in_pkgs.keys()),
+                        action=event.action.name,
+                        to_or_by='by' if event.action == 'Replaced' else 'by',
+                        is_or_are='is' if len(event.in_pkgs.keys()) == 1 else 'are'
+                    )
                 )
 
     api.current_logger().debug(message)
