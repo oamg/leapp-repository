@@ -77,7 +77,7 @@ def get_system_groups_status():
 
 @aslist
 def _get_active_kernel_modules(logger):
-    lines = run(['lsmod'], split=True)['stdout']
+    lines = run(['ls',"-d","/sys/module"], split=True)['stdout'] # can be implemented by os.lisdir(\'/sys/module\')
     for l in lines[1:]:
         name = l.split(' ')[0]
 
