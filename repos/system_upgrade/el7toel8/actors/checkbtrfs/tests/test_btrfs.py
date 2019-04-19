@@ -9,8 +9,8 @@ def create_modulesfacts(kernel_modules):
 
 def test_actor_with_btrfs_module(current_actor_context):
     with_btrfs = [
-        ActiveKernelModule(filename='btrfs', parameters=[]),
-        ActiveKernelModule(filename='kvm', parameters=[])]
+        ActiveKernelModule(name='btrfs', parameters=[]),
+        ActiveKernelModule(name='kvm', parameters=[])]
 
     current_actor_context.feed(create_modulesfacts(kernel_modules=with_btrfs))
     current_actor_context.run()
@@ -19,8 +19,8 @@ def test_actor_with_btrfs_module(current_actor_context):
 
 def test_actor_without_btrfs_module(current_actor_context):
     without_btrfs = [
-        ActiveKernelModule(filename='kvm_intel', parameters=[]),
-        ActiveKernelModule(filename='kvm', parameters=[])]
+        ActiveKernelModule(name='kvm_intel', parameters=[]),
+        ActiveKernelModule(name='kvm', parameters=[])]
 
     current_actor_context.feed(create_modulesfacts(kernel_modules=without_btrfs))
     current_actor_context.run()
