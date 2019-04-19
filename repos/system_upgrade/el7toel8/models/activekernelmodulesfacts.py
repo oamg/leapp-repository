@@ -12,7 +12,7 @@ class KernelModuleParameter(Model):
 class ActiveKernelModule(Model):
     topic = SystemFactsTopic
 
-    filename = fields.String()
+    name = fields.String()
     parameters = fields.List(fields.Model(KernelModuleParameter))
     signature = fields.Nullable(fields.String())
 

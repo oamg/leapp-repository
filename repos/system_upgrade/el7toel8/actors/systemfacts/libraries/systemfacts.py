@@ -87,7 +87,7 @@ def _get_active_kernel_modules(logger):
         base_path = '/sys/module/{module}'.format(module=name)
         parameters_path = os.path.join(base_path, 'parameters')
         if not os.path.exists(parameters_path):
-            yield ActiveKernelModule(filename=name, parameters=[])
+            yield ActiveKernelModule(name=name, parameters=[])
             continue
 
         # Use `modinfo` to probe for signature information
@@ -125,7 +125,7 @@ def _get_active_kernel_modules(logger):
         ]
 
         yield ActiveKernelModule(
-            filename=name,
+            name=name,
             parameters=items,
             signature=signature_string
         )
