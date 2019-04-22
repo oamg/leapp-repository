@@ -11,6 +11,7 @@ class RPM(Model):
     release = fields.String()
     arch = fields.String()
     pgpsig = fields.String()
+    repository = fields.Nullable(fields.String())
 
 
 class InstalledRPM(Model):

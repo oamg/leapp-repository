@@ -178,7 +178,7 @@ def get_sysctls_status():
 @aslist
 def _get_repositories():
     def asbool(x):
-        return x == 0
+        return x == '1'
 
     @aslist
     def _parse(r):
