@@ -47,3 +47,5 @@ varnish
 varnish-devel
 varnish-modules
 tpm2-abrmd
+squid
+python-docs
