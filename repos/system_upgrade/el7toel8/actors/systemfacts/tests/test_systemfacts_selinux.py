@@ -3,6 +3,7 @@ import selinux
 from leapp.libraries.actor.systemfacts import get_selinux_status
 from leapp.models import SELinuxFacts
 
+# FIXME: create valid tests...
 
 def test_selinux_enabled_enforcing(monkeypatch):
     """
@@ -10,9 +11,9 @@ def test_selinux_enabled_enforcing(monkeypatch):
     """
     monkeypatch.setattr(selinux, 'is_selinux_mls_enabled', lambda: 1)
     monkeypatch.setattr(selinux, 'security_getenforce', lambda: 1)
-    monkeypatch.setattr(selinux, 'selinux_getenforcemode', lambda: 1)
+    monkeypatch.setattr(selinux, 'selinux_getenforcemode', lambda: [0, 1])
     monkeypatch.setattr(selinux, 'is_selinux_enabled', lambda: 1)
-    monkeypatch.setattr(selinux, 'selinux_getpolicytype', lambda: ('', 'targeted'))
+    monkeypatch.setattr(selinux, 'selinux_getpolicytype', lambda: [0, 'targeted'])
     expected_data = {'policy': 'targeted',
                      'mls_enabled': True,
                      'enabled': True,
@@ -27,9 +28,9 @@ def test_selinux_enabled_permissive(monkeypatch):
     """
     monkeypatch.setattr(selinux, 'is_selinux_mls_enabled', lambda: 1)
     monkeypatch.setattr(selinux, 'security_getenforce', lambda: 0)
-    monkeypatch.setattr(selinux, 'selinux_getenforcemode', lambda: 0)
+    monkeypatch.setattr(selinux, 'selinux_getenforcemode', lambda: [0, 0])
     monkeypatch.setattr(selinux, 'is_selinux_enabled', lambda: 1)
-    monkeypatch.setattr(selinux, 'selinux_getpolicytype', lambda: ('', 'targeted'))
+    monkeypatch.setattr(selinux, 'selinux_getpolicytype', lambda: [0, 'targeted'])
     expected_data = {'policy': 'targeted',
                      'mls_enabled': True,
                      'enabled': True,
@@ -44,9 +45,9 @@ def test_selinux_disabled(monkeypatch):
     """
     monkeypatch.setattr(selinux, 'is_selinux_mls_enabled', lambda: 0)
     monkeypatch.setattr(selinux, 'security_getenforce', lambda: 0)
-    monkeypatch.setattr(selinux, 'selinux_getenforcemode', lambda: 0)
+    monkeypatch.setattr(selinux, 'selinux_getenforcemode', lambda: [0, 0])
     monkeypatch.setattr(selinux, 'is_selinux_enabled', lambda: 0)
-    monkeypatch.setattr(selinux, 'selinux_getpolicytype', lambda: ('', 'targeted'))
+    monkeypatch.setattr(selinux, 'selinux_getpolicytype', lambda: [0, 'targeted'])
     expected_data = {'policy': 'targeted',
                      'mls_enabled': False,
                      'enabled': False,
@@ -68,7 +69,7 @@ def test_selinux_disabled_no_config_file(monkeypatch):
     monkeypatch.setattr(selinux, 'security_getenforce', lambda: 0)
     monkeypatch.setattr(selinux, 'selinux_getenforcemode', MockNoConfigFileOSError)
     monkeypatch.setattr(selinux, 'is_selinux_enabled', lambda: 0)
-    monkeypatch.setattr(selinux, 'selinux_getpolicytype', lambda: ('', 'targeted'))
+    monkeypatch.setattr(selinux, 'selinux_getpolicytype', lambda: [0, 'targeted'])
     expected_data = {'policy': 'targeted',
                      'mls_enabled': False,
                      'enabled': False,
