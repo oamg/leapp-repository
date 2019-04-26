@@ -225,7 +225,8 @@ def get_selinux_status():
 
     try:
         outdata['runtime_mode'] = "enforcing" if selinux.security_getenforce() == 1 else "permissive"
-        enforce_mode = selinux.selinux_getenforcemode()
+        # FIXME: check selinux_getenforcemode[0] (that should be return value of a underneath function)
+        enforce_mode = selinux.selinux_getenforcemode()[1]
         if enforce_mode >= 0:
             outdata['static_mode'] = "enforcing" if enforce_mode == 1 else "permissive"
         else:
