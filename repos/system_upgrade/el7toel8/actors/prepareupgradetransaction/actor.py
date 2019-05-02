@@ -2,9 +2,11 @@ import os
 import json
 
 from leapp.actors import Actor
-from leapp.libraries.actor import preparetransaction
+from leapp.exceptions import StopActorExecutionError
+from leapp.libraries.actor import preparetransaction, xinitramgen
+from leapp.libraries.stdlib import CalledProcessError
 from leapp.models import FilteredRpmTransactionTasks, OSReleaseFacts, TargetRepositories
-from leapp.models import XFSPresence, UsedTargetRepositories, UsedTargetRepository
+from leapp.models import XFSPresence, UsedTargetRepositories, UsedTargetRepository, BootContent
 from leapp.tags import IPUWorkflowTag, DownloadPhaseTag
 
 
@@ -21,7 +23,7 @@ class PrepareUpgradeTransaction(Actor):
 
     name = 'prepare_upgrade_transaction'
     consumes = (OSReleaseFacts, FilteredRpmTransactionTasks, TargetRepositories, XFSPresence)
-    produces = (UsedTargetRepositories,)
+    produces = (UsedTargetRepositories, BootContent)
     tags = (IPUWorkflowTag, DownloadPhaseTag,)
 
     def is_system_registered_and_attached(self):
@@ -249,7 +251,27 @@ class PrepareUpgradeTransaction(Actor):
                 preparetransaction.produce_error(umount_error)
             return error
 
-        return preparetransaction.umount_dnf_cache(overlayfs_info)
+        try:
+            el8userspace = '/var/lib/leapp/el8target'
+            # Prepare el8 userspace with help of the overlay system
+            xinitramgen.prepare_el8_userspace(overlayfs_info, el8userspace, self.target_repoids)
+            # Dracut invocation
+            xinitramgen.generate_initram_disk(el8userspace)
+            # Artifacts moving (kernel/initram disk)
+            xinitramgen.copy_boot_files(el8userspace)
+            # clean up - Not used at the moment
+            xinitramgen.remove_userspace(el8userspace)
+        except Exception as e:
+            self.log.error("Caught an exception", exc_info=True)
+            if isinstance(e, StopActorExecutionError):
+                raise
+            # Raise for other problems
+            raise StopActorExecutionError(
+                message='Preparing initram disk failed with an unexpected error',
+                details=str(e)
+            )
+        finally:
+            return preparetransaction.umount_dnf_cache(overlayfs_info)
 
     def process(self):
         skip_rhsm = os.getenv('LEAPP_DEVEL_SKIP_RHSM', '0') == '1'
