@@ -23,7 +23,6 @@ License:        ASL 2.0
 URL:            https://oamg.github.io/leapp/
 Source0:        https://github.com/oamg/%{name}/archive/v%{version}.tar.gz#/%{name}-%{version}.tar.gz
 Source1:        deps-pkgs.tar.gz
-Source2:        leapp-repository-initrd.tar.gz
 BuildArch:      noarch
 Requires:       %{name}-sos-plugin = %{version}-%{release}
 BuildRequires:  python-devel
@@ -81,14 +80,11 @@ Requires:   libselinux-python
 %prep
 %autosetup -n %{name}-%{version}
 %setup -q  -n %{name}-%{version} -D -T -a 1
-%setup -q  -n %{name}-%{version} -D -T -a 2
 
 
 %build
 # ??? what is supposed to be this? we do not have any build target in the makefile
 make build
-cp -a leapp-repository-initrd*/vmlinuz-upgrade.x86_64       repos/system_upgrade/el7toel8/files/
-cp -a leapp-repository-initrd*/initramfs-upgrade.x86_64.img repos/system_upgrade/el7toel8/files/
 cp -a leapp*deps*rpm repos/system_upgrade/el7toel8/files/bundled-rpms/
 
 

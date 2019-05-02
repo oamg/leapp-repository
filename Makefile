@@ -105,17 +105,6 @@ source: prepare
 	@copr --config $(_COPR_CONFIG) download-build -d packaging/tmp `cat packaging/tmp/deps_build_id`
 	@mv `find packaging/tmp/ | grep "rpm$$" | grep -v "src"` packaging/tmp
 	@tar -czf packaging/sources/deps-pkgs.tar.gz -C packaging/tmp/ `ls packaging/tmp | grep -o "[^/]*rpm$$"`
-	@rm -rf packaging/tmp/*
-	@echo "--- Download $(PKGNAME)-initrd SRPM ---"
-	@copr --config $(_COPR_CONFIG) download-build -d packaging/tmp \
-		`_PKGNAME=$(PKGNAME)-initrd __TIMESTAMP=$(TIMESTAMP) $(MAKE) _list_approved_builds | grep -m1 '"id"' | grep -o "[0-9][0-9]*"`
-	@echo "--- Get $(PKGNAME)-initrd  tarball---"
-	@rpm2cpio `find packaging/tmp | grep -m1 "src.rpm$$"` > packaging/tmp/$(PKGNAME)-initrd.cpio
-	@cpio -iv --no-absolute-filenames --to-stdout "$(PKGNAME)-initrd-*.tar.gz" \
-		<packaging/tmp/$(PKGNAME)-initrd.cpio \
-		>packaging/sources/$(PKGNAME)-initrd.tar.gz
-		# -- it is easier to use here static name ot the initrd tarball; the rest can be handled easier
-		# >packaging/sources/`cpio -t <packaging/tmp/$(PKGNAME)-initrd.cpio | grep '$(PKGNAME)-initrd.*tar.gz'`
 	@rm -rf packaging/tmp
 
 srpm: source
