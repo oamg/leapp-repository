@@ -77,13 +77,10 @@ def get_system_groups_status():
 
 @aslist
 def _get_active_kernel_modules(logger):
-    lines = run(['ls',"-d","/sys/module"], split=True)['stdout'] # can be implemented by os.lisdir(\'/sys/module\')
-    for l in lines[1:]:
-        name = l.split(' ')[0]
+    lines = [module for module in os.listdir("/sys/module") if os.path.isdir("/sys/module/{}".format(module))]
 
-        # Read parameters of the given module as exposed by the
-        # `/sys` VFS, if there are no parameters exposed we just
-        # take the name of the module
+    for l in lines:
+        name = l
         base_path = '/sys/module/{module}'.format(module=name)
         parameters_path = os.path.join(base_path, 'parameters')
         if not os.path.exists(parameters_path):
