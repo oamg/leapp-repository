@@ -15,11 +15,9 @@ Please read documentation about [how to unit test actors](https://leapp.readthed
 
 ## Installing actor dependencies
 
-Each actor can now have its own Makefile with the `install-deps` target. This
-takes care of installing any dependencies of your actor. If your actor has
-any dependencies, include them in the Makefile.
-
-See the testing actor's example [here](repos/common/actors/testactor/Makefile).
+Each actor can have its own Makefile with the `install-deps` target, which takes
+care of installing any actor dependencies.
+If your actor has any dependencies, include them in the Makefile.
 
 To install dependencies for all actors, run:
 
