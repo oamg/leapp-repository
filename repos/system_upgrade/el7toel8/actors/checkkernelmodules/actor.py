@@ -25,6 +25,8 @@ class CheckKernelModules(Actor):
         This has been done due to the fact that we need to investigate in depth
         what each module does and if it is safe to add/remove it to/from the
         whitelist.
+     - Enable test "test_actor_with_missing_modules" when we properly deal with
+        the modules situation.
     """
     name = "check_kernel_modules"
     consumes = (ActiveKernelModulesFacts,)
