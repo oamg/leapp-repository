@@ -1,5 +1,6 @@
 from leapp.exceptions import StopActorExecutionError
-from leapp.libraries.stdlib import CalledProcessError, api, run
+from leapp.exceptions import CalledProcessError
+from leapp.libraries.stdlib import api, run
 from leapp.models import BootContent
 
 

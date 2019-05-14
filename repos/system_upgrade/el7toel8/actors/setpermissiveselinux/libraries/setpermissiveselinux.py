@@ -1,4 +1,5 @@
-from leapp.libraries.stdlib import CalledProcessError, run
+from leapp.exceptions import CalledProcessError
+from leapp.libraries.stdlib import run
 
 
 def selinux_set_permissive():

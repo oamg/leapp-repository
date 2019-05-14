@@ -1,5 +1,6 @@
 from leapp.actors import Actor
-from leapp.libraries.stdlib import CalledProcessError, run
+from leapp.exceptions import CalledProcessError
+from leapp.libraries.stdlib import run
 from leapp.models import NetworkManagerConfig
 from leapp.tags import FirstBootPhaseTag, IPUWorkflowTag
 
@@ -28,7 +29,7 @@ class NetworkManagerUpdateConnections(Actor):
             try:
                 r = run(['/usr/bin/python3', 'tools/nm-update-client-ids.py'])['stdout']
                 self.log.info('Updated client-ids: {}'.format(r))
-            except (OSError, CalledProcessError) as e:
+            except CalledProcessError as e:
                 self.log.warning('Error calling nm-update-client-ids script: {}'.format(e))
 
             break

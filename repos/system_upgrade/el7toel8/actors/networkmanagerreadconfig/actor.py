@@ -1,7 +1,8 @@
 import io
 
 from leapp.actors import Actor
-from leapp.libraries.stdlib import CalledProcessError, run
+from leapp.exceptions import CalledProcessError
+from leapp.libraries.stdlib import run
 from leapp.models import NetworkManagerConfig
 from leapp.tags import IPUWorkflowTag, FactsPhaseTag
 from six.moves.configparser import ConfigParser, ParsingError
@@ -26,7 +27,7 @@ class NetworkManagerReadConfig(Actor):
             # that the main configuration file and other files in
             # various directories get merged in the right way.
             r = run(['NetworkManager', '--print-config'], split=False)['stdout']
-        except (OSError, CalledProcessError) as e:
+        except CalledProcessError as e:
             self.log.warning('Error reading NetworkManager configuration: {}'.format(e))
             return
 

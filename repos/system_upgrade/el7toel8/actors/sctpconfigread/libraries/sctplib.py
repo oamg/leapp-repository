@@ -4,15 +4,16 @@
 
 from os.path import isfile
 
+from leapp.exceptions import CalledProcessError
 from leapp.libraries.actor import sctpdlm
-from leapp.libraries.stdlib import CalledProcessError, api, run
+from leapp.libraries.stdlib import api, run
 from leapp.models import ActiveKernelModulesFacts
 
 
 def anyfile(files):
     """
     Determines if any of the given paths exist and are a file.
-    
+
     :return: True if any of the given paths exists and it is a file.
     :rtype: bool
     """
@@ -31,7 +32,7 @@ def is_module_loaded(module):
 
     :return: True if the module has been found in the ActiveKernelModuleFacts.
     :rtype: bool
-    """    
+    """
     for fact in api.consume(ActiveKernelModulesFacts):
         for active_module in fact.kernel_modules:
             if active_module.filename == module:

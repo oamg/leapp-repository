@@ -1,5 +1,5 @@
-from leapp.exceptions import StopActorExecutionError
-from leapp.libraries.stdlib import run, CalledProcessError
+from leapp.exceptions import CalledProcessError, StopActorExecutionError
+from leapp.libraries.stdlib import run
 
 
 def prepare_yum_config():

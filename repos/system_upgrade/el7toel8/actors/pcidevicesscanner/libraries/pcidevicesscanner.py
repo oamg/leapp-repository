@@ -3,7 +3,8 @@ import os
 import shlex
 import six
 
-from leapp.libraries.stdlib import CalledProcessError, run
+from leapp.exceptions import CalledProcessError
+from leapp.libraries.stdlib import run
 from leapp.models import PCIDevices, PCIDevice
 
 

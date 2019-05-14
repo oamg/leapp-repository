@@ -6,7 +6,8 @@ from collections import namedtuple
 from six.moves.urllib.error import URLError
 from six.moves.urllib.request import urlopen
 
-from leapp.libraries.stdlib import CalledProcessError, api, run
+from leapp.exceptions import CalledProcessError
+from leapp.libraries.stdlib import api, run
 from leapp.libraries.stdlib.call import STDOUT
 from leapp.libraries.stdlib.config import is_debug
 
