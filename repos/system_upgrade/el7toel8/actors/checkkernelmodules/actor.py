@@ -2,7 +2,7 @@ from leapp.actors import Actor
 from leapp.models import ActiveKernelModulesFacts
 from leapp.reporting import Report
 from leapp.libraries.common.reporting import report_with_remediation
-from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
+from leapp.tags import ChecksPhaseTag, IPUWorkflowTag, ExperimentalTag
 
 
 class CheckKernelModules(Actor):
@@ -21,7 +21,8 @@ class CheckKernelModules(Actor):
         going to inhibit upgrade.
 
     FIXME:
-     - Currently, we have whitelisted every module from files/removed_modules.txt.
+     - Currently, we have whitelisted every module from files/removed_modules.txt
+        and marked actor as experimenta.
         This has been done due to the fact that we need to investigate in depth
         what each module does and if it is safe to add/remove it to/from the
         whitelist.
@@ -31,7 +32,7 @@ class CheckKernelModules(Actor):
     name = "check_kernel_modules"
     consumes = (ActiveKernelModulesFacts,)
     produces = (Report,)
-    tags = (ChecksPhaseTag, IPUWorkflowTag,)
+    tags = (ChecksPhaseTag, IPUWorkflowTag, ExperimentalTag)
 
     def process(self):
         with open("files/removed_modules.txt", "r") as removed, \
