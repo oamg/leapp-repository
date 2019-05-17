@@ -297,10 +297,15 @@ def add_output_pkgs_to_transaction_conf(transaction_configuration, events):
     :param transaction_configuration: RpmTransactionTasks model instance with pkgs to install, keep and remove based
                                       on the user configuration files
     """
+    message = 'Marking packages for removal as a result of events:\n'
+
     for event in events:
         if event.action in ('Split', 'Merged'):
             if all([pkg in transaction_configuration.to_remove for pkg in event.in_pkgs]):
                 transaction_configuration.to_remove.extend(event.out_pkgs)
+                message += '- {} -> {}\n'.format(', '.join(event.in_pkgs.keys()), ', '.join(event.out_pkgs.keys()))
+
+    api.current_logger().debug(message)
 
 
 def filter_out_transaction_conf_pkgs(to_install, to_remove, transaction_configuration):
