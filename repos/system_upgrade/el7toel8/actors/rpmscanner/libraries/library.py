@@ -1,7 +1,7 @@
 
-def get_package_repository_data(self):
+def get_package_repository_data():
     """ Return dictionary mapping package name with repository from which it was installed """
-    # import has to be inside the function to obey troubles with non-existing
+    # import has to be inside the function to avoid troubles with non-existing
     # module in Python3 (where we do not need this function anymore)
     import yum
     yum_base = yum.YumBase()
