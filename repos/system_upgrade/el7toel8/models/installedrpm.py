@@ -17,3 +17,11 @@ class RPM(Model):
 class InstalledRPM(Model):
     topic = SystemInfoTopic
     items = fields.List(fields.Model(RPM), default=[])
+
+
+class InstalledRedHatSignedRPM(InstalledRPM):
+    pass
+
+
+class InstalledUnsignedRPM(InstalledRPM):
+    pass

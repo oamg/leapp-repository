@@ -1,4 +1,5 @@
 from leapp.libraries import stdlib
+from leapp.models import InstalledRPM
 
 
 def get_installed_rpms():
