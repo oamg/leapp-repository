@@ -90,46 +90,45 @@ _list_all_builds:
 		| grep -E '"(built_packages|id|state|pkg_version)"' | grep -B3 "succeeded" \
 		| sed 's/"state": "succeeded",/----------------------/'
 
-
 source: prepare
 	@echo "--- Create source tarball ---"
 	@echo git archive --prefix "$(PKGNAME)-$(VERSION)/" -o "packaging/sources/$(PKGNAME)-$(VERSION).tar.gz" HEAD
-	@git archive --prefix "$(PKGNAME)-$(VERSION)/" -o "packaging/sources/$(PKGNAME)-$(VERSION).tar.gz" HEAD
+	git archive --prefix "$(PKGNAME)-$(VERSION)/" -o "packaging/sources/$(PKGNAME)-$(VERSION).tar.gz" HEAD
 	@echo "--- PREPARE DEPS PKGS ---"
 	mkdir -p packaging/tmp/
-	@__TIMESTAMP=$(TIMESTAMP) $(MAKE) _copr_build_deps_subpkg
+	__TIMESTAMP=$(TIMESTAMP) $(MAKE) _copr_build_deps_subpkg
 	@# THIS IS NOT TYPO! COPR_REPO=_COPR_REPO_TMP!!
-	@__TIMESTAMP=$(TIMESTAMP) _PKGNAME=$(DEPS_PKGNAME) COPR_REPO=$(_COPR_REPO_TMP) $(MAKE) _list_all_builds \
+	__TIMESTAMP=$(TIMESTAMP) _PKGNAME=$(DEPS_PKGNAME) COPR_REPO=$(_COPR_REPO_TMP) $(MAKE) _list_all_builds \
 		| grep -EB3 "pkg_version.*-$(RELEASE)" \
 		| grep -m1 '"id"' | grep -o "[0-9][0-9]*" > packaging/tmp/deps_build_id
-	@copr --config $(_COPR_CONFIG) download-build -d packaging/tmp `cat packaging/tmp/deps_build_id`
-	@mv `find packaging/tmp/ | grep "rpm$$" | grep -v "src"` packaging/tmp
-	@tar -czf packaging/sources/deps-pkgs.tar.gz -C packaging/tmp/ `ls packaging/tmp | grep -o "[^/]*rpm$$"`
-	@rm -rf packaging/tmp
+	copr --config $(_COPR_CONFIG) download-build -d packaging/tmp `cat packaging/tmp/deps_build_id`
+	mv `find packaging/tmp/ | grep "rpm$$" | grep -v "src"` packaging/tmp
+	tar -czf packaging/sources/deps-pkgs.tar.gz -C packaging/tmp/ `ls packaging/tmp | grep -o "[^/]*rpm$$"`
+	rm -rf packaging/tmp
 
 srpm: source
 	@echo "--- Build SRPM: $(PKGNAME)-$(VERSION)-$(RELEASE).. ---"
-	@cp packaging/$(PKGNAME).spec packaging/$(PKGNAME).spec.bak
-	@sed -i "s/1%{?dist}/$(RELEASE)%{?dist}/g" packaging/$(PKGNAME).spec
-	@rpmbuild -bs packaging/$(PKGNAME).spec \
+	cp packaging/$(PKGNAME).spec packaging/$(PKGNAME).spec.bak
+	sed -i "s/1%{?dist}/$(RELEASE)%{?dist}/g" packaging/$(PKGNAME).spec
+	rpmbuild -bs packaging/$(PKGNAME).spec \
 		--define "_sourcedir `pwd`/packaging/sources"  \
 		--define "_srcrpmdir `pwd`/packaging/SRPMS" \
 		--define "rhel 7" \
 		--define 'dist .el7' \
 		--define 'el7 1' || FAILED=1
-	@mv packaging/$(PKGNAME).spec.bak packaging/$(PKGNAME).spec
+	mv packaging/$(PKGNAME).spec.bak packaging/$(PKGNAME).spec
 
 _srpm_subpkg:
 	@echo "--- Build RPM: $(DEPS_PKGNAME)-$(DEPS_VERSION)-$(RELEASE).. ---"
-	@cp packaging/$(DEPS_PKGNAME).spec packaging/$(DEPS_PKGNAME).spec.bak
-	@sed -i "s/1%{?dist}/$(RELEASE)%{?dist}/g" packaging/$(DEPS_PKGNAME).spec
-	@rpmbuild -bs packaging/$(DEPS_PKGNAME).spec \
+	cp packaging/$(DEPS_PKGNAME).spec packaging/$(DEPS_PKGNAME).spec.bak
+	sed -i "s/1%{?dist}/$(RELEASE)%{?dist}/g" packaging/$(DEPS_PKGNAME).spec
+	rpmbuild -bs packaging/$(DEPS_PKGNAME).spec \
 		--define "_sourcedir `pwd`/packaging/sources"  \
 		--define "_srcrpmdir `pwd`/packaging/SRPMS" \
 		--define "rhel 8" \
 		--define 'dist .el8' \
 		--define 'el7 8' || FAILED=1
-	@mv packaging/$(DEPS_PKGNAME).spec.bak packaging/$(DEPS_PKGNAME).spec
+	mv packaging/$(DEPS_PKGNAME).spec.bak packaging/$(DEPS_PKGNAME).spec
 
 _copr_build_deps_subpkg: _srpm_subpkg
 	@echo "--- Build RPM ${DEPS_PKGNAME}-${DEPS_VERSION}-${RELEASE} in TMP CORP ---"
