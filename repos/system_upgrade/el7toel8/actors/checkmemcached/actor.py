@@ -1,8 +1,9 @@
 from leapp.actors import Actor
+from leapp.libraries.actor.library import check_memcached
+from leapp.libraries.common.rpms import has_package
 from leapp.models import InstalledRedHatSignedRPM
 from leapp.reporting import Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
-from leapp.libraries.actor.library import check_memcached
 
 
 class CheckMemcached(Actor):
@@ -20,11 +21,4 @@ class CheckMemcached(Actor):
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 
     def process(self):
-        installed_packages = set()
-
-        signed_rpms = self.consume(InstalledRedHatSignedRPM)
-        for rpm_pkgs in signed_rpms:
-            for pkg in rpm_pkgs.items:
-                installed_packages.add(pkg.name)
-
-        check_memcached('memcached' in installed_packages)
+        check_memcached(has_package(InstalledRedHatSignedRPM, 'memcached'))
