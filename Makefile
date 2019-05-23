@@ -85,10 +85,8 @@ _list_approved_builds:
 
 # FIXME: incompatible with newer version of copr-cli
 _list_all_builds:
-	@copr --config $(_COPR_CONFIG) get-package $(_COPR_REPO) \
-		--name $(__PKGNAME) --with-all-builds \
-		| grep -E '"(built_packages|id|state|pkg_version)"' | grep -B3 "succeeded" \
-		| sed 's/"state": "succeeded",/----------------------/'
+	./get_list_of_builds --config $(_COPR_CONFIG) get-package $(_COPR_REPO) \
+		--name $(__PKGNAME) --with-all-builds
 
 
 source: prepare

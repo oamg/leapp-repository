@@ -1,0 +1,244 @@
+#!/usr/bin/python3
+
+import sys
+import json
+import datetime
+import time
+
+from pprint import pprint as pp # noqa
+
+
+class CoprBuild(object):
+    """
+    Class representing copr build in format given from the copr-cli.
+
+    As the copr-cli changed (and probably will change) the format of given
+    data, this class provides interface to obtain various information that
+    are sometimes (or usually) needed, doesn't matter what exact JSON structure
+    is used. Use just the methods of the class to ensure your scripts will
+    provide same data and do not access the content directly.
+    """
+
+    def _parse_nevr(self):
+        """
+        Parse NEVR information from the obtained data.
+        """
+        nevr_str = None
+        if self._old_format:
+            nevr_str = self._data['source_json']['pkg'].rstrip('.src.rpm')
+        else:
+            nevr_str = '{}-{}'.format(self._data['source_package']['name'],
+                                      self._data['source_package']['version'])
+        nevr_split = nevr_str.split("-")
+        nevr_version = nevr_split[-2].split(":")
+        self.name = nevr_split[0:-2]
+        self.release = nevr_split[-1]
+        if len(nevr_version) > 1:
+            self.epoch = nevr_version[0]
+            self.version = nevr_version[1]
+        else:
+            # TODO: discussable: None, 0, or empty string...
+            self.epoch = ""
+            self.version = nevr_split[-2]
+
+    def __init__(self, data):
+        self._data = data
+        if self.data.get('source_package', None) is None:
+            # from copr-cli <= 1.78
+            self._old_format = True
+        else:
+            # from copr-cli >=1.79
+            self._old_format = False
+        self._parse_nevr()
+
+    def get_name(self):
+        """
+        Get the name of the package
+        """
+        return self.name
+
+    def get_epoch(self):
+        """
+        Get the epoch of the package.
+        """
+        return self.epoch
+
+    def get_version(self):
+        """
+        Get the version of the package.
+        """
+        return self.version
+
+    def get_release(self):
+        """
+        Get the release of the package.
+        """
+        return self.release
+
+    def _nevr_to_str(self):
+        """
+        Return string representation of the given NEVR.
+
+        :param tuple nevr: Expecting tuple in format returned by _parse_nevr
+        """
+        epoch = ''
+        if self.epoch != '':
+            epoch = '{}:'.format(self.epoch)
+
+        return "{}-{}{}-{}".format(self.name,
+                                   epoch,
+                                   self.version,
+                                   self.release)
+
+    def get_pkg(self):
+        """
+        Return the srpm pkg of the build. E.g. git-2.20.1-1.fc29.src.rpm
+        """
+        return "{}.src.rpm".format(self._nevr_to_str())
+
+    def get_timestamp(self):
+        """
+        Get the timestamp of the package.
+        """
+        return self._data['submitted_on']
+
+    def build_succeeded(self):
+        """
+        Return True when build succeeded. Return False otherwise.
+
+        That means, return False even for builds that have not been finished
+        yet.
+        """
+        return self._data['state'] == 'succeeded'
+
+    def finished(self):
+        """
+        Return True if build has been finished. Return False otherwise.
+
+        This does not reflect whether build has been finished successfully
+        or not.
+        """
+        raise NotImplementedError("This is not implemented yet..")
+
+
+class CoprBuilds(object):
+    """
+    Simplified class to work with builds in copr.
+
+    Loads data in JSON format (produced by copr-cli utility). This is just
+    really simple class that helps to manage list of builds in several ways,
+    like:
+        - produce simplified bash friendly output (TODO) for additional
+          processing
+        - filter builds using various methods
+    """
+    # TODO: create representation of the COPR build
+
+    @staticmethod
+    def load_copr_builds(from_stdin=True, filename=None):
+        """
+        Load JSON data from the stdin or the given file.
+
+        The list of builds produced by the copr-cli utility is expected.
+
+        :param boolean from_stdin: Read data from the stdin if True (default)
+        :param string  filename:   path to the file whith the json data
+        """
+        if from_stdin:
+            data = json.load(sys.stdin)
+        elif filename is not None:
+            # do not catch any error
+            with open(filename, 'rb') as fp:
+                data = json.load(fp)
+        else:
+            raise ValueError("Choosed reading from the file but filename is not given.")
+
+        return CoprBuilds(data['builds'])
+
+    def __init__(self, builds=list()):
+        if not isinstance(builds, list):
+            raise TypeError("Expected a list of builds, but obtained: {}"
+                            .format(type(builds)))
+        self._builds = builds
+
+    def __str__(self):
+        return str(self._builds)
+
+    def get_successful_builds(self):
+        """
+        Return CoprBuilds object with succeeded builds.
+        """
+        return CoprBuilds([build for build in self._builds if build.succeeded()])
+
+    def get_failed_builds(self):
+        """
+        Return CoprBuilds object with failed builds.
+        """
+        return CoprBuilds([build for build in self._builds if not build.succeeded()])
+
+    def get_builds_before_timestamp(self, timestamp):
+        """
+        Return CoprBuilds object with builds older than given timestamp.
+
+        :param int timestamp: Unix timestamp.
+        """
+        return CoprBuilds([build for build in self._builds if build.get_timestamp() < timestamp])
+
+    def get_builds_before_date(self, date_str, date_fmt='%Y%m%d'):
+        """
+        Return CoprBuilds object with builds created before the given date.
+
+        The default expected format of the given date_str should be 'YYYYMMDD'
+        (or '%Y%m%d' in time representation). Can be changed by date_fmt
+        parameter. Example of use:
+            cbuilds.get_builds_before_date('20190501')
+            cbuilds.get_builds_before_date('2019-05-01', '%Y-%m-%d')
+
+        :param str date_str: Date string in the given format
+        :param str date_fmt: The date format ('%Y%m%d' is default)
+        """
+        time_tuple = time.strptime(date_str, date_fmt)
+        return self.get_builds_before_timestamp(time.mktime(time_tuple))
+
+    def get_builds_older_than_days(self, days):
+        """
+        Return CoprBuilds object with builds created N days before.
+
+        :param int days: The number of days.
+        """
+        time_tuple = (datetime.datetime.today() - datetime.timedelta(days=days)).timetuple()
+        return self.get_builds_before_timestamp(time.mktime(time_tuple))
+
+    def get_builds_of_pkg(self, pkgname):
+        """
+        Return CoprBuilds object with builds related to the pkg of specific name.
+
+        :param str pkgname: name of the source package
+        """
+        filtered_builds = []
+        for build in self._builds:
+            nevr = CoprBuilds._parse_nevr_from_pkg(CoprBuilds.get_pkg(build))
+            if nevr[0] == pkgname:
+                filtered_builds.append(build)
+        return CoprBuilds(filtered_builds)
+
+    def get_names_of_pkgs(self):
+        """
+        Return the list of names of packages (just source packages, not binary).
+        """
+        pkgs = [CoprBuilds.get_pkg(build) for build in self._builds]
+        pkgnames = [CoprBuilds._parse_nevr_from_pkg(pkg)[0] for pkg in pkgs]
+        return list(set(pkgnames))
+
+    def get_builds_with_substr(self, substr):
+        return [build for build in self._builds if substr in build.get_pkg()]
+
+
+def main():
+    cbuilds = CoprBuilds.load_copr_builds()
+    cbuilds = cbuilds.get_successful_builds()
+    pp(cbuilds)
+
+
+if __name__ == '__main__':
+    main()
