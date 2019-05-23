@@ -1,0 +1,28 @@
+#!/usr/bin/env python
+
+import json
+import os
+import sys
+
+import copr.v3
+
+ownername = os.getenv('COPR_OWNER')
+projectname = os.getenv('COPR_PROJECT')
+packagename = os.getenv('COPR_PACKAGE')
+if not ownername:
+    ownername, projectname = os.getenv('COPR_REPO', '').split('/', 1)
+
+CONFIG_PATH = os.path.expandvars(os.getenv('_COPR_CONFIG', '~/.config/copr'))
+client = copr.v3.Client(copr.v3.config_from_file(path=CONFIG_PATH))
+builds = client.build_proxy.get_list(
+    status='succeeded',
+    pagination={'limit': 1, 'order': 'id', 'order_type': 'DESC'},
+    ownername=ownername,
+    projectname=projectname,
+    packagename=packagename)
+
+if builds:
+    if '--id' in sys.argv:
+        print(builds[0]['id'])
+    else:
+        json.dump(builds, sys.stdout, sort_keys=True, indent=2)
