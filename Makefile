@@ -83,14 +83,6 @@ _list_approved_builds:
 		| sed 's/"state": "succeeded",/----------------------/' \
 		| grep -A1 -B2 '"pkg_version".*-[1-9]'
 
-# FIXME: incompatible with newer version of copr-cli
-_list_all_builds:
-	@copr --config $(_COPR_CONFIG) get-package $(_COPR_REPO) \
-		--name $(__PKGNAME) --with-all-builds \
-		| grep -E '"(built_packages|id|state|pkg_version)"' | grep -B3 "succeeded" \
-		| sed 's/"state": "succeeded",/----------------------/'
-
-
 source: prepare
 	@echo "--- Create source tarball ---"
 	@echo git archive --prefix "$(PKGNAME)-$(VERSION)/" -o "packaging/sources/$(PKGNAME)-$(VERSION).tar.gz" HEAD
@@ -98,11 +90,8 @@ source: prepare
 	@echo "--- PREPARE DEPS PKGS ---"
 	mkdir -p packaging/tmp/
 	@__TIMESTAMP=$(TIMESTAMP) $(MAKE) _copr_build_deps_subpkg
-	@# THIS IS NOT TYPO! COPR_REPO=_COPR_REPO_TMP!!
-	@__TIMESTAMP=$(TIMESTAMP) _PKGNAME=$(DEPS_PKGNAME) COPR_REPO=$(_COPR_REPO_TMP) $(MAKE) _list_all_builds \
-		| grep -EB3 "pkg_version.*-$(RELEASE)" \
-		| grep -m1 '"id"' | grep -o "[0-9][0-9]*" > packaging/tmp/deps_build_id
-	@copr --config $(_COPR_CONFIG) download-build -d packaging/tmp `cat packaging/tmp/deps_build_id`
+	@copr --config $(_COPR_CONFIG) download-build -d packaging/tmp \
+		`COPR_REPO=$(_COPR_REPO_TMP) COPR_PACKAGE=$(DEPS_PKGNAME) ./get_latest_copr_build --id`
 	@mv `find packaging/tmp/ | grep "rpm$$" | grep -v "src"` packaging/tmp
 	@tar -czf packaging/sources/deps-pkgs.tar.gz -C packaging/tmp/ `ls packaging/tmp | grep -o "[^/]*rpm$$"`
 	@rm -rf packaging/tmp
