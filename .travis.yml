@@ -1,0 +1,19 @@
+git:
+  depth: 3
+language: python
+env:
+services:
+python:
+matrix:
+  include:
+    - python: "2.7"
+      env: CONTAINER=centos:7
+      services:
+        - docker
+      sudo: required
+install:
+    - docker pull ${CONTAINER}
+    - docker build -t leapp-tests -f utils/docker-tests/Dockerfile utils/docker-tests
+
+script:
+    - docker run --rm -ti -v ${PWD}:/payload leapp-tests
