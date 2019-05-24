@@ -111,7 +111,7 @@ class CoprBuild(object):
         """
         return self._data['state'] == 'succeeded'
 
-    def finished(self):
+    def build_finished(self):
         """
         Return True if build has been finished. Return False otherwise.
 
@@ -119,6 +119,12 @@ class CoprBuild(object):
         or not.
         """
         raise NotImplementedError("This is not implemented yet..")
+
+    def get_id(self):
+        """
+        Return the ID of the build.
+        """
+        return self._data['id']
 
 
 class CoprBuilds(object):
@@ -231,7 +237,17 @@ class CoprBuilds(object):
         return list(set(pkgnames))
 
     def get_builds_with_substr(self, substr):
-        return [build for build in self._builds if substr in build.get_pkg()]
+        """
+        Return CoprBuilds object with builds containing specific substring in pkg.
+        """
+        return CoprBuilds([build for build in self._builds if substr in build.get_pkg()])
+
+    def get_builds_with_release(self, release):
+        """
+        Return CoprBuilds object with builds with specific release
+        """
+        return CoprBuilds([build for build in self._builds if release == build.get_release()])
+
 
 
 def main():
