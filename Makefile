@@ -148,9 +148,13 @@ install-deps:
 	pip install --upgrade -r requirements.txt
 	python utils/install_actor_deps.py --actor=$(ACTOR)
 
-test:
+test:	lint
 	. tut/bin/activate; \
 	python utils/run_pytest.py --actor=$(ACTOR) --report=$(REPORT)
+
+lint:
+	. tut/bin/activate; \
+	bash -c "find repos -name '*.py' | xargs pylint"
 
 .PHONY: clean test install-deps build srpm
 
