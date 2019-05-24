@@ -25,7 +25,8 @@ class CoprBuild(object):
         """
         nevr_str = None
         if self._old_format:
-            nevr_str = self._data['source_json']['pkg'].rstrip('.src.rpm')
+            # FIXME: there is nested JSON that needs to be parsed again...
+            nevr_str = self._data['source_json'][0]['pkg'].rstrip('.src.rpm')
         else:
             nevr_str = '{}-{}'.format(self._data['source_package']['name'],
                                       self._data['source_package']['version'])
@@ -43,7 +44,7 @@ class CoprBuild(object):
 
     def __init__(self, data):
         self._data = data
-        if self.data.get('source_package', None) is None:
+        if self._data.get('source_package', None) is None:
             # from copr-cli <= 1.78
             self._old_format = True
         else:
@@ -159,7 +160,8 @@ class CoprBuilds(object):
         else:
             raise ValueError("Choosed reading from the file but filename is not given.")
 
-        return CoprBuilds(data['builds'])
+        builds = [CoprBuild(build) for build in data['builds']]
+        return CoprBuilds(builds)
 
     def __init__(self, builds=list()):
         if not isinstance(builds, list):
@@ -221,20 +223,13 @@ class CoprBuilds(object):
 
         :param str pkgname: name of the source package
         """
-        filtered_builds = []
-        for build in self._builds:
-            nevr = CoprBuilds._parse_nevr_from_pkg(CoprBuilds.get_pkg(build))
-            if nevr[0] == pkgname:
-                filtered_builds.append(build)
-        return CoprBuilds(filtered_builds)
+        return CoprBuilds([build for build in self._builds if pkgname == build.get_name()])
 
     def get_names_of_pkgs(self):
         """
         Return the list of names of packages (just source packages, not binary).
         """
-        pkgs = [CoprBuilds.get_pkg(build) for build in self._builds]
-        pkgnames = [CoprBuilds._parse_nevr_from_pkg(pkg)[0] for pkg in pkgs]
-        return list(set(pkgnames))
+        return list(set([build.get_name() for build in self._builds]))
 
     def get_builds_with_substr(self, substr):
         """
@@ -248,11 +243,17 @@ class CoprBuilds(object):
         """
         return CoprBuilds([build for build in self._builds if release == build.get_release()])
 
+    def get_builds(self):
+        """
+        Return the list of builds.
+        """
+        return self._builds()
 
 
 def main():
     cbuilds = CoprBuilds.load_copr_builds()
-    cbuilds = cbuilds.get_successful_builds()
+    cbuilds = cbuilds.get_builds_of_pkg("leapp-el7toel8-deps").get_successful_builds()
+    cbuilds = cbuilds.get_builds_with_release("0.201905230728Z.c2d6a65.sendmail.PR185.el8")
     pp(cbuilds)
 
 
