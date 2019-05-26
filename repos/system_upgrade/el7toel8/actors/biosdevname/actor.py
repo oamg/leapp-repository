@@ -1,11 +1,10 @@
-import pyudev
 import re
+
+import pyudev
 
 from leapp.actors import Actor
 from leapp.models import PersistentNetNamesFacts, KernelCmdlineArg
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
-from leapp.libraries.stdlib import run, CalledProcessError
-from leapp.exceptions import StopActorExecutionError
 
 
 class Biosdevname(Actor):
@@ -29,11 +28,10 @@ class Biosdevname(Actor):
         context = pyudev.Context()
 
         # There should be only one dmi/id device
-        dmi = pyudev.Enumerator(context).match_subsystem('dmi')
-        dev = list(filter(lambda d: d.sys_name == 'id', dmi))[0]
-        vendor = dev.attributes.get('sys_vendor')
-
-        return re.search('Dell.*', str(vendor)) is not None
+        for dev in pyudev.Enumerator(context).match_subsystem('dmi').match_sys_name('id'):
+            vendor = dev.attributes.get('sys_vendor')
+            return re.search('Dell.*', str(vendor)) is not None
+        return False
 
     def all_interfaces_biosdevname(self, interfaces):
         # Biosdevname supports two naming schemes
