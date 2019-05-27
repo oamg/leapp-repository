@@ -257,6 +257,7 @@ def test_add_output_pkgs_to_transaction_conf():
         Event('Split', {'split_in': 'repo'}, {'split_out1': 'repo', 'split_out2': 'repo'}),
         Event('Merged', {'merged_in1': 'repo', 'merged_in2': 'repo'}, {'merged_out': 'repo'}),
         Event('Renamed', {'renamed_in': 'repo'}, {'renamed_out': 'repo'}),
+        Event('Replaced', {'replaced_in': 'repo'}, {'replaced_out': 'repo'}),
     ]
 
     conf_empty = RpmTransactionTasks()
@@ -277,4 +278,8 @@ def test_add_output_pkgs_to_transaction_conf():
 
     conf_renamed = RpmTransactionTasks(to_remove=['renamed_in'])
     add_output_pkgs_to_transaction_conf(conf_renamed, events)
-    assert conf_renamed.to_remove == ['renamed_in']
+    assert sorted(conf_renamed.to_remove) == ['renamed_in', 'renamed_out']
+
+    conf_replaced = RpmTransactionTasks(to_remove=['replaced_in'])
+    add_output_pkgs_to_transaction_conf(conf_replaced, events)
+    assert sorted(conf_replaced.to_remove) == ['replaced_in', 'replaced_out']
