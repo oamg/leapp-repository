@@ -263,18 +263,18 @@ def test_add_output_pkgs_to_transaction_conf():
     add_output_pkgs_to_transaction_conf(conf_empty, events)
     assert conf_empty.to_remove == []
 
-    conf_split = RpmTransactionTasks(to_remove = ['split_in'])
+    conf_split = RpmTransactionTasks(to_remove=['split_in'])
     add_output_pkgs_to_transaction_conf(conf_split, events)
     assert sorted(conf_split.to_remove) == ['split_in', 'split_out1', 'split_out2']
 
-    conf_merged_incomplete = RpmTransactionTasks(to_remove = ['merged_in1'])
+    conf_merged_incomplete = RpmTransactionTasks(to_remove=['merged_in1'])
     add_output_pkgs_to_transaction_conf(conf_merged_incomplete, events)
     assert conf_merged_incomplete.to_remove == ['merged_in1']
 
-    conf_merged = RpmTransactionTasks(to_remove = ['merged_in1', 'merged_in2'])
+    conf_merged = RpmTransactionTasks(to_remove=['merged_in1', 'merged_in2'])
     add_output_pkgs_to_transaction_conf(conf_merged, events)
     assert sorted(conf_merged.to_remove) == ['merged_in1', 'merged_in2', 'merged_out']
 
-    conf_renamed = RpmTransactionTasks(to_remove = ['renamed_in'])
+    conf_renamed = RpmTransactionTasks(to_remove=['renamed_in'])
     add_output_pkgs_to_transaction_conf(conf_renamed, events)
     assert conf_renamed.to_remove == ['renamed_in']
