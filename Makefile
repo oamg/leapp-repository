@@ -5,7 +5,7 @@ VERSION=`grep -m1 "^Version:" packaging/$(PKGNAME).spec | grep -om1 "[0-9].[0-9.
 DEPS_VERSION=`grep -m1 "^Version:" packaging/$(DEPS_PKGNAME).spec | grep -om1 "[0-9].[0-9.]**"`
 
 # needed only in case the Python2 should be used
-_PYTHON_INTERPRETER=$${_PYTHON_INTERPRETER}
+_USE_PYTHON_INTERPRETER=$${_PYTHON_INTERPRETER}
 
 # by default use values you can see below, but in case the COPR_* var is defined
 # use it instead of the default
@@ -87,7 +87,7 @@ source: prepare
 	@__TIMESTAMP=$(TIMESTAMP) $(MAKE) _copr_build_deps_subpkg
 	@PKG_RELEASE=$(RELEASE) _COPR_CONFIG=$(_COPR_CONFIG) \
 		COPR_REPO=$(_COPR_REPO_TMP) COPR_PACKAGE=$(DEPS_PKGNAME) \
-		$(_PYTHON_INTERPRETER) ./utils/get_latest_copr_build > packaging/tmp/deps_build_id
+		$(_USE_PYTHON_INTERPRETER) ./utils/get_latest_copr_build > packaging/tmp/deps_build_id
 	@copr --config $(_COPR_CONFIG) download-build -d packaging/tmp `cat packaging/tmp/deps_build_id`
 	@mv `find packaging/tmp/ | grep "rpm$$" | grep -v "src"` packaging/tmp
 	@tar -czf packaging/sources/deps-pkgs.tar.gz -C packaging/tmp/ `ls packaging/tmp | grep -o "[^/]*rpm$$"`
