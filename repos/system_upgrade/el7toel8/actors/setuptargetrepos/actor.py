@@ -41,7 +41,8 @@ class SetupTargetRepos(Actor):
         reporting.report_with_remediation(
             title=title,
             summary=summary,
-            remediation='You can file a request to add this repository to the scope of in-place upgrades by filing a support ticket',
+            remediation='You can file a request to add this repository to the scope of in-place upgrades '
+                        'by filing a support ticket',
             severity='low')
 
         if is_verbose():

@@ -21,11 +21,12 @@ class PowerTop(Actor):
                 if rpm.name == 'powertop':
                     report_with_remediation(
                         title='PowerTOP compatibility options removed in the next major version',
-                        summary='The -d (dump) option which has been kept for RHEL backward compatibility has been dropped.\n'
-                                'The -h option which has been used for RHEL backward compatibility is no longer alias for --html, '
-                                'but it\'s now an alias for --help to follow the upstream.\n'
-                                'The -u option which has been used for RHEL backward compatibility as an alias for --help '
-                                'has been dropped.\n',
+                        summary='The -d (dump) option which has been kept for RHEL backward compatibility has been '
+                                'dropped.\n'
+                                'The -h option which has been used for RHEL backward compatibility is no longer '
+                                'alias for --html, but it\'s now an alias for --help to follow the upstream.\n'
+                                'The -u option which has been used for RHEL backward compatibility as an alias for '
+                                '--help has been dropped.\n',
                         remediation='Please remove the dropped options from your scripts.',
                         severity='low')
                     break
