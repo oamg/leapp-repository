@@ -8,7 +8,7 @@ def enable_sctp():
     """
 
     api.current_logger().info('Enabling SCTP.')
-    run(['/usr/bin/sed', '-i', 's/^\s*blacklist.*sctp/#&/',
+    run(['/usr/bin/sed', '-i', r's/^\s*blacklist.*sctp/#&/',
          '/etc/modprobe.d/sctp_diag-blacklist.conf',
          '/etc/modprobe.d/sctp-blacklist.conf'])
     api.current_logger().info('Enabled SCTP.')

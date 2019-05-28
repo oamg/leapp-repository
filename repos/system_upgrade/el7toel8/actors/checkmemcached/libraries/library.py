@@ -5,10 +5,9 @@ import re
 
 sysconfig_path = '/etc/sysconfig/memcached'
 
-# Check if the memcached sysconfig file was not modified since installation
-
 
 def is_sysconfig_default():
+    """Check if the memcached sysconfig file was not modified since installation."""
     try:
         result = run(['rpm', '-V', '--nomtime', 'memcached'], checked=False)
         return sysconfig_path not in result['stdout']
@@ -16,20 +15,18 @@ def is_sysconfig_default():
         api.current_logger().warn("rpm verification failed: %s", str(e))
         return True
 
-# Check if UDP port is disabled in the sysconfig file
-
 
 def is_udp_disabled():
+    """Check if UDP port is disabled in the sysconfig file."""
     with open(sysconfig_path) as f:
         for line in f:
-            if re.match('^\\s*OPTIONS=.*-U\s*0[^0-9]', line):
+            if re.match(r'^\s*OPTIONS=.*-U\s*0[^0-9]', line):
                 return True
     return False
 
-# Report potential issues in memcached configuration
-
 
 def check_memcached(memcached_installed):
+    """Report potential issues in memcached configuration."""
     if not memcached_installed:
         api.current_logger().info('memcached package is not installed')
         return
