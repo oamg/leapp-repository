@@ -7,7 +7,7 @@ from leapp.tags import FirstBootPhaseTag, IPUWorkflowTag
 class NetworkManagerUpdateConnections(Actor):
     """
     Update NetworkManager connections.
-    
+
     When using dhcp=dhclient on Red Hat Enterprise Linux 7, a non-hexadecimal client-id (a string)
     is sent on the wire as is (i.e. the first character is the 'type' as per RFC 2132 section
     9.14). On Red Hat Enterprise Linux 8, a zero byte is prepended to string-only client-ids. To

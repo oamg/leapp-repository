@@ -12,7 +12,7 @@ def test_custom_repos(current_actor_context):
                                     name='RHEL 8 Server (RPMs)',
                                     baseurl='https://.../dist/rhel/server/8/os',
                                     enabled=True)
-    
+
     blacklisted = CustomTargetRepository(repoid='rhel-8-blacklisted-rpms',
                                          name='RHEL 8 Blacklisted (RPMs)',
                                          baseurl='https://.../dist/rhel/blacklisted/8/os',

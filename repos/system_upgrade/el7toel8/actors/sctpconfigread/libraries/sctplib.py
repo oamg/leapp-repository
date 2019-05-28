@@ -12,7 +12,7 @@ from leapp.models import ActiveKernelModulesFacts
 def anyfile(files):
     """
     Determines if any of the given paths exist and are a file.
-    
+
     :return: True if any of the given paths exists and it is a file.
     :rtype: bool
     """

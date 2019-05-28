@@ -34,10 +34,10 @@ def is_xfs_without_ftype(mp):
     for l in run(['/usr/sbin/xfs_info', '{}'.format(mp)], split=True)['stdout']:
         if 'ftype=0' in l:
             return True
-    
+
     return False
 
-   
+
 def check_xfs():
     storage_info_msgs = api.consume(StorageInfo)
     storage_info = next(storage_info_msgs, None)
@@ -53,7 +53,7 @@ def check_xfs():
     systemdmount_data = check_xfs_systemdmount(storage_info.systemdmount)
 
     mountpoints = fstab_data | mount_data | systemdmount_data
-    
+
     xfs_presence = XFSPresence()
     # By now, we only care for XFS without ftype in use for /var
     has_xfs_without_ftype = False
