@@ -1,5 +1,5 @@
 from leapp.models import Model, fields
-from leapp.topics import TransactionTopic 
+from leapp.topics import TransactionTopic
 
 
 class RepositoryMap(Model):

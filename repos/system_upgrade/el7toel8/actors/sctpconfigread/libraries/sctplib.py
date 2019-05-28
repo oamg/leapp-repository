@@ -31,7 +31,7 @@ def is_module_loaded(module):
 
     :return: True if the module has been found in the ActiveKernelModuleFacts.
     :rtype: bool
-    """    
+    """
     for fact in api.consume(ActiveKernelModulesFacts):
         for active_module in fact.kernel_modules:
             if active_module.filename == module:

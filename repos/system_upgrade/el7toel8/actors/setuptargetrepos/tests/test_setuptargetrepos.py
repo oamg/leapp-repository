@@ -52,7 +52,7 @@ def test_repos_mapping(current_actor_context):
     repos_data = [
         RepositoryData(repoid='rhel-7-server-rpms', name='RHEL 7 Server'),
         RepositoryData(repoid='rhel-7-blacklisted-rpms', name='RHEL 7 Blacklisted')]
-    repos_files = [RepositoryFile(file='/etc/yum.repos.d/redhat.repo', data=repos_data)]    
+    repos_files = [RepositoryFile(file='/etc/yum.repos.d/redhat.repo', data=repos_data)]
     facts = RepositoriesFacts(repositories=repos_files)
 
     mapping=[RepositoryMap(from_id='rhel-7-server-rpms',
