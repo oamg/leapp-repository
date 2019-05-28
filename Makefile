@@ -5,7 +5,7 @@ VERSION=`grep -m1 "^Version:" packaging/$(PKGNAME).spec | grep -om1 "[0-9].[0-9.
 DEPS_VERSION=`grep -m1 "^Version:" packaging/$(DEPS_PKGNAME).spec | grep -om1 "[0-9].[0-9.]**"`
 
 # needed only in case the Python2 should be used
-_PYTHON_INTERPRETER=$$(_PYTHON_INTERPRETER)
+_PYTHON_INTERPRETER=$${_PYTHON_INTERPRETER}
 
 # by default use values you can see below, but in case the COPR_* var is defined
 # use it instead of the default
