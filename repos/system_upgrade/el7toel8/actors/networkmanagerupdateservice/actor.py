@@ -1,5 +1,3 @@
-import os
-
 from leapp.actors import Actor
 from leapp.libraries.stdlib import CalledProcessError, run
 from leapp.tags import ApplicationsPhaseTag, IPUWorkflowTag

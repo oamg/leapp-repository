@@ -1,7 +1,7 @@
 import sys
 import gi
 gi.require_version('NM', '1.0')
-from gi.repository import GLib, NM
+from gi.repository import NM  # noqa: F402
 
 
 def is_hexstring(s):
@@ -10,8 +10,8 @@ def is_hexstring(s):
         if len(a) != 1 and len(a) != 2:
             return False
         try:
-            h = int(a, 16)
-        except ValueError as e:
+            int(a, 16)
+        except ValueError:
             return False
     return True
 

@@ -1,5 +1,3 @@
-import sys
-
 from leapp.actors import Actor
 from leapp.tags import FinalizationPhaseTag, IPUWorkflowTag
 from leapp.models import SelinuxPermissiveDecision

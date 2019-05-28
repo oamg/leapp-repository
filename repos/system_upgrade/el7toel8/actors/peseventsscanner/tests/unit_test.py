@@ -1,4 +1,4 @@
-import os
+import os  # noqa: F401
 
 import pytest
 
@@ -16,8 +16,6 @@ from leapp.libraries.actor.library import (Event,
                                            report_skipped_packages)
 from leapp.libraries.common import reporting
 from leapp.libraries.stdlib import api
-from leapp.models import (RPM, InstalledRedHatSignedRPM,
-                          RepositoriesSetupTasks, RpmTransactionTasks)
 
 
 class show_message_mocked(object):

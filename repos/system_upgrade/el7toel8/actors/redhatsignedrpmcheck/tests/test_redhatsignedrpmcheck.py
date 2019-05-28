@@ -30,7 +30,7 @@ class report_generic_mocked(object):
 
 
 def test_skip_check(monkeypatch):
-    monkeypatch.setattr(os, "getenv", lambda(_): True)
+    monkeypatch.setattr(os, "getenv", lambda(_): True)  # noqa: E999
     monkeypatch.setattr(reporting, "report_generic", report_generic_mocked())
     with pytest.raises(StopActorExecution):
         library.skip_check()

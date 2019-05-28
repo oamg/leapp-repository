@@ -12,8 +12,8 @@ def check_config_supported(tcpwrap_facts, vsftpd_facts):
                                    'there is some vsftpd-related configuration in /etc/hosts.deny '
                                    'or /etc/hosts.allow. Please migrate it manually. '
                                    'The list of problematic configuration files:{}{}'
-                                  ).format(list_separator_fmt,
-                                           list_separator_fmt.join(bad_configs)),
+                                   ).format(list_separator_fmt,
+                                            list_separator_fmt.join(bad_configs)),
                           links=[{'title': 'Replacing TCP Wrappers in RHEL 8',
                                   'href': 'https://access.redhat.com/solutions/3906701'}],
                           severity='high',

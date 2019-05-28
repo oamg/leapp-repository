@@ -12,7 +12,7 @@ try:
 except ImportError:
     import configparser
 
-from leapp.libraries.stdlib import CalledProcessError, run
+from leapp.libraries.stdlib import CalledProcessError, api, run
 from leapp.models import SysctlVariablesFacts, SysctlVariable, ActiveKernelModulesFacts, ActiveKernelModule, \
     KernelModuleParameter, UsersFacts, User, GroupsFacts, Group, RepositoriesFacts, RepositoryFile, RepositoryData, \
     SELinuxFacts, fields, FirewallStatus, FirewallsFacts

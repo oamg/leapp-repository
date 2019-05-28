@@ -1,6 +1,3 @@
-import pytest
-
-from leapp.exceptions import StopActorExecution
 from leapp.libraries.actor.library import get_os_release_info
 from leapp.libraries.common import reporting
 from leapp.models import OSReleaseFacts

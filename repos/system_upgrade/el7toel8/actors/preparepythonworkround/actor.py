@@ -1,7 +1,7 @@
 import os
 
 from leapp.actors import Actor
-from leapp.tags import IPUWorkflowTag,  RPMUpgradePhaseTag
+from leapp.tags import IPUWorkflowTag, RPMUpgradePhaseTag
 
 
 class PreparePythonWorkround(Actor):

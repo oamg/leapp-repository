@@ -1,5 +1,3 @@
-import io
-
 from leapp.actors import Actor
 from leapp.libraries.stdlib import CalledProcessError, run
 from leapp.models import NetworkManagerConfig

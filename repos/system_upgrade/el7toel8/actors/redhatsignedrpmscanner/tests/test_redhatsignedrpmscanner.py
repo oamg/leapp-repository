@@ -1,5 +1,5 @@
 from leapp.snactor.fixture import current_actor_context
-from leapp.models import RPM, InstalledRPM, InstalledRedHatSignedRPM, InstalledUnsignedRPM, CheckResult
+from leapp.models import RPM, InstalledRPM, InstalledRedHatSignedRPM, InstalledUnsignedRPM
 
 
 RH_PACKAGER = 'Red Hat, Inc. <http://bugzilla.redhat.com/bugzilla>'

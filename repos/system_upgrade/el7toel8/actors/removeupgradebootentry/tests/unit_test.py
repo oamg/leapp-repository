@@ -1,7 +1,7 @@
 import pytest
 
 from leapp.exceptions import StopActorExecutionError
-from leapp.libraries import stdlib
+from leapp.libraries import stdlib  # noqa: F401
 from leapp.libraries.actor import library
 from leapp.models import BootContent
 

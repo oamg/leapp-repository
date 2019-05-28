@@ -3,7 +3,7 @@ from itertools import chain
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import preparetransaction
-from leapp.libraries.stdlib import api, run, CalledProcessError
+from leapp.libraries.stdlib import api, run
 from leapp.models import BootContent
 
 _REQUIRED_PACKAGES = [

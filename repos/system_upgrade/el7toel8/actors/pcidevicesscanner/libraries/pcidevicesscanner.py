@@ -1,7 +1,5 @@
 import functools
-import os
 import shlex
-import six
 
 from leapp.libraries.stdlib import CalledProcessError, run
 from leapp.models import PCIDevices, PCIDevice

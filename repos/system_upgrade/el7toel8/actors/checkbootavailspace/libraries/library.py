@@ -1,6 +1,5 @@
 from os import statvfs
 
-from leapp.libraries.stdlib import api
 from leapp.libraries.common import reporting
 
 MIN_AVAIL_BYTES_FOR_BOOT = 100 * 2**20  # 100 MiB
