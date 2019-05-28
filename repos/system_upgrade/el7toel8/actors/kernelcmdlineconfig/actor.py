@@ -36,4 +36,3 @@ class KernelCmdlineConfig(Actor):
                 raise StopActorExecutionError(
                        "Failed to append extra arguments to kernel command line.",
                        details={"details": str(e)})
-

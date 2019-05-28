@@ -50,4 +50,3 @@ class CheckNfs(Actor):
                                     remediation="Disable NFS temporarily for the upgrade if possible.",
                                     severity='high',
                                     flags=['inhibitor'])
-

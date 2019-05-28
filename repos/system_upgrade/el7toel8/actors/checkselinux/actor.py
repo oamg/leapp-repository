@@ -55,4 +55,3 @@ class CheckSelinux(Actor):
                 title='SElinux will be set to permissive mode',
                 summary='SElinux will be set to permissive mode as it was in enforcing mode.',
                 severity='low')
-

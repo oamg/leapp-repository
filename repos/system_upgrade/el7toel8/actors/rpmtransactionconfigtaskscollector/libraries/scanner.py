@@ -19,4 +19,3 @@ def load_tasks(base_dir, logger):
             to_install=load_tasks_file(os.path.join(base_dir, 'to_install'), logger),
             to_keep=load_tasks_file(os.path.join(base_dir, 'to_keep'), logger),
             to_remove=load_tasks_file(os.path.join(base_dir, 'to_remove'), logger))
-
