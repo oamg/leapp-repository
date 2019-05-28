@@ -50,7 +50,7 @@ class IPUWorkflow(Workflow):
 
     # The following two phases have been removed but are kept here for reference or in case they are needed again
 
-    #class AttachPackageReposPhase(Phase):
+    # class AttachPackageReposPhase(Phase):
     #    name = 'AttachPackageRepos'
     #    #NOTE: in case of use the AttachPackageReposPhaseTag tag has to be created
     #    filter = TagFilter(AttachPackageReposPhaseTag)
@@ -58,7 +58,7 @@ class IPUWorkflow(Workflow):
     #                        Policies.Retry.Phase)
     #    flags = Flags()
 
-    #class PlanningPhase(Phase):
+    # class PlanningPhase(Phase):
     #    name = 'Planning'
     #    #NOTE: in case of use the PlanningPhaseTag tag has to be created
     #    filter = TagFilter(PlanningPhaseTag)
@@ -92,7 +92,7 @@ class IPUWorkflow(Workflow):
 
     # The following two phases have been removed but are kept here for reference or in case they are needed again
 
-    #class NetworkPhase(Phase):
+    # class NetworkPhase(Phase):
     #    name = 'Network'
     #    #NOTE: in case of use the NetworkPhaseTag tag has to be created
     #    filter = TagFilter(NetworkPhaseTag)
@@ -100,7 +100,7 @@ class IPUWorkflow(Workflow):
     #                        Policies.Retry.Phase)
     #    flags = Flags()
 
-    #class StoragePhase(Phase):
+    # class StoragePhase(Phase):
     #    name = 'Storage'
     #    #NOTE: in case of use the StoragePhaseTag tag has to be created
     #    filter = TagFilter(StoragePhaseTag)

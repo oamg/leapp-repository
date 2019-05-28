@@ -15,6 +15,7 @@ def is_hexstring(s):
             return False
     return True
 
+
 client = NM.Client.new(None)
 if not client:
     print('Cannot create NM client instance')

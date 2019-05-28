@@ -12,7 +12,7 @@ class PythonInformUser(Actor):
     tags = (ChecksPhaseTag,)
 
     def process(self):
-        url = "https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html-single/configuring_basic_system_settings/#using-python3" # noqa E501
+        url = "https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html-single/configuring_basic_system_settings/#using-python3"  # noqa E501
         title = "Difference in Python versions and support in RHEL 8"
         severity = "high"
         summary = ("In RHEL 8, there is no 'python' command."
