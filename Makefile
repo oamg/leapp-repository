@@ -4,6 +4,9 @@ DEPS_PKGNAME=leapp-el7toel8-deps
 VERSION=`grep -m1 "^Version:" packaging/$(PKGNAME).spec | grep -om1 "[0-9].[0-9.]**"`
 DEPS_VERSION=`grep -m1 "^Version:" packaging/$(DEPS_PKGNAME).spec | grep -om1 "[0-9].[0-9.]**"`
 
+# needed only in case the Python2 should be used
+_USE_PYTHON_INTERPRETER=$${_PYTHON_INTERPRETER}
+
 # by default use values you can see below, but in case the COPR_* var is defined
 # use it instead of the default
 _COPR_REPO=$${COPR_REPO:-leapp}
@@ -75,22 +78,6 @@ prepare: clean
 	@echo "--- Prepare build directories ---"
 	@mkdir -p packaging/{sources,SRPMS}/
 
-# FIXME: incompatible with newer version of copr-cli
-_list_approved_builds:
-	@copr --config $(_COPR_CONFIG) get-package $(_COPR_REPO) \
-		--name $(__PKGNAME) --with-all-builds \
-		| grep -E '"(built_packages|id|state|pkg_version)"' | grep -B3 "succeeded" \
-		| sed 's/"state": "succeeded",/----------------------/' \
-		| grep -A1 -B2 '"pkg_version".*-[1-9]'
-
-# FIXME: incompatible with newer version of copr-cli
-_list_all_builds:
-	@copr --config $(_COPR_CONFIG) get-package $(_COPR_REPO) \
-		--name $(__PKGNAME) --with-all-builds \
-		| grep -E '"(built_packages|id|state|pkg_version)"' | grep -B3 "succeeded" \
-		| sed 's/"state": "succeeded",/----------------------/'
-
-
 source: prepare
 	@echo "--- Create source tarball ---"
 	@echo git archive --prefix "$(PKGNAME)-$(VERSION)/" -o "packaging/sources/$(PKGNAME)-$(VERSION).tar.gz" HEAD
@@ -98,10 +85,9 @@ source: prepare
 	@echo "--- PREPARE DEPS PKGS ---"
 	mkdir -p packaging/tmp/
 	@__TIMESTAMP=$(TIMESTAMP) $(MAKE) _copr_build_deps_subpkg
-	@# THIS IS NOT TYPO! COPR_REPO=_COPR_REPO_TMP!!
-	@__TIMESTAMP=$(TIMESTAMP) _PKGNAME=$(DEPS_PKGNAME) COPR_REPO=$(_COPR_REPO_TMP) $(MAKE) _list_all_builds \
-		| grep -EB3 "pkg_version.*-$(RELEASE)" \
-		| grep -m1 '"id"' | grep -o "[0-9][0-9]*" > packaging/tmp/deps_build_id
+	@PKG_RELEASE=$(RELEASE) _COPR_CONFIG=$(_COPR_CONFIG) \
+		COPR_REPO=$(_COPR_REPO_TMP) COPR_PACKAGE=$(DEPS_PKGNAME) \
+		$(_USE_PYTHON_INTERPRETER) ./utils/get_latest_copr_build > packaging/tmp/deps_build_id
 	@copr --config $(_COPR_CONFIG) download-build -d packaging/tmp `cat packaging/tmp/deps_build_id`
 	@mv `find packaging/tmp/ | grep "rpm$$" | grep -v "src"` packaging/tmp
 	@tar -czf packaging/sources/deps-pkgs.tar.gz -C packaging/tmp/ `ls packaging/tmp | grep -o "[^/]*rpm$$"`

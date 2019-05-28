@@ -1,0 +1,54 @@
+#!/usr/bin/python3
+
+import json
+import os
+import sys
+
+import copr.v3
+
+CONFIG_PATH = os.path.expandvars(os.getenv('_COPR_CONFIG', '~/.config/copr'))
+client = copr.v3.Client(copr.v3.config_from_file(path=CONFIG_PATH))
+
+# In case we are not able to retrieve from env vars, use defaults from the
+# configuration files.
+ownername = os.getenv('COPR_OWNER')
+projectname = os.getenv('COPR_PROJECT')
+packagename = os.getenv('COPR_PACKAGE')
+pkgrelease = os.getenv('PKG_RELEASE')
+if not ownername or not projectname:
+    copr_repo = os.getenv('COPR_REPO', '').split('/', 1)
+    if len(copr_repo) == 2:
+        ownername, projectname = os.getenv('COPR_REPO', '').split('/', 1)
+    else:
+        # We have just the name of project inside COPR_REPO value, it is
+        # expected when user is owner of the project. So set the user as
+        # owner from the config file.
+        projectname = copr_repo[0]
+        ownername = client.config['username']
+
+# limit set to 10 as it is not expected that there would be more packages build
+# in such short time
+builds = client.build_proxy.get_list(
+    status='succeeded',
+    pagination={'limit': 10, 'order': 'id', 'order_type': 'DESC'},
+    ownername=ownername,
+    projectname=projectname,
+    packagename=packagename)
+
+if '--debug' not in sys.argv:
+    json.dump(builds, sys.stderr, sort_keys=True, indent=2)
+
+for build in builds:
+    # Version in COPR contains VERSION-RELEASE string. We need just the
+    # release. Additionally we do not care about *elX* suffix. So remove it
+    # when compare.
+    _release = build['source_package']['version'].split("-")[-1]
+    # FIXME: instead of rsplit(.el8) remove whole elx.* as it can contain
+    # later e.g. .el8_0 instead of .el8
+    if _release.rstrip(".el8") == pkgrelease:
+        print(build['id'])
+        break
+else:
+    sys.stderr.write('Error: The build with the required release has not been found: {}'.format(pkgrelease))
+    sys.exit(1)
+
