@@ -1,6 +1,7 @@
 from leapp.models import Model, fields
 from leapp.topics import TransactionTopic 
 
+
 class RepositoryMap(Model):
     """
     Mapping between repositories to be used during upgrade.

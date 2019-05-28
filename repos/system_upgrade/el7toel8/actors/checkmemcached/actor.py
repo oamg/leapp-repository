@@ -4,6 +4,7 @@ from leapp.reporting import Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 from leapp.libraries.actor.library import check_memcached
 
+
 class CheckMemcached(Actor):
     """
     Check for incompatible changes in memcached configuration.

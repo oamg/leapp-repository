@@ -54,6 +54,7 @@ def parse_pci_devices(devices):
             progif=progif
         )
 
+
 def produce_pci_devices(producer, devices):
     ''' Produce a Leapp message with all PCI devices '''
     producer(PCIDevices(devices=devices))

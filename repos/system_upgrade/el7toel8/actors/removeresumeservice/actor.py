@@ -7,6 +7,7 @@ from leapp.libraries.stdlib import run
 from leapp.reporting import Report
 from leapp.tags import FirstBootPhaseTag, IPUWorkflowTag
 
+
 class RemoveSystemdResumeService(Actor):
     """
     Remove systemd service to launch Leapp.

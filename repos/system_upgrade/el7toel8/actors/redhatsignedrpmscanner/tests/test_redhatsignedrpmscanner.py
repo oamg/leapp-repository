@@ -38,6 +38,7 @@ def test_actor_execution_with_signed_unsigned_data(current_actor_context):
     assert current_actor_context.consume(InstalledUnsignedRPM)
     assert len(current_actor_context.consume(InstalledUnsignedRPM)[0].items) == 4
 
+
 def test_gpg_pubkey_pkg(current_actor_context):
     installed_rpm = [
         RPM(name='gpg-pubkey', version='0.1', release='1.sm01', epoch='1', packager=RH_PACKAGER, arch='noarch',

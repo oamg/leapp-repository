@@ -2,6 +2,7 @@ import os
 
 from leapp.snactor.fixture import current_actor_context
 
+
 def test_create_resume_service(current_actor_context):
 
     current_actor_context.run()

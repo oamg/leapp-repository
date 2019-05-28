@@ -2,6 +2,8 @@ from leapp.libraries.common import reporting
 from leapp.libraries.stdlib import api, run
 
 # Check if the chrony config file was not modified since installation
+
+
 def is_config_default():
     try:
         result = run(['rpm', '-V', '--nomtime', 'chrony'], checked=False)
@@ -11,6 +13,8 @@ def is_config_default():
         return True
 
 # Report potential issues in chrony configuration
+
+
 def check_chrony(chrony_installed):
     if not chrony_installed:
         api.current_logger().info('chrony package is not installed')

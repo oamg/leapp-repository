@@ -43,6 +43,7 @@ def test_actor_without_fstab_entry(current_actor_context):
     current_actor_context.run()
     assert not current_actor_context.consume(Report)
 
+
 def test_actor_with_mount_share(current_actor_context):
     with_mount_share = [MountEntry(name="nfs", mount="/mnt/data", tp="nfs",
                                    options="rw,nosuid,nodev,relatime,user_id=1000,group_id=1000")]

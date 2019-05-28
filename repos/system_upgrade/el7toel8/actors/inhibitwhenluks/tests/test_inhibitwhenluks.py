@@ -13,6 +13,7 @@ def test_actor_with_luks(current_actor_context):
     assert current_actor_context.consume(Report)
     assert 'inhibitor' in current_actor_context.consume(Report)[0].flags
 
+
 def test_actor_without_luks(current_actor_context):
     without_luks = [LsblkEntry(name='sda1', maj_min='8:0', rm='0',
                                size='10G', ro='0', tp='part', mountpoint='/boot'

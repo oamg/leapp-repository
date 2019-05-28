@@ -5,6 +5,7 @@ from leapp.libraries.actor.scanner import load_tasks
 
 CONFIGURATION_BASE_PATH='/etc/leapp/transaction'
 
+
 class RpmTransactionConfigTasksCollector(Actor):
     """
     Provides additional RPM transaction tasks from /etc/leapp/transaction.

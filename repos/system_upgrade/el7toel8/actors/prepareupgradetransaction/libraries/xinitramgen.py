@@ -97,11 +97,13 @@ def generate_initram_disk(userspace_dir):
         '/bin/sh', '/generate-initram.sh'
     ])
 
+
 def remove_userspace(userspace_dir):
     try:
         run(['rm', '-rf', userspace_dir])
     except Exception:
         api.current_logger().info('Removal of el8 userspace failed - Failure ignored', exc_info=True)
+
 
 def copy_boot_files(userspace_dir):
     kernel = 'vmlinuz-upgrade.x86_64'

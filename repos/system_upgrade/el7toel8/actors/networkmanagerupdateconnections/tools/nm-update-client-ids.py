@@ -3,6 +3,7 @@ import gi
 gi.require_version('NM', '1.0')
 from gi.repository import GLib, NM
 
+
 def is_hexstring(s):
     arr = s.split(':')
     for a in arr:

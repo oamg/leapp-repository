@@ -4,8 +4,10 @@ from leapp.reporting import Report
 
 RH_PACKAGER = 'Red Hat, Inc. <http://bugzilla.redhat.com/bugzilla>'
 
+
 def create_modulesfacts(installed_rpm):
     return InstalledRedHatSignedRPM(items=installed_rpm)
+
 
 def test_actor_with_acpid_package(current_actor_context):
     with_acpid = [
@@ -17,6 +19,7 @@ def test_actor_with_acpid_package(current_actor_context):
     current_actor_context.feed(create_modulesfacts(installed_rpm=with_acpid))
     current_actor_context.run()
     assert len(current_actor_context.consume(Report)) > 0
+
 
 def test_actor_without_acpid_package(current_actor_context):
     without_acpid = [

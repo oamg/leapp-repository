@@ -23,6 +23,7 @@ def test_not_supported_id(current_actor_context):
     assert current_actor_context.consume(Report)[0].title == 'Unsupported OS id'
     assert 'inhibitor' in current_actor_context.consume(Report)[0].flags
 
+
 def test_not_supported_major_version(current_actor_context):
     current_actor_context.feed(create_osrelease(id='rhel', version_id='6.6'))
     current_actor_context.run()

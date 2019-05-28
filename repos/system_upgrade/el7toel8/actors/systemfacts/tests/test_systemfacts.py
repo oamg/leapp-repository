@@ -1,5 +1,6 @@
 from leapp.snactor.fixture import current_actor_libraries
 
+
 def test_anyendswith(current_actor_libraries):
     from leapp.libraries.actor.systemfacts import anyendswith
     value = 'this_is_a_test'
