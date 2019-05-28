@@ -40,7 +40,6 @@ def test_actor_execution(current_actor_context):
         ('rhel-7-server-rpms', 'RHEL 7 Server'),
         ('rhel-7-unused-rpms', 'RHEL 7 Unused')])
 
-
     current_actor_context.feed(installed)
     current_actor_context.feed(repos)
     current_actor_context.run()

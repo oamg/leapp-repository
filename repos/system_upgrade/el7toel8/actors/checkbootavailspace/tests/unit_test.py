@@ -4,7 +4,6 @@ from leapp.libraries.actor.library import (MIN_AVAIL_BYTES_FOR_BOOT,
 from leapp.libraries.common import reporting
 
 
-
 class report_generic_mocked(object):
     def __init__(self):
         self.called = 0

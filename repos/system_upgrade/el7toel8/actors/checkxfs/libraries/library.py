@@ -48,7 +48,6 @@ def check_xfs():
         raise StopActorExecutionError('Could not check if XFS is in use.',
                                       details={'details': 'Did not receive a StorageInfo message'})
 
-
     fstab_data = check_xfs_fstab(storage_info.fstab)
     mount_data = check_xfs_mount(storage_info.mount)
     systemdmount_data = check_xfs_systemdmount(storage_info.systemdmount)

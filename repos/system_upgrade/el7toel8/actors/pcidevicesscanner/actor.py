@@ -16,6 +16,5 @@ class PCIDevicesScanner(Actor):
     produces = (PCIDevices,)
     tags = (IPUWorkflowTag, FactsPhaseTag,)
 
-
     def process(self):
         pcidevicesscanner.scan_pci_devices(self.produce)

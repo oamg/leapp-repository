@@ -18,7 +18,6 @@ class CheckSelinux(Actor):
     produces = (Report, SelinuxPermissiveDecision, SelinuxRelabelDecision)
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 
-
     def process(self):
 
         fact = next(self.consume(SELinuxFacts), None)

@@ -85,7 +85,6 @@ def was_sctp_used():
     return True
 
 
-
 def is_sctp_wanted():
     """
     Decision making funtion that decides based on the current or past usage of SCTP, the SCTP module is wanted

@@ -72,7 +72,6 @@ def test_produce_pci_devices(current_actor_libraries):
     def fake_producer(*args):
         output.extend(args)
 
-
     devices = [
         PCIDevice(
             slot='00:00.0',
@@ -109,7 +108,6 @@ def test_produce_no_devices(current_actor_libraries):
 
     def fake_producer(*args):
         output.extend(args)
-
 
     produce_pci_devices(fake_producer, [])
     assert len(output) == 1
