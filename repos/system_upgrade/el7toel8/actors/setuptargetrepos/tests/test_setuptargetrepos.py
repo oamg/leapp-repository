@@ -55,24 +55,24 @@ def test_repos_mapping(current_actor_context):
     repos_files = [RepositoryFile(file='/etc/yum.repos.d/redhat.repo', data=repos_data)]
     facts = RepositoriesFacts(repositories=repos_files)
 
-    mapping=[RepositoryMap(from_id='rhel-7-server-rpms',
-                           to_id='rhel-8-for-x86_64-baseos-htb-rpms',
-                           from_minor_version='all',
-                           to_minor_version='all',
-                           arch='x86_64',
-                           repo_type='rpm'),
-             RepositoryMap(from_id='rhel-7-server-rpms',
-                           to_id='rhel-8-for-x86_64-appstream-htb-rpms',
-                           from_minor_version='all',
-                           to_minor_version='all',
-                           arch='x86_64',
-                           repo_type='rpm'),
-             RepositoryMap(from_id='rhel-7-blacklist-rpms',
-                           to_id='rhel-8-blacklist-rpms',
-                           from_minor_version='all',
-                           to_minor_version='all',
-                           arch='x86_64',
-                           repo_type='rpm')]
+    mapping = [RepositoryMap(from_id='rhel-7-server-rpms',
+                             to_id='rhel-8-for-x86_64-baseos-htb-rpms',
+                             from_minor_version='all',
+                             to_minor_version='all',
+                             arch='x86_64',
+                             repo_type='rpm'),
+               RepositoryMap(from_id='rhel-7-server-rpms',
+                             to_id='rhel-8-for-x86_64-appstream-htb-rpms',
+                             from_minor_version='all',
+                             to_minor_version='all',
+                             arch='x86_64',
+                             repo_type='rpm'),
+               RepositoryMap(from_id='rhel-7-blacklist-rpms',
+                             to_id='rhel-8-blacklist-rpms',
+                             from_minor_version='all',
+                             to_minor_version='all',
+                             arch='x86_64',
+                             repo_type='rpm')]
     repos_map = RepositoriesMap(repositories=mapping)
 
     repos_blacklisted = RepositoriesBlacklisted(repoids=['rhel-8-blacklisted-rpms'])

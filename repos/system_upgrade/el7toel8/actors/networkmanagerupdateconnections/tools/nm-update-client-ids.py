@@ -20,9 +20,9 @@ if not client:
     print('Cannot create NM client instance')
     sys.exit(0)
 
-processed=0
-changed=0
-errors=0
+processed = 0
+changed = 0
+errors = 0
 
 for c in client.get_connections():
     s_ip4 = c.get_setting_ip4_config()
