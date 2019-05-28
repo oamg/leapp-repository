@@ -12,12 +12,12 @@ def create_selinuxfacts(static_mode, enabled, policy='targeted', mls_enabled=Tru
     runtime_mode = static_mode if static_mode != 'disabled' else None
 
     return SELinuxFacts(
-            runtime_mode=runtime_mode,
-            static_mode=static_mode,
-            enabled=enabled,
-            policy=policy,
-            mls_enabled=mls_enabled
-        )
+        runtime_mode=runtime_mode,
+        static_mode=static_mode,
+        enabled=enabled,
+        policy=policy,
+        mls_enabled=mls_enabled
+    )
 
 
 def test_actor_schedule_relabelling(current_actor_context):

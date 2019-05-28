@@ -22,8 +22,8 @@ class KernelCmdlineConfig(Actor):
             if "el8" in version:
                 return version
         raise StopActorExecutionError(
-                "Cannot get version of the installed RHEL-8 kernel",
-                details={"details": "\n".join(kernels)})
+            "Cannot get version of the installed RHEL-8 kernel",
+            details={"details": "\n".join(kernels)})
 
     def process(self):
         kernel_version = self.get_rhel8_kernel_version()
@@ -34,5 +34,5 @@ class KernelCmdlineConfig(Actor):
                 run(cmd)
             except CalledProcessError as e:
                 raise StopActorExecutionError(
-                       "Failed to append extra arguments to kernel command line.",
-                       details={"details": str(e)})
+                    "Failed to append extra arguments to kernel command line.",
+                    details={"details": str(e)})

@@ -22,13 +22,12 @@ def check_chrony(chrony_installed):
 
     if is_config_default():
         reporting.report_generic(
-                title='chrony using default configuration',
-                summary='default chrony configuration in RHEL8 uses leapsectz directive, which cannot be used with '
-                        'leap smearing NTP servers, and uses a single pool directive instead of four server '
-                        'directives',
-                severity='medium')
+            title='chrony using default configuration',
+            summary='default chrony configuration in RHEL8 uses leapsectz directive, which cannot be used with '
+            'leap smearing NTP servers, and uses a single pool directive instead of four server directives',
+            severity='medium')
     else:
         reporting.report_generic(
-                title='chrony using non-default configuration',
-                summary='chrony behavior will not change in RHEL8',
-                severity='low')
+            title='chrony using non-default configuration',
+            summary='chrony behavior will not change in RHEL8',
+            severity='low')

@@ -36,4 +36,4 @@ class RemoveSystemdResumeService(Actor):
             summary='"{}" was taking care of resuming upgrade process '
                     'after the first reboot.'.format(service_name),
             severity='low'
-            )
+        )

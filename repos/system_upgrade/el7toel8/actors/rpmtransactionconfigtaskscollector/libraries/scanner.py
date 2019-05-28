@@ -16,6 +16,6 @@ def load_tasks_file(path, logger):
 def load_tasks(base_dir, logger):
     # Loads configuration files to_install, to_keep, and to_remove from the given base directory
     return RpmTransactionTasks(
-            to_install=load_tasks_file(os.path.join(base_dir, 'to_install'), logger),
-            to_keep=load_tasks_file(os.path.join(base_dir, 'to_keep'), logger),
-            to_remove=load_tasks_file(os.path.join(base_dir, 'to_remove'), logger))
+        to_install=load_tasks_file(os.path.join(base_dir, 'to_install'), logger),
+        to_keep=load_tasks_file(os.path.join(base_dir, 'to_keep'), logger),
+        to_remove=load_tasks_file(os.path.join(base_dir, 'to_remove'), logger))

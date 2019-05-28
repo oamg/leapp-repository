@@ -264,9 +264,9 @@ def get_firewalls_status():
         return FirewallStatus(
             active=active,
             enabled=enabled,
-            )
+        )
 
     return FirewallsFacts(
         firewalld=_get_firewall_status('firewalld'),
         iptables=_get_firewall_status('iptables'),
-        )
+    )

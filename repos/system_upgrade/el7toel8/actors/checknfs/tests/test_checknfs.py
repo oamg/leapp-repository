@@ -36,9 +36,9 @@ def test_actor_with_fstab_entry(current_actor_context):
 
 def test_actor_without_fstab_entry(current_actor_context):
     without_fstab_entry = [FstabEntry(fs_spec="/dev/mapper/fedora-home", fs_file="/home",
-                                   fs_vfstype="ext4",
-                                   fs_mntops="defaults,x-systemd.device-timeout=0",
-                                   fs_freq="1", fs_passno="2")]
+                                      fs_vfstype="ext4",
+                                      fs_mntops="defaults,x-systemd.device-timeout=0",
+                                      fs_freq="1", fs_passno="2")]
     current_actor_context.feed(StorageInfo(fstab=without_fstab_entry))
     current_actor_context.run()
     assert not current_actor_context.consume(Report)

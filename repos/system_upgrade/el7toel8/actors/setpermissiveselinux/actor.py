@@ -32,5 +32,5 @@ class SetPermissiveSelinux(Actor):
                         summary='{}'.format(err_msg),
                         remediation='Please set SElinux into permissive mode manually.',
                         severity='high',
-                        )
+                    )
                     self.log.critical('Could not set SElinux into permissive mode: %s.' % err_msg)

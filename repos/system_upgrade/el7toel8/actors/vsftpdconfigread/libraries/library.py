@@ -3,9 +3,9 @@ import os
 
 from leapp.libraries.actor import config_parser
 from leapp.libraries.common.vsftpdutils import get_config_contents, get_default_config_hash, \
-                                               read_file, \
-                                               VSFTPD_CONFIG_DIR, \
-                                               STRICT_SSL_READ_EOF, TCP_WRAPPERS
+    read_file, \
+    VSFTPD_CONFIG_DIR, \
+    STRICT_SSL_READ_EOF, TCP_WRAPPERS
 from leapp.libraries.stdlib import api
 from leapp.models import VsftpdConfig, VsftpdFacts
 
