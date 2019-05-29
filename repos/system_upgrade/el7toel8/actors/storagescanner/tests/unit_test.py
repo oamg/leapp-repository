@@ -15,7 +15,7 @@ def test_get_partitions_info(monkeypatch):
         PartitionEntry(major='253', minor='1', blocks='1048576', name='dm-1')]
     assert expected == library._get_partitions_info('tests/files/partitions')
 
-    monkeypatch.setattr('library._is_file_readable', is_file_readable_mocked)
+    monkeypatch.setattr(library, '_is_file_readable', is_file_readable_mocked)
     assert [] == library._get_partitions_info('unreadable_file')
 
 
@@ -47,7 +47,7 @@ def test_get_fstab_info(monkeypatch):
             fs_passno='0')]
     assert expected == library._get_fstab_info('tests/files/fstab')
 
-    monkeypatch.setattr('library._is_file_readable', is_file_readable_mocked)
+    monkeypatch.setattr(library, '_is_file_readable', is_file_readable_mocked)
     assert [] == library._get_fstab_info('unreadable_file')
 
 
@@ -59,7 +59,7 @@ def test_get_mount_info(monkeypatch):
             ['tmpfs', 'on', '/dev/shm', 'type', 'tmpfs', '(rw,nosuid,nodev,seclabel)'],
             ['tmpfs', 'on', '/run', 'type', 'tmpfs', '(rw,nosuid,nodev,seclabel,mode=755)']]
 
-    monkeypatch.setattr('library._get_cmd_output', get_cmd_output_mocked)
+    monkeypatch.setattr(library, '_get_cmd_output', get_cmd_output_mocked)
     expected = [
         MountEntry(
             name='sysfs',
@@ -93,7 +93,7 @@ def test_get_lsblk_info(monkeypatch):
             ['rhel_ibm--p8--kvm--03--guest--02-root', '253:0', '0', '38G', '0', 'lvm', '/'],
             ['rhel_ibm--p8--kvm--03--guest--02-swap', '253:1', '0', '1G', '0', 'lvm', '[SWAP]']]
 
-    monkeypatch.setattr('library._get_cmd_output', get_cmd_output_mocked)
+    monkeypatch.setattr(library, '_get_cmd_output', get_cmd_output_mocked)
     expected = [
         LsblkEntry(
             name='vda',
@@ -143,7 +143,7 @@ def test_get_pvs_info(monkeypatch):
         return [
             ['/dev/vda2', 'rhel_ibm-p8-kvm-03-guest-02', 'lvm2', 'a--', '<39.00g', '4.00m']]
 
-    monkeypatch.setattr('library._get_cmd_output', get_cmd_output_mocked)
+    monkeypatch.setattr(library, '_get_cmd_output', get_cmd_output_mocked)
     expected = [
         PvsEntry(
             pv='/dev/vda2',
@@ -160,7 +160,7 @@ def test_get_vgs_info(monkeypatch):
         return [
             ['rhel_ibm-p8-kvm-03-guest-02', '1', '2', '0', 'wz--n-', '<39.00g', '4.00m']]
 
-    monkeypatch.setattr('library._get_cmd_output', get_cmd_output_mocked)
+    monkeypatch.setattr(library, '_get_cmd_output', get_cmd_output_mocked)
     expected = [
         VgsEntry(
             vg='rhel_ibm-p8-kvm-03-guest-02',
@@ -179,7 +179,7 @@ def test_get_lvdisplay_info(monkeypatch):
             ['root', 'rhel_ibm-p8-kvm-03-guest-02', '-wi-ao----', '37.99g', '', '', '', '', '', '', '', ''],
             ['swap', 'rhel_ibm-p8-kvm-03-guest-02', '-wi-ao----', '1.00g', '', '', '', '', '', '', '', '']]
 
-    monkeypatch.setattr('library._get_cmd_output', get_cmd_output_mocked)
+    monkeypatch.setattr(library, '_get_cmd_output', get_cmd_output_mocked)
     expected = [
         LvdisplayEntry(
             lv='root',
@@ -235,7 +235,7 @@ def test_get_systemd_mount_info(monkeypatch):
              'n/a',
              'c3890bf3-9273-4877-ad1f-68144e1eb858']]
 
-    monkeypatch.setattr('library._get_cmd_output', get_cmd_output_mocked)
+    monkeypatch.setattr(library, '_get_cmd_output', get_cmd_output_mocked)
     expected = [
         SystemdMountEntry(
             node='/dev/dm-1',

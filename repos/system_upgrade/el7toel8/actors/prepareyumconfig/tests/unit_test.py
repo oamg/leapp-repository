@@ -12,7 +12,7 @@ class run_mocked(object):
 
 
 def test_prepare_yum_config(monkeypatch):
-    monkeypatch.setattr('library.run', run_mocked())
+    monkeypatch.setattr(library, 'run', run_mocked())
     library.prepare_yum_config()
     assert library.run.called == 1
     assert library.run.args == ['handleyumconfig']
