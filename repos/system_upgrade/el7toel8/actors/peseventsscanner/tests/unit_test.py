@@ -1,4 +1,4 @@
-import os  # noqa: F401
+import os.path  # noqa: F401
 
 import pytest
 
@@ -242,7 +242,7 @@ def test_get_events(monkeypatch):
 def test_pes_data_not_found(monkeypatch):
     def file_not_exists(_filepath):
         return False
-    monkeypatch.setattr('os.path.isfile', file_not_exists)
+    monkeypatch.setattr(os.path, 'isfile', file_not_exists)
     monkeypatch.setattr(reporting, 'report_generic', report_generic_mocked())
     with pytest.raises(StopActorExecution):
         get_events('/etc/leapp/pes-data.json')

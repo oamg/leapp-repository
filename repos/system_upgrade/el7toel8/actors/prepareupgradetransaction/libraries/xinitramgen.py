@@ -3,7 +3,7 @@ from itertools import chain
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import preparetransaction
-from leapp.libraries.stdlib import api, run
+from leapp.libraries.stdlib import api, run, CalledProcessError
 from leapp.models import BootContent
 
 _REQUIRED_PACKAGES = [
@@ -101,7 +101,7 @@ def generate_initram_disk(userspace_dir):
 def remove_userspace(userspace_dir):
     try:
         run(['rm', '-rf', userspace_dir])
-    except Exception:
+    except (OSError, CalledProcessError):
         api.current_logger().info('Removal of el8 userspace failed - Failure ignored', exc_info=True)
 
 

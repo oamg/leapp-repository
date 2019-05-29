@@ -1,7 +1,7 @@
 import pytest
 
 from leapp.exceptions import StopActorExecutionError
-from leapp.libraries import stdlib  # noqa: F401
+from leapp.libraries.stdlib import api
 from leapp.libraries.actor import library
 from leapp.models import BootContent
 
@@ -29,7 +29,7 @@ def test_get_upgrade_kernel_filepath(monkeypatch):
     # BootContent message available
     def consume_message_mocked(*models):
         yield BootContent(kernel_path='/abc', initram_path='/def')
-    monkeypatch.setattr('leapp.libraries.stdlib.api.consume', consume_message_mocked)
+    monkeypatch.setattr(api, 'consume', consume_message_mocked)
 
     kernel_path = library.get_upgrade_kernel_filepath()
 
@@ -38,7 +38,7 @@ def test_get_upgrade_kernel_filepath(monkeypatch):
     # No BootContent message available
     def consume_no_message_mocked(*models):
         yield None
-    monkeypatch.setattr('leapp.libraries.stdlib.api.consume', consume_no_message_mocked)
+    monkeypatch.setattr(api, 'consume', consume_no_message_mocked)
 
     with pytest.raises(StopActorExecutionError):
         library.get_upgrade_kernel_filepath()

@@ -7,12 +7,12 @@ disable=
  no-member,
  no-name-in-module,
  raising-bad-type,
- undefined-variable,
+ #undefined-variable,
 # "W" Warnings for stylistic problems or minor programming issues
- anomalous-backslash-in-string,
+ #anomalous-backslash-in-string,
  arguments-differ,
  attribute-defined-outside-init,
- bad-indentation,
+ #bad-indentation,
  broad-except,
  cell-var-from-loop,
  deprecated-lambda,
@@ -26,26 +26,26 @@ disable=
  redefined-outer-name,
  relative-import,
  undefined-loop-variable,
- unsupported-membership-test,
+ #unsupported-membership-test,
  unsubscriptable-object,
  unused-argument,
  unused-import,
- unused-variable,
+ #unused-variable,
 # "C" Coding convention violations
  bad-continuation,
- bad-whitespace,
- consider-iterating-dictionary,
+ #bad-whitespace,
+ #consider-iterating-dictionary,
  invalid-name,
  len-as-condition,
- line-too-long,
+ #line-too-long,
  missing-docstring,
  old-style-class,
  superfluous-parens,
- trailing-newlines,
- trailing-whitespace,
+ #trailing-newlines,
+ #trailing-whitespace,
  unidiomatic-typecheck,
  wrong-import-order,
- wrong-import-position,
+ #wrong-import-position,
 # "R" Refactor recommendations
  duplicate-code,
  inconsistent-return-statements,
@@ -56,7 +56,7 @@ disable=
  too-many-locals,
  too-many-statements,
 # new for python3 version of pylint
- useless-object-inheritance
+ #useless-object-inheritance
 
 [FORMAT]
 # Maximum number of characters on a single line.

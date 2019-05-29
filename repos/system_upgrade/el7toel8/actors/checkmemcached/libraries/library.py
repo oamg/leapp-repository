@@ -1,7 +1,8 @@
+import re
+
 from leapp.libraries.common import reporting
 from leapp.libraries.stdlib import api, run
 
-import re
 
 sysconfig_path = '/etc/sysconfig/memcached'
 
