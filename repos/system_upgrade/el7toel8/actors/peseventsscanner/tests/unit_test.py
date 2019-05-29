@@ -180,7 +180,7 @@ def test_map_repositories(monkeypatch):
     map_repositories(to_install)
 
     msgs = [
-        '2 packages will not be installed due to not mapped repositories:',
+        '2 packages will not be installed or upgraded due to repositories unknown to leapp:',
         '- skipped01',
         '- skipped02']
     assert api.show_message.called == 1
@@ -193,18 +193,21 @@ def test_map_repositories(monkeypatch):
 
 
 def test_process_events(monkeypatch):
-    monkeypatch.setattr(library, 'REPOSITORIES_MAPPING', {'repo': 'mapped'})
+    monkeypatch.setattr(library, 'REPOSITORIES_MAPPING', {'rhel8-repo': 'rhel8-mapped'})
     monkeypatch.setattr(library, 'get_repositories_blacklisted', get_repos_blacklisted_mocked(set()))
 
     events = [
-        Event('Split', {'original': 'repo'}, {'split01': 'repo', 'split02': 'repo'}),
-        Event('Removed', {'removed': 'repo'}, {})]
-    to_install, to_remove = process_events(events, {})
+        Event('Split', {'original': 'rhel7-repo'}, {'split01': 'rhel8-repo', 'split02': 'rhel8-repo'}),
+        Event('Removed', {'removed': 'rhel7-repo'}, {}),
+        Event('Present', {'present': 'rhel8-repo'}, {})]
+    tasks = process_events(events, {})
 
-    assert len(to_install) == 2
-    assert to_install == {'split02': 'mapped', 'split01': 'mapped'}
-    assert len(to_remove) == 2
-    assert to_remove == {'removed': 'repo', 'original': 'repo'}
+    assert len(tasks['to_install']) == 2
+    assert tasks['to_install'] == {'split02': 'rhel8-mapped', 'split01': 'rhel8-mapped'}
+    assert len(tasks['to_remove']) == 2
+    assert tasks['to_remove'] == {'removed': 'rhel7-repo', 'original': 'rhel7-repo'}
+    assert len(tasks['to_keep']) == 1
+    assert tasks['to_keep'] == {'present': 'rhel8-mapped'}
 
 
 def test_get_events(monkeypatch):
