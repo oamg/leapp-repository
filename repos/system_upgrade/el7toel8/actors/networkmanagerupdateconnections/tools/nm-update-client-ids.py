@@ -3,6 +3,7 @@ import gi
 gi.require_version('NM', '1.0')
 from gi.repository import NM  # noqa: F402; pylint: disable=wrong-import-position
 
+
 def is_hexstring(s):
     arr = s.split(':')
     for a in arr:
