@@ -1,8 +1,8 @@
 from leapp.actors import Actor
+from leapp.libraries.common.reporting import report_with_remediation
 from leapp.models import ActiveKernelModulesFacts
 from leapp.reporting import Report
-from leapp.libraries.common.reporting import report_with_remediation
-from leapp.tags import ChecksPhaseTag, IPUWorkflowTag, ExperimentalTag
+from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
 class CheckKernelModules(Actor):
@@ -17,30 +17,28 @@ class CheckKernelModules(Actor):
     Note:
      - List of kernel modules missing on the RHEL 8 system is located in the
         files/removed_modules.txt file.
-     - Whitelisted modules located in the files/whitelisted_modules.txt are not
-        going to inhibit upgrade.
-
-    FIXME:
-     - Currently, we have whitelisted every module from files/removed_modules.txt
-        and marked actor as experimenta.
-        This has been done due to the fact that we need to investigate in depth
-        what each module does and if it is safe to add/remove it to/from the
-        whitelist.
-     - Enable test "test_actor_with_missing_modules" when we properly deal with
-        the modules situation.
     """
     name = "check_kernel_modules"
     consumes = (ActiveKernelModulesFacts,)
     produces = (Report,)
-    tags = (ChecksPhaseTag, IPUWorkflowTag, ExperimentalTag)
+    tags = (ChecksPhaseTag, IPUWorkflowTag)
 
     def process(self):
-        with open("files/removed_modules.txt", "r") as removed, \
-            open("files/whitelisted_modules.txt", "r") as whitelisted:
+        with open("files/removed_modules.txt", "r") as removed:
             removed_modules = [x.strip() for x in removed.readlines()]
-            whitelisted_modules = [x.strip() for x in whitelisted.readlines()]
-
             modules_to_report = set()
+
+            # FIXME:
+            # These modules are from the files/removed_modules.txt.
+            # However, they are present on the clean RHEL7.6 installation
+            # in virtual machine via vagrant. They are whitelisted because
+            # we do not want to inhibit upgrade from clean installation.
+            whitelisted_modules = [
+                "ablk_helper", "crct10dif_common", "cryptd", "floppy",
+                "gf128mul", "glue_helper", "iosf_mbi", "pata_acpi", "virtio",
+                "virtio_pci", "virtio_ring"
+            ]
+
             for fact in self.consume(ActiveKernelModulesFacts):
                 for active_module in fact.kernel_modules:
                     if active_module.filename in removed_modules \
