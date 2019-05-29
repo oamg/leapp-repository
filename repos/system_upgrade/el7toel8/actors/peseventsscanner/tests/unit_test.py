@@ -5,6 +5,7 @@ import pytest
 from leapp.exceptions import StopActorExecution
 from leapp.libraries.actor import library
 from leapp.libraries.actor.library import (Event,
+                                           add_output_pkgs_to_transaction_conf,
                                            filter_out_pkgs_in_blacklisted_repos,
                                            get_events,
                                            get_events_for_installed_pkgs_only,
@@ -249,3 +250,36 @@ def test_pes_data_not_found(monkeypatch):
         get_events('/etc/leapp/pes-data.json')
     assert reporting.report_generic.called == 1
     assert 'inhibitor' in reporting.report_generic.report_fields['flags']
+
+
+def test_add_output_pkgs_to_transaction_conf():
+    events = [
+        Event('Split', {'split_in': 'repo'}, {'split_out1': 'repo', 'split_out2': 'repo'}),
+        Event('Merged', {'merged_in1': 'repo', 'merged_in2': 'repo'}, {'merged_out': 'repo'}),
+        Event('Renamed', {'renamed_in': 'repo'}, {'renamed_out': 'repo'}),
+        Event('Replaced', {'replaced_in': 'repo'}, {'replaced_out': 'repo'}),
+    ]
+
+    conf_empty = RpmTransactionTasks()
+    add_output_pkgs_to_transaction_conf(conf_empty, events)
+    assert conf_empty.to_remove == []
+
+    conf_split = RpmTransactionTasks(to_remove=['split_in'])
+    add_output_pkgs_to_transaction_conf(conf_split, events)
+    assert sorted(conf_split.to_remove) == ['split_in', 'split_out1', 'split_out2']
+
+    conf_merged_incomplete = RpmTransactionTasks(to_remove=['merged_in1'])
+    add_output_pkgs_to_transaction_conf(conf_merged_incomplete, events)
+    assert conf_merged_incomplete.to_remove == ['merged_in1']
+
+    conf_merged = RpmTransactionTasks(to_remove=['merged_in1', 'merged_in2'])
+    add_output_pkgs_to_transaction_conf(conf_merged, events)
+    assert sorted(conf_merged.to_remove) == ['merged_in1', 'merged_in2', 'merged_out']
+
+    conf_renamed = RpmTransactionTasks(to_remove=['renamed_in'])
+    add_output_pkgs_to_transaction_conf(conf_renamed, events)
+    assert sorted(conf_renamed.to_remove) == ['renamed_in', 'renamed_out']
+
+    conf_replaced = RpmTransactionTasks(to_remove=['replaced_in'])
+    add_output_pkgs_to_transaction_conf(conf_replaced, events)
+    assert sorted(conf_replaced.to_remove) == ['replaced_in', 'replaced_out']

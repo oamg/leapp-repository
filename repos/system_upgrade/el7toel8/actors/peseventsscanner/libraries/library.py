@@ -27,6 +27,7 @@ def pes_events_scanner(pes_json_filepath):
     installed_pkgs = get_installed_pkgs()
     transaction_configuration = get_transaction_configuration()
     events = get_events(pes_json_filepath)
+    add_output_pkgs_to_transaction_conf(transaction_configuration, events)
     filtered_events = get_events_for_installed_pkgs_only(events, installed_pkgs)
     to_install, to_remove = process_events(filtered_events, installed_pkgs)
     filter_out_transaction_conf_pkgs(to_install, to_remove, transaction_configuration)
@@ -284,6 +285,27 @@ def report_skipped_packages(message, packages):
     reporting.report_generic(title=title, summary=summary, severity='high')
     if is_verbose():
         api.show_message(summary)
+
+
+def add_output_pkgs_to_transaction_conf(transaction_configuration, events):
+    """
+    Add more packages for removal to transaction configuration if they can be derived as outputs of PES events.
+
+    Output packages from an event are added to packages for removal only if all input packages are already there.
+
+    :param events: List of Event tuples, where each event contains event type and input/output pkgs
+    :param transaction_configuration: RpmTransactionTasks model instance with pkgs to install, keep and remove based
+                                      on the user configuration files
+    """
+    message = 'Marking packages for removal as a result of events:\n'
+
+    for event in events:
+        if event.action in ('Split', 'Merged', 'Replaced', 'Renamed'):
+            if all([pkg in transaction_configuration.to_remove for pkg in event.in_pkgs]):
+                transaction_configuration.to_remove.extend(event.out_pkgs)
+                message += '- [{}] {} -> {}\n'.format(event.action, ', '.join(event.in_pkgs.keys()), ', '.join(event.out_pkgs.keys()))
+
+    api.current_logger().debug(message)
 
 
 def filter_out_transaction_conf_pkgs(to_install, to_remove, transaction_configuration):
