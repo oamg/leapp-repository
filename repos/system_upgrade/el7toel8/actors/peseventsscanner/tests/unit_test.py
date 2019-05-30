@@ -16,6 +16,7 @@ from leapp.libraries.actor.library import (Event,
                                            report_skipped_packages)
 from leapp.libraries.common import reporting
 from leapp.libraries.stdlib import api
+from leapp.models import RpmTransactionTasks
 
 
 class show_message_mocked(object):
