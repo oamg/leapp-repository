@@ -1,4 +1,4 @@
-import os.path  # noqa: F401
+import os.path
 
 import pytest
 
