@@ -303,7 +303,11 @@ def add_output_pkgs_to_transaction_conf(transaction_configuration, events):
         if event.action in ('Split', 'Merged', 'Replaced', 'Renamed'):
             if all([pkg in transaction_configuration.to_remove for pkg in event.in_pkgs]):
                 transaction_configuration.to_remove.extend(event.out_pkgs)
-                message += '- [{}] {} -> {}\n'.format(event.action, ', '.join(event.in_pkgs.keys()), ', '.join(event.out_pkgs.keys()))
+                message += '- [{action}] {ins} -> {outs}\n'.format(
+                    action = event.action,
+                    ins = ', '.join(event.in_pkgs.keys()),
+                    outs = ', '.join(event.out_pkgs.keys())
+                )
 
     api.current_logger().debug(message)
 
