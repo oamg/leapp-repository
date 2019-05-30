@@ -8,9 +8,6 @@ There can be two arguments:
 
  1. ACTOR=myactor
 
-    NOTE: This is currently disabled, we will enable this when the CI will
-          support "one actor, one container" testing.
-
  2. REPORT=myreport.xml
 
     Outputs xml report for the JUnit.
@@ -89,12 +86,6 @@ if __name__ == "__main__":
     parser.add_argument("--report", help="filepath where to save report")
     args = parser.parse_args()
 
-    # User wants to test single actor specified in the args.actor.
-    if args.actor:
-        # NOTE: ACTOR flag is disabled. Check module docstring for more info.
-        logger.critical(" ACTOR flag is currently disabled!")
-        sys.exit(1)
-
     shutil.rmtree(REPORT_DIR, ignore_errors=True)
     os.mkdir(REPORT_DIR)
 
@@ -104,8 +95,8 @@ if __name__ == "__main__":
     # Find and collect leapp repositories.
     repos = find_and_scan_repositories(BASE_REPO, include_locals=True)
     repos.load()
-
-    for i, actor in enumerate(repos.actors):
+    actors = repos.actors if not args.actor else (repos.lookup_actor(args.actor),)
+    for i, actor in enumerate(actors):
         # Run tests if actor has any.
         if not actor.tests:
             status = " Tests MISSING: {ACTOR} | class={CLASS}"

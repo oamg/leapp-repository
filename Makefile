@@ -3,7 +3,10 @@ PKGNAME=leapp-repository
 DEPS_PKGNAME=leapp-el7toel8-deps
 VERSION=`grep -m1 "^Version:" packaging/$(PKGNAME).spec | grep -om1 "[0-9].[0-9.]**"`
 DEPS_VERSION=`grep -m1 "^Version:" packaging/$(DEPS_PKGNAME).spec | grep -om1 "[0-9].[0-9.]**"`
-
+ACTOR_PATH=repos
+ifdef ACTOR
+	ACTOR_PATH=`python utils/actor_path.py $(ACTOR)`
+endif
 # needed only in case the Python2 should be used
 _USE_PYTHON_INTERPRETER=$${_PYTHON_INTERPRETER}
 
@@ -148,14 +151,22 @@ install-deps:
 	pip install --upgrade -r requirements.txt
 	python utils/install_actor_deps.py --actor=$(ACTOR)
 
-test:	lint
+test_no_lint:
 	. tut/bin/activate; \
 	python utils/run_pytest.py --actor=$(ACTOR) --report=$(REPORT)
 
+test: lint test_no_lint
+
 lint:
 	. tut/bin/activate; \
-	bash -c "find repos -name '*.py' | xargs pylint"; \
-	flake8 repos
+	echo "--- Linting ... ---" && \
+	SEARCH_PATH=$(ACTOR_PATH) && \
+	echo "Using search path '$${SEARCH_PATH}'" && \
+	echo "--- Running pylint ---" && \
+	bash -c "[[ ! -z $${SEARCH_PATH} ]] && find $${SEARCH_PATH} -name '*.py' | xargs pylint" && \
+	echo "--- Running flake8 ---" && \
+	bash -c "[[ ! -z $${SEARCH_PATH} ]] && flake8 $${SEARCH_PATH}" && \
+	echo "--- Linting done. ---"
 
-.PHONY: clean test install-deps build srpm
+.PHONY: clean test install-deps build srpm test_no_lint
 
