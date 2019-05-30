@@ -7,4 +7,4 @@ pylint
 # pytest is fixed at 3.6.4 because never version (3.7.*) requires scandir, which depends on gcc
 pytest==3.6.4
 pytest-ordering==0.5
-git+https://github.com/leapp-to/leapp
+git+https://github.com/oamg/leapp
