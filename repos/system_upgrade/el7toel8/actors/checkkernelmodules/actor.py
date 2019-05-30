@@ -34,9 +34,9 @@ class CheckKernelModules(Actor):
             # in virtual machine via vagrant. They are whitelisted because
             # we do not want to inhibit upgrade from clean installation.
             whitelisted_modules = [
-                "ablk_helper", "crct10dif_common", "cryptd", "floppy",
-                "gf128mul", "glue_helper", "iosf_mbi", "pata_acpi", "virtio",
-                "virtio_pci", "virtio_ring"
+                'ablk_helper', 'crct10dif_common', 'cryptd', 'floppy',
+                'gf128mul', 'glue_helper', 'iosf_mbi', 'pata_acpi', 'virtio',
+                'virtio_pci', 'virtio_ring'
             ]
 
             for fact in self.consume(ActiveKernelModulesFacts):
@@ -46,11 +46,11 @@ class CheckKernelModules(Actor):
                         modules_to_report.add(active_module.filename)
 
             if modules_to_report:
-                title = "Detected unavailable kernel modules. Upgrade can't proceed."
-                summary = "The following kernel modules are not available on" \
-                          " the RHEL 8 system: {}".format(modules_to_report)
-                remediation = "Disable detected unavailable kernel modules in" \
-                              " order to proceed with the upgrade process."
+                title = 'Detected unavailable kernel modules. Upgrade cannot proceed.'
+                summary = ('The following kernel modules are not available on '
+                           'the RHEL 8 system: \n     - {}'.format('\n     - '.join(modules_to_report)))
+                remediation = ('Disable detected unavailable kernel modules in '
+                               'order to proceed with the upgrade process.')
                 report_with_remediation(title=title,
                                         summary=summary,
                                         remediation=remediation,
