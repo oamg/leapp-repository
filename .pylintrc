@@ -7,7 +7,6 @@ disable=
  no-member,
  no-name-in-module,
  raising-bad-type,
- #undefined-variable,
 # "W" Warnings for stylistic problems or minor programming issues
  arguments-differ,
  attribute-defined-outside-init,
@@ -49,3 +48,7 @@ disable=
 [FORMAT]
 # Maximum number of characters on a single line.
 max-line-length=119
+
+[DESIGN]
+max-args=11
+max-attributes=11
