@@ -39,6 +39,7 @@ if sys.version_info[0] < 3:
     reload(sys)
     sys.setdefaultencoding("utf-8")
 
+
 class NtpConfiguration(object):
     def __init__(self, root_dir, ntp_conf, step_tickers):
         self.root_dir = root_dir if root_dir != "/" else ""
@@ -66,14 +67,14 @@ class NtpConfiguration(object):
         self.ignored_directives = set()
         self.ignored_lines = []
 
-        #self.detect_enabled_services()
+        # self.detect_enabled_services()
         self.parse_step_tickers()
         self.parse_ntp_conf()
 
     def detect_enabled_services(self):
         for service in ["ntpdate", "ntpd", "ntp-wait"]:
-            if os.path.islink("{}/etc/systemd/system/multi-user.target.wants/{}.service"
-                    .format(self.root_dir, service)):
+            if os.path.islink(
+                    "{}/etc/systemd/system/multi-user.target.wants/{}.service".format(self.root_dir, service)):
                 self.enabled_services.add(service)
         logging.info("Enabled services found in /etc/systemd/system: %s",
                      " ".join(self.enabled_services))
@@ -117,25 +118,26 @@ class NtpConfiguration(object):
                     self.ignored_lines.append(line)
 
     def parse_directive(self, words):
+        res = True
         name = words.pop(0)
         if name.startswith("logconfig"):
             name = "logconfig"
 
         if words:
             if name in ["server", "peer", "pool"]:
-                return self.parse_source(name, words)
+                res = self.parse_source(name, words)
             elif name == "fudge":
-                return self.parse_fudge(words)
+                res = self.parse_fudge(words)
             elif name == "restrict":
-                return self.parse_restrict(words)
+                res = self.parse_restrict(words)
             elif name == "tos":
-                return self.parse_tos(words)
+                res = self.parse_tos(words)
             elif name == "includefile":
-                return self.parse_includefile(words)
+                res = self.parse_includefile(words)
             elif name == "keys":
-                return self.parse_keys(words)
+                res = self.parse_keys(words)
             elif name == "trustedkey":
-                return self.parse_trustedkey(words)
+                res = self.parse_trustedkey(words)
             elif name == "driftfile":
                 self.driftfile = words[0]
             elif name == "statistics":
@@ -144,12 +146,12 @@ class NtpConfiguration(object):
                 self.leapfile = words[0]
             else:
                 self.ignored_directives.add(name)
-                return False
+                res = False
         else:
             self.ignored_directives.add(name)
-            return False
+            res = False
 
-        return True
+        return res
 
     def parse_source(self, source_type, words):
         ipv4_only = False
@@ -372,7 +374,7 @@ class NtpConfiguration(object):
         for zone, pool in pools.items():
             # sort and skip all pools not in [0, 3] range
             pool.sort()
-            if [number for number, source in pool] != [0, 1, 2, 3]:
+            if [num for num, source in pool] != [0, 1, 2, 3]:
                 # only exact group of 4 servers can be converted, nothing to do here
                 continue
             # verify that parameters are the same for all servers in the pool
@@ -424,9 +426,9 @@ class NtpConfiguration(object):
         return conf
 
     def get_chrony_conf_allows(self):
-        allowed_networks = filter(lambda n: "ignore" not in self.restrictions[n] and
-                                    "noserve" not in self.restrictions[n],
-                                  self.restrictions.keys())
+        allowed_networks = filter(
+                lambda n: "ignore" not in self.restrictions[n] and "noserve" not in self.restrictions[n],
+                self.restrictions.keys())
 
         conf = ""
         for network in sorted(allowed_networks, key=lambda n: (n.version, n)):
@@ -442,11 +444,10 @@ class NtpConfiguration(object):
         return conf
 
     def get_chrony_conf_cmdallows(self):
-        allowed_networks = filter(lambda n: "ignore" not in self.restrictions[n] and
-                                    "noquery" not in self.restrictions[n] and
-                                    n != ipaddress.ip_network(u"127.0.0.1/32") and
-                                    n != ipaddress.ip_network(u"::1/128"),
-                                  self.restrictions.keys())
+        allowed_networks = filter(
+                lambda n: "ignore" not in self.restrictions[n] and "noquery" not in self.restrictions[n] and
+                n != ipaddress.ip_network(u"127.0.0.1/32") and n != ipaddress.ip_network(u"::1/128"),
+                self.restrictions.keys())
 
         ip_versions = set()
         conf = ""
@@ -490,11 +491,11 @@ class NtpConfiguration(object):
             orphan_stratum = self.tos_options["orphan"]
 
         if "clockstats" in self.statistics:
-            logs.append("refclocks");
+            logs.append("refclocks")
         if "loopstats" in self.statistics:
             logs.append("tracking")
         if "peerstats" in self.statistics:
-            logs.append("statistics");
+            logs.append("statistics")
         if "rawstats" in self.statistics:
             logs.append("measurements")
 
@@ -666,6 +667,7 @@ def main():
                 print(directive)
 
         conf.write_chrony_configuration(args.chrony_conf, args.chrony_keys, args.dry_run, args.backup)
+
 
 if __name__ == "__main__":
     main()

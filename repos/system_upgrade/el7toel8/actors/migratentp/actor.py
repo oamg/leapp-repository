@@ -3,6 +3,7 @@ from leapp.libraries.actor.library import migrate_ntp
 from leapp.models import Report, NtpMigrationDecision
 from leapp.tags import ApplicationsPhaseTag, IPUWorkflowTag
 
+
 class MigrateNtp(Actor):
     name = 'migrate_ntp'
     description = 'Migrate ntp and/or ntpdate configuration to chrony.'

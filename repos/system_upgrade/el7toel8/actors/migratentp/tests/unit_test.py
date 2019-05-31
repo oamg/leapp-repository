@@ -1,6 +1,7 @@
 from leapp.libraries.actor import library
 from leapp.libraries.common import reporting
 
+
 class report_generic_mocked(object):
     def __init__(self):
         self.called = 0
@@ -84,7 +85,8 @@ def test_migration(monkeypatch):
                 assert library.write_file.name == '/etc/ntp.conf.nosources'
                 assert 'without ntp configuration' in library.write_file.content
             assert library.ntp2chrony.called == 1
-            assert library.ntp2chrony.args == ('/',
+            assert library.ntp2chrony.args == (
+                    '/',
                     '/etc/ntp.conf' if 'ntpd' in ntp_services else '/etc/ntp.conf.nosources',
                     '/etc/ntp/step-tickers' if 'ntpdate' in ntp_services else '')
         else:
