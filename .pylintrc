@@ -52,3 +52,6 @@ max-line-length=119
 [DESIGN]
 max-args=11
 max-attributes=11
+
+[REPORTS]
+msg-template='[{msg_id} {symbol}] {msg} File: {path}, line {line}, in {obj}'
