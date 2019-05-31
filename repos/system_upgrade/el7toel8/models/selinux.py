@@ -26,7 +26,7 @@ class SELinuxRequestRPMs(Model):
     SELinux related RPM packages that need to be present after upgrade
 
     Listed packages provide types that where used in policy
-    customizations (to_install), or the corresponding policy 
+    customizations (to_install), or the corresponding policy
     was installed on RHEL-7 installation with priority 200
     (to_keep).
     """

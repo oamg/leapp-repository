@@ -2,13 +2,31 @@ import os
 import re
 from shutil import rmtree
 from leapp.libraries.stdlib import api, run, CalledProcessError
+from leapp.models import SELinuxModule
 
 # types and attributes that where removed between RHEL 7 and 8
-REMOVED_TYPES_=["base_typeattr_15","direct_run_init","gpgdomain","httpd_exec_scripts","httpd_user_script_exec_type","ibendport_type","ibpkey_type","pcmcia_typeattr_2","pcmcia_typeattr_3","pcmcia_typeattr_4","pcmcia_typeattr_5","pcmcia_typeattr_6","pcmcia_typeattr_7","sandbox_caps_domain","sandbox_typeattr_2","sandbox_typeattr_3","sandbox_typeattr_4","server_ptynode","systemctl_domain","user_home_content_type","userhelper_type","cgdcbxd_exec_t","cgdcbxd_t","cgdcbxd_unit_file_t","cgdcbxd_var_run_t","ganesha_use_fusefs","ganesha_exec_t","ganesha_t","ganesha_tmp_t","ganesha_unit_file_t","ganesha_var_log_t","ganesha_var_run_t","ganesha_use_fusefs"]
+REMOVED_TYPES_ = ["base_typeattr_15", "direct_run_init", "gpgdomain", "httpd_exec_scripts",
+                  "httpd_user_script_exec_type", "ibendport_type", "ibpkey_type", "pcmcia_typeattr_2",
+                  "pcmcia_typeattr_3", "pcmcia_typeattr_4", "pcmcia_typeattr_5", "pcmcia_typeattr_6",
+                  "pcmcia_typeattr_7", "sandbox_caps_domain", "sandbox_typeattr_2", "sandbox_typeattr_3",
+                  "sandbox_typeattr_4", "server_ptynode", "systemctl_domain", "user_home_content_type",
+                  "userhelper_type", "cgdcbxd_exec_t", "cgdcbxd_t", "cgdcbxd_unit_file_t", "cgdcbxd_var_run_t",
+                  "ganesha_use_fusefs", "ganesha_exec_t", "ganesha_t", "ganesha_tmp_t", "ganesha_unit_file_t",
+                  "ganesha_var_log_t", "ganesha_var_run_t", "ganesha_use_fusefs"]
 
 # types, attributes and boolean contained in container-selinux
-CONTAINER_TYPES=["container_connect_any","container_runtime_t","container_runtime_exec_t","spc_t","container_auth_t","container_auth_exec_t","spc_var_run_t","container_var_lib_t","container_home_t","container_config_t","container_lock_t","container_log_t","container_runtime_tmp_t","container_runtime_tmpfs_t","container_var_run_t","container_plugin_var_run_t","container_unit_file_t","container_devpts_t","container_share_t","container_port_t","container_build_t","container_logreader_t","docker_log_t","docker_tmpfs_t","docker_share_t","docker_t","docker_lock_t","docker_home_t","docker_exec_t","docker_unit_file_t","docker_devpts_t","docker_config_t","docker_tmp_t","docker_auth_exec_t","docker_plugin_var_run_t","docker_port_t","docker_auth_t","docker_var_run_t","docker_var_lib_t","container_domain","container_net_domain"]
+CONTAINER_TYPES = ["container_connect_any", "container_runtime_t", "container_runtime_exec_t", "spc_t",
+                   "container_auth_t", "container_auth_exec_t", "spc_var_run_t", "container_var_lib_t",
+                   "container_home_t", "container_config_t", "container_lock_t", "container_log_t",
+                   "container_runtime_tmp_t", "container_runtime_tmpfs_t", "container_var_run_t",
+                   "container_plugin_var_run_t", "container_unit_file_t", "container_devpts_t", "container_share_t",
+                   "container_port_t", "container_build_t", "container_logreader_t", "docker_log_t", "docker_tmpfs_t",
+                   "docker_share_t", "docker_t", "docker_lock_t", "docker_home_t", "docker_exec_t",
+                   "docker_unit_file_t", "docker_devpts_t", "docker_config_t", "docker_tmp_t", "docker_auth_exec_t",
+                   "docker_plugin_var_run_t", "docker_port_t", "docker_auth_t", "docker_var_run_t",
+                   "docker_var_lib_t", "container_domain", "container_net_domain"]
 
+WORKING_DIRECTORY = '/tmp/selinux/'
 
 def checkModule(name):
     '''
@@ -20,7 +38,7 @@ def checkModule(name):
     '''
     try:
         removed = run(['grep', '-w', '-E', "|".join(REMOVED_TYPES_), name], split=True)
-        run(['sed', '-i', '/%s/s/^/;/g' % '\|'.join(REMOVED_TYPES_), name])
+        run(['sed', '-i', '/%s/s/^/;/g' % r'\|'.join(REMOVED_TYPES_), name])
         return removed.get("stdout", [])
     except CalledProcessError:
         return []
@@ -57,7 +75,7 @@ def getSELinuxModules():
 
     Returns 3-tuple (modules, retain_rpms, install_rpms)
     where "modules" is a list of "SELinuxModule" objects,
-    "retain_rpms" is a list of RPMs that should be retained 
+    "retain_rpms" is a list of RPMs that should be retained
     during the upgrade and "install_rpms" is a list of RPMs
     that should be installed during the upgrade
 
@@ -81,7 +99,7 @@ def getSELinuxModules():
         os.chdir(WORKING_DIRECTORY)
     except OSError:
         api.current_logger().info("Failed to access working directory! Aborting.")
-        return ([],[],[])
+        return ([], [], [])
 
     for (name, priority) in modules:
         if priority == "200":
@@ -103,7 +121,7 @@ def getSELinuxModules():
                 with open(name + ".cil", 'r') as cil_file:
                     module_content = cil_file.read()
             except OSError as e:
-                api.current_logger().info("Error reading %s.cil : %s", name, str(e))
+                api.current_logger().info("Error reading %s.cil : %s", name, e.get("stderr", ""))
                 continue
 
             semodule_list.append(SELinuxModule(
@@ -119,7 +137,7 @@ def getSELinuxModules():
         # rename the cil module file so that it does not clash
         # with the same module on different priority
         try:
-            os.rename(name + ".cil",  "%s_%s" % (name, priority))
+            os.rename(name + ".cil", "%s_%s" % (name, priority))
         except OSError:
             # TODO leapp.libraries.stdlib.api.current_logger()
             # and move the method to a library
@@ -132,7 +150,7 @@ def getSELinuxModules():
     # Check if modules contain any type, attribute, or boolean contained in container-selinux and install it if so
     # This is necessary since container policy module is part of selinux-policy-targeted in RHEL 7 (but not in RHEL 8)
     try:
-        semodule = run(['grep', '-w', '-r', '-E', "|".join(CONTAINER_TYPES)], split=False)
+        run(['grep', '-w', '-r', '-E', "|".join(CONTAINER_TYPES)], split=False)
         # Request "container-selinux" to be installed since container types where used in local customizations
         # and container-selinux policy was removed from selinux-policy-* packages
         install_rpms.append("container-selinux")
@@ -175,5 +193,5 @@ def getSELinuxCustomizations():
 
     except CalledProcessError as e:
         api.current_logger().info("Failed to export SELinux customizations: %s", str(e))
-    
+
     return (semanage_valid, semanage_removed)
