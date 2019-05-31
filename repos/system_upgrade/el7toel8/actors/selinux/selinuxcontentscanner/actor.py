@@ -1,11 +1,9 @@
 from leapp.actors import Actor
-from leapp.models import SELinuxModules, SELinuxModule, SELinuxCustom, SELinuxFacts, SELinuxRequestRPMs, RpmTransactionTasks
+from leapp.models import SELinuxModules, SELinuxCustom, SELinuxFacts, SELinuxRequestRPMs, RpmTransactionTasks
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 from leapp.libraries.stdlib import run, CalledProcessError
 from leapp.libraries.actor import library
 
-
-WORKING_DIRECTORY = '/tmp/selinux/'
 
 class SELinuxContentScanner(Actor):
     '''
@@ -32,16 +30,16 @@ class SELinuxContentScanner(Actor):
         self.produce(SELinuxModules(modules=semodule_list))
         self.produce(
             RpmTransactionTasks(
-                to_install = rpms_to_install,
+                to_install=rpms_to_install,
                 # possibly not necessary - dnf should not remove RPMs (that exist in both RHEL 7 and 8) durign update
-                to_keep = rpms_to_keep
+                to_keep=rpms_to_keep
             )
         )
         # this is produced so that we can later verify that the RPMs are present after upgrade
         self.produce(
             SELinuxRequestRPMs(
-                to_install = rpms_to_install,
-                to_keep = rpms_to_keep
+                to_install=rpms_to_install,
+                to_keep=rpms_to_keep
             )
         )
 

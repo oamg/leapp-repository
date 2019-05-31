@@ -1,0 +1,4 @@
+(type mock_type_t)
+(typeattributeset domain (mock_type_t))
+(allow mock_type_t proc_type (file (getattr open read)))
+(allow mock_type_t container_var_run_t (file (getattr open read)))

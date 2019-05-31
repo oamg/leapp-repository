@@ -41,7 +41,8 @@ class SELinuxApplyCustom(Actor):
                 cil_filename = os.path.join(WORKING_DIRECTORY, "%s.cil" % module.name)
                 self.log.info("Installing module %s on priority %d.", module.name, module.priority)
                 if module.removed:
-                    self.log.info("The following lines where removed because of incompatibility: \n%s", '\n'.join(module.removed))
+                    self.log.info("The following lines where removed because of incompatibility: \n%s",
+                                  '\n'.join(module.removed))
                 # write module content to disk
                 try:
                     with open(cil_filename, 'w') as cil_file:
@@ -62,14 +63,14 @@ class SELinuxApplyCustom(Actor):
                     self.log.info("Error installing module: %s", str(e))
                     # TODO - save the failed module to /etc/selinux ?
                     # currently it is still left in the old policy store
-                    pass
                 try:
                     os.remove(cil_filename)
                 except OSError as e:
                     self.log.info("Error removing module file: %s", str(e))
         # import SELinux customizations collected by "semanage export"
         for custom in self.consume(SELinuxCustom):
-            self.log.info('Importing the following SELinux customizations collected by "semanage export": \n%s', '\n'.join(custom.commands))
+            self.log.info('Importing the following SELinux customizations collected by "semanage export": \n%s',
+                          '\n'.join(custom.commands))
             semanage_filename = os.path.join(WORKING_DIRECTORY, "semanage")
             # save SELinux customizations to disk
             try:
@@ -103,5 +104,3 @@ class SELinuxApplyCustom(Actor):
 
         # TODO - summarize all changes after LEAPP team rewrites reporting
         # from leapp.reporting import Report
-
-
