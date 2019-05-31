@@ -1,10 +1,12 @@
+import base64
+import io
+from subprocess import CalledProcessError
+import tarfile
+
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import reporting
-from leapp.libraries.stdlib import api, run
+from leapp.libraries.stdlib import run
 
-from subprocess import CalledProcessError
-
-import base64, io, tarfile
 
 def extract_tgz64(s):
     stream = io.BytesIO(base64.b64decode(s))
@@ -12,15 +14,18 @@ def extract_tgz64(s):
     tar.extractall()
     tar.close()
 
+
 def enable_service(name):
     try:
         run(['systemctl', 'enable', '{}.service'.format(name)])
     except CalledProcessError:
         raise StopActorExecutionError('Could not enable {} service'.format(name))
 
+
 def write_file(name, content):
     with open(name, 'w') as f:
-        f.write(content);
+        f.write(content)
+
 
 def ntp2chrony(root, ntp_conf, step_tickers):
     from leapp.libraries.actor import ntp2chrony
@@ -36,11 +41,12 @@ def ntp2chrony(root, ntp_conf, step_tickers):
     # the default ntp.conf
     return set(ntp_configuration.ignored_lines) - set(['disable monitor'])
 
+
 def migrate_ntp(migrate_services, config_tgz64):
     # Map of ntp->chrony services and flag if using configuration
-    service_map = { 'ntpd': ('chronyd', True),
-                    'ntpdate': ('chronyd', True),
-                    'ntp-wait': ('chrony-wait', False) }
+    service_map = {'ntpd': ('chronyd', True),
+                   'ntpdate': ('chronyd', True),
+                   'ntp-wait': ('chrony-wait', False)}
 
     # Minimal secure ntp.conf with no sources to migrate ntpdate only
     no_sources_directives = (

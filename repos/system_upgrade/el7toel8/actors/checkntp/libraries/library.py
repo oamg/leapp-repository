@@ -1,10 +1,13 @@
+import base64
+import io
+import os
+from subprocess import CalledProcessError
+import tarfile
+
 from leapp.libraries.common import reporting
 from leapp.libraries.stdlib import api, run
 from leapp.models import NtpMigrationDecision
 
-from subprocess import CalledProcessError
-
-import base64, io, os, tarfile
 
 # Check if a service is active and enabled
 def check_service(name):
@@ -18,9 +21,11 @@ def check_service(name):
 
     return True
 
+
 # Check if a file exists
 def is_file(name):
     return os.path.isfile(name)
+
 
 # Get a base64-encoded gzipped tarball of specified files
 def get_tgz64(filenames):
@@ -32,6 +37,7 @@ def get_tgz64(filenames):
     tar.close()
 
     return base64.b64encode(stream.getvalue())
+
 
 # Check services from the ntp packages for migration
 def check_ntp(installed_packages):

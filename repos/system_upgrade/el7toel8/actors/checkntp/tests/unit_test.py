@@ -1,7 +1,13 @@
+import base64
+import io
+import os
+import re
+import tarfile
+import tempfile
+
 from leapp.libraries.actor import library
 from leapp.libraries.common import reporting
 
-import base64, io, os, re, tarfile, tempfile
 
 class report_generic_mocked(object):
     def __init__(self):
@@ -43,8 +49,7 @@ def test_migration(monkeypatch):
         decision = library.check_ntp(set(packages))
 
         assert reporting.report_generic.called == 1
-        assert 'configuration will be migrated' in \
-                reporting.report_generic.report_fields['title']
+        assert 'configuration will be migrated' in reporting.report_generic.report_fields['title']
         for service in ['ntpd', 'ntpdate']:
             migrated = re.search(r'\b{}\b'.format(service),
                                  reporting.report_generic.report_fields['title']) is not None
