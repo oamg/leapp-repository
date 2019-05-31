@@ -78,17 +78,17 @@ class DnfShellRpmUpgrade(Actor):
                 },
             'dnf_conf':
                 {
-                     'allow_erasing': True,
-                     'best': True,
-                     'debugsolver': debugsolver,
-                     'disable_repos': True,
-                     'enable_repos': target_repoids,
-                     'gpgcheck': False,
-                     'platform_id': 'platform:el8',
-                     'releasever': '8',
-                     'test_flag': False,
+                    'allow_erasing': True,
+                    'best': True,
+                    'debugsolver': debugsolver,
+                    'disable_repos': True,
+                    'enable_repos': target_repoids,
+                    'gpgcheck': False,
+                    'platform_id': 'platform:el8',
+                    'releasever': '8',
+                    'test_flag': False,
                 }
-            }
+        }
 
         with NamedTemporaryFile() as data:
             json.dump(plugin_data, data)

@@ -2,6 +2,7 @@ from leapp.actors import Actor
 from leapp.models import SCTPConfig, RpmTransactionTasks
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
+
 class SCTPChecks(Actor):
     """
     Parses collected SCTP information and take necessary actions.

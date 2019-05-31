@@ -29,7 +29,6 @@ class SetupTargetRepos(Actor):
     produces = (TargetRepositories, Report,)
     tags = (IPUWorkflowTag, ChecksPhaseTag)
 
-
     def report_skipped_repos(self, repos, pkgs):
         title = 'Some enabled RPM repositories are unknown to Leapp'
         summary_data = []
@@ -41,12 +40,12 @@ class SetupTargetRepos(Actor):
         reporting.report_with_remediation(
             title=title,
             summary=summary,
-            remediation='You can file a request to add this repository to the scope of in-place upgrades by filing a support ticket',
+            remediation='You can file a request to add this repository to the scope of in-place upgrades '
+                        'by filing a support ticket',
             severity='low')
 
         if is_verbose():
             self.log.info('\n'.join([title, summary]))
-
 
     def process(self):
         # TODO: Think about Beta and Alpha repositories. How will we tell we

@@ -154,7 +154,8 @@ test:	lint
 
 lint:
 	. tut/bin/activate; \
-	bash -c "find repos -name '*.py' | xargs pylint"
+	bash -c "find repos -name '*.py' | xargs pylint"; \
+	flake8 repos
 
 .PHONY: clean test install-deps build srpm
 

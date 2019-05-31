@@ -1,5 +1,3 @@
-import pytest
-
 from leapp.snactor.fixture import current_actor_context
 from leapp.models import SelinuxPermissiveDecision
 

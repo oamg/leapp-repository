@@ -3,6 +3,7 @@ import errno
 
 from leapp.snactor.fixture import current_actor_context
 
+
 def test_remove_resume_service(current_actor_context):
     service_name = 'leapp_resume.service'
     service_path = os.path.join('/etc/systemd/system/', service_name)

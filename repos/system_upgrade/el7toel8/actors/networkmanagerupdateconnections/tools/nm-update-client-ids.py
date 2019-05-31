@@ -1,7 +1,8 @@
 import sys
 import gi
 gi.require_version('NM', '1.0')
-from gi.repository import GLib, NM
+from gi.repository import NM  # noqa: F402; pylint: disable=wrong-import-position
+
 
 def is_hexstring(s):
     arr = s.split(':')
@@ -9,19 +10,20 @@ def is_hexstring(s):
         if len(a) != 1 and len(a) != 2:
             return False
         try:
-            h = int(a, 16)
-        except ValueError as e:
+            int(a, 16)
+        except ValueError:
             return False
     return True
+
 
 client = NM.Client.new(None)
 if not client:
     print('Cannot create NM client instance')
     sys.exit(0)
 
-processed=0
-changed=0
-errors=0
+processed = 0
+changed = 0
+errors = 0
 
 for c in client.get_connections():
     s_ip4 = c.get_setting_ip4_config()

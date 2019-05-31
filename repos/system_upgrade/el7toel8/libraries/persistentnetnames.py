@@ -45,7 +45,7 @@ def interfaces():
             attrs['vendor'] = dev['ID_VENDOR_ID']
             attrs['pci_info'] = PCIAddress(**pci_info(dev['ID_PATH']))
             attrs['mac'] = dev.attributes['address']
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-except
             # FIXME(msekleta): We should probably handle errors more granularly
             # Maybe we should inhibit upgrade process at this point
             api.current_logger().warn('Failed to gather information about network interface: ' + str(e))

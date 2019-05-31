@@ -4,7 +4,6 @@ import json
 from leapp.actors import Actor
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import preparetransaction, xinitramgen
-from leapp.libraries.stdlib import CalledProcessError
 from leapp.models import FilteredRpmTransactionTasks, OSReleaseFacts, TargetRepositories
 from leapp.models import XFSPresence, UsedTargetRepositories, UsedTargetRepository, BootContent
 from leapp.tags import IPUWorkflowTag, DownloadPhaseTag

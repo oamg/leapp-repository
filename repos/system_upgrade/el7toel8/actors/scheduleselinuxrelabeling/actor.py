@@ -1,5 +1,3 @@
-import sys
-
 from leapp.actors import Actor
 from leapp.tags import FinalizationPhaseTag, IPUWorkflowTag
 from leapp.models import SelinuxRelabelDecision
@@ -37,5 +35,5 @@ class ScheduleSeLinuxRelabeling(Actor):
                         summary='./autorelabel file could not be created: {}.'.format(e),
                         remediation='Please set autorelabelling manually after the upgrade.',
                         severity='high'
-                        )
+                    )
                     self.log.critical('Could not schedule SElinux for relabelling: %s.' % e)

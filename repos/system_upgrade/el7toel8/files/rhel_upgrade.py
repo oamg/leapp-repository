@@ -69,7 +69,8 @@ class RhelUpgradeCommand(dnf.cli.Command):
 
         q = self.base.sack.query().installed()
         for pkg in q:
-            if pkg.name not in self.plugin_data['pkgs_info']['to_install'] + self.plugin_data['pkgs_info']['to_remove']:
+            if pkg.name not in (self.plugin_data['pkgs_info']['to_install']
+                                + self.plugin_data['pkgs_info']['to_remove']):
                 self.base.upgrade(pkg.name)
 
         self.base.distro_sync()

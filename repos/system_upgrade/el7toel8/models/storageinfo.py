@@ -105,4 +105,3 @@ class StorageInfo(Model):
     vgs = fields.List(fields.Model(VgsEntry), default=[])
     lvdisplay = fields.List(fields.Model(LvdisplayEntry), default=[])
     systemdmount = fields.List(fields.Model(SystemdMountEntry), default=[])
-

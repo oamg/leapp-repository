@@ -7,7 +7,7 @@ from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 class CheckXFS(Actor):
     """
     Check if XFS filesystem is in use.
-    
+
     If XFS filesystem without ftype is in use, produce a message to influence
     PrepareUpgradeTransaction actor about necessary steps during execution.
     """

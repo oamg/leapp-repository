@@ -22,7 +22,7 @@ class CheckAcpid(Actor):
                     report_with_remediation(
                         title='Acpid incompatible changes in the next major version',
                         summary='The option -d (debug) no longer implies -f (foreground).',
-                        remediation='You must now use both options (\'-df\') for the same behavior. Please update your scripts to be '
-                                    'compatible with the changes.',
+                        remediation='You must now use both options (\'-df\') for the same behavior. Please update '
+                                    'your scripts to be compatible with the changes.',
                         severity='low')
                     break

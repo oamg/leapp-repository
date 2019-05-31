@@ -12,7 +12,7 @@ from leapp.models import ActiveKernelModulesFacts
 def anyfile(files):
     """
     Determines if any of the given paths exist and are a file.
-    
+
     :return: True if any of the given paths exists and it is a file.
     :rtype: bool
     """
@@ -31,7 +31,7 @@ def is_module_loaded(module):
 
     :return: True if the module has been found in the ActiveKernelModuleFacts.
     :rtype: bool
-    """    
+    """
     for fact in api.consume(ActiveKernelModulesFacts):
         for active_module in fact.kernel_modules:
             if active_module.filename == module:
@@ -83,7 +83,6 @@ def was_sctp_used():
         return False
     api.current_logger().debug('Found logs regarding SCTP on journal.')
     return True
-
 
 
 def is_sctp_wanted():

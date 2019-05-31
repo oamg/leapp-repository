@@ -1,4 +1,4 @@
-import os
+import os.path
 
 import pytest
 
@@ -16,8 +16,7 @@ from leapp.libraries.actor.library import (Event,
                                            report_skipped_packages)
 from leapp.libraries.common import reporting
 from leapp.libraries.stdlib import api
-from leapp.models import (RPM, InstalledRedHatSignedRPM,
-                          RepositoriesSetupTasks, RpmTransactionTasks)
+from leapp.models import RpmTransactionTasks
 
 
 class show_message_mocked(object):
@@ -244,7 +243,7 @@ def test_get_events(monkeypatch):
 def test_pes_data_not_found(monkeypatch):
     def file_not_exists(_filepath):
         return False
-    monkeypatch.setattr('os.path.isfile', file_not_exists)
+    monkeypatch.setattr(os.path, 'isfile', file_not_exists)
     monkeypatch.setattr(reporting, 'report_generic', report_generic_mocked())
     with pytest.raises(StopActorExecution):
         get_events('/etc/leapp/pes-data.json')

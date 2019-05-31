@@ -32,8 +32,7 @@ def test_installed_defconf(monkeypatch):
         library.check_memcached(True)
 
         assert reporting.report_generic.called == 1
-        assert reporting.report_generic.report_fields['title'] == \
-                'memcached service is using default configuration'
+        assert reporting.report_generic.report_fields['title'] == 'memcached service is using default configuration'
 
 
 def test_installed_nodefconf_udp(monkeypatch):
@@ -44,8 +43,7 @@ def test_installed_nodefconf_udp(monkeypatch):
     library.check_memcached(True)
 
     assert reporting.report_generic.called == 1
-    assert reporting.report_generic.report_fields['title'] == \
-            'memcached has enabled UDP port'
+    assert reporting.report_generic.report_fields['title'] == 'memcached has enabled UDP port'
 
 
 def test_installed_nodefconf_noudp(monkeypatch):
@@ -56,5 +54,4 @@ def test_installed_nodefconf_noudp(monkeypatch):
     library.check_memcached(True)
 
     assert reporting.report_generic.called == 1
-    assert reporting.report_generic.report_fields['title'] == \
-            'memcached has already disabled UDP port'
+    assert reporting.report_generic.report_fields['title'] == 'memcached has already disabled UDP port'

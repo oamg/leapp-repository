@@ -1,5 +1,3 @@
-import io
-
 from leapp.actors import Actor
 from leapp.libraries.stdlib import CalledProcessError, run
 from leapp.models import NetworkManagerConfig
@@ -34,10 +32,10 @@ class NetworkManagerReadConfig(Actor):
 
         try:
             if hasattr(parser, 'read_string'):
-                 # Python 3
+                # Python 3
                 parser.read_string(r)
             else:
-                 # Python 2
+                # Python 2
                 from cStringIO import StringIO
                 parser.readfp(StringIO(r))
         except ParsingError as e:

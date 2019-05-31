@@ -1,5 +1,6 @@
 from leapp.snactor.fixture import current_actor_libraries
 
+
 def test_anyendswith(current_actor_libraries):
     from leapp.libraries.actor.systemfacts import anyendswith
     value = 'this_is_a_test'
@@ -24,6 +25,7 @@ def test_anyhasprefix(current_actor_libraries):
 
 def test_aslist(current_actor_libraries):
     from leapp.libraries.actor.systemfacts import aslist
+
     @aslist
     def local():
         yield True

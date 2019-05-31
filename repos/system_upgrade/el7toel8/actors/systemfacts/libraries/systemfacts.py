@@ -12,7 +12,7 @@ try:
 except ImportError:
     import configparser
 
-from leapp.libraries.stdlib import CalledProcessError, run
+from leapp.libraries.stdlib import CalledProcessError, api, run
 from leapp.models import SysctlVariablesFacts, SysctlVariable, ActiveKernelModulesFacts, ActiveKernelModule, \
     KernelModuleParameter, UsersFacts, User, GroupsFacts, Group, RepositoriesFacts, RepositoryFile, RepositoryData, \
     SELinuxFacts, fields, FirewallStatus, FirewallsFacts
@@ -264,9 +264,9 @@ def get_firewalls_status():
         return FirewallStatus(
             active=active,
             enabled=enabled,
-            )
+        )
 
     return FirewallsFacts(
         firewalld=_get_firewall_status('firewalld'),
         iptables=_get_firewall_status('iptables'),
-        )
+    )

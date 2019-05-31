@@ -33,7 +33,7 @@ class UsedRepositoriesScanner(Actor):
         for pkg in installed_pkgs:
             if pkg.repository in enabled_repos:
                 used_repos.setdefault(pkg.repository, []).append(pkg.name)
-        
+
         result = UsedRepositories()
         for repo, pkgs in used_repos.items():
             result.repositories.append(UsedRepository(repository=repo, packages=pkgs))

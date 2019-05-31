@@ -1,4 +1,4 @@
-from leapp.models import Model, fields
+from leapp.models import Model
 from leapp.topics import TransactionTopic
 
 

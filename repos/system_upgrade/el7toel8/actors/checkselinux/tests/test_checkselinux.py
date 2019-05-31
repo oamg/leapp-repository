@@ -2,9 +2,6 @@ from leapp.snactor.fixture import current_actor_context
 from leapp.models import (Report, SELinuxFacts, SelinuxPermissiveDecision,
                           SelinuxRelabelDecision)
 
-# import needed just to be able to create valid model, but not important for test
-from leapp.models import FirewallStatus, Firewalls
-
 
 # FIXME: fix the file properly regarding the fix of the issue:
 # # https://github.com/oamg/leapp-repository/issues/20
@@ -12,12 +9,12 @@ def create_selinuxfacts(static_mode, enabled, policy='targeted', mls_enabled=Tru
     runtime_mode = static_mode if static_mode != 'disabled' else None
 
     return SELinuxFacts(
-            runtime_mode=runtime_mode,
-            static_mode=static_mode,
-            enabled=enabled,
-            policy=policy,
-            mls_enabled=mls_enabled
-        )
+        runtime_mode=runtime_mode,
+        static_mode=static_mode,
+        enabled=enabled,
+        policy=policy,
+        mls_enabled=mls_enabled
+    )
 
 
 def test_actor_schedule_relabelling(current_actor_context):

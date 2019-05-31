@@ -31,8 +31,10 @@ class ReportLeftoverPackages(Actor):
                 report_generic(summary='Following packages have been removed:\n{}'.format('\n'.join(removed)),
                                title=title)
             else:
-                summary = '''Following packages have been removed:\n {}\n Dependent packages may have been removed as well,
-                        please check that you are not missing any packages.\n'''.format('\n'.join(to_remove))
+                summary = ('Following packages have been removed:\n'
+                           '{}\n'
+                           'Dependent packages may have been removed as well, please check that you are not missing '
+                           'any packages.\n'.format('\n'.join(to_remove)))
                 report_generic(title=title, summary=summary, severity='high')
             return
 

@@ -3,7 +3,8 @@ from leapp.models import RpmTransactionTasks
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 from leapp.libraries.actor.scanner import load_tasks
 
-CONFIGURATION_BASE_PATH='/etc/leapp/transaction'
+CONFIGURATION_BASE_PATH = '/etc/leapp/transaction'
+
 
 class RpmTransactionConfigTasksCollector(Actor):
     """

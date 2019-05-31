@@ -13,7 +13,7 @@ class run_mocked(object):
     def __call__(self, args, split=True):
         self.called += 1
         self.args = args
-        
+
         with_ftype = {'stdout': [
             "meta-data=/dev/loop0             isize=512    agcount=4, agsize=131072 blks",
             "         =                       sectsz=512   attr=2, projid32bit=1",

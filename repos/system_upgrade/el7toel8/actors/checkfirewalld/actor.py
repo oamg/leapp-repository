@@ -46,7 +46,7 @@ class CheckFirewalld(Actor):
             report_with_remediation(
                 title='Firewalld is using an unsupported ipset type.',
                 summary='These ipset types are not supported by firewalld\'s nftables backend:{}{}'.format(
-                                                                                                     *format_tuple),
+                    *format_tuple),
                 remediation='Remove ipsets of these types from firewalld:{}{}'.format(*format_tuple),
                 severity='high',
                 flags=['inhibitor'])

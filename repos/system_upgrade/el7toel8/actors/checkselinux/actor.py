@@ -18,7 +18,6 @@ class CheckSelinux(Actor):
     produces = (Report, SelinuxPermissiveDecision, SelinuxRelabelDecision)
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 
-
     def process(self):
 
         fact = next(self.consume(SELinuxFacts), None)
@@ -55,4 +54,3 @@ class CheckSelinux(Actor):
                 title='SElinux will be set to permissive mode',
                 summary='SElinux will be set to permissive mode as it was in enforcing mode.',
                 severity='low')
-

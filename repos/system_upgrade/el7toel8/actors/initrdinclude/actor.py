@@ -17,14 +17,14 @@ class InitrdInclude(Actor):
     tags = (FinalizationPhaseTag, IPUWorkflowTag)
 
     def get_rhel8_kernel_version(self):
-            kernels = run(["rpm", "-q", "kernel"], split=True)["stdout"]
-            for kernel in kernels:
-                version = kernel.split("-", 1)[1]
-                if "el8" in version:
-                    return version
-            raise StopActorExecutionError(
-                    "Cannot get version of the installed RHEL-8 kernel",
-                    details={"details": "\n".join(kernels)})
+        kernels = run(["rpm", "-q", "kernel"], split=True)["stdout"]
+        for kernel in kernels:
+            version = kernel.split("-", 1)[1]
+            if "el8" in version:
+                return version
+        raise StopActorExecutionError(
+            "Cannot get version of the installed RHEL-8 kernel",
+            details={"details": "\n".join(kernels)})
 
     def process(self):
         files = []
@@ -45,13 +45,13 @@ class InitrdInclude(Actor):
             # just hypothetic check, it should not die
             # NOTE(pstodulk): raise an exception and stop leapp execution now?
             raise StopActorExecutionError(
-                       "Cannot get info about the installed kernel.",
-                       details={"details": str(e)})
+                "Cannot get info about the installed kernel.",
+                details={"details": str(e)})
         try:
             cmd = ["dracut", "--install", " ".join(files), "-f", "--kver", kernel_version]
             run(cmd)
         except CalledProcessError as e:
             # NOTE(pstodulk) same note as above
             raise StopActorExecutionError(
-                       "Cannot regenerate dracut image.",
-                       details={"details": str(e)})
+                "Cannot regenerate dracut image.",
+                details={"details": str(e)})

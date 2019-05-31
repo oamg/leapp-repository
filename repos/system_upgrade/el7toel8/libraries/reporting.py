@@ -95,4 +95,3 @@ def report_generic(title=None, summary=None, **kwargs):
     """
     _validate_args(title, summary)
     report(title=title, detail={'summary': summary}, renderers=RenderGeneric, **kwargs)
-

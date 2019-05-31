@@ -1,7 +1,5 @@
 import functools
-import os
 import shlex
-import six
 
 from leapp.libraries.stdlib import CalledProcessError, run
 from leapp.models import PCIDevices, PCIDevice
@@ -53,6 +51,7 @@ def parse_pci_devices(devices):
             rev=rev,
             progif=progif
         )
+
 
 def produce_pci_devices(producer, devices):
     ''' Produce a Leapp message with all PCI devices '''

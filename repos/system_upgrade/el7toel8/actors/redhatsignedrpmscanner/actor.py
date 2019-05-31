@@ -1,7 +1,5 @@
-import os
-
 from leapp.actors import Actor
-from leapp.models import InstalledRedHatSignedRPM, InstalledUnsignedRPM, InstalledRPM, RPM
+from leapp.models import InstalledRedHatSignedRPM, InstalledUnsignedRPM, InstalledRPM
 from leapp.tags import IPUWorkflowTag, FactsPhaseTag
 
 

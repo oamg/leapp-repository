@@ -28,8 +28,7 @@ def test_installed_defconf(monkeypatch):
     library.check_chrony(True)
 
     assert reporting.report_generic.called == 1
-    assert reporting.report_generic.report_fields['title'] == \
-            'chrony using default configuration'
+    assert reporting.report_generic.report_fields['title'] == 'chrony using default configuration'
 
 
 def test_installed_nodefconf(monkeypatch):
@@ -39,5 +38,4 @@ def test_installed_nodefconf(monkeypatch):
     library.check_chrony(True)
 
     assert reporting.report_generic.called == 1
-    assert reporting.report_generic.report_fields['title'] == \
-            'chrony using non-default configuration'
+    assert reporting.report_generic.report_fields['title'] == 'chrony using non-default configuration'

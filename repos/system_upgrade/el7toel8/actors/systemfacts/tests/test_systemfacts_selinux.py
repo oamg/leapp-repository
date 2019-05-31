@@ -5,6 +5,7 @@ from leapp.models import SELinuxFacts
 
 # FIXME: create valid tests...
 
+
 def test_selinux_enabled_enforcing(monkeypatch):
     """
     Test case SELinux is enabled in enforcing mode

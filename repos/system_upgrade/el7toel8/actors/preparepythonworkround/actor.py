@@ -1,7 +1,7 @@
 import os
 
 from leapp.actors import Actor
-from leapp.tags import IPUWorkflowTag,  RPMUpgradePhaseTag
+from leapp.tags import IPUWorkflowTag, RPMUpgradePhaseTag
 
 
 class PreparePythonWorkround(Actor):
@@ -24,8 +24,8 @@ class PreparePythonWorkround(Actor):
         py3_leapp = os.path.join(leapp_home, "leapp3")
         os.mkdir(leapp_home)
         os.symlink(
-                "/usr/lib/python2.7/site-packages/leapp",
-                os.path.join(leapp_home, "leapp"))
+            "/usr/lib/python2.7/site-packages/leapp",
+            os.path.join(leapp_home, "leapp"))
         with open(py3_leapp, "w") as f:
             f_content = [
                 "#!/usr/bin/python3",
@@ -34,6 +34,6 @@ class PreparePythonWorkround(Actor):
                 "",
                 "import leapp.cli",
                 "sys.exit(leapp.cli.main())",
-                ]
+            ]
             f.write("{}\n\n".format("\n".join(f_content)))
         os.chmod(py3_leapp, 0o770)
