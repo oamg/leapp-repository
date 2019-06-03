@@ -1,11 +1,10 @@
 import base64
 import io
 import os
-from subprocess import CalledProcessError
 import tarfile
 
 from leapp.libraries.common import reporting
-from leapp.libraries.stdlib import api, run
+from leapp.libraries.stdlib import CalledProcessError, api, run
 from leapp.models import NtpMigrationDecision
 
 
