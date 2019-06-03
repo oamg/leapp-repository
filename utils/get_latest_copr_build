@@ -6,25 +6,58 @@ import sys
 
 import copr.v3
 
-CONFIG_PATH = os.path.expandvars(os.getenv('_COPR_CONFIG', '~/.config/copr'))
-client = copr.v3.Client(copr.v3.config_from_file(path=CONFIG_PATH))
 
-# In case we are not able to retrieve from env vars, use defaults from the
-# configuration files.
-ownername = os.getenv('COPR_OWNER')
-projectname = os.getenv('COPR_PROJECT')
-packagename = os.getenv('COPR_PACKAGE')
-pkgrelease = os.getenv('PKG_RELEASE')
+def exit_fail():
+    sys.stderr.write('Passed (or default) environment variables:\n')
+    for var, value in ENV_VARS.items():
+        sys.stderr.write('  {}: {}\n'.format(var, value))
+    sys.exit(1)
+
+
+def get_owner_from_config():
+    # We have just the name of project inside COPR_REPO value which is expected when the user
+    # is the owner of the project. So set the user as owner from the config file.
+    return client.config['username']
+
+
+ENV_VARS = {
+    '_COPR_CONFIG': '~/.config/copr',  # Copr config file. Get it through https://<copr instance>/api/.
+    'COPR_OWNER': None,  # Owner of the Copr project
+    'COPR_PROJECT': None,  # The Copr project to search
+    'COPR_PACKAGE': None,  # Name of the package to look for. This is optional - if empty, any package in the
+                           #  project is considered.
+    'PKG_RELEASE': None,  # The release part of the pkg NEVRA string, e.g.
+                          #  0.201906041623Z.f82f863.add_missing_deps.PR231
+    'COPR_REPO': None  # An alternative to COPR_OWNER & COPR_PROJECT. This env var should hold "owner/project".
+}
+
+for env, default in ENV_VARS.items():
+    ENV_VARS[env] = os.getenv(env, default)
+
+CONFIG_PATH = os.path.expandvars(ENV_VARS['_COPR_CONFIG'])
+client = copr.v3.Client(copr.v3.config_from_file(path=CONFIG_PATH))
+ownername = ENV_VARS['COPR_OWNER']
+projectname = ENV_VARS['COPR_PROJECT']
+
+if projectname and not ownername:
+    ownername = get_owner_from_config()
+
 if not ownername or not projectname:
-    copr_repo = os.getenv('COPR_REPO', '').split('/', 1)
-    if len(copr_repo) == 2:
-        ownername, projectname = os.getenv('COPR_REPO', '').split('/', 1)
+    if not ENV_VARS['COPR_REPO']:
+        sys.stderr.write(
+            'Error: Use either COPR_REPO env var in a format "owner/project" or COPR_OWNER & COPR_PROJECT env vars to'
+            ' specify the Copr repository to search in.\n')
+        exit_fail()
+
+    if '/' in ENV_VARS['COPR_REPO']:
+        ownername, projectname = ENV_VARS['COPR_REPO'].split('/', 1)
     else:
-        # We have just the name of project inside COPR_REPO value, it is
-        # expected when user is owner of the project. So set the user as
-        # owner from the config file.
-        projectname = copr_repo[0]
-        ownername = client.config['username']
+        ownername = get_owner_from_config()
+        projectname = ENV_VARS['COPR_REPO']
+
+if not ENV_VARS['PKG_RELEASE']:
+    sys.stderr.write('Error: Use PKG_RELEASE env var to specify the release part of the pkg NEVRA string.\n')
+    exit_fail()
 
 # limit set to 10 as it is not expected that there would be more packages build
 # in such short time
@@ -33,22 +66,19 @@ builds = client.build_proxy.get_list(
     pagination={'limit': 10, 'order': 'id', 'order_type': 'DESC'},
     ownername=ownername,
     projectname=projectname,
-    packagename=packagename)
+    packagename=ENV_VARS['COPR_PACKAGE'])
 
-if '--debug' not in sys.argv:
+if '--debug' in sys.argv:
     json.dump(builds, sys.stderr, sort_keys=True, indent=2)
+    sys.stderr.write('\n')
 
 for build in builds:
-    # Version in COPR contains VERSION-RELEASE string. We need just the
-    # release. Additionally we do not care about *elX* suffix. So remove it
-    # when compare.
-    _release = build['source_package']['version'].split("-")[-1]
-    # FIXME: instead of rsplit(.el8) remove whole elx.* as it can contain
-    # later e.g. .el8_0 instead of .el8
-    if _release.rstrip(".el8") == pkgrelease:
+    # Version in COPR contains VERSION-RELEASE string. We need just the release.
+    _release = build['source_package']['version'].split('-')[-1]
+    if _release.startswith(ENV_VARS['PKG_RELEASE']):
         print(build['id'])
         break
 else:
-    sys.stderr.write('Error: The build with the required release has not been found: {}'.format(pkgrelease))
-    sys.exit(1)
-
+    sys.stderr.write('Error: The build with the required release has not been found: {}\n'
+                     .format(ENV_VARS['PKG_RELEASE']))
+    exit_fail()
