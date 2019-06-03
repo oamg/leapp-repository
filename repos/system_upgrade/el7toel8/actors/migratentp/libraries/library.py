@@ -1,11 +1,10 @@
 import base64
 import io
-from subprocess import CalledProcessError
 import tarfile
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import reporting
-from leapp.libraries.stdlib import run
+from leapp.libraries.stdlib import CalledProcessError, run
 
 
 def extract_tgz64(s):
