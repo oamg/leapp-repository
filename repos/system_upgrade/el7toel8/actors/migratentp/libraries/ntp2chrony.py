@@ -28,7 +28,6 @@ import argparse
 import ipaddress
 import logging
 import os
-import os.path
 import re
 import subprocess
 import sys
@@ -73,8 +72,9 @@ class NtpConfiguration(object):
 
     def detect_enabled_services(self):
         for service in ["ntpdate", "ntpd", "ntp-wait"]:
-            if os.path.islink(
-                    "{}/etc/systemd/system/multi-user.target.wants/{}.service".format(self.root_dir, service)):
+            service_path = os.path.join(self.root_dir,
+                                        "etc/systemd/system/multi-user.target.wants/{}.service".format(service))
+            if os.path.islink(service_path):
                 self.enabled_services.add(service)
         logging.info("Enabled services found in /etc/systemd/system: %s",
                      " ".join(self.enabled_services))
@@ -426,9 +426,8 @@ class NtpConfiguration(object):
         return conf
 
     def get_chrony_conf_allows(self):
-        allowed_networks = filter(
-                lambda n: "ignore" not in self.restrictions[n] and "noserve" not in self.restrictions[n],
-                self.restrictions.keys())
+        allowed_networks = [n for n in self.restrictions
+                            if "ignore" not in self.restrictions[n] and "noserve" not in self.restrictions[n]]
 
         conf = ""
         for network in sorted(allowed_networks, key=lambda n: (n.version, n)):
@@ -444,10 +443,12 @@ class NtpConfiguration(object):
         return conf
 
     def get_chrony_conf_cmdallows(self):
-        allowed_networks = filter(
-                lambda n: "ignore" not in self.restrictions[n] and "noquery" not in self.restrictions[n] and
-                n != ipaddress.ip_network(u"127.0.0.1/32") and n != ipaddress.ip_network(u"::1/128"),
-                self.restrictions.keys())
+
+        def _is_network_allowed(network):
+            return ("ignore" not in self.restrictions[network] and "noquery" not in self.restrictions[network] and
+                    network != ipaddress.ip_network(u"127.0.0.1/32") and network != ipaddress.ip_network(u"::1/128"))
+
+        allowed_networks = [n for n in self.restrictions if _is_network_allowed(n)]
 
         ip_versions = set()
         conf = ""
@@ -610,7 +611,8 @@ class NtpConfiguration(object):
             if not trusted:
                 keys += "#"
 
-            keys += "{} {} {}:{}\n".format(key_id, key_type, prefix, password)
+            keys += "{key_id} {key_type} {prefix}:{password}\n".format(
+                    key_id=key_id, key_type=key_type, prefix=prefix, password=password)
 
         return keys
 
