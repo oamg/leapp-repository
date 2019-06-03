@@ -5,8 +5,11 @@ from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
 class CheckNtp(Actor):
+    """
+    Check if ntp and/or ntpdate configuration needs to be migrated.
+    """
+
     name = 'check_ntp'
-    description = 'Check if ntp and/or ntpdate configuration needs to be migrated.'
     consumes = (InstalledRedHatSignedRPM,)
     produces = (Report, NtpMigrationDecision)
     tags = (ChecksPhaseTag, IPUWorkflowTag)

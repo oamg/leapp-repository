@@ -5,8 +5,11 @@ from leapp.tags import ApplicationsPhaseTag, IPUWorkflowTag
 
 
 class MigrateNtp(Actor):
+    """
+    Migrate ntp and/or ntpdate configuration to chrony.
+    """
+
     name = 'migrate_ntp'
-    description = 'Migrate ntp and/or ntpdate configuration to chrony.'
     consumes = (NtpMigrationDecision,)
     produces = (Report,)
     tags = (ApplicationsPhaseTag, IPUWorkflowTag)
