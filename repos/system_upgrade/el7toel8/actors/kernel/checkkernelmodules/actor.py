@@ -35,8 +35,8 @@ class CheckKernelModules(Actor):
 
             for fact in self.consume(ActiveKernelModulesFacts):
                 for active_module in fact.kernel_modules:
-                    if active_module.filename in removed_modules \
-                        and active_module.filename not in whitelisted_modules:
+                    if active_module.filename in removed_modules and \
+                            active_module.filename not in whitelisted_modules:
                         modules_to_report.add(active_module.filename)
 
             if modules_to_report:
