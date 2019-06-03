@@ -1,6 +1,6 @@
 from leapp.actors import Actor
 from leapp.libraries.common.reporting import report_with_remediation
-from leapp.models import ActiveKernelModulesFacts
+from leapp.models import ActiveKernelModulesFacts, WhitelistedKernelModules
 from leapp.reporting import Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
@@ -19,25 +19,19 @@ class CheckKernelModules(Actor):
         files/removed_modules.txt file.
     """
     name = "check_kernel_modules"
-    consumes = (ActiveKernelModulesFacts,)
+    consumes = (ActiveKernelModulesFacts, WhitelistedKernelModules)
     produces = (Report,)
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 
     def process(self):
         with open("files/removed_modules.txt", "r") as removed:
             removed_modules = [x.strip() for x in removed.readlines()]
+            whitelisted_modules = set()
             modules_to_report = set()
 
-            # FIXME:
-            # These modules are from the files/removed_modules.txt.
-            # However, they are present on the clean RHEL7.6 installation
-            # in virtual machine via vagrant. They are whitelisted because
-            # we do not want to inhibit upgrade from clean installation.
-            whitelisted_modules = [
-                'ablk_helper', 'crct10dif_common', 'cryptd', 'floppy',
-                'gf128mul', 'glue_helper', 'iosf_mbi', 'pata_acpi', 'virtio',
-                'virtio_pci', 'virtio_ring'
-            ]
+            for fact in self.consume(WhitelistedKernelModules):
+                for module in fact.whitelisted_modules:
+                    whitelisted_modules.add(module)
 
             for fact in self.consume(ActiveKernelModulesFacts):
                 for active_module in fact.kernel_modules:
