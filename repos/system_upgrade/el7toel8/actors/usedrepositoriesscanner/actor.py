@@ -14,7 +14,7 @@ class UsedRepositoriesScanner(Actor):
 
     name = 'used_repository_scanner'
     consumes = (InstalledRedHatSignedRPM, RepositoriesFacts)
-    produces = (UsedRepositories)
+    produces = (UsedRepositories,)
     tags = (IPUWorkflowTag, FactsPhaseTag)
 
     def process(self):
