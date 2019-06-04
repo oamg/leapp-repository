@@ -18,12 +18,13 @@ URL:        https://oamg.github.io/leapp/
 ##################################################
 %package -n %{lrdname}
 Summary:    Meta-package with system dependencies for leapp repository
-Provides:   leapp-repository-dependencies = 3
+Provides:   leapp-repository-dependencies = 4
 Obsoletes:  leapp-repository-deps
 
 Requires:   dnf >= 4
 Requires:   pciutils
 Requires:   python3
+Requires:   python3-pyudev
 
 %description -n %{lrdname}
 %{summary}
