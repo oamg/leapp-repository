@@ -29,7 +29,7 @@ BuildRequires:  python-devel
 
 # IMPORTANT: everytime the requirements are changed, increment number by one
 # - same for Provides in deps subpackage
-Requires:       leapp-repository-dependencies = 3
+Requires:       leapp-repository-dependencies = 4
 
 # That's temporary to ensure the obsoleted subpackage is not installed
 # and will be removed when the current version of leapp-repository is installed
@@ -56,7 +56,7 @@ Summary:    Meta-package with system dependencies of %{name} package
 
 # IMPORTANT: everytime the requirements are changed, increment number by one
 # - same for Requires in main package
-Provides:  leapp-repository-dependencies = 3
+Provides:  leapp-repository-dependencies = 4
 ##################################################
 # Real requirements for the leapp-repository HERE
 ##################################################
@@ -65,6 +65,7 @@ Requires:   pciutils
 %if 0%{?rhel} && 0%{?rhel} == 7
 # Required to gather system facts about SELinux
 Requires:   libselinux-python
+Requires:   python-pyudev
 %else ## RHEL 8 dependencies ##
 # Requires:   systemd-container
 %endif
