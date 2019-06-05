@@ -30,14 +30,17 @@ class CheckKernelModules(Actor):
             modules_to_report = set()
 
             for fact in self.consume(WhitelistedKernelModules):
-                for module in fact.whitelisted_modules:
-                    whitelisted_modules.add(module)
+                whitelisted_modules.update(fact.whitelisted_modules)
 
             for fact in self.consume(ActiveKernelModulesFacts):
                 for active_module in fact.kernel_modules:
-                    if active_module.filename in removed_modules and \
-                            active_module.filename not in whitelisted_modules:
+                    if active_module.filename in whitelisted_modules:
+                        continue
+                    if active_module.filename in removed_modules:
                         modules_to_report.add(active_module.filename)
+
+            print(whitelisted_modules)
+            print(modules_to_report)
 
             if modules_to_report:
                 title = 'Detected unavailable kernel modules. Upgrade cannot proceed.'
