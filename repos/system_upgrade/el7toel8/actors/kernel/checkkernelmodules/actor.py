@@ -39,9 +39,6 @@ class CheckKernelModules(Actor):
                     if active_module.filename in removed_modules:
                         modules_to_report.add(active_module.filename)
 
-            print(whitelisted_modules)
-            print(modules_to_report)
-
             if modules_to_report:
                 title = 'Detected unavailable kernel modules. Upgrade cannot proceed.'
                 summary = ('The following kernel modules are not available on '
