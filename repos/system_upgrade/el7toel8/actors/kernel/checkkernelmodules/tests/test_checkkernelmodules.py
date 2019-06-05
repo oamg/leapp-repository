@@ -22,7 +22,7 @@ def test_actor_without_missing_modules(current_actor_context):
                ActiveKernelModule(filename="barfoo", parameters=[])]
     current_actor_context.feed(ActiveKernelModulesFacts(kernel_modules=modules))
     current_actor_context.run()
-    assert len(current_actor_context.consume(Report)) == 0
+    assert not current_actor_context.consume(Report)
 
 
 def test_actor_with_whitelisted_modules(current_actor_context):
@@ -33,4 +33,4 @@ def test_actor_with_whitelisted_modules(current_actor_context):
     modules = WhitelistedKernelModules(whitelisted_modules=["cryptd", "floppy"])
     current_actor_context.feed(modules)
     current_actor_context.run()
-    assert len(current_actor_context.consume(Report)) == 0
+    assert not current_actor_context.consume(Report)
