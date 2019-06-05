@@ -80,7 +80,7 @@ class SetupTargetRepos(Actor):
         for used_repos in self.consume(UsedRepositories):
             for used_repo in used_repos.repositories:
                 used[used_repo.repository] = used_repo.packages
-                for repo in repo_file.data:
+                for repo in used_repo.data:
                     enabled_repos.add(repo.repoid)
 
         skipped_repos = skipped_repos.intersection(used.keys())
