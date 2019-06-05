@@ -31,4 +31,4 @@ def test_actor_without_postfix_package(current_actor_context):
 def test_actor_with_postfix_package(current_actor_context):
     current_actor_context.feed(create_modulesfacts(installed_rpm=with_postfix))
     current_actor_context.run()
-    assert len(current_actor_context.consume(Report)) > 0
+    assert current_actor_context.consume(Report)

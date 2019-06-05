@@ -15,6 +15,7 @@ from leapp.libraries.actor.library import (Event,
                                            process_events,
                                            report_skipped_packages)
 from leapp.libraries.common import reporting
+from leapp.libraries.common.testutils import produce_mocked, report_generic_mocked
 from leapp.libraries.stdlib import api
 from leapp.models import RpmTransactionTasks
 
@@ -22,32 +23,14 @@ from leapp.models import RpmTransactionTasks
 class show_message_mocked(object):
     def __init__(self):
         self.called = 0
+        self.msg = None
 
     def __call__(self, msg):
         self.called += 1
         self.msg = msg
 
 
-class produce_mocked(object):
-    def __init__(self):
-        self.called = 0
-        self.model_instances = []
-
-    def __call__(self, *model_instances):
-        self.called += 1
-        self.model_instances.append(model_instances[0])
-
-
-class report_generic_mocked(object):
-    def __init__(self):
-        self.called = 0
-
-    def __call__(self, **report_fields):
-        self.called += 1
-        self.report_fields = report_fields
-
-
-class get_repos_blacklisted_mocked():
+class get_repos_blacklisted_mocked(object):
     def __init__(self, blacklisted):
         self.blacklisted = blacklisted
 

@@ -4,29 +4,11 @@ import pytest
 from leapp.exceptions import StopActorExecution
 from leapp.libraries.actor import library
 from leapp.libraries.common import reporting
+from leapp.libraries.common.testutils import produce_mocked, report_generic_mocked
 from leapp.libraries.stdlib import api
 from leapp.models import RPM, InstalledUnsignedRPM
 
 RH_PACKAGER = 'Red Hat, Inc. <http://bugzilla.redhat.com/bugzilla>'
-
-
-class produce_mocked(object):
-    def __init__(self):
-        self.called = 0
-        self.model_instances = []
-
-    def __call__(self, *model_instances):
-        self.called += 1
-        self.model_instances.append(model_instances[0])
-
-
-class report_generic_mocked(object):
-    def __init__(self):
-        self.called = 0
-
-    def __call__(self, **report_fields):
-        self.called += 1
-        self.report_fields = report_fields
 
 
 def test_skip_check(monkeypatch):
@@ -56,7 +38,7 @@ def test_actor_execution_without_unsigned_data(monkeypatch):
     monkeypatch.setattr(reporting, "report_with_remediation", report_generic_mocked())
 
     packages = library.get_unsigned_packages()
-    assert len(packages) == 0
+    assert not packages
     library.generate_report(packages)
     assert reporting.report_with_remediation.called == 0
 

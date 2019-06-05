@@ -94,7 +94,7 @@ def test_get_parsed_configs_empty_dir():
 
     assert not listdir.error
     assert fileops.read_called == 0
-    assert len(parsed_configs) == 0
+    assert not parsed_configs
 
 
 def test_get_parsed_configs_nonexistent_dir():
@@ -105,7 +105,7 @@ def test_get_parsed_configs_nonexistent_dir():
                                                  listdir=listdir.listdir)
 
     assert fileops.read_called == 0
-    assert len(parsed_configs) == 0
+    assert not parsed_configs
 
 
 def test_get_parsed_configs_inaccessible_dir():
@@ -116,7 +116,7 @@ def test_get_parsed_configs_inaccessible_dir():
                                                  listdir=listdir.listdir)
 
     assert fileops.read_called == 0
-    assert len(parsed_configs) == 0
+    assert not parsed_configs
 
 
 def test_get_vsftpd_facts():
@@ -163,7 +163,7 @@ def test_get_vsftpd_facts_empty_dir():
     facts = library.get_vsftpd_facts(read_func=fileops.read, listdir=listdir.listdir)
 
     assert facts.default_config_hash is None
-    assert len(facts.configs) == 0
+    assert not facts.configs
 
 
 def test_get_vsftpd_facts_nonexistent_dir():
@@ -173,7 +173,7 @@ def test_get_vsftpd_facts_nonexistent_dir():
     facts = library.get_vsftpd_facts(read_func=fileops.read, listdir=listdir.listdir)
 
     assert facts.default_config_hash is None
-    assert len(facts.configs) == 0
+    assert not facts.configs
 
 
 def test_get_vsftpd_facts_inaccessible_dir():
@@ -183,7 +183,7 @@ def test_get_vsftpd_facts_inaccessible_dir():
     facts = library.get_vsftpd_facts(read_func=fileops.read, listdir=listdir.listdir)
 
     assert facts.default_config_hash is None
-    assert len(facts.configs) == 0
+    assert not facts.configs
 
 
 def test_is_processable_vsftpd_installed():

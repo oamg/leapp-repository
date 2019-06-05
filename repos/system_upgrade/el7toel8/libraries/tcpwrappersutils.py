@@ -56,7 +56,7 @@ def _daemon_list_matches_daemon(daemon_list, daemon, recursion_depth):
             break
 
     next_list = daemon_list[cur_list_end + 1:]
-    if len(next_list) == 0:
+    if not next_list:
         matches_next_list = False
     else:
         matches_next_list = _daemon_list_matches_daemon(next_list, daemon, recursion_depth + 1)

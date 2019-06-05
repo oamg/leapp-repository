@@ -70,17 +70,17 @@ def test_VsftpdConfigParser_invalid_syntax():
 def test_VsftpdConfigParser_empty_config():
     parser = VsftpdConfigParser('')
     assert isinstance(parser.parsed_config, dict)
-    assert len(parser.parsed_config) == 0
+    assert not parser.parsed_config
 
 
 def test_VsftpdConfigParser_only_comments():
     parser = VsftpdConfigParser('# foo\n\n#bar\n')
     assert isinstance(parser.parsed_config, dict)
-    assert len(parser.parsed_config) == 0
+    assert not parser.parsed_config
 
     parser = VsftpdConfigParser('#anonymous_enable=yes\n')
     assert isinstance(parser.parsed_config, dict)
-    assert len(parser.parsed_config) == 0
+    assert not parser.parsed_config
 
 
 def test_VsftpdConfigParser_one_option():

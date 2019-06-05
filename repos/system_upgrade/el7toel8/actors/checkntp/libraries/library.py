@@ -54,7 +54,7 @@ def check_ntp(installed_packages):
             if main_config:
                 migrate_configs.append(service)
 
-    if len(migrate_configs):
+    if migrate_configs:
         reporting.report_generic(
              title='{} configuration will be migrated'.format(' and '.join(migrate_configs)),
              summary='{} service(s) detected to be enabled and active'.format(', '.join(migrate_services)),

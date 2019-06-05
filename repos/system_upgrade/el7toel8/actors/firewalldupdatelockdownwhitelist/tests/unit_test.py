@@ -1,6 +1,6 @@
-from leapp.libraries.actor import private
-
 import xml.etree.ElementTree as ElementTree
+
+from leapp.libraries.actor import private
 
 
 def test_firewalldupdatelockdownwhitelist_library():

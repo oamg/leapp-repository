@@ -118,7 +118,7 @@ class PrepareUpgradeTransaction(Actor):
 
         Return ErrorData or None.
         """
-        self.target_repoids = []
+        self.target_repoids = []  # noqa; pylint: disable=attribute-defined-outside-init
         skip_rhsm = os.getenv('LEAPP_DEVEL_SKIP_RHSM', '0') == '1'
 
         # TODO: skip_rhsm will work for now, but later it should be refactored better
@@ -335,10 +335,10 @@ class PrepareUpgradeTransaction(Actor):
             dnfplugin_dpath = '/lib/python2.7/site-packages/dnf-plugins'
 
             error = preparetransaction.copy_file_to_container(ofs_info, dnfplugin_spath, dnfplugin_dpath)
-            if error:
-                return error
 
-        error = self.dnf_plugin_rpm_download(ofs_info)
+        if not error:
+            error = self.dnf_plugin_rpm_download(ofs_info)
+
         if not error:
             error = preparetransaction.copy_file_from_container(
                 ofs_info,

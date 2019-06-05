@@ -1,3 +1,4 @@
+from __future__ import print_function
 import sys
 import gi
 gi.require_version('NM', '1.0')

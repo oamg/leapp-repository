@@ -2,22 +2,18 @@ import errno
 import functools
 import grp
 import json
+import logging
 import os
 import pwd
 import re
-import logging
 
-try:
-    import ConfigParser as configparser
-except ImportError:
-    import configparser
+from six.moves.configparser import ConfigParser as configparser
+import six
 
 from leapp.libraries.stdlib import CalledProcessError, api, run
 from leapp.models import SysctlVariablesFacts, SysctlVariable, ActiveKernelModulesFacts, ActiveKernelModule, \
     KernelModuleParameter, UsersFacts, User, GroupsFacts, Group, RepositoriesFacts, RepositoryFile, RepositoryData, \
     SELinuxFacts, fields, FirewallStatus, FirewallsFacts
-
-import six
 
 
 def aslist(f):
@@ -213,12 +209,13 @@ def get_repositories_status():
 
 def get_selinux_status():
     ''' Get SELinux status information '''
-
+    # will be None if something went wrong or contain SELinuxFacts otherwise
+    res = None
     try:
         import selinux
     except ImportError:
         api.report_error("SELinux Import Error", details="libselinux-python package must be installed.")
-        return
+        return res
 
     outdata = dict({'enabled': selinux.is_selinux_enabled() == 1})
     outdata['mls_enabled'] = selinux.is_selinux_mls_enabled() == 1
@@ -239,7 +236,8 @@ def get_selinux_status():
         outdata['static_mode'] = 'disabled'
         outdata['policy'] = 'targeted'
 
-    return SELinuxFacts(**outdata)
+    res = SELinuxFacts(**outdata)
+    return res
 
 
 def get_firewalls_status():
@@ -252,14 +250,14 @@ def get_firewalls_status():
             active = ret_list[0] == 'active'
         except CalledProcessError:
             active = False
-            logger.debug('The %s service is likely not active' % service_name)
+            logger.debug('The %s service is likely not active', service_name)
 
         try:
             ret_list = run(['systemctl', 'is-enabled', service_name], split=True)['stdout']
             enabled = ret_list[0] == 'enabled'
         except CalledProcessError:
             enabled = False
-            logger.debug('The %s service is likely not enabled nor running' % service_name)
+            logger.debug('The %s service is likely not enabled nor running', service_name)
 
         return FirewallStatus(
             active=active,

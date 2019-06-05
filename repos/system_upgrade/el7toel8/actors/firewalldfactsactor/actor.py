@@ -1,11 +1,10 @@
-from leapp.actors import Actor
-from leapp.models import FirewalldFacts
-from leapp.tags import FactsPhaseTag, IPUWorkflowTag
-
-from leapp.libraries.actor import private
-
 import os
 import xml.etree.ElementTree as ElementTree
+
+from leapp.actors import Actor
+from leapp.libraries.actor import private
+from leapp.models import FirewalldFacts
+from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 
 class FirewalldFactsActor(Actor):
@@ -40,11 +39,11 @@ class FirewalldFactsActor(Actor):
         ipsetTypesInUse = set()
         directory = '/etc/firewalld/ipsets'
         try:
-            for file in os.listdir(directory):
-                if not file.endswith('.xml'):
+            for filename in os.listdir(directory):
+                if not filename.endswith('.xml'):
                     continue
                 try:
-                    tree = ElementTree.parse(os.path.join(directory, file))
+                    tree = ElementTree.parse(os.path.join(directory, filename))
                     root = tree.getroot()
                     ipsetTypesInUse |= set(private.getIpsetTypesInUse(root))
                 except IOError:

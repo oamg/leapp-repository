@@ -4,6 +4,7 @@ from leapp.libraries.actor import library
 class run_mocked(object):
     def __init__(self):
         self.called = 0
+        self.args = None
 
     def __call__(self, args, split=True):
         self.called += 1

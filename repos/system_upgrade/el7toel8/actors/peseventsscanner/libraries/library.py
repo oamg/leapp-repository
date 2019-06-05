@@ -330,7 +330,7 @@ def filter_out_transaction_conf_pkgs(to_install, to_remove, transaction_configur
             to_install.pop(pes_based_pkg_to_install)
             pes_based_pkgs_not_to_be_installed.append(pes_based_pkg_to_install)
     for pes_based_pkg_to_remove in to_remove.keys():
-        if pes_based_pkg_to_remove in (transaction_configuration.to_install + transaction_configuration.to_keep):
+        if pes_based_pkg_to_remove in transaction_configuration.to_install + transaction_configuration.to_keep:
             to_remove.pop(pes_based_pkg_to_remove)
             pes_based_pkgs_not_to_be_removed.append(pes_based_pkg_to_remove)
 

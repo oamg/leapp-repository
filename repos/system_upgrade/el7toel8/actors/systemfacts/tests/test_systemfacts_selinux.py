@@ -57,7 +57,7 @@ def test_selinux_disabled(monkeypatch):
     assert SELinuxFacts(**expected_data) == get_selinux_status()
 
 
-class MockNoConfigFileOSError:
+class MockNoConfigFileOSError(object):
     def __init__(self):
         raise OSError
 
