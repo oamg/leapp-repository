@@ -1,4 +1,5 @@
 from leapp.actors import Actor
+from leapp.dialogs import RawMessageDialog
 from leapp.libraries.actor import report
 from leapp.reporting import Report
 from leapp.tags import ReportPhaseTag, IPUWorkflowTag
@@ -29,6 +30,9 @@ class VerifyCheckResults(Actor):
             self.report_error('Report Error: ' + error)
         else:
             self.log.info('Generated report at ' + report_file)
+            self.messaging.request_answers(
+                RawMessageDialog(message='Generated report at ' + report_file)
+            )
 
         if inhibitors:
             for e in inhibitors:
