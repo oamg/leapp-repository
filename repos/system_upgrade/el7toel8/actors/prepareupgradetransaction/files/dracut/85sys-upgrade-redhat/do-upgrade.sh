@@ -38,8 +38,8 @@ do_upgrade() {
     # NOTE: in case we would need to run leapp before pivot, we would need to
     #       specify where the root is, e.g. --root=/sysroot
     # TODO: update: systemd-nspawn
-    nspawn_opts="--capability=all --bind=/sys --bind=/dev --bind=/proc --bind=/run/udev --keep-unit --register=no"
-    $NEWROOT/bin/systemd-nspawn $nspawn_opts -D $NEWROOT $LEAPPBIN upgrade --resume $args
+    nspawn_opts="--capability=all --bind=/sys --bind=/dev --bind=/proc --bind=/run/udev --keep-unit --register=no --timezone=off --resolv-conf=off"
+    /bin/systemd-nspawn $nspawn_opts -D $NEWROOT $LEAPPBIN upgrade --resume $args
     rv=$?
 
     # NOTE: flush the cached content to disk to ensure everything is written
@@ -60,7 +60,7 @@ do_upgrade() {
         # all FSTAB partitions. As mount was working before, hopefully will
         # work now as well. Later this should be probably modified as we will
         # need to handle more stuff around storage at all.
-        $NEWROOT/bin/systemd-nspawn $nspawn_opts -D $NEWROOT /usr/bin/bash -c "mount -a; /usr/bin/python3 $LEAPP3_BIN upgrade --resume $args"
+        /bin/systemd-nspawn $nspawn_opts -D $NEWROOT /usr/bin/bash -c "mount -a; /usr/bin/python3 $LEAPP3_BIN upgrade --resume $args"
         rv=$?
     fi
 
