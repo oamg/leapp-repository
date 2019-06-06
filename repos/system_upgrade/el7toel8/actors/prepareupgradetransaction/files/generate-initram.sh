@@ -42,6 +42,7 @@ build() {
         --confdir /var/empty \
         --force \
         --add sys-upgrade \
+        --install systemd-nspawn \
         --no-hostonly \
         --nolvmconf \
         --nomdadmconf \
