@@ -7,7 +7,7 @@ import os
 import pwd
 import re
 
-from six.moves.configparser import ConfigParser as configparser
+from six.moves import configparser
 import six
 
 from leapp.libraries.stdlib import CalledProcessError, api, run
