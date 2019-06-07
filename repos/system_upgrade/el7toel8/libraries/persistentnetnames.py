@@ -11,7 +11,7 @@ def physical_interfaces():
     Returns a list of pyudev.Device objects for all physical network interfaces
     """
     enumerator = pyudev.Enumerator(udev_context).match_subsystem('net')
-    return (d for d in enumerator if not d.device_path.startswith('/devices/virtual/'))
+    return [d for d in enumerator if not d.device_path.startswith('/devices/virtual/')]
 
 
 def pci_info(path):
