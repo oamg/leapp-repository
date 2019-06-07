@@ -36,7 +36,7 @@ class CheckOSRelease(Actor):
         }
 
         for facts in self.consume(OSReleaseFacts):
-            if facts.id not in min_supported_version.keys():
+            if facts.release_id not in min_supported_version.keys():
                 report_generic(
                     title='Unsupported OS id',
                     summary='Supported OS ids for upgrade process: ' + ','.join(min_supported_version.keys()),
@@ -44,7 +44,7 @@ class CheckOSRelease(Actor):
                 )
                 return
 
-            min_version = [int(x) for x in min_supported_version[facts.id].split('.')]
+            min_version = [int(x) for x in min_supported_version[facts.release_id].split('.')]
             os_version = [int(x) for x in facts.version_id.split('.')]
 
             for current, minimal in zip(os_version, min_version):
@@ -54,7 +54,8 @@ class CheckOSRelease(Actor):
                 if current < minimal:
                     report_generic(
                         title='Unsupported OS version',
-                        summary='Minimal supported OS version for upgrade process: ' + min_supported_version[facts.id],
+                        summary='Minimal supported OS version for upgrade process: {}'.format(
+                            min_supported_version[facts.release_id]),
                         flags=['inhibitor']
                     )
                     return

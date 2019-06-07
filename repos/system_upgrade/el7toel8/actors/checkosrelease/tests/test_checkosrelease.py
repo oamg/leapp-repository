@@ -6,7 +6,7 @@ from leapp.snactor.fixture import current_actor_context
 def create_osrelease(release_id, version_id=None):
     version_id = version_id or '42'
     return OSReleaseFacts(
-        id=release_id,
+        release_id=release_id,
         name='test',
         pretty_name='test {}'.format(version_id),
         version='Some Test {}'.format(version_id),

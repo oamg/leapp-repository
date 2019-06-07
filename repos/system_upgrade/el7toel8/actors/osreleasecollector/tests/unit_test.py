@@ -9,7 +9,7 @@ def test_get_os_release_info(monkeypatch):
     monkeypatch.setattr(reporting, 'report_generic', report_generic_mocked())
 
     expected = OSReleaseFacts(
-        id='rhel',
+        release_id='rhel',
         name='Red Hat Enterprise Linux Server',
         pretty_name='Red Hat Enterprise Linux',
         version='7.6 (Maipo)',
