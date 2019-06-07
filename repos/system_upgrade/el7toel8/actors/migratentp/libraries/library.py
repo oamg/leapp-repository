@@ -54,7 +54,7 @@ def migrate_ntp(migrate_services, config_tgz64):
             'driftfile /var/lib/ntp/drift\n'
             'restrict default ignore nomodify notrap nopeer noquery\n')
 
-    if len(migrate_services) == 0:
+    if not migrate_services:
         # Nothing to migrate
         return
 
@@ -79,7 +79,7 @@ def migrate_ntp(migrate_services, config_tgz64):
 
     ignored_lines = ntp2chrony('/', ntp_conf, step_tickers)
 
-    if len(ignored_lines) == 0:
+    if not ignored_lines:
         reporting.report_generic(
                 title='{} configuration migrated to chrony'.format(' and '.join(migrate_configs)),
                 summary='ntp2chrony executed successfully',

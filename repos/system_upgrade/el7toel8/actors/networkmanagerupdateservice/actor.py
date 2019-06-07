@@ -47,7 +47,7 @@ class NetworkManagerUpdateService(Actor):
     def unit_enabled(self, name):
         try:
             ret = run(['systemctl', 'is-enabled', name], split=True)['stdout']
-            if len(ret) > 0:
+            if ret:
                 enabled = ret[0] == 'enabled'
             else:
                 enabled = False

@@ -43,9 +43,8 @@ def space_guard(path='/', min_free_mb=100):
         free_mb = (info.f_bavail * info.f_frsize) >> 20
         if free_mb >= min_free_mb:
             return None
-        else:
-            return ('''Not enough free disk space in '{path}', needed: {min} M, available: {avail} M.'''
-                    ' Free more disk space and try again.'.format(path=path, min=min_free_mb, avail=free_mb))
+        return ('''Not enough free disk space in '{path}', needed: {min} M, available: {avail} M.'''
+                ' Free more disk space and try again.'.format(path=path, min=min_free_mb, avail=free_mb))
     return closure
 
 
@@ -54,15 +53,15 @@ def permission_guard():
     raise NotImplementedError
 
 
-def _logging_handler(fd_info, buffer):
+def _logging_handler(fd_info, a_buffer):
     '''Custom log handler to always show DNF stdout to console and stderr only in DEBUG mode'''
     (_unused, fd_type) = fd_info
 
     if fd_type == STDOUT:
-        sys.stdout.write(buffer)
+        sys.stdout.write(a_buffer)
     else:
         if is_debug():
-            sys.stderr.write(buffer)
+            sys.stderr.write(a_buffer)
 
 
 def guard_call(cmd, guards=(), print_output=False):

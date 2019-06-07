@@ -82,7 +82,7 @@ class VsftpdConfigParser(object):
         self.parsed_config = self._parse_config(config_content)
 
     def _parse_config_line(self, line, conf_dict):
-        if len(line) == 0 or line.startswith('#') or line.isspace():
+        if not line or line.startswith('#') or line.isspace():
             return
         try:
             option, value = line.split('=', 1)

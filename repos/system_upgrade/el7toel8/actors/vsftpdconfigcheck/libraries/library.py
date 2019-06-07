@@ -4,7 +4,7 @@ from leapp.libraries.common.tcpwrappersutils import config_applies_to_daemon
 
 def check_config_supported(tcpwrap_facts, vsftpd_facts):
     bad_configs = [config.path for config in vsftpd_facts.configs if config.tcp_wrappers]
-    if len(bad_configs) > 0 and config_applies_to_daemon(tcpwrap_facts, 'vsftpd'):
+    if bad_configs and config_applies_to_daemon(tcpwrap_facts, 'vsftpd'):
         list_separator_fmt = '\n    - '
         report_with_links(title='Unsupported vsftpd configuration',
                           summary=('tcp_wrappers support has been removed in RHEL-8. '

@@ -1,7 +1,7 @@
 import json
 
 
-class PlainTextReport:
+class PlainTextReport(object):
     def header(self, report_file):
         pass
 
@@ -17,7 +17,7 @@ class PlainTextReport:
         pass
 
 
-class JSONReport:
+class JSONReport(object):
     _first_entry = True
 
     def header(self, report_file):

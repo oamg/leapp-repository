@@ -11,7 +11,7 @@ def assert_inhibits(reports, node_type):
 def test_no_inhibit_when_no_ha_cluster(monkeypatch, current_actor_context):
     monkeypatch.setattr("os.path.isfile", lambda path: False)
     current_actor_context.run()
-    assert len(current_actor_context.consume(Report)) == 0
+    assert not current_actor_context.consume(Report)
 
 
 def test_inhibits_when_cluster_node(monkeypatch, current_actor_context):

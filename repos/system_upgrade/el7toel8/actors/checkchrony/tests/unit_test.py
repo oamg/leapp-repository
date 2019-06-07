@@ -1,14 +1,6 @@
 from leapp.libraries.actor import library
 from leapp.libraries.common import reporting
-
-
-class report_generic_mocked(object):
-    def __init__(self):
-        self.called = 0
-
-    def __call__(self, **report_fields):
-        self.called += 1
-        self.report_fields = report_fields
+from leapp.libraries.common.testutils import report_generic_mocked
 
 
 def test_uninstalled(monkeypatch):

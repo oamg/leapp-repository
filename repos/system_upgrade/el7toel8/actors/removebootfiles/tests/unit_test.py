@@ -11,12 +11,16 @@ class remove_file_mocked(object):
         self.called = 0
         self.files_to_remove = []
 
-    def __call__(self, file):
+    def __call__(self, filename):
         self.called += 1
-        self.files_to_remove.append(file)
+        self.files_to_remove.append(filename)
 
 
 class logger_mocked(object):
+    def __init__(self):
+        self.warnmsg = None
+        self.errmsg = None
+
     def warning(self, msg):
         self.warnmsg = msg
 

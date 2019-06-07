@@ -18,7 +18,7 @@ def skip_check():
 
 def generate_report(packages):
     """ Generate a report if exists packages unsigned in the system """
-    if not len(packages):
+    if not packages:
         return
     unsigned_packages_new_line = '\n'.join(['- ' + p for p in packages])
     unsigned_packages = ' '.join(packages)

@@ -1,9 +1,9 @@
+import xml.etree.ElementTree as ElementTree
+
 from leapp.actors import Actor
+from leapp.libraries.actor import private
 from leapp.models import FirewalldFacts
 from leapp.tags import ApplicationsPhaseTag, IPUWorkflowTag
-from leapp.libraries.actor import private
-
-import xml.etree.ElementTree as ElementTree
 
 
 class FirewalldUpdateLockdownWhitelist(Actor):

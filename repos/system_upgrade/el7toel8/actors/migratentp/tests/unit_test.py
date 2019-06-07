@@ -1,19 +1,12 @@
 from leapp.libraries.actor import library
 from leapp.libraries.common import reporting
-
-
-class report_generic_mocked(object):
-    def __init__(self):
-        self.called = 0
-
-    def __call__(self, **report_fields):
-        self.called += 1
-        self.report_fields = report_fields
+from leapp.libraries.common.testutils import report_generic_mocked
 
 
 class extract_tgz64_mocked(object):
     def __init__(self):
         self.called = 0
+        self.s = None
 
     def __call__(self, s):
         self.called += 1
@@ -33,6 +26,8 @@ class enable_service_mocked(object):
 class write_file_mocked(object):
     def __init__(self):
         self.called = 0
+        self.name = None
+        self.content = None
 
     def __call__(self, name, content):
         self.called += 1
@@ -44,6 +39,7 @@ class ntp2chrony_mocked(object):
     def __init__(self, lines):
         self.called = 0
         self.ignored_lines = lines
+        self.args = None
 
     def __call__(self, *args):
         self.called += 1
@@ -67,7 +63,7 @@ def test_migration(monkeypatch):
 
         library.migrate_ntp(ntp_services, 'abcdef')
 
-        if len(ntp_services) > 0:
+        if ntp_services:
             assert reporting.report_generic.called == 1
             if ignored_lines > 0:
                 assert 'configuration partially migrated to chrony' in \

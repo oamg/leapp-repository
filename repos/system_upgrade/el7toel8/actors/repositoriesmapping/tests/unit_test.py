@@ -3,27 +3,9 @@ import pytest
 from leapp.exceptions import StopActorExecution
 from leapp.libraries.actor.library import scan_repositories
 from leapp.libraries.common import reporting
+from leapp.libraries.common.testutils import produce_mocked, report_generic_mocked
 from leapp.libraries.stdlib import api
 from leapp.models import RepositoriesMap, RepositoryMap
-
-
-class produce_mocked(object):
-    def __init__(self):
-        self.called = 0
-        self.model_instances = []
-
-    def __call__(self, *model_instances):
-        self.called += 1
-        self.model_instances.append(model_instances[0])
-
-
-class report_generic_mocked(object):
-    def __init__(self):
-        self.called = 0
-
-    def __call__(self, **report_fields):
-        self.called += 1
-        self.report_fields = report_fields
 
 
 def test_scan_valid_file(monkeypatch):

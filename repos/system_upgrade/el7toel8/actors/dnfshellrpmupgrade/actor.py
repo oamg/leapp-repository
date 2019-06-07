@@ -12,15 +12,15 @@ from leapp.models import FilteredRpmTransactionTasks, UsedTargetRepositories, Tr
 from leapp.tags import RPMUpgradePhaseTag, IPUWorkflowTag
 
 
-def _logging_handler(fd_info, buffer):
+def _logging_handler(fd_info, a_buffer):
     '''Custom log handler to always show DNF stdout to console and stderr only in DEBUG mode'''
     (_unused, fd_type) = fd_info
 
     if fd_type == STDOUT:
-        sys.stdout.write(buffer)
+        sys.stdout.write(a_buffer)
     else:
         if is_debug():
-            sys.stderr.write(buffer)
+            sys.stderr.write(a_buffer)
 
 
 class DnfShellRpmUpgrade(Actor):

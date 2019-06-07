@@ -18,7 +18,7 @@ def test_actor_with_irssi_package(current_actor_context):
 
     current_actor_context.feed(create_modulesfacts(installed_rpm=with_irssi))
     current_actor_context.run()
-    assert len(current_actor_context.consume(Report)) > 0
+    assert current_actor_context.consume(Report)
 
 
 def test_actor_without_irssi_package(current_actor_context):

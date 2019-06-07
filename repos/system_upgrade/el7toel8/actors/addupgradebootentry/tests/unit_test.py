@@ -6,11 +6,17 @@ from leapp.models import BootContent
 
 
 class run_mocked(object):
+    def __init__(self):
+        self.args = None
+
     def __call__(self, args, split=False):
         self.args = args
 
 
 class write_to_file_mocked(object):
+    def __init__(self):
+        self.content = None
+
     def __call__(self, filename, content):
         self.content = content
 

@@ -43,7 +43,7 @@ def scan_repositories(path):
             except ModelViolationError as err:
                 inhibit_upgrade('Repositories map file is invalid ({})'.format(err))
 
-    if len(repositories) == 0:
+    if not repositories:
         inhibit_upgrade('Repositories map file is invalid ({})'.format(path))
 
     api.produce(RepositoriesMap(repositories=repositories))

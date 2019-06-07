@@ -19,7 +19,7 @@ class OpenSshPermitRootLoginCheck(Actor):
 
     def process(self):
         for config in self.consume(OpenSshConfig):
-            if len(config.permit_root_login) == 0:
+            if not config.permit_root_login:
                 # TODO find out whether the file was modified and will be
                 # replaced by the update. If so, this message is bogus
                 report_with_remediation(

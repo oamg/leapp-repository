@@ -2,15 +2,7 @@ from leapp.libraries.actor.library import (MIN_AVAIL_BYTES_FOR_BOOT,
                                            check_avail_space_on_boot,
                                            inhibit_upgrade)
 from leapp.libraries.common import reporting
-
-
-class report_generic_mocked(object):
-    def __init__(self):
-        self.called = 0
-
-    def __call__(self, **report_fields):
-        self.called += 1
-        self.report_fields = report_fields
+from leapp.libraries.common.testutils import report_generic_mocked
 
 
 class fake_get_avail_bytes_on_boot(object):

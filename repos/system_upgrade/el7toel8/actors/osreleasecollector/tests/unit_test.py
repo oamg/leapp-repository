@@ -1,25 +1,7 @@
 from leapp.libraries.actor.library import get_os_release_info
 from leapp.libraries.common import reporting
+from leapp.libraries.common.testutils import produce_mocked, report_generic_mocked
 from leapp.models import OSReleaseFacts
-
-
-class produce_mocked(object):
-    def __init__(self):
-        self.called = 0
-        self.model_instances = []
-
-    def __call__(self, *model_instances):
-        self.called += 1
-        self.model_instances.append(model_instances[0])
-
-
-class report_generic_mocked(object):
-    def __init__(self):
-        self.called = 0
-
-    def __call__(self, **report_fields):
-        self.called += 1
-        self.report_fields = report_fields
 
 
 def test_get_os_release_info(monkeypatch):
@@ -27,7 +9,7 @@ def test_get_os_release_info(monkeypatch):
     monkeypatch.setattr(reporting, 'report_generic', report_generic_mocked())
 
     expected = OSReleaseFacts(
-        id='rhel',
+        release_id='rhel',
         name='Red Hat Enterprise Linux Server',
         pretty_name='Red Hat Enterprise Linux',
         version='7.6 (Maipo)',

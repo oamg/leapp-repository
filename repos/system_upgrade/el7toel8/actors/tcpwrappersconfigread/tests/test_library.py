@@ -123,7 +123,7 @@ def test_get_daemon_lists_in_file():
 def test_get_daemon_lists_in_file_nonexistent():
     reader = MockFileReader()
     daemon_lists = library._get_daemon_lists_in_file('/etc/hosts.allow', read_func=reader.read)
-    assert len(daemon_lists) == 0
+    assert not daemon_lists
 
 
 def test_get_daemon_lists():
@@ -144,7 +144,7 @@ def test_get_daemon_lists():
 def test_get_daemon_lists_nonexistent_config():
     reader = MockFileReader()
     daemon_lists = library._get_daemon_lists(read_func=reader.read)
-    assert len(daemon_lists) == 0
+    assert not daemon_lists
 
 
 def test_get_tcp_wrappers_facts():
@@ -165,4 +165,4 @@ def test_get_tcp_wrappers_facts():
 def test_get_tcp_wrappers_facts_nonexistent_config():
     reader = MockFileReader()
     facts = library.get_tcp_wrappers_facts(read_func=reader.read)
-    assert len(facts.daemon_lists) == 0
+    assert not facts.daemon_lists

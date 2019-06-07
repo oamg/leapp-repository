@@ -17,7 +17,7 @@ def get_os_release_info(path):
         return None
 
     return OSReleaseFacts(
-        id=data.get('ID', '').strip('"'),
+        release_id=data.get('ID', '').strip('"'),
         name=data.get('NAME', '').strip('"'),
         pretty_name=data.get('PRETTY_NAME', '').strip('"'),
         version=data.get('VERSION', '').strip('"'),

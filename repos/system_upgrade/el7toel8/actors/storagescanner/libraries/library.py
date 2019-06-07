@@ -178,7 +178,7 @@ def _get_systemd_mount_info():
     ''' Collect storage info from systemd-mount command '''
     for entry in _get_cmd_output(['systemd-mount', '--list'], ' ', 7):
         # We need to filter the entry because there is a ton of whitespace.
-        node, path, model, wwn, fs_type, label, uuid = list(filter(lambda x: x != '', entry))
+        node, path, model, wwn, fs_type, label, uuid = [x for x in entry if x != '']
         if node == "NODE":
             # First row of the "systemd-mount --list" output is a header.
             # Just skip it.

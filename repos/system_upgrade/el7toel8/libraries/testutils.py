@@ -1,6 +1,26 @@
 import os
 
 
+class produce_mocked(object):
+    def __init__(self):
+        self.called = 0
+        self.model_instances = []
+
+    def __call__(self, *model_instances):
+        self.called += 1
+        self.model_instances.append(model_instances[0])
+
+
+class report_generic_mocked(object):
+    def __init__(self):
+        self.called = 0
+        self.report_fields = None
+
+    def __call__(self, **report_fields):
+        self.called += 1
+        self.report_fields = report_fields
+
+
 def make_IOError(error):
     '''
     Create an IOError instance
