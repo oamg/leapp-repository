@@ -42,6 +42,7 @@ build() {
         --confdir /var/empty \
         --force \
         --add sys-upgrade \
+        --install "/usr/lib/systemd/system/debug-shell.service /usr/lib/systemd/system-generators/systemd-debug-generator" \
         --no-hostonly \
         --nolvmconf \
         --nomdadmconf \
