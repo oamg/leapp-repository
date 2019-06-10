@@ -104,3 +104,6 @@ ENV/
 # All kinds of vim stuff
 **/*~
 *.sw[a-z]
+
+# visual studio code configuration
+.vscode
