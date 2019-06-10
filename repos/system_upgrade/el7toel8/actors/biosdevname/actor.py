@@ -1,10 +1,9 @@
 import re
 
-import pyudev
-
 from leapp.actors import Actor
 from leapp.models import PersistentNetNamesFacts, KernelCmdlineArg
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
+import pyudev
 
 
 class Biosdevname(Actor):

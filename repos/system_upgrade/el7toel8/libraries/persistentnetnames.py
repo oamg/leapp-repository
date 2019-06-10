@@ -1,7 +1,6 @@
-import pyudev
-
 from leapp.models import PCIAddress, Interface
 from leapp.libraries.stdlib import api
+import pyudev
 
 udev_context = pyudev.Context()
 

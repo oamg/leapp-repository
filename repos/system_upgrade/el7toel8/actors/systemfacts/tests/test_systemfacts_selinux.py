@@ -1,7 +1,7 @@
-import selinux
-
 from leapp.libraries.actor.systemfacts import get_selinux_status
 from leapp.models import SELinuxFacts
+import selinux
+
 
 # FIXME: create valid tests...
 
