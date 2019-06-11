@@ -12,12 +12,12 @@ def add_boot_entry():
     kernel_dst_path, initram_dst_path = get_boot_file_paths()
     run([
         '/usr/sbin/grubby',
-        '--add-kernel={0}'.format(kernel_dst_path),
-        '--initrd={0}'.format(initram_dst_path),
-        '--title="RHEL Upgrade Initramfs"',
+        '--add-kernel', '{0}'.format(kernel_dst_path),
+        '--initrd', '{0}'.format(initram_dst_path),
+        '--title', 'RHEL Upgrade Initramfs',
         '--copy-default',
         '--make-default',
-        '--args="{DEBUG} enforcing=0 rd.plymouth=0 plymouth.enable=0"'.format(DEBUG=debug)
+        '--args', '{DEBUG} enforcing=0 rd.plymouth=0 plymouth.enable=0'.format(DEBUG=debug)
     ])
 
 
