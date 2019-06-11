@@ -30,9 +30,9 @@ def test_add_boot_entry(monkeypatch):
 
     library.add_boot_entry()
 
-    assert ' '.join(library.run.args) == ('/usr/sbin/grubby --add-kernel=/abc --initrd=/def --title="RHEL'
-                                          ' Upgrade Initramfs" --copy-default --make-default --args="debug'
-                                          ' enforcing=0 rd.plymouth=0 plymouth.enable=0"')
+    assert ' '.join(library.run.args) == ('/usr/sbin/grubby --add-kernel /abc --initrd /def --title RHEL'
+                                          ' Upgrade Initramfs --copy-default --make-default --args debug'
+                                          ' enforcing=0 rd.plymouth=0 plymouth.enable=0')
 
 
 def test_get_boot_file_paths(monkeypatch):
