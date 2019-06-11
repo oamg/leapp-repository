@@ -1,10 +1,9 @@
 from leapp.actors import Actor
 from leapp.models import FirewalldFacts
-from leapp.reporting import Report
-from leapp.libraries.common.reporting import report_with_remediation
-from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
-
 from leapp.libraries.actor import private
+from leapp.libraries.common.reporting import report_with_remediation
+from leapp.reporting import Report
+from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
 class CheckFirewalld(Actor):

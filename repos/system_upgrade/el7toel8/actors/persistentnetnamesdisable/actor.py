@@ -1,8 +1,7 @@
 import re
 
-from leapp.libraries.common import reporting
-
 from leapp.actors import Actor
+from leapp.libraries.common import reporting
 from leapp.models import PersistentNetNamesFacts, KernelCmdlineArg
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 

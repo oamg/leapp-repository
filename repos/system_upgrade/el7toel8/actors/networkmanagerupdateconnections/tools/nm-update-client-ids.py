@@ -1,5 +1,7 @@
 from __future__ import print_function
+
 import sys
+
 import gi
 gi.require_version('NM', '1.0')
 from gi.repository import NM  # noqa: F402; pylint: disable=wrong-import-position

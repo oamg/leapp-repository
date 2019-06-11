@@ -1,8 +1,8 @@
+from collections import namedtuple
 import os
 import shutil
 import sys
 
-from collections import namedtuple
 from six.moves.urllib.error import URLError
 from six.moves.urllib.request import urlopen
 

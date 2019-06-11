@@ -25,6 +25,7 @@ disable=
  bad-continuation,
  invalid-name,
  missing-docstring,
+ wrong-import-order,
 # "R" Refactor recommendations
  duplicate-code,
  no-self-use,
