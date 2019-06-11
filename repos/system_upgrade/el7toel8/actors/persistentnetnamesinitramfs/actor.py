@@ -1,6 +1,5 @@
-from leapp.libraries.common import persistentnetnames
-
 from leapp.actors import Actor
+from leapp.libraries.common import persistentnetnames
 from leapp.models import PersistentNetNamesFactsInitramfs
 from leapp.tags import LateTestsPhaseTag, IPUWorkflowTag
 

@@ -1,6 +1,7 @@
 import os
 
 import pytest
+
 from leapp.exceptions import StopActorExecution
 from leapp.libraries.actor import library
 from leapp.libraries.common import reporting

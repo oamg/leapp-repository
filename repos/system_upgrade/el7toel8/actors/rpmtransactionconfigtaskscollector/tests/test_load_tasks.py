@@ -1,4 +1,5 @@
 import logging
+
 from leapp.libraries.actor.scanner import load_tasks_file, load_tasks
 
 
