@@ -9,6 +9,7 @@ from leapp.libraries.stdlib import run, CalledProcessError
 
 WORKING_DIRECTORY = '/tmp/selinux/'
 
+
 class SELinuxApplyCustom(Actor):
     '''
     Re-apply SELinux customizations from RHEL-7 installation
@@ -52,13 +53,13 @@ class SELinuxApplyCustom(Actor):
                     continue
 
                 try:
-                    run([
-                        'semodule',
-                        '-X',
-                        str(module.priority),
-                        '-i',
-                        cil_filename]
-                    )
+                    run(['semodule',
+                         '-X',
+                         str(module.priority),
+                         '-i',
+                         cil_filename
+                         ]
+                        )
                 except CalledProcessError as e:
                     self.log.info("Error installing module: %s", str(e))
                     # TODO - save the failed module to /etc/selinux ?

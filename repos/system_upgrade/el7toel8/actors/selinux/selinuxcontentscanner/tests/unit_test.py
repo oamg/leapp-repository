@@ -1,6 +1,7 @@
 from leapp.libraries.stdlib import run, CalledProcessError
 from leapp.libraries.actor import library
 
+
 class run_mocked(object):
     def __init__(self):
         self.args = []
@@ -12,27 +13,28 @@ class run_mocked(object):
 
         if self.args == ['semodule', '-lfull']:
             stdout = ["400 permissive_abrt_t cil",
-                     "400   zebra       cil",
-                     "300 zebra       cil",
-                     "100 vpn               pp  ",
-                     "099 zebra             cil     ",
-                     "100   minissdpd         pp"]
+                      "400   zebra       cil",
+                      "300 zebra       cil",
+                      "100 vpn               pp  ",
+                      "099 zebra             cil     ",
+                      "100   minissdpd         pp"]
 
         elif self.args == ['semanage', 'export']:
             stdout = ["boolean -D",
-                     "login -D",
-                     "interface -D",
-                     "user -D",
-                     "port -D",
-                     "node -D",
-                     "fcontext -D",
-                     "module -D",
-                     "boolean -m -1 cron_can_relabel",
-                     "port -a -t http_port_t -p udp 81",
-                     "fcontext -a -f a -t httpd_sys_content_t '/web(/.*)?'",
-                     "fcontext -a -f a -t ganesha_var_run_t '/ganesha(/.*)?'"]
+                      "login -D",
+                      "interface -D",
+                      "user -D",
+                      "port -D",
+                      "node -D",
+                      "fcontext -D",
+                      "module -D",
+                      "boolean -m -1 cron_can_relabel",
+                      "port -a -t http_port_t -p udp 81",
+                      "fcontext -a -f a -t httpd_sys_content_t '/web(/.*)?'",
+                      "fcontext -a -f a -t ganesha_var_run_t '/ganesha(/.*)?'"]
 
         return {'stdout': stdout}
+
 
 class run_mocked_fail(object):
     def __init__(self):
@@ -55,6 +57,7 @@ def test_listSELinuxModules(monkeypatch):
     monkeypatch.setattr(library, "run", run_mocked_fail())
 
     assert library.listSELinuxModules() == []
+
 
 def test_getSELinuxCustomizations(monkeypatch):
     monkeypatch.setattr(library, "run", run_mocked())

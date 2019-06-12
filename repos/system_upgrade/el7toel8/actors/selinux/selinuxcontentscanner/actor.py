@@ -1,7 +1,6 @@
 from leapp.actors import Actor
 from leapp.models import SELinuxModules, SELinuxCustom, SELinuxFacts, SELinuxRequestRPMs, RpmTransactionTasks
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
-from leapp.libraries.stdlib import run, CalledProcessError
 from leapp.libraries.actor import library
 
 

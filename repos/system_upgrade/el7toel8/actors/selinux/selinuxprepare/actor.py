@@ -1,8 +1,8 @@
 from leapp.actors import Actor
 from leapp.models import SELinuxModules, SELinuxCustom
 from leapp.tags import PreparationPhaseTag, IPUWorkflowTag
-from leapp.libraries.stdlib import run, CalledProcessError
 from leapp.libraries.actor import library
+
 
 class SELinuxPrepare(Actor):
     '''
