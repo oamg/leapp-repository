@@ -1,5 +1,6 @@
 from leapp.libraries.stdlib import api, run, CalledProcessError
-from leapp.models import SELinuxModules, SELinuxCustom
+from leapp.models import SELinuxModules
+
 
 def removeSemanageCustomizations():
     # remove SELinux customizations done by semanage -- to be reintroduced after the upgrade
@@ -14,6 +15,7 @@ def removeSemanageCustomizations():
         except CalledProcessError:
             continue
 
+
 def removeCustomModules():
     # remove custom SElinux modules - to be reinstalled after the upgrade
     for semodules in api.consume(SELinuxModules):
@@ -21,13 +23,12 @@ def removeCustomModules():
         for module in semodules.modules:
             api.current_logger().info("Removing %s on priority %d.", module.name, module.priority)
             try:
-                run([
-                    'semodule',
-                    '-X',
-                    str(module.priority),
-                    '-r',
-                    module.name]
-                )
+                run(['semodule',
+                     '-X',
+                     str(module.priority),
+                     '-r',
+                     module.name]
+                    )
             except CalledProcessError as e:
                 api.current_logger().info("Failed to remove module %s on priority %d: %s",
                                           module.name, module.priority, str(e))

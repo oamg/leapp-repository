@@ -1,5 +1,7 @@
 import os
 
+import pytest
+
 from leapp.snactor.fixture import current_actor_context
 from leapp.models import SELinuxModule, SELinuxModules, SELinuxCustom, SELinuxFacts, SELinuxRequestRPMs
 from leapp.libraries.stdlib import api, run, CalledProcessError
@@ -15,16 +17,18 @@ test_modules = [
 ]
 
 semanage_commands = [
-['fcontext', '-t', 'ganesha_var_run_t', "'/ganesha(/.*)?'"],
-['fcontext', '-t', 'httpd_sys_content_t', "'/web(/.*)?'"],
-['port', '-t', 'http_port_t', '-p', 'udp', '81']
+    ['fcontext', '-t', 'ganesha_var_run_t', "'/ganesha(/.*)?'"],
+    ['fcontext', '-t', 'httpd_sys_content_t', "'/web(/.*)?'"],
+    ['port', '-t', 'http_port_t', '-p', 'udp', '81']
 ]
+
 
 def findModuleSemodule(semodule_lfull, name, priority):
     for line in semodule_lfull:
         if name in line and priority in line:
             return line
     return None
+
 
 def findSemanageRule(rules, rule):
     for r in rules:
@@ -35,11 +39,13 @@ def findSemanageRule(rules, rule):
             return r
     return None
 
+
+@pytest.mark.skip(reason='Test disabled because it would modify the system')
 def test_SELinuxApplyCustom(current_actor_context):
 
     semodule_list = [SELinuxModule(name=module, priority=int(prio),
                                    content="(allow domain proc_type (file (getattr open read)))", removed=[])
-                                   for (prio, module) in test_modules]
+                     for (prio, module) in test_modules]
 
     commands = [" ".join([c[0], "-a"] + c[1:]) for c in semanage_commands[1:]]
     semanage_removed = [" ".join([semanage_commands[0][0], "-a"] + semanage_commands[0][1:])]
@@ -68,7 +74,10 @@ def test_SELinuxApplyCustom(current_actor_context):
     for command in semanage_commands[1:-1]:
         assert findSemanageRule(semanage_export, command)
 
-def teardown():
+
+# Test disabled because it's setup and teardown would modify the system
+# Remove "_" before re-activation
+def teardown_():
     for priority, module in test_modules:
         try:
             run(["semodule", "-X", priority, "-r", module])

@@ -1,5 +1,7 @@
 import os
 
+import pytest
+
 from leapp.snactor.fixture import current_actor_context
 from leapp.models import SELinuxModule, SELinuxModules, SELinuxCustom, SELinuxFacts, SELinuxRequestRPMs
 from leapp.libraries.stdlib import api, run, CalledProcessError
@@ -14,15 +16,18 @@ test_modules = [
 ]
 
 semanage_commands = [
-['fcontext', '-t', 'httpd_sys_content_t', '"/web(/.*)?"'],
-['fcontext', '-t', 'ganesha_var_run_t', '"/ganesha(/.*)?"'],
-['port', '-t', 'http_port_t', '-p', 'udp', '81'],
-['permissive', 'abrt_t']
+    ['fcontext', '-t', 'httpd_sys_content_t', '"/web(/.*)?"'],
+    ['fcontext', '-t', 'ganesha_var_run_t', '"/ganesha(/.*)?"'],
+    ['port', '-t', 'http_port_t', '-p', 'udp', '81'],
+    ['permissive', 'abrt_t']
 ]
 
 testmoduledir = os.path.join(os.getcwd(), "tests/mock_modules/")
 
-def setup():
+
+# Test disabled because it's setup and teardown would modify the system
+# Remove "_" before re-activation
+def setup_():
     for priority, module in test_modules:
         try:
             semodule = run(["semodule", "-X", priority, "-i", os.path.join(testmoduledir, module + ".cil")])
@@ -39,11 +44,13 @@ def setup():
             api.current_logger().warning("Error applying selinux customizations %s", str(e.stderr))
             continue
 
+
 def findModule(selinuxmodules, name, priority):
     for module in selinuxmodules.modules:
         if module.name == name and module.priority == int(priority):
             return module
     return None
+
 
 def findSemanageRule(rules, rule):
     for r in rules:
@@ -54,6 +61,8 @@ def findSemanageRule(rules, rule):
             return r
     return None
 
+
+@pytest.mark.skip(reason="Test disabled because it's setup and teardown would modify the system")
 def test_SELinuxContentScanner(current_actor_context):
 
     expected_data = {'policy': 'targeted',
@@ -89,7 +98,9 @@ def test_SELinuxContentScanner(current_actor_context):
     assert findSemanageRule(custom.commands, semanage_commands[2])
 
 
-def teardown():
+# Test disabled because it's setup and teardown would modify the system
+# Remove "_" before re-activation
+def teardown_():
     for command in semanage_commands[:-1]:
         try:
             run(["semanage", command[0], "-d"] + command[1:])

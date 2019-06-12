@@ -3,6 +3,7 @@ from leapp.libraries.actor import library
 from leapp.libraries.stdlib import api
 from leapp.models import SELinuxModules, SELinuxModule
 
+
 class run_mocked(object):
     def __init__(self):
         self.args = []
@@ -23,19 +24,18 @@ class run_mocked(object):
 
         return {'stdout': stdout}
 
+
 def test_removeCustomModules(monkeypatch):
     mock_modules = {"a": 99,
                     "b": 300,
                     "c": 400,
-                    "abrt":190}
+                    "abrt": 190}
 
     def consume_SELinuxModules_mocked(*models):
 
         semodule_list = [SELinuxModule(name=k, priority=mock_modules[k], content="", removed=[])
-                                    for k in mock_modules]
-
+                         for k in mock_modules]
         yield SELinuxModules(modules=semodule_list)
-
 
     monkeypatch.setattr(api, "consume", consume_SELinuxModules_mocked)
     monkeypatch.setattr(library, "run", run_mocked())

@@ -1,6 +1,7 @@
 import os
 import re
 from shutil import rmtree
+
 from leapp.libraries.stdlib import api, run, CalledProcessError
 from leapp.models import SELinuxModule
 
@@ -27,6 +28,7 @@ CONTAINER_TYPES = ["container_connect_any", "container_runtime_t", "container_ru
                    "docker_var_lib_t", "container_domain", "container_net_domain"]
 
 WORKING_DIRECTORY = '/tmp/selinux/'
+
 
 def checkModule(name):
     '''
@@ -61,7 +63,7 @@ def listSELinuxModules():
         # "<priority> <module name>    <module type - pp/cil> "
         m = re.match(r'([0-9]+)\s+([\w-]+)\s+([\w-]+)\s*\Z', module)
         if not m:
-            #invalid output of "semodule -lfull"
+            # invalid output of "semodule -lfull"
             api.current_logger().info('Invalid output of "semodule -lfull": %s', module)
             continue
         modules.append((m.group(2), m.group(1)))
@@ -165,6 +167,7 @@ def getSELinuxModules():
     rmtree(WORKING_DIRECTORY, ignore_errors=True)
 
     return (semodule_list, retain_rpms, install_rpms)
+
 
 def getSELinuxCustomizations():
     '''
