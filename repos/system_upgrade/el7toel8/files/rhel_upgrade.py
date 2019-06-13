@@ -1,11 +1,20 @@
 # plugin inspired by "system_upgrade.py" from rpm-software-management
+from __future__ import print_function
 
 import json
 
 import dnf
 import dnf.cli
 
-CMDS = ['download', 'upgrade']
+CMDS = ['download', 'upgrade', 'check']
+
+
+class DoNotDownload(Exception):
+    pass
+
+
+def _do_not_download_packages(packages, progress=None, total=None):
+    raise DoNotDownload()
 
 
 class RhelUpgradeCommand(dnf.cli.Command):
@@ -31,10 +40,10 @@ class RhelUpgradeCommand(dnf.cli.Command):
 
     def configure(self):
         self.cli.demands.root_user = True
-        self.cli.demands.resolving = True
+        self.cli.demands.resolving = self.opts.tid[0] != 'check'
         self.cli.demands.available_repos = True
         self.cli.demands.sack_activation = True
-        self.cli.demands.cacheonly = True if self.opts.tid[0] == 'upgrade' else False
+        self.cli.demands.cacheonly = self.opts.tid[0] == 'upgrade'
         self.cli.demands.allow_erasing = self.plugin_data['dnf_conf']['allow_erasing']
         self.base.conf.protected_packages = []
         self.base.conf.best = self.plugin_data['dnf_conf']['best']
@@ -42,6 +51,9 @@ class RhelUpgradeCommand(dnf.cli.Command):
         self.base.conf.gpgcheck = self.plugin_data['dnf_conf']['gpgcheck']
         self.base.conf.debug_solver = self.plugin_data['dnf_conf']['debugsolver']
         self.base.conf.module_platform_id = self.plugin_data['dnf_conf']['platform_id']
+        installroot = self.plugin_data['dnf_conf'].get('installroot')
+        if installroot:
+            self.base.conf.installroot = installroot
         if self.plugin_data['dnf_conf']['test_flag'] and self.opts.tid[0] == 'download':
             self.base.conf.tsflags.append("test")
 
@@ -74,6 +86,16 @@ class RhelUpgradeCommand(dnf.cli.Command):
                 self.base.upgrade(pkg.name)
 
         self.base.distro_sync()
+
+        if self.opts.tid[0] == 'check':
+            self.base.resolve(allow_erasing=self.cli.demands.allow_erasing)
+
+            # We are doing this to avoid downloading the packages in the check phase
+            self.base.download_packages = _do_not_download_packages
+            try:
+                self.base.do_transaction()
+            except DoNotDownload:
+                print('Check completed.')
 
 
 class RhelUpgradePlugin(dnf.Plugin):
