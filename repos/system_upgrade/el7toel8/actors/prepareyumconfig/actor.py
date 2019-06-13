@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.libraries.actor import library
+from leapp.libraries.common import utils
 from leapp.tags import IPUWorkflowTag, PreparationPhaseTag
 
 
@@ -19,4 +19,4 @@ class Prepareyumconfig(Actor):
     tags = (IPUWorkflowTag, PreparationPhaseTag)
 
     def process(self):
-        library.prepare_yum_config()
+        utils.apply_yum_workaround()
