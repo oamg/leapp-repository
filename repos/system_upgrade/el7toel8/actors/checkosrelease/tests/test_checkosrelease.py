@@ -1,10 +1,46 @@
+import os
+
+import pytest
+
+from leapp.exceptions import StopActorExecution, StopActorExecutionError
+from leapp.libraries.actor import library
+from leapp.libraries.common import reporting
+from leapp.libraries.common.testutils import produce_mocked, report_generic_mocked
+from leapp.libraries.stdlib import api
 from leapp.models import OSReleaseFacts
-from leapp.reporting import Report
-from leapp.snactor.fixture import current_actor_context
+
+SUPPORTED_VERSION = {'rhel': ['7.5', '7.6']}
 
 
-def create_osrelease(release_id, version_id=None):
-    version_id = version_id or '42'
+def test_skip_check(monkeypatch):
+    monkeypatch.setattr(os, "getenv", lambda _unused: True)
+    monkeypatch.setattr(reporting, "report_generic", report_generic_mocked())
+
+    assert library.skip_check()
+    assert reporting.report_generic.called == 1
+    assert 'Skipped OS release check' in reporting.report_generic.report_fields['title']
+    assert reporting.report_generic.report_fields['severity'] == 'high'
+    assert 'flags' not in reporting.report_generic.report_fields
+
+
+def test_no_skip_check(monkeypatch):
+    monkeypatch.setattr(os, "getenv", lambda _unused: False)
+    monkeypatch.setattr(reporting, "report_generic", report_generic_mocked())
+
+    assert not library.skip_check()
+    assert reporting.report_generic.called == 0
+
+
+def test_no_facts(monkeypatch):
+    def os_release_mocked(*models):
+        yield None
+
+    monkeypatch.setattr(api, "consume", os_release_mocked)
+    with pytest.raises(StopActorExecutionError):
+        library.check_os_version(SUPPORTED_VERSION)
+
+
+def create_os_release(release_id, version_id=7.6):
     return OSReleaseFacts(
         release_id=release_id,
         name='test',
@@ -12,47 +48,67 @@ def create_osrelease(release_id, version_id=None):
         version='Some Test {}'.format(version_id),
         version_id=version_id,
         variant=None,
-        variant_id=None
+        variant_id=None,
     )
 
 
-def test_not_supported_id(current_actor_context):
-    current_actor_context.feed(create_osrelease(release_id='not_supported_id'))
-    current_actor_context.run()
-    assert current_actor_context.consume(Report)
-    assert current_actor_context.consume(Report)[0].title == 'Unsupported OS id'
-    assert 'inhibitor' in current_actor_context.consume(Report)[0].flags
+def test_not_supported_id(monkeypatch):
+    def os_release_mocked(*models):
+        yield create_os_release('rhel', '7.7')
+
+    monkeypatch.setattr(api, "consume", os_release_mocked)
+    monkeypatch.setattr(reporting, "report_generic", report_generic_mocked())
+
+    library.check_os_version(SUPPORTED_VERSION)
+    assert reporting.report_generic.called == 1
+    assert 'Unsupported OS version' in reporting.report_generic.report_fields['title']
+    assert 'flags' in reporting.report_generic.report_fields
+    assert 'inhibitor' in reporting.report_generic.report_fields['flags']
 
 
-def test_not_supported_major_version(current_actor_context):
-    current_actor_context.feed(create_osrelease(release_id='rhel', version_id='6.6'))
-    current_actor_context.run()
-    assert current_actor_context.consume(Report)
-    assert current_actor_context.consume(Report)[0].title == 'Unsupported OS version'
-    assert 'inhibitor' in current_actor_context.consume(Report)[0].flags
+def test_not_supported_release(monkeypatch):
+    def os_release_mocked(*models):
+        yield create_os_release('unsupported', SUPPORTED_VERSION['rhel'][0])
+
+    monkeypatch.setattr(api, "consume", os_release_mocked)
+    monkeypatch.setattr(reporting, "report_generic", report_generic_mocked())
+
+    library.check_os_version(SUPPORTED_VERSION)
+    assert reporting.report_generic.called == 1
+    assert 'Unsupported OS' in reporting.report_generic.report_fields['title']
+    assert 'flags' in reporting.report_generic.report_fields
+    assert 'inhibitor' in reporting.report_generic.report_fields['flags']
 
 
-def test_not_supported_minor_version(current_actor_context):
-    current_actor_context.feed(create_osrelease(release_id='rhel', version_id='7.5'))
-    current_actor_context.run()
-    assert current_actor_context.consume(Report)
-    assert current_actor_context.consume(Report)[0].title == 'Unsupported OS version'
-    assert 'inhibitor' in current_actor_context.consume(Report)[0].flags
+def test_supported_release(monkeypatch):
+    def os_mocked_first_release(*models):
+        yield create_os_release('rhel', SUPPORTED_VERSION['rhel'][0])
+
+    def os_mocked_second_release(*models):
+        yield create_os_release('rhel', SUPPORTED_VERSION['rhel'][1])
+
+    monkeypatch.setattr(api, "consume", os_mocked_first_release)
+    monkeypatch.setattr(reporting, "report_generic", report_generic_mocked())
+
+    library.check_os_version(SUPPORTED_VERSION)
+    monkeypatch.setattr(api, "consume", os_mocked_second_release)
+    library.check_os_version(SUPPORTED_VERSION)
+    assert reporting.report_generic.called == 0
 
 
-def test_supported_major_version(current_actor_context):
-    current_actor_context.feed(create_osrelease(release_id='rhel', version_id='8.5'))
-    current_actor_context.run()
-    assert not current_actor_context.consume(Report)
+def test_invalid_versions(monkeypatch):
+    def os_release_mocked(*models):
+        yield create_os_release('rhel', '7.6')
 
+    monkeypatch.setattr(api, "consume", os_release_mocked)
+    monkeypatch.setattr(reporting, "report_generic", report_generic_mocked())
 
-def test_supported_minor_version(current_actor_context):
-    current_actor_context.feed(create_osrelease(release_id='rhel', version_id='7.7'))
-    current_actor_context.run()
-    assert not current_actor_context.consume(Report)
+    with pytest.raises(StopActorExecution):
+        library.check_os_version('string')
+    with pytest.raises(StopActorExecution):
+        library.check_os_version(None)
 
-
-def test_same_supported_release(current_actor_context):
-    current_actor_context.feed(create_osrelease(release_id='rhel', version_id='7.6'))
-    current_actor_context.run()
-    assert not current_actor_context.consume(Report)
+    library.check_os_version({})
+    assert reporting.report_generic.called == 1
+    with pytest.raises(StopActorExecutionError):
+        library.check_os_version({'rhel': None})
