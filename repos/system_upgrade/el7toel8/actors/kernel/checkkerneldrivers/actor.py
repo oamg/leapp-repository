@@ -7,6 +7,9 @@ from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 class CheckKernelModules(Actor):
     """
+    TODO:
+    - make sure we have only drivers in blacklist
+
     Actor checks if any loaded RHEL 7 kernel module is missing in the RHEL 8.
     If yes, the upgrade process will be inhibited.
 
