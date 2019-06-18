@@ -1,6 +1,7 @@
 from leapp.actors import Actor
 from leapp.models import Report, OpenSshConfig
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
+from leapp.libraries.stdlib import api
 from leapp.libraries.common.reporting import report_with_remediation
 
 
@@ -29,13 +30,17 @@ class OpenSshAlgorithmsCheck(Actor):
         ]
         found_ciphers = []
         found_macs = []
-        for config in self.consume(OpenSshConfig):
-            for cipher in removed_ciphers:
-                if config.ciphers and cipher in config.ciphers:
-                    found_ciphers.append(cipher)
-            for mac in removed_macs:
-                if config.macs and mac in config.macs:
-                    found_macs.append(mac)
+        openssh_messages = self.consume(OpenSshConfig)
+        config = next(openssh_messages)
+        if list(openssh_messages):
+            api.current_logger().warning('Unexpectedly received more than one OpenSshConfig message.')
+
+        for cipher in removed_ciphers:
+            if config.ciphers and cipher in config.ciphers:
+                found_ciphers.append(cipher)
+        for mac in removed_macs:
+            if config.macs and mac in config.macs:
+                found_macs.append(mac)
 
         if found_ciphers:
             report_with_remediation(
