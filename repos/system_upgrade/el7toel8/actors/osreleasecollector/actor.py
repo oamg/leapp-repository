@@ -18,4 +18,4 @@ class OSReleaseCollector(Actor):
     tags = (IPUWorkflowTag, FactsPhaseTag,)
 
     def process(self):
-        self.produce(library.get_os_release_info('/etc/os-release'))
+        self.produce(library.get_os_release_model('/etc/os-release'))
