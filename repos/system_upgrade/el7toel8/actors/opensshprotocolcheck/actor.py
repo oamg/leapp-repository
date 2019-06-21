@@ -1,6 +1,7 @@
 from leapp.actors import Actor
 from leapp.models import Report, OpenSshConfig
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
+from leapp.libraries.stdlib import api
 from leapp.libraries.common.reporting import report_generic
 
 
@@ -19,9 +20,12 @@ class OpenSshProtocolCheck(Actor):
     tags = (ChecksPhaseTag, IPUWorkflowTag, )
 
     def process(self):
-        for config in self.consume(OpenSshConfig):
-            if not config.protocol:
-                continue
+        openssh_messages = self.consume(OpenSshConfig)
+        config = next(openssh_messages)
+        if list(openssh_messages):
+            api.current_logger().warning('Unexpectedly received more than one OpenSshConfig message.')
+
+        if config.protocol:
             report_generic(
                 title='OpenSSH configured with removed configuration Protocol',
                 summary='OpenSSH is configured with removed configuration '

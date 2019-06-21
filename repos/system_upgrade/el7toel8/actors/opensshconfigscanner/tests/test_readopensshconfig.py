@@ -3,7 +3,7 @@ from leapp.libraries.actor.readopensshconfig import parse_config, \
     produce_config, line_empty, parse_config_modification
 
 
-def test_line_empty(current_actor_libraries):
+def test_line_empty():
     assert line_empty("".strip()) is True
     assert line_empty("     ".strip()) is True
     assert line_empty("   # comment".strip()) is True
@@ -12,7 +12,7 @@ def test_line_empty(current_actor_libraries):
     assert line_empty("    option".strip()) is False
 
 
-def test_parse_config(current_actor_libraries):
+def test_parse_config():
     config = [
         "# comment from file",
         "",  # empty line
@@ -37,7 +37,7 @@ def test_parse_config(current_actor_libraries):
     assert output.macs == "hmac-md5"
 
 
-def test_parse_config_case(current_actor_libraries):
+def test_parse_config_case():
     config = [
         "PermitRootLogin prohibit-password",
         "UsePrivilegeSeparation yes",
@@ -52,7 +52,7 @@ def test_parse_config_case(current_actor_libraries):
     assert output.protocol == "1"
 
 
-def test_parse_config_multiple(current_actor_libraries):
+def test_parse_config_multiple():
     config = [
         "PermitRootLogin prohibit-password",
         "PermitRootLogin no",
@@ -72,7 +72,7 @@ def test_parse_config_multiple(current_actor_libraries):
     assert output.ciphers == 'aes128-cbc'
 
 
-def test_parse_config_commented(current_actor_libraries):
+def test_parse_config_commented():
     config = [
         "#PermitRootLogin no",
         "#UsePrivilegeSeparation no",
@@ -86,7 +86,7 @@ def test_parse_config_commented(current_actor_libraries):
     assert output.protocol is None
 
 
-def test_parse_config_missing_argument(current_actor_libraries):
+def test_parse_config_missing_argument():
     config = [
         "PermitRootLogin",
         "UsePrivilegeSeparation",
@@ -100,7 +100,7 @@ def test_parse_config_missing_argument(current_actor_libraries):
     assert output.protocol is None
 
 
-def test_parse_config_match(current_actor_libraries):
+def test_parse_config_match():
     config = [
         "PermitRootLogin yes",
         "Match address 192.168.*",
@@ -118,7 +118,7 @@ def test_parse_config_match(current_actor_libraries):
     assert output.protocol is None
 
 
-def test_parse_config_deprecated(current_actor_libraries):
+def test_parse_config_deprecated():
     config = [
         "permitrootlogin without-password"
     ]
@@ -128,7 +128,7 @@ def test_parse_config_deprecated(current_actor_libraries):
     assert output.permit_root_login[0].value == "prohibit-password"
 
 
-def test_parse_config_empty(current_actor_libraries):
+def test_parse_config_empty():
     output = parse_config([])
     assert isinstance(output, OpenSshConfig)
     assert isinstance(output, OpenSshConfig)
@@ -137,7 +137,7 @@ def test_parse_config_empty(current_actor_libraries):
     assert output.protocol is None
 
 
-def test_parse_config_modification(current_actor_libraries):
+def test_parse_config_modification():
     # This one was modified
     data = [
         "S.5....T.  c /etc/ssh/sshd_config",
@@ -164,7 +164,7 @@ def test_parse_config_modification(current_actor_libraries):
     assert parse_config_modification(data)
 
 
-def test_produce_config(current_actor_libraries):
+def test_produce_config():
     output = []
 
     def fake_producer(*args):

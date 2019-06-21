@@ -2,7 +2,7 @@ from leapp.libraries.actor.library import semantics_changes
 from leapp.models import OpenSshConfig, OpenSshPermitRootLogin
 
 
-def test_globally_enabled(current_actor_context):
+def test_globally_enabled():
     """ Configuration file in this format:
 
         PermitRootLogin yes # explicit
@@ -18,7 +18,7 @@ def test_globally_enabled(current_actor_context):
     assert not semantics_changes(config)
 
 
-def test_globally_disabled(current_actor_context):
+def test_globally_disabled():
     """ Configuration file in this format:
 
         PermitRootLogin no # explicit
@@ -34,7 +34,7 @@ def test_globally_disabled(current_actor_context):
     assert not semantics_changes(config)
 
 
-def test_globally_disabled_password(current_actor_context):
+def test_globally_disabled_password():
     """ Configuration file in this format:
 
         PermitRootLogin prohibit-password # explicit
@@ -50,7 +50,7 @@ def test_globally_disabled_password(current_actor_context):
     assert not semantics_changes(config)
 
 
-def test_in_match_disabled(current_actor_context):
+def test_in_match_disabled():
     """ Configuration file in this format:
 
         # PermitRootLogin yes # implicit
@@ -68,7 +68,7 @@ def test_in_match_disabled(current_actor_context):
     assert semantics_changes(config)
 
 
-def test_in_match_disabled_password(current_actor_context):
+def test_in_match_disabled_password():
     """ Configuration file in this format:
 
         # PermitRootLogin yes # implicit
@@ -86,7 +86,7 @@ def test_in_match_disabled_password(current_actor_context):
     assert semantics_changes(config)
 
 
-def test_in_match_enabled(current_actor_context):
+def test_in_match_enabled():
     """ Configuration file in this format:
 
         # PermitRootLogin yes # implicit
@@ -105,7 +105,7 @@ def test_in_match_enabled(current_actor_context):
     assert not semantics_changes(config)
 
 
-def test_in_match_all_disabled(current_actor_context):
+def test_in_match_all_disabled():
     """ Configuration file in this format:
 
         # PermitRootLogin yes # implicit
@@ -123,7 +123,7 @@ def test_in_match_all_disabled(current_actor_context):
     assert not semantics_changes(config)
 
 
-def test_in_match_all_disabled_password(current_actor_context):
+def test_in_match_all_disabled_password():
     """ Configuration file in this format:
 
         # PermitRootLogin yes # implicit
@@ -141,7 +141,7 @@ def test_in_match_all_disabled_password(current_actor_context):
     assert not semantics_changes(config)
 
 
-def test_in_match_all_enabled(current_actor_context):
+def test_in_match_all_enabled():
     """ Configuration file in this format:
 
         # PermitRootLogin yes # implicit
@@ -159,7 +159,7 @@ def test_in_match_all_enabled(current_actor_context):
     assert not semantics_changes(config)
 
 
-def test_in_match_enabled_globally_disabled(current_actor_context):
+def test_in_match_enabled_globally_disabled():
     """ Configuration file in this format:
 
         PermitRootLogin no # explicit
@@ -180,7 +180,7 @@ def test_in_match_enabled_globally_disabled(current_actor_context):
     assert not semantics_changes(config)
 
 
-def test_in_match_disabled_globally_enabled(current_actor_context):
+def test_in_match_disabled_globally_enabled():
     """ Configuration file in this format:
 
         PermitRootLogin yes # explicit
