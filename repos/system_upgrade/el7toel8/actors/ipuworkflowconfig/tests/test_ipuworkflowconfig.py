@@ -3,6 +3,9 @@ import os
 import pytest
 
 from leapp.libraries.actor import library
+from leapp.libraries.common import reporting
+from leapp.libraries.common.testutils import produce_mocked, report_generic_mocked
+from leapp.models import OSRelease
 
 
 def _clean_leapp_envs(monkeypatch):
@@ -26,3 +29,22 @@ def test_leapp_env_vars(monkeypatch):
     monkeypatch.setenv('TEST2', 'test')
 
     assert len(library.get_env_vars()) == 3
+
+
+def test_get_os_release_info(monkeypatch):
+    monkeypatch.setattr('leapp.libraries.stdlib.api.produce', produce_mocked())
+    monkeypatch.setattr(reporting, 'report_generic', report_generic_mocked())
+
+    expected = OSRelease(
+        release_id='rhel',
+        name='Red Hat Enterprise Linux Server',
+        pretty_name='Red Hat Enterprise Linux',
+        version='7.6 (Maipo)',
+        version_id='7.6',
+        variant='Server',
+        variant_id='server')
+    assert expected == library.get_os_release('tests/files/os-release')
+
+    assert not library.get_os_release('tests/files/non-existent-file')
+    assert reporting.report_generic.called == 1
+    assert 'inhibitor' in reporting.report_generic.report_fields['flags']
