@@ -4,7 +4,8 @@ from leapp.libraries.common import reporting
 from leapp.models import EnvVar, OSRelease
 
 
-ENV_IGNORE = ('LEAPP_CURRENT_PHASE', 'LEAPP_CURRENT_ACTOR')
+ENV_IGNORE = ('LEAPP_CURRENT_PHASE', 'LEAPP_CURRENT_ACTOR', 'LEAPP_VERBOSE',
+              'LEAPP_DEBUG')
 
 
 def get_env_vars():
