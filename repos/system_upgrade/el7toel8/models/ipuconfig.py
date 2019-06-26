@@ -21,6 +21,13 @@ class OSRelease(Model):
     variant_id = fields.Nullable(fields.String())  # same as above
 
 
+class Version(Model):
+    topic = SystemInfoTopic
+
+    source = fields.String()
+    target = fields.String()
+
+
 class IPUConfig(Model):
     """
     IPU workflow configuration model
@@ -29,4 +36,5 @@ class IPUConfig(Model):
 
     leapp_env_vars = fields.List(fields.Model(EnvVar), default=[])
     os_release = fields.Model(OSRelease)
+    version = fields.Model(Version)
     architecture = fields.String()
