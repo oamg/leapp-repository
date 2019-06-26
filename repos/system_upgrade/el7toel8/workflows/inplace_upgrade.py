@@ -3,6 +3,7 @@ from leapp.workflows.phases import Phase
 from leapp.workflows.flags import Flags
 from leapp.workflows.tagfilters import TagFilter
 from leapp.workflows.policies import Policies
+from leapp.models import IPUConfig
 from leapp.tags import IPUWorkflowTag, FactsPhaseTag, ChecksPhaseTag, \
     DownloadPhaseTag, InterimPreparationPhaseTag, InitRamStartPhaseTag, \
     LateTestsPhaseTag, PreparationPhaseTag, RPMUpgradePhaseTag, ApplicationsPhaseTag, ThirdPartyApplicationsPhaseTag, \
@@ -13,6 +14,7 @@ class IPUWorkflow(Workflow):
     name = 'InplaceUpgrade'
     tag = IPUWorkflowTag
     short_name = 'ipu'
+    configuration = IPUConfig
     description = '''The IPU workflow takes care of an in-place upgrade (IPU) of RHEL 7 to RHEL 8.'''
 
     class FactsCollectionPhase(Phase):
