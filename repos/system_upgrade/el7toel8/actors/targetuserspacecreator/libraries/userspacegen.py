@@ -137,7 +137,7 @@ def perform():
 
     rhsm_info = next(api.consume(SourceRHSMInfo), None)
     if not rhsm_info and not rhsm.skip_rhsm():
-        api.log.warn("Could not receive RHSM information - Is this system registered?")
+        api.current_logger().warn("Could not receive RHSM information - Is this system registered?")
         return
 
     presence = next(api.consume(XFSPresence), XFSPresence())
