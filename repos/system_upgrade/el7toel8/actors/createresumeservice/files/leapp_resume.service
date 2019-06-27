@@ -2,6 +2,9 @@
 Description=Temporary Leapp service which resumes execution after reboot
 After=default.target
 DefaultDependencies=no
+After=dbus.service
+After=network-online.target
+Wants=network-online.target
 
 [Service]
 Type=oneshot
