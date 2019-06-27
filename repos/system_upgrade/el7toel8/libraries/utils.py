@@ -6,10 +6,6 @@ from leapp.libraries.common import mounting
 from leapp.libraries.stdlib import STDOUT, CalledProcessError, api, config, run
 
 
-def _logger():
-    return api.current_logger()
-
-
 def makedirs(path, mode=0o777, exists_ok=True):
     mounting._makedirs(path=path, mode=mode, exists_ok=exists_ok)
 
@@ -66,7 +62,7 @@ def report_and_ignore_shutil_rmtree_error(func, path, exc_info):
     """
     Helper function for shutil.rmtree to only report errors but don't fail.
     """
-    _logger().warn(
+    api.current_logger().warn(
         'While trying to remove directories: %s failed at %s with an exception %s message: %s',
         func.__name__, path, exc_info[0].__name__, exc_info[1]
     )
@@ -117,13 +113,13 @@ def clean_guard(cleanup_function):
             try:
                 return f(*args, **kwargs)
             except Exception:  # Broad exception handler to handle all cases but rethrows
-                _logger().debug('Clean guard caught an exception - Calling cleanup function.')
+                api.current_logger().debug('Clean guard caught an exception - Calling cleanup function.')
                 try:
                     cleanup_function(*args, **kwargs)
                 except Exception:  # pylint: disable=broad-except
                     # Broad exception handler to handle all cases however, swallowed, to avoid loosing the original
                     # error. Logging for debuggability.
-                    _logger().warn('Caught and swallowed an exception during cleanup.', exc_info=True)
+                    api.current_logger().warn('Caught and swallowed an exception during cleanup.', exc_info=True)
                 raise  # rethrow original exception
         return wrapper
     return clean_wrapper
