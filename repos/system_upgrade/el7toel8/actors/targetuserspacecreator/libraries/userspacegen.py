@@ -9,10 +9,6 @@ from leapp.models import (OSReleaseFacts, RequiredTargetUserspacePackages, Sourc
                           TargetUserSpaceInfo, UsedTargetRepositories, UsedTargetRepository, XFSPresence)
 
 
-def _logger():
-    return api.current_logger()
-
-
 def prepare_target_userspace(context, userspace_dir, enabled_repos, packages):
     """
     Implements the creation of the target userspace.
@@ -77,19 +73,18 @@ def _get_product_certificate_path():
 
 
 def _create_target_userspace_directories(target_userspace):
-    _logger().debug('Creating target userspace directories.')
+    api.current_logger().debug('Creating target userspace directories.')
     try:
         utils.makedirs(target_userspace)
-        _logger().debug('Done creating target userspace directories.')
+        api.current_logger().debug('Done creating target userspace directories.')
     except OSError:
-        _logger().error(
+        api.current_logger().error(
             'Failed to create temporary target userspace directories %s', target_userspace, exc_info=True)
         # This is an attempt for giving the user a chance to resolve it on their own
         raise StopActorExecutionError(
             message='Failed to prepare environment for package download while creating directories.',
             details={
-                'hint': 'Please ensure that {directory} is empty and modifiable.'.format(
-                    directory=target_userspace)
+                'hint': 'Please ensure that {directory} is empty and modifiable.'.format(directory=target_userspace)
             }
         )
 
@@ -109,7 +104,7 @@ def gather_target_repositories(target_rhsm_info):
                     'hint': ('It is required to have RHEL repository on the system'
                              ' provided by the subscription-manager. Possibly you'
                              ' are missing a valid SKU for the target system or network'
-                             ' connection failed. Check whether you the system is attached'
+                             ' connection failed. Check whether your system is attached'
                              ' to the valid SKU providing target repositories.')
                 }
             )
@@ -150,12 +145,12 @@ def perform():
             xfs_present=xfs_present) as overlay:
         with overlay.nspawn() as context:
             with rhsm.switched_certificate(context, rhsm_info, prod_cert_path) as target_rhsm_info:
-                _logger().debug("Target RHSM Info: SKUs: {skus} Repositories: {repos}".format(
+                api.current_logger().debug("Target RHSM Info: SKUs: {skus} Repositories: {repos}".format(
                     repos=target_rhsm_info.enabled_repos,
                     skus=rhsm_info.attached_skus if rhsm_info else []
                 ))
                 target_repoids = gather_target_repositories(target_rhsm_info)
-                _logger().debug("Gathered target repositories: {}".format(', '.join(target_repoids)))
+                api.current_logger().debug("Gathered target repositories: {}".format(', '.join(target_repoids)))
                 prepare_target_userspace(context, constants.TARGET_USERSPACE, target_repoids, list(packages))
                 _prep_repository_access(context, constants.TARGET_USERSPACE)
                 dnfplugin.install(constants.TARGET_USERSPACE)
