@@ -136,6 +136,20 @@ def unset_release(context):
 
 
 @with_rhsm
+def set_release(context, release):
+    """
+    This function will set the version specified.
+
+    :param context: An instance of a mounting.IsolatedActions class
+    :type context: mounting.IsolatedActions class
+    :param release: Release to set the subscription manager to.
+    :type release: str
+    """
+    with _handle_rhsm_exceptions():
+        context.call(['subscription-manager', 'release', '--set', release], split=False)
+
+
+@with_rhsm
 def restore_release(context, rhsm_info):
     """
     If a release has been set, this function will restore it from the rhsm_info.release value.
@@ -146,8 +160,7 @@ def restore_release(context, rhsm_info):
     :type rhsm_info: RHSMInfo derived model
     """
     if rhsm_info.release:
-        with _handle_rhsm_exceptions():
-            context.call(['subscription-manager', 'release', '--set', rhsm_info.release], split=False)
+        set_release(context, rhsm_info.release)
 
 
 @with_rhsm
@@ -201,7 +214,7 @@ def get_existing_product_certificates(context, rhsm_info):
 
 
 @contextlib.contextmanager
-def switched_certificate(context, rhsm_info, cert_path):
+def switched_certificate(context, rhsm_info, cert_path, version):
     """
     Performs all actions needed to switch the product certificate passed.
 
@@ -238,6 +251,7 @@ def switched_certificate(context, rhsm_info, cert_path):
     unset_release(context)
     try:
         refresh(context)
+        set_release(context, version)
         target_rhsm_info = TargetRHSMInfo()
         scan_rhsm_info(context, target_rhsm_info)
         yield target_rhsm_info
@@ -245,6 +259,7 @@ def switched_certificate(context, rhsm_info, cert_path):
         # Restore backup of product certificates
         context.call(['rm', '-rf', pki_path], checked=False)
         context.call(['cp', '-a', pki_backup_path, pki_path], checked=False)
+        unset_release(context)
         # Restore release
         restore_release(context, rhsm_info)
 
