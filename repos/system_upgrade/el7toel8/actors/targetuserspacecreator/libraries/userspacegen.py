@@ -144,7 +144,8 @@ def perform():
             scratch_dir=constants.SCRATCH_DIR,
             xfs_present=xfs_present) as overlay:
         with overlay.nspawn() as context:
-            with rhsm.switched_certificate(context, rhsm_info, prod_cert_path) as target_rhsm_info:
+            target_version = api.current_actor().configuration.version.target
+            with rhsm.switched_certificate(context, rhsm_info, prod_cert_path, target_version) as target_rhsm_info:
                 api.current_logger().debug("Target RHSM Info: SKUs: {skus} Repositories: {repos}".format(
                     repos=target_rhsm_info.enabled_repos,
                     skus=rhsm_info.attached_skus if rhsm_info else []
