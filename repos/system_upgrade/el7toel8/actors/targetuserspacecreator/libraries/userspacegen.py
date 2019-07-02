@@ -152,6 +152,15 @@ def perform():
                 ))
                 target_repoids = gather_target_repositories(target_rhsm_info)
                 api.current_logger().debug("Gathered target repositories: {}".format(', '.join(target_repoids)))
+                if not target_repoids:
+                    raise StopActorExecutionError(
+                        message='There are no enabled target repositories for the upgrade process to proceed.',
+                        details={'hint': (
+                            'Ensure your system is correctly registered with the subscription manager and that'
+                            ' your current subscription is entitled to install the requested target version {version}'
+                            ).format(version=api.current_actor().configuration.version.target)
+                        }
+                    )
                 prepare_target_userspace(context, constants.TARGET_USERSPACE, target_repoids, list(packages))
                 _prep_repository_access(context, constants.TARGET_USERSPACE)
                 dnfplugin.install(constants.TARGET_USERSPACE)
