@@ -62,6 +62,8 @@ class RhelUpgradeCommand(dnf.cli.Command):
         for repo in self.base.repos.all():
             if repo.id in enabled_repos:
                 repo.skip_if_unavailable = False
+                if not self.base.conf.gpgcheck:
+                    repo.gpgcheck = False
                 repo.enable()
 
     def run(self):
