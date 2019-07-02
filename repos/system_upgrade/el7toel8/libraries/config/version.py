@@ -89,25 +89,23 @@ def matches_version(match_list, detected):
                          "'<integer>.<integer>' but provided was '{}'".format(match_list))
 
 
-def matches_source_version(match_list):
+def matches_source_version(*match_list):
     """
     Check if one of provided source versions matches the configured one.
 
     :param match_list: specification of versions to check against
-    :type match_list: list or tuple of strings, for details see argument ``match_list``
-                      of function :func:`matches_version`.
+    :type match_list: strings, for details see argument ``match_list`` of function :func:`matches_version`.
     """
     source_version = api.current_actor().configuration.version.source
     return matches_version(match_list, source_version)
 
 
-def matches_target_version(match_list):
+def matches_target_version(*match_list):
     """
     Check if one of provided target versions matches the configured one.
 
     :param match_list: specification of versions to check against
-    :type match_list: list or tuple of strings, for details see argument ``match_list``
-                      of function :func:`matches_version`.
+    :type match_list: strings, for details see argument ``match_list`` of function :func:`matches_version`.
     """
     target_version = api.current_actor().configuration.version.target
     return matches_version(match_list, target_version)

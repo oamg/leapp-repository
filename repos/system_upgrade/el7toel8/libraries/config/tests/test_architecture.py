@@ -12,15 +12,15 @@ class CurrentActorMocked(object):
 
 def test_matches_architecture_pass(monkeypatch):
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked)
-    assert architecture.matches_architecture(architecture.ARCH_ACCEPTED)
+    assert architecture.matches_architecture(*architecture.ARCH_ACCEPTED)
 
 
 def test_matches_architecture_fail(monkeypatch):
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked)
-    assert not architecture.matches_architecture([])
-    assert not architecture.matches_architecture(architecture.ARCH_ACCEPTED[1:])
+    assert not architecture.matches_architecture()
+    assert not architecture.matches_architecture(*architecture.ARCH_ACCEPTED[1:])
 
 
 def test_matches_architecture_wrong_args():
     with pytest.raises(TypeError):
-        architecture.matches_architecture(['aarch64', 1])
+        architecture.matches_architecture('aarch64', 1)
