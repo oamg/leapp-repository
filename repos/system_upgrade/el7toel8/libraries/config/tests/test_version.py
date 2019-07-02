@@ -8,19 +8,19 @@ def test_version_to_tuple():
 
 
 def test_validate_versions():
-    assert version._validate_versions(['7.6', '7.7']) is None
+    version._validate_versions(['7.6', '7.7'])
     with pytest.raises(ValueError):
         assert version._validate_versions(['7.6', 'z.z'])
 
 
 def test_simple_versions():
-    assert version._simple_versions(['7.6', '7.7']) is True
-    assert version._simple_versions(['7.6', '< 7.7']) is False
+    assert version._simple_versions(['7.6', '7.7'])
+    assert not version._simple_versions(['7.6', '< 7.7'])
 
 
 def test_cmp_versions():
-    assert version._cmp_versions(['>= 7.6', '< 7.7']) is True
-    assert version._cmp_versions(['>= 7.6', '& 7.7']) is False
+    assert version._cmp_versions(['>= 7.6', '< 7.7'])
+    assert not version._cmp_versions(['>= 7.6', '& 7.7'])
 
 
 def test_matches_version_wrong_args():
@@ -39,13 +39,13 @@ def test_matches_version_wrong_args():
 
 
 def test_matches_version_fail():
-    assert version.matches_version(['> 7.6', '< 7.7'], '7.6') is False
-    assert version.matches_version(['> 7.6', '< 7.7'], '7.7') is False
-    assert version.matches_version(['> 7.6', '< 7.10'], '7.6') is False
-    assert version.matches_version(['> 7.6', '< 7.10'], '7.10') is False
-    assert version.matches_version(['7.6', '7.7', '7.10'], '7.8') is False
+    assert not version.matches_version(['> 7.6', '< 7.7'], '7.6')
+    assert not version.matches_version(['> 7.6', '< 7.7'], '7.7')
+    assert not version.matches_version(['> 7.6', '< 7.10'], '7.6')
+    assert not version.matches_version(['> 7.6', '< 7.10'], '7.10')
+    assert not version.matches_version(['7.6', '7.7', '7.10'], '7.8')
 
 
 def test_matches_version_pass():
-    assert version.matches_version(['7.6', '7.7', '7.10'], '7.7') is True
-    assert version.matches_version(['> 7.6', '< 7.10'], '7.7') is True
+    assert version.matches_version(['7.6', '7.7', '7.10'], '7.7')
+    assert version.matches_version(['> 7.6', '< 7.10'], '7.7')
