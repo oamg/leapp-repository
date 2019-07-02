@@ -5,5 +5,5 @@ from leapp.models import TargetRHSMInfo
 
 def process():
     info = next(api.consume(TargetRHSMInfo), None)
-    if info:
+    if info and info.release:
         rhsm.set_release(mounting.NotIsolatedActions(base_dir='/'), info.release)
