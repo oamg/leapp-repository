@@ -77,12 +77,39 @@ def produce_report(reports_dir, path):
     trees[0].write(path, encoding='utf-8', xml_declaration=True)
 
 
+def test_libraries(libraries):
+    for lib, name in libraries:
+        os.environ['LEAPP_TESTED_LIBRARY'] = lib[0]
+        cmd = pytest_cmd + [lib[0]]
+        if args.report:
+            cmd += ['--junit-xml={REPORT}'.format(REPORT=REPORT_DIR + name + '.xml')]
+        logger.info(" Running pytest with: {PYTEST_CMD}".format(PYTEST_CMD=' '.join(cmd)))
+        pytest_status.add(subprocess.call(cmd))
+
+
+def test_actors(actors):
+    for i, actor in enumerate(actors):
+        # Run tests if actor has any.
+        if not actor.tests:
+            status = " Tests MISSING: {ACTOR} | class={CLASS}"
+            status = status.format(ACTOR=actor.name, CLASS=actor.class_name)
+            logger.critical(status)
+        else:
+            os.environ['LEAPP_TESTED_ACTOR'] = actor.full_path
+            cmd = pytest_cmd + [actor.full_path]
+            if args.report:
+                cmd += ['--junit-xml={REPORT}'.format(REPORT=REPORT_DIR + actor.name + str(i) + '.xml')]
+            logger.info(" Running pytest with: {PYTEST_CMD}".format(PYTEST_CMD=' '.join(cmd)))
+            pytest_status.add(subprocess.call(cmd))
+
+
 if __name__ == "__main__":
     pytest_cmd = ["pytest", "-v"]
     pytest_status = set()
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--actor", help="name of the actor for which to run tests")
+    parser.add_argument("--libraries", action='store_true', help="run tests for shared libraries")
     parser.add_argument("--report", help="filepath where to save report")
     args = parser.parse_args()
 
@@ -95,21 +122,20 @@ if __name__ == "__main__":
     # Find and collect leapp repositories.
     repos = find_and_scan_repositories(BASE_REPO, include_locals=True)
     repos.load()
+
+    libraries = [(r.libraries, r.name) for r in repos.repos if r.libraries]
     actors = repos.actors if not args.actor else (repos.lookup_actor(args.actor),)
-    for i, actor in enumerate(actors):
-        # Run tests if actor has any.
-        if not actor.tests:
-            status = " Tests MISSING: {ACTOR} | class={CLASS}"
-            status = status.format(ACTOR=actor.name, CLASS=actor.class_name)
-            logger.critical(status)
-        else:
-            os.environ['LEAPP_TESTED_ACTOR'] = actor.full_path
-            cmd = pytest_cmd + [actor.full_path]
-            if args.report:
-                cmd += ['--junit-xml={REPORT}'.format(REPORT=REPORT_DIR + actor.name + str(i) + '.xml')]
-            # Run pytest.
-            logger.info(" Running pytest with: {PYTEST_CMD}".format(PYTEST_CMD=' '.join(cmd)))
-            pytest_status.add(subprocess.call(cmd))
+
+    if args.actor and args.libraries:
+        test_libraries(libraries)
+        test_actors(actors)
+    elif args.actor:
+        test_actors(actors)
+    elif args.libraries:
+        test_libraries(libraries)
+    else:
+        test_libraries(libraries)
+        test_actors(actors)
 
     if args.report:
         produce_report(REPORT_DIR, args.report)

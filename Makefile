@@ -4,8 +4,19 @@ DEPS_PKGNAME=leapp-el7toel8-deps
 VERSION=`grep -m1 "^Version:" packaging/$(PKGNAME).spec | grep -om1 "[0-9].[0-9.]**"`
 DEPS_VERSION=`grep -m1 "^Version:" packaging/$(DEPS_PKGNAME).spec | grep -om1 "[0-9].[0-9.]**"`
 ACTOR_PATH=repos
+LIBRARY_PATH=`python utils/library_path.py`
 ifdef ACTOR
 	ACTOR_PATH=`python utils/actor_path.py $(ACTOR)`
+	TEST_ACTOR_ARG=--actor=$(ACTOR)
+	ifneq ($(TEST_LIBS),y)
+		LIBRARY_PATH=
+	endif
+endif
+ifeq ($(TEST_LIBS),y)
+	TEST_LIBRARIES_ARG=--libraries
+	ifndef ACTOR
+		ACTOR_PATH=
+	endif
 endif
 # needed only in case the Python2 should be used
 _USE_PYTHON_INTERPRETER=$${_PYTHON_INTERPRETER}
@@ -60,13 +71,23 @@ help:
 	@echo "  copr_build             create the COPR build using the COPR TOKEN"
 	@echo "                         - default path is: $(_COPR_CONFIG)"
 	@echo "                         - can be changed by the COPR_CONFIG env"
+	@echo "  install-deps           create python virtualenv and install there"
+	@echo "                         leapp-repository with dependencies"
+	@echo "  lint                   lint source code"
+	@echo "  test                   lint source code and run tests"
+	@echo "  test_no_lint           run tests without linting the source code"
+	@echo "Targets test, lint and test_no_lint support environment variables ACTOR and"
+	@echo "TEST_LIBS."
+	@echo "If ACTOR=<actor> is specified, targets are run against the specified actor."
+	@echo "If TEST_LIBS=y is specified, targets are run against shared libraries."
 	@echo ""
 	@echo "Possible use:"
 	@echo "  make <target>"
 	@echo "  PR=5 make <target>"
-	@echo "  MR=6 <target>"
+	@echo "  MR=6 make <target>"
 	@echo "  PR=7 SUFFIX='my_additional_suffix' make <target>"
-	@echo "  MR=6 COPR_CONFIG='path/to/the/config/copr/file' <target>"
+	@echo "  MR=6 COPR_CONFIG='path/to/the/config/copr/file' make <target>"
+	@echo "  ACTOR=<actor> TEST_LIBS=y make test"
 	@echo ""
 
 clean:
@@ -151,22 +172,22 @@ install-deps:
 	pip install --upgrade -r requirements.txt
 	python utils/install_actor_deps.py --actor=$(ACTOR)
 
-test_no_lint:
-	. tut/bin/activate; \
-	python utils/run_pytest.py --actor=$(ACTOR) --report=$(REPORT)
-
-test: lint test_no_lint
-
 lint:
 	. tut/bin/activate; \
 	echo "--- Linting ... ---" && \
-	SEARCH_PATH=$(ACTOR_PATH) && \
+	SEARCH_PATH={$(ACTOR_PATH),$(LIBRARY_PATH)} && \
 	echo "Using search path '$${SEARCH_PATH}'" && \
 	echo "--- Running pylint ---" && \
-	bash -c "[[ ! -z $${SEARCH_PATH} ]] && find $${SEARCH_PATH} -name '*.py' | xargs pylint" && \
+	bash -c "[[ ! -z $${SEARCH_PATH} ]] && find $${SEARCH_PATH} -name '*.py' | sort -u | xargs pylint" && \
 	echo "--- Running flake8 ---" && \
 	bash -c "[[ ! -z $${SEARCH_PATH} ]] && flake8 $${SEARCH_PATH}" && \
 	echo "--- Linting done. ---"
 
-.PHONY: clean test install-deps build srpm test_no_lint
+test_no_lint:
+	. tut/bin/activate; \
+	python utils/run_pytest.py $(TEST_ACTOR_ARG) $(TEST_LIBRARIES_ARG) --report=$(REPORT)
 
+test: lint test_no_lint
+
+
+.PHONY: help build clean prepare source srpm copr_build print_release register install-deps lint test_no_lint test
