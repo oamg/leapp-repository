@@ -35,7 +35,7 @@ class CheckKernelDrivers(Actor):
             # Extracting kernel drivers from the files/removed_drivers.txt.
             for line in removed.readlines():
                 token = line.strip()
-                if token.startswith('#') or len(token) == 0:
+                if token.startswith('#') or not token:
                     # We do not want comments or empty lines.
                     continue
                 removed_drivers.append(token)
@@ -69,7 +69,8 @@ class CheckKernelDrivers(Actor):
             if drivers_to_report:
                 title = ('Detected loaded kernel drivers which have been removed '
                          'in RHEL 8. Upgrade cannot proceed.')
-                URL = "https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html-single/considerations_in_adopting_rhel_8/index#removed-device-drivers_hardware-enablement"
+                URL = ('https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html-single/'
+                       'considerations_in_adopting_rhel_8/index#removed-device-drivers_hardware-enablement')
                 summary = ('Support for the following currently loaded RHEL 7 '
                            'device drivers has been removed in RHEL 8: \n     - {}'
                            '\nPlease see {} for details.'.format('\n     - '.join(drivers_to_report), URL))
