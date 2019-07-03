@@ -12,7 +12,8 @@ from leapp.models import (InstalledRedHatSignedRPM, PESRpmTransactionTasks,
 # FIXME: this mapping is not complete and will need to be manually updated frequently
 REPOSITORIES_MAPPING = {
     'rhel8-appstream': 'rhel-8-for-x86_64-appstream-rpms',
-    'rhel8-baseos': 'rhel-8-for-x86_64-baseos-rpms'}
+    'rhel8-baseos': 'rhel-8-for-x86_64-baseos-rpms',
+    'rhel8-crb': 'codeready-builder-for-rhel-8-x86_64-rpms'}
 
 Event = namedtuple('Event', ['action',   # A string representing an event type (see EVENT_TYPES)
                              'in_pkgs',  # A dictionary with packages in format {<pkg_name>: <repository>}
@@ -217,8 +218,8 @@ def process_events(events, installed_pkgs):
         if event.action in ('Renamed', 'Replaced', 'Removed'):
             to_remove.update(event.in_pkgs)
 
-    filter_out_pkgs_in_blacklisted_repos(to_install)
     map_repositories(to_install)
+    filter_out_pkgs_in_blacklisted_repos(to_install)
 
     return to_install, to_remove
 
