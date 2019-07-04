@@ -14,7 +14,6 @@ class SELinuxPrepare(Actor):
     '''
 
     name = 'selinuxprepare'
-    # TODO change description to doc string - first line is summary, followed by more in-depth description
     consumes = (SELinuxCustom, SELinuxModules)
     produces = ()
     tags = (PreparationPhaseTag, IPUWorkflowTag)

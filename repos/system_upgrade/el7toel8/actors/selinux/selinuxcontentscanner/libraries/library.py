@@ -32,15 +32,17 @@ WORKING_DIRECTORY = '/tmp/selinux/'
 
 def checkModule(name):
     '''
-    Check if given module contains one of removed types.
+    Check if given module contains one of removed types and comment out corresponding lines.
 
-    If so, comment out corresponding lines and return them.
     The function expects a text file "$name" containing cil policy
     to be present in the current directory.
+
+    Returns a list of invalid lines.
     '''
     try:
         removed = run(['grep', '-w', '-E', "|".join(REMOVED_TYPES_), name], split=True)
-        run(['sed', '-i', '/%s/s/^/;/g' % r'\|'.join(REMOVED_TYPES_), name])
+        # Add ";" at the beginning of invalid lines (comment them out)
+        run(['sed', '-i', '/{}/s/^/;/g'.format(r'\|'.join(REMOVED_TYPES_)), name])
         return removed.get("stdout", [])
     except CalledProcessError:
         return []
@@ -55,6 +57,7 @@ def listSELinuxModules():
     try:
         semodule = run(['semodule', '-lfull'], split=True)
     except CalledProcessError:
+        api.current_logger().warning('Cannot get list of selinux modules')
         return []
 
     modules = []
@@ -64,7 +67,7 @@ def listSELinuxModules():
         m = re.match(r'([0-9]+)\s+([\w-]+)\s+([\w-]+)\s*\Z', module)
         if not m:
             # invalid output of "semodule -lfull"
-            api.current_logger().info('Invalid output of "semodule -lfull": %s', module)
+            api.current_logger().warning('Invalid output of "semodule -lfull": %s', module)
             continue
         modules.append((m.group(2), m.group(1)))
 
@@ -100,7 +103,7 @@ def getSELinuxModules():
         os.mkdir(WORKING_DIRECTORY)
         os.chdir(WORKING_DIRECTORY)
     except OSError:
-        api.current_logger().info("Failed to access working directory! Aborting.")
+        api.current_logger().warning("Failed to access working directory! Aborting.")
         return ([], [], [])
 
     for (name, priority) in modules:
@@ -113,17 +116,18 @@ def getSELinuxModules():
             # module from selinux-policy-* package - skipping
             continue
         # extract custom module and save it to SELinuxModule object
+        module_file = name + ".cil"
         try:
             run(['semodule', '-c', '-X', priority, '-E', name])
             # check if the module contains invalid types and remove them if so
-            removed = checkModule(name + ".cil")
+            removed = checkModule(module_file)
 
             # get content of the module
             try:
-                with open(name + ".cil", 'r') as cil_file:
+                with open(module_file, 'r') as cil_file:
                     module_content = cil_file.read()
             except OSError as e:
-                api.current_logger().info("Error reading %s.cil : %s", name, e.get("stderr", ""))
+                api.current_logger().warning("Error reading %s.cil : %s", name, str(e))
                 continue
 
             semodule_list.append(SELinuxModule(
@@ -134,16 +138,14 @@ def getSELinuxModules():
                 )
             )
         except CalledProcessError:
-            api.current_logger().info("Module %s could not be extracted!", name)
+            api.current_logger().warning("Module %s could not be extracted!", name)
             continue
         # rename the cil module file so that it does not clash
         # with the same module on different priority
         try:
-            os.rename(name + ".cil", "%s_%s" % (name, priority))
+            os.rename(module_file, "{}_{}".format(name, priority))
         except OSError:
-            # TODO leapp.libraries.stdlib.api.current_logger()
-            # and move the method to a library
-            api.current_logger().info("Failed to rename module file.")
+            api.current_logger().warning("Failed to rename module file %s to include priority.", name)
     # this is necessary for check if container-selinux needs to be installed
     try:
         run(['semanage', 'export', '-f', 'semanage'])
@@ -166,7 +168,7 @@ def getSELinuxModules():
         pass
     rmtree(WORKING_DIRECTORY, ignore_errors=True)
 
-    return (semodule_list, retain_rpms, install_rpms)
+    return (semodule_list, list(set(retain_rpms)), list(set(install_rpms)))
 
 
 def getSELinuxCustomizations():
@@ -195,6 +197,6 @@ def getSELinuxCustomizations():
                 semanage_valid.append(line)
 
     except CalledProcessError as e:
-        api.current_logger().info("Failed to export SELinux customizations: %s", str(e))
+        api.current_logger().warning("Failed to export SELinux customizations: %s", str(e.stderr))
 
     return (semanage_valid, semanage_removed)

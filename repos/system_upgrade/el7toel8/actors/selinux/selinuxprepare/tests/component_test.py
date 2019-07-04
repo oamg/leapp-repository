@@ -68,7 +68,7 @@ def test_SELinuxPrepare(current_actor_context):
         api.current_logger().warning("Error listing SELinux customizations: %s", str(e.stderr))
 
     semodule_list = [SELinuxModule(name=module, priority=int(prio), content="", removed=[])
-                     for (prio, module) in test_modules + [["400", "permissive_abrt_t"]]]
+                     for (prio, module) in test_modules.reverse() + [["400", "permissive_abrt_t"]]]
 
     current_actor_context.feed(SELinuxModules(modules=semodule_list))
     current_actor_context.run()

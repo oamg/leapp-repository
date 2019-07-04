@@ -30,11 +30,9 @@ testmoduledir = os.path.join(os.getcwd(), "tests/mock_modules/")
 def setup_():
     for priority, module in test_modules:
         try:
-            semodule = run(["semodule", "-X", priority, "-i", os.path.join(testmoduledir, module + ".cil")])
+            run(["semodule", "-X", priority, "-i", os.path.join(testmoduledir, module + ".cil")])
         except CalledProcessError as e:
-            api.current_logger().warning("Error installing mock module: %s", e.stderr)
-            api.current_logger().warning("Error installing mock module: %s, %s", str(e.stderr),
-                                         semodule.get("stderr", "fuck"))
+            api.current_logger().warning("Error installing mock module: %s", str(e.stderr))
             continue
 
     for command in semanage_commands:
