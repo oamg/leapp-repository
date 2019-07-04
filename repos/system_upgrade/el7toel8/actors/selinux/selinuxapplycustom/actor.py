@@ -1,5 +1,5 @@
 import os
-from shutil import rmtree
+import shutil
 
 from leapp.actors import Actor
 from leapp.models import SELinuxModules, SELinuxCustom, SELinuxRequestRPMs
@@ -27,47 +27,45 @@ class SELinuxApplyCustom(Actor):
         # cil module files need to be extracted to disk in order to be installed
 
         # clear working directory
-        rmtree(WORKING_DIRECTORY, ignore_errors=True)
+        shutil.rmtree(WORKING_DIRECTORY, ignore_errors=True)
 
         try:
             os.mkdir(WORKING_DIRECTORY)
         except OSError:
-            self.log.info("Failed to create working directory! Aborting.")
+            self.log.warning("Failed to create working directory! Aborting.")
             return
 
         # import custom SElinux modules
         for semodules in self.consume(SELinuxModules):
             self.log.info("Processing custom SELinux policy modules. Count: %d.", len(semodules.modules))
             for module in semodules.modules:
-                cil_filename = os.path.join(WORKING_DIRECTORY, "%s.cil" % module.name)
+                cil_filename = os.path.join(WORKING_DIRECTORY, "{}.cil".format(module.name))
                 self.log.info("Installing module %s on priority %d.", module.name, module.priority)
                 if module.removed:
-                    self.log.info("The following lines where removed because of incompatibility: \n%s",
-                                  '\n'.join(module.removed))
+                    self.log.warning("The following lines where removed because of incompatibility: \n%s",
+                                     '\n'.join(module.removed))
                 # write module content to disk
                 try:
                     with open(cil_filename, 'w') as cil_file:
                         cil_file.write(module.content)
                 except OSError as e:
-                    self.log.info("Error writing %s : %s", cil_filename, str(e))
+                    self.log.warning("Error writing %s : %s", cil_filename, str(e))
                     continue
 
                 try:
                     run(['semodule',
-                         '-X',
-                         str(module.priority),
-                         '-i',
-                         cil_filename
+                         '-X', str(module.priority),
+                         '-i', cil_filename
                          ]
                         )
                 except CalledProcessError as e:
-                    self.log.info("Error installing module: %s", str(e))
+                    self.log.warning("Error installing module: %s", str(e.stderr))
                     # TODO - save the failed module to /etc/selinux ?
                     # currently it is still left in the old policy store
                 try:
                     os.remove(cil_filename)
                 except OSError as e:
-                    self.log.info("Error removing module file: %s", str(e))
+                    self.log.warning("Error removing module file: %s", str(e))
         # import SELinux customizations collected by "semanage export"
         for custom in self.consume(SELinuxCustom):
             self.log.info('Importing the following SELinux customizations collected by "semanage export": \n%s',
@@ -78,25 +76,22 @@ class SELinuxApplyCustom(Actor):
                 with open(semanage_filename, 'w') as s_file:
                     s_file.write('\n'.join(custom.commands))
             except OSError as e:
-                self.log.info("Error writing SELinux customizations: %s", str(e))
+                self.log.warning("Error writing SELinux customizations: %s", str(e))
             # import customizations
             try:
                 run(['semanage', 'import', '-f', semanage_filename])
             except CalledProcessError as e:
-                self.log.info("Failed to import SELinux customizations: %s", str(e))
+                self.log.warning("Failed to import SELinux customizations: %s", str(e.stderr))
                 continue
             # clean-up
             try:
                 os.remove(semanage_filename)
             except OSError as e:
-                self.log.info("Failed to remove temporary file %s: %s", semanage_filename, str(e))
+                self.log.warning("Failed to remove temporary file %s: %s", semanage_filename, str(e))
                 continue
 
         # clean-up
-        try:
-            os.rmdir("/tmp/selinux")
-        except OSError:
-            pass
+        shutil.rmtree(WORKING_DIRECTORY, ignore_errors=True)
 
         # TODO - Verify that all RPM packages reqested by selinux actors are installed
         self.log.info("Verifying selinux-related RPMs requested before upgrade.")
