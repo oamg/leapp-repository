@@ -7,5 +7,8 @@
 # See man pages fstab(5), findfs(8), mount(8) and/or blkid(8) for more info
 #
 /dev/mapper/rhel_ibm--p8--kvm--03--guest--02-root /                       xfs     defaults        0 0
-UUID=0a5215ef-1fb4-4b1b-8860-be4baa9e624c /boot                   xfs     defaults        0 0
+UUID=0a5215ef-1fb4-4b1b-8860-be4baa9e624c /boot                   xfs     defaults        0 1
+UUID=acf9f525-3691-429f-96d7-3f8530227062 /var                   xfs     defaults
+# Testing comment at the middle of valid lines
+UUID=d74186c9-21d5-4549-ae26-91ca9ed36f56 /tmp                   ext4     defaults,nodev,nosuid,noexec        1
 /dev/mapper/rhel_ibm--p8--kvm--03--guest--02-swap swap                    swap    defaults        0 0
