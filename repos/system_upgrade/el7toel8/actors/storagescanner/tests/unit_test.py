@@ -1,4 +1,7 @@
 from leapp.libraries.actor import library
+from leapp.libraries.common import reporting
+from leapp.libraries.common.testutils import report_generic_mocked
+from leapp.libraries.stdlib import api
 from leapp.models import PartitionEntry, FstabEntry, MountEntry, LsblkEntry, PvsEntry, VgsEntry, \
     LvdisplayEntry, SystemdMountEntry
 
@@ -20,9 +23,6 @@ def test_get_partitions_info(monkeypatch):
 
 
 def test_get_fstab_info(monkeypatch):
-    def is_file_readable_mocked(path):
-        return False
-
     expected = [
         FstabEntry(
             fs_spec='/dev/mapper/rhel_ibm--p8--kvm--03--guest--02-root',
@@ -37,6 +37,20 @@ def test_get_fstab_info(monkeypatch):
             fs_vfstype='xfs',
             fs_mntops='defaults',
             fs_freq='0',
+            fs_passno='1'),
+        FstabEntry(
+            fs_spec='UUID=acf9f525-3691-429f-96d7-3f8530227062',
+            fs_file='/var',
+            fs_vfstype='xfs',
+            fs_mntops='defaults',
+            fs_freq='0',
+            fs_passno='0'),
+        FstabEntry(
+            fs_spec='UUID=d74186c9-21d5-4549-ae26-91ca9ed36f56',
+            fs_file='/tmp',
+            fs_vfstype='ext4',
+            fs_mntops='defaults,nodev,nosuid,noexec',
+            fs_freq='1',
             fs_passno='0'),
         FstabEntry(
             fs_spec='/dev/mapper/rhel_ibm--p8--kvm--03--guest--02-swap',
@@ -46,9 +60,30 @@ def test_get_fstab_info(monkeypatch):
             fs_freq='0',
             fs_passno='0')]
     assert expected == library._get_fstab_info('tests/files/fstab')
-
-    monkeypatch.setattr(library, '_is_file_readable', is_file_readable_mocked)
+    monkeypatch.setattr(library, '_is_file_readable', lambda(_): False)
     assert [] == library._get_fstab_info('unreadable_file')
+
+
+def test_invalid_fstab_info(monkeypatch):
+    class logger_mocked(object):
+        def __init__(self):
+            self.errmsg = None
+
+        def error(self, msg):
+            self.errmsg = msg
+
+        def __call__(self):
+            return self
+
+    monkeypatch.setattr(reporting, "report_with_remediation", report_generic_mocked())
+    monkeypatch.setattr(api, 'current_logger', logger_mocked())
+
+    library._get_fstab_info('tests/files/invalid_fstab')
+    assert reporting.report_with_remediation.called == 1
+    assert reporting.report_with_remediation.report_fields['severity'] == 'high'
+    assert 'Problems with parsing data in /etc/fstab' in reporting.report_with_remediation.report_fields['title']
+    assert 'inhibitor' in reporting.report_with_remediation.report_fields['flags']
+    assert "The fstab configuration file seems to be invalid" in api.current_logger.errmsg
 
 
 def test_get_mount_info(monkeypatch):

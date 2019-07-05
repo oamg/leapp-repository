@@ -1,0 +1,11 @@
+
+#
+# /etc/fstab
+# Created by anaconda on Thu Nov 15 16:05:33 2018
+#
+# Accessible filesystems, by reference, are maintained under '/dev/disk'
+# See man pages fstab(5), findfs(8), mount(8) and/or blkid(8) for more info
+#
+
+/dev/mapper/rhel_ibm--p8--kvm--03--guest--02-root /               xfs     defaults        0 0
+UUID=0a5215ef-1fb4-4b1b-8860-be4baa9e624c /boot                   xfs

@@ -5,6 +5,7 @@ import functools
 
 from leapp.models import StorageInfo, PartitionEntry, FstabEntry, MountEntry, LsblkEntry, \
     PvsEntry, VgsEntry, LvdisplayEntry, SystemdMountEntry
+from leapp.libraries.common import reporting
 from leapp.libraries.stdlib import api
 
 
@@ -79,7 +80,7 @@ def _get_fstab_info(fstab_path):
     ''' Collect storage info from /etc/fstab file '''
     if _is_file_readable(fstab_path):
         with open(fstab_path, 'r') as fstab:
-            for entry in fstab:
+            for line, entry in enumerate(fstab, 1):
                 if entry.startswith('#'):
                     continue
 
@@ -87,7 +88,43 @@ def _get_fstab_info(fstab_path):
                 if not entry:
                     continue
 
-                fs_spec, fs_file, fs_vfstype, fs_mntops, fs_freq, fs_passno = entry.split()
+                entries = entry.split()
+
+                if len(entries) == 4:
+                    entries.append('0')
+
+                if len(entries) == 5:
+                    entries.append('0')
+
+                if len(entries) != 6:
+                    if any(value.startswith('#') for value in entries):
+                        remediation = (
+                            'Comments in the /etc/fstab file must be at the beginning of the line, your file has a'
+                            ' comment at the end of the line at line {}, please edit and fix this, for further'
+                            ' information read fstab man page (man 5 fstab).'.format(line)
+                        )
+                    else:
+                        remediation = (
+                            'The /etc/fstab file must have at least 4 values and at most 6 per line, your file on the'
+                            ' line: {} have {} values, please edit and fix this, for further information read'
+                            ' fstab man page (man 5 fstab). '.format(line, len(entries))
+                        )
+                    summary = (
+                        'The fstab configuration file seems to be invalid. You need to fix it to be able to proceed'
+                        ' with the upgrade process.'
+                    )
+                    reporting.report_with_remediation(
+                        title='Problems with parsing data in /etc/fstab',
+                        summary=summary,
+                        remediation=remediation,
+                        severity='high',
+                        flags=['inhibitor']
+                    )
+
+                    api.current_logger().error(summary)
+                    break
+
+                fs_spec, fs_file, fs_vfstype, fs_mntops, fs_freq, fs_passno = entries
                 yield FstabEntry(
                     fs_spec=fs_spec,
                     fs_file=fs_file,
