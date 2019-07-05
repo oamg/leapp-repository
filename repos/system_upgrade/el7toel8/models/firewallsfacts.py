@@ -14,3 +14,4 @@ class FirewallsFacts(Model):
 
     firewalld = fields.Model(FirewallStatus)
     iptables = fields.Model(FirewallStatus)
+    ip6tables = fields.Model(FirewallStatus)

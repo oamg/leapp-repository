@@ -267,4 +267,5 @@ def get_firewalls_status():
     return FirewallsFacts(
         firewalld=_get_firewall_status('firewalld'),
         iptables=_get_firewall_status('iptables'),
+        ip6tables=_get_firewall_status('ip6tables'),
     )
