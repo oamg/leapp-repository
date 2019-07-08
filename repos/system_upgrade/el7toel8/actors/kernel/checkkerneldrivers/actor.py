@@ -55,6 +55,7 @@ class CheckKernelDrivers(Actor):
 
             # Going over the collected drivers and considering for reporting only
             # those drivers that are currently used by some device.
+            udevadm_db = ''
             for fact in self.consume(UdevAdmInfoData):
                 udevadm_db += fact.db
             for line in udevadm_db.split('\n'):
