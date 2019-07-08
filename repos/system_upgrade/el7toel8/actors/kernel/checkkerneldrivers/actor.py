@@ -1,6 +1,5 @@
 from leapp.actors import Actor
 from leapp.libraries.common.reporting import report_with_remediation
-from leapp.libraries.stdlib import run
 from leapp.models import ActiveKernelModulesFacts, WhitelistedKernelModules, UdevAdmInfoData
 from leapp.reporting import Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
