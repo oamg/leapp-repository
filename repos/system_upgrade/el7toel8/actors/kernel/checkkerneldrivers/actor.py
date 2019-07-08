@@ -1,27 +1,27 @@
 from leapp.actors import Actor
 from leapp.libraries.common.reporting import report_with_remediation
 from leapp.libraries.stdlib import run
-from leapp.models import ActiveKernelModulesFacts, WhitelistedKernelModules
+from leapp.models import ActiveKernelModulesFacts, WhitelistedKernelModules, UdevAdmInfoData
 from leapp.reporting import Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
 class CheckKernelDrivers(Actor):
     """
-    Actor checks if any loaded RHEL 7 kernel driver is missing in the RHEL 8.
+    Actor checks if any loaded RHEL7 kernel driver is missing in the RHEL8.
     If yes, the upgrade process will be inhibited.
 
-    Inhibition is done because missing kernel driver on the RHEL 8 system may
-    mean that the hardware using such driver would not work on the RHEL 8.
+    Inhibition is done because missing kernel driver on the RHEL8 system may
+    mean that the hardware using such driver would not work on the RHEL8.
 
     Note:
-     - List of kernel drivers missing on the RHEL 8 system is located in the
+     - List of kernel drivers missing on the RHEL8 system is located in the
         files/removed_drivers.txt file.
      - Whitelisted modules that are not going to be reported are consumed from
         the WhitelistedKernelModules
     """
     name = 'check_kernel_drivers'
-    consumes = (ActiveKernelModulesFacts, WhitelistedKernelModules)
+    consumes = (ActiveKernelModulesFacts, WhitelistedKernelModules, UdevAdmInfoData)
     produces = (Report,)
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 
@@ -53,17 +53,18 @@ class CheckKernelDrivers(Actor):
                     if active_module.filename in removed_drivers:
                         collected_drivers.add(active_module.filename)
 
-            # Going over collected drivers and considering for reporting only
+            # Going over the collected drivers and considering for reporting only
             # those drivers that are currently used by some device.
-            udevadm_out = run('udevadm info -e'.split(), split=True)['stdout']
-            for line in udevadm_out:
+            for fact in self.consume(UdevAdmInfoData):
+                udevadm_db += fact.db
+            for line in udevadm_db.split('\n'):
                 if 'E: DRIVER=' in line:
                     _, driver = line.split('=')
                     if driver in collected_drivers:
                         drivers_to_report.add(driver)
 
-            # In the end, we are only going to report drivers that are currently:
-            # - removed in the RHEL8 (that are part of files/removed_drivers.txt)
+            # In the end, we are only going to report drivers that are:
+            # - removed in the RHEL8 (are part of files/removed_drivers.txt)
             # - not whitelisted
             # - currently being used by some device
             if drivers_to_report:
