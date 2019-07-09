@@ -36,7 +36,7 @@ def build_plugin_data(target_repoids, debug, test, tasks):
     Generates a dictionary with the DNF plugin data.
     """
     # get list of repo IDs of target repositories that should be used for upgrade
-    data={
+    data = {
         'pkgs_info': {
             'local_rpms': [os.path.join('/installroot', pkg.lstrip('/')) for pkg in tasks.local_rpms],
             'to_install': [pkg for pkg in tasks.to_install],
