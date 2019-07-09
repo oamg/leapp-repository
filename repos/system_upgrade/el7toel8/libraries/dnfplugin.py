@@ -15,7 +15,6 @@ DNF_PLUGIN_DATA_PATH = os.path.join('/var/lib/leapp', DNF_PLUGIN_DATA_NAME)
 DNF_PLUGIN_DATA_LOG_PATH = os.path.join('/var/log/leapp', DNF_PLUGIN_DATA_NAME)
 DNF_DEBUG_DATA_PATH = '/var/log/leapp/dnf-debugdata/'
 
-import
 
 def install(target_basedir):
     """
@@ -37,7 +36,7 @@ def build_plugin_data(target_repoids, debug, test, tasks):
     Generates a dictionary with the DNF plugin data.
     """
     # get list of repo IDs of target repositories that should be used for upgrade
-    data = {
+    data={
         'pkgs_info': {
             'local_rpms': [os.path.join('/installroot', pkg.lstrip('/')) for pkg in tasks.local_rpms],
             'to_install': [pkg for pkg in tasks.to_install],
