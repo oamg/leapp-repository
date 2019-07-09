@@ -34,8 +34,14 @@ def _run_cmd(cmd, split=False, logmsg=""):
         api.current_logger().warning("%s: %s", logmsg, str(e.stderr))
 
 
-SEMODULE_LFULL_INITIAL = _run_cmd(["semodule", "-lfull"], logmsg="Error listing SELinux customizations")
-SEMANAGE_EXPORT_INITIAL = _run_cmd(["semanage", "export"], logmsg="Error listing SELinux customizations")
+@pytest.fixture(scope="module")
+def semodule_lfull_initial():
+    yield _run_cmd(["semodule", "-lfull"], logmsg="Error listing SELinux customizations")
+
+
+@pytest.fixture(scope="module")
+def semanage_export_initial():
+    yield _run_cmd(["semanage", "export"], logmsg="Error listing SELinux customizations")
 
 
 def setup():
@@ -55,10 +61,15 @@ def setup():
 
 @pytest.mark.skipif(not os.environ.get("DESTRUCTIVE_TESTING", False),
                     reason='Test disabled by default because it would modify the system')
-def test_SELinuxPrepare(current_actor_context):
+def test_SELinuxPrepare(current_actor_context, semodule_lfull_initial, semanage_export_initial):
+    before_test = []
     for cmd in (["semodule", "-lfull"], ["semanage", "export"]):
         res = _run_cmd(cmd)
+        before_test.append(res)
+        # XXX still not sure about logging in tests
         api.current_logger().info("Before test:%s", res)
+    # Make sure that initial semodule/semanage commands don't match before tests ones
+    assert before_test != [semodule_lfull_initial, semanage_export_initial]
 
     # XXX FIXME test_modules.reverse() returns None and changes underlying list which should not happen
     # to global vars. Removing that reversing as it is broken anyway
@@ -70,9 +81,9 @@ def test_SELinuxPrepare(current_actor_context):
 
     # check if all given modules and local customizations where removed
     semodule_res = _run_cmd(["semodule", "-lfull"])
-    assert SEMODULE_LFULL_INITIAL == semodule_res
+    assert semodule_lfull_initial == semodule_res
     semanage_res = _run_cmd(["semanage", "export"])
-    assert SEMANAGE_EXPORT_INITIAL == semanage_res
+    assert semanage_export_initial == semanage_res
 
 
 def teardown():
