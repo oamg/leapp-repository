@@ -26,7 +26,7 @@ def guarded_execution(*guards):
                 'hint': 'Possible spurious failure: {cause}'.format(cause=' '.join(guard_errors))
             }
         raise StopActorExecutionError(
-            message=e.message,
+            message=str(e),
             details=details
         )
 

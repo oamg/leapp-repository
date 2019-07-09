@@ -1,3 +1,5 @@
+from __future__ import division
+
 from os import statvfs
 
 from leapp.libraries.common import reporting

@@ -1,3 +1,6 @@
+[MASTER]
+py3k=
+
 [MESSAGES CONTROL]
 disable=
 # "F" Fatal errors that prevent further processing
@@ -8,6 +11,7 @@ disable=
  no-name-in-module,
  raising-bad-type,
 # "W" Warnings for stylistic problems or minor programming issues
+ no-absolute-import,
  arguments-differ,
  cell-var-from-loop,
  fixme,

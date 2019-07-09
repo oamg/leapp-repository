@@ -27,7 +27,7 @@ def install(target_basedir):
     except EnvironmentError as e:
         api.current_logger().debug('Failed to install DNF plugin', exc_info=True)
         raise StopActorExecutionError(
-            message='Failed to install DNF plugin. Error: {}'.format(e.message)
+            message='Failed to install DNF plugin. Error: {}'.format(str(e))
         )
 
 
@@ -86,7 +86,7 @@ def backup_debug_data(context):
         try:
             context.copytree_from('/debugdata', DNF_DEBUG_DATA_PATH)
         except OSError as e:
-            api.current_logger().warn('Failed to copy debugdata. Message: {}'.format(e.message), exc_info=True)
+            api.current_logger().warn('Failed to copy debugdata. Message: {}'.format(str(e)), exc_info=True)
 
 
 def _transaction(context, stage, target_repoids, tasks, test=False):
@@ -109,9 +109,9 @@ def _transaction(context, stage, target_repoids, tasks, test=False):
                 callback_raw=utils.logging_handler
             )
         except OSError as e:
-            api.current_logger().error('Could not call dnf command: Message: %s', e.message, exc_info=True)
+            api.current_logger().error('Could not call dnf command: Message: %s', str(e), exc_info=True)
             raise StopActorExecutionError(
-                message='Failed to execute dnf. Reason: {}'.format(e.message)
+                message='Failed to execute dnf. Reason: {}'.format(str(e))
             )
         except CalledProcessError as e:
             api.current_logger().error('DNF execution failed: ')

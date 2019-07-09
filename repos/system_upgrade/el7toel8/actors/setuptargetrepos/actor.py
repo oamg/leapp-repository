@@ -62,7 +62,7 @@ class SetupTargetRepos(Actor):
                 for repo in repo_file.data:
                     enabled_repos.add(repo.repoid)
 
-        skipped_repos = skipped_repos.intersection(used.keys())
+        skipped_repos = skipped_repos.intersection(set(used.keys()))
 
         if skipped_repos:
             pkgs = set()

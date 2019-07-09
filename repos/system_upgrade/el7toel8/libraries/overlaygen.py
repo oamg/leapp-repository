@@ -33,7 +33,7 @@ def cleanup_scratch(scratch_dir, mounts_dir):
             run(['/bin/umount', '-fl', mounts_dir])
             api.current_logger().debug('Unmounted mounted disk image.')
         except (OSError, CalledProcessError) as e:
-            api.current_logger().warn('Failed to umount %s - message: %s', mounts_dir, e.message)
+            api.current_logger().warn('Failed to umount %s - message: %s', mounts_dir, str(e))
     api.current_logger().debug('Recursively removing scratch directory %s.', scratch_dir)
     shutil.rmtree(scratch_dir, onerror=utils.report_and_ignore_shutil_rmtree_error)
     api.current_logger().debug('Recursively removed scratch directory %s.', scratch_dir)
@@ -60,7 +60,7 @@ def _create_mount_disk_image(scratch_dir, mounts_dir):
     except CalledProcessError as e:
         api.current_logger().error('Failed to create ext4 filesystem %s', exc_info=True)
         raise StopActorExecutionError(
-            message=e.message
+            message=str(e)
         )
 
     return diskimage_path
