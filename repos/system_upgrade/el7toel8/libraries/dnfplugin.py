@@ -15,6 +15,7 @@ DNF_PLUGIN_DATA_PATH = os.path.join('/var/lib/leapp', DNF_PLUGIN_DATA_NAME)
 DNF_PLUGIN_DATA_LOG_PATH = os.path.join('/var/log/leapp', DNF_PLUGIN_DATA_NAME)
 DNF_DEBUG_DATA_PATH = '/var/log/leapp/dnf-debugdata/'
 
+import
 
 def install(target_basedir):
     """

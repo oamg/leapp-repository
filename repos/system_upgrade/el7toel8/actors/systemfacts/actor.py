@@ -4,7 +4,6 @@ from leapp.models import SysctlVariablesFacts, ActiveKernelModulesFacts, UsersFa
     SELinuxFacts, FirewallsFacts
 from leapp.tags import IPUWorkflowTag, FactsPhaseTag
 
-import
 
 class SystemFactsActor(Actor):
     """
