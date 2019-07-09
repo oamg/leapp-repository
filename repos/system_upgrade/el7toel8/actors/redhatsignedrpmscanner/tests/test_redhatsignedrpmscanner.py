@@ -8,7 +8,7 @@ from leapp.snactor.fixture import current_actor_context
 RH_PACKAGER = 'Red Hat, Inc. <http://bugzilla.redhat.com/bugzilla>'
 
 
-class TestModel(Model):
+class MockModel(Model):
     topic = RPM.topic
     list_field = fields.List(fields.Integer(), default=[42])
     list_field_nullable = fields.Nullable(fields.List(fields.String()))
@@ -68,30 +68,30 @@ def test_gpg_pubkey_pkg(current_actor_context):
 def test_create_lookup():
     # NOTE(ivasilev) Ideally should be tested separately from the actor, but since library
     # testing functionality is not yet implemented in leapp-repository the tests will reside here.
-    model = TestModel()
+    model = MockModel()
     # plain non-empty list
     model.list_field.extend([-42])
     with mock.patch('leapp.libraries.stdlib.api.consume', return_value=(model,)):
         # monkeypatch.setattr('leapp.libraries.stdlib.api.consume', consume_message_mocked)
-        lookup = rpms.create_lookup(TestModel, 'list_field', 'real')
+        lookup = rpms.create_lookup(MockModel, 'list_field', 'real')
         assert {42, -42} == lookup
     # empty list
     model.list_field = []
     with mock.patch('leapp.libraries.stdlib.api.consume', return_value=(model,)):
-        lookup = rpms.create_lookup(TestModel, 'list_field', 'real')
+        lookup = rpms.create_lookup(MockModel, 'list_field', 'real')
         assert {} == lookup
     # nullable list without default
     assert model.list_field_nullable is None
     with mock.patch('leapp.libraries.stdlib.api.consume', return_value=(model,)):
-        lookup = rpms.create_lookup(TestModel, 'list_field_nullable', 'real')
+        lookup = rpms.create_lookup(MockModel, 'list_field_nullable', 'real')
         assert {} == lookup
     # improper usage: lookup from non iterable field
     with mock.patch('leapp.libraries.stdlib.api.consume', return_value=(model,)):
-        lookup = rpms.create_lookup(TestModel, 'int_field', 'real')
+        lookup = rpms.create_lookup(MockModel, 'int_field', 'real')
         assert {} == lookup
     # improper usage: lookup from iterable but bad attribute
     with mock.patch('leapp.libraries.stdlib.api.consume', return_value=(model,)):
-        lookup = rpms.create_lookup(TestModel, 'list_field', 'nosuchattr')
+        lookup = rpms.create_lookup(MockModel, 'list_field', 'nosuchattr')
         assert {} == lookup
 
 
