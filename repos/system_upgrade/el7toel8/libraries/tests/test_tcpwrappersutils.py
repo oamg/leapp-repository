@@ -2,6 +2,7 @@ import leapp.libraries.common.tcpwrappersutils as lib
 from leapp.models import DaemonList, TcpWrappersFacts
 
 
+
 def test_config_applies_to_daemon_simple():
     daemon_list=DaemonList(value=['vsftpd'])
     facts = TcpWrappersFacts(daemon_lists=[daemon_list])
