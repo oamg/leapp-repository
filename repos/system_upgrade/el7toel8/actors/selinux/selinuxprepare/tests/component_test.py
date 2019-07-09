@@ -2,10 +2,10 @@ import os
 
 import pytest
 
-from leapp.snactor.fixture import current_actor_context
-from leapp.models import SELinuxModule, SELinuxModules, SELinuxCustom
 from leapp.libraries.stdlib import api, run, CalledProcessError
+from leapp.models import SELinuxModule, SELinuxModules, SELinuxCustom
 from leapp.reporting import Report
+from leapp.snactor.fixture import current_actor_context
 
 
 TEST_MODULES = [
@@ -26,12 +26,12 @@ SEMANAGE_COMMANDS = [
 testmoduledir = "tests/mock_modules/"
 
 
-def _run_cmd(cmd, split=False, logmsg=""):
+def _run_cmd(cmd, logmsg="", split=False):
     try:
         return run(cmd, split=split).get("stdout", "")
     except CalledProcessError as e:
-        # XXX FIXME not sure logging in tests makes sense
-        api.current_logger().warning("%s: %s", logmsg, str(e.stderr))
+        if logmsg:
+            api.current_logger().warning("%s: %s", logmsg, str(e.stderr))
 
 
 @pytest.fixture(scope="module")
@@ -44,12 +44,8 @@ def semanage_export_initial():
     yield _run_cmd(["semanage", "export"], logmsg="Error listing SELinux customizations")
 
 
-def setup():
-    # NOTE(ivasilev) Maybe there is a more elegant way to conditionally run setup/teardown
-    enabled = os.environ.get("DESTRUCTIVE_TESTING", False)
-    if not enabled:
-        return
-
+@pytest.fixture(scope="function")
+def destructive_selinux_env():
     for priority, module in TEST_MODULES:
         tests_dir = os.path.join(os.getenv('PYTEST_CURRENT_TEST').rsplit(os.path.sep, 2)[0], testmoduledir)
         _run_cmd(["semodule", "-X", priority, "-i", os.path.join(tests_dir, module + ".cil")],
@@ -58,13 +54,22 @@ def setup():
     for command in SEMANAGE_COMMANDS:
         _run_cmd(["semanage", command[0], "-a"] + command[1:], logmsg="Error applying selinux customizations")
 
+    yield
 
-@pytest.mark.skipif(not os.environ.get("DESTRUCTIVE_TESTING", False),
+    for priority, module in TEST_MODULES + [["400", "permissive_abrt_t"]]:
+        _run_cmd(["semodule", "-X", priority, "-r", module])
+
+    for command in SEMANAGE_COMMANDS:
+        _run_cmd(["semanage", command[0], "-d"] + command[1:])
+
+
+@pytest.mark.skipif(os.getenv("DESTRUCTIVE_TESTING", False) in [False, "0"],
                     reason='Test disabled by default because it would modify the system')
-def test_SELinuxPrepare(current_actor_context, semodule_lfull_initial, semanage_export_initial):
+def test_SELinuxPrepare(current_actor_context, semodule_lfull_initial, semanage_export_initial,
+                        destructive_selinux_env):
     before_test = []
     for cmd in (["semodule", "-lfull"], ["semanage", "export"]):
-        res = _run_cmd(cmd)
+        res = _run_cmd(cmd, "Error listing SELinux customizations")
         before_test.append(res)
         # XXX still not sure about logging in tests
         api.current_logger().info("Before test:%s", res)
@@ -80,24 +85,7 @@ def test_SELinuxPrepare(current_actor_context, semodule_lfull_initial, semanage_
     current_actor_context.run()
 
     # check if all given modules and local customizations where removed
-    semodule_res = _run_cmd(["semodule", "-lfull"])
+    semodule_res = _run_cmd(["semodule", "-lfull"], "Error listing SELinux modules")
     assert semodule_lfull_initial == semodule_res
-    semanage_res = _run_cmd(["semanage", "export"])
+    semanage_res = _run_cmd(["semanage", "export"], "Error listing SELinux customizations")
     assert semanage_export_initial == semanage_res
-
-
-def teardown():
-    # NOTE(ivasilev) Maybe there is a more elegant way to conditionally run setup/teardown
-    enabled = os.environ.get("DESTRUCTIVE_TESTING", False)
-    if not enabled:
-        return
-
-    for priority, module in TEST_MODULES + [["400", "permissive_abrt_t"]]:
-        # failure is expected -- should be removed by the actor
-        # XXX FIXME if failure is 100% expected - use assertRaises
-        _run_cmd(["semodule", "-X", priority, "-r", module])
-
-    for command in SEMANAGE_COMMANDS:
-        # failure is expected -- should be removed by the actor
-        # XXX FIXME if failure is 100% expected - use assertRaises
-        _run_cmd(["semanage", command[0], "-d"] + command[1:])
