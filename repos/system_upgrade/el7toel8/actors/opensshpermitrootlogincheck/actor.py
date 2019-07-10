@@ -33,7 +33,7 @@ class OpenSshPermitRootLoginCheck(Actor):
                         'the option PermitRootLogin in sshd_config file, '
                         'which will default in RHEL8 to "prohibit-password".',
                 remediation='If you depend on remote root logins using '
-                            'passwords, condider setting up a different '
+                            'passwords, consider setting up a different '
                             'user for remote administration or adding '
                             '"PermitRootLogin yes" to sshd_config.',
                 severity='high',
