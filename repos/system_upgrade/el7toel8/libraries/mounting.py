@@ -4,6 +4,7 @@ import shutil
 from collections import namedtuple
 
 from leapp.libraries.stdlib import run, CalledProcessError, api
+from leapp.libraries.common.config import get_all_envs
 
 ErrorData = namedtuple('ErrorData', ['summary', 'details'])
 
@@ -64,19 +65,21 @@ class IsolationType(object):
     class NSPAWN(_Implementation):
         """ systemd-nspawn implementation """
 
-        def __init__(self, target, binds=()):
+        def __init__(self, target, binds=(), env_vars=None):
             super(IsolationType.NSPAWN, self).__init__(target=target)
             self.binds = binds
+            self.env_vars = env_vars or get_all_envs()
 
         def make_command(self, cmd):
             """ Transform the command to be executed with systemd-nspawn """
             binds = ['--bind={}'.format(bind) for bind in self.binds]
+            setenvs = ['--setenv={}={}'.format(env.name, env.value) for env in self.env_vars]
             return [
                 'systemd-nspawn',
                 '--register=no',
                 '--quiet',
                 '-D', self.target
-            ] + binds + cmd
+            ] + binds + setenvs + cmd
 
     class CHROOT(_Implementation):
         """ chroot implementation """
@@ -225,8 +228,9 @@ class ChrootActions(IsolatedActions):
 class NspawnActions(IsolatedActions):
     """ Isolation with systemd-nspawn """
 
-    def __init__(self, base_dir, binds=()):
-        super(NspawnActions, self).__init__(base_dir=base_dir, implementation=IsolationType.NSPAWN, binds=binds)
+    def __init__(self, base_dir, binds=(), env_vars=None):
+        super(NspawnActions, self).__init__(
+            base_dir=base_dir, implementation=IsolationType.NSPAWN, binds=binds, env_vars=env_vars)
 
 
 class NotIsolatedActions(IsolatedActions):
