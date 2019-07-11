@@ -8,13 +8,23 @@ CURRENT_TARGET_VERSION = '8.1'
 ENV_IGNORE = ('LEAPP_CURRENT_PHASE', 'LEAPP_CURRENT_ACTOR', 'LEAPP_VERBOSE',
               'LEAPP_DEBUG')
 
+ENV_MAPPING = {'LEAPP_DEVEL_DM_DISABLE_UDEV': 'DM_DISABLE_UDEV'}
+
 
 def get_env_vars():
     """
-    Gather LEAPP_DEVEL environment variables and provide them as messages to be
+    Gather LEAPP_DEVEL environment variables and respective mappings to provide them as messages to be
     available after reboot.
     """
-    return [EnvVar(name=k, value=v) for (k, v) in os.environ.items() if k.startswith('LEAPP_') and k not in ENV_IGNORE]
+    env_vars = []
+    leapp_vars = {k: v for (k, v) in os.environ.items() if k.startswith('LEAPP_') and k not in ENV_IGNORE}
+    for k, v in leapp_vars.items():
+        if k in ENV_MAPPING:
+            env_vars.append(EnvVar(name=ENV_MAPPING.get(k), value=v))
+            continue
+        env_vars.append(EnvVar(name=k, value=v))
+
+    return env_vars
 
 
 def get_os_release(path):
