@@ -7,7 +7,7 @@ from leapp.models import SELinuxModule, SELinuxModules, SELinuxCustom, SELinuxFa
 from leapp.libraries.stdlib import api, run, CalledProcessError
 from leapp.reporting import Report
 
-test_modules = [
+TEST_MODULES = [
     ["400", "mock1"],
     ["99", "mock1"],
     ["200", "mock1"],
@@ -16,85 +16,70 @@ test_modules = [
     ["400", "permissive_abrt_t"]
 ]
 
-semanage_commands = [
+SEMANAGE_COMMANDS = [
     ['fcontext', '-t', 'ganesha_var_run_t', "'/ganesha(/.*)?'"],
     ['fcontext', '-t', 'httpd_sys_content_t', "'/web(/.*)?'"],
     ['port', '-t', 'http_port_t', '-p', 'udp', '81']
 ]
 
 
+def _run_cmd(cmd, logmsg="", split=True):
+    try:
+        return run(cmd, split=split).get("stdout", "")
+    except CalledProcessError as e:
+        if logmsg:
+            api.current_logger().warning("%s: %s", logmsg, str(e.stderr))
+
+
 def findModuleSemodule(semodule_lfull, name, priority):
-    for line in semodule_lfull:
-        if name in line and priority in line:
-            return line
-    return None
+    return next((line for line in semodule_lfull if (name in line and priority in line)), None)
 
 
 def findSemanageRule(rules, rule):
-    for r in rules:
-        for word in rule:
-            if word not in r:
-                break
-        else:
-            return r
-    return None
+    return next((r for r in rules if all(word in r for word in rule)), None)
 
 
-@pytest.mark.skip(reason='Test disabled because it would modify the system')
-def test_SELinuxApplyCustom(current_actor_context):
+@pytest.fixture(scope="function")
+def destructive_selinux_teardown():
+    # actor introduces changes to the system, therefore only teardown is needed
+    yield
+
+    for priority, module in TEST_MODULES:
+        _run_cmd(["semodule", "-X", priority, "-r", module],
+                 "Error removing module {} after testing".format(module))
+
+    for command in SEMANAGE_COMMANDS[1:]:
+        _run_cmd(["semanage", command[0], "-d"] + [x.strip('"\'') for x in command[1:]],
+                 "Failed to remove SELinux customizations after testing")
+
+    _run_cmd(["semanage", SEMANAGE_COMMANDS[0][0], "-d"] + SEMANAGE_COMMANDS[0][1:],
+             "Failed to remove SELinux customizations after testing")
+
+
+@pytest.mark.skipif(os.getenv("DESTRUCTIVE_TESTING", False) in [False, "0"],
+                    reason='Test disabled by default because it would modify the system')
+def test_SELinuxApplyCustom(current_actor_context, destructive_selinux_teardown):
 
     semodule_list = [SELinuxModule(name=module, priority=int(prio),
                                    content="(allow domain proc_type (file (getattr open read)))", removed=[])
-                     for (prio, module) in test_modules]
+                     for (prio, module) in TEST_MODULES]
 
-    commands = [" ".join([c[0], "-a"] + c[1:]) for c in semanage_commands[1:]]
-    semanage_removed = [" ".join([semanage_commands[0][0], "-a"] + semanage_commands[0][1:])]
+    commands = [" ".join([c[0], "-a"] + c[1:]) for c in SEMANAGE_COMMANDS[1:]]
+    semanage_removed = [" ".join([SEMANAGE_COMMANDS[0][0], "-a"] + SEMANAGE_COMMANDS[0][1:])]
 
     current_actor_context.feed(SELinuxModules(modules=semodule_list))
     current_actor_context.feed(SELinuxCustom(commands=commands, removed=semanage_removed))
     current_actor_context.run()
 
-    # check if all given modules and local customizations where removed
-    semodule_lfull = []
-    semanage_export = []
-    try:
-        semodule = run(["semodule", "-lfull"], split=True)
-        semodule_lfull = semodule.get("stdout", "")
-        semanage = run(["semanage", "export"], split=True)
-        semanage_export = semanage.get("stdout", "")
-    except CalledProcessError as e:
-        api.current_logger().warning("Error listing selinux customizations: %s", str(e.stderr))
-        assert False
+    semodule_lfull = _run_cmd(["semodule", "-lfull"],
+                              "Error listing selinux modules")
+    semanage_export = _run_cmd(["semanage", "export"],
+                               "Error listing selinux customizations")
 
-    # check that all modules installed during test setup where reported
-    for priority, name in test_modules:
+    # check that all reported modules where introduced to the system
+    for priority, name in TEST_MODULES:
         if priority != "100" and priority != "200":
             assert findModuleSemodule(semodule_lfull, name, priority)
-    # check that all valid commands where reintroduced to the system
-    for command in semanage_commands[1:-1]:
+    # check that all valid commands where introduced to the system
+    for command in SEMANAGE_COMMANDS[1:-1]:
         assert findSemanageRule(semanage_export, command)
-
-
-# Test disabled because it's setup and teardown would modify the system
-# Remove "_" before re-activation
-def teardown_():
-    for priority, module in test_modules:
-        try:
-            run(["semodule", "-X", priority, "-r", module])
-        except CalledProcessError as e:
-            # expected if the test fails
-            api.current_logger().warning("Error removing selinux modules after testing: %s", str(e.stderr))
-
-    for command in semanage_commands[1:]:
-        try:
-            run(["semanage", command[0], "-d"] + [x.strip('"\'') for x in command[1:]])
-        except CalledProcessError as e:
-            # expected if the test fails
-            api.current_logger().warning("Error removing selinux customizations after testing: %s", str(e.stderr))
-            continue
-
-    try:
-        run(["semanage", semanage_commands[0][0], "-d"] + semanage_commands[0][1:])
-    except CalledProcessError:
-        # expected
-        pass
