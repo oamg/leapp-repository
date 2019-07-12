@@ -27,11 +27,11 @@ def apply_yum_workaround(context=None):
         context.call(cmd)
     except OSError as e:
         raise StopActorExecutionError(
-            message='Failed to exceute script to apply yum adjustment. Message: {}'.format(e.message)
+            message='Failed to exceute script to apply yum adjustment. Message: {}'.format(str(e))
         )
     except CalledProcessError as e:
         raise StopActorExecutionError(
-            message='Failed to apply yum adjustment. Message: {}'.format(e.message)
+            message='Failed to apply yum adjustment. Message: {}'.format(str(e))
         )
 
 
@@ -77,7 +77,7 @@ def call_with_oserror_handled(cmd):
     except OSError as e:
         if cmd:
             raise StopActorExecutionError(
-                message=e.message,
+                message=str(e),
                 details={
                     'hint': 'Please ensure that {} is installed and executable.'.format(cmd[0])
                 }
@@ -97,7 +97,7 @@ def call_with_failure_hint(cmd, hint):
         call_with_oserror_handled(cmd)
     except CalledProcessError as e:
         raise StopActorExecutionError(
-            message='Failed to execute command `{}`. Error: {}'.format(' '.join(cmd), e.message),
+            message='Failed to execute command `{}`. Error: {}'.format(' '.join(cmd), str(e)),
             details={hint: hint}
         )
 

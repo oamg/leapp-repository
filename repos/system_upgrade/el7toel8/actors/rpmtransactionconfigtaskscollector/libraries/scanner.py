@@ -10,7 +10,7 @@ def load_tasks_file(path, logger):
             with open(path, 'r') as f:
                 return list(set([entry.strip() for entry in f.read().split() if entry.strip()]))
         except IOError as e:
-            logger.warn('Failed to open %s to load additional transaction data. Error: %s', path, e.message)
+            logger.warn('Failed to open %s to load additional transaction data. Error: %s', path, str(e))
     return []
 
 

@@ -284,12 +284,12 @@ class MountingBase(object):
             try:
                 run(['umount', '-fl', self.target], split=False)
             except (OSError, CalledProcessError) as e:
-                api.current_logger().warn('Unmounting %s failed with: %s', self.target, e.message)
+                api.current_logger().warn('Unmounting %s failed with: %s', self.target, str(e))
         for directory in itertools.chain(self.additional_directories, (self.target,)):
             try:
                 run(['rm', '-rf', directory], split=False)
             except (OSError, CalledProcessError):
-                api.current_logger().warn('Removing mount directory %s failed with: %s', directory, e.message)
+                api.current_logger().warn('Removing mount directory %s failed with: %s', directory, str(e))
 
     def mount(self):
         """ Performs the mount if MountConfig.should_create = True """
@@ -306,7 +306,7 @@ class MountingBase(object):
         try:
             run(['mount'] + self._mount_options() + [self.target], split=False)
         except (OSError, CalledProcessError) as e:
-            api.current_logger().warn('Mounting %s failed with: %s', self.target, e.message, exc_info=True)
+            api.current_logger().warn('Mounting %s failed with: %s', self.target, str(e), exc_info=True)
             raise MountError(
                 message='Mount operation with mode {} from {} to {} failed: {}'.format(
                     self._mode, self.source, self.target, str(e)),

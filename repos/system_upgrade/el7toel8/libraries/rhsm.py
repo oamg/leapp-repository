@@ -23,7 +23,7 @@ def _handle_rhsm_exceptions(hint=None):
     except OSError as e:
         api.current_logger().error('Failed to execute subscription-manager executable')
         raise StopActorExecutionError(
-            message='Unable to execute subscription-manager executable. Message: {}'.format(e.message),
+            message='Unable to execute subscription-manager executable. Message: {}'.format(str(e)),
             details={
                 'hint': 'Please ensure subscription-manager is installed and exceutable.'
             }

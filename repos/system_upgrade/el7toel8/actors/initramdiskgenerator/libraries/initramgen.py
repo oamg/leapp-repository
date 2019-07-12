@@ -35,7 +35,7 @@ def copy_dracut_modules(context, modules):
             api.current_logger().error('Failed to copy dracut module "{name}" from "{source}" to "{target}"'.format(
                 name=module.name, source=module.module_path, target=context.full_path('/dracut')), exc_info=True)
             raise StopActorExecutionError(
-                message='Failed to install dracut modules required in the initram. Error: {}'.format(e.message)
+                message='Failed to install dracut modules required in the initram. Error: {}'.format(str(e))
             )
 
 

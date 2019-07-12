@@ -1,3 +1,5 @@
+from __future__ import division
+
 from leapp.libraries.actor.library import (MIN_AVAIL_BYTES_FOR_BOOT,
                                            check_avail_space_on_boot,
                                            inhibit_upgrade)

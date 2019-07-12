@@ -51,7 +51,7 @@ class TestConfigConversion(object):
 
     def test_match(self):
 
-        for f in [f for f in os.listdir(NTP_MATCH_DIR) if f.endswith('conf')]:
+        for f in [fe for fe in os.listdir(NTP_MATCH_DIR) if fe.endswith('conf')]:
             # get recorded actual result
             num = f.split('.')[0].split('_')[0]
             ntp_conf = os.path.join(NTP_MATCH_DIR, f)

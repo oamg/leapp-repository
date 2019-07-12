@@ -266,7 +266,7 @@ def map_repositories(to_install):
     """Map repositories from PES data to RHSM repository id"""
     repo_not_mapped_pkgs = set()
     for pkg, repo in to_install.items():
-        if repo not in REPOSITORIES_MAPPING.keys():
+        if repo not in REPOSITORIES_MAPPING:
             repo_not_mapped_pkgs.add(pkg)
             del to_install[pkg]
             continue
