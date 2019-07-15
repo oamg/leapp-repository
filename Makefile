@@ -181,6 +181,8 @@ lint:
 	bash -c "[[ ! -z $${SEARCH_PATH} ]] && find $${SEARCH_PATH} -name '*.py' | sort -u | xargs pylint" && \
 	echo "--- Running flake8 ---" && \
 	bash -c "[[ ! -z $${SEARCH_PATH} ]] && flake8 $${SEARCH_PATH}" && \
+	echo "--- Checking py3 compatibility ---" && \
+	bash -c "[[ ! -z $${SEARCH_PATH} ]] && find $${SEARCH_PATH} -name '*.py' | sort -u | xargs pylint --py3k" && \
 	echo "--- Linting done. ---"
 
 test_no_lint:

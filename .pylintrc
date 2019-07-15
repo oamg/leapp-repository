@@ -1,6 +1,3 @@
-[MASTER]
-py3k=
-
 [MESSAGES CONTROL]
 disable=
 # "F" Fatal errors that prevent further processing
