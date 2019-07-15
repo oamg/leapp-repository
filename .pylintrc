@@ -27,7 +27,6 @@ disable=
  unused-import,
 # "C" Coding convention violations
  bad-continuation,
- invalid-name,
  missing-docstring,
  wrong-import-order,
 # "R" Refactor recommendations
@@ -49,3 +48,15 @@ max-attributes=21  # 4x + 1 from default
 
 [REPORTS]
 msg-template='[{msg_id} {symbol}] {msg} File: {path}, line {line}, in {obj}'
+
+[BASIC]
+# In order to make a check more strict add proper regex http://pylint-messages.wikidot.com/messages:c0103
+argument-rgx=.*
+attr-rgx=.*
+class-rgx=.*
+const-rgx=.*
+function-rgx=.*
+method-rgx=.*
+module-rgx=.*
+variable-rgx=.*
+inlinevar-rgx=.*
