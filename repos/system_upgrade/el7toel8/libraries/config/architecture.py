@@ -14,8 +14,8 @@ def matches_architecture(*match_list):
     """
     Check if one of provided architectures matches the system's one.
 
-    :param match: architectures to check against
-    :type match: list, tuple of strings
+    :param match_list: specification of architectures to check against
+    :type match_list: strings
     :return: ``True`` if system's architecture matches one of the values in match_list, ``False`` otherwise
     :rtype: bool
     """
