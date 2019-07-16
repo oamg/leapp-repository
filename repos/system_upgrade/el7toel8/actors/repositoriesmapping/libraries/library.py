@@ -28,10 +28,15 @@ def scan_repositories(path):
         next(data)  # skip header
 
         for row in data:
-            if len(row) != 6:
+            # skip empty lines and comments
+            if not row or row[0].startswith('#'):
                 continue
 
-            from_id, to_id, from_minor_version, to_minor_version, arch, repo_type = row
+            try:
+                from_id, to_id, from_minor_version, to_minor_version, arch, repo_type = row
+            except ValueError as err:
+                inhibit_upgrade('Repositories map file is invalid, offending line number: {} ({})'.format(
+                    data.line_num, err))
 
             try:
                 repositories.append(RepositoryMap(from_id=from_id,
@@ -41,7 +46,8 @@ def scan_repositories(path):
                                                   arch=arch,
                                                   repo_type=repo_type))
             except ModelViolationError as err:
-                inhibit_upgrade('Repositories map file is invalid ({})'.format(err))
+                inhibit_upgrade('Repositories map file is invalid, offending line number: {} ({})'.format(
+                    data.line_num, err))
 
     if not repositories:
         inhibit_upgrade('Repositories map file is invalid ({})'.format(path))
