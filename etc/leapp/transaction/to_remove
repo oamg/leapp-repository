@@ -1,51 +1,14 @@
-redhat-rpm-config
+### List of packages (each on new line) to be removed from the upgrade transaction
+
+# python2-devel - https://bugzilla.redhat.com/show_bug.cgi?id=1703600
 python2-devel
+# packages that depends on python2-devel
 pygobject2-devel
-pygtk2-devel
 python2-cairo-devel
 python2-debug
-python2-psycopg2-debug
 python2-numpy-f2py
-python2-scipy
 python2-virtualenv
-kernel-rpm-macros
-multilib-rpm-config
-nodejs-packaging
-nodejs-devel
-perl-devel
-net-snmp-devel
-perl-App-cpanminus
-perl-tests
-perl-ExtUtils-CBuilder
-perl-CPAN
-perl-ExtUtils-Embed
-perl-ExtUtils-MakeMaker
-perl-ExtUtils-Install
-perl-Module-Build
-perl-libnetcfg
-perl-inc-latest
-redhat-lsb-languages
-redhat-lsb
-perl-ExtUtils-Miniperl
-perl
-platform-python-devel
-platform-python-debug
-python36-debug
-python3-numpy-f2py
-python3-scipy
-python36-devel
-python3-virtualenv
-unbound-devel
-rpm-build
-openscap-utils
-oscap-anaconda-addon
-scap-workbench
-rpmdevtools
-supermin-devel
-scl-utils-build
-varnish
-varnish-devel
-varnish-modules
-tpm2-abrmd
+# squid - https://bugzilla.redhat.com/show_bug.cgi?id=1703117
 squid
+# python-docs - https://bugzilla.redhat.com/show_bug.cgi?id=1703605
 python-docs

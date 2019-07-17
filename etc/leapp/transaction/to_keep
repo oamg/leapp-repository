@@ -1,3 +1,5 @@
+### List of packages (each on new line) to be kept in the upgrade transaction
+
 leapp
 python2-leapp
 python3-leapp
