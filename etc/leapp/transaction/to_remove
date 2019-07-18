@@ -12,3 +12,5 @@ python2-virtualenv
 squid
 # python-docs - https://bugzilla.redhat.com/show_bug.cgi?id=1703605
 python-docs
+
+python-tools
