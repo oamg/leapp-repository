@@ -168,8 +168,13 @@ def perform_transaction_install(target_userspace_info, used_repos, tasks):
         '/proc:/installroot/proc',
         '/run/udev:/installroot/run/udev'
     ]
+
     if os.path.ismount('/boot'):
         bind_mounts.append('/boot:/installroot/boot')
+
+    if os.path.ismount('/boot/efi'):
+        bind_mounts.append('/boot/efi:/installroot/boot/efi')
+
     with _prepare_transaction(used_repos=used_repos,
                               target_userspace_info=target_userspace_info,
                               binds=bind_mounts
