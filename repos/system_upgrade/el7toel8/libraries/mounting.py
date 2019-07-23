@@ -288,7 +288,7 @@ class MountingBase(object):
         for directory in itertools.chain(self.additional_directories, (self.target,)):
             try:
                 run(['rm', '-rf', directory], split=False)
-            except (OSError, CalledProcessError):
+            except (OSError, CalledProcessError) as e:
                 api.current_logger().warn('Removing mount directory %s failed with: %s', directory, str(e))
 
     def mount(self):
