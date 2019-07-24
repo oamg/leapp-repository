@@ -25,7 +25,7 @@ class run_mocked(object):
         return {'stdout': stdout}
 
 
-def test_removeCustomModules(monkeypatch):
+def test_remove_custom_modules(monkeypatch):
     mock_modules = {"a": 99,
                     "b": 300,
                     "c": 400,
@@ -40,8 +40,8 @@ def test_removeCustomModules(monkeypatch):
     monkeypatch.setattr(api, "consume", consume_SELinuxModules_mocked)
     monkeypatch.setattr(library, "run", run_mocked())
 
-    library.removeCustomModules()
+    library.remove_custom_modules()
     assert library.run.called == len(mock_modules)
     assert library.run.non_semodule_calls == 0
-    # verify that removeCustomModules tried to remove all given modules
+    # verify that remove_custom_modules tried to remove all given modules
     assert (set(mock_modules) - library.run.removed_modules) == set()

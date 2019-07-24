@@ -2,7 +2,7 @@ from leapp.libraries.stdlib import api, run, CalledProcessError
 from leapp.models import SELinuxModules
 
 
-def removeSemanageCustomizations():
+def remove_semanage_customizations():
     # remove SELinux customizations done by semanage -- to be reintroduced after the upgrade
     api.current_logger().info('Removing SELinux customizations introduced by semanage.')
 
@@ -16,7 +16,7 @@ def removeSemanageCustomizations():
             continue
 
 
-def removeCustomModules():
+def remove_custom_modules():
     # remove custom SElinux modules - to be reinstalled after the upgrade
     for semodules in api.consume(SELinuxModules):
         api.current_logger().info("Removing custom SELinux policy modules. Count: %d", len(semodules.modules))

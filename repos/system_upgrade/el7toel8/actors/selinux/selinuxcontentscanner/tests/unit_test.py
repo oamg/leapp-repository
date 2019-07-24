@@ -44,25 +44,25 @@ class run_mocked_fail(object):
         raise CalledProcessError(self, 1, "Mock error ;)")
 
 
-def test_listSELinuxModules(monkeypatch):
+def test_list_selinux_modules(monkeypatch):
     monkeypatch.setattr(library, "run", run_mocked())
 
-    assert library.listSELinuxModules() == [("permissive_abrt_t", "400"),
-                                            ("zebra", "400"),
-                                            ("zebra", "300"),
-                                            ("vpn", "100"),
-                                            ("zebra", "099"),
-                                            ("minissdpd", "100")]
+    assert library.list_selinux_modules() == [("permissive_abrt_t", "400"),
+                                              ("zebra", "400"),
+                                              ("zebra", "300"),
+                                              ("vpn", "100"),
+                                              ("zebra", "099"),
+                                              ("minissdpd", "100")]
 
     monkeypatch.setattr(library, "run", run_mocked_fail())
 
-    assert library.listSELinuxModules() == []
+    assert library.list_selinux_modules() == []
 
 
-def test_getSELinuxCustomizations(monkeypatch):
+def test_get_selinux_customizations(monkeypatch):
     monkeypatch.setattr(library, "run", run_mocked())
 
-    (semanage_valid, semanage_removed) = library.getSELinuxCustomizations()
+    (semanage_valid, semanage_removed) = library.get_selinux_customizations()
 
     assert len(semanage_valid) == 11
     assert semanage_valid[0] == "boolean -D"

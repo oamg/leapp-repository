@@ -19,5 +19,5 @@ class SELinuxPrepare(Actor):
     tags = (PreparationPhaseTag, IPUWorkflowTag)
 
     def process(self):
-        library.removeSemanageCustomizations()
-        library.removeCustomModules()
+        library.remove_semanage_customizations()
+        library.remove_custom_modules()

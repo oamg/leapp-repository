@@ -57,12 +57,12 @@ def destructive_selinux_env():
                  "Error removing selinux module {} after testing".format(module))
 
 
-def findModule(selinuxmodules, name, priority):
+def find_module(selinuxmodules, name, priority):
     return next((module for module in selinuxmodules.modules
                 if (module.name == name and module.priority == int(priority))), None)
 
 
-def findSemanageRule(rules, rule):
+def find_semanage_rule(rules, rule):
     return next((r for r in rules if all(word in r for word in rule)), None)
 
 
@@ -85,7 +85,7 @@ def test_SELinuxContentScanner(current_actor_context, destructive_selinux_env):
     # check that all modules installed during test setup where reported
     for priority, name in TEST_MODULES:
         if priority != "100" and priority != "200":
-            assert findModule(modules, name, priority)
+            assert find_module(modules, name, priority)
 
     rpms = current_actor_context.consume(SELinuxRequestRPMs)[0]
     assert rpms
@@ -97,7 +97,7 @@ def test_SELinuxContentScanner(current_actor_context, destructive_selinux_env):
     custom = current_actor_context.consume(SELinuxCustom)[0]
     assert custom
     # the second command contains removed type and should be discarded
-    assert findSemanageRule(custom.removed, SEMANAGE_COMMANDS[1])
+    assert find_semanage_rule(custom.removed, SEMANAGE_COMMANDS[1])
     # the rest of the commands should be reported (except for the last which will show up in modules)
-    assert findSemanageRule(custom.commands, SEMANAGE_COMMANDS[0])
-    assert findSemanageRule(custom.commands, SEMANAGE_COMMANDS[2])
+    assert find_semanage_rule(custom.commands, SEMANAGE_COMMANDS[0])
+    assert find_semanage_rule(custom.commands, SEMANAGE_COMMANDS[2])
