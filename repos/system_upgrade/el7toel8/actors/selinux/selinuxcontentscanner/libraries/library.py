@@ -30,7 +30,7 @@ CONTAINER_TYPES = ["container_connect_any", "container_runtime_t", "container_ru
 WORKING_DIRECTORY = '/tmp/selinux/'
 
 
-def checkModule(name):
+def check_module(name):
     '''
     Check if given module contains one of removed types and comment out corresponding lines.
 
@@ -48,7 +48,7 @@ def checkModule(name):
         return []
 
 
-def listSELinuxModules():
+def list_selinux_modules():
     '''
     Produce list of SELinux policy modules
 
@@ -74,7 +74,7 @@ def listSELinuxModules():
     return modules
 
 
-def getSELinuxModules():
+def get_selinux_modules():
     '''
     Read all custom SELinux policy modules from the system
 
@@ -86,7 +86,7 @@ def getSELinuxModules():
 
     '''
 
-    modules = listSELinuxModules()
+    modules = list_selinux_modules()
     semodule_list = []
     # list of rpms containing policy modules to be installed on RHEL 8
     retain_rpms = []
@@ -120,7 +120,7 @@ def getSELinuxModules():
         try:
             run(['semodule', '-c', '-X', priority, '-E', name])
             # check if the module contains invalid types and remove them if so
-            removed = checkModule(module_file)
+            removed = check_module(module_file)
 
             # get content of the module
             try:
@@ -171,7 +171,7 @@ def getSELinuxModules():
     return (semodule_list, list(set(retain_rpms)), list(set(install_rpms)))
 
 
-def getSELinuxCustomizations():
+def get_selinux_customizations():
     '''
     Extract local SELinux customizations introduced by semanage command
 

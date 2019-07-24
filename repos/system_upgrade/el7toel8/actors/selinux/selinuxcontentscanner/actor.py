@@ -24,7 +24,7 @@ class SELinuxContentScanner(Actor):
             if not fact.enabled:
                 return
 
-        (semodule_list, rpms_to_keep, rpms_to_install) = library.getSELinuxModules()
+        (semodule_list, rpms_to_keep, rpms_to_install) = library.get_selinux_modules()
 
         self.produce(SELinuxModules(modules=semodule_list))
         self.produce(
@@ -42,7 +42,7 @@ class SELinuxContentScanner(Actor):
             )
         )
 
-        (semanage_valid, semanage_removed) = library.getSELinuxCustomizations()
+        (semanage_valid, semanage_removed) = library.get_selinux_customizations()
 
         self.produce(
             SELinuxCustom(

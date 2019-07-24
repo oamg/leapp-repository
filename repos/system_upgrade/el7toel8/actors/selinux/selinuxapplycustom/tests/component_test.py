@@ -31,11 +31,11 @@ def _run_cmd(cmd, logmsg="", split=True):
             api.current_logger().warning("%s: %s", logmsg, str(e.stderr))
 
 
-def findModuleSemodule(semodule_lfull, name, priority):
+def find_module_semodule(semodule_lfull, name, priority):
     return next((line for line in semodule_lfull if (name in line and priority in line)), None)
 
 
-def findSemanageRule(rules, rule):
+def find_semanage_rule(rules, rule):
     return next((r for r in rules if all(word in r for word in rule)), None)
 
 
@@ -79,7 +79,7 @@ def test_SELinuxApplyCustom(current_actor_context, destructive_selinux_teardown)
     # check that all reported modules where introduced to the system
     for priority, name in TEST_MODULES:
         if priority != "100" and priority != "200":
-            assert findModuleSemodule(semodule_lfull, name, priority)
+            assert find_module_semodule(semodule_lfull, name, priority)
     # check that all valid commands where introduced to the system
     for command in SEMANAGE_COMMANDS[1:-1]:
-        assert findSemanageRule(semanage_export, command)
+        assert find_semanage_rule(semanage_export, command)
