@@ -2,6 +2,8 @@
 
 # python2-devel - https://bugzilla.redhat.com/show_bug.cgi?id=1703600
 python2-devel
+# python2-tools - same reason as python2-devel
+python2-tools
 # packages that depends on python2-devel
 pygobject2-devel
 python2-cairo-devel
