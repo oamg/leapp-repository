@@ -1,4 +1,5 @@
 from leapp.actors import Actor
+from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor.library import semantics_changes
 from leapp.models import Report, OpenSshConfig
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
@@ -20,9 +21,13 @@ class OpenSshPermitRootLoginCheck(Actor):
 
     def process(self):
         openssh_messages = self.consume(OpenSshConfig)
-        config = next(openssh_messages)
+        config = next(openssh_messages, None)
         if list(openssh_messages):
             api.current_logger().warning('Unexpectedly received more than one OpenSshConfig message.')
+        if not config:
+            raise StopActorExecutionError(
+                'Could not check openssh configuration', details={'details': 'No OpenSshConfig facts found.'}
+            )
 
         if not config.permit_root_login:
             # TODO find out whether the file was modified and will be
