@@ -1,4 +1,5 @@
 from leapp.actors import Actor
+from leapp.exceptions import StopActorExecutionError
 from leapp.models import Report, TcpWrappersFacts, InstalledRedHatSignedRPM
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 from leapp.libraries.stdlib import api
@@ -44,9 +45,13 @@ class TcpWrappersCheck(Actor):
     def process(self):
         # Consume a single TCP Wrappers message
         tcp_wrappers_messages = self.consume(TcpWrappersFacts)
-        tcp_wrappers_facts = next(tcp_wrappers_messages)
+        tcp_wrappers_facts = next(tcp_wrappers_messages, None)
         if list(tcp_wrappers_messages):
             api.current_logger().warning('Unexpectedly received more than one TcpWrappersFacts message.')
+        if not tcp_wrappers_facts:
+            raise StopActorExecutionError(
+                'Could not check tcp wrappers configuration', details={'details': 'No TcpWrappersFacts found.'}
+            )
 
         # Convert installed packages message to list
         packages = create_lookup(InstalledRedHatSignedRPM, field='items', key='name')
