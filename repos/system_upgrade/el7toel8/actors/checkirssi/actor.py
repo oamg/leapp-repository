@@ -1,9 +1,9 @@
 from leapp.actors import Actor
-from leapp.libraries.common.reporting import report_with_remediation
 from leapp.libraries.common.rpms import has_package
 from leapp.models import InstalledRedHatSignedRPM
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
-from leapp.reporting import Report
+from leapp.reporting import Report, create_report
+from leapp import reporting
 
 
 class CheckIrssi(Actor):
@@ -18,11 +18,18 @@ class CheckIrssi(Actor):
 
     def process(self):
         if has_package(InstalledRedHatSignedRPM, 'irssi'):
-            report_with_remediation(
-                title='Irssi incompatible changes in the next major version',
-                summary='Disabled support for the insecure SSLv2 protocol.\n'
-                        'Disabled SSLv3 due to the POODLE vulnerability.\n'
-                        'Removing networks will now remove all attached servers and channels.\n'
-                        'Removed --disable-ipv6 option.\n',
-                remediation='Please update your scripts to be compatible with the changes.',
-                severity='low')
+            create_report([
+                reporting.Title('Irssi incompatible changes in the next major version'),
+                reporting.Summary(
+                    'Disabled support for the insecure SSLv2 protocol.\n'
+                    'Disabled SSLv3 due to the POODLE vulnerability.\n'
+                    'Removing networks will now remove all attached servers and channels.\n'
+                    'Removed --disable-ipv6 option.\n'
+                ),
+                reporting.Severity(reporting.Severity.LOW),
+                reporting.Tags([
+                        reporting.Tags.COMMUNICATION,
+                        reporting.Tags.TOOLS
+                ]),
+                reporting.Remediation(hint='Please update your scripts to be compatible with the changes.')
+            ])

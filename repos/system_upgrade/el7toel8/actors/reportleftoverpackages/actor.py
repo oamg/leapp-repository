@@ -1,7 +1,7 @@
 from leapp.actors import Actor
-from leapp.libraries.common.reporting import report_generic
 from leapp.models import LeftoverPackages, RemovedPackages
-from leapp.reporting import Report
+from leapp.reporting import Report, create_report
+from leapp import reporting
 from leapp.tags import RPMUpgradePhaseTag, IPUWorkflowTag
 
 
@@ -28,14 +28,24 @@ class ReportLeftoverPackages(Actor):
 
             if removed_packages.items:
                 removed = ['-'.join([pkg.name, pkg.version, pkg.release]) for pkg in removed_packages.items]
-                report_generic(summary='Following packages have been removed:\n{}'.format('\n'.join(removed)),
-                               title=title)
+                create_report([
+                    reporting.Title(title),
+                    reporting.Summary('Following packages have been removed:\n{}'.format('\n'.join(removed))),
+                    reporting.Severity(reporting.Severity.HIGH),
+                    reporting.Tags([reporting.Tags.SANITY]),
+                ])
             else:
                 summary = ('Following packages have been removed:\n'
                            '{}\n'
                            'Dependent packages may have been removed as well, please check that you are not missing '
                            'any packages.\n'.format('\n'.join(to_remove)))
-                report_generic(title=title, summary=summary, severity='high')
+
+                create_report([
+                    reporting.Title(title),
+                    reporting.Summary(summary),
+                    reporting.Severity(reporting.Severity.HIGH),
+                    reporting.Tags([reporting.Tags.SANITY]),
+                ])
             return
 
         if not leftover_packages.items:
@@ -44,6 +54,9 @@ class ReportLeftoverPackages(Actor):
 
         summary = 'Following RHEL 7 packages have not been upgraded:\n{}\n'.format('\n'.join(to_remove))
         summary += 'Please remove these packages to keep your system in supported state.\n'
-        report_generic(title='Some RHEL 7 packages have not been upgraded',
-                       summary=summary,
-                       severity='high')
+        create_report([
+            reporting.Title('Some RHEL 7 packages have not been upgraded'),
+            reporting.Summary(summary),
+            reporting.Severity(reporting.Severity.HIGH),
+            reporting.Tags([reporting.Tags.SANITY]),
+        ])

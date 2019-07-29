@@ -25,5 +25,6 @@ def test_sku_report_has_no_skus(monkeypatch, current_actor_context):
         current_actor_context.run()
         reports = list(current_actor_context.consume(Report))
         assert reports and len(reports) == 1
-        assert reports[0].severity == 'high'
-        assert reports[0].title == 'The system is not registered or subscribed.'
+        report_fields = reports[0].report
+        assert report_fields['severity'] == 'high'
+        assert report_fields['title'] == 'The system is not registered or subscribed.'

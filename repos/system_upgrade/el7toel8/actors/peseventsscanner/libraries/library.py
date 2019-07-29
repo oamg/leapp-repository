@@ -3,7 +3,7 @@ import os
 from collections import namedtuple
 
 from leapp.exceptions import StopActorExecution, StopActorExecutionError
-from leapp.libraries.common import reporting
+from leapp import reporting
 from leapp.libraries.stdlib import api
 from leapp.libraries.stdlib.config import is_verbose
 from leapp.models import (InstalledRedHatSignedRPM, PESRpmTransactionTasks,
@@ -83,7 +83,13 @@ def get_events(pes_events_filepath):
         title = 'Missing/Invalid PES data file ({})'.format(pes_events_filepath)
         summary = 'Read documentation at: https://access.redhat.com/articles/3664871 for more information ' \
             'about how to retrieve the files'
-        reporting.report_generic(title=title, summary=summary, severity='high', flags=['inhibitor'])
+        reporting.create_report([
+            reporting.Title(title),
+            reporting.Summary(summary),
+            reporting.Severity(reporting.Severity.HIGH),
+            reporting.Tags([reporting.Tags.SANITY]),
+            reporting.Flags([reporting.Flags.INHIBITOR])
+        ])
         raise StopActorExecution()
 
 
@@ -283,7 +289,12 @@ def report_skipped_packages(message, packages):
     """Generate report message about skipped packages"""
     title = 'Packages will not be installed'
     summary = '{} {}\n{}'.format(len(packages), message, '\n'.join(['- ' + p for p in packages]))
-    reporting.report_generic(title=title, summary=summary, severity='high')
+    reporting.create_report([
+        reporting.Title(title),
+        reporting.Summary(summary),
+        reporting.Severity(reporting.Severity.HIGH),
+        reporting.Tags([reporting.Tags.REPOSITORY]),
+    ])
     if is_verbose():
         api.show_message(summary)
 

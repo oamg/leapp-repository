@@ -11,14 +11,17 @@ class produce_mocked(object):
         self.model_instances.append(model_instances[0])
 
 
-class report_generic_mocked(object):
+class create_report_mocked(object):
     def __init__(self):
         self.called = 0
-        self.report_fields = None
+        self.report_fields = {}
 
-    def __call__(self, **report_fields):
+    def __call__(self, report_fields):
         self.called += 1
-        self.report_fields = report_fields
+        # iterate list of report primitives (classes)
+        for report in report_fields:
+            # last element of path is our field name
+            self.report_fields.update(report.to_dict)
 
 
 def make_IOError(error):

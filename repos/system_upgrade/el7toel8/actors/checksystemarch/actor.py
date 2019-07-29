@@ -1,8 +1,8 @@
 import platform
 
 from leapp.actors import Actor
-from leapp.reporting import Report
-from leapp.libraries.common.reporting import report_generic
+from leapp.reporting import Report, create_report
+from leapp import reporting
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
@@ -21,8 +21,10 @@ class CheckSystemArch(Actor):
 
     def process(self):
         if platform.machine() != 'x86_64':
-            report_generic(
-                title='Unsupported arch',
-                summary='Upgrade process is only supported on x86_64 systems.',
-                severity='high',
-                flags=['inhibitor'])
+            create_report([
+                reporting.Title('Unsupported architecture'),
+                reporting.Summary('Upgrade process is only supported on x86_64 systems.'),
+                reporting.Severity(reporting.Severity.HIGH),
+                reporting.Tags([reporting.Tags.SANITY]),
+                reporting.Flags([reporting.Flags.INHIBITOR])
+            ])

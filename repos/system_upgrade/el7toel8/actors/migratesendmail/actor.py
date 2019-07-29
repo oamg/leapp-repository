@@ -1,8 +1,8 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import library
-from leapp.libraries.common.reporting import report_generic
 from leapp.models import SendmailMigrationDecision
-from leapp.reporting import Report
+from leapp.reporting import Report, create_report
+from leapp import reporting
 from leapp.tags import ApplicationsPhaseTag, IPUWorkflowTag
 
 
@@ -24,7 +24,11 @@ class MigrateSendmail(Actor):
         for f in decision.migrate_files:
             library.migrate_file(f)
         list_separator_fmt = '\n    - '
-        report_generic(
-            title='sendmail configuration files migrated',
-            summary='Uncompressed IPv6 addresses in {}'.format(list_separator_fmt.join(decision.migrate_files)),
-            severity='low')
+        create_report([
+            reporting.Title('sendmail configuration files migrated'),
+            reporting.Summary(
+                'Uncompressed IPv6 addresses in {}'.format(list_separator_fmt.join(decision.migrate_files))
+            ),
+            reporting.Severity(reporting.Severity.LOW),
+            reporting.Tags([reporting.Tags.SERVICES, reporting.Tags.EMAIL])
+        ])

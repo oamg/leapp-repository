@@ -1,6 +1,6 @@
 from leapp.libraries.actor import library
-from leapp.libraries.common import reporting
-from leapp.libraries.common.testutils import report_generic_mocked
+from leapp import reporting
+from leapp.libraries.common.testutils import create_report_mocked
 
 
 class extract_tgz64_mocked(object):
@@ -55,7 +55,7 @@ def test_migration(monkeypatch):
                 (['ntp-wait'], ['chrony-wait'], 0),
                 (['ntpd', 'ntpdate', 'ntp-wait'], ['chronyd', 'chronyd', 'chrony-wait'], 1),
             ]:
-        monkeypatch.setattr(reporting, 'report_generic', report_generic_mocked())
+        monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
         monkeypatch.setattr(library, 'extract_tgz64', extract_tgz64_mocked())
         monkeypatch.setattr(library, 'enable_service', enable_service_mocked())
         monkeypatch.setattr(library, 'write_file', write_file_mocked())
@@ -64,13 +64,13 @@ def test_migration(monkeypatch):
         library.migrate_ntp(ntp_services, 'abcdef')
 
         if ntp_services:
-            assert reporting.report_generic.called == 1
+            assert reporting.create_report.called == 1
             if ignored_lines > 0:
                 assert 'configuration partially migrated to chrony' in \
-                        reporting.report_generic.report_fields['title']
+                        reporting.create_report.report_fields['title']
             else:
                 assert 'configuration migrated to chrony' in \
-                        reporting.report_generic.report_fields['title']
+                        reporting.create_report.report_fields['title']
 
             assert library.extract_tgz64.called == 1
             assert library.extract_tgz64.s == 'abcdef'
@@ -86,7 +86,7 @@ def test_migration(monkeypatch):
                     '/etc/ntp.conf' if 'ntpd' in ntp_services else '/etc/ntp.conf.nosources',
                     '/etc/ntp/step-tickers' if 'ntpdate' in ntp_services else '')
         else:
-            assert reporting.report_generic.called == 0
+            assert reporting.create_report.called == 0
             assert library.extract_tgz64.called == 0
             assert library.enable_service.called == 0
             assert library.write_file.called == 0

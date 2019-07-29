@@ -5,7 +5,7 @@ import functools
 
 from leapp.models import StorageInfo, PartitionEntry, FstabEntry, MountEntry, LsblkEntry, \
     PvsEntry, VgsEntry, LvdisplayEntry, SystemdMountEntry
-from leapp.libraries.common import reporting
+from leapp import reporting
 from leapp.libraries.stdlib import api
 
 
@@ -113,13 +113,14 @@ def _get_fstab_info(fstab_path):
                         'The fstab configuration file seems to be invalid. You need to fix it to be able to proceed'
                         ' with the upgrade process.'
                     )
-                    reporting.report_with_remediation(
-                        title='Problems with parsing data in /etc/fstab',
-                        summary=summary,
-                        remediation=remediation,
-                        severity='high',
-                        flags=['inhibitor']
-                    )
+                    reporting.create_report([
+                        reporting.Title('Problems with parsing data in /etc/fstab'),
+                        reporting.Summary(summary),
+                        reporting.Severity(reporting.Severity.HIGH),
+                        reporting.Tags([reporting.Tags.FILESYSTEM]),
+                        reporting.Flags([reporting.Flags.INHIBITOR]),
+                        reporting.Remediation(hint=remediation)
+                    ])
 
                     api.current_logger().error(summary)
                     break

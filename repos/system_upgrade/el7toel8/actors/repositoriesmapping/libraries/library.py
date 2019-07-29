@@ -2,7 +2,7 @@ import csv
 import os
 
 from leapp.exceptions import StopActorExecution
-from leapp.libraries.common import reporting
+from leapp import reporting
 from leapp.libraries.stdlib import api
 from leapp.models import RepositoriesMap, RepositoryMap
 from leapp.models.fields import ModelViolationError
@@ -11,7 +11,13 @@ from leapp.models.fields import ModelViolationError
 def inhibit_upgrade(title):
     summary = 'Read documentation at: https://access.redhat.com/articles/3664871 for more information ' \
         'about how to retrieve the files'
-    reporting.report_generic(title=title, summary=summary, severity='high', flags=['inhibitor'])
+    reporting.create_report([
+        reporting.Title(title),
+        reporting.Summary(summary),
+        reporting.Severity(reporting.Severity.HIGH),
+        reporting.Tags([reporting.Tags.UPGRADE_PROCESS]),
+        reporting.Flags([reporting.Flags.INHIBITOR])
+    ])
     raise StopActorExecution()
 
 

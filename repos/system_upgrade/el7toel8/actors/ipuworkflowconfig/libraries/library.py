@@ -1,6 +1,6 @@
 import os
 
-from leapp.libraries.common import reporting
+from leapp import reporting
 from leapp.models import EnvVar, OSRelease
 
 CURRENT_TARGET_VERSION = '8.0'
@@ -32,11 +32,13 @@ def get_os_release(path):
                 variant_id=data.get('VARIANT_ID', '').strip('"') or None
             )
     except IOError as e:
-        reporting.report_generic(
-            title='Error while collecting system OS facts',
-            summary=str(e),
-            severity='high',
-            flags=['inhibitor'])
+        reporting.create_report([
+            reporting.Title('Error while collecting system OS facts'),
+            reporting.Summary(str(e)),
+            reporting.Severity(reporting.Severity.HIGH),
+            reporting.Tags([reporting.Tags.OS_FACTS, reporting.Tags.SANITY]),
+            reporting.Flags([reporting.Flags.INHIBITOR])
+        ])
         return None
 
 

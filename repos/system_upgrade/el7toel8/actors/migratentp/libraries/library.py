@@ -3,8 +3,11 @@ import io
 import tarfile
 
 from leapp.exceptions import StopActorExecutionError
-from leapp.libraries.common import reporting
+from leapp import reporting
 from leapp.libraries.stdlib import CalledProcessError, run
+
+
+COMMON_REPORT_TAGS = [reporting.Tags.SERVICES, reporting.Tags.TIME_MANAGEMENT]
 
 
 def extract_tgz64(s):
@@ -80,12 +83,17 @@ def migrate_ntp(migrate_services, config_tgz64):
     ignored_lines = ntp2chrony('/', ntp_conf, step_tickers)
 
     if not ignored_lines:
-        reporting.report_generic(
-                title='{} configuration migrated to chrony'.format(' and '.join(migrate_configs)),
-                summary='ntp2chrony executed successfully',
-                severity='low')
+        reporting.create_report([
+            reporting.Title('{} configuration migrated to chrony'.format(' and '.join(migrate_configs))),
+            reporting.Summary('ntp2chrony executed successfully'),
+            reporting.Severity(reporting.Severity.INFO),
+            reporting.Tags(COMMON_REPORT_TAGS)
+        ])
+
     else:
-        reporting.report_generic(
-                title='{} configuration partially migrated to chrony'.format(' and '.join(migrate_configs)),
-                summary='Some lines in /etc/ntp.conf were ignored in migration (check /etc/chrony.conf)',
-                severity='medium')
+        reporting.create_report([
+            reporting.Title('{} configuration partially migrated to chrony'.format(' and '.join(migrate_configs))),
+            reporting.Summary('Some lines in /etc/ntp.conf were ignored in migration (check /etc/chrony.conf)'),
+            reporting.Severity(reporting.Severity.MEDIUM),
+            reporting.Tags(COMMON_REPORT_TAGS)
+        ])

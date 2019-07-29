@@ -3,7 +3,8 @@ from leapp.exceptions import StopActorExecutionError
 from leapp.models import Report, OpenSshConfig
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 from leapp.libraries.stdlib import api
-from leapp.libraries.common.reporting import report_generic
+from leapp.reporting import create_report
+from leapp import reporting
 
 
 class OpenSshUsePrivilegeSeparationCheck(Actor):
@@ -30,9 +31,18 @@ class OpenSshUsePrivilegeSeparationCheck(Actor):
 
         if config.use_privilege_separation is not None and \
            config.use_privilege_separation != "sandbox":
-            report_generic(
-                title='OpenSSH configured not to use privilege separation sandbox',
-                summary='OpenSSH is configured to disable privilege '
-                        'separation sandbox, which is decreasing security '
-                        'and is no longer supported in RHEL 8',
-                severity='low')
+            create_report([
+                reporting.Title('OpenSSH configured not to use privilege separation sandbox'),
+                reporting.Summary(
+                    'OpenSSH is configured to disable privilege '
+                    'separation sandbox, which is decreasing security '
+                    'and is no longer supported in RHEL 8'
+                ),
+                reporting.Severity(reporting.Severity.LOW),
+                reporting.Tags([
+                        reporting.Tags.AUTHENTICATION,
+                        reporting.Tags.SECURITY,
+                        reporting.Tags.NETWORK,
+                        reporting.Tags.SERVICES
+                ]),
+            ])

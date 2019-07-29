@@ -1,5 +1,6 @@
 from leapp.actors import Actor
-from leapp.libraries.common.reporting import report_generic
+from leapp.reporting import create_report
+from leapp import reporting
 from leapp.models import Report, TargetRHSMInfo
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
@@ -17,11 +18,14 @@ class ReportSetTargetRelease(Actor):
     def process(self):
         info = next(self.consume(TargetRHSMInfo), None)
         if info and info.release:
-            report_generic(
-                title='The subscription-manager release is going to be set to {release}'.format(release=info.release),
-                summary=(
+            create_report([
+                reporting.Title(
+                    'The subscription-manager release is going to be set to {release}'.format(release=info.release)),
+                reporting.Summary(
                     'After the upgrade has completed the release of the subscription-manager will be set to {release}.'
-                    ' This will ensure that you will receive and keep the version you choose to upgrade to.'
-                ).format(release=info.release),
-                severity='low'
-            )
+                    ' This will ensure that you will receive and keep the version you choose to upgrade to.'.
+                    format(release=info.release)
+                ),
+                reporting.Severity(reporting.Severity.LOW),
+                reporting.Tags([reporting.Tags.UPGRADE_PROCESS])
+            ])

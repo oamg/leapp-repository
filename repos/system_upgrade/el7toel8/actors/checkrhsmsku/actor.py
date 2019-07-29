@@ -1,8 +1,9 @@
 from leapp.actors import Actor
 from leapp.libraries.common import rhsm
 from leapp.models import Report, SourceRHSMInfo
+from leapp.reporting import create_report
+from leapp import reporting
 from leapp.tags import IPUWorkflowTag, ChecksPhaseTag
-from leapp.libraries.common.reporting import report_with_remediation
 
 
 class CheckRedHatSubscriptionManagerSKU(Actor):
@@ -22,12 +23,15 @@ class CheckRedHatSubscriptionManagerSKU(Actor):
         if not rhsm.skip_rhsm():
             for info in self.consume(SourceRHSMInfo):
                 if not info.attached_skus:
-                    report_with_remediation(
-                        title='The system is not registered or subscribed.',
-                        summary='The system has to be registered and subscribed to be able to proceed the upgrade.',
-                        remediation=(
-                            'Register your system with the subscription-manager tool and attach it to proper SKUs'
-                            ' to be able to proceed the upgrade.'),
-                        severity='high',
-                        flags=['inhibitor']
-                    )
+                    create_report([
+                        reporting.Title('The system is not registered or subscribed.'),
+                        reporting.Summary(
+                            'The system has to be registered and subscribed to be able to proceed the upgrade.'
+                        ),
+                        reporting.Severity(reporting.Severity.HIGH),
+                        reporting.Tags([reporting.Tags.SANITY]),
+                        reporting.Flags([reporting.Flags.INHIBITOR]),
+                        reporting.Remediation(
+                            hint='Register your system with the subscription-manager tool and attach it to proper SKUs'
+                                 ' to be able to proceed the upgrade.')
+                    ])

@@ -1,7 +1,10 @@
 import re
 
-from leapp.libraries.common import reporting
+from leapp import reporting
 from leapp.libraries.stdlib import api, run
+
+
+COMMON_REPORT_TAGS = [reporting.Tags.SERVICES]
 
 
 sysconfig_path = '/etc/sysconfig/memcached'
@@ -36,17 +39,27 @@ def check_memcached(memcached_installed):
     disabled_udp_port = is_udp_disabled()
 
     if default_memcached_conf:
-        reporting.report_generic(
-            title='memcached service is using default configuration',
-            summary='memcached in RHEL8 listens on loopback only and has UDP port disabled by default',
-            severity='medium')
+        reporting.create_report([
+            reporting.Title('memcached service is using default configuration'),
+            reporting.Summary('memcached in RHEL8 listens on loopback only and has UDP port disabled by default'),
+            reporting.Severity(reporting.Severity.MEDIUM),
+            reporting.Tags(COMMON_REPORT_TAGS),
+        ])
+
     elif not disabled_udp_port:
-        reporting.report_generic(
-            title='memcached has enabled UDP port',
-            summary='memcached in RHEL7 has UDP port enabled by default, but it is disabled by default in RHEL8',
-            severity='medium')
+        reporting.create_report([
+            reporting.Title('memcached has enabled UDP port'),
+            reporting.Summary(
+                'memcached in RHEL7 has UDP port enabled by default, but it is disabled by default in RHEL8'
+            ),
+            reporting.Severity(reporting.Severity.MEDIUM),
+            reporting.Tags(COMMON_REPORT_TAGS),
+        ])
+
     else:
-        reporting.report_generic(
-            title='memcached has already disabled UDP port',
-            summary='memcached in RHEL8 has UDP port disabled by default',
-            severity='low')
+        reporting.create_report([
+            reporting.Title('memcached has already disabled UDP port'),
+            reporting.Summary('memcached in RHEL8 has UDP port disabled by default'),
+            reporting.Severity(reporting.Severity.LOW),
+            reporting.Tags(COMMON_REPORT_TAGS),
+        ])

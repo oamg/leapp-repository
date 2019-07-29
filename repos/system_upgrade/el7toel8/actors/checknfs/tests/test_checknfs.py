@@ -9,7 +9,8 @@ def test_actor_with_systemdmount_entry(current_actor_context):
                                                  uuid="n/a")]
     current_actor_context.feed(StorageInfo(systemdmount=with_systemdmount_entry))
     current_actor_context.run()
-    assert 'inhibitor' in current_actor_context.consume(Report)[0].flags
+    report_fields = current_actor_context.consume(Report)[0].report
+    assert 'inhibitor' in report_fields['flags']
 
 
 def test_actor_without_systemdmount_entry(current_actor_context):
@@ -31,7 +32,8 @@ def test_actor_with_fstab_entry(current_actor_context):
                                    fs_freq="0", fs_passno="0")]
     current_actor_context.feed(StorageInfo(fstab=with_fstab_entry))
     current_actor_context.run()
-    assert 'inhibitor' in current_actor_context.consume(Report)[0].flags
+    report_fields = current_actor_context.consume(Report)[0].report
+    assert 'inhibitor' in report_fields['flags']
 
 
 def test_actor_without_fstab_entry(current_actor_context):
@@ -49,7 +51,8 @@ def test_actor_with_mount_share(current_actor_context):
                                    options="rw,nosuid,nodev,relatime,user_id=1000,group_id=1000")]
     current_actor_context.feed(StorageInfo(mount=with_mount_share))
     current_actor_context.run()
-    assert 'inhibitor' in current_actor_context.consume(Report)[0].flags
+    report_fields = current_actor_context.consume(Report)[0].report
+    assert 'inhibitor' in report_fields['flags']
 
 
 def test_actor_without_mount_share(current_actor_context):

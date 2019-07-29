@@ -5,8 +5,8 @@ from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 from leapp.libraries.stdlib import api
 from leapp.libraries.actor.library import config_affects_daemons
 from leapp.libraries.common.rpms import create_lookup
-from leapp.libraries.common.reporting import report_with_links
-
+from leapp.reporting import create_report
+from leapp import reporting
 
 DAEMONS = [
     ("audit", ["auditd"]),
@@ -59,13 +59,20 @@ class TcpWrappersCheck(Actor):
         found_packages = config_affects_daemons(tcp_wrappers_facts, packages, DAEMONS)
 
         if found_packages:
-            report_with_links(title='TCP Wrappers configuration affects some installed packages',
-                              summary=('tcp_wrappers support has been removed in RHEL-8. '
-                                       'There is some configuration affecting installed packages (namely {}) '
-                                       'in /etc/hosts.deny or /etc/hosts.allow, which '
-                                       'is no longer going to be effective after update. '
-                                       'Please migrate it manually.'.format(', '.join(found_packages))),
-                              links=[{'title': 'Replacing TCP Wrappers in RHEL 8',
-                                      'href': 'https://access.redhat.com/solutions/3906701'}],
-                              severity='high',
-                              flags=['inhibitor'])
+            create_report([
+                reporting.Title('TCP Wrappers configuration affects some installed packages'),
+                reporting.Summary(
+                    'tcp_wrappers support has been removed in RHEL-8. '
+                    'There is some configuration affecting installed packages (namely {}) '
+                    'in /etc/hosts.deny or /etc/hosts.allow, which '
+                    'is no longer going to be effective after update. '
+                    'Please migrate it manually.'.format(', '.join(found_packages))
+                ),
+                reporting.Severity(reporting.Severity.HIGH),
+                reporting.ExternalLink(
+                    title='Replacing TCP Wrappers in RHEL 8',
+                    url='https://access.redhat.com/solutions/3906701'
+                ),
+                reporting.Tags([reporting.Tags.SECURITY, reporting.Tags.NETWORK]),
+                reporting.Flags([reporting.Flags.INHIBITOR])
+            ])

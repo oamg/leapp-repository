@@ -1,7 +1,7 @@
 from leapp.actors import Actor
 from leapp.models import StorageInfo
-from leapp.reporting import Report
-from leapp.libraries.common.reporting import report_with_remediation
+from leapp.reporting import Report, create_report
+from leapp import reporting
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
@@ -21,12 +21,11 @@ class InhibitWhenLuks(Actor):
         for storage_info in self.consume(StorageInfo):
             for blk in storage_info.lsblk:
                 if blk.tp == 'crypt':
-                    report_with_remediation(
-                        title='LUKS encrypted partition detected',
-                        summary='Upgrading system with encrypted partitions is not supported',
-                        remediation='If the encrypted partition is not system one and the system '
-                                    'is not depending on it, you can remove/blacklist it from '
-                                    'the system',
-                        severity='high',
-                        flags=['inhibitor'])
+                    create_report([
+                        reporting.Title('LUKS encrypted partition detected'),
+                        reporting.Summary('Upgrading system with encrypted partitions is not supported'),
+                        reporting.Severity(reporting.Severity.HIGH),
+                        reporting.Tags([reporting.Tags.BOOT, reporting.Tags.ENCRYPTION]),
+                        reporting.Flags([reporting.Flags.INHIBITOR]),
+                    ])
                     break
