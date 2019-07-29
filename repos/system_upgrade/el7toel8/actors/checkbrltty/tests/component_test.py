@@ -29,3 +29,9 @@ def test_actor_without_brltty_package(current_actor_context):
     current_actor_context.feed(create_modulesfacts(installed_rpm=without_brltty))
     current_actor_context.run()
     assert not current_actor_context.consume(Report)
+
+
+def test_actor_with_brltty_package(current_actor_context):
+    current_actor_context.feed(create_modulesfacts(installed_rpm=with_brltty))
+    current_actor_context.run()
+    assert current_actor_context.consume(Report)
