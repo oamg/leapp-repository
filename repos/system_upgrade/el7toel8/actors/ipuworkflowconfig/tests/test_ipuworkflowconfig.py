@@ -31,6 +31,16 @@ def test_leapp_env_vars(monkeypatch):
     assert len(library.get_env_vars()) == 1
 
 
+def test_get_target_version(monkeypatch):
+    monkeypatch.delenv('LEAPP_DEVEL_TARGET_RELEASE', raising=False)
+    assert library.get_target_version() == library.CURRENT_TARGET_VERSION
+    monkeypatch.setenv('LEAPP_DEVEL_TARGET_RELEASE', '')
+    assert library.get_target_version() == library.CURRENT_TARGET_VERSION
+    monkeypatch.setenv('LEAPP_DEVEL_TARGET_RELEASE', '1.2.3')
+    assert library.get_target_version() == '1.2.3'
+    monkeypatch.delenv('LEAPP_DEVEL_TARGET_RELEASE', raising=True)
+
+
 def test_get_os_release_info(monkeypatch):
     monkeypatch.setattr('leapp.libraries.stdlib.api.produce', produce_mocked())
     monkeypatch.setattr(reporting, 'report_generic', report_generic_mocked())

@@ -18,7 +18,7 @@ class IPUWorkflowConfig(Actor):
     tags = (IPUWorkflowTag,)
 
     def process(self):
-        target_version = '8.0'
+        target_version = library.get_target_version()
         os_release = library.get_os_release('/etc/os-release')
         self.produce(IPUConfig(
             leapp_env_vars=library.get_env_vars(),

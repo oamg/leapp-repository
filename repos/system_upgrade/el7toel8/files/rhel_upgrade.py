@@ -95,7 +95,10 @@ class RhelUpgradeCommand(dnf.cli.Command):
             # We are doing this to avoid downloading the packages in the check phase
             self.base.download_packages = _do_not_download_packages
             try:
-                self.base.do_transaction()
+                displays = []
+                if self.cli.demands.transaction_display is not None:
+                    displays.append(self.cli.demands.transaction_display)
+                self.base.do_transaction(display=displays)
             except DoNotDownload:
                 print('Check completed.')
 
