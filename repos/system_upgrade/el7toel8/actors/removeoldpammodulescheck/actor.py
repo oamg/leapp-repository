@@ -21,7 +21,7 @@ class RemoveOldPAMModulesCheck(Actor):
     tags = (IPUWorkflowTag, ChecksPhaseTag, ExperimentalTag)
     dialogs = (
         Dialog(
-            scope='remove_old_pam_modules_check',
+            scope='remove_pam_pkcs11_module_check',
             reason='Confirmation',
             components=(
                 BooleanComponent(
@@ -37,7 +37,7 @@ class RemoveOldPAMModulesCheck(Actor):
             )
         ),
         Dialog(
-            scope='remove_old_pam_modules_check',
+            scope='remove_pam_krb5_module_check',
             reason='Confirmation',
             components=(
                 BooleanComponent(
