@@ -5,7 +5,7 @@ from leapp.tags import IPUWorkflowTag, FactsPhaseTag
 
 class RepositoriesBlacklist(Actor):
     """
-    Generate list of Repositories ID that should be ignored by Leapp during upgrade process
+    Generate list of repository IDs that should be ignored by Leapp during upgrade process
     """
 
     name = 'repositories_blacklist'
@@ -22,8 +22,9 @@ class RepositoriesBlacklist(Actor):
         return False
 
     def process(self):
-        # blacklist crb repo <=> optional repo is not enabled
-        if not self._is_repo_enabled('rhel-7-server-optional-rpms'):
-            self.log.info("The optional repository is not enabled. Add the CRB repository to the blacklist.")
+        # blacklist CRB repo if optional repo is not enabled
+        if not (self._is_repo_enabled('rhel-7-server-optional-rpms') or
+                self._is_repo_enabled('rhel-7-server-eus-optional-rpms')):
+            self.log.info("The optional repository is not enabled. Blacklisting the CRB repository.")
             self.produce(RepositoriesBlacklisted(
                 repoids=['codeready-builder-for-rhel-8-x86_64-rpms']))
