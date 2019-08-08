@@ -3,7 +3,8 @@ import shutil
 from leapp.actors import Actor
 from leapp.libraries.common import dnfplugin
 from leapp.libraries.stdlib import run
-from leapp.models import FilteredRpmTransactionTasks, TargetUserSpaceInfo, TransactionCompleted, UsedTargetRepositories
+from leapp.models import (FilteredRpmTransactionTasks, SourceRHSMInfo, TargetUserSpaceInfo, TransactionCompleted,
+                          UsedTargetRepositories)
 from leapp.tags import IPUWorkflowTag, RPMUpgradePhaseTag
 
 
@@ -16,7 +17,7 @@ class DnfUpgradeTransaction(Actor):
     """
 
     name = 'dnf_upgrade_transaction'
-    consumes = (FilteredRpmTransactionTasks, TargetUserSpaceInfo, UsedTargetRepositories)
+    consumes = (FilteredRpmTransactionTasks, SourceRHSMInfo, TargetUserSpaceInfo, UsedTargetRepositories)
     produces = (TransactionCompleted,)
     tags = (RPMUpgradePhaseTag, IPUWorkflowTag)
 
@@ -29,9 +30,9 @@ class DnfUpgradeTransaction(Actor):
         # cmd = ['subscription-manager', 'release', '--unset']
         # run(cmd)
 
-        # FIXME: that's ugly hack, we should get info which file remove and
-        # do it more nicely..
-        run(['rm', '-f', '/etc/pki/product/69.pem'])
+        src_rhsm_info = next(self.consume(SourceRHSMInfo), None)
+        for prod_cert in src_rhsm_info.existing_product_certificates:
+            run(['rm', '-f', prod_cert])
 
         used_repos = self.consume(UsedTargetRepositories)
         tasks = next(self.consume(FilteredRpmTransactionTasks), FilteredRpmTransactionTasks())

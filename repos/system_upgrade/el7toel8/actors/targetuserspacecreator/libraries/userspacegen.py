@@ -5,8 +5,11 @@ from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import constants
 from leapp.libraries.common import dnfplugin, mounting, overlaygen, rhsm, utils
 from leapp.libraries.stdlib import api, run
-from leapp.models import (OSReleaseFacts, RequiredTargetUserspacePackages, SourceRHSMInfo, TargetRepositories,
+from leapp.models import (IPUConfig, RequiredTargetUserspacePackages, SourceRHSMInfo, TargetRepositories,
                           TargetUserSpaceInfo, UsedTargetRepositories, UsedTargetRepository, XFSPresence)
+
+
+PROD_CERTS_FOLDER = 'prod-certs'
 
 
 def prepare_target_userspace(context, userspace_dir, enabled_repos, packages):
@@ -47,29 +50,45 @@ def _prep_repository_access(context, target_userspace):
     context.copytree_from('/etc/yum.repos.d', os.path.join(target_userspace, 'etc', 'yum.repos.d'))
 
 
-def get_os_variant():
-    """
-    Retrieves the OS variant from the first matching OSReleaseFacts message. Returns an empty string otherwise.
-    """
-    for msg in api.consume(OSReleaseFacts):
-        if msg.variant_id:
-            return msg.variant_id
-    return ''
-
-
 def _get_product_certificate_path():
     """
     Retrieves the required / used product certificate for RHSM.
     """
-    sys_var = get_os_variant()
-    var_prodcert = {'server': '479.pem'}
-    if sys_var not in var_prodcert:
-        raise StopActorExecutionError(
-            message=('Failed to to retrieve Product Cert file.'
-                     'Product cert file not available for System Variant \'{}\'.'.format(sys_var))
-        )
+    config = next(api.consume(IPUConfig), None)
+    variant = config.os_release.variant_id
+    architecture = config.architecture
+    tgt_version = config.version.target
+    # TODO: so far only base channel is available in rhel8
+    tgt_channel = 'base'
+    certs_folder = api.get_common_folder_path(PROD_CERTS_FOLDER)
 
-    return api.get_file_path(var_prodcert[sys_var])
+    prod_certs = {
+        'server': {
+            'x86_64': {
+                'base': '479.pem',
+                # 'EUS': TBD
+            },
+            'aarch64': {
+                'base': '419.pem',
+                # 'EUS': TBD
+            },
+            'ppc64le': {
+                'base': '279.pem',
+                # 'EUS': TBD
+            },
+            's390x': {
+                'base': '72.pem',
+                # 'EUS': TBD
+            }
+        }
+    }
+
+    try:
+        cert = prod_certs[variant][architecture][tgt_channel]
+    except KeyError as e:
+        raise StopActorExecutionError(message=('Failed to determine what certificate to use for {}.'.format(e)))
+
+    return os.path.join(certs_folder, tgt_version, cert)
 
 
 def _create_target_userspace_directories(target_userspace):
