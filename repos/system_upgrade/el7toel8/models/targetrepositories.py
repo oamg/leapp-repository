@@ -16,9 +16,14 @@ class RHELTargetRepository(TargetRepositoryBase):
 
 
 class CustomTargetRepository(TargetRepositoryBase):
-    name = fields.String()
-    baseurl = fields.String()
+    name = fields.Nullable(fields.String())
+    baseurl = fields.Nullable(fields.String())
     enabled = fields.Boolean(default=True)
+
+
+class CustomTargetRepositories(Model):
+    topic = TransactionTopic
+    repos = fields.List(fields.Model(CustomTargetRepository))
 
 
 class TargetRepositories(Model):

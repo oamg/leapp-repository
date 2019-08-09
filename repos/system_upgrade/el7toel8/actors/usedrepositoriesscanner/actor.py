@@ -36,5 +36,5 @@ class UsedRepositoriesScanner(Actor):
 
         result = UsedRepositories()
         for repo, pkgs in used_repos.items():
-            result.repositories.append(UsedRepository(repository=repo, packages=pkgs))
+            result.repositories.append(UsedRepository(repoid=repo, packages=pkgs))
         self.produce(result)

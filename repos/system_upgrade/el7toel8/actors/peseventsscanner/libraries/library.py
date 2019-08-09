@@ -6,8 +6,9 @@ from leapp.exceptions import StopActorExecution, StopActorExecutionError
 from leapp import reporting
 from leapp.libraries.stdlib import api
 from leapp.libraries.stdlib.config import is_verbose
-from leapp.models import (InstalledRedHatSignedRPM, PESRpmTransactionTasks,
-                          RepositoriesSetupTasks, RpmTransactionTasks, RepositoriesBlacklisted)
+from leapp.models import (CustomTargetRepositories, CustomTargetRepository,
+                          InstalledRedHatSignedRPM, PESRpmTransactionTasks,
+                          RepositoriesBlacklisted, RpmTransactionTasks)
 
 # FIXME: this mapping is not complete and will need to be manually updated frequently
 REPOSITORIES_MAPPING = {
@@ -406,4 +407,4 @@ def produce_messages(tasks):
                                            to_remove=to_remove_pkgs))
 
     if to_enable_repos:
-        api.produce(RepositoriesSetupTasks(to_enable=to_enable_repos))
+        api.produce(CustomTargetRepositories(repos=[CustomTargetRepository(repoid=repo) for repo in to_enable_repos]))
