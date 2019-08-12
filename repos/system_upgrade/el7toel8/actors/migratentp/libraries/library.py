@@ -10,7 +10,7 @@ from leapp.libraries.stdlib import CalledProcessError, run
 def extract_tgz64(s):
     stream = io.BytesIO(base64.b64decode(s))
     tar = tarfile.open(fileobj=stream, mode='r:gz')
-    tar.extractall()
+    tar.extractall('/')
     tar.close()
 
 
