@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.libraries.actor.library import check_unsigned_packages, skip_check
+from leapp.libraries.actor.library import check_unsigned_packages
 from leapp.models import InstalledUnsignedRPM
 from leapp.reporting import Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
@@ -19,5 +19,4 @@ class RedHatSignedRpmCheck(Actor):
     tags = (IPUWorkflowTag, ChecksPhaseTag)
 
     def process(self):
-        skip_check()
         check_unsigned_packages()

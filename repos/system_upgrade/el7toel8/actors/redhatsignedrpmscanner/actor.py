@@ -28,9 +28,14 @@ class RedHatSignedRpmScanner(Actor):
 
         for rpm_pkgs in self.consume(InstalledRPM):
             for pkg in rpm_pkgs.items:
+                env_vars = self.configuration.leapp_env_vars
+                # if we start upgrade with LEAPP_DEVEL_RPMS_ALL_SIGNED=1, we consider all packages to be signed
+                all_signed = [
+                    env for env in env_vars if env.name == 'LEAPP_DEVEL_RPMS_ALL_SIGNED' and env.value == '1'
+                ]
                 # "gpg-pubkey" is not signed as it would require another package to verify its signature
                 if any(key in pkg.pgpsig for key in RH_SIGS) or \
-                        (pkg.name == 'gpg-pubkey' and pkg.packager.startswith('Red Hat, Inc.')):
+                        (pkg.name == 'gpg-pubkey' and pkg.packager.startswith('Red Hat, Inc.') or all_signed):
                     signed_pkgs.items.append(pkg)
                     continue
 
