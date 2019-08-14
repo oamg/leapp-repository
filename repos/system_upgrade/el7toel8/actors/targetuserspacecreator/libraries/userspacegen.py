@@ -5,7 +5,7 @@ from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import constants
 from leapp.libraries.common import dnfplugin, mounting, overlaygen, rhsm, utils
 from leapp.libraries.stdlib import api, run
-from leapp.models import (IPUConfig, RequiredTargetUserspacePackages, SourceRHSMInfo, TargetRepositories,
+from leapp.models import (RequiredTargetUserspacePackages, SourceRHSMInfo, TargetRepositories,
                           TargetUserSpaceInfo, UsedTargetRepositories, UsedTargetRepository, XFSPresence)
 
 
@@ -54,12 +54,11 @@ def _get_product_certificate_path():
     """
     Retrieves the required / used product certificate for RHSM.
     """
-    config = next(api.consume(IPUConfig), None)
-    variant = config.os_release.variant_id
-    architecture = config.architecture
-    tgt_version = config.version.target
+    variant = api.current_actor().configuration.os_release.variant_id
+    architecture = api.current_actor().configuration.architecture
+    target_version = api.current_actor().configuration.version.target
     # TODO: so far only base channel is available in rhel8
-    tgt_channel = 'base'
+    target_channel = 'base'
     certs_folder = api.get_common_folder_path(PROD_CERTS_FOLDER)
 
     prod_certs = {
@@ -84,11 +83,11 @@ def _get_product_certificate_path():
     }
 
     try:
-        cert = prod_certs[variant][architecture][tgt_channel]
+        cert = prod_certs[variant][architecture][target_channel]
     except KeyError as e:
         raise StopActorExecutionError(message=('Failed to determine what certificate to use for {}.'.format(e)))
 
-    return os.path.join(certs_folder, tgt_version, cert)
+    return os.path.join(certs_folder, target_version, cert)
 
 
 def _create_target_userspace_directories(target_userspace):
