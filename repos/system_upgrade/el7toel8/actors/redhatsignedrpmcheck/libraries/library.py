@@ -1,18 +1,24 @@
 import os
 
 from leapp.exceptions import StopActorExecution
-from leapp.libraries.common import reporting
+from leapp import reporting
 from leapp.libraries.stdlib import api
 from leapp.libraries.stdlib.config import is_verbose
 from leapp.models import InstalledUnsignedRPM
 
 
+COMMON_REPORT_TAGS = [reporting.Tags.SANITY]
+
+
 def skip_check():
     """ Check if has environment variable to skip this actor checks """
     if os.getenv('LEAPP_SKIP_CHECK_SIGNED_PACKAGES'):
-        reporting.report_generic(title='Skipped signed packages check',
-                                 severity='low',
-                                 summary='Signed packages check skipped via LEAPP_SKIP_CHECK_SIGNED_PACKAGES env var')
+        reporting.create_report([
+            reporting.Title('Skipped signed packages check'),
+            reporting.Summary('Signed packages check skipped via LEAPP_SKIP_CHECK_SIGNED_PACKAGES env var'),
+            reporting.Severity(reporting.Severity.LOW),
+            reporting.Tags(COMMON_REPORT_TAGS)
+        ])
         raise StopActorExecution()
 
 
@@ -22,15 +28,18 @@ def generate_report(packages):
         return
     unsigned_packages_new_line = '\n'.join(['- ' + p for p in packages])
     unsigned_packages = ' '.join(packages)
-    remediation = 'yum remove {}'.format(unsigned_packages)
+    remediation = ['yum', 'remove', '{}'.format(unsigned_packages)]
+    title = 'Packages not signed by Red Hat found in the system'
     summary = 'The following packages have not been signed by Red Hat ' \
               'and may be removed in the upgrade process:\n{}'.format(unsigned_packages_new_line)
-    reporting.report_with_remediation(
-        title='Packages not signed by Red Hat found in the system',
-        summary=summary,
-        remediation=remediation,
-        severity='high',
-    )
+    reporting.create_report([
+        reporting.Title(title),
+        reporting.Summary(summary),
+        reporting.Severity(reporting.Severity.HIGH),
+        reporting.Tags(COMMON_REPORT_TAGS),
+        reporting.Remediation(commands=[remediation])
+    ])
+
     if is_verbose():
         api.show_message(summary)
 

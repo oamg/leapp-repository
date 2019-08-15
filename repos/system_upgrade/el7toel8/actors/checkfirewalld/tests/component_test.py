@@ -8,4 +8,5 @@ def test_actor_execution(current_actor_context):
                        ebtablesTablesInUse=['broute'],
                        ipsetTypesInUse=['hash:net,port']))
     current_actor_context.run()
-    assert 'inhibitor' in current_actor_context.consume(Report)[0].flags
+    report_fileds = current_actor_context.consume(Report)[0].report
+    assert 'inhibitor' in report_fileds['flags']

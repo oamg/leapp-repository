@@ -1,4 +1,4 @@
-from leapp.libraries.common import reporting
+from leapp import reporting
 from leapp.libraries.stdlib import api, run
 
 
@@ -19,13 +19,26 @@ def check_chrony(chrony_installed):
         return
 
     if is_config_default():
-        reporting.report_generic(
-            title='chrony using default configuration',
-            summary='default chrony configuration in RHEL8 uses leapsectz directive, which cannot be used with '
-            'leap smearing NTP servers, and uses a single pool directive instead of four server directives',
-            severity='medium')
+        reporting.create_report([
+            reporting.Title('chrony using default configuration'),
+            reporting.Summary(
+                'default chrony configuration in RHEL8 uses leapsectz directive, which cannot be used with '
+                'leap smearing NTP servers, and uses a single pool directive instead of four server directives'
+            ),
+            reporting.Severity(reporting.Severity.MEDIUM),
+            reporting.Tags([
+                    reporting.Tags.SERVICES,
+                    reporting.Tags.TIME_MANAGEMENT
+            ])
+        ])
+
     else:
-        reporting.report_generic(
-            title='chrony using non-default configuration',
-            summary='chrony behavior will not change in RHEL8',
-            severity='low')
+        reporting.create_report([
+            reporting.Title('chrony using non-default configuration'),
+            reporting.Summary('chrony behavior will not change in RHEL8'),
+            reporting.Severity(reporting.Severity.LOW),
+            reporting.Tags([
+                    reporting.Tags.SERVICES,
+                    reporting.Tags.TIME_MANAGEMENT
+            ])
+        ])

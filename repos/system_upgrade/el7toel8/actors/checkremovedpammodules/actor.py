@@ -3,7 +3,8 @@ from leapp.exceptions import StopActorExecutionError
 from leapp.models import Report, PamConfiguration
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 from leapp.libraries.stdlib import api
-from leapp.libraries.common.reporting import report_with_remediation
+from leapp.reporting import create_report
+from leapp import reporting
 
 
 class CheckRemovedPamModules(Actor):
@@ -46,15 +47,18 @@ class CheckRemovedPamModules(Actor):
                     replacements.add(replacement)
 
         if found_modules:
-            report_with_remediation(
-                title='The {} pam module(s) no longer available'.format(', '.join(found_modules)),
-                summary='The services {} using PAM are configured to '
-                        'use {} module(s), which is no longer available '
-                        'in Red Hat Enterprise Linux 8.'.format(
-                        ', '.join(found_services), ', '.join(found_modules)),
-                remediation='If you depend on its functionality, it is '
-                            'recommended to migrate to {}. Otherwise '
-                            'please remove the pam module(s) from all the files '
-                            'under /etc/pam.d/.'.format(', '.join(replacements)),
-                severity='high',
-                flags=['inhibitor'])
+            create_report([
+                reporting.Title('The {} pam module(s) no longer available'.format(', '.join(found_modules))),
+                reporting.Summary('The services {} using PAM are configured to '
+                                  'use {} module(s), which is no longer available '
+                                  'in Red Hat Enterprise Linux 8.'.format(
+                                      ', '.join(found_services), ', '.join(found_modules))),
+                reporting.Remediation(
+                    hint='If you depend on its functionality, it is '
+                         'recommended to migrate to {}. Otherwise '
+                         'please remove the pam module(s) from all the files '
+                         'under /etc/pam.d/.'.format(', '.join(replacements))
+                ),
+                reporting.Severity(reporting.Severity.HIGH),
+                reporting.Flags([reporting.Flags.INHIBITOR])
+            ])

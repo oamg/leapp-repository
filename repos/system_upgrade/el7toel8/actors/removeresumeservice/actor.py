@@ -2,9 +2,9 @@ import os
 import errno
 
 from leapp.actors import Actor
-from leapp.libraries.common.reporting import report_generic
 from leapp.libraries.stdlib import run
-from leapp.reporting import Report
+from leapp.reporting import Report, create_report
+from leapp import reporting
 from leapp.tags import FirstBootPhaseTag, IPUWorkflowTag
 
 
@@ -31,9 +31,10 @@ class RemoveSystemdResumeService(Actor):
                 if e.errno != errno.ENOENT:
                     raise
 
-        report_generic(
-            title='"{}" service deleted'.format(service_name),
-            summary='"{}" was taking care of resuming upgrade process '
-                    'after the first reboot.'.format(service_name),
-            severity='low'
-        )
+        create_report([
+            reporting.Title('"{}" service deleted'.format(service_name)),
+            reporting.Summary(
+                '"{}" was taking care of resuming upgrade process '
+                'after the first reboot.'.format(service_name)),
+            reporting.Tags([reporting.Tags.UPGRADE_PROCESS]),
+        ])

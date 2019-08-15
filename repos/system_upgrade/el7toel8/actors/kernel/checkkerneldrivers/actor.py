@@ -1,7 +1,7 @@
 from leapp.actors import Actor
-from leapp.libraries.common.reporting import report_with_remediation
 from leapp.models import ActiveKernelModulesFacts, WhitelistedKernelModules, UdevAdmInfoData
-from leapp.reporting import Report
+from leapp.reporting import Report, create_report
+from leapp import reporting
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
@@ -77,8 +77,11 @@ class CheckKernelDrivers(Actor):
                            '\nPlease see {} for details.'.format('\n     - '.join(drivers_to_report), URL))
                 remediation = ('Please disable detected kernel drivers in '
                                'order to proceed with the upgrade process using the rmmod tool.')
-                report_with_remediation(title=title,
-                                        summary=summary,
-                                        remediation=remediation,
-                                        severity='high',
-                                        flags=['inhibitor'])
+                create_report([
+                    reporting.Title(title),
+                    reporting.Summary(summary),
+                    reporting.Severity(reporting.Severity.HIGH),
+                    reporting.Tags([reporting.Tags.KERNEL, reporting.Tags.DRIVERS]),
+                    reporting.Flags([reporting.Flags.INHIBITOR]),
+                    reporting.Remediation(hint=remediation)
+                ])

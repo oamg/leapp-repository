@@ -3,7 +3,8 @@ from leapp.exceptions import StopActorExecutionError
 from leapp.models import Report, OpenSshConfig
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 from leapp.libraries.stdlib import api
-from leapp.libraries.common.reporting import report_generic
+from leapp.reporting import create_report
+from leapp import reporting
 
 
 class OpenSshProtocolCheck(Actor):
@@ -31,10 +32,19 @@ class OpenSshProtocolCheck(Actor):
             )
 
         if config.protocol:
-            report_generic(
-                title='OpenSSH configured with removed configuration Protocol',
-                summary='OpenSSH is configured with removed configuration '
-                        'option Protocol. If this used to be for enabling '
-                        'SSHv1, this is no longer supported in RHEL 8. '
-                        'Otherwise this option can be simply removed.',
-                severity='low')
+            create_report([
+                reporting.Title('OpenSSH configured with removed configuration Protocol'),
+                reporting.Summary(
+                    'OpenSSH is configured with removed configuration '
+                    'option Protocol. If this used to be for enabling '
+                    'SSHv1, this is no longer supported in RHEL 8. '
+                    'Otherwise this option can be simply removed.'
+                ),
+                reporting.Severity(reporting.Severity.LOW),
+                reporting.Tags([
+                        reporting.Tags.AUTHENTICATION,
+                        reporting.Tags.SECURITY,
+                        reporting.Tags.NETWORK,
+                        reporting.Tags.SERVICES
+                ]),
+            ])

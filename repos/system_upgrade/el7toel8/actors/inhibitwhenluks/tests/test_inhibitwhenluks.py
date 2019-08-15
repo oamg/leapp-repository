@@ -11,7 +11,8 @@ def test_actor_with_luks(current_actor_context):
     current_actor_context.feed(StorageInfo(lsblk=with_luks))
     current_actor_context.run()
     assert current_actor_context.consume(Report)
-    assert 'inhibitor' in current_actor_context.consume(Report)[0].flags
+    report_fields = current_actor_context.consume(Report)[0].report
+    assert 'inhibitor' in report_fields['flags']
 
 
 def test_actor_without_luks(current_actor_context):

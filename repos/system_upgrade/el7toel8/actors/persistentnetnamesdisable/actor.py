@@ -1,9 +1,9 @@
 import re
 
 from leapp.actors import Actor
-from leapp.libraries.common import reporting
 from leapp.models import KernelCmdlineArg, PersistentNetNamesFacts
-from leapp.reporting import Report
+from leapp.reporting import Report, create_report
+from leapp import reporting
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 
@@ -39,10 +39,14 @@ class PersistentNetNamesDisable(Actor):
         if self.single_eth0(interfaces):
             self.disable_persistent_naming()
         elif len(interfaces) > 1 and self.ethX_count(interfaces) > 0:
-            reporting.report_generic(
-                title='Unsupported network configuration',
-                summary='Detected multiple network interfaces using unstable kernel names (e.g. eth0, eth1). '
-                        'Upgrade process can not continue because stability of names can not be guaranteed. '
-                        'Please read the article at https://access.redhat.com/solutions/4067471 for more information.',
-                severity='high',
-                flags=['inhibitor'])
+            create_report([
+                reporting.Title('Unsupported network configuration'),
+                reporting.Summary(
+                    'Detected multiple network interfaces using unstable kernel names (e.g. eth0, eth1). '
+                    'Upgrade process can not continue because stability of names can not be guaranteed. '
+                    'Please read the article at https://access.redhat.com/solutions/4067471 for more information.'
+                ),
+                reporting.Severity(reporting.Severity.HIGH),
+                reporting.Tags([reporting.Tags.NETWORK]),
+                reporting.Flags([reporting.Flags.INHIBITOR])
+            ])

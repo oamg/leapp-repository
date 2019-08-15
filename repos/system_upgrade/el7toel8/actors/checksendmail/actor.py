@@ -1,11 +1,14 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import library
-from leapp.libraries.common.reporting import report_with_remediation, report_generic
 from leapp.libraries.common.rpms import has_package
 from leapp.libraries.common.tcpwrappersutils import config_applies_to_daemon
 from leapp.models import InstalledRedHatSignedRPM, SendmailMigrationDecision, TcpWrappersFacts
-from leapp.reporting import Report
+from leapp.reporting import Report, create_report
+from leapp import reporting
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
+
+
+COMMON_REPORT_TAGS = [reporting.Tags.SERVICES, reporting.Tags.EMAIL]
 
 
 class CheckSendmail(Actor):
@@ -24,22 +27,34 @@ class CheckSendmail(Actor):
             return
 
         if config_applies_to_daemon(next(self.consume(TcpWrappersFacts)), 'sendmail'):
-            report_with_remediation(
-                title='TCP wrappers support removed in the next major version',
-                summary='TCP wrappers are legacy host-based ACL (Access Control List) system '
-                        'which has been removed in the next major version of RHEL.',
-                remediation='Please migrate from TCP wrappers to some other access control mechanism and delete '
-                        'sendmail from the /etc/hosts.[allow|deny].',
-                severity='high',
-                flags=['inhibitor'])
+            create_report([
+                reporting.Title('TCP wrappers support removed in the next major version'),
+                reporting.Summary(
+                    'TCP wrappers are legacy host-based ACL (Access Control List) system '
+                    'which has been removed in the next major version of RHEL.'
+                ),
+                reporting.Remediation(
+                    hint='Please migrate from TCP wrappers to some other access control mechanism and delete '
+                         'sendmail from the /etc/hosts.[allow|deny].'
+                ),
+                reporting.Severity(reporting.Severity.HIGH),
+                reporting.Tags(COMMON_REPORT_TAGS + [reporting.Tags.NETWORK]),
+                reporting.Flags([reporting.Flags.INHIBITOR])
+            ])
+
             return
         migrate_files = library.check_files_for_compressed_ipv6()
         if migrate_files:
-            report_generic(
-                title='sendmail configuration will be migrated',
-                summary='IPv6 addresses will be uncompressed, check all IPv6 addresses in all sendmail '
-                        'configuration files for correctness.',
-                severity='low')
+            create_report([
+                reporting.Title('sendmail configuration will be migrated'),
+                reporting.Summary(
+                    'IPv6 addresses will be uncompressed, check all IPv6 addresses in all sendmail '
+                    'configuration files for correctness.'
+                ),
+                reporting.Severity(reporting.Severity.LOW),
+                reporting.Tags(COMMON_REPORT_TAGS)
+            ])
+
             self.produce(SendmailMigrationDecision(migrate_files=migrate_files))
         else:
             self.log.info('The sendmail configuration seems compatible - it won\'t be migrated.')

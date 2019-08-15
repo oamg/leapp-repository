@@ -4,8 +4,8 @@ import pytest
 
 from leapp.exceptions import StopActorExecution, StopActorExecutionError
 from leapp.libraries.actor import library
-from leapp.libraries.common import reporting
-from leapp.libraries.common.testutils import produce_mocked, report_generic_mocked
+from leapp import reporting
+from leapp.libraries.common.testutils import produce_mocked, create_report_mocked
 from leapp.libraries.stdlib import api
 from leapp.models import OSReleaseFacts
 
@@ -14,21 +14,21 @@ SUPPORTED_VERSION = {'rhel': ['7.5', '7.6']}
 
 def test_skip_check(monkeypatch):
     monkeypatch.setattr(os, "getenv", lambda _unused: True)
-    monkeypatch.setattr(reporting, "report_generic", report_generic_mocked())
+    monkeypatch.setattr(reporting, "create_report", create_report_mocked())
 
     assert library.skip_check()
-    assert reporting.report_generic.called == 1
-    assert 'Skipped OS release check' in reporting.report_generic.report_fields['title']
-    assert reporting.report_generic.report_fields['severity'] == 'high'
-    assert 'flags' not in reporting.report_generic.report_fields
+    assert reporting.create_report.called == 1
+    assert 'Skipped OS release check' in reporting.create_report.report_fields['title']
+    assert reporting.create_report.report_fields['severity'] == 'high'
+    assert 'flags' not in reporting.create_report.report_fields
 
 
 def test_no_skip_check(monkeypatch):
     monkeypatch.setattr(os, "getenv", lambda _unused: False)
-    monkeypatch.setattr(reporting, "report_generic", report_generic_mocked())
+    monkeypatch.setattr(reporting, "create_report", create_report_mocked())
 
     assert not library.skip_check()
-    assert reporting.report_generic.called == 0
+    assert reporting.create_report.called == 0
 
 
 def test_no_facts(monkeypatch):
@@ -57,13 +57,13 @@ def test_not_supported_id(monkeypatch):
         yield create_os_release('rhel', '7.7')
 
     monkeypatch.setattr(api, "consume", os_release_mocked)
-    monkeypatch.setattr(reporting, "report_generic", report_generic_mocked())
+    monkeypatch.setattr(reporting, "create_report", create_report_mocked())
 
     library.check_os_version(SUPPORTED_VERSION)
-    assert reporting.report_generic.called == 1
-    assert 'Unsupported OS version' in reporting.report_generic.report_fields['title']
-    assert 'flags' in reporting.report_generic.report_fields
-    assert 'inhibitor' in reporting.report_generic.report_fields['flags']
+    assert reporting.create_report.called == 1
+    assert 'Unsupported OS version' in reporting.create_report.report_fields['title']
+    assert 'flags' in reporting.create_report.report_fields
+    assert 'inhibitor' in reporting.create_report.report_fields['flags']
 
 
 def test_not_supported_release(monkeypatch):
@@ -71,13 +71,13 @@ def test_not_supported_release(monkeypatch):
         yield create_os_release('unsupported', SUPPORTED_VERSION['rhel'][0])
 
     monkeypatch.setattr(api, "consume", os_release_mocked)
-    monkeypatch.setattr(reporting, "report_generic", report_generic_mocked())
+    monkeypatch.setattr(reporting, "create_report", create_report_mocked())
 
     library.check_os_version(SUPPORTED_VERSION)
-    assert reporting.report_generic.called == 1
-    assert 'Unsupported OS' in reporting.report_generic.report_fields['title']
-    assert 'flags' in reporting.report_generic.report_fields
-    assert 'inhibitor' in reporting.report_generic.report_fields['flags']
+    assert reporting.create_report.called == 1
+    assert 'Unsupported OS' in reporting.create_report.report_fields['title']
+    assert 'flags' in reporting.create_report.report_fields
+    assert 'inhibitor' in reporting.create_report.report_fields['flags']
 
 
 def test_supported_release(monkeypatch):
@@ -88,12 +88,12 @@ def test_supported_release(monkeypatch):
         yield create_os_release('rhel', SUPPORTED_VERSION['rhel'][1])
 
     monkeypatch.setattr(api, "consume", os_mocked_first_release)
-    monkeypatch.setattr(reporting, "report_generic", report_generic_mocked())
+    monkeypatch.setattr(reporting, "create_report", create_report_mocked())
 
     library.check_os_version(SUPPORTED_VERSION)
     monkeypatch.setattr(api, "consume", os_mocked_second_release)
     library.check_os_version(SUPPORTED_VERSION)
-    assert reporting.report_generic.called == 0
+    assert reporting.create_report.called == 0
 
 
 def test_invalid_versions(monkeypatch):
@@ -101,7 +101,7 @@ def test_invalid_versions(monkeypatch):
         yield create_os_release('rhel', '7.6')
 
     monkeypatch.setattr(api, "consume", os_release_mocked)
-    monkeypatch.setattr(reporting, "report_generic", report_generic_mocked())
+    monkeypatch.setattr(reporting, "create_report", create_report_mocked())
 
     with pytest.raises(StopActorExecution):
         library.check_os_version('string')
@@ -109,6 +109,6 @@ def test_invalid_versions(monkeypatch):
         library.check_os_version(None)
 
     library.check_os_version({})
-    assert reporting.report_generic.called == 1
+    assert reporting.create_report.called == 1
     with pytest.raises(StopActorExecutionError):
         library.check_os_version({'rhel': None})

@@ -4,8 +4,9 @@ from leapp.libraries.actor.library import COROSYNC_CONF_LOCATION
 
 def assert_inhibits(reports, node_type):
     assert len(reports) == 1
-    assert "inhibitor" in reports[0].flags
-    assert "cluster {0}".format(node_type) in reports[0].detail["summary"]
+    report_fields = reports[0].report
+    assert "inhibitor" in report_fields['flags']
+    assert "cluster {0}".format(node_type) in report_fields["summary"]
 
 
 def test_no_inhibit_when_no_ha_cluster(monkeypatch, current_actor_context):

@@ -1,9 +1,9 @@
 from leapp.actors import Actor
 from leapp.dialogs import Dialog
 from leapp.dialogs.components import BooleanComponent
-from leapp.libraries.common.reporting import report_generic, report_with_remediation
 from leapp.models import Authselect, AuthselectDecision
-from leapp.reporting import Report
+from leapp.reporting import Report, create_report
+from leapp import reporting
 from leapp.tags import IPUWorkflowTag, ChecksPhaseTag, ExperimentalTag
 
 
@@ -83,14 +83,23 @@ class AuthselectCheck(Actor):
             )
         )
 
-        report_generic(
-            title='Authselect will be used to configure PAM and nsswitch.conf.',
-            summary='There is a new tool called authselect in RHEL8 that '
-                    'replaced authconfig. The upgrade process detected '
-                    'that authconfig was used to generate current '
-                    'configuration and it will automatically convert it '
-                    'to authselect. Authselect call is: {}'.format(command)
-        )
+        create_report([
+            reporting.Title(
+                'Authselect will be used to configure PAM and nsswitch.conf.'
+            ),
+            reporting.Summary(
+                'There is a new tool called authselect in RHEL8 that '
+                'replaced authconfig. The upgrade process detected '
+                'that authconfig was used to generate current '
+                'configuration and it will automatically convert it '
+                'to authselect. Authselect call is: {}'.format(command)
+            ),
+            reporting.Tags([
+                reporting.Tags.AUTHENTICATION,
+                reporting.Tags.SECURITY,
+                reporting.Tags.TOOLS
+            ])
+        ])
 
     def produce_current_configuration(self, model):
         self.produce(
@@ -99,14 +108,24 @@ class AuthselectCheck(Actor):
             )
         )
 
-        report_generic(
-            title='Current PAM and nsswitch.conf configuration will be kept.',
-            summary='There is a new tool called authselect in RHEL8 that '
-                    'replaced authconfig. The upgrade process was unable '
-                    'to find an authselect profile that would be equivalent '
-                    'to your current configuration. Therefore your '
-                    'configuration will be left intact.'
-        )
+        create_report([
+            reporting.Title(
+                'Current PAM and nsswitch.conf configuration will be kept.'
+            ),
+            reporting.Summary(
+                'There is a new tool called authselect in RHEL8 that '
+                'replaced authconfig. The upgrade process was unable '
+                'to find an authselect profile that would be equivalent '
+                'to your current configuration. Therefore your '
+                'configuration will be left intact.'
+            ),
+            reporting.Tags([
+                reporting.Tags.AUTHENTICATION,
+                reporting.Tags.SECURITY,
+                reporting.Tags.TOOLS
+            ]),
+            reporting.Severity(reporting.Severity.INFO)
+        ])
 
     def produce_suggested_configuration(self, model, confirmed, command):
         self.produce(
@@ -114,24 +133,43 @@ class AuthselectCheck(Actor):
                 confirmed=confirmed
             )
         )
-
         if confirmed:
-            report_generic(
-                title='Authselect will be used to configure PAM and nsswitch.conf.',
-                summary='There is a new tool called authselect in RHEL8 that '
-                        'replaced authconfig. The upgrade process suggested '
-                        'an authselect profile that is similar to your '
-                        'current configuration and your system will be switched '
-                        'to this profile. Authselect call is: {}'.format(command)
-            )
+            create_report([
+                reporting.Title(
+                    'Authselect will be used to configure PAM and nsswitch.conf.'
+                ),
+                reporting.Summary(
+                    'There is a new tool called authselect in RHEL8 that '
+                    'replaced authconfig. The upgrade process suggested '
+                    'an authselect profile that is similar to your '
+                    'current configuration and your system will be switched '
+                    'to this profile. Authselect call is: {}'.format(command)
+                ),
+                reporting.Tags([
+                    reporting.Tags.AUTHENTICATION,
+                    reporting.Tags.SECURITY,
+                    reporting.Tags.TOOLS
+                ])
+            ])
+
         else:
-            report_with_remediation(
-                title='Current PAM and nsswitch.conf configuration will be kept.',
-                summary='There is a new tool called authselect in RHEL8 that '
-                        'replaced authconfig. The upgrade process suggested '
-                        'an authselect profile that is similar to your '
-                        'current configuration. However this suggestion was '
-                        'refused therefore existing configuration will be kept '
-                        'intact.',
-                remediation='To switch to authselect manually, call: {}'.format(command)
-            )
+            create_report([
+                reporting.Title(
+                    'Current PAM and nsswitch.conf configuration will be kept.'
+                ),
+                reporting.Summary(
+                    'There is a new tool called authselect in RHEL8 that '
+                    'replaced authconfig. The upgrade process suggested '
+                    'an authselect profile that is similar to your '
+                    'current configuration. However this suggestion was '
+                    'refused therefore existing configuration will be kept '
+                    'intact.',
+                ),
+                reporting.Tags([
+                    reporting.Tags.AUTHENTICATION,
+                    reporting.Tags.SECURITY,
+                    reporting.Tags.TOOLS
+                ]),
+                reporting.Remediation(commands=[[command]]),
+                reporting.Severity(reporting.Severity.MEDIUM)
+            ])
