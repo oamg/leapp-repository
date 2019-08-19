@@ -4,15 +4,14 @@
 %global sos_report_plugindir %{python2_sitelib}/sos/plugins/
 %global py3_sos_report_plugindir /usr/lib/python3.6/site-packages/sos/plugins/
 # Defining py_byte_compile macro because it is not defined in old rpm (el7)
-# Only defined to python2 since python3 is not used in RHEL7
-%{!?py_byte_compile: %global py_byte_compile py2_byte_compile() {\
-    python_binary="%1"\
-    bytecode_compilation_path="%2"\
-    find $bytecode_compilation_path -type f -a -name "*.py" -print0 | xargs -0 $python_binary -c 'import py_compile, sys; [py_compile.compile(f, dfile=f.partition("$RPM_BUILD_ROOT")[2]) for f in sys.argv[1:]]' || :\
-    find $bytecode_compilation_path -type f -a -name "*.py" -print0 | xargs -0 $python_binary -O -c 'import py_compile, sys; [py_compile.compile(f, dfile=f.partition("$RPM_BUILD_ROOT")[2]) for f in sys.argv[1:]]' || :\
-}\
-py2_byte_compile "%1" "%2"}
-
+%{!?py_byte_compile: %global py_byte_compile() {\
+    python_binary="%1";\
+    bytecode_compilation_path="%2";\
+    failure=0;\
+    find $bytecode_compilation_path -type f -a -name "*.py" -print0 | xargs -0 $python_binary -s -c 'import py_compile, sys; [py_compile.compile(f, dfile=f.partition("'"$RPM_BUILD_ROOT"'")[2], doraise=True) for f in sys.argv[1:]]' || failure=1;\
+    find $bytecode_compilation_path -type f -a -name "*.py" -print0 | xargs -0 $python_binary -s -O -c 'import py_compile, sys; [py_compile.compile(f, dfile=f.partition("'"$RPM_BUILD_ROOT"'")[2], doraise=True) for f in sys.argv[1:]]' || failure=1;\
+    test $failure -eq 0\
+}}
 
 Name:           leapp-repository
 Version:        0.8.1
@@ -27,8 +26,8 @@ BuildArch:      noarch
 Requires:       %{name}-sos-plugin = %{version}-%{release}
 BuildRequires:  python-devel
 
-# IMPORTANT: everytime the requirements are changed, increment number by one
-# - same for Provides in deps subpackage
+# IMPORTANT: everytime the requirements are changed, increment the number below
+# by one - do the same for Provides of the deps subpackage below.
 Requires:       leapp-repository-dependencies = 5
 
 # That's temporary to ensure the obsoleted subpackage is not installed
@@ -50,12 +49,12 @@ SOS report plugin for leapp.
 
 # This metapackage should contain all RPM dependencies exluding deps on *leapp*
 # RPMs. This metapackage will be automatically replaced during the upgrade
-# to satisfy dependencies with RPMs from target system.
+# to satisfy dependencies with RPMs from the target system.
 %package deps
 Summary:    Meta-package with system dependencies of %{name} package
 
-# IMPORTANT: everytime the requirements are changed, increment number by one
-# - same for Requires in main package
+# IMPORTANT: everytime the requirements are changed, increment the number below
+# by one - do the same for Requires of the leapp-repository package above.
 Provides:  leapp-repository-dependencies = 5
 ##################################################
 # Real requirements for the leapp-repository HERE
@@ -68,11 +67,9 @@ Requires:   libselinux-python
 Requires:   python-pyudev
 # required by SELinux actors
 Requires:   policycoreutils-python
-%else ## RHEL 8 dependencies ##
-# Requires:   systemd-container
 %endif
 ##################################################
-# end requirement
+# end of requirements
 ##################################################
 
 
@@ -86,8 +83,6 @@ Requires:   policycoreutils-python
 
 
 %build
-# ??? what is supposed to be this? we do not have any build target in the makefile
-make build
 cp -a leapp*deps*rpm repos/system_upgrade/el7toel8/files/bundled-rpms/
 
 
@@ -104,7 +99,7 @@ install -m 0644 etc/leapp/transaction/* %{buildroot}%{_sysconfdir}/leapp/transac
 rm -rf %{buildroot}%{repositorydir}/containerization
 rm -rf %{buildroot}%{repositorydir}/test
 
-# remove component/unit tests, Makefiles, ... stuff that related to testing only
+# remove component/unit tests, Makefiles, ... stuff that is only testing-related
 rm -rf %{buildroot}%{repositorydir}/common/actors/testactor
 find %{buildroot}%{repositorydir}/common -name "test.py" -delete
 rm -rf `find %{buildroot}%{repositorydir} -name "tests" -type d`
