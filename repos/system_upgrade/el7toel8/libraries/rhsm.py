@@ -282,7 +282,7 @@ def switched_certificate(context, rhsm_info, cert_path, version):
 
     unset_release(context)
     try:
-        refresh(context)
+        # refresh(context)
         set_release(context, version)
         target_rhsm_info = TargetRHSMInfo()
         scan_rhsm_info(context, target_rhsm_info)
