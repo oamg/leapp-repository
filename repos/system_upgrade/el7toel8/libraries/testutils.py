@@ -21,7 +21,7 @@ class create_report_mocked(object):
         # iterate list of report primitives (classes)
         for report in report_fields:
             # last element of path is our field name
-            self.report_fields.update(report.to_dict)
+            self.report_fields.update(report.to_dict())
 
 
 def make_IOError(error):
