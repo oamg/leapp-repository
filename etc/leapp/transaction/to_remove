@@ -10,7 +10,5 @@ python2-cairo-devel
 python2-debug
 python2-numpy-f2py
 python2-virtualenv
-# squid - https://bugzilla.redhat.com/show_bug.cgi?id=1703117
-squid
 # python-docs - https://bugzilla.redhat.com/show_bug.cgi?id=1703605
 python-docs
