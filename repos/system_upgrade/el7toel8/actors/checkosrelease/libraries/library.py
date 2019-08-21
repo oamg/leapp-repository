@@ -1,19 +1,24 @@
 import os
 
 from leapp.exceptions import StopActorExecution, StopActorExecutionError
-from leapp.libraries.common import reporting
+from leapp import reporting
 from leapp.libraries.stdlib import api
 from leapp.models import OSReleaseFacts
+
+
+COMMON_REPORT_TAGS = [reporting.Tags.SANITY]
 
 
 def skip_check():
     """ Check if an environment variable was used to skip this actor """
     if os.getenv('LEAPP_SKIP_CHECK_OS_RELEASE'):
-        reporting.report_generic(
-            title='Skipped OS release check',
-            severity='high',
-            summary='Source RHEL release check skipped via LEAPP_SKIP_CHECK_OS_RELEASE env var.',
-        )
+        reporting.create_report([
+            reporting.Title('Skipped OS release check'),
+            reporting.Summary('Source RHEL release check skipped via LEAPP_SKIP_CHECK_OS_RELEASE env var.'),
+            reporting.Severity(reporting.Severity.HIGH),
+            reporting.Tags(COMMON_REPORT_TAGS)
+        ])
+
         return True
     return False
 
@@ -34,11 +39,14 @@ def check_os_version(supported_version):
         )
 
     if facts.release_id not in supported_version:
-        reporting.report_generic(
-            title='Unsupported OS',
-            summary='Only RHEL is supported by the upgrade process',
-            flags=['inhibitor'],
-        )
+        reporting.create_report([
+            reporting.Title('Unsupported OS'),
+            reporting.Summary('Only RHEL is supported by the upgrade process'),
+            reporting.Severity(reporting.Severity.HIGH),
+            reporting.Tags(COMMON_REPORT_TAGS),
+            reporting.Flags([reporting.Flags.INHIBITOR])
+        ])
+
         return
 
     if not isinstance(supported_version[facts.release_id], list):
@@ -48,10 +56,14 @@ def check_os_version(supported_version):
         )
 
     if facts.version_id not in supported_version[facts.release_id]:
-        reporting.report_generic(
-            title='Unsupported OS version',
-            summary='The supported OS versions for the upgrade process: {}'.format(
-                ', '.join(supported_version[facts.release_id])
+        reporting.create_report([
+            reporting.Title('Unsupported OS version'),
+            reporting.Summary(
+                'The supported OS versions for the upgrade process: {}'.format(
+                    ', '.join(supported_version[facts.release_id])
+                )
             ),
-            flags=['inhibitor'],
-        )
+            reporting.Severity(reporting.Severity.HIGH),
+            reporting.Tags(COMMON_REPORT_TAGS),
+            reporting.Flags([reporting.Flags.INHIBITOR])
+        ])

@@ -3,9 +3,9 @@ import os
 import pytest
 
 from leapp.libraries.actor import library
-from leapp.libraries.common import reporting
-from leapp.libraries.common.testutils import produce_mocked, report_generic_mocked
+from leapp.libraries.common.testutils import produce_mocked, create_report_mocked
 from leapp.models import OSRelease
+from leapp import reporting
 
 
 def _clean_leapp_envs(monkeypatch):
@@ -43,7 +43,7 @@ def test_get_target_version(monkeypatch):
 
 def test_get_os_release_info(monkeypatch):
     monkeypatch.setattr('leapp.libraries.stdlib.api.produce', produce_mocked())
-    monkeypatch.setattr(reporting, 'report_generic', report_generic_mocked())
+    monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
 
     expected = OSRelease(
         release_id='rhel',
@@ -56,5 +56,5 @@ def test_get_os_release_info(monkeypatch):
     assert expected == library.get_os_release('tests/files/os-release')
 
     assert not library.get_os_release('tests/files/non-existent-file')
-    assert reporting.report_generic.called == 1
-    assert 'inhibitor' in reporting.report_generic.report_fields['flags']
+    assert reporting.create_report.called == 1
+    assert 'inhibitor' in reporting.create_report.report_fields['flags']

@@ -3,7 +3,7 @@ import io
 import os
 import tarfile
 
-from leapp.libraries.common import reporting
+from leapp import reporting
 from leapp.libraries.stdlib import CalledProcessError, api, run
 from leapp.models import NtpMigrationDecision
 
@@ -55,10 +55,13 @@ def check_ntp(installed_packages):
                 migrate_configs.append(service)
 
     if migrate_configs:
-        reporting.report_generic(
-             title='{} configuration will be migrated'.format(' and '.join(migrate_configs)),
-             summary='{} service(s) detected to be enabled and active'.format(', '.join(migrate_services)),
-             severity='low')
+        reporting.create_report([
+            reporting.Title('{} configuration will be migrated'.format(' and '.join(migrate_configs))),
+            reporting.Summary('{} service(s) detected to be enabled and active'.format(', '.join(migrate_services))),
+            reporting.Severity(reporting.Severity.LOW),
+            reporting.Tags([reporting.Tags.SERVICES, reporting.Tags.TIME_MANAGEMENT]),
+        ])
+
         # Save configuration files that will be renamed in the upgrade
         config_tgz64 = get_tgz64(['/etc/ntp.conf', '/etc/ntp/keys',
                                   '/etc/ntp/crypto/pw', '/etc/ntp/step-tickers'])

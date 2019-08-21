@@ -12,9 +12,11 @@ class Leapp(Plugin, RedHatPlugin):
 
     def setup(self):
         self.add_copy_spec([
-            '/var/lib/leapp/leapp.db',
             '/var/log/leapp/dnf-debugdata/',
             '/var/log/leapp/leapp-upgrade.log',
             '/var/log/leapp/leapp-report.txt',
             '/var/log/leapp/dnf-plugin-data.txt'
         ])
+
+        # capture DB without sizelimit
+        self.add_copy_spec('/var/lib/leapp/leapp.db', sizelimit=0)

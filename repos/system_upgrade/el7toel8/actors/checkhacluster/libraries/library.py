@@ -1,22 +1,24 @@
 import os.path
 
-from leapp.libraries.common.reporting import report_generic
+from leapp import reporting
+from leapp.reporting import create_report
 
 COROSYNC_CONF_LOCATION = "/etc/corosync/corosync.conf"
 CIB_LOCATION = "/var/lib/pacemaker/cib/cib.xml"
 
 
 def inhibit(node_type):
-    report_generic(
-        title="Use of HA cluster detected. Upgrade can't proceed.",
-        summary=(
+    create_report([
+        reporting.Title("Use of HA cluster detected. Upgrade can't proceed."),
+        reporting.Summary(
             "HA cluster is not supported by the inplace upgrade.\n"
             "HA cluster configuration file(s) found."
             " It seems to be a cluster {0}.".format(node_type)
         ),
-        severity="high",
-        flags=["inhibitor"],
-    )
+        reporting.Severity(reporting.Severity.HIGH),
+        reporting.Tags([reporting.Tags.HIGH_AVAILABILITY]),
+        reporting.Flags([reporting.Flags.INHIBITOR])
+    ])
 
 
 def check_ha_cluster():

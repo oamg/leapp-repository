@@ -1,8 +1,8 @@
 from leapp.actors import Actor
-from leapp.libraries.common.reporting import report_generic
 from leapp.libraries.stdlib import run, CalledProcessError
 from leapp.models import Authselect, AuthselectDecision
-from leapp.reporting import Report
+from leapp import reporting
+from leapp.reporting import Report, create_report
 from leapp.tags import IPUWorkflowTag, ApplicationsPhaseTag, ExperimentalTag
 
 
@@ -31,14 +31,30 @@ class AuthselectApply(Actor):
         try:
             run(command)
         except CalledProcessError as err:
-            report_generic(
-                title='Authselect call failed.',
-                summary=str(err)
-            )
+            create_report([  # pylint: disable-msg=too-many-arguments
+                reporting.Title('Authselect call failed'),
+                reporting.Summary(str(err)),
+                reporting.Severity(reporting.Severity.MEDIUM),
+                reporting.Tags([
+                    reporting.Tags.AUTHENTICATION,
+                    reporting.Tags.SECURITY,
+                    reporting.Tags.TOOLS
+                ]),
+                reporting.Flags([
+                    reporting.Flags.FAILURE
+                ])
+            ])  # pylint: disable-msg=too-many-arguments
             return
 
-        report_generic(
-            title='System was converted to authselect.',
-            summary='System was converted to authselect with the '
-                    'following call: "{}"'.format(' '.join(command))
-        )
+        create_report([  # pylint: disable-msg=too-many-arguments
+            reporting.Title('System was converted to authselect.'),
+            reporting.Summary(
+                'System was converted to authselect with the '
+                'following call: "{}"'.format(' '.join(command))
+            ),
+            reporting.Tags([
+                    reporting.Tags.AUTHENTICATION,
+                    reporting.Tags.SECURITY,
+                    reporting.Tags.TOOLS
+                ])
+        ])  # pylint: disable-msg=too-many-arguments

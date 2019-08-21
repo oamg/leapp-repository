@@ -6,7 +6,7 @@ These guidelines are an addition to the [Leapp project contribution guidelines](
 
 1. The code should follow these documents as much as feasible:
    - the [Leapp project Python coding guidelines](https://github.com/oamg/leapp-guidelines/blob/master/python-coding-guidelines.md).
-   - the [Best practices for writing actors](https://github.com/oamg/leapp-repository/blob/master/docs/best-practices.md)
+   - the [Best practices for writing actors](https://leapp.readthedocs.io/en/latest/best-practices.html)
 1. All Python code must be Python 2.7+/3.6+ compatible.
 1. Use of Python language for the actor's logic is **preferred**, even though you can call a script in any language from the actor's Python skeleton.
 

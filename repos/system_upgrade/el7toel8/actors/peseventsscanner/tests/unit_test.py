@@ -14,8 +14,8 @@ from leapp.libraries.actor.library import (Event,
                                            parse_pes_events_file,
                                            process_events,
                                            report_skipped_packages)
-from leapp.libraries.common import reporting
-from leapp.libraries.common.testutils import produce_mocked, report_generic_mocked
+from leapp import reporting
+from leapp.libraries.common.testutils import produce_mocked, create_report_mocked
 from leapp.libraries.stdlib import api
 from leapp.models import RpmTransactionTasks
 
@@ -114,35 +114,35 @@ def test_get_events_for_installed_pkgs_only(monkeypatch):
 def test_report_skipped_packages(monkeypatch):
     monkeypatch.setattr(api, 'produce', produce_mocked())
     monkeypatch.setattr(api, 'show_message', show_message_mocked())
-    monkeypatch.setattr(reporting, 'report_generic', report_generic_mocked())
+    monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
     monkeypatch.setenv('LEAPP_VERBOSE', '1')
     report_skipped_packages('packages will not be installed:', ['skipped01', 'skipped02'])
 
     message = '2 packages will not be installed:\n- skipped01\n- skipped02'
     assert api.show_message.called == 1
     assert api.show_message.msg == message
-    assert reporting.report_generic.called == 1
-    assert reporting.report_generic.report_fields['title'] == 'Packages will not be installed'
-    assert reporting.report_generic.report_fields['summary'] == message
+    assert reporting.create_report.called == 1
+    assert reporting.create_report.report_fields['title'] == 'Packages will not be installed'
+    assert reporting.create_report.report_fields['summary'] == message
 
 
 def test_report_skipped_packages_no_verbose_mode(monkeypatch):
     monkeypatch.setattr(api, 'produce', produce_mocked())
     monkeypatch.setattr(api, 'show_message', show_message_mocked())
-    monkeypatch.setattr(reporting, 'report_generic', report_generic_mocked())
+    monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
     monkeypatch.setenv('LEAPP_VERBOSE', '0')
     report_skipped_packages('packages will not be installed:', ['skipped01', 'skipped02'])
 
     message = '2 packages will not be installed:\n- skipped01\n- skipped02'
     assert api.show_message.called == 0
-    assert reporting.report_generic.called == 1
-    assert reporting.report_generic.report_fields['title'] == 'Packages will not be installed'
-    assert reporting.report_generic.report_fields['summary'] == message
+    assert reporting.create_report.called == 1
+    assert reporting.create_report.report_fields['title'] == 'Packages will not be installed'
+    assert reporting.create_report.report_fields['summary'] == message
 
 
 def test_filter_out_pkgs_in_blacklisted_repos(monkeypatch):
     monkeypatch.setattr(api, 'show_message', show_message_mocked())
-    monkeypatch.setattr(reporting, 'report_generic', report_generic_mocked())
+    monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
     monkeypatch.setattr(library, 'get_repositories_blacklisted', get_repos_blacklisted_mocked(set(['blacklisted'])))
     monkeypatch.setenv('LEAPP_VERBOSE', '1')
 
@@ -159,9 +159,9 @@ def test_filter_out_pkgs_in_blacklisted_repos(monkeypatch):
         '- skipped02']
     assert api.show_message.called == 1
     assert api.show_message.msg == '\n'.join(msgs)
-    assert reporting.report_generic.called == 1
-    assert reporting.report_generic.report_fields['summary'] == '\n'.join(msgs)
-    assert reporting.report_generic.report_fields['title'] == 'Packages will not be installed'
+    assert reporting.create_report.called == 1
+    assert reporting.create_report.report_fields['summary'] == '\n'.join(msgs)
+    assert reporting.create_report.report_fields['title'] == 'Packages will not be installed'
 
     assert to_install == {'pkg01': 'repo01', 'pkg02': 'repo02'}
 
@@ -169,7 +169,7 @@ def test_filter_out_pkgs_in_blacklisted_repos(monkeypatch):
 def test_map_repositories(monkeypatch):
     monkeypatch.setattr(api, 'show_message', show_message_mocked())
     monkeypatch.setattr(library, 'REPOSITORIES_MAPPING', {'repo': 'mapped'})
-    monkeypatch.setattr(reporting, 'report_generic', report_generic_mocked())
+    monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
     monkeypatch.setenv('LEAPP_VERBOSE', '1')
 
     to_install = {
@@ -185,9 +185,9 @@ def test_map_repositories(monkeypatch):
         '- skipped02']
     assert api.show_message.called == 1
     assert api.show_message.msg == '\n'.join(msgs)
-    assert reporting.report_generic.called == 1
-    assert reporting.report_generic.report_fields['title'] == 'Packages will not be installed'
-    assert reporting.report_generic.report_fields['summary'] == '\n'.join(msgs)
+    assert reporting.create_report.called == 1
+    assert reporting.create_report.report_fields['title'] == 'Packages will not be installed'
+    assert reporting.create_report.report_fields['summary'] == '\n'.join(msgs)
 
     assert to_install == {'pkg01': 'mapped', 'pkg02': 'mapped'}
 
@@ -208,30 +208,30 @@ def test_process_events(monkeypatch):
 
 
 def test_get_events(monkeypatch):
-    monkeypatch.setattr(reporting, 'report_generic', report_generic_mocked())
+    monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
 
     with pytest.raises(StopActorExecution):
         get_events('files/tests/sample02.json')
-    assert reporting.report_generic.called == 1
-    assert 'inhibitor' in reporting.report_generic.report_fields['flags']
+    assert reporting.create_report.called == 1
+    assert 'inhibitor' in reporting.create_report.report_fields['flags']
 
-    reporting.report_generic.called = 0
-    reporting.report_generic.model_instances = []
+    reporting.create_report.called = 0
+    reporting.create_report.model_instances = []
     with pytest.raises(StopActorExecution):
         get_events('files/tests/sample03.json')
-    assert reporting.report_generic.called == 1
-    assert 'inhibitor' in reporting.report_generic.report_fields['flags']
+    assert reporting.create_report.called == 1
+    assert 'inhibitor' in reporting.create_report.report_fields['flags']
 
 
 def test_pes_data_not_found(monkeypatch):
     def file_not_exists(_filepath):
         return False
     monkeypatch.setattr(os.path, 'isfile', file_not_exists)
-    monkeypatch.setattr(reporting, 'report_generic', report_generic_mocked())
+    monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
     with pytest.raises(StopActorExecution):
         get_events('/etc/leapp/pes-data.json')
-    assert reporting.report_generic.called == 1
-    assert 'inhibitor' in reporting.report_generic.report_fields['flags']
+    assert reporting.create_report.called == 1
+    assert 'inhibitor' in reporting.create_report.report_fields['flags']
 
 
 def test_add_output_pkgs_to_transaction_conf():

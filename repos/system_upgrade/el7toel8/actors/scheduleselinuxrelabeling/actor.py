@@ -1,8 +1,11 @@
 from leapp.actors import Actor
 from leapp.tags import FinalizationPhaseTag, IPUWorkflowTag
 from leapp.models import SelinuxRelabelDecision
-from leapp.reporting import Report
-from leapp.libraries.common.reporting import report_generic, report_with_remediation
+from leapp.reporting import Report, create_report
+from leapp import reporting
+
+
+COMMON_REPORT_TAGS = [reporting.Tags.SELINUX]
 
 
 class ScheduleSeLinuxRelabeling(Actor):
@@ -23,17 +26,24 @@ class ScheduleSeLinuxRelabeling(Actor):
                 try:
                     with open('/.autorelabel', 'w'):
                         pass
-                    report_generic(
-                        title='SElinux scheduled for relabelling',
-                        summary='/.autorelabel file touched on root in order to schedule SElinux relabelling.',
-                        severity='low',
-                    )
+                    create_report([
+                        reporting.Title('SElinux scheduled for relabelling'),
+                        reporting.Summary(
+                            '/.autorelabel file touched on root in order to schedule SElinux relabelling.'),
+                        reporting.Severity(reporting.Severity.INFO),
+                        reporting.Tags(COMMON_REPORT_TAGS),
+                    ])
+
                 except OSError as e:
                     # FIXME: add an "action required" flag later
-                    report_with_remediation(
-                        title='Could not schedule SElinux for relabelling',
-                        summary='./autorelabel file could not be created: {}.'.format(e),
-                        remediation='Please set autorelabelling manually after the upgrade.',
-                        severity='high'
-                    )
+                    create_report([
+                        reporting.Title('Could not schedule SElinux for relabelling'),
+                        reporting.Summary('./autorelabel file could not be created: {}.'.format(e)),
+                        reporting.Severity(reporting.Severity.HIGH),
+                        reporting.Tags(COMMON_REPORT_TAGS),
+                        reporting.Remediation(
+                            hint='Please set autorelabelling manually after the upgrade.'
+                        ),
+                        reporting.Flags([reporting.Flags.FAILURE])
+                    ])
                     self.log.critical('Could not schedule SElinux for relabelling: %s.' % e)

@@ -4,8 +4,8 @@ import pytest
 
 from leapp.exceptions import StopActorExecution
 from leapp.libraries.actor import library
-from leapp.libraries.common import reporting
-from leapp.libraries.common.testutils import produce_mocked, report_generic_mocked
+from leapp import reporting
+from leapp.libraries.common.testutils import produce_mocked, create_report_mocked
 from leapp.libraries.stdlib import api
 from leapp.models import RPM, InstalledUnsignedRPM
 
@@ -14,19 +14,19 @@ RH_PACKAGER = 'Red Hat, Inc. <http://bugzilla.redhat.com/bugzilla>'
 
 def test_skip_check(monkeypatch):
     monkeypatch.setattr(os, "getenv", lambda _unused: True)
-    monkeypatch.setattr(reporting, "report_generic", report_generic_mocked())
+    monkeypatch.setattr(reporting, "create_report", create_report_mocked())
     with pytest.raises(StopActorExecution):
         library.skip_check()
-    assert reporting.report_generic.called == 1
-    assert 'Skipped signed packages check' in reporting.report_generic.report_fields['title']
+    assert reporting.create_report.called == 1
+    assert 'Skipped signed packages check' in reporting.create_report.report_fields['title']
 
 
 def test_no_skip_check(monkeypatch):
     monkeypatch.setattr(os, "getenv", lambda(_): False)
-    monkeypatch.setattr(reporting, "report_generic", report_generic_mocked())
+    monkeypatch.setattr(reporting, "create_report", create_report_mocked())
 
     library.skip_check()
-    assert reporting.report_generic.called == 0
+    assert reporting.create_report.called == 0
 
 
 def test_actor_execution_without_unsigned_data(monkeypatch):
@@ -36,12 +36,12 @@ def test_actor_execution_without_unsigned_data(monkeypatch):
     monkeypatch.setattr(api, "consume", consume_unsigned_message_mocked)
     monkeypatch.setattr(api, "produce", produce_mocked())
     monkeypatch.setattr(api, "show_message", lambda x: True)
-    monkeypatch.setattr(reporting, "report_with_remediation", report_generic_mocked())
+    monkeypatch.setattr(reporting, "create_report", create_report_mocked())
 
     packages = library.get_unsigned_packages()
     assert not packages
     library.generate_report(packages)
-    assert reporting.report_with_remediation.called == 0
+    assert reporting.create_report.called == 0
 
 
 def test_actor_execution_with_unsigned_data(monkeypatch):
@@ -60,11 +60,11 @@ def test_actor_execution_with_unsigned_data(monkeypatch):
     monkeypatch.setattr(api, "consume", consume_unsigned_message_mocked)
     monkeypatch.setattr(api, "produce", produce_mocked())
     monkeypatch.setattr(api, "show_message", lambda x: True)
-    monkeypatch.setattr(reporting, "report_with_remediation", report_generic_mocked())
+    monkeypatch.setattr(reporting, "create_report", create_report_mocked())
 
     packages = library.get_unsigned_packages()
     assert len(packages) == 4
     library.generate_report(packages)
-    assert reporting.report_with_remediation.called == 1
-    assert 'Packages not signed by Red Hat found' in reporting.report_with_remediation.report_fields['title']
-    assert 'yum remove sample' in reporting.report_with_remediation.report_fields['remediation']
+    assert reporting.create_report.called == 1
+    assert 'Packages not signed by Red Hat found' in reporting.create_report.report_fields['title']
+    assert ['yum remove sample' in r for r in reporting.create_report.report_fields['remediations']]

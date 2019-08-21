@@ -13,11 +13,11 @@ def test_actor_with_unsupported_tcpwrap_and_vsftpd_config(current_actor_context)
     current_actor_context.feed(vsftpd_facts)
     current_actor_context.feed(tcpwrap_facts)
     current_actor_context.run()
-    report = current_actor_context.consume(Report)[0]
+    report_fields = current_actor_context.consume(Report)[0].report
 
-    assert 'inhibitor' in report.flags
-    assert 'foo.conf' not in report.detail['summary']
-    assert 'bar.conf' in report.detail['summary']
+    assert 'inhibitor' in report_fields['flags']
+    assert 'foo.conf' not in report_fields['summary']
+    assert 'bar.conf' in report_fields['summary']
 
 
 def test_actor_with_unsupported_tcpwrap_multiple_unsupported_vsftpd_configs(current_actor_context):
@@ -31,12 +31,12 @@ def test_actor_with_unsupported_tcpwrap_multiple_unsupported_vsftpd_configs(curr
     current_actor_context.feed(vsftpd_facts)
     current_actor_context.feed(tcpwrap_facts)
     current_actor_context.run()
-    report = current_actor_context.consume(Report)[0]
+    report_fields = current_actor_context.consume(Report)[0].report
 
-    assert 'inhibitor' in report.flags
-    assert 'foo.conf' in report.detail['summary']
-    assert 'bar.conf' not in report.detail['summary']
-    assert 'goo.conf' in report.detail['summary']
+    assert 'inhibitor' in report_fields['flags']
+    assert 'foo.conf' in report_fields['summary']
+    assert 'bar.conf' not in report_fields['summary']
+    assert 'goo.conf' in report_fields['summary']
 
 
 def test_actor_with_unsupported_tcpwrap_config(current_actor_context):

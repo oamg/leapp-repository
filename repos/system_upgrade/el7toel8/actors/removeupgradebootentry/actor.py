@@ -1,6 +1,6 @@
 from leapp.actors import Actor
 from leapp.libraries.actor.library import remove_boot_entry
-from leapp.models import BootContent
+from leapp.models import BootContent, FirmwareFacts
 from leapp.tags import InitRamStartPhaseTag, IPUWorkflowTag
 
 
@@ -12,7 +12,7 @@ class RemoveUpgradeBootEntry(Actor):
     """
 
     name = 'remove_upgrade_boot_entry'
-    consumes = (BootContent,)
+    consumes = (BootContent, FirmwareFacts)
     produces = ()
     tags = (IPUWorkflowTag, InitRamStartPhaseTag)
 

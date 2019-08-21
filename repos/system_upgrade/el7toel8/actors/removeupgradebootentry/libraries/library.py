@@ -1,17 +1,28 @@
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.stdlib import CalledProcessError, api, run
-from leapp.models import BootContent
+from leapp.models import BootContent, FirmwareFacts
 
 
 def remove_boot_entry():
     # we need to make sure /boot is mounted before trying to remove the boot entry
-    try:
-        run([
-            '/bin/mount', '/boot'
-        ])
-    except CalledProcessError:
-        # /boot has been most likely already mounted
-        pass
+
+    facts_msg = api.consume(FirmwareFacts)
+    facts = next(facts_msg, None)
+    if not facts:
+        raise StopActorExecutionError('Could not identify system firmware',
+                                      details={'details': 'Actor did not receive FirmwareFacts message.'})
+
+    mount_points_per_firmware = {
+        'bios': ['/boot'],
+        'efi': ['/boot', '/boot/efi']
+    }
+
+    for mp in mount_points_per_firmware[facts.firmware]:
+        try:
+            run(['/bin/mount', mp])
+        except CalledProcessError:
+            # partitions have been most likely already mounted
+            pass
     kernel_filepath = get_upgrade_kernel_filepath()
     run([
         '/usr/sbin/grubby',
@@ -30,7 +41,7 @@ def get_upgrade_kernel_filepath():
     if list(boot_content_msgs):
         api.current_logger().warning('Unexpectedly received more than one BootContent message.')
     if not boot_content:
-        raise StopActorExecutionError('Could not create a GRUB boot entry for the upgrade initramfs.',
+        raise StopActorExecutionError('Could not remove GRUB boot entry for the upgrade initramfs.',
                                       details={'details': 'Did not receive a message about the leapp-provided'
                                                           ' kernel and initramfs.'})
     return boot_content.kernel_path

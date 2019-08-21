@@ -1,9 +1,9 @@
 from leapp.actors import Actor
 from leapp.dialogs import Dialog
 from leapp.dialogs.components import BooleanComponent
-from leapp.libraries.common.reporting import report_with_remediation
 from leapp.models import RemovedPAMModules
-from leapp.reporting import Report
+from leapp.reporting import Report, create_report
+from leapp import reporting
 from leapp.tags import IPUWorkflowTag, ChecksPhaseTag, ExperimentalTag
 
 
@@ -75,27 +75,44 @@ class RemoveOldPAMModulesCheck(Actor):
         return self.request_answers(questions[module]).get('confirm', False)
 
     def produce_report(self, module):
-        report_with_remediation(
-            title='Module {0} will be removed from PAM configuration'.format(module),
-            summary='Module {0} was surpassed by SSSD and therefore it was '
-                    'removed from RHEL-8. Keeping it in PAM configuration may '
-                    'lock out the system thus it will be automatically removed '
-                    'from PAM configuration before upgrading to RHEL-8. '
-                    'Please switch to SSSD to recover the functionality '
-                    'of {0}.'.format(module),
-            remediation='Configure SSSD to replace {0}'.format(module)
-        )
+        create_report([
+            reporting.Title('Module {0} will be removed from PAM configuration'.format(module)),
+            reporting.Summary(
+                'Module {0} was surpassed by SSSD and therefore it was '
+                'removed from RHEL-8. Keeping it in PAM configuration may '
+                'lock out the system thus it will be automatically removed '
+                'from PAM configuration before upgrading to RHEL-8. '
+                'Please switch to SSSD to recover the functionality '
+                'of {0}.'.format(module)
+            ),
+            reporting.Severity(reporting.Severity.MEDIUM),
+            reporting.Tags([
+                    reporting.Tags.AUTHENTICATION,
+                    reporting.Tags.SECURITY,
+                    reporting.Tags.TOOLS
+            ]),
+            reporting.Remediation(hint='Configure SSSD to replace {0}'.format(module))
+        ])
 
     def produce_inhibitor(self, module):
-        report_with_remediation(
-            title='Upgrade process was interrupted because {0} is enabled in '
-                  'PAM configuration and SA user refused to disable it '
-                  'automatically.'.format(module),
-            summary='Module {0} was surpassed by SSSD and therefore it was '
-                    'removed from RHEL-8. Keeping it in PAM configuration may '
-                    'lock out the system thus it is necessary to disable it '
-                    'before the upgrade process can continue.'.format(module),
-            remediation='Disable {0} module and switch to SSSD to recover '
-                        'its functionality.'.format(module),
-            flags=['inhibitor']
-        )
+        create_report([
+            reporting.Title(
+                'Upgrade process was interrupted because {0} is enabled in '
+                'PAM configuration and SA user refused to disable it '
+                'automatically.'.format(module)),
+            reporting.Summary(
+                'Module {0} was surpassed by SSSD and therefore it was '
+                'removed from RHEL-8. Keeping it in PAM configuration may '
+                'lock out the system thus it is necessary to disable it '
+                'before the upgrade process can continue.'.format(module)
+            ),
+            reporting.Severity(reporting.Severity.HIGH),
+            reporting.Tags([
+                    reporting.Tags.AUTHENTICATION,
+                    reporting.Tags.SECURITY,
+                    reporting.Tags.TOOLS
+            ]),
+            reporting.Flags([reporting.Flags.INHIBITOR]),
+            reporting.Remediation(
+                hint='Disable {0} module and switch to SSSD to recover its functionality.'.format(module))
+        ])

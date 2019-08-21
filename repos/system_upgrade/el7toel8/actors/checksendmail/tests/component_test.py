@@ -37,4 +37,5 @@ def test_actor_with_tcp_wrappers(current_actor_context):
     current_actor_context.feed(create_modulesfacts(installed_rpm=with_sendmail))
     current_actor_context.feed(tcpwrap_facts)
     current_actor_context.run()
-    assert 'inhibitor' in current_actor_context.consume(Report)[0].flags
+    report_fields = current_actor_context.consume(Report)[0].report
+    assert 'inhibitor' in report_fields['flags']

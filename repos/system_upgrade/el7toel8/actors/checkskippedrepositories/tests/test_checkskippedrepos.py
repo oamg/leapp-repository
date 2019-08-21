@@ -15,11 +15,11 @@ def test_skipped_repos(current_actor_context):
     reports = list(current_actor_context.consume(Report))
     assert reports
     assert len(reports) == 1
-    report = reports[0]
+    report_fields = reports[0].report
     for pkg in reported_packages:
-        assert '\n- {}'.format(pkg) in report.detail.get('summary')
+        assert '\n- {}'.format(pkg) in report_fields['summary']
     for repo in reported_repos:
-        assert '\n- {}'.format(repo) in report.detail.get('summary')
+        assert '\n- {}'.format(repo) in report_fields['summary']
 
 
 def test_skipped_just_repos(current_actor_context):
@@ -35,9 +35,9 @@ def test_skipped_just_repos(current_actor_context):
     reports = list(current_actor_context.consume(Report))
     assert reports
     assert len(reports) == 1
-    report = reports[0]
+    report_fields = reports[0].report
     for repo in reported_repos:
-        assert '\n- {}'.format(repo) in report.detail.get('summary')
+        assert '\n- {}'.format(repo) in report_fields['summary']
 
 
 def test_skipped_repos_empty(current_actor_context):

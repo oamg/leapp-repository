@@ -1,8 +1,8 @@
 from leapp.actors import Actor
 from leapp.models import FirewalldFacts
 from leapp.libraries.actor import private
-from leapp.libraries.common.reporting import report_with_remediation
-from leapp.reporting import Report
+from leapp.reporting import Report, create_report
+from leapp import reporting
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
@@ -32,20 +32,42 @@ class CheckFirewalld(Actor):
             format_tuple = (
                 list_separator_fmt,
                 list_separator_fmt.join(list(set(unsupported_tables))),)
-            report_with_remediation(
-                title='Firewalld is using an unsupported ebtables table.',
-                summary='ebtables in RHEL-8 does not support these tables:{}{}'.format(*format_tuple),
-                remediation='Remove firewalld direct rules that use these ebtables tables:{}{}'.format(*format_tuple),
-                severity='high',
-                flags=['inhibitor'])
+            create_report([
+                reporting.Title('Firewalld is using an unsupported ebtables table.'),
+                reporting.Summary('ebtables in RHEL-8 does not support these tables:{}{}'.format(*format_tuple)),
+                reporting.Severity(reporting.Severity.HIGH),
+                reporting.Tags([
+                        reporting.Tags.FIREWALL,
+                        reporting.Tags.SECURITY,
+                        reporting.Tags.NETWORK
+                ]),
+                reporting.Flags([
+                        reporting.Flags.INHIBITOR
+                ]),
+                reporting.Remediation(
+                    hint='Remove firewalld direct rules that use these ebtables tables:{}{}'.format(*format_tuple)
+                )
+            ])
+
         if unsupported_ipset_types:
             format_tuple = (
                 list_separator_fmt,
                 list_separator_fmt.join(list(set(unsupported_ipset_types))),)
-            report_with_remediation(
-                title='Firewalld is using an unsupported ipset type.',
-                summary='These ipset types are not supported by firewalld\'s nftables backend:{}{}'.format(
-                    *format_tuple),
-                remediation='Remove ipsets of these types from firewalld:{}{}'.format(*format_tuple),
-                severity='high',
-                flags=['inhibitor'])
+            create_report([
+                reporting.Title('Firewalld is using an unsupported ipset type.'),
+                reporting.Summary(
+                    'These ipset types are not supported by firewalld\'s nftables backend:{}{}'.format(*format_tuple)
+                ),
+                reporting.Severity(reporting.Severity.HIGH),
+                reporting.Tags([
+                        reporting.Tags.FIREWALL,
+                        reporting.Tags.SECURITY,
+                        reporting.Tags.NETWORK
+                ]),
+                reporting.Flags([
+                        reporting.Flags.INHIBITOR
+                ]),
+                reporting.Remediation(
+                    hint='Remove ipsets of these types from firewalld:{}{}'.format(*format_tuple)
+                )
+            ])

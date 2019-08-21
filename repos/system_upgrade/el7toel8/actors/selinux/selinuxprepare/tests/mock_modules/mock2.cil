@@ -1,0 +1,4 @@
+(type mock_type2_t)
+(typeattributeset direct_run_init (mock_type2_t))
+(allow mock_type_t file_type (file (getattr open read)))
+(allow mock_type_t ganesha_exec_t (file (getattr open read)))
