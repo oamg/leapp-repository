@@ -6,6 +6,9 @@ from leapp import reporting
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
+related = [reporting.RelatedResource('package', 'firewalld')]
+
+
 class CheckFirewalld(Actor):
     """
     Check for certain firewalld configuration that may prevent an upgrade.
@@ -47,7 +50,7 @@ class CheckFirewalld(Actor):
                 reporting.Remediation(
                     hint='Remove firewalld direct rules that use these ebtables tables:{}{}'.format(*format_tuple)
                 )
-            ])
+            ] + related)
 
         if unsupported_ipset_types:
             format_tuple = (
@@ -70,4 +73,4 @@ class CheckFirewalld(Actor):
                 reporting.Remediation(
                     hint='Remove ipsets of these types from firewalld:{}{}'.format(*format_tuple)
                 )
-            ])
+            ] + related)

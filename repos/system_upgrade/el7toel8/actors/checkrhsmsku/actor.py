@@ -33,5 +33,6 @@ class CheckRedHatSubscriptionManagerSKU(Actor):
                         reporting.Flags([reporting.Flags.INHIBITOR]),
                         reporting.Remediation(
                             hint='Register your system with the subscription-manager tool and attach it to proper SKUs'
-                                 ' to be able to proceed the upgrade.')
+                                 ' to be able to proceed the upgrade.'),
+                        reporting.RelatedResource('package', 'subscription-manager')
                     ])

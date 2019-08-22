@@ -24,5 +24,9 @@ class PythonInformUser(Actor):
             reporting.Severity(reporting.Severity.HIGH),
             reporting.Tags([reporting.Tags.PYTHON]),
             reporting.Audience('developer'),
-            reporting.Remediation(commands=[['alternatives', '--set', 'python', '/usr/bin/python3']])
+            reporting.ExternalLink(url, title),
+            reporting.Remediation(commands=[['alternatives', '--set', 'python', '/usr/bin/python3']]),
+            reporting.RelatedResource('package', 'python'),
+            reporting.RelatedResource('package', 'python2'),
+            reporting.RelatedResource('package', 'python3')
         ])

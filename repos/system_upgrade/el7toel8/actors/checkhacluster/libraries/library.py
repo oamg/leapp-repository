@@ -17,7 +17,9 @@ def inhibit(node_type):
         ),
         reporting.Severity(reporting.Severity.HIGH),
         reporting.Tags([reporting.Tags.HIGH_AVAILABILITY]),
-        reporting.Flags([reporting.Flags.INHIBITOR])
+        reporting.Flags([reporting.Flags.INHIBITOR]),
+        reporting.RelatedResource('file', COROSYNC_CONF_LOCATION),
+        reporting.RelatedResource('file', CIB_LOCATION)
     ])
 
 

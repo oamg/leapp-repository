@@ -9,6 +9,11 @@ COMMON_REPORT_TAGS = [reporting.Tags.SERVICES]
 
 sysconfig_path = '/etc/sysconfig/memcached'
 
+related = [
+    reporting.RelatedResource('package', 'memcached'),
+    reporting.RelatedResource('file', sysconfig_path)
+]
+
 
 def is_sysconfig_default():
     """Check if the memcached sysconfig file was not modified since installation."""
@@ -44,7 +49,7 @@ def check_memcached(memcached_installed):
             reporting.Summary('memcached in RHEL8 listens on loopback only and has UDP port disabled by default'),
             reporting.Severity(reporting.Severity.MEDIUM),
             reporting.Tags(COMMON_REPORT_TAGS),
-        ])
+        ] + related)
 
     elif not disabled_udp_port:
         reporting.create_report([
@@ -54,7 +59,7 @@ def check_memcached(memcached_installed):
             ),
             reporting.Severity(reporting.Severity.MEDIUM),
             reporting.Tags(COMMON_REPORT_TAGS),
-        ])
+        ] + related)
 
     else:
         reporting.create_report([
@@ -62,4 +67,4 @@ def check_memcached(memcached_installed):
             reporting.Summary('memcached in RHEL8 has UDP port disabled by default'),
             reporting.Severity(reporting.Severity.LOW),
             reporting.Tags(COMMON_REPORT_TAGS),
-        ])
+        ] + related)

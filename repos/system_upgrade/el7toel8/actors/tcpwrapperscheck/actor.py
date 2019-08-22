@@ -74,5 +74,8 @@ class TcpWrappersCheck(Actor):
                     url='https://access.redhat.com/solutions/3906701'
                 ),
                 reporting.Tags([reporting.Tags.SECURITY, reporting.Tags.NETWORK]),
-                reporting.Flags([reporting.Flags.INHIBITOR])
-            ])
+                reporting.Flags([reporting.Flags.INHIBITOR]),
+                reporting.RelatedResource('file', '/etc/hosts.allow'),
+                reporting.RelatedResource('file', '/etc/hosts.deny'),
+                reporting.RelatedResource('package', 'tcp_wrappers')
+            ] + [reporting.RelatedResource('package', fp) for fp in found_packages])

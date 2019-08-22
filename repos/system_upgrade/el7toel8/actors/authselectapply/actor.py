@@ -6,6 +6,13 @@ from leapp.reporting import Report, create_report
 from leapp.tags import IPUWorkflowTag, ApplicationsPhaseTag, ExperimentalTag
 
 
+resources = [
+    reporting.RelatedResource('package', 'authselect'),
+    reporting.RelatedResource('package', 'authconfig'),
+    reporting.RelatedResource('file', '/etc/nsswitch.conf')
+]
+
+
 class AuthselectApply(Actor):
     """
     Apply changes suggested by AuthselectScanner.
@@ -43,7 +50,7 @@ class AuthselectApply(Actor):
                 reporting.Flags([
                     reporting.Flags.FAILURE
                 ])
-            ])  # pylint: disable-msg=too-many-arguments
+            ] + resources)  # pylint: disable-msg=too-many-arguments
             return
 
         create_report([  # pylint: disable-msg=too-many-arguments
@@ -57,4 +64,4 @@ class AuthselectApply(Actor):
                     reporting.Tags.SECURITY,
                     reporting.Tags.TOOLS
                 ])
-        ])  # pylint: disable-msg=too-many-arguments
+        ] + resources)  # pylint: disable-msg=too-many-arguments

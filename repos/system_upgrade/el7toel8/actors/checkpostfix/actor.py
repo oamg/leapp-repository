@@ -57,5 +57,6 @@ class CheckPostfix(Actor):
                         ),
                         reporting.Severity(reporting.Severity.LOW),
                         reporting.Tags([reporting.Tags.SERVICES, reporting.Tags.EMAIL]),
+                        reporting.RelatedResource('package', 'postfix')
                     ])
                     return

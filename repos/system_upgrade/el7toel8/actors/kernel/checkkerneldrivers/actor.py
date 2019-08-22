@@ -84,4 +84,4 @@ class CheckKernelDrivers(Actor):
                     reporting.Tags([reporting.Tags.KERNEL, reporting.Tags.DRIVERS]),
                     reporting.Flags([reporting.Flags.INHIBITOR]),
                     reporting.Remediation(hint=remediation)
-                ])
+                ] + [reporting.RelatedResource('kernel-driver', km) for km in drivers_to_report])

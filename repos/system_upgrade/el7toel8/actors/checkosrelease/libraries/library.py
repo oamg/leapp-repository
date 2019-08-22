@@ -8,6 +8,8 @@ from leapp.models import OSReleaseFacts
 
 COMMON_REPORT_TAGS = [reporting.Tags.SANITY]
 
+related = [reporting.RelatedResource('file', '/etc/os-release')]
+
 
 def skip_check():
     """ Check if an environment variable was used to skip this actor """
@@ -17,7 +19,7 @@ def skip_check():
             reporting.Summary('Source RHEL release check skipped via LEAPP_SKIP_CHECK_OS_RELEASE env var.'),
             reporting.Severity(reporting.Severity.HIGH),
             reporting.Tags(COMMON_REPORT_TAGS)
-        ])
+        ] + related)
 
         return True
     return False
@@ -45,7 +47,7 @@ def check_os_version(supported_version):
             reporting.Severity(reporting.Severity.HIGH),
             reporting.Tags(COMMON_REPORT_TAGS),
             reporting.Flags([reporting.Flags.INHIBITOR])
-        ])
+        ] + related)
 
         return
 
@@ -66,4 +68,4 @@ def check_os_version(supported_version):
             reporting.Severity(reporting.Severity.HIGH),
             reporting.Tags(COMMON_REPORT_TAGS),
             reporting.Flags([reporting.Flags.INHIBITOR])
-        ])
+        ] + related)

@@ -119,7 +119,8 @@ def _get_fstab_info(fstab_path):
                         reporting.Severity(reporting.Severity.HIGH),
                         reporting.Tags([reporting.Tags.FILESYSTEM]),
                         reporting.Flags([reporting.Flags.INHIBITOR]),
-                        reporting.Remediation(hint=remediation)
+                        reporting.Remediation(hint=remediation),
+                        reporting.RelatedResource('file', '/etc/fstab')
                     ])
 
                     api.current_logger().error(summary)

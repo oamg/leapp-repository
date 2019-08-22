@@ -88,7 +88,8 @@ def get_events(pes_events_filepath):
             reporting.Summary(summary),
             reporting.Severity(reporting.Severity.HIGH),
             reporting.Tags([reporting.Tags.SANITY]),
-            reporting.Flags([reporting.Flags.INHIBITOR])
+            reporting.Flags([reporting.Flags.INHIBITOR]),
+            reporting.RelatedResource('file', pes_events_filepath)
         ])
         raise StopActorExecution()
 
@@ -294,7 +295,7 @@ def report_skipped_packages(message, packages):
         reporting.Summary(summary),
         reporting.Severity(reporting.Severity.HIGH),
         reporting.Tags([reporting.Tags.REPOSITORY]),
-    ])
+    ] + [reporting.RelatedResource('package', p) for p in packages])
     if is_verbose():
         api.show_message(summary)
 

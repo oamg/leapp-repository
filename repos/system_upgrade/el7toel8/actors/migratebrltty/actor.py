@@ -34,5 +34,6 @@ class MigrateBrltty(Actor):
                     reporting.Title('brltty configuration files migrated'),
                     reporting.Summary(report_summary),
                     reporting.Severity(reporting.Severity.LOW),
-                    reporting.Tags([reporting.Tags.TOOLS, reporting.Tags.ACCESSIBILITY])
+                    reporting.Tags([reporting.Tags.TOOLS, reporting.Tags.ACCESSIBILITY]),
+                    reporting.RelatedResource('package', 'brltty')
                 ])

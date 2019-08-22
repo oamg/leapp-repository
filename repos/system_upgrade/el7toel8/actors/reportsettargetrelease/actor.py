@@ -27,5 +27,6 @@ class ReportSetTargetRelease(Actor):
                     format(release=info.release)
                 ),
                 reporting.Severity(reporting.Severity.LOW),
-                reporting.Tags([reporting.Tags.UPGRADE_PROCESS])
+                reporting.Tags([reporting.Tags.UPGRADE_PROCESS]),
+                reporting.RelatedResource('package', 'subscription-manager')
             ])
