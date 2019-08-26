@@ -22,5 +22,6 @@ class DnfTransactionCheck(Actor):
         tasks = next(self.consume(FilteredRpmTransactionTasks), FilteredRpmTransactionTasks())
         target_userspace_info = next(self.consume(TargetUserSpaceInfo), None)
 
-        dnfplugin.perform_transaction_check(tasks=tasks, used_repos=used_repos,
-                                            target_userspace_info=target_userspace_info, xfs_present=xfs_present)
+        if target_userspace_info:
+            dnfplugin.perform_transaction_check(tasks=tasks, used_repos=used_repos,
+                                                target_userspace_info=target_userspace_info, xfs_present=xfs_present)
