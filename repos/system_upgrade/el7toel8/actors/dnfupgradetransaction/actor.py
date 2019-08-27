@@ -31,8 +31,9 @@ class DnfUpgradeTransaction(Actor):
         # run(cmd)
 
         src_rhsm_info = next(self.consume(SourceRHSMInfo), None)
-        for prod_cert in src_rhsm_info.existing_product_certificates:
-            run(['rm', '-f', prod_cert])
+        if src_rhsm_info:
+            for prod_cert in src_rhsm_info.existing_product_certificates:
+                run(['rm', '-f', prod_cert])
 
         used_repos = self.consume(UsedTargetRepositories)
         tasks = next(self.consume(FilteredRpmTransactionTasks), FilteredRpmTransactionTasks())
