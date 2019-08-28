@@ -1,0 +1,16 @@
+# NetworkManager configuration: /etc/NetworkManager/NetworkManager.conf (lib: 20-connectivity-fedora.conf)
+
+[main]
+# plugins=ifcfg-rh
+# rc-manager=symlink
+# auth-polkit=true
+dhcp=dhclient
+
+[connectivity]
+uri=http://fedoraproject.org/static/hotspot.txt
+response=OK
+interval=300
+
+[logging]
+# backend=journal
+# audit=false
