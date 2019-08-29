@@ -11,9 +11,9 @@ from leapp.models import (InstalledRedHatSignedRPM, PESRpmTransactionTasks,
 
 # FIXME: this mapping is not complete and will need to be manually updated frequently
 REPOSITORIES_MAPPING = {
-    'rhel8-appstream': 'rhel-8-for-x86_64-appstream-rpms',
-    'rhel8-baseos': 'rhel-8-for-x86_64-baseos-rpms',
-    'rhel8-crb': 'codeready-builder-for-rhel-8-x86_64-rpms'}
+    'rhel8-appstream': 'rhel-8-for-aarch64-appstream-rpms',
+    'rhel8-baseos': 'rhel-8-for-aarch64-baseos-rpms',
+    'rhel8-crb': 'codeready-builder-for-rhel-8-aarch64-rpms'}
 
 Event = namedtuple('Event', ['action',   # A string representing an event type (see EVENT_TYPES)
                              'in_pkgs',  # A dictionary with packages in format {<pkg_name>: <repository>}

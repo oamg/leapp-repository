@@ -5,7 +5,6 @@ from leapp.libraries.stdlib import api
 from leapp.models import RequiredUpgradeInitramPackages, UpgradeDracutModule
 
 _REQUIRED_PACKAGES = [
-    'biosdevname',
     'binutils',
     'cifs-utils',
     'device-mapper-multipath',

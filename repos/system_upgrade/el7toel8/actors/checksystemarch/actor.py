@@ -20,10 +20,10 @@ class CheckSystemArch(Actor):
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 
     def process(self):
-        if platform.machine() != 'x86_64':
+        if platform.machine() != 'aarch64':
             create_report([
                 reporting.Title('Unsupported architecture'),
-                reporting.Summary('Upgrade process is only supported on x86_64 systems.'),
+                reporting.Summary('Upgrade process is only supported on aarch64 systems.'),
                 reporting.Severity(reporting.Severity.HIGH),
                 reporting.Tags([reporting.Tags.SANITY]),
                 reporting.Flags([reporting.Flags.INHIBITOR])

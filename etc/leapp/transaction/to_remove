@@ -14,3 +14,6 @@ python2-virtualenv
 squid
 # python-docs - https://bugzilla.redhat.com/show_bug.cgi?id=1703605
 python-docs
+
+# Package grub2-tools-1:2.02-0.76.el7.1.aarch64 is already installed.
+grub2-tools-efi

@@ -70,7 +70,7 @@ def generate_initram_disk(context):
     install_initram_deps(context)
     context.call([
         '/bin/sh', '-c',
-        'LEAPP_ADD_DRACUT_MODULES={modules} {cmd}'.format(
+        'LEAPP_ADD_DRACUT_MODULES={modules} LEAPP_KERNEL_ARCH=aarch64 {cmd}'.format(
             modules=','.join([mod.name for mod in modules]),
             cmd=os.path.join('/', INITRAM_GEN_SCRIPT_NAME))
     ])
@@ -82,8 +82,8 @@ def copy_boot_files(context):
     Function to copy the generated initram and corresponding kernel to /boot - Additionally produces a BootContent
     message with their location.
     """
-    kernel = 'vmlinuz-upgrade.x86_64'
-    initram = 'initramfs-upgrade.x86_64.img'
+    kernel = 'vmlinuz-upgrade.aarch64'
+    initram = 'initramfs-upgrade.aarch64.img'
     content = BootContent(
         kernel_path=os.path.join('/boot', kernel),
         initram_path=os.path.join('/boot', initram)
