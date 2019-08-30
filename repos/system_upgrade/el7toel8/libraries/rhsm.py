@@ -11,33 +11,41 @@ from leapp.models import TargetRHSMInfo
 _RE_REPO_UID = re.compile(r'Repo ID:\s*([^\s]+)')
 _RE_RELEASE = re.compile(r'Release:\s*([^\s]+)')
 _RE_SKU_CONSUMED = re.compile(r'SKU:\s*([^\s]+)')
-_RETRY_TIMES = 5
+_ATTEMPTS = 5
 _RETRY_SLEEP = 5
 
 
-def _rhsm_retry(times, sleep=None):
+def _rhsm_retry(max_attempts, sleep=None):
+    """
+    A decorator to retry executing a function/method if unsuccessful.
+
+    The function/method execution is considered unsuccessful when it raises StopActorExecutionError.
+
+    :param max_attempts: Maximum number of attempts to execute the decorated function/method.
+    :param sleep: Time to wait between attempts. In seconds.
+    """
     def impl(f):
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
             attempts = 0
             while True:
+                attempts += 1
                 try:
                     return f(*args, **kwargs)
                 except StopActorExecutionError:
-                    attempts += 1
-                    if times < attempts:
+                    if max_attempts <= attempts:
                         api.current_logger().warning(
-                            'Attempt %d of %d to perform %s failed. Maximum number of retries have been reached.',
-                            attempts, times, f.__name__)
+                            'Attempt %d of %d to perform %s failed. Maximum number of retries has been reached.',
+                            attempts, max_attempts, f.__name__)
                         raise
                     if sleep:
                         api.current_logger().info(
                             'Attempt %d of %d to perform %s failed - Retrying after %s seconds',
-                            attempts, times, f.__name__, str(sleep))
+                            attempts, max_attempts, f.__name__, str(sleep))
                         time.sleep(sleep)
                     else:
                         api.current_logger().info(
-                            'Attempt %d of %d to perform %s failed - Retrying...', attempts, times, f.__name__)
+                            'Attempt %d of %d to perform %s failed - Retrying...', attempts, max_attempts, f.__name__)
         return wrapper
     return impl
 
@@ -152,7 +160,7 @@ def _get_repositories_to_use(context, rhsm_info, target_repositories):
 
 
 @with_rhsm
-@_rhsm_retry(times=_RETRY_TIMES, sleep=_RETRY_SLEEP)
+@_rhsm_retry(max_attempts=_ATTEMPTS, sleep=_RETRY_SLEEP)
 def unset_release(context):
     """
     Unsets the configured release from the subscription manager so we can perform the upgrade.
@@ -166,7 +174,7 @@ def unset_release(context):
 
 
 @with_rhsm
-@_rhsm_retry(times=_RETRY_TIMES, sleep=_RETRY_SLEEP)
+@_rhsm_retry(max_attempts=_ATTEMPTS, sleep=_RETRY_SLEEP)
 def set_release(context, release):
     """
     This function will set the version specified.
@@ -212,7 +220,7 @@ def get_release(context, rhsm_info):
 
 
 @with_rhsm
-@_rhsm_retry(times=_RETRY_TIMES, sleep=_RETRY_SLEEP)
+@_rhsm_retry(max_attempts=_ATTEMPTS, sleep=_RETRY_SLEEP)
 def refresh(context):
     """
     Calls 'subscription-manager refresh'
