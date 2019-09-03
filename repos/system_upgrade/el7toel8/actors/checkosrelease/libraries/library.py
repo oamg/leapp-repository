@@ -3,7 +3,7 @@ import os
 from leapp.exceptions import StopActorExecution, StopActorExecutionError
 from leapp import reporting
 from leapp.libraries.stdlib import api
-from leapp.models import OSReleaseFacts
+from leapp.libraries.common.config import version
 
 
 COMMON_REPORT_TAGS = [reporting.Tags.SANITY]
@@ -29,16 +29,9 @@ def check_os_version(supported_version):
         api.current_logger().warning('The supported version value is invalid.')
         raise StopActorExecution()
 
-    facts_messages = api.consume(OSReleaseFacts)
-    facts = next(facts_messages, None)
-    if list(facts_messages):
-        api.current_logger().warning('Unexpectedly received more than one OSReleaseFacts message.')
-    if not facts:
-        raise StopActorExecutionError(
-            'Could not check OS version', details={'details': 'No OSReleaseFacts facts found.'}
-        )
+    release_id, version_id = version.current_version()
 
-    if facts.release_id not in supported_version:
+    if not version.matches_release(supported_version.keys(), release_id):
         reporting.create_report([
             reporting.Title('Unsupported OS'),
             reporting.Summary('Only RHEL is supported by the upgrade process'),
@@ -49,18 +42,18 @@ def check_os_version(supported_version):
 
         return
 
-    if not isinstance(supported_version[facts.release_id], list):
+    if not isinstance(supported_version[release_id], list):
         raise StopActorExecutionError(
             'Invalid versions',
             details={'details': 'OS versions are invalid, please provide a valid list.'},
         )
 
-    if facts.version_id not in supported_version[facts.release_id]:
+    if not version.matches_version(supported_version[release_id], version_id):
         reporting.create_report([
             reporting.Title('Unsupported OS version'),
             reporting.Summary(
                 'The supported OS versions for the upgrade process: {}'.format(
-                    ', '.join(supported_version[facts.release_id])
+                    ', '.join(supported_version[release_id])
                 )
             ),
             reporting.Severity(reporting.Severity.HIGH),

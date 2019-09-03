@@ -1,5 +1,6 @@
 from leapp.actors import Actor
 from leapp.libraries.actor.library import check_os_version, skip_check
+from leapp.libraries.common.config import version
 from leapp.models import OSReleaseFacts
 from leapp.reporting import Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
@@ -20,6 +21,5 @@ class CheckOSRelease(Actor):
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 
     def process(self):
-        supported_version = {'rhel': ['7.6']}
         if not skip_check():
-            check_os_version(supported_version)
+            check_os_version(version.SUPPORTED_VERSION)
