@@ -1,7 +1,5 @@
-from six.moves.configparser import ConfigParser, ParsingError
-
+from leapp.libraries.actor.library import read_nm_config, parse_nm_config, check_nm_dhcp
 from leapp.actors import Actor
-from leapp.libraries.stdlib import CalledProcessError, run
 from leapp.models import NetworkManagerConfig
 from leapp.tags import IPUWorkflowTag, FactsPhaseTag
 
@@ -20,30 +18,11 @@ class NetworkManagerReadConfig(Actor):
 
     def process(self):
         nm_config = NetworkManagerConfig()
-        try:
-            # Use 'NM --print-config' to read the configurationo so
-            # that the main configuration file and other files in
-            # various directories get merged in the right way.
-            r = run(['NetworkManager', '--print-config'], split=False)['stdout']
-        except (OSError, CalledProcessError) as e:
-            self.log.warning('Error reading NetworkManager configuration: {}'.format(e))
-            return
 
-        parser = ConfigParser()
+        cfg = read_nm_config()
+        parser = parse_nm_config(cfg)
 
-        try:
-            if hasattr(parser, 'read_string'):
-                # Python 3
-                parser.read_string(r)
-            else:
-                # Python 2
-                from cStringIO import StringIO
-                parser.readfp(StringIO(r))
-        except ParsingError as e:
-            self.log.warning('Error parsing NetworkManager configuration: {}'.format(e))
-            return
+        if parser:
+            check_nm_dhcp(nm_cfg=nm_config, parser=parser)
 
-        if parser.has_option('main', 'dhcp'):
-            nm_config.dhcp = parser.get("main", "dhcp")
-
-        self.produce(nm_config)
+            self.produce(nm_config)
