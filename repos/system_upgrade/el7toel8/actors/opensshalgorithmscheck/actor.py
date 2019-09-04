@@ -48,6 +48,10 @@ class OpenSshAlgorithmsCheck(Actor):
             if config.macs and mac in config.macs:
                 found_macs.append(mac)
 
+        resources = [
+            reporting.RelatedResource('package', 'openssh-server'),
+            reporting.RelatedResource('file', '/etc/ssh/sshd_config')
+        ]
         if found_ciphers:
             create_report([
                 reporting.Title('OpenSSH configured to use removed ciphers'),
@@ -69,7 +73,7 @@ class OpenSshAlgorithmsCheck(Actor):
                          '{}'.format(','.join(found_ciphers))
                 ),
                 reporting.Flags([reporting.Flags.INHIBITOR])
-            ])
+            ] + resources)
 
         if found_macs:
             create_report([
@@ -91,4 +95,4 @@ class OpenSshAlgorithmsCheck(Actor):
                     hint='Remove the following MACs from sshd_config: {}'.format(','.join(found_macs))
                 ),
                 reporting.Flags([reporting.Flags.INHIBITOR])
-            ])
+            ] + resources)

@@ -26,5 +26,7 @@ def check_config_supported(tcpwrap_facts, vsftpd_facts):
             reporting.ExternalLink(
                 title='Replacing TCP Wrappers in RHEL 8',
                 url='https://access.redhat.com/solutions/3906701'
-            )
-        ])
+            ),
+            reporting.RelatedResource('package', 'tcp_wrappers'),
+            reporting.RelatedResource('package', 'vsftpd'),
+        ] + [reporting.RelatedResource('file', str(bc)) for bc in bad_configs])

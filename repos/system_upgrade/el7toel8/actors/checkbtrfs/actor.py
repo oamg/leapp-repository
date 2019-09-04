@@ -33,6 +33,7 @@ class CheckBtrfs(Actor):
                         ),
                         reporting.Severity(reporting.Severity.HIGH),
                         reporting.Flags([reporting.Flags.INHIBITOR]),
-                        reporting.Tags([reporting.Tags.FILESYSTEM])
+                        reporting.Tags([reporting.Tags.FILESYSTEM]),
+                        reporting.RelatedResource('kernel-driver', 'btrfs')
                     ])
                     break

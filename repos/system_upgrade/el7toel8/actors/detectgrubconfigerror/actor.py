@@ -17,7 +17,8 @@ class DetectGrubConfigError(Actor):
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 
     def process(self):
-        error_detected = detect_config_error('/etc/default/grub')
+        config = '/etc/default/grub'
+        error_detected = detect_config_error(config)
         if error_detected:
             create_report([
                 reporting.Title('Syntax error detected in grub configuration'),
@@ -27,7 +28,8 @@ class DetectGrubConfigError(Actor):
                     'Error is automatically fixed by add_upgrade_boot_entry actor.'
                 ),
                 reporting.Severity(reporting.Severity.LOW),
-                reporting.Tags([reporting.Tags.BOOT])
+                reporting.Tags([reporting.Tags.BOOT]),
+                reporting.RelatedResource('file', config)
             ])
 
         self.produce(GrubConfigError(error_detected=error_detected))

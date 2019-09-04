@@ -37,7 +37,8 @@ def get_os_release(path):
             reporting.Summary(str(e)),
             reporting.Severity(reporting.Severity.HIGH),
             reporting.Tags([reporting.Tags.OS_FACTS, reporting.Tags.SANITY]),
-            reporting.Flags([reporting.Flags.INHIBITOR])
+            reporting.Flags([reporting.Flags.INHIBITOR]),
+            reporting.RelatedResource('file', path)
         ])
         return None
 

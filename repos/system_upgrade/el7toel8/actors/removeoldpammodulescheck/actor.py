@@ -91,7 +91,8 @@ class RemoveOldPAMModulesCheck(Actor):
                     reporting.Tags.SECURITY,
                     reporting.Tags.TOOLS
             ]),
-            reporting.Remediation(hint='Configure SSSD to replace {0}'.format(module))
+            reporting.Remediation(hint='Configure SSSD to replace {0}'.format(module)),
+            reporting.RelatedResource('package', 'sssd')
         ])
 
     def produce_inhibitor(self, module):
@@ -114,5 +115,6 @@ class RemoveOldPAMModulesCheck(Actor):
             ]),
             reporting.Flags([reporting.Flags.INHIBITOR]),
             reporting.Remediation(
-                hint='Disable {0} module and switch to SSSD to recover its functionality.'.format(module))
+                hint='Disable {0} module and switch to SSSD to recover its functionality.'.format(module)),
+            reporting.RelatedResource('package', 'sssd')
         ])

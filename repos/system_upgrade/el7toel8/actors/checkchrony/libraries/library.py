@@ -2,6 +2,13 @@ from leapp import reporting
 from leapp.libraries.stdlib import api, run
 
 
+related = [
+    reporting.RelatedResource('package', 'ntpd'),
+    reporting.RelatedResource('package', 'chrony'),
+    reporting.RelatedResource('file', '/etc/chrony.conf'),
+]
+
+
 def is_config_default():
     """Check if the chrony config file was not modified since installation."""
     try:
@@ -30,7 +37,7 @@ def check_chrony(chrony_installed):
                     reporting.Tags.SERVICES,
                     reporting.Tags.TIME_MANAGEMENT
             ])
-        ])
+        ] + related)
 
     else:
         reporting.create_report([
@@ -41,4 +48,4 @@ def check_chrony(chrony_installed):
                     reporting.Tags.SERVICES,
                     reporting.Tags.TIME_MANAGEMENT
             ])
-        ])
+        ] + related)

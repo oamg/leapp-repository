@@ -10,6 +10,10 @@ from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 COMMON_REPORT_TAGS = [reporting.Tags.SERVICES, reporting.Tags.EMAIL]
 
+related = [
+    reporting.RelatedResource('file', f) for f in library.get_conf_files()
+] + [reporting.RelatedResource('package', 'sendmail')]
+
 
 class CheckSendmail(Actor):
     """
@@ -40,7 +44,7 @@ class CheckSendmail(Actor):
                 reporting.Severity(reporting.Severity.HIGH),
                 reporting.Tags(COMMON_REPORT_TAGS + [reporting.Tags.NETWORK]),
                 reporting.Flags([reporting.Flags.INHIBITOR])
-            ])
+            ] + related)
 
             return
         migrate_files = library.check_files_for_compressed_ipv6()
@@ -53,7 +57,7 @@ class CheckSendmail(Actor):
                 ),
                 reporting.Severity(reporting.Severity.LOW),
                 reporting.Tags(COMMON_REPORT_TAGS)
-            ])
+            ] + related)
 
             self.produce(SendmailMigrationDecision(migrate_files=migrate_files))
         else:

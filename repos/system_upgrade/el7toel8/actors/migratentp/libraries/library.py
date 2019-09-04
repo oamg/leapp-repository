@@ -82,13 +82,16 @@ def migrate_ntp(migrate_services, config_tgz64):
 
     ignored_lines = ntp2chrony('/', ntp_conf, step_tickers)
 
+    config_resources = [reporting.RelatedResource('file', mc) for mc in migrate_configs + [ntp_conf]]
+    package_resources = [reporting.RelatedResource('package', p) for p in ['ntpd', 'chrony']]
+
     if not ignored_lines:
         reporting.create_report([
             reporting.Title('{} configuration migrated to chrony'.format(' and '.join(migrate_configs))),
             reporting.Summary('ntp2chrony executed successfully'),
             reporting.Severity(reporting.Severity.INFO),
             reporting.Tags(COMMON_REPORT_TAGS)
-        ])
+        ] + config_resources + package_resources)
 
     else:
         reporting.create_report([
@@ -96,4 +99,4 @@ def migrate_ntp(migrate_services, config_tgz64):
             reporting.Summary('Some lines in /etc/ntp.conf were ignored in migration (check /etc/chrony.conf)'),
             reporting.Severity(reporting.Severity.MEDIUM),
             reporting.Tags(COMMON_REPORT_TAGS)
-        ])
+        ] + config_resources + package_resources)

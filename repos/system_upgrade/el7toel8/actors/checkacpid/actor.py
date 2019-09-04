@@ -25,5 +25,6 @@ class CheckAcpid(Actor):
                 reporting.Remediation(
                     hint='You must now use both options (\'-df\') for the same behavior. Please update '
                          'your scripts to be compatible with the changes.'),
-                reporting.Tags([reporting.Tags.KERNEL, reporting.Tags.SERVICES])
+                reporting.Tags([reporting.Tags.KERNEL, reporting.Tags.SERVICES]),
+                reporting.RelatedResource('package', 'acpid')
             ])

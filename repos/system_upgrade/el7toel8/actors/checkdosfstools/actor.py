@@ -33,5 +33,6 @@ class CheckDosfstools(Actor):
                         reporting.Tags.FILESYSTEM,
                         reporting.Tags.TOOLS
                 ]),
-                reporting.Remediation(hint='Please update your scripts to be compatible with the changes.')
+                reporting.Remediation(hint='Please update your scripts to be compatible with the changes.'),
+                reporting.RelatedResource('package', 'dosfstools')
             ])

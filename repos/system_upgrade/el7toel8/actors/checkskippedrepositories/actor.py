@@ -36,6 +36,9 @@ class CheckSkippedRepositories(Actor):
             summary_data.extend(['- {}'.format(p) for p in packages])
             summary = '\n'.join(summary_data)
 
+            packages_related = [reporting.RelatedResource('package', str(p)) for p in packages]
+            repos_related = [reporting.RelatedResource('repository', str(r)) for r in repos]
+
             create_report([
                 reporting.Title(title),
                 reporting.Summary(summary),
@@ -44,7 +47,7 @@ class CheckSkippedRepositories(Actor):
                 reporting.Remediation(
                     hint='You can file a request to add this repository to the scope of in-place upgrades '
                          'by filing a support ticket')
-            ])
+            ] + packages_related + repos_related)
 
             if config.is_verbose():
                 self.log.info('\n'.join([title, summary]))

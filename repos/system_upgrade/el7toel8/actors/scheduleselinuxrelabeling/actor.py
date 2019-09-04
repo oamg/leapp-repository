@@ -7,6 +7,8 @@ from leapp import reporting
 
 COMMON_REPORT_TAGS = [reporting.Tags.SELINUX]
 
+related = [reporting.RelatedResource('file', '/.autorelabel')]
+
 
 class ScheduleSeLinuxRelabeling(Actor):
     """
@@ -32,18 +34,18 @@ class ScheduleSeLinuxRelabeling(Actor):
                             '/.autorelabel file touched on root in order to schedule SElinux relabelling.'),
                         reporting.Severity(reporting.Severity.INFO),
                         reporting.Tags(COMMON_REPORT_TAGS),
-                    ])
+                    ] + related)
 
                 except OSError as e:
                     # FIXME: add an "action required" flag later
                     create_report([
                         reporting.Title('Could not schedule SElinux for relabelling'),
-                        reporting.Summary('./autorelabel file could not be created: {}.'.format(e)),
+                        reporting.Summary('/.autorelabel file could not be created: {}.'.format(e)),
                         reporting.Severity(reporting.Severity.HIGH),
                         reporting.Tags(COMMON_REPORT_TAGS),
                         reporting.Remediation(
                             hint='Please set autorelabelling manually after the upgrade.'
                         ),
                         reporting.Flags([reporting.Flags.FAILURE])
-                    ])
+                    ] + related)
                     self.log.critical('Could not schedule SElinux for relabelling: %s.' % e)

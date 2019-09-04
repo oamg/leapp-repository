@@ -8,6 +8,17 @@ from leapp.libraries.stdlib import CalledProcessError, api, run
 from leapp.models import NtpMigrationDecision
 
 
+files = [
+    '/etc/ntp.conf', '/etc/ntp/keys',
+    '/etc/ntp/crypto/pw', '/etc/ntp/step-tickers'
+]
+
+related = [
+    reporting.RelatedResource('package', 'ntpd'),
+    reporting.RelatedResource('package', 'chrony'),
+] + [reporting.RelatedResource('file', f) for f in files]
+
+
 # Check if a service is active and enabled
 def check_service(name):
     for state in ['active', 'enabled']:
@@ -60,11 +71,10 @@ def check_ntp(installed_packages):
             reporting.Summary('{} service(s) detected to be enabled and active'.format(', '.join(migrate_services))),
             reporting.Severity(reporting.Severity.LOW),
             reporting.Tags([reporting.Tags.SERVICES, reporting.Tags.TIME_MANAGEMENT]),
-        ])
+        ] + related)
 
         # Save configuration files that will be renamed in the upgrade
-        config_tgz64 = get_tgz64(['/etc/ntp.conf', '/etc/ntp/keys',
-                                  '/etc/ntp/crypto/pw', '/etc/ntp/step-tickers'])
+        config_tgz64 = get_tgz64(files)
     else:
         api.current_logger().info('ntpd/ntpdate configuration will not be migrated')
         migrate_services = []

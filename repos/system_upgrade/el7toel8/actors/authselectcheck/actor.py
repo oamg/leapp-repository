@@ -7,6 +7,13 @@ from leapp import reporting
 from leapp.tags import IPUWorkflowTag, ChecksPhaseTag, ExperimentalTag
 
 
+resources = [
+    reporting.RelatedResource('package', 'authselect'),
+    reporting.RelatedResource('package', 'authconfig'),
+    reporting.RelatedResource('file', '/etc/nsswitch.conf')
+]
+
+
 class AuthselectCheck(Actor):
     """
     Confirm suggested authselect call from AuthselectScanner.
@@ -99,7 +106,7 @@ class AuthselectCheck(Actor):
                 reporting.Tags.SECURITY,
                 reporting.Tags.TOOLS
             ])
-        ])
+        ] + resources)
 
     def produce_current_configuration(self, model):
         self.produce(
@@ -125,7 +132,7 @@ class AuthselectCheck(Actor):
                 reporting.Tags.TOOLS
             ]),
             reporting.Severity(reporting.Severity.INFO)
-        ])
+        ] + resources)
 
     def produce_suggested_configuration(self, model, confirmed, command):
         self.produce(
@@ -150,7 +157,7 @@ class AuthselectCheck(Actor):
                     reporting.Tags.SECURITY,
                     reporting.Tags.TOOLS
                 ])
-            ])
+            ] + resources)
 
         else:
             create_report([
@@ -172,4 +179,4 @@ class AuthselectCheck(Actor):
                 ]),
                 reporting.Remediation(commands=[[command]]),
                 reporting.Severity(reporting.Severity.MEDIUM)
-            ])
+            ] + resources)

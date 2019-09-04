@@ -37,8 +37,8 @@ def generate_report(packages):
         reporting.Summary(summary),
         reporting.Severity(reporting.Severity.HIGH),
         reporting.Tags(COMMON_REPORT_TAGS),
-        reporting.Remediation(commands=[remediation])
-    ])
+        reporting.Remediation(commands=[remediation]),
+    ] + [reporting.RelatedResource('package', p) for p in packages])
 
     if is_verbose():
         api.show_message(summary)

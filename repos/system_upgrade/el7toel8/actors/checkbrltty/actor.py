@@ -7,6 +7,9 @@ from leapp import reporting
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
+related = [reporting.RelatedResource('package', 'brltty')]
+
+
 class CheckBrltty(Actor):
     """
     Check if brltty is installed, check whether configuration update is needed.
@@ -30,7 +33,7 @@ class CheckBrltty(Actor):
                 reporting.Remediation(
                     hint='Please update your scripts to be compatible with the changes.'
                 )
-            ])
+            ] + related)
 
             (migrate_file, migrate_bt, migrate_espeak) = library.check_for_unsupported_cfg()
             report_summary = ''
@@ -47,7 +50,7 @@ class CheckBrltty(Actor):
                     reporting.Summary(report_summary),
                     reporting.Severity(reporting.Severity.LOW),
                     reporting.Tags([reporting.Tags.ACCESSIBILITY]),
-                ])
+                ] + related)
 
                 self.produce(BrlttyMigrationDecision(migrate_file=migrate_file, migrate_bt=migrate_bt,
                                                      migrate_espeak=migrate_espeak))
@@ -57,4 +60,4 @@ class CheckBrltty(Actor):
                     reporting.Summary('brltty configuration seems to be compatible'),
                     reporting.Severity(reporting.Severity.LOW),
                     reporting.Tags([reporting.Tags.ACCESSIBILITY]),
-                ])
+                ] + related)

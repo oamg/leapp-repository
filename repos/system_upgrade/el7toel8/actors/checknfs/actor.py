@@ -54,5 +54,6 @@ class CheckNfs(Actor):
                         reporting.Tags.NETWORK
                 ]),
                 reporting.Remediation(hint='Disable NFS temporarily for the upgrade if possible.'),
-                reporting.Flags([reporting.Flags.INHIBITOR])
+                reporting.Flags([reporting.Flags.INHIBITOR]),
+                reporting.RelatedResource('file', '/etc/fstab')
             ])

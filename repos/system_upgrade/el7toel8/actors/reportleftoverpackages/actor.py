@@ -33,7 +33,7 @@ class ReportLeftoverPackages(Actor):
                     reporting.Summary('Following packages have been removed:\n{}'.format('\n'.join(removed))),
                     reporting.Severity(reporting.Severity.HIGH),
                     reporting.Tags([reporting.Tags.SANITY]),
-                ])
+                ] + [reporting.RelatedResource('package', pkg.name) for pkg in removed_packages.items])
             else:
                 summary = ('Following packages have been removed:\n'
                            '{}\n'
@@ -45,7 +45,7 @@ class ReportLeftoverPackages(Actor):
                     reporting.Summary(summary),
                     reporting.Severity(reporting.Severity.HIGH),
                     reporting.Tags([reporting.Tags.SANITY]),
-                ])
+                ] + [reporting.RelatedResource('package', pkg.name) for pkg in leftover_packages.items])
             return
 
         if not leftover_packages.items:
@@ -59,4 +59,4 @@ class ReportLeftoverPackages(Actor):
             reporting.Summary(summary),
             reporting.Severity(reporting.Severity.HIGH),
             reporting.Tags([reporting.Tags.SANITY]),
-        ])
+        ] + [reporting.RelatedResource('package', pkg.name) for pkg in leftover_packages.items])

@@ -34,5 +34,6 @@ def inhibit_upgrade(avail_bytes):
         ),
         reporting.Severity(reporting.Severity.HIGH),
         reporting.Tags([reporting.Tags.FILESYSTEM]),
-        reporting.Flags([reporting.Flags.INHIBITOR])
+        reporting.Flags([reporting.Flags.INHIBITOR]),
+        reporting.RelatedResource('directory', '/boot')
     ])

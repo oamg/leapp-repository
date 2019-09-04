@@ -38,6 +38,10 @@ class OpenSshPermitRootLoginCheck(Actor):
                 'Could not check openssh configuration', details={'details': 'No OpenSshConfig facts found.'}
             )
 
+        resources = [
+            reporting.RelatedResource('package', 'openssh-server'),
+            reporting.RelatedResource('file', '/etc/ssh/sshd_config')
+        ]
         if not config.permit_root_login:
             # TODO find out whether the file was modified and will be
             # replaced by the update. If so, this message is bogus
@@ -57,7 +61,7 @@ class OpenSshPermitRootLoginCheck(Actor):
                          '"PermitRootLogin yes" to sshd_config.'
                 ),
                 reporting.Flags([reporting.Flags.INHIBITOR])
-            ])
+            ] + resources)
 
         # Check if there is at least one PermitRootLogin other than "no"
         # in match blocks (other than Match All).
@@ -83,4 +87,4 @@ class OpenSshPermitRootLoginCheck(Actor):
                          'in global context if desired.'
                 ),
                 reporting.Flags([reporting.Flags.INHIBITOR])
-            ])
+            ] + resources)

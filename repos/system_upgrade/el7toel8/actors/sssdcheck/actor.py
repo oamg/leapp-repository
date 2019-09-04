@@ -7,6 +7,11 @@ from leapp.tags import IPUWorkflowTag, ChecksPhaseTag
 
 COMMON_REPORT_TAGS = [reporting.Tags.AUTHENTICATION, reporting.Tags.SECURITY]
 
+related = [
+    reporting.RelatedResource('package', 'sssd'),
+    reporting.RelatedResource('file', '/etc/sssd/sssd.conf')
+]
+
 
 class SSSDCheck(Actor):
     '''
@@ -49,7 +54,7 @@ class SSSDCheck(Actor):
             reporting.Summary('Local provider is no longer supported.'),
             reporting.Tags(COMMON_REPORT_TAGS),
             reporting.Severity(reporting.Severity.MEDIUM)
-            ])
+        ] + related)
 
     def reportRemovedOption(self, domain, option):
         create_report([
@@ -58,7 +63,7 @@ class SSSDCheck(Actor):
             reporting.Summary('Option %s was removed and it will be ignored.' % option),
             reporting.Tags(COMMON_REPORT_TAGS),
             reporting.Severity(reporting.Severity.MEDIUM)
-        ])
+        ] + related)
 
     def reportSudoRegexp(self, domain):
         create_report([
@@ -71,4 +76,4 @@ class SSSDCheck(Actor):
                 hint='If you use sudo rules with wildcards, set this option to true explicitly.'
             ),
             reporting.Severity(reporting.Severity.HIGH)
-        ])
+        ] + related)
