@@ -1,7 +1,7 @@
 from leapp.actors import Actor
 from leapp.reporting import Report, create_report
 from leapp import reporting
-from leapp.tags import ChecksPhaseTag
+from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
 class PythonInformUser(Actor):
@@ -9,7 +9,7 @@ class PythonInformUser(Actor):
     description = "This actor informs the user of differences in Python version and support in RHEL 8."
     consumes = ()
     produces = (Report,)
-    tags = (ChecksPhaseTag,)
+    tags = (ChecksPhaseTag, IPUWorkflowTag)
 
     def process(self):
         url = "https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html-single/configuring_basic_system_settings/#using-python3"  # noqa: E501; pylint: disable=line-too-long
