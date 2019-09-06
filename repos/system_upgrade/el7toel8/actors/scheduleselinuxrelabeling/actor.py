@@ -36,7 +36,7 @@ class ScheduleSeLinuxRelabeling(Actor):
                         reporting.Tags(COMMON_REPORT_TAGS),
                     ] + related)
 
-                except OSError as e:
+                except EnvironmentError as e:
                     # FIXME: add an "action required" flag later
                     create_report([
                         reporting.Title('Could not schedule SElinux for relabelling'),
