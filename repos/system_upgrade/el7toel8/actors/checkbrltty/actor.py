@@ -54,10 +54,3 @@ class CheckBrltty(Actor):
 
                 self.produce(BrlttyMigrationDecision(migrate_file=migrate_file, migrate_bt=migrate_bt,
                                                      migrate_espeak=migrate_espeak))
-            else:
-                create_report([
-                    reporting.Title('brltty configuration will be not migrated'),
-                    reporting.Summary('brltty configuration seems to be compatible'),
-                    reporting.Severity(reporting.Severity.LOW),
-                    reporting.Tags([reporting.Tags.ACCESSIBILITY]),
-                ] + related)
