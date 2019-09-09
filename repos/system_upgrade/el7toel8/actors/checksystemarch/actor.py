@@ -1,16 +1,14 @@
-import platform
-
 from leapp.actors import Actor
-from leapp.reporting import Report, create_report
-from leapp import reporting
+from leapp.libraries.actor import library
+from leapp.reporting import Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
 class CheckSystemArch(Actor):
     """
-    Check if system is running at a supported archtecture. If no, inhibit the upgrade process.
+    Check if system is running at a supported architecture. If no, inhibit the upgrade process.
 
-    Base on collected system facts, verify if current archtecture is supported, otherwise produces
+    Base on collected system facts, verify if current architecture is supported, otherwise produces
     a message to inhibit upgrade process
     """
 
@@ -20,11 +18,4 @@ class CheckSystemArch(Actor):
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 
     def process(self):
-        if platform.machine() != 'x86_64':
-            create_report([
-                reporting.Title('Unsupported architecture'),
-                reporting.Summary('Upgrade process is only supported on x86_64 systems.'),
-                reporting.Severity(reporting.Severity.HIGH),
-                reporting.Tags([reporting.Tags.SANITY]),
-                reporting.Flags([reporting.Flags.INHIBITOR])
-            ])
+        library.check_architecture()

@@ -6,8 +6,8 @@ from leapp.libraries.stdlib import api
 ARCH_X86_64 = 'x86_64'
 ARCH_ARM64 = 'aarch64'
 ARCH_PPC64LE = 'ppc64le'
-ARCH_S390X = 's390x'
-ARCH_ACCEPTED = (ARCH_X86_64, ARCH_ARM64, ARCH_PPC64LE, ARCH_S390X)
+# ARCH_S390X = 's390x'
+ARCH_ACCEPTED = (ARCH_X86_64, ARCH_ARM64, ARCH_PPC64LE)
 
 
 def matches_architecture(*match_list):
