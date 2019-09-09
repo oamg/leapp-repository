@@ -44,7 +44,7 @@ class run_mocked(object):
         return with_ftype
 
 
-def test_check_xfs_fstab(monkeypatch):
+def test_scan_xfs_fstab(monkeypatch):
     fstab_data_no_xfs = {
         "fs_spec": "/dev/mapper/fedora-home",
         "fs_file": "/home",
@@ -53,7 +53,7 @@ def test_check_xfs_fstab(monkeypatch):
         "fs_freq": "1",
         "fs_passno": "2"}
 
-    mountpoints = library.check_xfs_fstab([FstabEntry(**fstab_data_no_xfs)])
+    mountpoints = library.scan_xfs_fstab([FstabEntry(**fstab_data_no_xfs)])
     assert not mountpoints
 
     fstab_data_xfs = {
@@ -64,18 +64,18 @@ def test_check_xfs_fstab(monkeypatch):
         "fs_freq": "0",
         "fs_passno": "0"}
 
-    mountpoints = library.check_xfs_fstab([FstabEntry(**fstab_data_xfs)])
+    mountpoints = library.scan_xfs_fstab([FstabEntry(**fstab_data_xfs)])
     assert mountpoints == {"/"}
 
 
-def test_check_xfs_mount(monkeypatch):
+def test_scan_xfs_mount(monkeypatch):
     mount_data_no_xfs = {
         "name": "tmpfs",
         "mount": "/run/snapd/ns",
         "tp": "tmpfs",
         "options": "rw,nosuid,nodev,seclabel,mode=755"}
 
-    mountpoints = library.check_xfs_mount([MountEntry(**mount_data_no_xfs)])
+    mountpoints = library.scan_xfs_mount([MountEntry(**mount_data_no_xfs)])
     assert not mountpoints
 
     mount_data_xfs = {
@@ -84,11 +84,11 @@ def test_check_xfs_mount(monkeypatch):
         "tp": "xfs",
         "options": "rw,relatime,seclabel,attr2,inode64,noquota"}
 
-    mountpoints = library.check_xfs_mount([MountEntry(**mount_data_xfs)])
+    mountpoints = library.scan_xfs_mount([MountEntry(**mount_data_xfs)])
     assert mountpoints == {"/boot"}
 
 
-def test_check_xfs_systemdmount(monkeypatch):
+def test_scan_xfs_systemdmount(monkeypatch):
     systemdmount_data_no_xfs = {
         "node": "/dev/sda1",
         "path": "pci-0000:00:17.0-ata-2",
@@ -98,7 +98,7 @@ def test_check_xfs_systemdmount(monkeypatch):
         "label": "n/a",
         "uuid": "5675d309-eff7-4eb1-9c27-58bc5880ec72"}
 
-    mountpoints = library.check_xfs_systemdmount([SystemdMountEntry(**systemdmount_data_no_xfs)])
+    mountpoints = library.scan_xfs_systemdmount([SystemdMountEntry(**systemdmount_data_no_xfs)])
     assert not mountpoints
 
     systemdmount_data_xfs = {
@@ -110,7 +110,7 @@ def test_check_xfs_systemdmount(monkeypatch):
         "label": "n/a",
         "uuid": "n/a"}
 
-    mountpoints = library.check_xfs_systemdmount([SystemdMountEntry(**systemdmount_data_xfs)])
+    mountpoints = library.scan_xfs_systemdmount([SystemdMountEntry(**systemdmount_data_xfs)])
     assert mountpoints == {"/var"}
 
 
@@ -124,7 +124,7 @@ def test_is_xfs_without_ftype(monkeypatch):
     assert ' '.join(library.run.args) == "/usr/sbin/xfs_info /boot"
 
 
-def test_check_xfs(monkeypatch):
+def test_scan_xfs(monkeypatch):
     monkeypatch.setattr(library, "run", run_mocked())
 
     def consume_no_xfs_message_mocked(*models):
@@ -132,12 +132,13 @@ def test_check_xfs(monkeypatch):
     monkeypatch.setattr(api, "consume", consume_no_xfs_message_mocked)
     monkeypatch.setattr(api, "produce", produce_mocked())
 
-    library.check_xfs()
+    library.scan_xfs()
     assert api.produce.called == 1
     assert len(api.produce.model_instances) == 1
     assert isinstance(api.produce.model_instances[0], XFSPresence)
     assert not api.produce.model_instances[0].present
     assert not api.produce.model_instances[0].without_ftype
+    assert not api.produce.model_instances[0].mountpoints_without_ftype
 
     def consume_ignored_xfs_message_mocked(*models):
         mount_data = {
@@ -149,12 +150,13 @@ def test_check_xfs(monkeypatch):
     monkeypatch.setattr(api, "consume", consume_ignored_xfs_message_mocked)
     monkeypatch.setattr(api, "produce", produce_mocked())
 
-    library.check_xfs()
+    library.scan_xfs()
     assert api.produce.called == 1
     assert len(api.produce.model_instances) == 1
     assert isinstance(api.produce.model_instances[0], XFSPresence)
-    assert not api.produce.model_instances[0].present
+    assert api.produce.model_instances[0].present
     assert not api.produce.model_instances[0].without_ftype
+    assert not api.produce.model_instances[0].mountpoints_without_ftype
 
     def consume_xfs_with_ftype_message_mocked(*models):
         fstab_data = {
@@ -168,12 +170,13 @@ def test_check_xfs(monkeypatch):
     monkeypatch.setattr(api, "consume", consume_xfs_with_ftype_message_mocked)
     monkeypatch.setattr(api, "produce", produce_mocked())
 
-    library.check_xfs()
+    library.scan_xfs()
     assert api.produce.called == 1
     assert len(api.produce.model_instances) == 1
     assert isinstance(api.produce.model_instances[0], XFSPresence)
     assert api.produce.model_instances[0].present
     assert not api.produce.model_instances[0].without_ftype
+    assert not api.produce.model_instances[0].mountpoints_without_ftype
 
     def consume_xfs_without_ftype_message_mocked(*models):
         fstab_data = {
@@ -187,17 +190,25 @@ def test_check_xfs(monkeypatch):
     monkeypatch.setattr(api, "consume", consume_xfs_without_ftype_message_mocked)
     monkeypatch.setattr(api, "produce", produce_mocked())
 
-    library.check_xfs()
+    library.scan_xfs()
     assert api.produce.called == 1
     assert len(api.produce.model_instances) == 1
     assert isinstance(api.produce.model_instances[0], XFSPresence)
     assert api.produce.model_instances[0].present
     assert api.produce.model_instances[0].without_ftype
+    assert api.produce.model_instances[0].mountpoints_without_ftype
+    assert len(api.produce.model_instances[0].mountpoints_without_ftype) == 1
+    assert api.produce.model_instances[0].mountpoints_without_ftype[0] == '/var'
 
     def consume_no_message_mocked(*models):
         yield None
     monkeypatch.setattr(api, "consume", consume_no_message_mocked)
     monkeypatch.setattr(api, "produce", produce_mocked())
 
-    with pytest.raises(StopActorExecutionError):
-        library.check_xfs()
+    library.scan_xfs()
+    assert api.produce.called == 1
+    assert len(api.produce.model_instances) == 1
+    assert isinstance(api.produce.model_instances[0], XFSPresence)
+    assert not api.produce.model_instances[0].present
+    assert not api.produce.model_instances[0].without_ftype
+    assert not api.produce.model_instances[0].mountpoints_without_ftype
