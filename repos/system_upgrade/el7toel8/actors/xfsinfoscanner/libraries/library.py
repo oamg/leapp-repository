@@ -1,9 +1,8 @@
-from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.stdlib import api, run
 from leapp.models import StorageInfo, XFSPresence
 
 
-def check_xfs_fstab(data):
+def scan_xfs_fstab(data):
     mountpoints = set()
     for entry in data:
         if entry.fs_vfstype == "xfs":
@@ -12,7 +11,7 @@ def check_xfs_fstab(data):
     return mountpoints
 
 
-def check_xfs_mount(data):
+def scan_xfs_mount(data):
     mountpoints = set()
     for entry in data:
         if entry.tp == "xfs":
@@ -21,7 +20,7 @@ def check_xfs_mount(data):
     return mountpoints
 
 
-def check_xfs_systemdmount(data):
+def scan_xfs_systemdmount(data):
     mountpoints = set()
     for entry in data:
         if entry.fs_type == "xfs":
@@ -38,30 +37,27 @@ def is_xfs_without_ftype(mp):
     return False
 
 
-def check_xfs():
+def scan_xfs():
     storage_info_msgs = api.consume(StorageInfo)
     storage_info = next(storage_info_msgs, None)
 
     if list(storage_info_msgs):
         api.current_logger().warning('Unexpectedly received more than one StorageInfo message.')
-    if not storage_info:
-        raise StopActorExecutionError('Could not check if XFS is in use.',
-                                      details={'details': 'Did not receive a StorageInfo message'})
 
-    fstab_data = check_xfs_fstab(storage_info.fstab)
-    mount_data = check_xfs_mount(storage_info.mount)
-    systemdmount_data = check_xfs_systemdmount(storage_info.systemdmount)
+    fstab_data = set()
+    mount_data = set()
+    systemdmount_data = set()
+    if storage_info:
+        fstab_data = scan_xfs_fstab(storage_info.fstab)
+        mount_data = scan_xfs_mount(storage_info.mount)
+        systemdmount_data = scan_xfs_systemdmount(storage_info.systemdmount)
 
     mountpoints = fstab_data | mount_data | systemdmount_data
+    mountpoints_ftype0 = list(filter(is_xfs_without_ftype, mountpoints))
 
-    xfs_presence = XFSPresence()
-    # By now, we only care for XFS without ftype in use for /var
-    has_xfs_without_ftype = False
-    for mp in ('/var', '/'):
-        if mp in mountpoints:
-            xfs_presence.present = True
-            if is_xfs_without_ftype(mp):
-                has_xfs_without_ftype = True
-
-    xfs_presence.without_ftype = has_xfs_without_ftype
-    api.produce(xfs_presence)
+    # By now, we only have XFS mountpoints and check whether or not it has ftype = 0
+    api.produce(XFSPresence(
+        present=len(mountpoints) > 0,
+        without_ftype=len(mountpoints_ftype0) > 0,
+        mountpoints_without_ftype=mountpoints_ftype0,
+    ))
