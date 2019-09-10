@@ -63,7 +63,7 @@ class CheckKernelDrivers(Actor):
                            'device drivers has been removed in RHEL 8: \n     - {}'
                            '\nPlease see {} for details.'.format('\n     - '.join(collected_drivers), URL))
                 remediation = ('Please disable detected kernel drivers in '
-                               'order to proceed with the upgrade process using the rmmod tool.')
+                               'order to proceed with the upgrade process using the rmmod or modprobe -r.')
                 create_report([
                     reporting.Title(title),
                     reporting.Summary(summary),
