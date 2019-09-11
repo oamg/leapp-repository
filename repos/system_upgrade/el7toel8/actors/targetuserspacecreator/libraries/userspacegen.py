@@ -4,10 +4,11 @@ import os
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import constants
 from leapp.libraries.common import dnfplugin, mounting, overlaygen, rhsm, utils
-from leapp.libraries.stdlib import api, run
-from leapp.models import (RequiredTargetUserspacePackages, SourceRHSMInfo, TargetRepositories,
-                          TargetUserSpaceInfo, UsedTargetRepositories, UsedTargetRepository, XFSPresence)
-
+from leapp.libraries.stdlib import CalledProcessError, api, run
+from leapp.models import (RequiredTargetUserspacePackages, SourceRHSMInfo,
+                          TargetRepositories, TargetUserSpaceInfo,
+                          UsedTargetRepositories, UsedTargetRepository,
+                          XFSPresence)
 
 PROD_CERTS_FOLDER = 'prod-certs'
 
@@ -21,20 +22,23 @@ def prepare_target_userspace(context, userspace_dir, enabled_repos, packages):
     with mounting.BindMount(source=userspace_dir, target=os.path.join(context.base_dir, 'el8target')):
         repos_opt = [['--enablerepo', repo] for repo in enabled_repos]
         repos_opt = list(itertools.chain(*repos_opt))
-        context.call(
-            [
-                'dnf',
-                'install',
-                '-y',
-                '--nogpgcheck',
-                '--setopt=module_platform_id=platform:el8',
-                '--setopt=keepcache=1',
-                '--releasever', '8',
-                '--installroot', '/el8target',
-                '--disablerepo', '*'
-            ] + repos_opt + packages,
-            callback_raw=utils.logging_handler
-        )
+        cmd = ['dnf',
+               'install',
+               '-y',
+               '--nogpgcheck',
+               '--setopt=module_platform_id=platform:el8',
+               '--setopt=keepcache=1',
+               '--releasever', '8',
+               '--installroot', '/el8target',
+               '--disablerepo', '*'
+               ] + repos_opt + packages
+        try:
+            context.call(cmd, callback_raw=utils.logging_handler)
+        except CalledProcessError as exc:
+            raise StopActorExecutionError(
+                message='Unable to install RHEL 8 userspace packages.',
+                details={'details': str(exc), 'stderr': exc.stderr}
+            )
 
 
 def _prep_repository_access(context, target_userspace):
