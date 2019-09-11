@@ -6,15 +6,9 @@ from leapp.exceptions import StopActorExecution, StopActorExecutionError
 from leapp import reporting
 from leapp.libraries.stdlib import api
 from leapp.libraries.stdlib.config import is_verbose
-from leapp.models import (InstalledRedHatSignedRPM, PESRpmTransactionTasks,
+from leapp.models import (InstalledRedHatSignedRPM, PESRpmTransactionTasks, RepositoriesMap,
                           RepositoriesSetupTasks, RpmTransactionTasks, RepositoriesBlacklisted)
 
-# FIXME: this mapping is not complete and will need to be manually updated frequently
-REPOSITORIES_MAPPING = {
-    'rhel8-appstream': 'rhel-8-for-x86_64-appstream-rpms',
-    'rhel8-baseos': 'rhel-8-for-x86_64-baseos-rpms',
-    'rhel8-crb': 'codeready-builder-for-rhel-8-x86_64-rpms',
-    'rhel8-supplementary': 'rhel-8-for-x86_64-supplementary-rpms'}
 
 Event = namedtuple('Event', ['action',   # A string representing an event type (see EVENT_TYPES)
                              'in_pkgs',  # A dictionary with packages in format {<pkg_name>: <repository>}
@@ -54,6 +48,31 @@ def get_installed_pkgs():
                                                           'packages (InstalledRedHatSignedRPM)'})
     installed_pkgs.update([pkg.name for pkg in installed_rh_signed_rpm_msg.items])
     return installed_pkgs
+
+
+def _get_repositories_mapping():
+    """
+    Get all repositories mapped from repomap file and map repositories id with respective names.
+
+    :return: Dictionary with all repositories mapped.
+    """
+    repositories_mapping = {}
+
+    repositories_map_msgs = api.consume(RepositoriesMap)
+    repositories_map_msg = next(repositories_map_msgs, None)
+    if list(repositories_map_msgs):
+        api.current_logger().warning('Unexpectedly received more than one RepositoriesMap message.')
+    if not repositories_map_msg:
+        raise StopActorExecutionError(
+            'Cannot parse RepositoriesMap data properly',
+            details={'Problem': 'Did not receive a message with mapped repositories'}
+        )
+
+    for repository in repositories_map_msg.repositories:
+        if repository.arch == api.current_actor().configuration.architecture:
+            repositories_mapping[repository.to_name] = repository.to_id
+
+    return repositories_mapping
 
 
 def get_transaction_configuration():
@@ -205,7 +224,6 @@ def process_events(events, installed_pkgs):
         'to_keep': {},
         'to_install': {},
         'to_remove': {}}
-
     for event in events:
         if event.action in ('Deprecated', 'Present'):
             # Add these packages to to_keep to make sure the repo they're in on RHEL 8 gets enabled
@@ -317,18 +335,15 @@ def get_repositories_blacklisted():
 
 
 def map_repositories(packages):
-    """
-    Map repositories from PES data to RHSM repository id
-
-    :param packages: A dictionary in format {<pkg_name>: <repository>}
-    """
+    """Map repositories from PES data to RHSM repository id"""
+    repositories_mapping = _get_repositories_mapping()
     repo_without_mapping = set()
     for pkg, repo in packages.items():
-        if repo not in REPOSITORIES_MAPPING:
+        if repo not in repositories_mapping:
             repo_without_mapping.add(pkg)
             continue
 
-        packages[pkg] = REPOSITORIES_MAPPING[repo]
+        packages[pkg] = repositories_mapping[repo]
 
     for pkg in repo_without_mapping:
         del packages[pkg]
