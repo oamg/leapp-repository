@@ -33,6 +33,22 @@ class RhelUpgradeCommand(dnf.cli.Command):
                             metavar="[%s]" % "|".join(CMDS))
         parser.add_argument('filename')
 
+    def _process_packages(self, pkg_set, op):
+        '''
+        Adds list of packages for given operation to the transaction
+        '''
+        pkgs_notfound = []
+
+        for pkg_spec in pkg_set:
+            try:
+                op(pkg_spec)
+            except dnf.exceptions.MarkingError:
+                self.pkgs_notfound.append(pkg_spec)
+        if pkgs_notfound:
+            err_str = ('Packages marked by Leapp for installation/removal/upgrade not found '
+                       'in repository metadata: ') + ' '.join(pkgs_notfound)
+            raise dnf.exceptions.MarkingError(err_str)
+
     def pre_configure(self):
         with open(self.opts.filename) as fo:
             self.plugin_data = json.load(fo)
@@ -74,23 +90,22 @@ class RhelUpgradeCommand(dnf.cli.Command):
         for pkg in local_rpm_objects:
             self.base.package_install(pkg)
 
-        for pkg_spec in self.plugin_data['pkgs_info']['to_remove']:
-            try:
-                self.base.remove(pkg_spec)
-            except dnf.exceptions.MarkingError:
-                self.pkgs_notfound.append(pkg_spec)
+        to_install_local = self.plugin_data['pkgs_info']['local_rpms']
+        to_install = self.plugin_data['pkgs_info']['to_install']
+        to_remove = self.plugin_data['pkgs_info']['to_remove']
+        to_upgrade = self.plugin_data['pkgs_info']['to_upgrade']
 
-        for pkg_spec in self.plugin_data['pkgs_info']['to_install']:
-            try:
-                self.base.install(pkg_spec)
-            except dnf.exceptions.MarkingError:
-                self.pkgs_notfound.append(pkg_spec)
+        # Local (on filesystem) packages to be installed.
+        # add_remote_rpms() accepts list of packages
 
-        q = self.base.sack.query().installed()
-        for pkg in q:
-            if pkg.name not in (self.plugin_data['pkgs_info']['to_install']
-                                + self.plugin_data['pkgs_info']['to_remove']):
-                self.base.upgrade(pkg.name)
+        self.base.add_remote_rpms(to_install_local)
+
+        # Packages to be removed
+        self._process_packages(to_remove, self.base.remove)
+        # Packages to be installed
+        self._process_packages(to_install, self.base.install)
+        # Packages to be upgraded
+        self._process_packages(to_upgrade, self.base.upgrade)
 
         self.base.distro_sync()
 
