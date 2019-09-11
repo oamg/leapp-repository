@@ -1,4 +1,5 @@
 # Support for the following device drivers has been removed in RHEL 8.
+#
 # https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html-single/considerations_in_adopting_rhel_8/index#removed-device-drivers_hardware-enablement
 
 3w-9xxx
