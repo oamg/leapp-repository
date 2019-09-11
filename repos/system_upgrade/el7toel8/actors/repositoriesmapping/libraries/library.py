@@ -39,18 +39,26 @@ def scan_repositories(path):
                 continue
 
             try:
-                from_id, to_id, from_minor_version, to_minor_version, arch, repo_type = row
+                from_id, to_id, to_name, from_minor_version, to_minor_version, arch, repo_type = row
             except ValueError as err:
                 inhibit_upgrade('Repositories map file is invalid, offending line number: {} ({})'.format(
                     data.line_num, err))
 
+            if arch != api.current_actor().configuration.architecture:
+                continue
+
             try:
-                repositories.append(RepositoryMap(from_id=from_id,
-                                                  to_id=to_id,
-                                                  from_minor_version=from_minor_version,
-                                                  to_minor_version=to_minor_version,
-                                                  arch=arch,
-                                                  repo_type=repo_type))
+                repositories.append(
+                    RepositoryMap(
+                        from_id=from_id,
+                        to_id=to_id,
+                        to_name=to_name,
+                        from_minor_version=from_minor_version,
+                        to_minor_version=to_minor_version,
+                        arch=arch,
+                        repo_type=repo_type,
+                    )
+                )
             except ModelViolationError as err:
                 inhibit_upgrade('Repositories map file is invalid, offending line number: {} ({})'.format(
                     data.line_num, err))

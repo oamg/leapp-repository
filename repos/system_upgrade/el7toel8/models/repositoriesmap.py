@@ -14,6 +14,7 @@ class RepositoryMap(Model):
 
     from_id = fields.String()
     to_id = fields.String()
+    to_name = fields.String()
     from_minor_version = fields.String()
     to_minor_version = fields.String()
     arch = fields.String()

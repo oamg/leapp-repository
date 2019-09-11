@@ -183,7 +183,7 @@ def test_resolve_conflicting_requests(monkeypatch):
 
 def test_map_repositories(monkeypatch):
     monkeypatch.setattr(api, 'show_message', show_message_mocked())
-    monkeypatch.setattr(library, 'REPOSITORIES_MAPPING', {'repo': 'mapped'})
+    monkeypatch.setattr(library, '_get_repositories_mapping', lambda: {'repo': 'mapped'})
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
     monkeypatch.setenv('LEAPP_VERBOSE', '1')
 
@@ -208,7 +208,7 @@ def test_map_repositories(monkeypatch):
 
 
 def test_process_events(monkeypatch):
-    monkeypatch.setattr(library, 'REPOSITORIES_MAPPING', {'rhel8-repo': 'rhel8-mapped'})
+    monkeypatch.setattr(library, '_get_repositories_mapping', lambda: {'rhel8-repo': 'rhel8-mapped'})
     monkeypatch.setattr(library, 'get_repositories_blacklisted', get_repos_blacklisted_mocked(set()))
 
     events = [
