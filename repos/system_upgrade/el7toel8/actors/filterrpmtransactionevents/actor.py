@@ -28,6 +28,7 @@ class FilterRpmTransactionTasks(Actor):
         to_install = set()
         to_remove = set()
         to_keep = set()
+        to_upgrade = set()
         for event in self.consume(RpmTransactionTasks, PESRpmTransactionTasks):
             local_rpms.update(event.local_rpms)
             to_install.update(event.to_install)
@@ -36,8 +37,12 @@ class FilterRpmTransactionTasks(Actor):
 
         to_remove.difference_update(to_keep)
 
+        # run upgrade for the rest of RH signed pkgs which we do not have rule for
+        to_upgrade = installed_pkgs - (to_install | to_remove)
+
         self.produce(FilteredRpmTransactionTasks(
             local_rpms=list(local_rpms),
             to_install=list(to_install),
             to_remove=list(to_remove),
-            to_keep=list(to_keep)))
+            to_keep=list(to_keep),
+            to_upgrade=list(to_upgrade)))

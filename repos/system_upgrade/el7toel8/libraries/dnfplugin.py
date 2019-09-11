@@ -41,7 +41,7 @@ def build_plugin_data(target_repoids, debug, test, tasks):
             'local_rpms': [os.path.join('/installroot', pkg.lstrip('/')) for pkg in tasks.local_rpms],
             'to_install': [pkg for pkg in tasks.to_install],
             'to_remove': [pkg for pkg in tasks.to_remove],
-            #            'to_upgrade': [pkg for pkg in tasks.to_upgrade]
+            'to_upgrade': [pkg for pkg in tasks.to_upgrade]
         },
         'dnf_conf': {
             'allow_erasing': True,
