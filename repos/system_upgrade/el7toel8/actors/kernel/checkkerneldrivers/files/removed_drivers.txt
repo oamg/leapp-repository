@@ -79,7 +79,7 @@ pata_sil680
 pata_sis
 pata_via
 pdc_adma
-pm80xx(pm8001)
+pm80xx
 pmcraid
 qla3xxx
 stex
