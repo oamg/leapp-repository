@@ -188,6 +188,10 @@ lint:
 
 test_no_lint:
 	. tut/bin/activate; \
+	snactor repo find --path repos/; \
+	cd repos/system_upgrade/el7toel8/; \
+	snactor workflow sanity-check ipu && \
+	cd - && \
 	python utils/run_pytest.py $(TEST_ACTOR_ARG) $(TEST_LIBRARIES_ARG) --report=$(REPORT)
 
 test: lint test_no_lint
