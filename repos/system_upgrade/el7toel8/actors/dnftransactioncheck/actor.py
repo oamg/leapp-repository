@@ -1,6 +1,7 @@
 from leapp.actors import Actor
 from leapp.libraries.common import dnfplugin
-from leapp.models import FilteredRpmTransactionTasks, TargetUserSpaceInfo, UsedTargetRepositories, XFSPresence
+from leapp.models import (FilteredRpmTransactionTasks, StorageInfo, TargetUserSpaceInfo, UsedTargetRepositories,
+                          XFSPresence)
 from leapp.tags import TargetTransactionChecksPhaseTag, IPUWorkflowTag
 
 
@@ -10,17 +11,18 @@ class DnfTransactionCheck(Actor):
     """
 
     name = 'dnf_transaction_check'
-    consumes = (UsedTargetRepositories, FilteredRpmTransactionTasks, TargetUserSpaceInfo, XFSPresence)
+    consumes = (UsedTargetRepositories, FilteredRpmTransactionTasks, StorageInfo, TargetUserSpaceInfo, XFSPresence)
     produces = ()
     tags = (IPUWorkflowTag, TargetTransactionChecksPhaseTag)
 
     def process(self):
-        presence = next(self.consume(XFSPresence), XFSPresence())
-        xfs_present = presence.present and presence.without_ftype
+        xfs_info = next(self.consume(XFSPresence), XFSPresence())
+        storage_info = next(self.consume(StorageInfo), StorageInfo())
         used_repos = self.consume(UsedTargetRepositories)
         tasks = next(self.consume(FilteredRpmTransactionTasks), FilteredRpmTransactionTasks())
         target_userspace_info = next(self.consume(TargetUserSpaceInfo), None)
 
         if target_userspace_info:
             dnfplugin.perform_transaction_check(tasks=tasks, used_repos=used_repos,
-                                                target_userspace_info=target_userspace_info, xfs_present=xfs_present)
+                                                target_userspace_info=target_userspace_info, xfs_info=xfs_info,
+                                                storage_info=storage_info)

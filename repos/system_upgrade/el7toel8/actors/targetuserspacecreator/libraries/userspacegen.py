@@ -5,10 +5,8 @@ from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import constants
 from leapp.libraries.common import dnfplugin, mounting, overlaygen, rhsm, utils
 from leapp.libraries.stdlib import CalledProcessError, api, run, config
-from leapp.models import (RequiredTargetUserspacePackages, SourceRHSMInfo,
-                          TargetRepositories, TargetUserSpaceInfo,
-                          UsedTargetRepositories, UsedTargetRepository,
-                          XFSPresence)
+from leapp.models import (RequiredTargetUserspacePackages, SourceRHSMInfo, StorageInfo, TargetRepositories,
+                          TargetUserSpaceInfo, UsedTargetRepositories, UsedTargetRepository, XFSPresence)
 
 PROD_CERTS_FOLDER = 'prod-certs'
 
@@ -156,21 +154,24 @@ def perform():
 
     rhsm_info = next(api.consume(SourceRHSMInfo), None)
     if not rhsm_info and not rhsm.skip_rhsm():
-        api.current_logger().warn("Could not receive RHSM information - Is this system registered?")
+        api.current_logger().warn('Could not receive RHSM information - Is this system registered?')
         return
 
-    presence = next(api.consume(XFSPresence), XFSPresence())
-    xfs_present = presence.present and presence.without_ftype
+    xfs_info = next(api.consume(XFSPresence), XFSPresence())
+    storage_info = next(api.consume(StorageInfo), None)
+    if not storage_info:
+        api.current_logger.error('No storage info available cannot proceed.')
 
     prod_cert_path = _get_product_certificate_path()
     with overlaygen.create_source_overlay(
             mounts_dir=constants.MOUNTS_DIR,
             scratch_dir=constants.SCRATCH_DIR,
-            xfs_present=xfs_present) as overlay:
+            storage_info=storage_info,
+            xfs_info=xfs_info) as overlay:
         with overlay.nspawn() as context:
             target_version = api.current_actor().configuration.version.target
             with rhsm.switched_certificate(context, rhsm_info, prod_cert_path, target_version) as target_rhsm_info:
-                api.current_logger().debug("Target RHSM Info: SKUs: {skus} Repositories: {repos}".format(
+                api.current_logger().debug('Target RHSM Info: SKUs: {skus} Repositories: {repos}'.format(
                     repos=target_rhsm_info.enabled_repos,
                     skus=rhsm_info.attached_skus if rhsm_info else []
                 ))

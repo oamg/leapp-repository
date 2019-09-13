@@ -7,6 +7,64 @@ from leapp.libraries.common import mounting, utils
 from leapp.libraries.stdlib import CalledProcessError, api, run
 
 
+def _ensure_enough_diskimage_space(space_needed, directory):
+    stat = os.statvfs(directory)
+    if (stat.f_frsize * stat.f_bavail) < (space_needed * 1024 * 1024):
+        message = ('Not enough space available for creating required disk images in {directory}. ' +
+                   'Needed: {space_needed} MiB').format(space_needed=space_needed, directory=directory)
+        api.current_logger().error(message)
+        raise StopActorExecutionError(message)
+
+
+def _get_mountpoints(storage_info):
+    return list(set([entry.fs_file for entry in storage_info.fstab if os.path.isdir(entry.fs_file)]))
+
+
+def _mount_name(mountpoint):
+    return 'root{}'.format(mountpoint.replace('/', '_'))
+
+
+def _mount_dir(mounts_dir, mountpoint):
+    return os.path.join(mounts_dir, _mount_name(mountpoint))
+
+
+def _prepare_required_mounts(scratch_dir, mounts_dir, mount_points, xfs_info):
+    result = {mountpoint: mounting.NullMount(_mount_dir(mounts_dir, mountpoint)) for mountpoint in mount_points}
+    if not xfs_info.mountpoints_without_ftype:
+        return result
+
+    space_needed = _overlay_disk_size() * len(xfs_info.mountpoints_without_ftype)
+    disk_images_directory = os.path.join(scratch_dir, 'diskimages')
+
+    # Ensure we cleanup old disk images before we check for space contraints.
+    run(['rm', '-rf', disk_images_directory])
+    _create_diskimages_dir(scratch_dir, disk_images_directory)
+    _ensure_enough_diskimage_space(space_needed, scratch_dir)
+
+    for mountpoint in xfs_info.mountpoints_without_ftype:
+        if mountpoint in mount_points:
+            image = _create_mount_disk_image(disk_images_directory, mountpoint)
+            result[mountpoint] = mounting.LoopMount(source=image, target=_mount_dir(mounts_dir, mountpoint))
+    return result
+
+
+@contextlib.contextmanager
+def _build_overlay_mount(root_mount, mounts):
+    if not root_mount:
+        raise StopActorExecutionError('Root mount point has not been prepared for overlayfs.')
+    if not mounts:
+        yield root_mount
+    else:
+        current = mounts.keys()[0]
+        current_mount = mounts.pop(current)
+        name = _mount_name(current)
+        with mounting.OverlayMount(name=name, source=current, workdir=current_mount.target) as overlay:
+            with mounting.BindMount(source=overlay.target,
+                                    target=os.path.join(root_mount.target, current.lstrip('/'))):
+                with _build_overlay_mount(root_mount, mounts) as mount:
+                    yield mount
+
+
 def _overlay_disk_size():
     """
     Convenient function to retrieve the overlay disk size
@@ -39,19 +97,18 @@ def cleanup_scratch(scratch_dir, mounts_dir):
     api.current_logger().debug('Recursively removed scratch directory %s.', scratch_dir)
 
 
-@utils.clean_guard(cleanup_function=cleanup_scratch)
-def _create_mount_disk_image(scratch_dir, mounts_dir):
+def _create_mount_disk_image(disk_images_directory, path):
     """
     Creates the mount disk image, for cases when we hit XFS with ftype=0
     """
-    diskimage_path = os.path.join(scratch_dir, 'diskimage')
+    diskimage_path = os.path.join(disk_images_directory, _mount_name(path))
     disk_size = _overlay_disk_size()
 
     api.current_logger().debug('Attempting to create disk image with size %d MiB at %s', disk_size, diskimage_path)
     utils.call_with_failure_hint(
         cmd=['/bin/dd', 'if=/dev/zero', 'of={}'.format(diskimage_path), 'bs=1M', 'count={}'.format(disk_size)],
         hint='Please ensure that there is enough diskspace in {} at least {} MiB are needed'.format(
-            scratch_dir, disk_size)
+            diskimage_path, disk_size)
     )
 
     api.current_logger().debug('Creating ext4 filesystem in disk image at %s', diskimage_path)
@@ -64,6 +121,26 @@ def _create_mount_disk_image(scratch_dir, mounts_dir):
         )
 
     return diskimage_path
+
+
+def _create_diskimages_dir(scratch_dir, diskimages_dir):
+    """
+    Prepares directories for disk images
+    """
+    api.current_logger().debug('Creating disk images directory.')
+    try:
+        utils.makedirs(diskimages_dir)
+        api.current_logger().debug('Done creating disk images directory.')
+    except OSError:
+        api.current_logger().error('Failed to create disk images directory %s', diskimages_dir, exc_info=True)
+
+        # This is an attempt for giving the user a chance to resolve it on their own
+        raise StopActorExecutionError(
+            message='Failed to prepare environment for package download while creating directories.',
+            details={
+                'hint': 'Please ensure that {scratch_dir} is empty and modifiable.'.format(scratch_dir=scratch_dir)
+            }
+        )
 
 
 def _create_mounts_dir(scratch_dir, mounts_dir):
@@ -98,32 +175,25 @@ def _mount_dnf_cache(overlay_target):
 
 
 @contextlib.contextmanager
-def _prepare_mounts(mounts_dir, scratch_dir, cleanup, detach, xfs_present):
-    """
-    A context manager function that prepares the scratch userspace and creates a mounting target directory. In case of
-    XFS with ftype=0 it will trigger the creation of the disk image and mounts it and ensure the cleanup after leaving
-    the context.
-    """
-    if cleanup:
-        cleanup_scratch(scratch_dir, mounts_dir)
-    _create_mounts_dir(scratch_dir=scratch_dir, mounts_dir=mounts_dir)
-    if xfs_present:
-        mount = mounting.LoopMount(source=_create_mount_disk_image(scratch_dir, mounts_dir),
-                                   target=mounts_dir, config=mounting.MountConfig.MountOnly)
-    else:
-        mount = mounting.NullMount(target=mounts_dir)
-    with mount:
-        yield mount
-
-
-@contextlib.contextmanager
-def create_source_overlay(mounts_dir, scratch_dir, xfs_present, cleanup=True, detach=False):
+def create_source_overlay(mounts_dir, scratch_dir, xfs_info, storage_info, mount_target=None):
     """
     Context manager that prepares the source system overlay and yields the mount.
     """
     api.current_logger().debug('Creating source overlay in {scratch_dir} with mounts in {mounts_dir}'.format(
         scratch_dir=scratch_dir, mounts_dir=mounts_dir))
-    with _prepare_mounts(mounts_dir, scratch_dir, cleanup, detach, xfs_present) as mounts:
-        with mounting.OverlayMount(name='source_overlay', source='/', workdir=mounts.target) as overlay:
-            with _mount_dnf_cache(overlay.target):
-                yield overlay
+    try:
+        _create_mounts_dir(scratch_dir, mounts_dir)
+        mounts = _prepare_required_mounts(scratch_dir, mounts_dir, _get_mountpoints(storage_info), xfs_info)
+        with mounts.pop('/') as root_mount:
+            with mounting.OverlayMount(name='system_overlay', source='/', workdir=root_mount.target) as root_overlay:
+                if mount_target:
+                    target = mounting.BindMount(source=root_overlay.target, target=mount_target)
+                else:
+                    target = mounting.NullMount(target=root_overlay.target)
+                with target:
+                    with _build_overlay_mount(root_overlay, mounts) as overlay:
+                        with _mount_dnf_cache(overlay.target):
+                            yield overlay
+    except Exception:
+        cleanup_scratch(scratch_dir, mounts_dir)
+        raise

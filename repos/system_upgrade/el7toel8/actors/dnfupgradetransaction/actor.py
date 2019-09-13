@@ -3,8 +3,8 @@ import shutil
 from leapp.actors import Actor
 from leapp.libraries.common import dnfplugin
 from leapp.libraries.stdlib import run
-from leapp.models import (FilteredRpmTransactionTasks, SourceRHSMInfo, TargetUserSpaceInfo, TransactionCompleted,
-                          UsedTargetRepositories)
+from leapp.models import (FilteredRpmTransactionTasks, SourceRHSMInfo, StorageInfo, TargetUserSpaceInfo,
+                          TransactionCompleted, UsedTargetRepositories)
 from leapp.tags import IPUWorkflowTag, RPMUpgradePhaseTag
 
 
@@ -17,7 +17,7 @@ class DnfUpgradeTransaction(Actor):
     """
 
     name = 'dnf_upgrade_transaction'
-    consumes = (FilteredRpmTransactionTasks, SourceRHSMInfo, TargetUserSpaceInfo, UsedTargetRepositories)
+    consumes = (FilteredRpmTransactionTasks, SourceRHSMInfo, StorageInfo, TargetUserSpaceInfo, UsedTargetRepositories)
     produces = (TransactionCompleted,)
     tags = (RPMUpgradePhaseTag, IPUWorkflowTag)
 
@@ -36,10 +36,11 @@ class DnfUpgradeTransaction(Actor):
                 run(['rm', '-f', prod_cert])
 
         used_repos = self.consume(UsedTargetRepositories)
+        storage_info = next(self.consume(StorageInfo), None)
         tasks = next(self.consume(FilteredRpmTransactionTasks), FilteredRpmTransactionTasks())
         target_userspace_info = next(self.consume(TargetUserSpaceInfo), None)
 
-        dnfplugin.perform_transaction_install(tasks=tasks, used_repos=used_repos,
+        dnfplugin.perform_transaction_install(tasks=tasks, used_repos=used_repos, storage_info=storage_info,
                                               target_userspace_info=target_userspace_info)
         self.produce(TransactionCompleted())
         userspace = next(self.consume(TargetUserSpaceInfo), None)

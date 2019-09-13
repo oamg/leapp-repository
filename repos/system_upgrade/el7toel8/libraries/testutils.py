@@ -7,8 +7,8 @@ class produce_mocked(object):
         self.model_instances = []
 
     def __call__(self, *model_instances):
-        self.called += 1
-        self.model_instances.append(model_instances[0])
+        self.called += len(model_instances)
+        self.model_instances.extend(list(model_instances))
 
 
 class create_report_mocked(object):
