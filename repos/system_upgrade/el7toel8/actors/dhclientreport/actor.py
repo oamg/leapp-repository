@@ -2,6 +2,7 @@ from leapp.actors import Actor
 from leapp.libraries.common.reporting import report_with_remediation
 from leapp.reporting import Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
+from leapp.models import InstalledRedHatSignedRPM
 
 
 class CheckDhclientActor(Actor):
