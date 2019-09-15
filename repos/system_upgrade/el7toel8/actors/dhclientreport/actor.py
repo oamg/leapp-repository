@@ -3,6 +3,7 @@ from leapp.libraries.common.reporting import report_with_remediation
 from leapp.reporting import Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 from leapp.models import InstalledRedHatSignedRPM
+from leapp.libraries.common.rpms import has_package
 
 
 class CheckDhclientActor(Actor):
@@ -16,15 +17,8 @@ class CheckDhclientActor(Actor):
     produces = (Report,)
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 
-    def is_dhclient_installed(self):
-        for fact in self.consume(InstalledRedHatSignedRPM):
-            for rpm in fact.items:
-                if rpm.name == 'dhclient':
-                    return True
-        return False
-
     def process(self):
-        if self.is_dhclient_installed():
+        if has_package(InstalledRedHatSignedRPM, 'dhclient'):
             title = 'dhclient command line options changed'
             summary = (
                 'dhclient command line options have been changed '
