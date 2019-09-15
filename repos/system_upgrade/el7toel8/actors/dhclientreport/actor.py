@@ -1,9 +1,9 @@
-from leapp.actors import Actor
-from leapp.reporting import Report, create_report
 from leapp import reporting
-from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
-from leapp.models import InstalledRedHatSignedRPM
+from leapp.actors import Actor
 from leapp.libraries.common.rpms import has_package
+from leapp.models import InstalledRedHatSignedRPM
+from leapp.reporting import Report, create_report
+from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
 class CheckDhclientActor(Actor):
