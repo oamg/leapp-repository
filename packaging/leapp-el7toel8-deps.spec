@@ -18,7 +18,7 @@ URL:        https://oamg.github.io/leapp/
 ##################################################
 %package -n %{lrdname}
 Summary:    Meta-package with system dependencies for leapp repository
-Provides:   leapp-repository-dependencies = 5
+Provides:   leapp-repository-dependencies = 6
 Obsoletes:  leapp-repository-deps
 
 Requires:   dnf >= 4
