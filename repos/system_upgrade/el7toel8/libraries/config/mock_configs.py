@@ -1,3 +1,11 @@
+
+"""
+This is not regular library.
+
+The library is supposed to be used only for testing purposes. Import of the
+library is expected only inside test files.
+"""
+
 from leapp.models import IPUConfig, EnvVar, OSRelease, Version
 
 CONFIG = IPUConfig(
