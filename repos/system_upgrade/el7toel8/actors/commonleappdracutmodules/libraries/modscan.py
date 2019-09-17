@@ -1,11 +1,11 @@
 import os
 import re
 
+from leapp.libraries.common.config import architecture
 from leapp.libraries.stdlib import api
 from leapp.models import RequiredUpgradeInitramPackages, UpgradeDracutModule
 
 _REQUIRED_PACKAGES = [
-    'biosdevname',
     'binutils',
     'cifs-utils',
     'device-mapper-multipath',
@@ -46,7 +46,10 @@ def _create_dracut_modules():
 
 
 def _create_initram_packages():
-    return RequiredUpgradeInitramPackages(packages=_REQUIRED_PACKAGES)
+    required_pkgs = _REQUIRED_PACKAGES
+    if architecture.matches_architecture(architecture.ARCH_X86_64):
+        required_pkgs.append('biosdevname')
+    return RequiredUpgradeInitramPackages(packages=required_pkgs)
 
 
 def process():
