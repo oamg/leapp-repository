@@ -4,18 +4,21 @@ from collections import namedtuple
 
 from leapp.exceptions import StopActorExecution, StopActorExecutionError
 from leapp import reporting
+from leapp.libraries.common.config import architecture
 from leapp.libraries.stdlib import api
 from leapp.libraries.stdlib.config import is_verbose
 from leapp.models import (InstalledRedHatSignedRPM, PESRpmTransactionTasks, RepositoriesMap,
                           RepositoriesSetupTasks, RpmTransactionTasks, RepositoriesBlacklisted)
 
 
-Event = namedtuple('Event', ['action',   # A string representing an event type (see EVENT_TYPES)
-                             'in_pkgs',  # A dictionary with packages in format {<pkg_name>: <repository>}
-                             'out_pkgs'  # A dictionary with packages in format {<pkg_name>: <repository>}
+Event = namedtuple('Event', ['action',        # A string representing an event type (see EVENT_TYPES)
+                             'in_pkgs',       # A dictionary with packages in format {<pkg_name>: <repository>}
+                             'out_pkgs',      # A dictionary with packages in format {<pkg_name>: <repository>}
+                             'architectures'  # A list of strings representing architectures
                              ])
 
 EVENT_TYPES = ('Present', 'Removed', 'Deprecated', 'Replaced', 'Split', 'Merged', 'Moved', 'Renamed')
+ARCHITECTURES = ['x86_64', 'aarch64', 'ppc64le', 's390x']
 
 
 def pes_events_scanner(pes_json_filepath):
@@ -23,8 +26,10 @@ def pes_events_scanner(pes_json_filepath):
     installed_pkgs = get_installed_pkgs()
     transaction_configuration = get_transaction_configuration()
     events = get_events(pes_json_filepath)
-    add_output_pkgs_to_transaction_conf(transaction_configuration, events)
-    filtered_events = get_events_for_installed_pkgs_only(events, installed_pkgs)
+    arch = api.current_actor().configuration.architecture
+    arch_events = filter_events_by_architecture(events, arch)
+    add_output_pkgs_to_transaction_conf(transaction_configuration, arch_events)
+    filtered_events = get_events_for_installed_pkgs_only(arch_events, installed_pkgs)
     tasks = process_events(filtered_events, installed_pkgs)
     filter_out_transaction_conf_pkgs(tasks, transaction_configuration)
     produce_messages(tasks)
@@ -114,6 +119,14 @@ def get_events(pes_events_filepath):
         raise StopActorExecution()
 
 
+def filter_events_by_architecture(events, arch):
+    filtered_events = []
+    for event in events:
+        if not event.architectures or arch in event.architectures:
+            filtered_events.append(event)
+    return filtered_events
+
+
 def parse_pes_events_file(path):
     """
     Parse JSON file returning PES events
@@ -164,13 +177,19 @@ def parse_entry(entry):
                               }
                           ]
                       },
+                      'architectures': [  # 'can be empty'
+                          'x86_64',
+                          's390x'
+                      ]
                   }
     """
+
     action = parse_action(entry['action'])
     in_pkgs = parse_packageset(entry.get('in_packageset') or {})
     out_pkgs = parse_packageset(entry.get('out_packageset') or {})
+    architectures = parse_architectures(entry.get('architectures') or [])
 
-    return Event(action, in_pkgs, out_pkgs)
+    return Event(action, in_pkgs, out_pkgs, architectures)
 
 
 def parse_action(action_id):
@@ -188,6 +207,13 @@ def parse_packageset(packageset):
     :return: A dictionary with packages in format {<pkg_name>: <repository>}
     """
     return {p['name']: p['repository'].lower() for p in packageset.get('package', [])}
+
+
+def parse_architectures(architectures):
+    for arch in architectures:
+        if arch not in architecture.ARCH_ACCEPTED:
+            raise ValueError('Found event with invalid architecture: {}'. format(arch))
+    return architectures
 
 
 def get_events_for_installed_pkgs_only(events, installed_rh_pkgs):

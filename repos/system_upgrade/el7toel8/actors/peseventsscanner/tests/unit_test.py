@@ -7,6 +7,7 @@ from leapp.libraries.actor import library
 from leapp.libraries.actor.library import (Event,
                                            add_output_pkgs_to_transaction_conf,
                                            filter_out_pkgs_in_blacklisted_repos,
+                                           filter_events_by_architecture,
                                            get_events,
                                            get_events_for_installed_pkgs_only,
                                            map_repositories, parse_action,
@@ -101,8 +102,8 @@ def test_parse_pes_events_file(current_actor_context):
 
 def test_get_events_for_installed_pkgs_only(monkeypatch):
     events = [
-        Event('Split', {'original': 'repo'}, {'split01': 'repo', 'split02': 'repo'}),
-        Event('Removed', {'removed': 'repo'}, {})]
+        Event('Split', {'original': 'repo'}, {'split01': 'repo', 'split02': 'repo'}, []),
+        Event('Removed', {'removed': 'repo'}, {}, [])]
     filtered = get_events_for_installed_pkgs_only(events, {'original'})
 
     assert len(filtered) == 1
@@ -170,8 +171,8 @@ def test_resolve_conflicting_requests(monkeypatch):
     monkeypatch.setattr(library, 'map_repositories', lambda x: x)
     monkeypatch.setattr(library, 'filter_out_pkgs_in_blacklisted_repos', lambda x: x)
     events = [
-        Event('Split', {'sip-devel': 'repo'}, {'python3-sip-devel': 'repo', 'sip': 'repo'}),
-        Event('Split', {'sip': 'repo'}, {'python3-pyqt5-sip': 'repo', 'python3-sip': 'repo'})]
+        Event('Split', {'sip-devel': 'repo'}, {'python3-sip-devel': 'repo', 'sip': 'repo'}, []),
+        Event('Split', {'sip': 'repo'}, {'python3-pyqt5-sip': 'repo', 'python3-sip': 'repo'}, [])]
     installed_pkgs = {'sip'}
 
     tasks = process_events(events, installed_pkgs)
@@ -212,9 +213,9 @@ def test_process_events(monkeypatch):
     monkeypatch.setattr(library, 'get_repositories_blacklisted', get_repos_blacklisted_mocked(set()))
 
     events = [
-        Event('Split', {'original': 'rhel7-repo'}, {'split01': 'rhel8-repo', 'split02': 'rhel8-repo'}),
-        Event('Removed', {'removed': 'rhel7-repo'}, {}),
-        Event('Present', {'present': 'rhel8-repo'}, {})]
+        Event('Split', {'original': 'rhel7-repo'}, {'split01': 'rhel8-repo', 'split02': 'rhel8-repo'}, []),
+        Event('Removed', {'removed': 'rhel7-repo'}, {}, []),
+        Event('Present', {'present': 'rhel8-repo'}, {}, [])]
     tasks = process_events(events, set())
 
     assert tasks['to_install'] == {'split02': 'rhel8-mapped', 'split01': 'rhel8-mapped'}
@@ -251,10 +252,10 @@ def test_pes_data_not_found(monkeypatch):
 
 def test_add_output_pkgs_to_transaction_conf():
     events = [
-        Event('Split', {'split_in': 'repo'}, {'split_out1': 'repo', 'split_out2': 'repo'}),
-        Event('Merged', {'merged_in1': 'repo', 'merged_in2': 'repo'}, {'merged_out': 'repo'}),
-        Event('Renamed', {'renamed_in': 'repo'}, {'renamed_out': 'repo'}),
-        Event('Replaced', {'replaced_in': 'repo'}, {'replaced_out': 'repo'}),
+        Event('Split', {'split_in': 'repo'}, {'split_out1': 'repo', 'split_out2': 'repo'}, []),
+        Event('Merged', {'merged_in1': 'repo', 'merged_in2': 'repo'}, {'merged_out': 'repo'}, []),
+        Event('Renamed', {'renamed_in': 'repo'}, {'renamed_out': 'repo'}, []),
+        Event('Replaced', {'replaced_in': 'repo'}, {'replaced_out': 'repo'}, []),
     ]
 
     conf_empty = RpmTransactionTasks()
@@ -280,3 +281,18 @@ def test_add_output_pkgs_to_transaction_conf():
     conf_replaced = RpmTransactionTasks(to_remove=['replaced_in'])
     add_output_pkgs_to_transaction_conf(conf_replaced, events)
     assert sorted(conf_replaced.to_remove) == ['replaced_in', 'replaced_out']
+
+
+def test_filter_events_by_architecture():
+    events = [
+        Event('Present', {'pkg1': 'repo'}, {}, ['arch1']),
+        Event('Present', {'pkg2': 'repo'}, {}, ['arch2', 'arch1', 'arch3']),
+        Event('Present', {'pkg3': 'repo'}, {}, ['arch2', 'arch3', 'arch4']),
+        Event('Present', {'pkg4': 'repo'}, {}, [])
+    ]
+
+    filtered = filter_events_by_architecture(events, 'arch1')
+    assert {'pkg1': 'repo'} in [event.in_pkgs for event in filtered]
+    assert {'pkg2': 'repo'} in [event.in_pkgs for event in filtered]
+    assert {'pkg3': 'repo'} not in [event.in_pkgs for event in filtered]
+    assert {'pkg4': 'repo'} in [event.in_pkgs for event in filtered]
