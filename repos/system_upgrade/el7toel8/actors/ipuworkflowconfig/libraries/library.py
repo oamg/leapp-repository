@@ -3,7 +3,7 @@ import os
 from leapp import reporting
 from leapp.models import EnvVar, OSRelease
 
-CURRENT_TARGET_VERSION = '8.0'
+CURRENT_TARGET_VERSION = '8.1'
 
 ENV_IGNORE = ('LEAPP_CURRENT_PHASE', 'LEAPP_CURRENT_ACTOR', 'LEAPP_VERBOSE',
               'LEAPP_DEBUG')
