@@ -67,7 +67,11 @@ class RhelUpgradeCommand(dnf.cli.Command):
                 repo.enable()
 
     def run(self):
-        self.base.add_remote_rpms(self.plugin_data['pkgs_info']['local_rpms'])
+        # takes local rpms, creates Package objects from them, and then adds them to the sack as virtual repository
+        local_rpm_objects = self.base.add_remote_rpms(self.plugin_data['pkgs_info']['local_rpms'])
+
+        for pkg in local_rpm_objects:
+            self.base.package_install(pkg)
 
         for pkg_spec in self.plugin_data['pkgs_info']['to_remove']:
             try:
