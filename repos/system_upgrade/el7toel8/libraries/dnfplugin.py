@@ -51,7 +51,7 @@ def build_plugin_data(target_repoids, debug, test, tasks):
             'enable_repos': target_repoids,
             'gpgcheck': False,
             'platform_id': 'platform:el8',
-            'releasever': '8',
+            'releasever': api.current_actor().configuration.version.target,
             'installroot': '/installroot',
             'test_flag': test
         }

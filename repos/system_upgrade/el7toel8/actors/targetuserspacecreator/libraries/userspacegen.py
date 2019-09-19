@@ -28,7 +28,7 @@ def prepare_target_userspace(context, userspace_dir, enabled_repos, packages):
                '--nogpgcheck',
                '--setopt=module_platform_id=platform:el8',
                '--setopt=keepcache=1',
-               '--releasever', '8',
+               '--releasever', api.current_actor().configuration.version.target,
                '--installroot', '/el8target',
                '--disablerepo', '*'
                ] + repos_opt + packages
