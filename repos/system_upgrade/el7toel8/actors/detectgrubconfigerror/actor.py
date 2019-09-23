@@ -1,5 +1,6 @@
 from leapp.actors import Actor
 from leapp.libraries.actor.scanner import detect_config_error
+from leapp.libraries.common.config import architecture
 from leapp.models import GrubConfigError
 from leapp.reporting import Report, create_report
 from leapp import reporting
@@ -17,6 +18,10 @@ class DetectGrubConfigError(Actor):
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 
     def process(self):
+        if architecture.matches_architecture(architecture.ARCH_S390X):
+            # For now, skip just s390x, that's only one that is failing now
+            # because ZIPL is used there
+            return
         config = '/etc/default/grub'
         error_detected = detect_config_error(config)
         if error_detected:
