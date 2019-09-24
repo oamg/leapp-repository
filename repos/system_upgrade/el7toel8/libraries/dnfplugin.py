@@ -182,20 +182,6 @@ def perform_transaction_install(target_userspace_info, used_repos, tasks):
         _transaction(context=context, stage='upgrade', target_repoids=target_repoids, tasks=tasks)
 
 
-def perform_transaction_check(target_userspace_info, used_repos, tasks, xfs_present):
-    """
-    Perform DNF transaction check using our plugin
-    """
-    with _prepare_transaction(used_repos=used_repos,
-                              target_userspace_info=target_userspace_info
-                              ) as (context, target_repoids, userspace_info):
-        with overlaygen.create_source_overlay(mounts_dir=userspace_info.mounts, scratch_dir=userspace_info.scratch,
-                                              xfs_present=xfs_present) as overlay:
-            utils.apply_yum_workaround(overlay.nspawn())
-            with mounting.BindMount(source=overlay.target, target=os.path.join(context.base_dir, 'installroot')):
-                _transaction(context=context, stage='check', target_repoids=target_repoids, tasks=tasks)
-
-
 def perform_rpm_download(target_userspace_info, used_repos, tasks, xfs_present):
     """
     Perform RPM download including the transaction test using dnf with our plugin
