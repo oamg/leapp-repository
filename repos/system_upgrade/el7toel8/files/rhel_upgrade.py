@@ -2,6 +2,7 @@
 from __future__ import print_function
 
 import json
+import sys
 
 import dnf
 import dnf.cli
@@ -94,7 +95,11 @@ class RhelUpgradeCommand(dnf.cli.Command):
         self.base.distro_sync()
 
         if self.opts.tid[0] == 'check':
-            self.base.resolve(allow_erasing=self.cli.demands.allow_erasing)
+            try:
+                self.base.resolve(allow_erasing=self.cli.demands.allow_erasing)
+            except dnf.exceptions.DepsolveError as e:
+                print(str(e), file=sys.stderr)
+                raise
 
             # We are doing this to avoid downloading the packages in the check phase
             self.base.download_packages = _do_not_download_packages
