@@ -131,19 +131,20 @@ def gather_target_repositories(target_rhsm_info):
                 }
             )
 
-    target_repoids = set()
+    target_repoids = []
     for target_repo in api.consume(TargetRepositories):
         for rhel_repo in target_repo.rhel_repos:
             if rhel_repo.repoid in target_rhsm_info.available_repos:
-                target_repoids.add(rhel_repo.repoid)
+                target_repoids.append(rhel_repo.repoid)
         for custom_repo in target_repo.custom_repos:
             # TODO: complete processing of custom repositories
             # HINT: now it will work only for custom repos that exist
             # + already on the system in a repo file
             # TODO: should check available_target_repoids + additional custom repos
             # + outside of rhsm..
-            target_repoids.add(custom_repo.repoid)
-    return list(target_repoids)
+            # #if custom_repo.repoid in available_target_repoids:
+            target_repoids.append(custom_repo.repoid)
+    return target_repoids
 
 
 def perform():
