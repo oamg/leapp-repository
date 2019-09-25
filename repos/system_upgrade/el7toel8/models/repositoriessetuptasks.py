@@ -6,7 +6,6 @@ class RepositoriesSetupTasks(Model):
     """
     Information about repositories that must be managed in order to complete upgrade process.
 
-    !!! THIS MODEL IS OBSOLETE. Use for example CustomTargetRepositories instead. !!!
     'to_enable' field consists of a list of repositories that should be enabled in order to complete
     upgrade process. This information should be processed by an actor dedicated to manage
     repositories.

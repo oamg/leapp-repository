@@ -1,5 +1,6 @@
-from leapp.models import (RPM, InstalledRedHatSignedRPM, RepositoriesFacts,
-                          RepositoryData, RepositoryFile, UsedRepositories)
+from leapp.snactor.fixture import current_actor_context
+from leapp.models import RPM, InstalledRedHatSignedRPM, RepositoryFile, RepositoryData, \
+    RepositoriesFacts, UsedRepositories
 
 
 def get_sample_rpm(name, repository):
@@ -45,6 +46,6 @@ def test_actor_execution(current_actor_context):
     assert current_actor_context.consume(UsedRepositories)
     used_repos = current_actor_context.consume(UsedRepositories)[0].repositories
     assert len(used_repos) == 1
-    assert used_repos[0].repoid == 'rhel-7-server-rpms'
+    assert used_repos[0].repository == 'rhel-7-server-rpms'
     assert len(used_repos[0].packages) == 2
     assert used_repos[0].packages == ['pkg1', 'pkg2']
