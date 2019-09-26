@@ -33,7 +33,7 @@ def test_add_boot_entry(monkeypatch):
     assert library.run.args == ['/usr/sbin/grubby',
                                 '--add-kernel', '/abc',
                                 '--initrd', '/def',
-                                '--title', 'RHEL Upgrade Initramfs',
+                                '--title', 'RHEL-Upgrade-Initramfs',
                                 '--copy-default',
                                 '--make-default',
                                 '--args',
