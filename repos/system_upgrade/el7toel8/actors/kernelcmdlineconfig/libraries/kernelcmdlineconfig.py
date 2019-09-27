@@ -12,6 +12,7 @@ def process():
                    '--args={}={}'.format(arg.key, arg.value)]
             try:
                 stdlib.run(cmd)
+                stdlib.run(['/usr/sbin/zipl'])
             except (OSError, stdlib.CalledProcessError) as e:
                 raise StopActorExecutionError(
                     "Failed to append extra arguments to kernel command line.",

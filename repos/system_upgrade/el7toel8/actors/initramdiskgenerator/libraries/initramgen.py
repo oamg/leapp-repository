@@ -68,9 +68,11 @@ def generate_initram_disk(context):
     copy_dracut_modules(context, modules)
     context.copy_to(generator_script, os.path.join('/', INITRAM_GEN_SCRIPT_NAME))
     install_initram_deps(context)
+    if os.path.exists('/etc/dasd.conf'):
+        context.copy_to('/etc/dasd.conf', '/etc/dasd.conf')
     context.call([
         '/bin/sh', '-c',
-        'LEAPP_ADD_DRACUT_MODULES={modules} LEAPP_KERNEL_ARCH={arch} {cmd}'.format(
+        'LEAPP_ADD_DRACUT_MODULES="{modules}" LEAPP_KERNEL_ARCH={arch} {cmd}'.format(
             modules=','.join([mod.name for mod in modules]),
             arch=api.current_actor().configuration.architecture,
             cmd=os.path.join('/', INITRAM_GEN_SCRIPT_NAME))

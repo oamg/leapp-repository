@@ -28,6 +28,7 @@ def remove_boot_entry():
         '/usr/sbin/grubby',
         '--remove-kernel={0}'.format(kernel_filepath)
     ])
+    run(['/usr/sbin/zipl'])
     # TODO: Move calling `mount -a` to a separate actor as it is not really related to removing the upgrade boot entry.
     #       It's worth to call it after removing the boot entry to avoid boot loop in case mounting fails.
     run([

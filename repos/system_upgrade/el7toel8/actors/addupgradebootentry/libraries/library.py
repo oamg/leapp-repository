@@ -19,6 +19,7 @@ def add_boot_entry():
         '--make-default',
         '--args', '{DEBUG} enforcing=0 rd.plymouth=0 plymouth.enable=0'.format(DEBUG=debug)
     ])
+    run(['/usr/sbin/zipl'])
 
 
 def get_boot_file_paths():

@@ -40,6 +40,7 @@ def update_default_kernel(kernel_info):
     else:
         try:
             stdlib.run(['grubby', '--set-default', kernel_info.kernel_path])
+            stdlib.run(['/usr/sbin/zipl'])
         except (OSError, stdlib.CalledProcessError):
             api.current_logger().error('Failed to set default kernel to: %s', kernel_info.kernel_path, exc_info=True)
 
