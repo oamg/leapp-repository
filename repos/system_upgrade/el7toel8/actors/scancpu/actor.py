@@ -9,7 +9,7 @@ class ScanCPU(Actor):
 
     name = 'scancpu'
     consumes = ()
-    produces = (CPUInfo)
+    produces = (CPUInfo,)
     tags = (IPUWorkflowTag, FactsPhaseTag)
 
     def process(self):
