@@ -1,75 +1,124 @@
-from leapp.models import RepositoriesBlacklisted, RepositoriesFacts, RepositoryFile, RepositoryData
+# from leapp.models import RepositoriesBlacklisted, RepositoriesFacts, RepositoryFile, RepositoryData
+from leapp.libraries.actor import library
+from leapp.libraries.common.testutils import produce_mocked
+from leapp.libraries.stdlib import api
+from leapp.models import (
+    RepositoriesBlacklisted,
+    RepositoriesFacts,
+    RepositoriesMap,
+    RepositoryMap,
+    RepositoryFile,
+    RepositoryData,
+)
 from leapp.snactor.fixture import current_actor_context
 
 
-def get_repo_data(repoids, enabled=True):
-    data = []
-    for repo in repoids:
-        data.append(RepositoryData(repoid=repo, name=repo, enabled=enabled))
-    return data
+def test_with_optionals(monkeypatch):
+    def repositories_mock(*model):
+        mapping = [
+            RepositoryMap(
+                to_name='rhel-7-foobar-rpms',
+                from_id='rhel-7-optional-rpms',
+                to_id='rhel-8-optional-rpms',
+                from_minor_version='all',
+                to_minor_version='all',
+                arch='x86_64',
+                repo_type='rpm',
+            ),
+            RepositoryMap(
+                to_name='rhel-7-blacklist-rpms',
+                from_id='rhel-7-blacklist-rpms',
+                to_id='rhel-8-blacklist-rpms',
+                from_minor_version='all',
+                to_minor_version='all',
+                arch='x86_64',
+                repo_type='rpm',
+            ),
+        ]
+        yield RepositoriesMap(repositories=mapping)
+
+    monkeypatch.setattr(api, "consume", repositories_mock)
+    optionals = library._get_list_of_optional_repos()
+    assert 'rhel-7-optional-rpms' in optionals
+    assert 'rhel-7-blacklist-rpms' not in optionals
 
 
-def get_repo_files(repoids, enabled=True):
-    files = []
-    for i, repo in enumerate(repoids):
-        files.append(RepositoryFile(file='/etc/yum.d/sample{}.repo'.format(i),
-                                    data=get_repo_data([repo])))
-    return files
+def test_without_optionals(monkeypatch):
+    def repositories_mock(*model):
+        mapping = [
+            RepositoryMap(
+                to_name='rhel-7-foobar-rpms',
+                from_id='rhel-7-foobar-rpms',
+                to_id='rhel-8-foobar-rpms',
+                from_minor_version='all',
+                to_minor_version='all',
+                arch='x86_64',
+                repo_type='rpm',
+            ),
+            RepositoryMap(
+                to_name='rhel-7-blacklist-rpms',
+                from_id='rhel-7-blacklist-rpms',
+                to_id='rhel-8-blacklist-rpms',
+                from_minor_version='all',
+                to_minor_version='all',
+                arch='x86_64',
+                repo_type='rpm',
+            ),
+        ]
+        yield RepositoriesMap(repositories=mapping)
+
+    monkeypatch.setattr(api, "consume", repositories_mock)
+    assert not library._get_list_of_optional_repos()
 
 
-def get_repo_facts(repoids, enabled=True, multiple_files=False):
-    if multiple_files:
-        repos = get_repo_files(repoids, enabled=enabled)
-    else:
-        repos = [RepositoryFile(file='/etc/yum.d/sample.repo',
-                                data=get_repo_data(repoids, enabled))]
-    return RepositoriesFacts(repositories=repos)
+def test_with_empty_optional_repo(monkeypatch):
+    def repositories_mock(*model):
+        repos_data = [RepositoryData(repoid='rhel-7-optional-rpms', name='RHEL 7 Server', enabled=False)]
+        repos_files = [RepositoryFile(file='/etc/yum.repos.d/redhat.repo', data=repos_data)]
+        yield RepositoriesFacts(repositories=repos_files)
+
+    monkeypatch.setattr(library, "_get_list_of_optional_repos", lambda: {})
+    monkeypatch.setattr(api, "consume", repositories_mock)
+    assert not library._get_disabled_optional_repo()
 
 
-def test_repositoriesblacklist_empty(current_actor_context):
-    current_actor_context.feed()
-    current_actor_context.run()
-    assert current_actor_context.consume(RepositoriesBlacklisted)
-    repoids = current_actor_context.consume(RepositoriesBlacklisted)[0].repoids
-    assert 'codeready-builder-for-rhel-8-x86_64-rpms' in repoids
+def test_with_repo_disabled(monkeypatch):
+    def repositories_mock(*model):
+        repos_data = [RepositoryData(repoid='rhel-7-optional-rpms', name='RHEL 7 Server', enabled=False)]
+        repos_files = [RepositoryFile(file='/etc/yum.repos.d/redhat.repo', data=repos_data)]
+        yield RepositoriesFacts(repositories=repos_files)
+
+    monkeypatch.setattr(library, "_get_list_of_optional_repos", lambda: {'rhel-7-optional-rpms': 'rhel-7'})
+    monkeypatch.setattr(api, "consume", repositories_mock)
+    disabled = library._get_disabled_optional_repo()
+    assert 'rhel-7' in disabled
 
 
-def test_repositoriesblacklist_no_optional(current_actor_context):
-    repo_facts = get_repo_facts(['rhel-7-server-rpms', 'rhel-7-extras-rpms'])
-    current_actor_context.feed(repo_facts)
-    current_actor_context.run()
-    assert current_actor_context.consume(RepositoriesBlacklisted)
-    repoids = current_actor_context.consume(RepositoriesBlacklisted)[0].repoids
-    assert 'codeready-builder-for-rhel-8-x86_64-rpms' in repoids
+def test_with_repo_enabled(monkeypatch):
+    def repositories_mock(*model):
+        repos_data = [RepositoryData(repoid='rhel-7-optional-rpms', name='RHEL 7 Server')]
+        repos_files = [RepositoryFile(file='/etc/yum.repos.d/redhat.repo', data=repos_data)]
+        yield RepositoriesFacts(repositories=repos_files)
+
+    monkeypatch.setattr(library, "_get_list_of_optional_repos", lambda: {'rhel-7-optional-rpms': 'rhel-7'})
+    monkeypatch.setattr(api, "consume", repositories_mock)
+    assert not library._get_disabled_optional_repo()
 
 
-def test_repositoriesblacklist_disabled_optional(current_actor_context):
-    repo_facts = get_repo_facts(['rhel-7-server-optional-rpms'], False)
-    current_actor_context.feed(repo_facts)
-    current_actor_context.run()
-    assert current_actor_context.consume(RepositoriesBlacklisted)
-    repoids = current_actor_context.consume(RepositoriesBlacklisted)[0].repoids
-    assert 'codeready-builder-for-rhel-8-x86_64-rpms' in repoids
+def test_repositoriesblacklist_not_empty(monkeypatch):
+    name = 'test'
+    monkeypatch.setattr(library, "_get_disabled_optional_repo", lambda: [name])
+    monkeypatch.setattr(api, "produce", produce_mocked())
+
+    library.process()
+    assert api.produce.called == 1
+    assert isinstance(api.produce.model_instances[0], RepositoriesBlacklisted)
+    assert api.produce.model_instances[0].repoids[0] == name
 
 
-def test_repositoriesblacklist_optional(current_actor_context):
-    repo_facts = get_repo_facts(['test', 'rhel-7-server-optional-rpms', 'rhel-7-server-rpms'])
-    current_actor_context.feed(repo_facts)
-    current_actor_context.run()
-    assert not current_actor_context.consume(RepositoriesBlacklisted)
+def test_repositoriesblacklist_empty(monkeypatch):
+    monkeypatch.setattr(library, "_get_disabled_optional_repo", lambda: [])
+    monkeypatch.setattr(api, "produce", produce_mocked())
 
-
-def test_repositoriesblacklist_optional_multiple_repo_files(current_actor_context):
-    repo_facts = get_repo_facts(['test', 'rhel-7-server-optional-rpms', 'rhel-7-server-rpms'], True, True)
-    current_actor_context.feed(repo_facts)
-    current_actor_context.run()
-    assert not current_actor_context.consume(RepositoriesBlacklisted)
-
-
-def test_repositoriesblacklist_no_optional_multiple_repo_files(current_actor_context):
-    repo_facts = get_repo_facts(['rhel-7-server-rpms', 'rhel-7-extras-rpms'], True, True)
-    current_actor_context.feed(repo_facts)
-    current_actor_context.run()
-    assert current_actor_context.consume(RepositoriesBlacklisted)
-    repoids = current_actor_context.consume(RepositoriesBlacklisted)[0].repoids
-    assert 'codeready-builder-for-rhel-8-x86_64-rpms' in repoids
+    library.process()
+    assert api.produce.called == 0
