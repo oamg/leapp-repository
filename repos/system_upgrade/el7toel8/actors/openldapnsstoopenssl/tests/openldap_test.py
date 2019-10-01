@@ -41,7 +41,7 @@ def test_converts_cleanly(config_name, tmpdir, mock):
     ('pass', (None, 'Wrong-Name', None), RuntimeError, r'Could not find cert')
 ])
 def test_convert_raises(config_name, config_override, exception, match, tmpdir, mock):
-    config = [(override if override is not None else conf) 
+    config = [(override if override is not None else conf)
               for conf, override in zip(mock[0][config_name], config_override)]
     ol = Openldap(log)
     conf = ol.TLSConfiguration(*config)

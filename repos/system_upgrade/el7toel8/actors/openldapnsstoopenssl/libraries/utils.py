@@ -48,4 +48,3 @@ def copy_some_permissions(filename, interpolations, dest):
         copy_permissions(fn, dest)
         return True
     raise RuntimeError('Could not set properties of `%s`' % dest)
-

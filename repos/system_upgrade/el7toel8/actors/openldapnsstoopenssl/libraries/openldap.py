@@ -10,6 +10,8 @@ from collections import namedtuple
 
 from utils import (
     copy_permissions,
+    AlreadyConverted,
+    InsufficientTooling,
     NotNSSConfiguration,
     UMASK
 )
@@ -17,7 +19,7 @@ from nss import Nss
 
 
 
-class Openldap:
+class Openldap(object):
     # (<directory>, <pem-file>, <pem-file>)
     # (<directory>, <cert-name>, <pin-file>)
     TLSConfiguration = namedtuple('TLSConfiguration', ['cacertdir', 'cert', 'key'])

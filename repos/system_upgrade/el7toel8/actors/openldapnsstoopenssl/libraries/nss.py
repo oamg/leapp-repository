@@ -12,17 +12,17 @@ from utils import (
 )
 
 
-class Nss:
+class Nss(object):
     @staticmethod
     def _handle_popen_result(process, name):
-        if process.returncode == None:
+        if process.returncode is None:
             raise RuntimeError('Process %s not finished yet!' % (name))
         if process.returncode != 0:
             stderr = process.stderr.read() if process.stderr else '<None>'
             raise RuntimeError('Running %s failed, the stderr was: %s' % (name, stderr))
 
     @classmethod
-    def certutil_get_certs(self, cacertdir):
+    def certutil_get_certs(cls, cacertdir):
         """Return list of certificates in NSS DB as {<name>: (<flags, ...>)}"""
         p = sp.Popen(['certutil', '-d', cacertdir, '-L'], stdout=sp.PIPE, stderr=sp.PIPE)
         stdout, _ = p.communicate()
@@ -42,14 +42,14 @@ class Nss:
         return parsed
 
     @classmethod
-    def export_cert(self, cacertdir, name, dest):
+    def export_cert(cls, cacertdir, name, dest):
         try:
             old_umask = os.umask(UMASK)
             with open(dest, 'w') as fd:
                 cmd = ['certutil', '-d', cacertdir, '-L', '-n', name, '-a']
                 p = sp.Popen(cmd, stdout=fd, stderr=sp.PIPE)
                 p.wait()
-                self._handle_popen_result(p, 'certutil -L')
+                cls._handle_popen_result(p, 'certutil -L')
             copy_some_permissions(str(ph.join(cacertdir, 'cert%s.db')), [8, 9], dest)
         except BaseException as e:
             raise RuntimeError('Exporting certificate failed: ' + str(e))
@@ -57,7 +57,7 @@ class Nss:
             os.umask(old_umask)
 
     @classmethod
-    def export_key(self, cacertdir, name, pinfile, dest):
+    def export_key(cls, cacertdir, name, pinfile, dest):
         DUMMY = 'dummy'
         pass_arg = ['-K', ''] if pinfile is None else ['-k', pinfile]
         with open(os.devnull, 'w') as DEVNULL:
@@ -75,8 +75,8 @@ class Nss:
                 ossl.wait()
                 pk12.wait()
 
-                self._handle_popen_result(pk12, 'pk12util')
-                self._handle_popen_result(ossl, 'openssl pkcs12')
+                cls._handle_popen_result(pk12, 'pk12util')
+                cls._handle_popen_result(ossl, 'openssl pkcs12')
 
                 copy_some_permissions(str(ph.join(cacertdir, 'key%s.db')), [3, 4], dest)
             except BaseException as e:
@@ -85,7 +85,7 @@ class Nss:
                 os.umask(old_umask)
 
     @classmethod
-    def export_ca_certs(self, cacertdir, destdir):
+    def export_ca_certs(cls, cacertdir, destdir):
         try:
             old_umask = os.umask(UMASK)
             os.mkdir(destdir)
@@ -95,7 +95,7 @@ class Nss:
         finally:
             os.umask(old_umask)
 
-        certs = self.certutil_get_certs(cacertdir)
+        certs = cls.certutil_get_certs(cacertdir)
         num = 0
         for name, flags in certs.items():
             if 'T' in flags[0]:

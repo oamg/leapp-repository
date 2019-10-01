@@ -8,7 +8,7 @@ from utils import (
 from openldap import Openldap
 
 
-class SssdServices():
+class SssdServices(object):
     OPTS = [('pam', 'pam_cert_db_path'),
             ('ssh', 'ca_db')]
 
@@ -56,7 +56,7 @@ class SssdServices():
         return (True,)
 
 
-class SssdDomains():
+class SssdDomains(object):
     OPTS = {'ldap_tls_cacertdir': 'cacertdir',
             'ldap_tls_cert': 'cert',
             'ldap_tls_key': 'key'}
@@ -65,7 +65,7 @@ class SssdDomains():
         self.sssd_module = sssd_module
         self._sssd = sssd
         self._ol = ol
-    
+
     def _read(self):
         domains = [self._sssd.get_domain(d) for d in self._sssd.list_domains()]
         confs = {}
