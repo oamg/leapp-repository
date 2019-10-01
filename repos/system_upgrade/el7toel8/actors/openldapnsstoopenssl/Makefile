@@ -1,2 +1,2 @@
 install-deps:
-	yum install -y python-sssdconfig sssd
+	yum install -y nss-tools openssl python-sssdconfig sssd
