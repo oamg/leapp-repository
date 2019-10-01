@@ -3,14 +3,13 @@ import os
 import os.path as ph
 
 import pytest
+from conftest import mock, CONFS
 
 from leapp.libraries.actor.openldap import Openldap
 from leapp.libraries.actor.nss import Nss
 from leapp.libraries.actor.utils import (
     NotNSSConfiguration,
 )
-
-from conftest import mock, CONFS
 
 log = logging.getLogger('testing')
 
@@ -25,7 +24,7 @@ def test_certutil_get_certs(mock):
     assert Nss.certutil_get_certs(mock[0]['nopass'][0])
 
 
-@pytest.mark.parametrize('config_name', CONFS.keys())
+@pytest.mark.parametrize('config_name', list(CONFS))
 def test_converts_cleanly(config_name, tmpdir, mock):
     ol = Openldap(log)
     conf = ol.TLSConfiguration(*mock[0][config_name])

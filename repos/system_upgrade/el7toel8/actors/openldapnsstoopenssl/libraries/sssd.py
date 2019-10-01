@@ -105,7 +105,7 @@ class SssdDomains(object):
         return (True,)
 
 
-class Sssd(Openldap):
+class Sssd(object):
 
     def __init__(self, log, config_file='/etc/sssd/sssd.conf'):
         self._log = log

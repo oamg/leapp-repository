@@ -38,14 +38,13 @@ class OpenldapNSStoOpenSSL(Actor):
         elif rv is True:
             self.success()
             return True
-        else:
-            fail('Unexpected error occurred: %s' % err)
-            return False
+        fail('Unexpected error occurred: %s' % err)
+        return False
 
     def abandon(self, reason):
         create_report([reporting.Title('No OpenLDAP certificates conversion necessary'),
                        reporting.Summary('%s. Certificates are most likely in correct format.'
-                                ' Leaving as is.' % reason),
+                                         ' Leaving as is.' % reason),
                        reporting.Severity(reporting.Severity.LOW)])
 
     def success(self):

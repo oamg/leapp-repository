@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-import subprocess as sp
+from __future__ import print_function
+
 import os
 import os.path as ph
 import re
 import fileinput
-import shutil
 from distutils.spawn import find_executable
 from collections import namedtuple
 
@@ -16,7 +16,6 @@ from utils import (
     UMASK
 )
 from nss import Nss
-
 
 
 class Openldap(object):
@@ -71,8 +70,7 @@ class Openldap(object):
         normalized = m[0].lower()[4:]  # dropping TLS_ prefix
         if normalized in conf._fields:
             return fn(normalized, m[1], conf)
-        else:
-            return None
+        return None
 
     def _read_ldap_conf(self):
         def fn(attr, value, conf):

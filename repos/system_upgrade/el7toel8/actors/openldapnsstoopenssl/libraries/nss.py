@@ -2,7 +2,6 @@ import os
 import os.path as ph
 import re
 import subprocess as sp
-import sys
 
 from utils import (
     copy_permissions,
@@ -35,8 +34,7 @@ class Nss(object):
             matches = re.match(pattern, line)
             if matches:
                 return (matches.group(1), matches.groups()[1:])
-            else:
-                return None
+            return None
 
         parsed = {p[0]: p[1] for p in map(parse_line, lines) if p is not None}
         return parsed
@@ -63,13 +61,13 @@ class Nss(object):
         with open(os.devnull, 'w') as DEVNULL:
             try:
                 pk12 = sp.Popen(['pk12util', '-d', cacertdir, '-o', '/dev/stdout',
-                              '-n', name, '-W', DUMMY] + pass_arg,
-                             stdout=sp.PIPE, stdin=DEVNULL, stderr=sp.PIPE)
+                                 '-n', name, '-W', DUMMY] + pass_arg,
+                                stdout=sp.PIPE, stdin=DEVNULL, stderr=sp.PIPE)
 
                 old_umask = os.umask(UMASK)
                 ossl = sp.Popen(['openssl', 'pkcs12', '-in', '/dev/stdin', '-out', dest,
-                              '-nodes', '-nocerts', '-passin', 'pass:{}'.format(DUMMY)],
-                             stdin=sp.PIPE, stderr=sp.PIPE)
+                                 '-nodes', '-nocerts', '-passin', 'pass:{}'.format(DUMMY)],
+                                stdin=sp.PIPE, stderr=sp.PIPE)
                 ossl.communicate(input=pk12.stdout.read())
 
                 ossl.wait()

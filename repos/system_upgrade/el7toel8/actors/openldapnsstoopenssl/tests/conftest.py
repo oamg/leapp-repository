@@ -1,21 +1,21 @@
 import copy
 import os
 import os.path as ph
-import pytest
 import random
 import shutil
 import string
 import subprocess as sp
 import tempfile
 
+import pytest
 
 CONFS = {'nopass': ['nssdb-nopass', 'User-Cert', None],
          'pass': ['nssdb', 'User-Cert', 'nssdb/pin.txt']}
 
 
-def generate_noise(file, length=512):
+def generate_noise(filename, length=512):
     out = ''.join([random.choice(string.ascii_letters) for _ in range(length)])
-    with open(file, 'w') as f:
+    with open(filename, 'w') as f:
         f.write(out.encode())
 
 
@@ -66,6 +66,6 @@ def mock(request):
     # the tests will be parametrized with CONFS but will actually use this function's
     # confs of return value instead. And this line below just asserts we have at least
     # the keys the same.
-    assert confs.keys() == CONFS.keys()
+    assert list(confs) == list(CONFS)
 
     return (confs, nssdb_files)
