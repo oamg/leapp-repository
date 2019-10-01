@@ -1,7 +1,7 @@
 from leapp.actors import Actor
 from leapp.libraries.common import dnfplugin
 from leapp.models import FilteredRpmTransactionTasks, TargetUserSpaceInfo, UsedTargetRepositories, XFSPresence
-from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
+from leapp.tags import TargetTransactionChecksPhaseTag, IPUWorkflowTag
 
 
 class DnfTransactionCheck(Actor):
@@ -12,10 +12,9 @@ class DnfTransactionCheck(Actor):
     name = 'dnf_transaction_check'
     consumes = (UsedTargetRepositories, FilteredRpmTransactionTasks, TargetUserSpaceInfo, XFSPresence)
     produces = ()
-    tags = (IPUWorkflowTag, ChecksPhaseTag)
+    tags = (IPUWorkflowTag, TargetTransactionChecksPhaseTag)
 
     def process(self):
-
         presence = next(self.consume(XFSPresence), XFSPresence())
         xfs_present = presence.present and presence.without_ftype
         used_repos = self.consume(UsedTargetRepositories)
