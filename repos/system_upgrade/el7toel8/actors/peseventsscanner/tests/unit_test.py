@@ -166,6 +166,21 @@ def test_filter_out_pkgs_in_blacklisted_repos(monkeypatch):
     assert to_install == {'pkg01': 'repo01', 'pkg02': 'repo02'}
 
 
+def test_resolve_conflicting_requests(monkeypatch):
+    monkeypatch.setattr(library, 'map_repositories', lambda x: x)
+    monkeypatch.setattr(library, 'filter_out_pkgs_in_blacklisted_repos', lambda x: x)
+    events = [
+        Event('Split', {'sip-devel': 'repo'}, {'python3-sip-devel': 'repo', 'sip': 'repo'}),
+        Event('Split', {'sip': 'repo'}, {'python3-pyqt5-sip': 'repo', 'python3-sip': 'repo'})]
+    installed_pkgs = {'sip'}
+
+    tasks = process_events(events, installed_pkgs)
+
+    assert tasks['to_install'] == {'python3-sip-devel': 'repo', 'python3-pyqt5-sip': 'repo', 'python3-sip': 'repo'}
+    assert tasks['to_remove'] == {'sip-devel': 'repo'}
+    assert tasks['to_keep'] == {'sip': 'repo'}
+
+
 def test_map_repositories(monkeypatch):
     monkeypatch.setattr(api, 'show_message', show_message_mocked())
     monkeypatch.setattr(library, 'REPOSITORIES_MAPPING', {'repo': 'mapped'})
@@ -200,13 +215,10 @@ def test_process_events(monkeypatch):
         Event('Split', {'original': 'rhel7-repo'}, {'split01': 'rhel8-repo', 'split02': 'rhel8-repo'}),
         Event('Removed', {'removed': 'rhel7-repo'}, {}),
         Event('Present', {'present': 'rhel8-repo'}, {})]
-    tasks = process_events(events, {})
+    tasks = process_events(events, set())
 
-    assert len(tasks['to_install']) == 2
     assert tasks['to_install'] == {'split02': 'rhel8-mapped', 'split01': 'rhel8-mapped'}
-    assert len(tasks['to_remove']) == 2
     assert tasks['to_remove'] == {'removed': 'rhel7-repo', 'original': 'rhel7-repo'}
-    assert len(tasks['to_keep']) == 1
     assert tasks['to_keep'] == {'present': 'rhel8-mapped'}
 
 

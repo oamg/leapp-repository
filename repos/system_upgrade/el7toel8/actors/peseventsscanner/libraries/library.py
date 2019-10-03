@@ -234,6 +234,7 @@ def process_events(events, installed_pkgs):
     map_repositories(tasks['to_install'])
     map_repositories(tasks['to_keep'])
     filter_out_pkgs_in_blacklisted_repos(tasks['to_install'])
+    resolve_conflicting_requests(tasks)
 
     return tasks
 
@@ -284,6 +285,27 @@ def filter_out_pkgs_in_blacklisted_repos(to_install):
     if blacklisted_pkgs:
         report_skipped_packages('packages will not be installed due to blacklisted repositories:',
                                 blacklisted_pkgs)
+
+
+def resolve_conflicting_requests(tasks):
+    """
+    Do not remove what is supposed to be kept or installed.
+
+    PES events may give us conflicting requests - to both install/keep and remove a pkg.
+    Example of two real-world PES events resulting in a conflict:
+      PES event 1: sip-devel  SPLIT INTO   python3-sip-devel, sip
+      PES event 2: sip        SPLIT INTO   python3-pyqt5-sip, python3-sip
+        -> without this function, sip would reside in both 'to_keep' and 'to_remove', causing a dnf conflict
+    """
+    pkgs_in_conflict = set()
+    for pkg in list(tasks['to_install'].keys()) + list(tasks['to_keep'].keys()):
+        if pkg in tasks['to_remove']:
+            pkgs_in_conflict.add(pkg)
+            del tasks['to_remove'][pkg]
+
+    if pkgs_in_conflict:
+        api.current_logger().debug('The following packages were marked to be kept/installed and removed at the same'
+                                   ' time. Leapp will upgrade them.\n{}'.format('\n'.join(pkgs_in_conflict)))
 
 
 def get_repositories_blacklisted():
