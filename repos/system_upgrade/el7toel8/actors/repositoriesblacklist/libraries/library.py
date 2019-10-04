@@ -11,8 +11,9 @@ def _get_list_of_optional_repos():
     """
     opt_repo = {}
     repo_map = next(api.consume(RepositoriesMap), None)
+
     if repo_map:
-        for repo in repo_map:
+        for repo in repo_map.repositories:
             if repo.from_id.endswith('optional-rpms'):
                 opt_repo[repo.from_id] = repo.to_id
     return opt_repo
@@ -24,11 +25,11 @@ def _get_disabled_optional_repo():
     """
     opt_repos = _get_list_of_optional_repos()
     repos_blacklist = []
-    for repos in api.consume(RepositoriesFacts):
-        for repo_file in repos.repositories:
-            for repo in repo_file.data:
-                if repo.repoid in opt_repos and not repo.enabled:
-                    repos_blacklist.append(opt_repos[repo.repoid])
+    repo_map = next(api.consume(RepositoriesFacts), None)
+    for repo_file in repo_map.repositories:
+        for repo in repo_file.data:
+            if repo.repoid in opt_repos and not repo.enabled:
+                repos_blacklist.append(opt_repos[repo.repoid])
     return repos_blacklist
 
 
@@ -37,4 +38,4 @@ def process():
     reposid_blacklist = _get_disabled_optional_repo()
     if reposid_blacklist:
         api.current_logger().info("The optional repository is not enabled. Blacklisting the CRB repository.")
-        api.produce(RepositoriesBlacklisted(repoids=[reposid_blacklist]))
+        api.produce(RepositoriesBlacklisted(repoids=reposid_blacklist))
