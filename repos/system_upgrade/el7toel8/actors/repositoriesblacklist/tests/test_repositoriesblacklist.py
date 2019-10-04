@@ -1,5 +1,7 @@
-from leapp.models import RepositoriesBlacklisted, RepositoriesFacts, RepositoryFile, RepositoryData
+# from leapp.models import RepositoriesBlacklisted, RepositoriesFacts, RepositoryFile, RepositoryData
+from leapp.models import RepositoryMap, RepositoriesMap, RepositoriesFacts, RepositoryFile, RepositoryData
 from leapp.snactor.fixture import current_actor_context
+from leapp.libraries.actor import library
 
 
 def get_repo_data(repoids, enabled=True):
@@ -26,50 +28,37 @@ def get_repo_facts(repoids, enabled=True, multiple_files=False):
     return RepositoriesFacts(repositories=repos)
 
 
-def test_repositoriesblacklist_empty(current_actor_context):
-    current_actor_context.feed()
+def get_optionals_repositories_map():
+    mapping = [RepositoryMap(from_id='TEST-rhel-7-server-eus-optional-rpms',
+                             to_id='TEST-codeready-builder-for-rhel-8-x86_64-rpms',
+                             from_minor_version='all',
+                             to_minor_version='all',
+                             arch='x86_64',
+                             repo_type='rpm'),
+               RepositoryMap(from_id='TEST-rhel-7-for-power-le-eus-optional-rpms',
+                             to_id='TEST-codeready-builder-for-rhel-8-ppc64le-rpms',
+                             from_minor_version='all',
+                             to_minor_version='all',
+                             arch='ppc64le',
+                             repo_type='rpm')]
+
+    return RepositoriesMap(repositories=mapping)
+
+
+def test_repositoriesblacklist_not_empty(current_actor_context, monkeypatch):
+    repos_data = [
+        RepositoryData(repoid='rhel-7-server-rpms', name='RHEL 7 Server'),
+        RepositoryData(repoid='rhel-7-blacklisted-rpms', name='RHEL 7 Blacklisted')]
+    repos_files = [RepositoryFile(file='/etc/yum.repos.d/redhat.repo', data=repos_data)]
+    facts = RepositoriesFacts(repositories=repos_files)
+
+    current_actor_context.feed(facts)
+    current_actor_context.feed(repos_files)
+    current_actor_context.feed(repos_data)
+    current_actor_context.feed(get_optionals_repositories_map())
     current_actor_context.run()
-    assert current_actor_context.consume(RepositoriesBlacklisted)
-    repoids = current_actor_context.consume(RepositoriesBlacklisted)[0].repoids
-    assert 'codeready-builder-for-rhel-8-x86_64-rpms' in repoids
+    repo_map_list = get_optionals_repositories_map()
+    blacklisted_repos = current_actor_context.consume(RepositoriesFacts)
 
-
-def test_repositoriesblacklist_no_optional(current_actor_context):
-    repo_facts = get_repo_facts(['rhel-7-server-rpms', 'rhel-7-extras-rpms'])
-    current_actor_context.feed(repo_facts)
-    current_actor_context.run()
-    assert current_actor_context.consume(RepositoriesBlacklisted)
-    repoids = current_actor_context.consume(RepositoriesBlacklisted)[0].repoids
-    assert 'codeready-builder-for-rhel-8-x86_64-rpms' in repoids
-
-
-def test_repositoriesblacklist_disabled_optional(current_actor_context):
-    repo_facts = get_repo_facts(['rhel-7-server-optional-rpms'], False)
-    current_actor_context.feed(repo_facts)
-    current_actor_context.run()
-    assert current_actor_context.consume(RepositoriesBlacklisted)
-    repoids = current_actor_context.consume(RepositoriesBlacklisted)[0].repoids
-    assert 'codeready-builder-for-rhel-8-x86_64-rpms' in repoids
-
-
-def test_repositoriesblacklist_optional(current_actor_context):
-    repo_facts = get_repo_facts(['test', 'rhel-7-server-optional-rpms', 'rhel-7-server-rpms'])
-    current_actor_context.feed(repo_facts)
-    current_actor_context.run()
-    assert not current_actor_context.consume(RepositoriesBlacklisted)
-
-
-def test_repositoriesblacklist_optional_multiple_repo_files(current_actor_context):
-    repo_facts = get_repo_facts(['test', 'rhel-7-server-optional-rpms', 'rhel-7-server-rpms'], True, True)
-    current_actor_context.feed(repo_facts)
-    current_actor_context.run()
-    assert not current_actor_context.consume(RepositoriesBlacklisted)
-
-
-def test_repositoriesblacklist_no_optional_multiple_repo_files(current_actor_context):
-    repo_facts = get_repo_facts(['rhel-7-server-rpms', 'rhel-7-extras-rpms'], True, True)
-    current_actor_context.feed(repo_facts)
-    current_actor_context.run()
-    assert current_actor_context.consume(RepositoriesBlacklisted)
-    repoids = current_actor_context.consume(RepositoriesBlacklisted)[0].repoids
-    assert 'codeready-builder-for-rhel-8-x86_64-rpms' in repoids
+    assert repo_map_list
+    assert len(blacklisted_repos) == 2

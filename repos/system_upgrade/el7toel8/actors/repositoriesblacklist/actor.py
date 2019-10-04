@@ -1,6 +1,6 @@
 from leapp.actors import Actor
 from leapp.libraries.actor.library import process
-from leapp.models import RepositoriesBlacklisted, RepositoriesFacts, RepositoriesMap
+from leapp.models import RepositoriesBlacklisted, RepositoriesFacts
 from leapp.tags import IPUWorkflowTag, FactsPhaseTag
 
 
