@@ -39,7 +39,7 @@ def scan_repositories(path):
                 continue
 
             try:
-                from_id, to_id, to_name, from_minor_version, to_minor_version, arch, repo_type = row
+                from_repoid, to_repoid, to_pes_repo, from_minor_version, to_minor_version, arch, repo_type = row
             except ValueError as err:
                 inhibit_upgrade('Repositories map file is invalid, offending line number: {} ({})'.format(
                     data.line_num, err))
@@ -50,9 +50,9 @@ def scan_repositories(path):
             try:
                 repositories.append(
                     RepositoryMap(
-                        from_id=from_id,
-                        to_id=to_id,
-                        to_name=to_name,
+                        from_repoid=from_repoid,
+                        to_repoid=to_repoid,
+                        to_pes_repo=to_pes_repo,
                         from_minor_version=from_minor_version,
                         to_minor_version=to_minor_version,
                         arch=arch,

@@ -29,11 +29,11 @@ def test_scan_valid_file(monkeypatch):
     assert isinstance(api.produce.model_instances[0], RepositoriesMap)
     assert len(api.produce.model_instances[0].repositories) == 4
     assert isinstance(api.produce.model_instances[0].repositories[0], RepositoryMap)
-    assert api.produce.model_instances[0].repositories[0].from_id == 'FromRepo01'
+    assert api.produce.model_instances[0].repositories[0].from_repoid == 'FromRepo01'
     assert api.produce.model_instances[0].repositories[0].repo_type == 'rpm'
     assert isinstance(api.produce.model_instances[0].repositories[3], RepositoryMap)
-    assert api.produce.model_instances[0].repositories[3].to_id == 'ToRepo04'
-    assert api.produce.model_instances[0].repositories[2].to_name == 'ToName03'
+    assert api.produce.model_instances[0].repositories[3].to_repoid == 'ToRepo04'
+    assert api.produce.model_instances[0].repositories[2].to_pes_repo == 'ToName03'
     assert api.produce.model_instances[0].repositories[3].arch == architecture.ARCH_X86_64
 
 

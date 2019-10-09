@@ -17,18 +17,18 @@ def test_with_optionals(monkeypatch):
     def repositories_mock(*model):
         mapping = [
             RepositoryMap(
-                to_name='rhel-7-foobar-rpms',
-                from_id='rhel-7-optional-rpms',
-                to_id='rhel-8-optional-rpms',
+                to_pes_repo='rhel-7-foobar-rpms',
+                from_repoid='rhel-7-optional-rpms',
+                to_repoid='rhel-8-optional-rpms',
                 from_minor_version='all',
                 to_minor_version='all',
                 arch='x86_64',
                 repo_type='rpm',
             ),
             RepositoryMap(
-                to_name='rhel-7-blacklist-rpms',
-                from_id='rhel-7-blacklist-rpms',
-                to_id='rhel-8-blacklist-rpms',
+                to_pes_repo='rhel-7-blacklist-rpms',
+                from_repoid='rhel-7-blacklist-rpms',
+                to_repoid='rhel-8-blacklist-rpms',
                 from_minor_version='all',
                 to_minor_version='all',
                 arch='x86_64',
@@ -47,18 +47,18 @@ def test_without_optionals(monkeypatch):
     def repositories_mock(*model):
         mapping = [
             RepositoryMap(
-                to_name='rhel-7-foobar-rpms',
-                from_id='rhel-7-foobar-rpms',
-                to_id='rhel-8-foobar-rpms',
+                to_pes_repo='rhel-7-foobar-rpms',
+                from_repoid='rhel-7-foobar-rpms',
+                to_repoid='rhel-8-foobar-rpms',
                 from_minor_version='all',
                 to_minor_version='all',
                 arch='x86_64',
                 repo_type='rpm',
             ),
             RepositoryMap(
-                to_name='rhel-7-blacklist-rpms',
-                from_id='rhel-7-blacklist-rpms',
-                to_id='rhel-8-blacklist-rpms',
+                to_pes_repo='rhel-7-blacklist-rpms',
+                from_repoid='rhel-7-blacklist-rpms',
+                to_repoid='rhel-8-blacklist-rpms',
                 from_minor_version='all',
                 to_minor_version='all',
                 arch='x86_64',
