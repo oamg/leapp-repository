@@ -70,7 +70,7 @@ def _get_repositories_mapping():
 
     for repository in repositories_map_msg.repositories:
         if repository.arch == api.current_actor().configuration.architecture:
-            repositories_mapping[repository.to_name] = repository.to_id
+            repositories_mapping[repository.to_pes_repo] = repository.to_repoid
 
     return repositories_mapping
 

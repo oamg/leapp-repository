@@ -49,9 +49,9 @@ class SetupTargetRepos(Actor):
                 if platform.machine() != repo_map.arch:
                     continue
 
-                mapped_repos.add(repo_map.from_id)
-                if repo_map.from_id in enabled_repos:
-                    rhel_repos.append(RHELTargetRepository(repoid=repo_map.to_id))
+                mapped_repos.add(repo_map.from_repoid)
+                if repo_map.from_repoid in enabled_repos:
+                    rhel_repos.append(RHELTargetRepository(repoid=repo_map.to_repoid))
 
         skipped_repos = enabled_repos.difference(mapped_repos)
 
