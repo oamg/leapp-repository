@@ -1,8 +1,8 @@
-from leapp.actors import Actor
-from leapp.reporting import create_report
 from leapp import reporting
+from leapp.actors import Actor
 from leapp.models import Report, TargetRHSMInfo
-from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
+from leapp.reporting import create_report
+from leapp.tags import IPUWorkflowTag, TargetTransactionChecksPhaseTag
 
 
 class ReportSetTargetRelease(Actor):
@@ -13,7 +13,7 @@ class ReportSetTargetRelease(Actor):
     name = 'report_set_target_release'
     consumes = (TargetRHSMInfo,)
     produces = (Report,)
-    tags = (IPUWorkflowTag, ChecksPhaseTag)
+    tags = (IPUWorkflowTag, TargetTransactionChecksPhaseTag)
 
     def process(self):
         info = next(self.consume(TargetRHSMInfo), None)
