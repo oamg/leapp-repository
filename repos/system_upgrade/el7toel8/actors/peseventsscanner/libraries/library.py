@@ -18,7 +18,6 @@ Event = namedtuple('Event', ['action',        # A string representing an event t
                              ])
 
 EVENT_TYPES = ('Present', 'Removed', 'Deprecated', 'Replaced', 'Split', 'Merged', 'Moved', 'Renamed')
-ARCHITECTURES = architecture.ARCH_SUPPORTED
 
 
 def pes_events_scanner(pes_json_filepath):
