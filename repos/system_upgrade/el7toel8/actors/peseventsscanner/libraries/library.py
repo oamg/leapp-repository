@@ -14,10 +14,12 @@ from leapp.models import (InstalledRedHatSignedRPM, PESRpmTransactionTasks, Repo
 Event = namedtuple('Event', ['action',        # A string representing an event type (see EVENT_TYPES)
                              'in_pkgs',       # A dictionary with packages in format {<pkg_name>: <repository>}
                              'out_pkgs',      # A dictionary with packages in format {<pkg_name>: <repository>}
+                             'release',       # A tuple representing a release in format (major, minor)
                              'architectures'  # A list of strings representing architectures
                              ])
 
 EVENT_TYPES = ('Present', 'Removed', 'Deprecated', 'Replaced', 'Split', 'Merged', 'Moved', 'Renamed')
+RELEASES = ((7, 5), (7, 6), (7, 7), (7, 8), (8, 0), (8, 1))  # TODO: bad, bad hardcode
 
 
 def pes_events_scanner(pes_json_filepath):
@@ -29,7 +31,7 @@ def pes_events_scanner(pes_json_filepath):
     arch_events = filter_events_by_architecture(events, arch)
     add_output_pkgs_to_transaction_conf(transaction_configuration, arch_events)
     filtered_events = get_events_for_installed_pkgs_only(arch_events, installed_pkgs)
-    tasks = process_events(filtered_events, installed_pkgs)
+    tasks = process_events(filtered_events, installed_pkgs, RELEASES)
     filter_out_transaction_conf_pkgs(tasks, transaction_configuration)
     produce_messages(tasks)
 
@@ -186,9 +188,10 @@ def parse_entry(entry):
     action = parse_action(entry['action'])
     in_pkgs = parse_packageset(entry.get('in_packageset') or {})
     out_pkgs = parse_packageset(entry.get('out_packageset') or {})
+    release = parse_release(entry.get('release') or {})
     architectures = parse_architectures(entry.get('architectures') or [])
 
-    return Event(action, in_pkgs, out_pkgs, architectures)
+    return Event(action, in_pkgs, out_pkgs, release, architectures)
 
 
 def parse_action(action_id):
@@ -206,6 +209,10 @@ def parse_packageset(packageset):
     :return: A dictionary with packages in format {<pkg_name>: <repository>}
     """
     return {p['name']: p['repository'].lower() for p in packageset.get('package', [])}
+
+
+def parse_release(release):
+    return (release['major_version'], release['minor_version']) if release else (0, 0)
 
 
 def parse_architectures(architectures):
@@ -236,7 +243,7 @@ def is_at_least_one_event_input_pkg_installed(installed_rh_pkgs, event_in_pkgs):
     return installed_rh_pkgs.intersection(set(event_in_pkgs.keys()))
 
 
-def process_events(events, installed_pkgs):
+def process_events(events, installed_pkgs, releases):
     """
     Process PES events to get lists of pkgs to keep, to install and to remove.
 
@@ -248,31 +255,56 @@ def process_events(events, installed_pkgs):
     tasks = {  # Contains dicts in format {<pkg_name>: <repository>}
         'to_keep': {},
         'to_install': {},
-        'to_remove': {}}
-    for event in events:
-        if event.action in ('Deprecated', 'Present'):
-            # Add these packages to to_keep to make sure the repo they're in on RHEL 8 gets enabled
-            tasks['to_keep'].update(event.in_pkgs)
+        'to_remove': {}
+    }
+    for release in releases:
+        slated = {
+            'to_keep': {},
+            'to_install': {},
+            'to_remove': {}
+        }
+        for event in [e for e in events if e.release == release]:
+            if all(
+                (p in installed_pkgs or p in list(tasks['to_install'].keys()))
+                    and p not in list(tasks['to_remove'].keys())
+                    for p in event.in_pkgs.keys()
+            ):
+                if event.action in ('Deprecated', 'Present'):
+                    # Add these packages to to_keep to make sure the repo they're in on RHEL 8 gets enabled
+                    slated['to_keep'].update(event.in_pkgs)
 
-        if event.action == 'Moved':
-            # Add these packages to to_keep to make sure the repo they're in on RHEL 8 gets enabled
-            # We don't care about the "in_pkgs" as it contains always just one pkg - the same as the "out" pkg
-            tasks['to_keep'].update(event.out_pkgs)
+                if event.action == 'Moved':
+                    # Add these packages to to_keep to make sure the repo they're in on RHEL 8 gets enabled
+                    # We don't care about the "in_pkgs" as it contains always just one pkg - the same as the "out" pkg
+                    slated['to_keep'].update(event.out_pkgs)
 
-        if event.action in ('Split', 'Merged', 'Renamed', 'Replaced'):
-            non_installed_out_pkgs = filter_out_installed_pkgs(event.out_pkgs, installed_pkgs)
-            tasks['to_install'].update(non_installed_out_pkgs)
-            # Add the already installed "out" pkgs to to_keep to make sure the repo they're in on RHEL 8 gets enabled
-            installed_out_pkgs = get_installed_out_pkgs(event.out_pkgs, installed_pkgs)
-            tasks['to_keep'].update(installed_out_pkgs)
-            if event.action in ('Split', 'Merged'):
-                # Uninstall those RHEL 7 pkgs that are no longer on RHEL 8
-                in_pkgs_without_out_pkgs = filter_out_out_pkgs(event.in_pkgs, event.out_pkgs)
-                tasks['to_remove'].update(in_pkgs_without_out_pkgs)
+                if event.action in ('Split', 'Merged', 'Renamed', 'Replaced'):
+                    non_installed_out_pkgs = filter_out_installed_pkgs(event.out_pkgs, installed_pkgs)
+                    slated['to_install'].update(non_installed_out_pkgs)
+                    # Add already installed "out" pkgs to to_keep to ensure the repo they're in on RHEL 8 gets enabled
+                    installed_out_pkgs = get_installed_out_pkgs(event.out_pkgs, installed_pkgs)
+                    slated['to_keep'].update(installed_out_pkgs)
+                    if event.action in ('Split', 'Merged'):
+                        # Uninstall those RHEL 7 pkgs that are no longer on RHEL 8
+                        in_pkgs_without_out_pkgs = filter_out_out_pkgs(event.in_pkgs, event.out_pkgs)
+                        slated['to_remove'].update(in_pkgs_without_out_pkgs)
 
-        if event.action in ('Renamed', 'Replaced', 'Removed'):
-            # Uninstall those RHEL 7 pkgs that are no longer on RHEL 8
-            tasks['to_remove'].update(event.in_pkgs)
+                if event.action in ('Renamed', 'Replaced', 'Removed'):
+                    # Uninstall those RHEL 7 pkgs that are no longer on RHEL 8
+                    slated['to_remove'].update(event.in_pkgs)
+
+        do_not_remove = {}
+        for package in slated['to_remove']:
+            if package in tasks['to_keep']:
+                del tasks['to_keep'][package]
+            elif package in tasks['to_install']:
+                del tasks['to_install'][package]
+                do_not_remove[package] = slated['to_remove'][package]
+        for package in do_not_remove:
+            del slated['to_remove'][package]
+
+        for key in 'to_keep', 'to_install', 'to_remove':
+            tasks[key].update(slated[key])
 
     map_repositories(tasks['to_install'])
     map_repositories(tasks['to_keep'])
