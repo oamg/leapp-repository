@@ -123,3 +123,11 @@ def clean_guard(cleanup_function):
                 raise  # rethrow original exception
         return wrapper
     return clean_wrapper
+
+
+def read_file(path):
+    """
+    Reads the file specified by path in text mode and returns the contents.
+    """
+    with open(path, 'r') as f:
+        return f.read()
