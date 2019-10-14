@@ -1,16 +1,20 @@
+from collections import namedtuple
+
 import pytest
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import library
+from leapp.libraries.common.config import architecture
+from leapp.libraries.stdlib import api
 from leapp.models import BootContent
 
 
 class run_mocked(object):
     def __init__(self):
-        self.args = None
+        self.args = []
 
     def __call__(self, args, split=False):
-        self.args = args
+        self.args.append(args)
 
 
 class write_to_file_mocked(object):
@@ -21,23 +25,55 @@ class write_to_file_mocked(object):
         self.content = content
 
 
-def test_add_boot_entry(monkeypatch):
+class CurrentActorMocked(object):
+    def __init__(self, arch):
+        self.configuration = namedtuple('configuration', ['architecture'])(arch)
+
+    def __call__(self):
+        return self
+
+
+def test_add_boot_entry_non_s390x(monkeypatch):
     def get_boot_file_paths_mocked():
         return '/abc', '/def'
     monkeypatch.setattr(library, 'get_boot_file_paths', get_boot_file_paths_mocked)
     monkeypatch.setenv('LEAPP_DEBUG', '1')
     monkeypatch.setattr(library, 'run', run_mocked())
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(architecture.ARCH_X86_64))
 
     library.add_boot_entry()
 
-    assert library.run.args == ['/usr/sbin/grubby',
-                                '--add-kernel', '/abc',
-                                '--initrd', '/def',
-                                '--title', 'RHEL-Upgrade-Initramfs',
-                                '--copy-default',
-                                '--make-default',
-                                '--args',
-                                'debug enforcing=0 rd.plymouth=0 plymouth.enable=0']
+    assert len(library.run.args) == 1
+    assert library.run.args[0] == ['/usr/sbin/grubby',
+                                   '--add-kernel', '/abc',
+                                   '--initrd', '/def',
+                                   '--title', 'RHEL-Upgrade-Initramfs',
+                                   '--copy-default',
+                                   '--make-default',
+                                   '--args',
+                                   'debug enforcing=0 rd.plymouth=0 plymouth.enable=0']
+
+
+def test_add_boot_entry_s390x(monkeypatch):
+    def get_boot_file_paths_mocked():
+        return '/abc', '/def'
+    monkeypatch.setattr(library, 'get_boot_file_paths', get_boot_file_paths_mocked)
+    monkeypatch.setenv('LEAPP_DEBUG', '1')
+    monkeypatch.setattr(library, 'run', run_mocked())
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(architecture.ARCH_S390X))
+
+    library.add_boot_entry()
+
+    assert len(library.run.args) == 2
+    assert library.run.args[0] == ['/usr/sbin/grubby',
+                                   '--add-kernel', '/abc',
+                                   '--initrd', '/def',
+                                   '--title', 'RHEL-Upgrade-Initramfs',
+                                   '--copy-default',
+                                   '--make-default',
+                                   '--args',
+                                   'debug enforcing=0 rd.plymouth=0 plymouth.enable=0']
+    assert library.run.args[1] == ['/usr/sbin/zipl']
 
 
 def test_get_boot_file_paths(monkeypatch):

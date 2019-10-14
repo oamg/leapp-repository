@@ -2,6 +2,7 @@ import os
 import re
 
 from leapp.exceptions import StopActorExecutionError
+from leapp.libraries.common.config import architecture
 from leapp.libraries.stdlib import api, run
 from leapp.models import BootContent
 
@@ -19,6 +20,12 @@ def add_boot_entry():
         '--make-default',
         '--args', '{DEBUG} enforcing=0 rd.plymouth=0 plymouth.enable=0'.format(DEBUG=debug)
     ])
+
+    if architecture.matches_architecture(architecture.ARCH_S390X):
+        # on s390x we need to call zipl explicitly because of issue in grubby,
+        # otherwise the new boot entry will not be set as default
+        # See https://bugzilla.redhat.com/show_bug.cgi?id=1764306
+        run(['/usr/sbin/zipl'])
 
 
 def get_boot_file_paths():

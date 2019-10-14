@@ -1,4 +1,5 @@
 from leapp.exceptions import StopActorExecutionError
+from leapp.libraries.common.config import architecture
 from leapp.libraries.stdlib import CalledProcessError, api, run
 from leapp.models import BootContent, FirmwareFacts
 
@@ -28,6 +29,12 @@ def remove_boot_entry():
         '/usr/sbin/grubby',
         '--remove-kernel={0}'.format(kernel_filepath)
     ])
+    if architecture.matches_architecture(architecture.ARCH_S390X):
+        # on s390x we need to call zipl explicitly because of issue in grubby,
+        # otherwise the new boot entry will not be set as default
+        # See https://bugzilla.redhat.com/show_bug.cgi?id=1764306
+        run(['/usr/sbin/zipl'])
+
     # TODO: Move calling `mount -a` to a separate actor as it is not really related to removing the upgrade boot entry.
     #       It's worth to call it after removing the boot entry to avoid boot loop in case mounting fails.
     run([

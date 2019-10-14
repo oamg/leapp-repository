@@ -2,6 +2,7 @@ import os
 from collections import namedtuple
 
 from leapp.libraries import stdlib
+from leapp.libraries.common.config import architecture
 from leapp.libraries.stdlib import api
 from leapp.models import InstalledTargetKernelVersion
 
@@ -40,6 +41,11 @@ def update_default_kernel(kernel_info):
     else:
         try:
             stdlib.run(['grubby', '--set-default', kernel_info.kernel_path])
+            if architecture.matches_architecture(architecture.ARCH_S390X):
+                # on s390x we need to call zipl explicitly because of issue in grubby,
+                # otherwise the new boot entry will not be set as default
+                # See https://bugzilla.redhat.com/show_bug.cgi?id=1764306
+                stdlib.run(['/usr/sbin/zipl'])
         except (OSError, stdlib.CalledProcessError):
             api.current_logger().error('Failed to set default kernel to: %s', kernel_info.kernel_path, exc_info=True)
 
