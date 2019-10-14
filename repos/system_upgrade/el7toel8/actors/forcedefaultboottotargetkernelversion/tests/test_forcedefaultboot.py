@@ -5,12 +5,14 @@ import pytest
 
 from leapp.libraries import stdlib
 from leapp.libraries.actor import forcedefaultboot
+from leapp.libraries.common.config import architecture
 from leapp.libraries.stdlib import api
 from leapp.models import InstalledTargetKernelVersion
 
 Expected = namedtuple(
     'Expected', (
-     'grubby_setdefault'
+     'grubby_setdefault',
+     'zipl_called'
     )
 )
 
@@ -20,7 +22,8 @@ Case = namedtuple(
      'kernel_exists',
      'entry_default',
      'entry_exists',
-     'message_available'
+     'message_available',
+     'arch_s390x'
      )
 )
 
@@ -32,20 +35,48 @@ OLD_KERNEL_VERSION = '0.1.2.3.el7.x86_64'
 OLD_KERNEL_PATH = '/boot/vmlinuz-{}'.format(OLD_KERNEL_VERSION)
 
 CASES = (
-    (Case(initrd_exists=True, kernel_exists=True, entry_default=True, entry_exists=True, message_available=True),
-     Expected(grubby_setdefault=False)),
-    (Case(initrd_exists=False, kernel_exists=True, entry_default=False, entry_exists=True, message_available=True),
-     Expected(grubby_setdefault=False)),
-    (Case(initrd_exists=True, kernel_exists=False, entry_default=False, entry_exists=True, message_available=True),
-     Expected(grubby_setdefault=False)),
-    (Case(initrd_exists=False, kernel_exists=False, entry_default=False, entry_exists=True, message_available=True),
-     Expected(grubby_setdefault=False)),
-    (Case(initrd_exists=True, kernel_exists=True, entry_default=False, entry_exists=True, message_available=False),
-     Expected(grubby_setdefault=False)),
-    (Case(initrd_exists=True, kernel_exists=True, entry_default=False, entry_exists=False, message_available=False),
-     Expected(grubby_setdefault=False)),
-    (Case(initrd_exists=True, kernel_exists=True, entry_default=False, entry_exists=True, message_available=True),
-     Expected(grubby_setdefault=True))
+    (Case(initrd_exists=True, kernel_exists=True, entry_default=True, entry_exists=True, message_available=True,
+          arch_s390x=False),
+     Expected(grubby_setdefault=False, zipl_called=False)),
+    (Case(initrd_exists=False, kernel_exists=True, entry_default=False, entry_exists=True, message_available=True,
+          arch_s390x=False),
+     Expected(grubby_setdefault=False, zipl_called=False)),
+    (Case(initrd_exists=True, kernel_exists=False, entry_default=False, entry_exists=True, message_available=True,
+          arch_s390x=False),
+     Expected(grubby_setdefault=False, zipl_called=False)),
+    (Case(initrd_exists=False, kernel_exists=False, entry_default=False, entry_exists=True, message_available=True,
+          arch_s390x=False),
+     Expected(grubby_setdefault=False, zipl_called=False)),
+    (Case(initrd_exists=True, kernel_exists=True, entry_default=False, entry_exists=True, message_available=False,
+          arch_s390x=False),
+     Expected(grubby_setdefault=False, zipl_called=False)),
+    (Case(initrd_exists=True, kernel_exists=True, entry_default=False, entry_exists=False, message_available=False,
+          arch_s390x=False),
+     Expected(grubby_setdefault=False, zipl_called=False)),
+    (Case(initrd_exists=True, kernel_exists=True, entry_default=False, entry_exists=True, message_available=True,
+          arch_s390x=False),
+     Expected(grubby_setdefault=True, zipl_called=False)),
+    (Case(initrd_exists=True, kernel_exists=True, entry_default=True, entry_exists=True, message_available=True,
+          arch_s390x=True),
+     Expected(grubby_setdefault=False, zipl_called=False)),
+    (Case(initrd_exists=False, kernel_exists=True, entry_default=False, entry_exists=True, message_available=True,
+          arch_s390x=True),
+     Expected(grubby_setdefault=False, zipl_called=False)),
+    (Case(initrd_exists=True, kernel_exists=False, entry_default=False, entry_exists=True, message_available=True,
+          arch_s390x=True),
+     Expected(grubby_setdefault=False, zipl_called=False)),
+    (Case(initrd_exists=False, kernel_exists=False, entry_default=False, entry_exists=True, message_available=True,
+          arch_s390x=True),
+     Expected(grubby_setdefault=False, zipl_called=False)),
+    (Case(initrd_exists=True, kernel_exists=True, entry_default=False, entry_exists=True, message_available=False,
+          arch_s390x=True),
+     Expected(grubby_setdefault=False, zipl_called=False)),
+    (Case(initrd_exists=True, kernel_exists=True, entry_default=False, entry_exists=False, message_available=False,
+          arch_s390x=True),
+     Expected(grubby_setdefault=False, zipl_called=False)),
+    (Case(initrd_exists=True, kernel_exists=True, entry_default=False, entry_exists=True, message_available=True,
+          arch_s390x=True),
+     Expected(grubby_setdefault=True, zipl_called=True))
 )
 
 _GRUBBY_INFO_TEMPLATE = '''index={entry_index}
@@ -60,12 +91,15 @@ class MockedRun(object):
     def __init__(self, case):
         self.case = case
         self.called_setdefault = False
+        self.called_zipl = False
 
     def __call__(self, cmd, *args, **kwargs):
         if cmd and cmd[0] == 'grubby':
             target = getattr(self, 'grubby_{}'.format(cmd[1].strip('--').replace('-', '_')), None)
             assert target and 'Unsupport grubby command called'
             return target(cmd)  # pylint: disable=not-callable
+        if cmd and cmd[0] == '/usr/sbin/zipl':
+            self.called_zipl = True
         return None
 
     def grubby_info(self, cmd):
@@ -109,6 +143,36 @@ def mocked_exists(case, orig_path_exists):
     return impl
 
 
+class mocked_logger(object):
+    def __init__(self):
+        self.errmsg = None
+        self.warnmsg = None
+        self.dbgmsg = None
+
+    def error(self, *args):
+        self.errmsg = args
+
+    def warning(self, *args):
+        self.warnmsg = args
+
+    def debug(self, *args):
+        self.dbgmsg = args
+
+    def __call__(self):
+        return self
+
+
+class CurrentActorMocked(object):
+    def __init__(self, case):
+        if case.arch_s390x:
+            self.configuration = namedtuple('configuration', ['architecture'])(architecture.ARCH_S390X)
+        else:
+            self.configuration = namedtuple('configuration', ['architecture'])(architecture.ARCH_X86_64)
+
+    def __call__(self):
+        return self
+
+
 @pytest.mark.parametrize('case_result', CASES)
 def test_force_default_boot_target_scenario(case_result, monkeypatch):
     case, result = case_result
@@ -116,5 +180,8 @@ def test_force_default_boot_target_scenario(case_result, monkeypatch):
     monkeypatch.setattr(api, 'consume', mocked_consume(case))
     monkeypatch.setattr(stdlib, 'run', mocked_run)
     monkeypatch.setattr(os.path, 'exists', mocked_exists(case, os.path.exists))
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(case))
+    monkeypatch.setattr(api, 'current_logger', mocked_logger())
     forcedefaultboot.process()
     assert result.grubby_setdefault == mocked_run.called_setdefault
+    assert result.zipl_called == mocked_run.called_zipl

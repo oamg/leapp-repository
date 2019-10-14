@@ -1,8 +1,11 @@
+from collections import namedtuple
+
 import pytest
 
 from leapp.exceptions import StopActorExecutionError
-from leapp.libraries.stdlib import api
 from leapp.libraries.actor import library
+from leapp.libraries.common.config import architecture
+from leapp.libraries.stdlib import api
 from leapp.models import BootContent, FirmwareFacts
 
 
@@ -13,8 +16,36 @@ class run_mocked(object):
         self.args.append(args)
 
 
+class mocked_logger(object):
+    def __init__(self):
+        self.errmsg = None
+        self.warnmsg = None
+        self.dbgmsg = None
+
+    def error(self, *args):
+        self.errmsg = args
+
+    def warning(self, *args):
+        self.warnmsg = args
+
+    def debug(self, *args):
+        self.dbgmsg = args
+
+    def __call__(self):
+        return self
+
+
+class CurrentActorMocked(object):
+    def __init__(self, arch):
+        self.configuration = namedtuple('configuration', ['architecture'])(arch)
+
+    def __call__(self):
+        return self
+
+
 @pytest.mark.parametrize('firmware', ['bios', 'efi'])
-def test_remove_boot_entry(firmware, monkeypatch):
+@pytest.mark.parametrize('arch', [architecture.ARCH_X86_64, architecture.ARCH_S390X])
+def test_remove_boot_entry(firmware, arch, monkeypatch):
     def get_upgrade_kernel_filepath_mocked():
         return '/abc'
 
@@ -24,6 +55,8 @@ def test_remove_boot_entry(firmware, monkeypatch):
     monkeypatch.setattr(library, 'get_upgrade_kernel_filepath', get_upgrade_kernel_filepath_mocked)
     monkeypatch.setattr(api, 'consume', consume_systemfacts_mocked)
     monkeypatch.setattr(library, 'run', run_mocked())
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(arch))
+    monkeypatch.setattr(api, 'current_logger', mocked_logger())
 
     library.remove_boot_entry()
 
@@ -31,7 +64,10 @@ def test_remove_boot_entry(firmware, monkeypatch):
     if firmware == 'efi':
         boot_mounts.append(['/bin/mount', '/boot/efi'])
 
-    calls = boot_mounts + [['/usr/sbin/grubby', '--remove-kernel=/abc'], ['/bin/mount', '-a']]
+    calls = boot_mounts + [['/usr/sbin/grubby', '--remove-kernel=/abc']]
+    if arch == architecture.ARCH_S390X:
+        calls.append(['/usr/sbin/zipl'])
+    calls.append(['/bin/mount', '-a'])
 
     assert library.run.args == calls
 
