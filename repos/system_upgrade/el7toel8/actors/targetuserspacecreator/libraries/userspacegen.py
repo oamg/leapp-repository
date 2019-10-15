@@ -4,7 +4,7 @@ import os
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import constants
 from leapp.libraries.common import dnfplugin, mounting, overlaygen, rhsm, utils
-from leapp.libraries.stdlib import CalledProcessError, api, run
+from leapp.libraries.stdlib import CalledProcessError, api, run, config
 from leapp.models import (RequiredTargetUserspacePackages, SourceRHSMInfo,
                           TargetRepositories, TargetUserSpaceInfo,
                           UsedTargetRepositories, UsedTargetRepository,
@@ -32,6 +32,8 @@ def prepare_target_userspace(context, userspace_dir, enabled_repos, packages):
                '--installroot', '/el8target',
                '--disablerepo', '*'
                ] + repos_opt + packages
+        if config.is_verbose():
+            cmd.append('-v')
         try:
             context.call(cmd, callback_raw=utils.logging_handler)
         except CalledProcessError as exc:
