@@ -103,8 +103,8 @@ def test_parse_pes_events_file(current_actor_context):
 
 def test_get_events_for_installed_pkgs_only(monkeypatch):
     events = [
-        Event('Split', {'original': 'repo'}, {'split01': 'repo', 'split02': 'repo'}, (0, 0), []),
-        Event('Removed', {'removed': 'repo'}, {}, (0, 0), [])]
+        Event('Split', {'original': 'repo'}, {'split01': 'repo', 'split02': 'repo'}, (0, 0), (0, 0), []),
+        Event('Removed', {'removed': 'repo'}, {}, (0, 0), (0, 0), [])]
     filtered = get_events_for_installed_pkgs_only(events, {'original'})
 
     assert len(filtered) == 1
@@ -172,8 +172,8 @@ def test_resolve_conflicting_requests(monkeypatch):
     monkeypatch.setattr(library, 'map_repositories', lambda x: x)
     monkeypatch.setattr(library, 'filter_out_pkgs_in_blacklisted_repos', lambda x: x)
     events = [
-        Event('Split', {'sip-devel': 'repo'}, {'python3-sip-devel': 'repo', 'sip': 'repo'}, (8, 0), []),
-        Event('Split', {'sip': 'repo'}, {'python3-pyqt5-sip': 'repo', 'python3-sip': 'repo'}, (8, 0), [])]
+        Event('Split', {'sip-devel': 'repo'}, {'python3-sip-devel': 'repo', 'sip': 'repo'}, (7, 6), (8, 0), []),
+        Event('Split', {'sip': 'repo'}, {'python3-pyqt5-sip': 'repo', 'python3-sip': 'repo'}, (7, 6), (8, 0), [])]
     installed_pkgs = {'sip'}
 
     tasks = process_events(events, installed_pkgs, RELEASES)
@@ -214,9 +214,10 @@ def test_process_events(monkeypatch):
     monkeypatch.setattr(library, 'get_repositories_blacklisted', get_repos_blacklisted_mocked(set()))
 
     events = [
-        Event('Split', {'original': 'rhel7-repo'}, {'split01': 'rhel8-repo', 'split02': 'rhel8-repo'}, (8, 0), []),
-        Event('Removed', {'removed': 'rhel7-repo'}, {}, (8, 0), []),
-        Event('Present', {'present': 'rhel8-repo'}, {}, (8, 0), [])]
+        Event('Split', {'original': 'rhel7-repo'}, {'split01': 'rhel8-repo', 'split02': 'rhel8-repo'},
+              (7, 6), (8, 0), []),
+        Event('Removed', {'removed': 'rhel7-repo'}, {}, (7, 6), (8, 0), []),
+        Event('Present', {'present': 'rhel8-repo'}, {}, (7, 6), (8, 0), [])]
     tasks = process_events(events, set(), RELEASES)
 
     assert tasks['to_install'] == {'split02': 'rhel8-mapped', 'split01': 'rhel8-mapped'}
@@ -253,10 +254,10 @@ def test_pes_data_not_found(monkeypatch):
 
 def test_add_output_pkgs_to_transaction_conf():
     events = [
-        Event('Split', {'split_in': 'repo'}, {'split_out1': 'repo', 'split_out2': 'repo'}, (8, 0), []),
-        Event('Merged', {'merged_in1': 'repo', 'merged_in2': 'repo'}, {'merged_out': 'repo'}, (8, 0), []),
-        Event('Renamed', {'renamed_in': 'repo'}, {'renamed_out': 'repo'}, (8, 0), []),
-        Event('Replaced', {'replaced_in': 'repo'}, {'replaced_out': 'repo'}, (8, 0), []),
+        Event('Split', {'split_in': 'repo'}, {'split_out1': 'repo', 'split_out2': 'repo'}, (7, 6), (8, 0), []),
+        Event('Merged', {'merged_in1': 'repo', 'merged_in2': 'repo'}, {'merged_out': 'repo'}, (7, 6), (8, 0), []),
+        Event('Renamed', {'renamed_in': 'repo'}, {'renamed_out': 'repo'}, (7, 6), (8, 0), []),
+        Event('Replaced', {'replaced_in': 'repo'}, {'replaced_out': 'repo'}, (7, 6), (8, 0), []),
     ]
 
     conf_empty = RpmTransactionTasks()
@@ -286,10 +287,10 @@ def test_add_output_pkgs_to_transaction_conf():
 
 def test_filter_events_by_architecture():
     events = [
-        Event('Present', {'pkg1': 'repo'}, {}, (8, 0), ['arch1']),
-        Event('Present', {'pkg2': 'repo'}, {}, (8, 0), ['arch2', 'arch1', 'arch3']),
-        Event('Present', {'pkg3': 'repo'}, {}, (8, 0), ['arch2', 'arch3', 'arch4']),
-        Event('Present', {'pkg4': 'repo'}, {}, (8, 0), [])
+        Event('Present', {'pkg1': 'repo'}, {}, (7, 6), (8, 0), ['arch1']),
+        Event('Present', {'pkg2': 'repo'}, {}, (7, 6), (8, 0), ['arch2', 'arch1', 'arch3']),
+        Event('Present', {'pkg3': 'repo'}, {}, (7, 6), (8, 0), ['arch2', 'arch3', 'arch4']),
+        Event('Present', {'pkg4': 'repo'}, {}, (7, 6), (8, 0), [])
     ]
 
     filtered = filter_events_by_architecture(events, 'arch1')
