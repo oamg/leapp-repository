@@ -37,31 +37,36 @@ build() {
     DRACUT_CONF_DIR=${LEAPP_DRACUT_CONF:-/var/empty}
 
     DRACUT_LVMCONF_ARG="--nolvmconf"
-    if [[ ! -z LEAPP_DRACUT_LVMCONF ]]; then
+    if [[ ! -z "$LEAPP_DRACUT_LVMCONF" ]]; then
         DRACUT_LVMCONF_ARG="--lvmconf"
     fi
     DRACUT_MDADMCONF_ARG="--nomdadmconf"
-    if [[ ! -z LEAPP_DRACUT_MDADMCONF ]]; then
+    if [[ ! -z "$LEAPP_DRACUT_MDADMCONF" ]]; then
         # include local /etc/mdadm.conf
         DRACUT_MDADMCONF_ARG="--mdadmconf"
     fi
 
     KERNEL_VERSION=$LEAPP_KERNEL_VERSION
-    if [[ -z $KERNEL_VERSION ]]; then
+    if [[ -z "$KERNEL_VERSION" ]]; then
         KERNEL_VERSION=$(get_kernel_version)
     fi
 
     KERNEL_ARCH='x86_64'
-    if [[ ! -z $LEAPP_KERNEL_ARCH ]]; then
+    if [[ ! -z "$LEAPP_KERNEL_ARCH" ]]; then
         KERNEL_ARCH=$LEAPP_KERNEL_ARCH
     fi
 
     DRACUT_MODULES_ADD=""
-    if [[ -z $LEAPP_ADD_DRACUT_MODULES ]]; then
+    if [[ -z "$LEAPP_ADD_DRACUT_MODULES" ]]; then
         echo 'ERROR: No dracut modules to add'
         exit 1;
     else
         DRACUT_MODULES_ADD=$(echo "--add $LEAPP_ADD_DRACUT_MODULES" | sed 's/,/ --add /g')
+    fi
+
+    DRACUT_INSTALL="systemd-nspawn"
+    if [[ -n "$LEAPP_DRACUT_INSTALL_FILES" ]]; then
+        DRACUT_INSTALL="$DRACUT_INSTALL $LEAPP_DRACUT_INSTALL_FILES"
     fi
 
     pushd /artifacts
@@ -73,7 +78,7 @@ build() {
         --force \
         --conf $DRACUT_CONF \
         --confdir $DRACUT_CONF_DIR \
-        --install systemd-nspawn \
+        --install "$DRACUT_INSTALL" \
         $DRACUT_MODULES_ADD \
         $DRACUT_MDADMCONF_ARG \
         $DRACUT_LVMCONF_ARG \

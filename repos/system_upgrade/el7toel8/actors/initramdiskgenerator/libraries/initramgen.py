@@ -3,6 +3,7 @@ import shutil
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import dnfplugin, mounting
+from leapp.libraries.common.config import architecture
 from leapp.libraries.stdlib import api
 from leapp.models import (BootContent, RequiredUpgradeInitramPackages, TargetUserSpaceInfo, UpgradeDracutModule,
                           UsedTargetRepositories)
@@ -54,6 +55,28 @@ def install_initram_deps(context):
         packages=packages, target_userspace_info=target_userspace_info, used_repos=used_repos)
 
 
+def _install_files(context):
+    """
+    Copy the required files into the `context` userspace and return the list
+    of those files.
+
+    Those files will be copied from the source to the userspace used for
+    generating of the upgrade initrd. These files may need to be installed
+    in the initrd explicitly, so return the list of those files for other
+    purposes.
+    """
+    # TODO: currently we need this just for /etc/dasd.conf, but it's expected
+    # we will need this for more files in future. The concept used here will
+    # need to be changed, as we should consume specific messages instead.
+    # But for now this should be enough. Keeping that for future.
+    if architecture.matches_architecture(architecture.ARCH_S390X):
+        # we don't need to check existence of the file - it is required on this
+        # this architecture
+        context.copy_to('/etc/dasd.conf', '/etc/dasd.conf')
+        return ['/etc/dasd.conf']
+    return []
+
+
 def generate_initram_disk(context):
     """
     Function to actually execute the initram creation.
@@ -68,11 +91,15 @@ def generate_initram_disk(context):
     copy_dracut_modules(context, modules)
     context.copy_to(generator_script, os.path.join('/', INITRAM_GEN_SCRIPT_NAME))
     install_initram_deps(context)
+    install_files = _install_files(context)
+    # FIXME: issue #376
     context.call([
         '/bin/sh', '-c',
-        'LEAPP_ADD_DRACUT_MODULES={modules} LEAPP_KERNEL_ARCH={arch} {cmd}'.format(
+        'LEAPP_ADD_DRACUT_MODULES="{modules}" LEAPP_KERNEL_ARCH={arch} '
+        'LEAPP_DRACUT_INSTALL_FILES="{files}" {cmd}'.format(
             modules=','.join([mod.name for mod in modules]),
             arch=api.current_actor().configuration.architecture,
+            files=' '.join(install_files),
             cmd=os.path.join('/', INITRAM_GEN_SCRIPT_NAME))
     ])
     copy_boot_files(context)
