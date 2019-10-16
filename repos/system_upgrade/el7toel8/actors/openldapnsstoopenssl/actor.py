@@ -42,15 +42,13 @@ class OpenldapNSStoOpenSSL(Actor):
         return False
 
     def abandon(self, reason):
-        create_report([reporting.Title('No OpenLDAP certificates conversion necessary'),
-                       reporting.Summary('%s. Certificates are most likely in correct format.'
-                                         ' Leaving as is.' % reason),
-                       reporting.Severity(reporting.Severity.LOW)])
+        self.log.info('No OpenLDAP certificates conversion necessary: '
+                      '%s. Certificates are most likely in correct format.'
+                      ' Leaving as is.' % reason)
 
     def success(self):
-        create_report([reporting.Title('OpenLDAP certificates converted successfully'),
-                       reporting.Summary('Created PEM certificates and updated the configuration file.'),
-                       reporting.Severity(reporting.Severity.LOW)])
+        self.log.info('OpenLDAP certificates converted successfully: '
+                      'Created PEM certificates and updated the configuration file.')
 
     def fail(self, err):
         create_report([reporting.Title('OpenLDAP certificates processing failed'),
