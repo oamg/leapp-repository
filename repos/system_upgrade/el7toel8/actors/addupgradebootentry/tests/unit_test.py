@@ -43,8 +43,10 @@ def test_add_boot_entry_non_s390x(monkeypatch):
 
     library.add_boot_entry()
 
-    assert len(library.run.args) == 1
+    assert len(library.run.args) == 2
     assert library.run.args[0] == ['/usr/sbin/grubby',
+                                   '--remove-kernel', '/abc']
+    assert library.run.args[1] == ['/usr/sbin/grubby',
                                    '--add-kernel', '/abc',
                                    '--initrd', '/def',
                                    '--title', 'RHEL-Upgrade-Initramfs',
@@ -64,8 +66,10 @@ def test_add_boot_entry_s390x(monkeypatch):
 
     library.add_boot_entry()
 
-    assert len(library.run.args) == 2
+    assert len(library.run.args) == 3
     assert library.run.args[0] == ['/usr/sbin/grubby',
+                                   '--remove-kernel', '/abc']
+    assert library.run.args[1] == ['/usr/sbin/grubby',
                                    '--add-kernel', '/abc',
                                    '--initrd', '/def',
                                    '--title', 'RHEL-Upgrade-Initramfs',
@@ -73,7 +77,7 @@ def test_add_boot_entry_s390x(monkeypatch):
                                    '--make-default',
                                    '--args',
                                    'debug enforcing=0 rd.plymouth=0 plymouth.enable=0']
-    assert library.run.args[1] == ['/usr/sbin/zipl']
+    assert library.run.args[2] == ['/usr/sbin/zipl']
 
 
 def test_get_boot_file_paths(monkeypatch):

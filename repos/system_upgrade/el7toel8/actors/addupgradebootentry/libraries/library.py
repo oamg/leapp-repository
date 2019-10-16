@@ -3,7 +3,7 @@ import re
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common.config import architecture
-from leapp.libraries.stdlib import api, run
+from leapp.libraries.stdlib import api, run, CalledProcessError
 from leapp.models import BootContent
 
 
@@ -11,21 +11,41 @@ def add_boot_entry():
     debug = 'debug' if os.getenv('LEAPP_DEBUG', '0') == '1' else ''
 
     kernel_dst_path, initram_dst_path = get_boot_file_paths()
+    try:
+        _remove_old_upgrade_boot_entry(kernel_dst_path)
+        run([
+            '/usr/sbin/grubby',
+            '--add-kernel', '{0}'.format(kernel_dst_path),
+            '--initrd', '{0}'.format(initram_dst_path),
+            '--title', 'RHEL-Upgrade-Initramfs',
+            '--copy-default',
+            '--make-default',
+            '--args', '{DEBUG} enforcing=0 rd.plymouth=0 plymouth.enable=0'.format(DEBUG=debug)
+        ])
+
+        if architecture.matches_architecture(architecture.ARCH_S390X):
+            # on s390x we need to call zipl explicitly because of issue in grubby,
+            # otherwise the new boot entry will not be set as default
+            # See https://bugzilla.redhat.com/show_bug.cgi?id=1764306
+            run(['/usr/sbin/zipl'])
+    except CalledProcessError as e:
+        raise StopActorExecutionError(
+           'Cannot configure bootloader.',
+           details={'details': '{}: {}'.format(str(e), e.stderr)}
+        )
+
+
+def _remove_old_upgrade_boot_entry(kernel_dst_path):
+    """
+    Remove entry referring to the upgrade kernel.
+
+    We have to ensure there are no duplicit boot entries. Main reason is crash
+    of zipl when duplicit entries exist.
+    """
     run([
         '/usr/sbin/grubby',
-        '--add-kernel', '{0}'.format(kernel_dst_path),
-        '--initrd', '{0}'.format(initram_dst_path),
-        '--title', 'RHEL-Upgrade-Initramfs',
-        '--copy-default',
-        '--make-default',
-        '--args', '{DEBUG} enforcing=0 rd.plymouth=0 plymouth.enable=0'.format(DEBUG=debug)
+        '--remove-kernel', '{0}'.format(kernel_dst_path)
     ])
-
-    if architecture.matches_architecture(architecture.ARCH_S390X):
-        # on s390x we need to call zipl explicitly because of issue in grubby,
-        # otherwise the new boot entry will not be set as default
-        # See https://bugzilla.redhat.com/show_bug.cgi?id=1764306
-        run(['/usr/sbin/zipl'])
 
 
 def get_boot_file_paths():
