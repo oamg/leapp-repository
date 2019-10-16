@@ -98,14 +98,17 @@ def _transaction(context, stage, target_repoids, tasks, test=False):
     backup_config(context=context)
 
     with guards.guarded_execution(guards.connection_guard(), guards.space_guard()):
+        cmd = [
+            '/usr/bin/dnf',
+            'rhel-upgrade',
+            stage,
+            DNF_PLUGIN_DATA_PATH
+        ]
+        if config.is_verbose():
+            cmd.append('-v')
         try:
             context.call(
-                cmd=[
-                    '/usr/bin/dnf',
-                    'rhel-upgrade',
-                    stage,
-                    DNF_PLUGIN_DATA_PATH
-                ],
+                cmd=cmd,
                 callback_raw=utils.logging_handler
             )
         except OSError as e:
@@ -142,17 +145,18 @@ def install_initramdisk_requirements(packages, target_userspace_info, used_repos
                               target_userspace_info=target_userspace_info) as (context, target_repoids, _unused):
         repos_opt = [['--enablerepo', repo] for repo in target_repoids]
         repos_opt = list(itertools.chain(*repos_opt))
-        context.call(
-            [
-                'dnf',
-                'install',
-                '-y',
-                '--nogpgcheck',
-                '--setopt=module_platform_id=platform:el8',
-                '--setopt=keepcache=1',
-                '--disablerepo', '*'
-            ] + repos_opt + [package for package in packages]
-        )
+        cmd = [
+            'dnf',
+            'install',
+            '-y',
+            '--nogpgcheck',
+            '--setopt=module_platform_id=platform:el8',
+            '--setopt=keepcache=1',
+            '--disablerepo', '*'
+        ] + repos_opt + [package for package in packages]
+        if config.is_verbose():
+            cmd.append('-v')
+        context.call(cmd)
 
 
 def perform_transaction_install(target_userspace_info, used_repos, tasks):
