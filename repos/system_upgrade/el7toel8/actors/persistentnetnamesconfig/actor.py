@@ -49,9 +49,6 @@ class PersistentNetNamesConfig(Actor):
         rhel7_ifaces = next(self.consume(PersistentNetNamesFacts)).interfaces
         rhel8_ifaces = next(self.consume(PersistentNetNamesFactsInitramfs)).interfaces
 
-        sorted(rhel7_ifaces, key=lambda iface: iface.name)
-        sorted(rhel8_ifaces, key=lambda iface: iface.name)
-
         rhel7_ifaces_map = {iface.mac: iface for iface in rhel7_ifaces}
         rhel8_ifaces_map = {iface.mac: iface for iface in rhel8_ifaces}
 
