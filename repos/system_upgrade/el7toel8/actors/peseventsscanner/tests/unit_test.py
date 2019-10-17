@@ -174,7 +174,7 @@ def test_resolve_conflicting_requests(monkeypatch):
     events = [
         Event('Split', {'sip-devel': 'repo'}, {'python3-sip-devel': 'repo', 'sip': 'repo'}, (7, 6), (8, 0), []),
         Event('Split', {'sip': 'repo'}, {'python3-pyqt5-sip': 'repo', 'python3-sip': 'repo'}, (7, 6), (8, 0), [])]
-    installed_pkgs = {'sip'}
+    installed_pkgs = {'sip', 'sip-devel'}
 
     tasks = process_events(events, installed_pkgs, RELEASES)
 
@@ -218,7 +218,8 @@ def test_process_events(monkeypatch):
               (7, 6), (8, 0), []),
         Event('Removed', {'removed': 'rhel7-repo'}, {}, (7, 6), (8, 0), []),
         Event('Present', {'present': 'rhel8-repo'}, {}, (7, 6), (8, 0), [])]
-    tasks = process_events(events, set(), RELEASES)
+    installed_pkgs = {'original', 'removed', 'present'}
+    tasks = process_events(events, installed_pkgs, RELEASES)
 
     assert tasks['to_install'] == {'split02': 'rhel8-mapped', 'split01': 'rhel8-mapped'}
     assert tasks['to_remove'] == {'removed': 'rhel7-repo', 'original': 'rhel7-repo'}

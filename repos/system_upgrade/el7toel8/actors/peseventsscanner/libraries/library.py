@@ -31,8 +31,7 @@ def pes_events_scanner(pes_json_filepath):
     arch = api.current_actor().configuration.architecture
     arch_events = filter_events_by_architecture(events, arch)
     add_output_pkgs_to_transaction_conf(transaction_configuration, arch_events)
-    filtered_events = get_events_for_installed_pkgs_only(arch_events, installed_pkgs)
-    tasks = process_events(filtered_events, installed_pkgs, RELEASES)
+    tasks = process_events(arch_events, installed_pkgs, RELEASES)
     filter_out_transaction_conf_pkgs(tasks, transaction_configuration)
     produce_messages(tasks)
 
