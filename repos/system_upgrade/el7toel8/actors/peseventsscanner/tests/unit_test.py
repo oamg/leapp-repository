@@ -10,7 +10,6 @@ from leapp.libraries.actor.library import (Event,
                                            filter_out_pkgs_in_blacklisted_repos,
                                            filter_events_by_architecture,
                                            get_events,
-                                           get_events_for_installed_pkgs_only,
                                            map_repositories, parse_action,
                                            parse_entry, parse_packageset,
                                            parse_pes_events_file,
@@ -99,18 +98,6 @@ def test_parse_pes_events_file(current_actor_context):
     assert events[1].action == 'Removed'
     assert events[1].in_pkgs == {'removed': 'repo'}
     assert events[1].out_pkgs == {}
-
-
-def test_get_events_for_installed_pkgs_only(monkeypatch):
-    events = [
-        Event('Split', {'original': 'repo'}, {'split01': 'repo', 'split02': 'repo'}, (0, 0), (0, 0), []),
-        Event('Removed', {'removed': 'repo'}, {}, (0, 0), (0, 0), [])]
-    filtered = get_events_for_installed_pkgs_only(events, {'original'})
-
-    assert len(filtered) == 1
-    assert filtered[0].action == 'Split'
-    assert filtered[0].in_pkgs == {'original': 'repo'}
-    assert filtered[0].out_pkgs == {'split01': 'repo', 'split02': 'repo'}
 
 
 def test_report_skipped_packages(monkeypatch):

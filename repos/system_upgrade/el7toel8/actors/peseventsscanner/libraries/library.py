@@ -223,27 +223,6 @@ def parse_architectures(architectures):
     return architectures
 
 
-def get_events_for_installed_pkgs_only(events, installed_rh_pkgs):
-    """
-    Get those PES events that have at least one of the event's "input" packages installed and signed by Red Hat.
-
-    :param events: List of Event tuples, where each event contains event type and input/output pkgs
-    :param installed_rh_pkgs: Set of names of the installed Red Hat-signed packages
-    :return: List of Event tuples, not including those events whose input packages are not installed
-    """
-
-    filtered = []
-    for event in events:
-        if is_at_least_one_event_input_pkg_installed(installed_rh_pkgs, event.in_pkgs):
-            filtered.append(event)
-
-    return filtered
-
-
-def is_at_least_one_event_input_pkg_installed(installed_rh_pkgs, event_in_pkgs):
-    return installed_rh_pkgs.intersection(set(event_in_pkgs.keys()))
-
-
 def _debug_event(e):
     api.current_logger().debug('{ir} -> {r}  {inp} --{ac}-> {out}'.format(
         ir=e.initial_release,
