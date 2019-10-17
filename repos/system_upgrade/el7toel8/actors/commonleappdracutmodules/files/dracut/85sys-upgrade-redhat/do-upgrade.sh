@@ -29,18 +29,13 @@ do_upgrade() {
         getargbool 0 enforcing || echo 0 > /sys/fs/selinux/enforce
     fi
 
-    # Incase we have the LVM command available try make it activate all partitions
-    if command -v lvm 2>/dev/null 1>/dev/null; then
-        lvm vgchange -a y
-    fi
-
     # and off we go...
     # NOTE: in case we would need to run leapp before pivot, we would need to
     #       specify where the root is, e.g. --root=/sysroot
     # TODO: update: systemd-nspawn
     nspawn_opts="--capability=all --bind=/sys --bind=/dev --bind=/dev/pts --bind=/run/systemd --bind=/proc"
     nspawn_opts="$nspawn_opts  --bind=/run/udev --keep-unit --register=no --timezone=off --resolv-conf=off"
-    /bin/systemd-nspawn $nspawn_opts -D /usr/bin/bash -c "mount -a; $NEWROOT $LEAPPBIN upgrade --resume $args"
+    /bin/systemd-nspawn $nspawn_opts -D $NEWROOT /usr/bin/bash -c "mount -a; $LEAPPBIN upgrade --resume $args"
     rv=$?
 
     # NOTE: flush the cached content to disk to ensure everything is written

@@ -75,6 +75,7 @@ install() {
     inst_binary sync
 
     # script to actually run the upgrader binary
+    inst_hook upgrade 49 "$moddir/mount_usr.sh"
     inst_hook upgrade 50 "$moddir/do-upgrade.sh"
 
     #NOTE: some clean up?.. ideally, everything should be inside the leapp*
