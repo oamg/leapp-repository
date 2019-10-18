@@ -53,7 +53,11 @@ class CheckPostfix(Actor):
                             'This parameter is used to implement the "permit_mynetworks" feature. The change '
                             'could result in unexpected "access denied" errors, because postfix will now by '
                             'default trust only the local machine, not the remote SMTP clients on the '
-                            'same IP subnetwork.\n',
+                            'same IP subnetwork.\n\n'
+                            'Postfix now supports dynamically loaded database plugins. Plugins are shipped '
+                            'in individual RPM sub-packages. Correct database plugins have to be installed, '
+                            'otherwise the specific database client will not work. For example for PostgreSQL '
+                            'map to work, the postfix-pgsql RPM package has to be installed.\n',
                         ),
                         reporting.Severity(reporting.Severity.LOW),
                         reporting.Tags([reporting.Tags.SERVICES, reporting.Tags.EMAIL]),
