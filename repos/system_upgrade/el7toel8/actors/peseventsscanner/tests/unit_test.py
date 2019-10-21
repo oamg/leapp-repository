@@ -158,6 +158,8 @@ def test_filter_out_pkgs_in_blacklisted_repos(monkeypatch):
 def test_resolve_conflicting_requests(monkeypatch):
     monkeypatch.setattr(library, 'map_repositories', lambda x: x)
     monkeypatch.setattr(library, 'filter_out_pkgs_in_blacklisted_repos', lambda x: x)
+    monkeypatch.setattr(library, 'RELEASES', ((7, 5), (7, 6), (7, 7), (7, 8), (8, 0), (8, 1)))
+
     events = [
         Event('Split', {'sip-devel': 'repo'}, {'python3-sip-devel': 'repo', 'sip': 'repo'}, (7, 6), (8, 0), []),
         Event('Split', {'sip': 'repo'}, {'python3-pyqt5-sip': 'repo', 'python3-sip': 'repo'}, (7, 6), (8, 0), [])]
@@ -199,6 +201,7 @@ def test_map_repositories(monkeypatch):
 def test_process_events(monkeypatch):
     monkeypatch.setattr(library, '_get_repositories_mapping', lambda: {'rhel8-repo': 'rhel8-mapped'})
     monkeypatch.setattr(library, 'get_repositories_blacklisted', get_repos_blacklisted_mocked(set()))
+    monkeypatch.setattr(library, 'RELEASES', ((7, 5), (7, 6), (7, 7), (7, 8), (8, 0), (8, 1)))
 
     events = [
         Event('Split', {'original': 'rhel7-repo'}, {'split01': 'rhel8-repo', 'split02': 'rhel8-repo'},

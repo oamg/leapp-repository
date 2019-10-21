@@ -11,12 +11,12 @@ from leapp.models import (InstalledRedHatSignedRPM, PESRpmTransactionTasks, Repo
                           RepositoriesSetupTasks, RpmTransactionTasks, RepositoriesBlacklisted)
 
 
-Event = namedtuple('Event', ['action',           # A string representing an event type (see EVENT_TYPES)
-                             'in_pkgs',          # A dictionary with packages in format {<pkg_name>: <repository>}
-                             'out_pkgs',         # A dictionary with packages in format {<pkg_name>: <repository>}
-                             'from_release',     # A tuple representing a release in format (major, minor)
-                             'to_release',       # A tuple representing a release in format (major, minor)
-                             'architectures'     # A list of strings representing architectures
+Event = namedtuple('Event', ['action',        # A string representing an event type (see EVENT_TYPES)
+                             'in_pkgs',       # A dictionary with packages in format {<pkg_name>: <repository>}
+                             'out_pkgs',      # A dictionary with packages in format {<pkg_name>: <repository>}
+                             'from_release',  # A tuple representing a release in format (major, minor)
+                             'to_release',    # A tuple representing a release in format (major, minor)
+                             'architectures'  # A list of strings representing architectures
                              ])
 
 EVENT_TYPES = ('Present', 'Removed', 'Deprecated', 'Replaced', 'Split', 'Merged', 'Moved', 'Renamed')
@@ -223,6 +223,15 @@ def parse_architectures(architectures):
     return architectures
 
 
+def is_event_relevant(event, installed_pkgs, tasks):
+    for package in event.in_pkgs.keys():
+        if package in tasks['to_remove']:
+            return False
+        if package not in installed_pkgs and package not in tasks['to_install']:
+            return False
+    return True
+
+
 def process_events(events, installed_pkgs):
     """
     Process PES events to get lists of pkgs to keep, to install and to remove.
@@ -244,11 +253,7 @@ def process_events(events, installed_pkgs):
             'to_remove': {}
         }
         for event in [e for e in events if e.to_release == release]:
-            if all(
-                (p in installed_pkgs or p in list(tasks['to_install'].keys()))
-                    and p not in list(tasks['to_remove'].keys())
-                    for p in event.in_pkgs.keys()
-            ):
+            if is_event_relevant(event, installed_pkgs, tasks):
                 if event.action in ('Deprecated', 'Present'):
                     # Add these packages to to_keep to make sure the repo they're in on RHEL 8 gets enabled
                     current['to_keep'].update(event.in_pkgs)
