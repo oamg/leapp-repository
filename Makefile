@@ -21,6 +21,9 @@ endif
 # needed only in case the Python2 should be used
 _USE_PYTHON_INTERPRETER=$${_PYTHON_INTERPRETER}
 
+# python version to run test with
+_PYTHON_VENV=$${PYTHON_VENV:-python2.7}
+
 # by default use values you can see below, but in case the COPR_* var is defined
 # use it instead of the default
 _COPR_REPO=$${COPR_REPO:-leapp}
@@ -167,7 +170,11 @@ register:
 	snactor repo find --path repos
 
 install-deps:
-	virtualenv --system-site-packages -p /usr/bin/python2.7 tut; \
+	@# in centos:7 python 3.x is not installed by default
+	case $(_PYTHON_VENV) in python3*) yum install -y ${shell echo $(_PYTHON_VENV) | tr -d .}; esac
+	@# in centos:7 actor's python 3.x dependencies are in epel
+	case $(_PYTHON_VENV) in python3*) yum install -y epel-release; esac
+	virtualenv --system-site-packages -p /usr/bin/$(_PYTHON_VENV) tut; \
 	. tut/bin/activate; \
 	pip install --upgrade setuptools; \
 	pip install --upgrade -r requirements.txt

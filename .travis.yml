@@ -1,19 +1,20 @@
 git:
   depth: 3
-language: python
+language:
+  minimal
 env:
+  global:
+    - CONTAINER=centos:7
+  jobs:
+    - PYTHON_VENV=python2.7
+    - PYTHON_VENV=python3.6
 services:
-python:
-matrix:
-  include:
-    - python: "2.7"
-      env: CONTAINER=centos:7
-      services:
-        - docker
-      sudo: required
+  - docker
+sudo: required
+
 install:
-    - docker pull ${CONTAINER}
-    - docker build -t leapp-tests -f utils/docker-tests/Dockerfile utils/docker-tests
+  - docker pull ${CONTAINER}
+  - docker build -t leapp-tests -f utils/docker-tests/Dockerfile utils/docker-tests
 
 script:
-    - docker run --rm -ti -v ${PWD}:/payload leapp-tests
+  - docker run --rm -ti -v ${PWD}:/payload --env=PYTHON_VENV leapp-tests
