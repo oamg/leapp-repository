@@ -153,6 +153,13 @@ def parse_entry(entry):
                   {
                       'action': 3,
                       'id': 15,
+                      'initial_release': {  # can be None
+                          'z_stream': None,
+                          'major_version': 7,
+                          'tag': None,
+                          'os_name': 'RHEL',
+                          'minor_version': 7
+                      },
                       'release': {
                           'z_stream': None,
                           'major_version': 8,
@@ -167,9 +174,9 @@ def parse_entry(entry):
                                   'name': 'espeak',
                                   'repository': 'rhel7-optional'
                               }
-                           ]
-                      }
-                      'out_packageset': {  # 'out_packageset' can be None
+                          ]
+                      },
+                      'out_packageset': {  # can be None
                           'set_id': 21,
                           'package': [
                               {
@@ -178,8 +185,10 @@ def parse_entry(entry):
                               }
                           ]
                       },
-                      'architectures': [  # 'can be empty'
+                      'architectures': [  # can be empty
                           'x86_64',
+                          'aarch64',
+                          'ppc64le',
                           's390x'
                       ]
                   }
@@ -281,14 +290,14 @@ def process_events(events, installed_pkgs):
         do_not_remove = {}
         for package in current['to_remove']:
             if package in tasks['to_keep']:
-                api.current_logger().debug(
-                    '{} :: {} to be kept / currently removed - removing'.format(
-                        package, current['to_remove'][package]))
+                api.current_logger().warning(
+                    '{p} :: {r} to be kept / currently removed - removing'.format(
+                        p=package, r=current['to_remove'][package]))
                 del tasks['to_keep'][package]
             elif package in tasks['to_install']:
-                api.current_logger().debug(
-                    '{} :: {} to be installed / currently removed - annihilating tasks'.format(
-                        package, current['to_remove'][package]))
+                api.current_logger().warning(
+                    '{p} :: {r} to be installed / currently removed - annihilating tasks'.format(
+                        p=package, r=current['to_remove'][package]))
                 del tasks['to_install'][package]
                 do_not_remove[package] = current['to_remove'][package]
         for package in do_not_remove:
@@ -296,14 +305,20 @@ def process_events(events, installed_pkgs):
 
         for package in current['to_install']:
             if package in tasks['to_remove']:
-                api.current_logger().debug(
-                    '{} :: {} to be removed / currently installed - keeping'.format(
-                        package, current['to_install'][package]))
+                api.current_logger().warning(
+                    '{p} :: {r} to be removed / currently installed - keeping'.format(
+                        p=package, r=current['to_install'][package]))
                 current['to_keep'][package] = current['to_install'][package]
                 del tasks['to_remove'][package]
                 del current['to_install'][package]
 
+        verbs = {'to_keep': 'kept', 'to_install': 'installed', 'to_remove': 'removed'}
         for key in 'to_keep', 'to_install', 'to_remove':
+            for package in current[key]:
+                if package in tasks[key]:
+                    api.current_logger().warning(
+                        '{p} :: {r} to be {v} TWICE - internal bug (not serious, continuing)'.format(
+                            p=package, r=current['to_install'][package], v=verbs[key]))
             tasks[key].update(current[key])
 
     map_repositories(tasks['to_install'])
