@@ -20,13 +20,11 @@ def process():
         api.curernt_logger().warning("The machine (CPU) type is empty.")
 
     if cpuinfo.machine_type not in SUPPORTED_MACHINE_TYPES:
-        summary = ("The machine is not possible to upgrade because of unsupported"
-                   " type of the processor. Regarding the official documentation,"
-                   " z13 and z14 processors are supported on the Red Had Enterprise"
-                   " Linux 8 system for the IBM Z architecture. If you have one of"
-                   " the supported processors, you should see provided the machine"
-                   " type in the /proc/cpuinfo file with one of those values: {}."
-                   " Detected machine type of the CPU is '{}'."
+        summary = ("The system is not possible to upgrade because of unsupported"
+                   " type of the processor. Based on the official documentation,"
+                   " z13 and z14 processors are supported on the Red Hat Enterprise"
+                   " Linux 8 system for the IBM Z architecture. The supported processors"
+                   " have machine types {}. The detected machine type of the CPU is '{}'."
                    .format(", ".join([str(i) for i in SUPPORTED_MACHINE_TYPES]), cpuinfo.machine_type))
         report = [
             reporting.Title("The processor is not supported by the target system."),
