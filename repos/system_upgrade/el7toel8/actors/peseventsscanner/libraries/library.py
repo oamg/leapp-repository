@@ -233,6 +233,7 @@ def parse_architectures(architectures):
 
 
 def is_event_relevant(event, installed_pkgs, tasks):
+    """Determine if event is applicable given the installed packages and tasks planned so far."""
     for package in event.in_pkgs.keys():
         if package in tasks['to_remove']:
             return False
@@ -276,7 +277,7 @@ def process_events(events, installed_pkgs):
                     non_installed_out_pkgs = filter_out_installed_pkgs(event.out_pkgs, installed_pkgs)
                     current['to_install'].update(non_installed_out_pkgs)
                     # Add already installed "out" pkgs to to_keep to ensure the repo they're in on RHEL 8 gets enabled
-                    installed_out_pkgs = get_installed_out_pkgs(event.out_pkgs, installed_pkgs)
+                    installed_out_pkgs = get_installed_event_pkgs(event.out_pkgs, installed_pkgs)
                     current['to_keep'].update(installed_out_pkgs)
                     if event.action in ('Split', 'Merged'):
                         # Uninstall those RHEL 7 pkgs that are no longer on RHEL 8
@@ -285,9 +286,10 @@ def process_events(events, installed_pkgs):
 
                 if event.action in ('Renamed', 'Replaced', 'Removed'):
                     # Uninstall those RHEL 7 pkgs that are no longer on RHEL 8
-                    current['to_remove'].update(event.in_pkgs)
+                    installed_in_pkgs = get_installed_event_pkgs(event.in_pkgs, installed_pkgs)
+                    current['to_remove'].update(installed_in_pkgs)
 
-        do_not_remove = {}
+        do_not_remove = set()
         for package in current['to_remove']:
             if package in tasks['to_keep']:
                 api.current_logger().warning(
@@ -299,7 +301,7 @@ def process_events(events, installed_pkgs):
                     '{p} :: {r} to be installed / currently removed - annihilating tasks'.format(
                         p=package, r=current['to_remove'][package]))
                 del tasks['to_install'][package]
-                do_not_remove[package] = current['to_remove'][package]
+                do_not_remove.add(package)
         for package in do_not_remove:
             del current['to_remove'][package]
 
@@ -334,14 +336,14 @@ def filter_out_installed_pkgs(event_out_pkgs, installed_pkgs):
     return {k: v for k, v in event_out_pkgs.items() if k not in installed_pkgs}
 
 
-def get_installed_out_pkgs(event_out_pkgs, installed_pkgs):
+def get_installed_event_pkgs(event_pkgs, installed_pkgs):
     """
-    Get those event's "out" packages which are already installed.
+    Get those event's "in" or "out" packages which are already installed.
 
     Even though we don't want to install the already installed pkgs, to be able to upgrade them to their RHEL 8 version
     we need to know in which repos they are and enable such repos.
     """
-    return {k: v for k, v in event_out_pkgs.items() if k in installed_pkgs}
+    return {k: v for k, v in event_pkgs.items() if k in installed_pkgs}
 
 
 def filter_out_out_pkgs(event_in_pkgs, event_out_pkgs):
