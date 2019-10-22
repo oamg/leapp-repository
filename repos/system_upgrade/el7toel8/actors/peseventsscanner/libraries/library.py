@@ -282,17 +282,26 @@ def process_events(events, installed_pkgs):
         for package in current['to_remove']:
             if package in tasks['to_keep']:
                 api.current_logger().debug(
-                    '{} :: {} to be kept / current for removal - unkeeping'.format(
+                    '{} :: {} to be kept / currently removed - removing'.format(
                         package, current['to_remove'][package]))
                 del tasks['to_keep'][package]
             elif package in tasks['to_install']:
                 api.current_logger().debug(
-                    '{} :: {} to be installed / current for removal - annihilating'.format(
+                    '{} :: {} to be installed / currently removed - annihilating tasks'.format(
                         package, current['to_remove'][package]))
                 del tasks['to_install'][package]
                 do_not_remove[package] = current['to_remove'][package]
         for package in do_not_remove:
             del current['to_remove'][package]
+
+        for package in current['to_install']:
+            if package in tasks['to_remove']:
+                api.current_logger().debug(
+                    '{} :: {} to be removed / currently installed - keeping'.format(
+                        package, current['to_install'][package]))
+                current['to_keep'][package] = current['to_install'][package]
+                del tasks['to_remove'][package]
+                del current['to_install'][package]
 
         for key in 'to_keep', 'to_install', 'to_remove':
             tasks[key].update(current[key])
