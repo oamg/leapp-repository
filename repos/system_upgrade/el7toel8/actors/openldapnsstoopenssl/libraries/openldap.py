@@ -8,14 +8,14 @@ import fileinput
 from distutils.spawn import find_executable
 from collections import namedtuple
 
-from utils import (
+from leapp.libraries.actor.utils import (
     copy_permissions,
     AlreadyConverted,
     InsufficientTooling,
     NotNSSConfiguration,
     UMASK
 )
-from nss import Nss
+from leapp.libraries.actor.nss import Nss
 
 
 class Openldap(object):

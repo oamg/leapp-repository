@@ -1,11 +1,11 @@
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 import os.path as ph
 
-from utils import (
+from leapp.libraries.actor.utils import (
     NotNSSConfiguration,
     InsufficientTooling
 )
-from openldap import Openldap
+from leapp.libraries.actor.openldap import Openldap
 
 
 class SssdServices(object):

@@ -4,10 +4,11 @@ import os.path as ph
 import random
 import shutil
 import string
-import subprocess as sp
 import tempfile
 
 import pytest
+
+from leapp.libraries.stdlib import run
 
 CONFS = {'nopass': ['nssdb-nopass', 'User-Cert', None],
          'pass': ['nssdb', 'User-Cert', 'nssdb/pin.txt']}
@@ -49,11 +50,11 @@ def mock(request):
         else:
             pin = []
 
-        sp.check_call(['certutil', '-N'] + db + (pin or ['--empty-password']))
-        sp.check_call(['certutil', '-S', '-m', '1001', '-n', ca_name, '-t', 'CT,C,C',
-                       '-x', '-s', 'CN=example.com,O=test'] + db + noise + pin)
-        sp.check_call(['certutil', '-S', '-m', '1002', '-n', cert, '-t', 'u,u,u',
-                       '-c', ca_name, '-s', 'CN=user.example.com,O=test'] + db + noise + pin)
+        run(['certutil', '-N'] + db + (pin or ['--empty-password']))
+        run(['certutil', '-S', '-m', '1001', '-n', ca_name, '-t', 'CT,C,C',
+             '-x', '-s', 'CN=example.com,O=test'] + db + noise + pin)
+        run(['certutil', '-S', '-m', '1002', '-n', cert, '-t', 'u,u,u',
+             '-c', ca_name, '-s', 'CN=user.example.com,O=test'] + db + noise + pin)
 
         nssdb_files = ['cert8.db', 'key3.db'] if ph.exists(ph.join(d, 'cert8.db')) else ['cert9.db', 'key4.db']
 

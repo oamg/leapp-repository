@@ -3,12 +3,13 @@ import os.path as ph
 import re
 import subprocess as sp
 
-from utils import (
+from leapp.libraries.actor.utils import (
     copy_permissions,
     copy_some_permissions,
     NotNSSConfiguration,
     UMASK
 )
+from leapp.libraries.stdlib import run
 
 
 class Nss(object):
@@ -20,14 +21,21 @@ class Nss(object):
             stderr = process.stderr.read() if process.stderr else '<None>'
             raise RuntimeError('Running %s failed, the stderr was: %s' % (name, stderr))
 
+    @staticmethod
+    def _handle_run_result(process, name):
+        if process['exit_code'] is None:
+            raise RuntimeError('Process %s not finished yet!' % (name))
+        if process['exit_code'] != 0:
+            stderr = process['stderr'] if process['stderr'] else '<None>'
+            raise RuntimeError('Running %s failed, the stderr was: %s' % (name, stderr))
+
     @classmethod
     def certutil_get_certs(cls, cacertdir):
         """Return list of certificates in NSS DB as {<name>: (<flags, ...>)}"""
-        p = sp.Popen(['certutil', '-d', cacertdir, '-L'], stdout=sp.PIPE, stderr=sp.PIPE)
-        stdout, _ = p.communicate()
-        if p.returncode != 0:
+        p = run(['certutil', '-d', cacertdir, '-L'], split=True, checked=False)
+        if p['exit_code'] != 0:
             raise NotNSSConfiguration('Opening NSS database failed')
-        lines = stdout.decode().split('\n')[4:]  # dropping header
+        lines = p['stdout'][4:]  # dropping header
 
         def parse_line(line):
             pattern = re.compile(r'(?P<name>.*?)\s+(?P<ssl>\w*),(?P<mime>\w*),(?P<mail>\w*)')
@@ -45,9 +53,9 @@ class Nss(object):
             old_umask = os.umask(UMASK)
             with open(dest, 'w') as fd:
                 cmd = ['certutil', '-d', cacertdir, '-L', '-n', name, '-a']
-                p = sp.Popen(cmd, stdout=fd, stderr=sp.PIPE)
-                p.wait()
-                cls._handle_popen_result(p, 'certutil -L')
+                p = run(cmd, checked=False)
+                fd.write(p['stdout'])
+                cls._handle_run_result(p, 'certutil -L')
             copy_some_permissions(str(ph.join(cacertdir, 'cert%s.db')), [8, 9], dest)
         except BaseException as e:
             raise RuntimeError('Exporting certificate failed: ' + str(e))
@@ -101,8 +109,6 @@ class Nss(object):
                 Nss.export_cert(cacertdir, name, ph.join(destdir, filename))
                 num += 1
         try:
-            p = sp.Popen(['openssl', 'rehash', destdir],
-                         stdout=sp.PIPE, stderr=sp.PIPE)
-            p.wait()
+            run(['openssl', 'rehash', destdir])
         except BaseException as e:
             raise RuntimeError('Rehashing CA certificates failed: ' + str(e))
