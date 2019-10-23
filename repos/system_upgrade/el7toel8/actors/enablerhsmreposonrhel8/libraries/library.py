@@ -7,7 +7,12 @@ def set_rhsm_release():
     """Set the RHSM release to the target RHEL 8 minor version."""
     info = next(api.consume(TargetRHSMInfo), None)
     if info and info.release:
-        rhsm.set_release(mounting.NotIsolatedActions(base_dir='/'), info.release)
+        try:
+            rhsm.set_release(mounting.NotIsolatedActions(base_dir='/'), info.release)
+        except CalledProcessError as err:
+            api.current_logger().warning('Unable to set the {0} release through subscription-manager. When using dnf,'
+                                         ' content of the latest RHEL 8 minor version will be downloaded.\n{1}'
+                                         .format(info.release, str(err)))
     else:
         api.current_logger().debug('Skipping setting the RHSM release due to the use of LEAPP_DEVEL_SKIP_RHSM.')
 
