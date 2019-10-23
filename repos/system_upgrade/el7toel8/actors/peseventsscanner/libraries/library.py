@@ -264,29 +264,42 @@ def process_events(events, installed_pkgs):
         }
         for event in [e for e in events if e.to_release == release]:
             if is_event_relevant(event, installed_pkgs, tasks):
+                api.current_logger().debug('{fr} -> {tr}  {ip} --{ac}-> {op}'.format(
+                    fr=event.from_release,  # noqa: W1662
+                    tr=event.to_release,
+                    ip=', '.join(p[0] for p in event.in_pkgs.items()) if event.in_pkgs else '{}',
+                    ac=event.action,
+                    op=', '.join(p[0] for p in event.out_pkgs.items()) if event.out_pkgs else '{}'
+                ))
                 if event.action in ('Deprecated', 'Present'):
                     # Add these packages to to_keep to make sure the repo they're in on RHEL 8 gets enabled
+                    api.current_logger().debug(' KEEP {}'.format(', '.join(event.in_pkgs)))
                     current['to_keep'].update(event.in_pkgs)
 
                 if event.action == 'Moved':
                     # Add these packages to to_keep to make sure the repo they're in on RHEL 8 gets enabled
                     # We don't care about the "in_pkgs" as it contains always just one pkg - the same as the "out" pkg
+                    api.current_logger().debug(' KEEP {}'.format(', '.join(event.out_pkgs)))
                     current['to_keep'].update(event.out_pkgs)
 
                 if event.action in ('Split', 'Merged', 'Renamed', 'Replaced'):
                     non_installed_out_pkgs = filter_out_installed_pkgs(event.out_pkgs, installed_pkgs)
+                    api.current_logger().debug(' INSTALL {}'.format(', '.join(non_installed_out_pkgs)))
                     current['to_install'].update(non_installed_out_pkgs)
                     # Add already installed "out" pkgs to to_keep to ensure the repo they're in on RHEL 8 gets enabled
                     installed_out_pkgs = get_installed_event_pkgs(event.out_pkgs, installed_pkgs)
+                    api.current_logger().debug(' KEEP {}'.format(', '.join(installed_out_pkgs)))
                     current['to_keep'].update(installed_out_pkgs)
                     if event.action in ('Split', 'Merged'):
                         # Uninstall those RHEL 7 pkgs that are no longer on RHEL 8
                         in_pkgs_without_out_pkgs = filter_out_out_pkgs(event.in_pkgs, event.out_pkgs)
+                        api.current_logger().debug(' REMOVE {}'.format(', '.join(in_pkgs_without_out_pkgs)))
                         current['to_remove'].update(in_pkgs_without_out_pkgs)
 
                 if event.action in ('Renamed', 'Replaced', 'Removed'):
                     # Uninstall those RHEL 7 pkgs that are no longer on RHEL 8
                     installed_in_pkgs = get_installed_event_pkgs(event.in_pkgs, installed_pkgs)
+                    api.current_logger().debug(' REMOVE {}'.format(', '.join(installed_in_pkgs)))
                     current['to_remove'].update(installed_in_pkgs)
 
         do_not_remove = set()
