@@ -15,7 +15,7 @@ py2_byte_compile "%1" "%2"}
 
 
 Name:           leapp-repository
-Version:        0.8.1
+Version:        0.9.0
 Release:        1%{?dist}
 Summary:        Repositories for leapp
 
