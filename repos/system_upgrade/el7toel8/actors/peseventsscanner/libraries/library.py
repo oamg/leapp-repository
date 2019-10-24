@@ -332,6 +332,13 @@ def process_events(events, installed_pkgs):
                 del tasks['to_remove'][package]
                 del current['to_install'][package]
 
+        for package in current['to_keep']:
+            if package in tasks['to_remove']:
+                api.current_logger().warning(
+                    '{p} :: {r} to be removed / currently kept - keeping'.format(
+                        p=package, r=current['to_keep'][package]))
+                del tasks['to_remove'][package]
+
         verbs = {'to_keep': 'kept', 'to_install': 'installed', 'to_remove': 'removed'}
         for key in 'to_keep', 'to_install', 'to_remove':
             for package in current[key]:
