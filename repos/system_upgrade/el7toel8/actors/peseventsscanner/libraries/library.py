@@ -245,7 +245,7 @@ def is_event_relevant(event, installed_pkgs, tasks):
 def add_packages_to_tasks(tasks, packages, key):
     verb = key[3:].upper()  # 'to_remove' -> 'REMOVE' and so on
     if packages:
-        api.current_logger().debug(' {v} {p}'.format(v=verb, p=', '.join(packages)))
+        api.current_logger().debug('{v} {p}'.format(v=verb, p=', '.join(packages)))
         tasks[key].update(packages)
 
 
@@ -274,13 +274,6 @@ def process_events(events, installed_pkgs):
             n=len(release_events), r=release))
         for event in release_events:
             if is_event_relevant(event, installed_pkgs, tasks):
-                api.current_logger().debug('{fr} -> {tr}  {ip} --{ac}-> {op}'.format(
-                    fr=event.from_release,  # noqa: W1662
-                    tr=event.to_release,
-                    ip=', '.join(p[0] for p in event.in_pkgs.items()) if event.in_pkgs else '{}',
-                    ac=event.action,
-                    op=', '.join(p[0] for p in event.out_pkgs.items()) if event.out_pkgs else '{}'
-                ))
                 if event.action in ('Deprecated', 'Present'):
                     # Add these packages to to_keep to make sure the repo they're in on RHEL 8 gets enabled
                     add_packages_to_tasks(current, event.in_pkgs, 'to_keep')
@@ -309,12 +302,12 @@ def process_events(events, installed_pkgs):
         for package in current['to_remove']:
             if package in tasks['to_keep']:
                 api.current_logger().warning(
-                    '{p} :: {r} to be kept / currently removed - removing'.format(
+                    '{p} :: {r} to be kept / currently removed - removing package'.format(
                         p=package, r=current['to_remove'][package]))
                 del tasks['to_keep'][package]
             elif package in tasks['to_install']:
                 api.current_logger().warning(
-                    '{p} :: {r} to be installed / currently removed - annihilating tasks'.format(
+                    '{p} :: {r} to be installed / currently removed - ignoring tasks'.format(
                         p=package, r=current['to_remove'][package]))
                 del tasks['to_install'][package]
                 do_not_remove.add(package)
@@ -324,7 +317,7 @@ def process_events(events, installed_pkgs):
         for package in current['to_install']:
             if package in tasks['to_remove']:
                 api.current_logger().warning(
-                    '{p} :: {r} to be removed / currently installed - keeping'.format(
+                    '{p} :: {r} to be removed / currently installed - keeping package'.format(
                         p=package, r=current['to_install'][package]))
                 current['to_keep'][package] = current['to_install'][package]
                 del tasks['to_remove'][package]
@@ -333,7 +326,7 @@ def process_events(events, installed_pkgs):
         for package in current['to_keep']:
             if package in tasks['to_remove']:
                 api.current_logger().warning(
-                    '{p} :: {r} to be removed / currently kept - keeping'.format(
+                    '{p} :: {r} to be removed / currently kept - keeping package'.format(
                         p=package, r=current['to_keep'][package]))
                 del tasks['to_remove'][package]
 
