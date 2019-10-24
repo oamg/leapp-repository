@@ -336,7 +336,7 @@ def process_events(events, installed_pkgs):
                 if package in tasks[key]:
                     api.current_logger().warning(
                         '{p} :: {r} to be {v} TWICE - internal bug (not serious, continuing)'.format(
-                            p=package, r=current['to_install'][package], v=verbs[key]))
+                            p=package, r=current[key][package], v=verbs[key]))
             tasks[key].update(current[key])
 
     map_repositories(tasks['to_install'])
