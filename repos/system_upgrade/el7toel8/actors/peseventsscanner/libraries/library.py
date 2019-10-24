@@ -262,7 +262,10 @@ def process_events(events, installed_pkgs):
             'to_install': {},
             'to_remove': {}
         }
-        for event in [e for e in events if e.to_release == release]:
+        release_events = [e for e in events if e.to_release == release]
+        api.current_logger().debug('---- Processing {n} eligible events for release {r}'.format(
+            n=len(release_events), r=release))
+        for event in release_events:
             if is_event_relevant(event, installed_pkgs, tasks):
                 api.current_logger().debug('{fr} -> {tr}  {ip} --{ac}-> {op}'.format(
                     fr=event.from_release,  # noqa: W1662
