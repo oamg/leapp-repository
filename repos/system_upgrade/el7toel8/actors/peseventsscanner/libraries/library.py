@@ -242,6 +242,13 @@ def is_event_relevant(event, installed_pkgs, tasks):
     return True
 
 
+def add_packages_to_tasks(tasks, packages, key):
+    verb = key[3:].upper()  # 'to_remove' -> 'REMOVE' and so on
+    if packages:
+        api.current_logger().debug(' {v} {p}'.format(v=verb, p=', '.join(packages)))
+        tasks[key].update(packages)
+
+
 def process_events(events, installed_pkgs):
     """
     Process PES events to get lists of pkgs to keep, to install and to remove.
@@ -276,38 +283,29 @@ def process_events(events, installed_pkgs):
                 ))
                 if event.action in ('Deprecated', 'Present'):
                     # Add these packages to to_keep to make sure the repo they're in on RHEL 8 gets enabled
-                    api.current_logger().debug(' KEEP {}'.format(', '.join(event.in_pkgs)))
-                    current['to_keep'].update(event.in_pkgs)
+                    add_packages_to_tasks(current, event.in_pkgs, 'to_keep')
 
                 if event.action == 'Moved':
                     # Add these packages to to_keep to make sure the repo they're in on RHEL 8 gets enabled
                     # We don't care about the "in_pkgs" as it contains always just one pkg - the same as the "out" pkg
-                    api.current_logger().debug(' KEEP {}'.format(', '.join(event.out_pkgs)))
-                    current['to_keep'].update(event.out_pkgs)
+                    add_packages_to_tasks(current, event.out_pkgs, 'to_keep')
 
                 if event.action in ('Split', 'Merged', 'Renamed', 'Replaced'):
                     non_installed_out_pkgs = filter_out_installed_pkgs(event.out_pkgs, installed_pkgs)
-                    if non_installed_out_pkgs:
-                        api.current_logger().debug(' INSTALL {}'.format(', '.join(non_installed_out_pkgs)))
-                        current['to_install'].update(non_installed_out_pkgs)
+                    add_packages_to_tasks(current, non_installed_out_pkgs, 'to_install')
                     # Add already installed "out" pkgs to to_keep to ensure the repo they're in on RHEL 8 gets enabled
                     installed_out_pkgs = get_installed_event_pkgs(event.out_pkgs, installed_pkgs)
-                    if installed_out_pkgs:
-                        api.current_logger().debug(' KEEP {}'.format(', '.join(installed_out_pkgs)))
-                        current['to_keep'].update(installed_out_pkgs)
+                    add_packages_to_tasks(current, installed_out_pkgs, 'to_keep')
 
-                    in_pkgs_without_out_pkgs = filter_out_out_pkgs(event.in_pkgs, event.out_pkgs)
-                    if event.action in ('Split', 'Merged') and in_pkgs_without_out_pkgs:
+                    if event.action in ('Split', 'Merged'):
                         # Uninstall those RHEL 7 pkgs that are no longer on RHEL 8
-                        api.current_logger().debug(' REMOVE {}'.format(', '.join(in_pkgs_without_out_pkgs)))
-                        current['to_remove'].update(in_pkgs_without_out_pkgs)
+                        in_pkgs_without_out_pkgs = filter_out_out_pkgs(event.in_pkgs, event.out_pkgs)
+                        add_packages_to_tasks(current, in_pkgs_without_out_pkgs, 'to_remove')
 
                 if event.action in ('Renamed', 'Replaced', 'Removed'):
                     # Uninstall those RHEL 7 pkgs that are no longer on RHEL 8
                     installed_in_pkgs = get_installed_event_pkgs(event.in_pkgs, installed_pkgs)
-                    if installed_in_pkgs:
-                        api.current_logger().debug(' REMOVE {}'.format(', '.join(installed_in_pkgs)))
-                        current['to_remove'].update(installed_in_pkgs)
+                    add_packages_to_tasks(current, installed_in_pkgs, 'to_remove')
 
         do_not_remove = set()
         for package in current['to_remove']:
