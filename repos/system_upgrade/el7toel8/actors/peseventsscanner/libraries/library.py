@@ -295,12 +295,12 @@ def process_events(events, installed_pkgs):
                     if installed_out_pkgs:
                         api.current_logger().debug(' KEEP {}'.format(', '.join(installed_out_pkgs)))
                         current['to_keep'].update(installed_out_pkgs)
-                    if event.action in ('Split', 'Merged'):
+
+                    in_pkgs_without_out_pkgs = filter_out_out_pkgs(event.in_pkgs, event.out_pkgs)
+                    if event.action in ('Split', 'Merged') and in_pkgs_without_out_pkgs:
                         # Uninstall those RHEL 7 pkgs that are no longer on RHEL 8
-                        in_pkgs_without_out_pkgs = filter_out_out_pkgs(event.in_pkgs, event.out_pkgs)
-                        if in_pkgs_without_out_pkgs:
-                            api.current_logger().debug(' REMOVE {}'.format(', '.join(in_pkgs_without_out_pkgs)))
-                            current['to_remove'].update(in_pkgs_without_out_pkgs)
+                        api.current_logger().debug(' REMOVE {}'.format(', '.join(in_pkgs_without_out_pkgs)))
+                        current['to_remove'].update(in_pkgs_without_out_pkgs)
 
                 if event.action in ('Renamed', 'Replaced', 'Removed'):
                     # Uninstall those RHEL 7 pkgs that are no longer on RHEL 8
