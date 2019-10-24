@@ -284,23 +284,27 @@ def process_events(events, installed_pkgs):
 
                 if event.action in ('Split', 'Merged', 'Renamed', 'Replaced'):
                     non_installed_out_pkgs = filter_out_installed_pkgs(event.out_pkgs, installed_pkgs)
-                    api.current_logger().debug(' INSTALL {}'.format(', '.join(non_installed_out_pkgs)))
-                    current['to_install'].update(non_installed_out_pkgs)
+                    if non_installed_out_pkgs:
+                        api.current_logger().debug(' INSTALL {}'.format(', '.join(non_installed_out_pkgs)))
+                        current['to_install'].update(non_installed_out_pkgs)
                     # Add already installed "out" pkgs to to_keep to ensure the repo they're in on RHEL 8 gets enabled
                     installed_out_pkgs = get_installed_event_pkgs(event.out_pkgs, installed_pkgs)
-                    api.current_logger().debug(' KEEP {}'.format(', '.join(installed_out_pkgs)))
-                    current['to_keep'].update(installed_out_pkgs)
+                    if installed_out_pkgs:
+                        api.current_logger().debug(' KEEP {}'.format(', '.join(installed_out_pkgs)))
+                        current['to_keep'].update(installed_out_pkgs)
                     if event.action in ('Split', 'Merged'):
                         # Uninstall those RHEL 7 pkgs that are no longer on RHEL 8
                         in_pkgs_without_out_pkgs = filter_out_out_pkgs(event.in_pkgs, event.out_pkgs)
-                        api.current_logger().debug(' REMOVE {}'.format(', '.join(in_pkgs_without_out_pkgs)))
-                        current['to_remove'].update(in_pkgs_without_out_pkgs)
+                        if in_pkgs_without_out_pkgs:
+                            api.current_logger().debug(' REMOVE {}'.format(', '.join(in_pkgs_without_out_pkgs)))
+                            current['to_remove'].update(in_pkgs_without_out_pkgs)
 
                 if event.action in ('Renamed', 'Replaced', 'Removed'):
                     # Uninstall those RHEL 7 pkgs that are no longer on RHEL 8
                     installed_in_pkgs = get_installed_event_pkgs(event.in_pkgs, installed_pkgs)
-                    api.current_logger().debug(' REMOVE {}'.format(', '.join(installed_in_pkgs)))
-                    current['to_remove'].update(installed_in_pkgs)
+                    if installed_in_pkgs:
+                        api.current_logger().debug(' REMOVE {}'.format(', '.join(installed_in_pkgs)))
+                        current['to_remove'].update(installed_in_pkgs)
 
         do_not_remove = set()
         for package in current['to_remove']:
