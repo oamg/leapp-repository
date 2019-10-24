@@ -303,9 +303,7 @@ def process_events(events, installed_pkgs):
                         add_packages_to_tasks(current, in_pkgs_without_out_pkgs, 'to_remove')
 
                 if event.action in ('Renamed', 'Replaced', 'Removed'):
-                    # Uninstall those RHEL 7 pkgs that are no longer on RHEL 8
-                    installed_in_pkgs = get_installed_event_pkgs(event.in_pkgs, installed_pkgs)
-                    add_packages_to_tasks(current, installed_in_pkgs, 'to_remove')
+                    add_packages_to_tasks(current, event.in_pkgs, 'to_remove')
 
         do_not_remove = set()
         for package in current['to_remove']:
