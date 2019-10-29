@@ -87,36 +87,162 @@ def test_invalid_fstab_info(monkeypatch):
 
 
 def test_get_mount_info(monkeypatch):
-    def get_cmd_output_mocked(cmd, delim, expected_len):
-        return [
-            ['sysfs', 'on', '/sys', 'type', 'sysfs', '(rw,nosuid,nodev,noexec,relatime,seclabel)'],
-            ['proc', 'on', '/proc', 'type', 'proc', '(rw,nosuid,nodev,noexec,relatime)'],
-            ['tmpfs', 'on', '/dev/shm', 'type', 'tmpfs', '(rw,nosuid,nodev,seclabel)'],
-            ['tmpfs', 'on', '/run', 'type', 'tmpfs', '(rw,nosuid,nodev,seclabel,mode=755)']]
-
-    monkeypatch.setattr(library, '_get_cmd_output', get_cmd_output_mocked)
     expected = [
         MountEntry(
-            name='sysfs',
-            mount='/sys',
-            tp='sysfs',
-            options='(rw,nosuid,nodev,noexec,relatime,seclabel)'),
+            name='sysfs', mount='/sys', tp='sysfs',
+            options='rw,seclabel,nosuid,nodev,noexec,relatime'
+        ),
         MountEntry(
-            name='proc',
-            mount='/proc',
-            tp='proc',
-            options='(rw,nosuid,nodev,noexec,relatime)'),
+            name='proc', mount='/proc', tp='proc',
+            options='rw,nosuid,nodev,noexec,relatime'
+        ),
         MountEntry(
-            name='tmpfs',
-            mount='/dev/shm',
-            tp='tmpfs',
-            options='(rw,nosuid,nodev,seclabel)'),
+            name='devtmpfs', mount='/dev', tp='devtmpfs',
+            options='rw,seclabel,nosuid,size=16131092k,nr_inodes=4032773,mode=755'
+        ),
         MountEntry(
-            name='tmpfs',
-            mount='/run',
-            tp='tmpfs',
-            options='(rw,nosuid,nodev,seclabel,mode=755)')]
-    assert expected == library._get_mount_info()
+            name='securityfs', mount='/sys/kernel/security', tp='securityfs',
+            options='rw,nosuid,nodev,noexec,relatime'
+        ),
+        MountEntry(
+            name='tmpfs', mount='/dev/shm', tp='tmpfs',
+            options='rw,seclabel,nosuid,nodev'
+        ),
+        MountEntry(
+            name='devpts', mount='/dev/pts', tp='devpts',
+            options='rw,seclabel,nosuid,noexec,relatime,gid=5,mode=620,ptmxmode=000'
+        ),
+        MountEntry(
+            name='tmpfs', mount='/run', tp='tmpfs',
+            options='rw,seclabel,nosuid,nodev,mode=755'
+        ),
+        MountEntry(
+            name='tmpfs', mount='/sys/fs/cgroup', tp='tmpfs',
+            options='ro,seclabel,nosuid,nodev,noexec,mode=755'
+        ),
+        MountEntry(
+            name='cgroup2', mount='/sys/fs/cgroup/unified', tp='cgroup2',
+            options='rw,seclabel,nosuid,nodev,noexec,relatime,nsdelegate'
+        ),
+        MountEntry(
+            name='cgroup', mount='/sys/fs/cgroup/systemd', tp='cgroup',
+            options='rw,seclabel,nosuid,nodev,noexec,relatime,xattr,name=systemd'
+        ),
+        MountEntry(
+            name='pstore', mount='/sys/fs/pstore', tp='pstore',
+            options='rw,seclabel,nosuid,nodev,noexec,relatime'
+        ),
+        MountEntry(
+            name='bpf', mount='/sys/fs/bpf', tp='bpf',
+            options='rw,nosuid,nodev,noexec,relatime,mode=700'
+        ),
+        MountEntry(
+            name='cgroup', mount='/sys/fs/cgroup/cpuset', tp='cgroup',
+            options='rw,seclabel,nosuid,nodev,noexec,relatime,cpuset'
+        ),
+        MountEntry(
+            name='cgroup', mount='/sys/fs/cgroup/net_cls,net_prio', tp='cgroup',
+            options='rw,seclabel,nosuid,nodev,noexec,relatime,net_cls,net_prio'
+        ),
+        MountEntry(
+            name='cgroup', mount='/sys/fs/cgroup/hugetlb', tp='cgroup',
+            options='rw,seclabel,nosuid,nodev,noexec,relatime,hugetlb'
+        ),
+        MountEntry(
+            name='cgroup', mount='/sys/fs/cgroup/pids', tp='cgroup',
+            options='rw,seclabel,nosuid,nodev,noexec,relatime,pids'
+        ),
+        MountEntry(
+            name='cgroup', mount='/sys/fs/cgroup/freezer', tp='cgroup',
+            options='rw,seclabel,nosuid,nodev,noexec,relatime,freezer'
+        ),
+        MountEntry(
+            name='cgroup', mount='/sys/fs/cgroup/blkio', tp='cgroup',
+            options='rw,seclabel,nosuid,nodev,noexec,relatime,blkio'
+        ),
+        MountEntry(
+            name='cgroup', mount='/sys/fs/cgroup/devices', tp='cgroup',
+            options='rw,seclabel,nosuid,nodev,noexec,relatime,devices'
+        ),
+        MountEntry(
+            name='cgroup', mount='/sys/fs/cgroup/cpu,cpuacct', tp='cgroup',
+            options='rw,seclabel,nosuid,nodev,noexec,relatime,cpu,cpuacct'
+        ),
+        MountEntry(
+            name='cgroup', mount='/sys/fs/cgroup/memory', tp='cgroup',
+            options='rw,seclabel,nosuid,nodev,noexec,relatime,memory'
+        ),
+        MountEntry(
+            name='cgroup', mount='/sys/fs/cgroup/perf_event', tp='cgroup',
+            options='rw,seclabel,nosuid,nodev,noexec,relatime,perf_event'
+        ),
+        MountEntry(
+            name='configfs', mount='/sys/kernel/config', tp='configfs',
+            options='rw,relatime'
+        ),
+        MountEntry(
+            name='/dev/mapper/fedora-root', mount='/', tp='ext4',
+            options='rw,seclabel,relatime'
+        ),
+        MountEntry(
+            name='selinuxfs', mount='/sys/fs/selinux', tp='selinuxfs',
+            options='rw,relatime'
+        ),
+        MountEntry(
+            name='debugfs', mount='/sys/kernel/debug', tp='debugfs',
+            options='rw,seclabel,relatime'
+        ),
+        MountEntry(
+            name='hugetlbfs', mount='/dev/hugepages', tp='hugetlbfs',
+            options='rw,seclabel,relatime,pagesize=2M'
+        ),
+        MountEntry(
+            name='systemd-1', mount='/proc/sys/fs/binfmt_misc', tp='autofs',
+            options='rw,relatime,fd=38,pgrp=1,timeout=0,minproto=5,maxproto=5,direct,pipe_ino=14019'
+        ),
+        MountEntry(
+            name='mqueue', mount='/dev/mqueue', tp='mqueue',
+            options='rw,seclabel,relatime'
+        ),
+        MountEntry(
+            name='fusectl', mount='/sys/fs/fuse/connections', tp='fusectl',
+            options='rw,relatime'
+        ),
+        MountEntry(
+            name='tmpfs', mount='/tmp', tp='tmpfs',
+            options='rw,seclabel,nosuid,nodev'
+        ),
+        MountEntry(
+            name='/dev/nvme0n1p1', mount='/boot', tp='ext4',
+            options='rw,seclabel,relatime'
+        ),
+        MountEntry(
+            name='/dev/mapper/fedora-home', mount='/home', tp='ext4',
+            options='rw,seclabel,relatime'
+        ),
+        MountEntry(
+            name='sunrpc', mount='/var/lib/nfs/rpc_pipefs', tp='rpc_pipefs',
+            options='rw,relatime'
+        ),
+        MountEntry(
+            name='tmpfs', mount='/run/user/1000', tp='tmpfs',
+            options='rw,seclabel,nosuid,nodev,relatime,size=3229704k,mode=700,uid=1000,gid=1000'
+        ),
+        MountEntry(
+            name='tmpfs', mount='/run/user/42', tp='tmpfs',
+            options='rw,seclabel,nosuid,nodev,relatime,size=3229704k,mode=700,uid=42,gid=42'
+        ),
+        MountEntry(
+            name='gvfsd-fuse', mount='/run/user/1000/gvfs',
+            tp='fuse.gvfsd-fuse', options='rw,nosuid,nodev,relatime,user_id=1000,group_id=1000'
+        ),
+        MountEntry(
+            name='/dev/loop2p1', mount='/mnt/foo\\040bar', tp='iso9660',
+            options='ro,nosuid,nodev,relatime,nojoliet,check=s,map=n,blocksize=2048'
+        )
+    ]
+
+    assert expected == library._get_mount_info('tests/files/mounts')
 
 
 def test_get_lsblk_info(monkeypatch):
