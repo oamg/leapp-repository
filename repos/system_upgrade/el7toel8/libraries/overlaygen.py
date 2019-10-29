@@ -48,6 +48,12 @@ def _prepare_required_mounts(scratch_dir, mounts_dir, mount_points, xfs_info):
     return result
 
 
+def _overlay_if(condition, name, source, workdir):
+    if condition:
+        return mounting.OverlayMount(name=name, source=source, workdir=workdir)
+    return mounting.NullMount(target=source)
+
+
 @contextlib.contextmanager
 def _build_overlay_mount(root_mount, mounts):
     if not root_mount:
@@ -58,7 +64,8 @@ def _build_overlay_mount(root_mount, mounts):
         current = mounts.keys()[0]
         current_mount = mounts.pop(current)
         name = _mount_name(current)
-        with mounting.OverlayMount(name=name, source=current, workdir=current_mount.target) as overlay:
+        # We will not make an overlay over /boot/efi as it is vfat that does not support overlayfs
+        with _overlay_if(current != '/boot/efi', name=name, source=current, workdir=current_mount.target) as overlay:
             with mounting.BindMount(source=overlay.target,
                                     target=os.path.join(root_mount.target, current.lstrip('/'))):
                 with _build_overlay_mount(root_mount, mounts) as mount:
