@@ -137,15 +137,17 @@ def _get_fstab_info(fstab_path):
 
 
 @aslist
-def _get_mount_info():
-    ''' Collect storage info from mount command '''
-    for entry in _get_cmd_output(['mount'], ' ', 6):
-        name, _, mount, _, tp, options = entry
-        yield MountEntry(
-            name=name,
-            mount=mount,
-            tp=tp,
-            options=options)
+def _get_mount_info(path):
+    ''' Collect storage info '''
+    with open(path, 'r') as fp:
+        for line in [l.strip() for l in fp.readlines()]:
+            device, mount, tp, options, _, _ = line.split(' ')
+            yield MountEntry(
+                name=device,
+                mount=mount,
+                tp=tp,
+                options=options
+            )
 
 
 @aslist
@@ -237,7 +239,7 @@ def get_storage_info():
     return StorageInfo(
         partitions=_get_partitions_info('/proc/partitions'),
         fstab=_get_fstab_info('/etc/fstab'),
-        mount=_get_mount_info(),
+        mount=_get_mount_info('/proc/mounts'),
         lsblk=_get_lsblk_info(),
         pvs=_get_pvs_info(),
         vgs=_get_vgs_info(),
