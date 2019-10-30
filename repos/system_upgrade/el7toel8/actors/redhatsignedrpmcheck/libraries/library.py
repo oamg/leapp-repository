@@ -13,7 +13,7 @@ def generate_report(packages):
         return
     unsigned_packages_new_line = '\n'.join(['- ' + p for p in packages])
     unsigned_packages = ' '.join(packages)
-    remediation = ['yum', 'remove', '{}'.format(unsigned_packages)]
+    remediation = ['yum', '-y', 'remove', '{}'.format(unsigned_packages)]
     title = 'Packages not signed by Red Hat found in the system'
     summary = 'The following packages have not been signed by Red Hat ' \
               'and may be removed in the upgrade process:\n{}'.format(unsigned_packages_new_line)
