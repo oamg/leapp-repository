@@ -25,7 +25,7 @@ class PythonInformUser(Actor):
             reporting.Tags([reporting.Tags.PYTHON]),
             reporting.Audience('developer'),
             reporting.ExternalLink(url, title),
-            reporting.Remediation(commands=[['alternatives', '--set', 'python', '/usr/bin/python3']]),
+            reporting.Remediation(hint='Please run "alternatives --set python /usr/bin/python3" after upgrade'),
             reporting.RelatedResource('package', 'python'),
             reporting.RelatedResource('package', 'python2'),
             reporting.RelatedResource('package', 'python3')

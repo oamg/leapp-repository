@@ -51,6 +51,7 @@ def test_actor_execution_with_unsigned_data(monkeypatch):
     assert reporting.create_report.called == 1
     assert 'Packages not signed by Red Hat found' in reporting.create_report.report_fields['title']
     assert all(r['remediations']['context'][0] == 'yum' and
-               r['remediations']['context'][1] == 'remove' and
-               'sample' in r['remediations']['context'][2]
+               r['remediations']['context'][1] == '-y' and
+               r['remediations']['context'][2] == 'remove' and
+               'sample' in r['remediations']['context'][3]
                for r in reporting.create_report.report_fields['remediations'])
