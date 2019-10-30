@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.models import RpmTransactionTasks
+from leapp.models import RpmTransactionTasks, InstalledRedHatSignedRPM
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 from leapp.libraries.actor.scanner import load_tasks
 
@@ -15,7 +15,7 @@ class RpmTransactionConfigTasksCollector(Actor):
     """
 
     name = 'rpm_transaction_config_tasks_collector'
-    consumes = ()
+    consumes = (InstalledRedHatSignedRPM,)
     produces = (RpmTransactionTasks,)
     tags = (FactsPhaseTag, IPUWorkflowTag)
 

@@ -1,14 +1,32 @@
 import logging
 
+import pytest
+
 from leapp.libraries.actor.scanner import load_tasks_file, load_tasks
+from leapp.models import RPM, InstalledRedHatSignedRPM
+from leapp.libraries.stdlib import api
 
 
-def test_load_tasks(tmpdir):
+RH_PACKAGER = 'Red Hat, Inc. <http://bugzilla.redhat.com/bugzilla>'
+
+
+def test_load_tasks(tmpdir, monkeypatch):
+
+    def consume_signed_rpms_mocked(*models):
+        installed = [
+            RPM(name='c', version='0.1', release='1.sm01', epoch='1', packager=RH_PACKAGER, arch='noarch',
+                pgpsig='RSA/SHA256, Mon 01 Jan 1970 00:00:00 AM -03, Key ID 199e2f91fd431d51')
+            ]
+        yield InstalledRedHatSignedRPM(items=installed)
+
+    monkeypatch.setattr(api, "consume", consume_signed_rpms_mocked)
+
     tmpdir.join('to_install').write('a\n b\n  c \n\n\nc\na\nc\nb')
     tmpdir.join('to_keep').write('a\n b\n  c \n\n\nc\na\nc\nb')
     tmpdir.join('to_remove').write('a\n b\n  c \n\n\nc\na\nc\nb')
     m = load_tasks(tmpdir.strpath, logging)
-    assert set(m.to_install) == set(['a', 'b', 'c'])
+    # c is not going to be in "to_install" as it is already installed
+    assert set(m.to_install) == set(['a', 'b'])
     assert set(m.to_keep) == set(['a', 'b', 'c'])
     assert set(m.to_remove) == set(['a', 'b', 'c'])
 

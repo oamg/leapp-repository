@@ -1,1 +1,2 @@
 ### List of packages (each on new line) to be added to the upgrade transaction
+### Signed packages which are already installed will be skipped
