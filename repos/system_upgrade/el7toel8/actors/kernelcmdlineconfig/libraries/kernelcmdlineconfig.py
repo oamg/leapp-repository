@@ -8,6 +8,13 @@ from leapp.models import InstalledTargetKernelVersion, KernelCmdlineArg
 def process():
     kernel_version = next(api.consume(InstalledTargetKernelVersion), None)
     if kernel_version:
+        # XXX FIXME HOTFIX
+        try:
+            stdlib.run(["grub2-mkconfig", "-o", "/boot/efi/EFI/redhat/grub.cfg"])
+            stdlib.run(["grub2-switch-to-blscfg"])
+            stdlib.run(["sed", "-i", ".bak", "-e", "'s/GRUB_ENABLE_BLSCFG=true//g'", "/etc/default/grub"])
+        except (OSError, stdlib.CalledProcessError) as e:
+            raise StopActorExecutionError("Alas, hotfix failed", details={"details": str(e)})
         for arg in api.consume(KernelCmdlineArg):
             cmd = ['grubby', '--update-kernel=/boot/vmlinuz-{}'.format(kernel_version.version),
                    '--args={}={}'.format(arg.key, arg.value)]
