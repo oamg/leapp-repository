@@ -46,9 +46,9 @@ class CheckSelinux(Actor):
             self.produce(SelinuxRelabelDecision(
                 set_relabel=True))
             create_report([
-                reporting.Title('Schedule SElinux relabeling'),
-                reporting.Summary('Schedule SElinux relabeling as the status was permissive/enforcing.'),
-                reporting.Severity(reporting.Severity.LOW),
+                reporting.Title('SElinux relabeling has been scheduled'),
+                reporting.Summary('SElinux relabeling has been scheduled as the status was permissive/enforcing.'),
+                reporting.Severity(reporting.Severity.INFO),
                 reporting.Tags([reporting.Tags.SELINUX, reporting.Tags.SECURITY])
             ])
 
