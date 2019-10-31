@@ -89,7 +89,7 @@ def backup_debug_data(context):
             api.current_logger().warn('Failed to copy debugdata. Message: {}'.format(str(e)), exc_info=True)
 
 
-def _transaction(context, stage, target_repoids, tasks, test=False):
+def _transaction(context, stage, target_repoids, tasks, test=False, cmd_prefix=None):
     """
     Perform the actual DNF rpm download via our DNF plugin
     """
@@ -106,6 +106,8 @@ def _transaction(context, stage, target_repoids, tasks, test=False):
         ]
         if config.is_verbose():
             cmd.append('-v')
+        if cmd_prefix:
+            cmd = cmd_prefix + cmd
         try:
             context.call(
                 cmd=cmd,
@@ -190,7 +192,12 @@ def perform_transaction_install(target_userspace_info, storage_info, used_repos,
                               target_userspace_info=target_userspace_info,
                               binds=bind_mounts
                               ) as (context, target_repoids, _unused):
-        _transaction(context=context, stage='upgrade', target_repoids=target_repoids, tasks=tasks)
+        # the below nsenter command is important as we need to enter sysvipc namespace on the host so we can
+        # communicate with udev
+        cmd_prefix = ['nsenter', '--ipc=/installroot/proc/1/ns/ipc']
+        _transaction(
+                context=context, stage='upgrade', target_repoids=target_repoids, tasks=tasks, cmd_prefix=cmd_prefix
+            )
 
 
 def perform_transaction_check(target_userspace_info, used_repos, tasks, xfs_info, storage_info):
