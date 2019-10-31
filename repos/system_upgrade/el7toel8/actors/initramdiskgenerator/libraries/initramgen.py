@@ -77,6 +77,17 @@ def _install_files(context):
     return []
 
 
+def install_multipath_files(context):
+    # Include multipath related files (according to module-setup of multipath)
+    if os.path.exists('/etc/xdrdevices.conf'):
+        context.copy_to('/etc/xdrdevices.conf', '/etc/xdrdevices.conf')
+    if os.path.exists('/etc/multipath.conf'):
+        context.copy_to('/etc/multipath.conf', '/etc/multipath.conf')
+        if os.path.isdir('/etc/multipath'):
+            shutil.rmtree(context.full_path('/etc/multipath'))
+            context.copytree_to('/etc/multipath', '/etc/multipath')
+
+
 def generate_initram_disk(context):
     """
     Function to actually execute the initram creation.
@@ -91,6 +102,7 @@ def generate_initram_disk(context):
     copy_dracut_modules(context, modules)
     context.copy_to(generator_script, os.path.join('/', INITRAM_GEN_SCRIPT_NAME))
     install_initram_deps(context)
+    install_multipath_files(context)
     install_files = _install_files(context)
     # FIXME: issue #376
     context.call([
