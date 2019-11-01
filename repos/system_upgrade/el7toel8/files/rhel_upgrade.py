@@ -90,15 +90,9 @@ class RhelUpgradeCommand(dnf.cli.Command):
         for pkg in local_rpm_objects:
             self.base.package_install(pkg)
 
-        to_install_local = self.plugin_data['pkgs_info']['local_rpms']
         to_install = self.plugin_data['pkgs_info']['to_install']
         to_remove = self.plugin_data['pkgs_info']['to_remove']
         to_upgrade = self.plugin_data['pkgs_info']['to_upgrade']
-
-        # Local (on filesystem) packages to be installed.
-        # add_remote_rpms() accepts list of packages
-
-        self.base.add_remote_rpms(to_install_local)
 
         # Packages to be removed
         self._process_packages(to_remove, self.base.remove)
