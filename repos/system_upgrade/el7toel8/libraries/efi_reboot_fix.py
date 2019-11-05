@@ -1,4 +1,5 @@
 from re import compile as regexp
+import os
 
 from leapp.libraries.stdlib import run
 
@@ -24,6 +25,9 @@ def get_next_boot_match(string):
 
 
 def maybe_emit_updated_boot_entry():
+    if not os.path.exists('/sbin/efibootmgr'):
+        return
+
     efi_info = run(['/sbin/efibootmgr'], checked=False, split=True)
     if efi_info['exit_code'] != 0:
         # Not an efi system
