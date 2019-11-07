@@ -1,5 +1,4 @@
 import operator
-import os
 
 import six
 
@@ -14,7 +13,7 @@ OP_MAP = {
     '<=': operator.le
 }
 
-SUPPORTED_VERSION = {'rhel': ['7.6']}
+SUPPORTED_VERSIONS = {'rhel': ['7.6']}
 
 
 def _version_to_tuple(version):
@@ -132,7 +131,7 @@ def matches_release(allowed_releases, release):
 
 
 def current_version():
-    """Return current Linux release and version running in system.
+    """Return the current Linux release and version.
 
     :raises StopActorExecutionError: this exception will be raised if no facts found to read data.
     :return: The tuple contains release name and version value.
@@ -150,17 +149,14 @@ def current_version():
 
 
 def is_supported_version():
-    """ Verify if current system version is supported to the upgrade.
+    """ Verify if the current system version is supported for the upgrade.
 
-    :return: `True` if current version is supported and `False` otherwise.
+    :return: `True` if the current version is supported and `False` otherwise.
     :rtype: bool
     """
-    if os.getenv('LEAPP_SKIP_CHECK_OS_RELEASE'):
-        return True
-
     release_id, version_id = current_version()
 
-    if not matches_release(SUPPORTED_VERSION, release_id):
+    if not matches_release(SUPPORTED_VERSIONS, release_id):
         return False
 
-    return matches_version(SUPPORTED_VERSION[release_id], version_id)
+    return matches_version(SUPPORTED_VERSIONS[release_id], version_id)
