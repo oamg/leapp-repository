@@ -18,6 +18,13 @@ def inhibit(node_type):
         reporting.Severity(reporting.Severity.HIGH),
         reporting.Tags([reporting.Tags.HIGH_AVAILABILITY]),
         reporting.Flags([reporting.Flags.INHIBITOR]),
+        reporting.ExternalLink(
+            url="https://access.redhat.com/articles/2059253",
+            title=(
+                "Recommended Practices for Applying Software Updates"
+                " to a RHEL High Availability or Resilient Storage Cluster"
+            ),
+        ),
         reporting.RelatedResource('file', COROSYNC_CONF_LOCATION),
         reporting.RelatedResource('file', CIB_LOCATION)
     ])
