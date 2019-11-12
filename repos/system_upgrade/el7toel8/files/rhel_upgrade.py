@@ -25,7 +25,6 @@ class RhelUpgradeCommand(dnf.cli.Command):
     def __init__(self, cli):
         super(RhelUpgradeCommand, self).__init__(cli)
         self.plugin_data = {}
-        self.pkgs_notfound = []
 
     @staticmethod
     def set_argparser(parser):
@@ -43,7 +42,7 @@ class RhelUpgradeCommand(dnf.cli.Command):
             try:
                 op(pkg_spec)
             except dnf.exceptions.MarkingError:
-                self.pkgs_notfound.append(pkg_spec)
+                pkgs_notfound.append(pkg_spec)
         if pkgs_notfound:
             err_str = ('Packages marked by Leapp for installation/removal/upgrade not found '
                        'in repository metadata: ') + ' '.join(pkgs_notfound)
