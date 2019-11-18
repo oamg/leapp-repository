@@ -106,6 +106,7 @@ class RhelUpgradeCommand(dnf.cli.Command):
             try:
                 self.base.resolve(allow_erasing=self.cli.demands.allow_erasing)
             except dnf.exceptions.DepsolveError as e:
+                print('Transaction check: ', file=sys.stderr)
                 print(str(e), file=sys.stderr)
                 raise
 
