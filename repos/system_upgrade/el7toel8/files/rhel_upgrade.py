@@ -44,9 +44,9 @@ class RhelUpgradeCommand(dnf.cli.Command):
             except dnf.exceptions.MarkingError:
                 pkgs_notfound.append(pkg_spec)
         if pkgs_notfound:
-            err_str = ('Packages marked by Leapp for installation/removal/upgrade not found '
-                       'in repository metadata: ') + ' '.join(pkgs_notfound)
-            raise dnf.exceptions.MarkingError(err_str)
+            err_str = ('Packages marked by Leapp for {} not found '
+                       'in repositories metadata: '.format(op.__name__) + ' '.join(pkgs_notfound))
+            print('Warning: ' + err_str, file=sys.stderr)
 
     def pre_configure(self):
         with open(self.opts.filename) as fo:
