@@ -3,7 +3,7 @@ from collections import namedtuple
 
 from leapp.libraries import stdlib
 from leapp.libraries.common.config import architecture
-from leapp.libraries.stdlib import api
+from leapp.libraries.stdlib import api, config
 from leapp.models import InstalledTargetKernelVersion
 
 KernelInfo = namedtuple('KernelInfo', ('kernel_path', 'initrd_path'))
@@ -51,6 +51,19 @@ def update_default_kernel(kernel_info):
 
 
 def process():
+    if config.is_debug:
+        try:
+            # the following command prints output of grubenv for debugging purposes and is repeated after setting
+            # default kernel so we can be sure we have the right saved entry
+            #
+            # saved_entry=63...
+            # kernelopts=root=/dev/mapper...
+            #
+            #
+            # boot_success and boot_indeterminate parameters are added later by one-shot systemd service
+            stdlib.run(['grub2-editenv', 'list'])
+        except stdlib.CalledProcessError:
+            api.current_logger().error('Failed to execute "grub2-editenv list" command')
     message = next(api.consume(InstalledTargetKernelVersion), None)
     if not message:
         api.current_logger().warning(('Skipped - Forcing checking and setting default boot entry to target kernel'
@@ -72,3 +85,8 @@ def process():
                                       'Forcing default kernel to %s'),
                                      current_default_kernel, kernel_info.kernel_path)
         update_default_kernel(kernel_info)
+    if config.is_debug:
+        try:
+            stdlib.run(['grub2-editenv', 'list'])
+        except stdlib.CalledProcessError:
+            api.current_logger().error('Failed to execute "grub2-editenv list" command')
