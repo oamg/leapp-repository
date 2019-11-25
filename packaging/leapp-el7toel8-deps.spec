@@ -36,7 +36,7 @@ Requires:   policycoreutils-python-utils
 ##################################################
 %package -n %{ldname}
 Summary:    Meta-package with system dependencies for leapp framework
-Provides:   leapp-framework-dependencies = 2
+Provides:   leapp-framework-dependencies = 3
 Obsoletes:  leapp-deps
 
 Requires:   findutils
@@ -46,12 +46,12 @@ Requires:   findutils
 # RPM is unclear.
 Requires:   python2-six
 Requires:   python2-setuptools
-Requires:   python2-jinja2
+Requires:   python2-requests
 
 # Python3 deps
 Requires:   python3-six
 Requires:   python3-setuptools
-Requires:   python3-jinja2
+Requires:   python3-requests
 
 %description -n %{ldname}
 %{summary}
