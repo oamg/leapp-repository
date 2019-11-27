@@ -48,12 +48,12 @@ install() {
     done
 
     # just try : set another services into the wantsdir
-    #        dracut-cmdline   \
     #        sysroot.mount    \
     #        dracut-mount     \
     #        dracut-pre-udev  \
     #         dracut-pre-mount.service
     for s in \
+             dracut-cmdline.service   \
              dracut-initqueue.service \
     ;do
         ln -sf "${systemdsystemunitdir}/$s" $upgrade_wantsdir
