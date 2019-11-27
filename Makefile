@@ -38,7 +38,7 @@ N_REL=`_NR=$${PR:+0}; if test "$${_NR:-100}" == "100"; then _NR=$${MR:+0}; fi; g
 
 TIMESTAMP:=$${__TIMESTAMP:-$(shell /bin/date -u "+%Y%m%d%H%MZ")}
 SHORT_SHA=`git rev-parse --short HEAD`
-BRANCH=`git rev-parse --abbrev-ref HEAD | tr '-' '_'`
+BRANCH=`git rev-parse --abbrev-ref HEAD | tr -- '-/' '_'`
 
 # In case anyone would like to add any other suffix, just make it possible
 _SUFFIX=`if test -n "$$SUFFIX"; then echo ".$${SUFFIX}"; fi; `
