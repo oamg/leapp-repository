@@ -1,7 +1,13 @@
+import os
+
 from leapp.actors import Actor
 from leapp.models import TransactionCompleted
 from leapp.tags import RPMUpgradePhaseTag, IPUWorkflowTag, ExperimentalTag
-from leapp.libraries.stdlib import api, run, CalledProcessError
+from leapp.libraries.stdlib import api
+
+
+GRUBBY_FILES = ['/usr/libexec/grubby/grubby-bls', '/usr/libexec/grubby/grubby']
+DEBUG_FLAG = 'set -x\n'
 
 
 class GrubbyDebug(Actor):
@@ -15,11 +21,27 @@ class GrubbyDebug(Actor):
     tags = (ExperimentalTag, RPMUpgradePhaseTag, IPUWorkflowTag, )
 
     def process(self):
-        try:
-            run(["sed", "-i", r"/^\#\!\/bin\/bash/aset -x", "/usr/libexec/grubby/grubby-bls"])
-        except CalledProcessError:
-            api.current_logger().warning('Failed to activate debug mode in grubby-bls', exc_info=True)
-        try:
-            run(["sed", "-i", r"/^\#\!\/bin\/bash/aset -x", "/usr/libexec/grubby/grubby"])
-        except CalledProcessError:
-            api.current_logger().warning('Failed to activate debug mode in grubby', exc_info=True)
+
+        def enable_debug(filename):
+            with open(filename, 'r') as fo_read:
+                content = fo_read.readlines()
+                if DEBUG_FLAG in content:
+                    return
+                shebang_line = 0
+                for i, line in enumerate(content):
+                    if line.startswith('#!/bin/bash'):
+                        shebang_line = i
+                        break
+                content.insert(shebang_line+1, DEBUG_FLAG)
+
+            with open(filename, 'w') as fo_write:
+                content = ''.join(content)
+                fo_write.write(content)
+
+        for file_ in GRUBBY_FILES:
+            if os.path.exists(file_):
+                try:
+                    enable_debug(file_)
+                except (IOError, OSError):
+                    api.current_logger().warning(
+                        'Failed to activate debug mode in {}'.format(file_), exc_info=True)
