@@ -7,7 +7,7 @@ from leapp.tags import ApplicationsPhaseTag, IPUWorkflowTag
 
 class VimMigrate(Actor):
     """
-    Modify configuration files Vim 8.0 and later to keep the same behavior
+    Modify configuration files of Vim 8.0 and later to keep the same behavior
     as Vim 7.4 and earlier had.
     """
 
