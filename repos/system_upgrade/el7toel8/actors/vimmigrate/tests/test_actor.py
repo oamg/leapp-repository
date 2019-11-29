@@ -5,40 +5,22 @@ from leapp.reporting import Report
 from leapp.snactor.fixture import current_actor_context
 
 
-rpms = [
-    (
-        RPM(name='vim-minimal', version='1', release='1.el7',
-            epoch='0', packager='foo', arch='x84_64',
-            pgpsig='bar'),
-        RPM(name='vim-enhanced', version='1', release='1.el7',
-            epoch='0', packager='foo', arch='x84_64',
-            pgpsig='bar')
-    ),
-    (
-        RPM(name='vim-minimal', version='1', release='1.el7',
-            epoch='0', packager='foo', arch='x84_64',
-            pgpsig='bar'),
-        RPM(name='ble', version='1', release='1.el7',
-            epoch='0', packager='foo', arch='x84_64',
-            pgpsig='bar')
-    ),
-    (
-        RPM(name='vim-enhanced', version='1', release='1.el7',
-            epoch='0', packager='foo', arch='x84_64',
-            pgpsig='bar'),
-        RPM(name='moo', version='1', release='1.el7',
-            epoch='0', packager='foo', arch='x84_64',
-            pgpsig='bar')
-    ),
-    (
-        RPM(name='you', version='1', release='1.el7',
-            epoch='0', packager='foo', arch='x84_64',
-            pgpsig='bar'),
-        RPM(name='hele', version='1', release='1.el7',
-            epoch='0', packager='foo', arch='x84_64',
-            pgpsig='bar')
-    )
+rpms = []
+packages = [('vim-minimal', 'vim-enhanced'),
+    ('vim-minimal', 'ble'),
+    ('vim-enhanced', 'moo'),
+    ('you', 'hele')
 ]
+
+for packageA, packageB in packages:
+    rpms.append(
+        (
+            RPM(name=packageA, version='1', release='1.el7',
+                epoch='0', packager='foo', arch='x84_64', pgpsig='bar'),
+            RPM(name=packageB, version='1', release='1.el7', epoch='0',
+                packager='foo', arch='x84_64', pgpsig='bar')
+        )
+    )
 
 
 @pytest.mark.parametrize("rpms", rpms)

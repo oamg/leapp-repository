@@ -22,6 +22,9 @@ class VimMigrate(Actor):
         for pkg, config_file in library.vim_configs.items():
             if not has_package(InstalledRedHatSignedRPM, pkg):
                 continue
+
+            self.log.debug('Updating Vim configuration file {}.'.format(config_file))
+
             try:
                 library.update_config(config_file, library.append_string)
             except (OSError, IOError) as error:
