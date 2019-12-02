@@ -45,8 +45,8 @@ packages = [
 
 class MockLogger(object):
     def __init__(self):
-        self.debugmsg = None
-        self.errmsg = None
+        self.debugmsg = ''
+        self.errmsg = ''
 
     def debug(self, message):
         self.debugmsg += message
@@ -90,20 +90,20 @@ class MockPackageSet(object):
 
 class ExpectedOutput(object):
     def __init__(self):
-        self.expected_debugmsg = ''
-        self.expected_errmsg = ''
+        self.debugmsg = ''
+        self.errmsg = ''
 
     def create(self, rpms):
         error_list = []
 
         for pkg, config in rpms.items():
             if pkg in library.vim_configs.keys():
-                self.expected_debugmsg += 'Updating Vim configuration file {}.'.format(config)
+                self.debugmsg += 'Updating Vim configuration file {}.'.format(config)
                 if config == '':
                     error_list.append((config, 'Error during writing to file: {}'.format(config)))
 
         if error_list:
-            self.expected_errmsg = ('The files below have not been modified '
+            self.errmsg = ('The files below have not been modified '
                                     '(error message included):' + ''.join(
                                     ['\n    - {}: {}'.format(err[0], err[1])
                                     for err in error_list]))
