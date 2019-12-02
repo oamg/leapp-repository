@@ -67,7 +67,7 @@ class MockPackageSet(object):
 
     def add_packages(self, pkgs):
         if self.installed_packages is None:
-            self.installed_packages = {}
+            self.installed_packages = []
 
         for rpm, config in pkgs.items():
             self.installed_packages.append(MockPackage(rpm, config))
