@@ -100,7 +100,7 @@ class ExpectedOutput(object):
             if pkg in vim_configs.keys():
                 self.debugmsg += 'Updating Vim configuration file {}.'.format(vim_configs[pkg])
                 if config == '':
-                    error_list.append((config, 'Error during writing to file: {}'.format(vim_configs[pkg])))
+                    error_list.append((vim_configs[pkg], 'Error during writing to file: {}'.format(vim_configs[pkg])))
 
         if error_list:
             self.errmsg = ('The files below have not been modified '
