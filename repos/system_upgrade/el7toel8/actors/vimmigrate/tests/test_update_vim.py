@@ -1,6 +1,6 @@
 import pytest
 
-from leapp.libraries.actor import library
+from leapp.libraries.actor.library import update_vim, vim_configs
 
 
 packages = [
@@ -97,8 +97,8 @@ class ExpectedOutput(object):
         error_list = []
 
         for pkg, config in rpms.items():
-            if pkg in library.vim_configs.keys():
-                self.debugmsg += 'Updating Vim configuration file {}.'.format(config)
+            if pkg in vim_configs.keys():
+                self.debugmsg += 'Updating Vim configuration file {}.'.format(vim_configs[pkg])
                 if config == '':
                     error_list.append((config, 'Error during writing to file: {}'.format(config)))
 
@@ -119,10 +119,10 @@ def test_update_vim(rpms):
     expected = ExpectedOutput()
     expected.create(rpms)
 
-    library.update_vim(logger.debug,
-                       logger.error,
-                       installed_packages.is_installed,
-                       installed_packages.append_content)
+    update_vim(logger.debug,
+               logger.error,
+               installed_packages.is_installed,
+               installed_packages.append_content)
 
     assert expected.debugmsg == logger.debugmsg
     assert expected.errmsg == logger.errmsg
