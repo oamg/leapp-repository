@@ -1,6 +1,5 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import library
-from leapp.libraries.common.rpms import has_package
 from leapp.models import InstalledRedHatSignedRPM
 from leapp.tags import ApplicationsPhaseTag, IPUWorkflowTag
 
@@ -17,20 +16,4 @@ class VimMigrate(Actor):
     tags = (ApplicationsPhaseTag, IPUWorkflowTag)
 
     def process(self):
-        error_list = []
-
-        for pkg, config_file in library.vim_configs.items():
-            if not has_package(InstalledRedHatSignedRPM, pkg):
-                continue
-
-            self.log.debug('Updating Vim configuration file {}.'.format(config_file))
-
-            try:
-                library.update_config(config_file, library.append_string)
-            except (OSError, IOError) as error:
-                self.log.warning('Cannot modify the {} config file.'.format(config_file))
-                error_list.append((config_file, error))
-        if error_list:
-            self.log.error('The files below have not been modified (error message included):' +
-                           ''.join(['\n    - {}: {}'.format(err[0], err[1]) for err in error_list]))
-            return
+        library.update_vim()

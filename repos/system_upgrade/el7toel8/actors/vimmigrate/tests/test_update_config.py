@@ -19,9 +19,7 @@ class MockFile(object):
         raise IOError('Error during writing to file: {}.'.format(path))
 
 
-def test_update_config_file_errors():
-    path = 'foo'
-
+def test_update_config_file_errors(path='foo'):
     f = MockFile(path, content='')
 
     with pytest.raises(IOError):
