@@ -22,9 +22,9 @@ class UnsupportedUpgradeCheck(Actor):
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 
     def process(self):
-        env = os.environ
-        devel_vars = {k: env[k] for k in env if k.startswith('LEAPP_DEVEL_')}
-        override = 'LEAPP_UNSUPPORTED' in env
+        leapp_vars = self.configuration.leapp_env_vars
+        devel_vars = [var for var in leapp_vars if var.name.startswith('LEAPP_DEVEL_')]
+        override = bool([var for var in leapp_vars if var.name == 'LEAPP_UNSUPPORTED'])
 
         if devel_vars and not override:
             reporting.create_report([
@@ -34,7 +34,7 @@ class UnsupportedUpgradeCheck(Actor):
                     'These variables are for development purposes only and can interfere with the upgrade '
                     'process in unexpected ways. As such, a successful and safe upgrade process cannot be '
                     'guaranteed and the upgrade is unsupported.\n'
-                    'Found development variables:\n- ' + '\n- '.join(devel_vars) + '\n'
+                    'Found development variables:\n- ' + '\n- '.join([var.name for var in devel_vars]) + '\n'
                 ),
                 reporting.Severity(reporting.Severity.HIGH),
                 reporting.Flags([reporting.Flags.INHIBITOR]),
