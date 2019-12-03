@@ -104,9 +104,9 @@ class ExpectedOutput(object):
 
         if error_list:
             self.errmsg = ('The files below have not been modified '
-                           '(error message included):' + ''.join(
-                           ['\n    - {}: {}'.format(err[0], err[1])
-                           for err in error_list]))
+                           '(error message included):' +
+                           ''.join(['\n    - {}: {}'.format(err[0], err[1])
+                                   for err in error_list]))
 
 
 @pytest.mark.parametrize('rpms', packages)
