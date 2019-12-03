@@ -3,7 +3,7 @@ import os
 from leapp.actors import Actor
 from leapp.models import TransactionCompleted
 from leapp.tags import RPMUpgradePhaseTag, IPUWorkflowTag, ExperimentalTag
-from leapp.libraries.stdlib import api
+from leapp.libraries.stdlib import api, run, CalledProcessError
 
 
 GRUBBY_FILES = ['/usr/libexec/grubby/grubby-bls', '/usr/libexec/grubby/grubby']
@@ -45,3 +45,14 @@ class GrubbyDebug(Actor):
                 except (IOError, OSError):
                     api.current_logger().warning(
                         'Failed to activate debug mode in {}'.format(file_), exc_info=True)
+
+        try:
+            run(['ls', '-la', '/boot'])
+        except CalledProcessError:
+            api.current_logger().warning(
+                'Could not list /boot dir', exc_info=True)
+        try:
+            run(['sh', '-c', 'cat /boot/loader/entries/*.conf'])
+        except CalledProcessError:
+            api.current_logger().warning(
+                'Could not show all BLS entries', exc_info=True)
