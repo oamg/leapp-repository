@@ -50,7 +50,7 @@ def _check_package(pkg):
 
     :param str pkg: name of package
     """
-    return has_package(api.consume(InstalledRedHatSignedRPM), pkg)
+    return has_package(InstalledRedHatSignedRPM, pkg)
 
 
 def update_vim(debug_log=api.current_logger().debug,
