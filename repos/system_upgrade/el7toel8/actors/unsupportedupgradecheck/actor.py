@@ -1,11 +1,10 @@
-import os
 import json
 
+from leapp import reporting
 from leapp.actors import Actor
 from leapp.models import Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 from leapp.utils.audit import get_connection
-from leapp import reporting
 
 
 class UnsupportedUpgradeCheck(Actor):
@@ -34,12 +33,15 @@ class UnsupportedUpgradeCheck(Actor):
                     'These variables are for development purposes only and can interfere with the upgrade '
                     'process in unexpected ways. As such, a successful and safe upgrade process cannot be '
                     'guaranteed and the upgrade is unsupported.\n'
-                    'Found development variables:\n- ' + '\n- '.join([var.name for var in devel_vars]) + '\n'
+                    'You can bypass this error by setting the LEAPP_UNSUPPORTED variable but by doing so, '
+                    'you continue at your own risk.\n'
+                    'Found development variables:\n- {}\n'.format('\n- '.join([v.name for v in devel_vars]))
                 ),
                 reporting.Severity(reporting.Severity.HIGH),
                 reporting.Flags([reporting.Flags.INHIBITOR]),
                 reporting.Tags([reporting.Tags.UPGRADE_PROCESS, reporting.Tags.SANITY]),
-                reporting.Remediation(hint='Invoke leapp without any LEAPP_DEVEL_* environment variables.')
+                reporting.Remediation(hint=('Invoke leapp without any LEAPP_DEVEL_* environment variables '
+                                            'or set LEAPP_UNSUPPORTED=1.'))
             ])
 
         experimental = []
@@ -57,10 +59,13 @@ class UnsupportedUpgradeCheck(Actor):
                     'These actors are unstable or in development and can interfere with the upgrade '
                     'process in unexpected ways. As such, a successful and safe upgrade process cannot be '
                     'guaranteed and the upgrade is unsupported.\n'
+                    'You can bypass this error by setting the LEAPP_UNSUPPORTED variable but by doing so, '
+                    'you continue at your own risk.\n'
                     'Found enabled experimental actors:\n- ' + '\n- '.join(experimental) + '\n'
                 ),
                 reporting.Severity(reporting.Severity.HIGH),
                 reporting.Flags([reporting.Flags.INHIBITOR]),
                 reporting.Tags([reporting.Tags.UPGRADE_PROCESS, reporting.Tags.SANITY]),
-                reporting.Remediation(hint='Invoke leapp without any --whitelist-experimental options.')
+                reporting.Remediation(hint=('Invoke leapp without any --whitelist-experimental options '
+                                            'or set LEAPP_UNSUPPORTED=1.'))
             ])
