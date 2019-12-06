@@ -14,7 +14,7 @@ OP_MAP = {
     '<=': operator.le
 }
 
-SUPPORTED_VERSION = {'rhel': ['7.6']}
+SUPPORTED_VERSION = {'rhel': ['7.6', '7.7']}
 
 
 def _version_to_tuple(version):
