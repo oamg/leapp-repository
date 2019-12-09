@@ -113,7 +113,7 @@ def check_kde_gnome():
                     reporting.Severity(reporting.Severity.MEDIUM),
                     reporting.Tags([
                         reporting.Tags.UPGRADE_PROCESS
-                    ])
+                    ])])
             else:
                 api.current_logger().info("GNOME used as default session. Continuing with the upgrade.")
         api.current_logger().info("----------------------------------")
