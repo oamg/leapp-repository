@@ -21,7 +21,8 @@ class UnsupportedUpgradeCheck(Actor):
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 
     def process(self):
-        leapp_vars = self.configuration.leapp_env_vars
+        conf = self.configuration
+        leapp_vars = conf.leapp_env_vars
         devel_vars = [var for var in leapp_vars if var.name.startswith('LEAPP_DEVEL_')]
         override = bool([var for var in leapp_vars if var.name == 'LEAPP_UNSUPPORTED'])
 
@@ -44,13 +45,7 @@ class UnsupportedUpgradeCheck(Actor):
                                             'or set LEAPP_UNSUPPORTED=1.'))
             ])
 
-        experimental = []
-        with get_connection(None) as db:
-            conf = db.execute("SELECT configuration FROM execution "
-                              "WHERE kind = 'upgrade' OR kind = 'preupgrade' "
-                              "ORDER BY id DESC LIMIT 1").fetchone()
-            if conf:
-                experimental = json.loads(conf[0])["whitelist_experimental"]
+        experimental = json.loads(conf[0])["whitelist_experimental"]
         if experimental and not override:
             reporting.create_report([
                 reporting.Title('Upgrade inhibited due to enabled experimental actors'),
