@@ -17,9 +17,11 @@ def is_executable(path):
 
 def get_xsession(path):
     """
-    Gets current XSession. If there is more than one definition of xsession for some reason,
-     function returns last definition. Return empty string if no XSession found in file given
-     by path (any reason including bad path etc.)
+    Gets current XSession.
+
+    If there is more than one definition of xsession for some reason,
+    function returns last definition. Return empty string if no XSession found in file given
+    by path (any reason including bad path etc.)
     """
     default_xsession = ""
     if not isinstance(path, str):
@@ -47,8 +49,11 @@ def check_app_in_use(app):
 
 def is_installed(app):
     """
-    Wrapper for "rpm -q <app>" command, returns True if application is found,
-    False in other cases. Output of rpm command is not supressed.
+    Wrapper for "rpm -q <app>" command
+
+    Return value: True if application is found,
+    False in other cases.
+    Output of rpm command is not supressed.
     """
     return True if subprocess.call(["rpm", "-q", app]) == 0 else False
 
@@ -73,8 +78,8 @@ def check_kde_gnome():
     if kde_desktop_installed:
         api.current_logger().info("KDE desktop is installed. Checking what we can do about it.")
         if not gnome_desktop_installed:
-            api.current_logger().error("Cannot perform the upgrade because there is\
-             no other desktop than KDE installed.")
+            api.current_logger().error("Cannot perform the upgrade because there is"
+                                       " no other desktop than KDE installed.")
             # We cannot continue with the upgrade process
             reporting.create_report([
                 reporting.Title("Cannot upgrade because there is no other desktop than KDE installed."),
@@ -100,17 +105,14 @@ def check_kde_gnome():
         else:
             if "plasma" in default_xsession:  # using in because there can be some white spaces
                 api.current_logger().info("KDE used as default session.")
-                api.current_logger().info("Upgrade can be performed, but KDE desktop will\
-                 be removed in favor of GNOME")
+                api.current_logger().info("Upgrade can be performed, but KDE desktop will"
+                                          " be removed in favor of GNOME")
                 reporting.create_report([
                     reporting.Title("Upgrade can be performed, but KDE will be uninstalled."),
                     reporting.Summary("KDE has to be uninstalled in favor of GNOME to perform the upgrade."),
                     reporting.Severity(reporting.Severity.MEDIUM),
                     reporting.Tags([
                         reporting.Tags.UPGRADE_PROCESS
-                    ]),
-                    reporting.Remediation(
-                        hint="KDE has to be removed, no other solution is possible.")
                     ])
             else:
                 api.current_logger().info("GNOME used as default session. Continuing with the upgrade.")

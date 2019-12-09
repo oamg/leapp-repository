@@ -12,6 +12,8 @@ from leapp.libraries.actor.library import check_kde_gnome
 
 class CheckKdeGnome(Actor):
     """
+    Checks whether KDE is installed
+
     Actor will check whether KDE is installed together with GNOME desktop to inform whether we can
     inhibit the upgrade process. When both are installed, we need to inform the user that KDE will
     be removed and GNOME will be used instead. If only KDE is installed, we want to inhibit

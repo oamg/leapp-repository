@@ -29,6 +29,7 @@ def test_no_desktop(monkeypatch):
     Scenario: There is no desktop.
     Expected behavior: No report
     """
+
     #  Desktop presence is found by trying to execute gnome-session or startkde
     monkeypatch.setattr(library, "is_executable", lambda x: False)
     monkeypatch.setattr(reporting, "create_report", create_report_mocked())
@@ -57,8 +58,8 @@ def test_only_gnome_without_active_apps(monkeypatch):
     """
     Scenatio: no KDE desktop is installed, but there are some KDE apps, which are not active
     Expected behavior: No report (unused app is not considered to be important)
-
     """
+
     monkeypatch.setattr(library, "is_executable", is_executable_only_gnome)
     monkeypatch.setattr(library, "is_installed", lambda x: True)
     monkeypatch.setattr(library, "check_app_in_use", lambda x: False)
@@ -73,8 +74,8 @@ def test_only_gnome_with_active_apps(monkeypatch):
     """
     Scenatio: no KDE desktop is installed, but there are some KDE apps, which are actively used
     Expected behavior: Report is made (severity = MEDIUM)
-
     """
+
     monkeypatch.setattr(library, "is_executable", is_executable_only_gnome)
     monkeypatch.setattr(library, "is_installed", lambda x: True)
     monkeypatch.setattr(library, "check_app_in_use", check_app_in_use_mocked)
@@ -83,10 +84,8 @@ def test_only_gnome_with_active_apps(monkeypatch):
     library.check_kde_gnome()
 
     assert reporting.create_report.called == 1
-    #  Do not even touch the string! It is ugly, but because of max line lenght it has to
-    #  be written on two lines.
-    assert reporting.create_report.report_fields["title"] == "Upgrade can be\
- performed, but KDE apps will be uninstalled."
+    title_KDE_apps = "Upgrade can be performed, but KDE apps will be uninstalled."
+    assert reporting.create_report.report_fields["title"] == title_KDE_apps
 
 
 def test_only_kde(monkeypatch):
@@ -94,6 +93,7 @@ def test_only_kde(monkeypatch):
     Scenario: There is only KDE installed.
     Expected behavior: Report is generated with HIGH severity and inhibitor tag.
     """
+
     monkeypatch.setattr(library, "is_executable", is_executable_only_kde)
     monkeypatch.setattr(reporting, "create_report", create_report_mocked())
 
@@ -109,6 +109,7 @@ def test_both_gnome_main_without_active_apps(monkeypatch):
     and there are no KDE apps
     Expected behavior: No report is generated.
     """
+
     monkeypatch.setattr(library, "is_executable", lambda x: True)
     monkeypatch.setattr(library, "is_installed", lambda x: False)
     monkeypatch.setattr(library, "get_xsession", get_xsession_gnome)
@@ -125,6 +126,7 @@ def test_both_gnome_main_with_active_apps(monkeypatch):
     and there are some KDE apps
     Expected behavior: Report is generated about deleting KDE apps
     """
+
     monkeypatch.setattr(library, "is_executable", lambda x: True)
     monkeypatch.setattr(library, "is_installed", lambda x: True)
     monkeypatch.setattr(library, "get_xsession", get_xsession_gnome)
@@ -134,10 +136,8 @@ def test_both_gnome_main_with_active_apps(monkeypatch):
     library.check_kde_gnome()
 
     assert reporting.create_report.called == 1
-    #  Do not even touch the string! It is ugly, but because of max line lenght it has to
-    #  be written on two lines.
-    assert reporting.create_report.report_fields["title"] == "Upgrade can be\
- performed, but KDE apps will be uninstalled."
+    title_KDE_apps = "Upgrade can be performed, but KDE apps will be uninstalled."
+    assert reporting.create_report.report_fields["title"] == title_KDE_apps
 
 
 def test_both_kde_main_without_active_apps(monkeypatch):
@@ -146,6 +146,7 @@ def test_both_kde_main_without_active_apps(monkeypatch):
     and there are no KDE apps
     Expected behavior: There is a report generated.
     """
+
     monkeypatch.setattr(library, "is_executable", lambda x: True)
     monkeypatch.setattr(library, "is_installed", lambda x: False)
     monkeypatch.setattr(library, "get_xsession", get_xsession_kde)
@@ -154,8 +155,8 @@ def test_both_kde_main_without_active_apps(monkeypatch):
     library.check_kde_gnome()
 
     assert reporting.create_report.called == 1
-    assert reporting.create_report.report_fields["title"] == "Upgrade can be\
- performed, but KDE will be uninstalled."
+    title_KDE = "Upgrade can be performed, but KDE will be uninstalled."
+    assert reporting.create_report.report_fields["title"] == title_KDE
 
 
 def test_both_kde_main_with_active_apps(monkeypatch):
@@ -164,6 +165,7 @@ def test_both_kde_main_with_active_apps(monkeypatch):
     and there are some KDE apps
     Expected behavior: Two reports are generated: one about KDE and one about KDE apps.
     """
+
     monkeypatch.setattr(library, "is_executable", lambda x: True)
     monkeypatch.setattr(library, "is_installed", lambda x: True)
     monkeypatch.setattr(library, "get_xsession", get_xsession_kde)
