@@ -1,10 +1,7 @@
-import json
-
 from leapp import reporting
 from leapp.actors import Actor
 from leapp.models import Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
-from leapp.utils.audit import get_connection
 
 
 class UnsupportedUpgradeCheck(Actor):
@@ -23,8 +20,9 @@ class UnsupportedUpgradeCheck(Actor):
     def process(self):
         conf = self.configuration
         leapp_vars = conf.leapp_env_vars
-        devel_vars = [var for var in leapp_vars if var.name.startswith('LEAPP_DEVEL_')]
-        override = bool([var for var in leapp_vars if var.name == 'LEAPP_UNSUPPORTED'])
+        devel_vars = [v for v in leapp_vars if v.name.startswith('LEAPP_DEVEL_')]
+        experimental = bool([v for v in leapp_vars if v.name == 'LEAPP_EXPERIMENTAL' and v.value == '1'])
+        override = bool([v for v in leapp_vars if v.name == 'LEAPP_UNSUPPORTED' and v.value == '1'])
 
         if devel_vars and not override:
             reporting.create_report([
@@ -45,7 +43,6 @@ class UnsupportedUpgradeCheck(Actor):
                                             'or set LEAPP_UNSUPPORTED=1.'))
             ])
 
-        experimental = json.loads(conf[0])["whitelist_experimental"]
         if experimental and not override:
             reporting.create_report([
                 reporting.Title('Upgrade inhibited due to enabled experimental actors'),
@@ -56,7 +53,6 @@ class UnsupportedUpgradeCheck(Actor):
                     'guaranteed and the upgrade is unsupported.\n'
                     'You can bypass this error by setting the LEAPP_UNSUPPORTED variable but by doing so, '
                     'you continue at your own risk.\n'
-                    'Found enabled experimental actors:\n- ' + '\n- '.join(experimental) + '\n'
                 ),
                 reporting.Severity(reporting.Severity.HIGH),
                 reporting.Flags([reporting.Flags.INHIBITOR]),
