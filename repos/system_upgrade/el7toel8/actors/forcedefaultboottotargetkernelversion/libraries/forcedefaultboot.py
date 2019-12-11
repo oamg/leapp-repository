@@ -76,6 +76,13 @@ def process():
         api.current_logger().warning('Failed to query grubby for default kernel', exc_info=True)
         return
 
+    for type_ in ('index', 'title'):
+        try:
+            stdlib.run(['grubby', '--default-{}'.format(type_)])
+        except (OSError, stdlib.CalledProcessError):
+            api.current_logger().warning('Failed to query grubby for default {}'.format(type_), exc_info=True)
+            return
+
     kernel_info = get_kernel_info(message)
     if not kernel_info:
         return
