@@ -28,10 +28,12 @@ Case = namedtuple(
 )
 
 TARGET_KERNEL_VERSION = '1.2.3.4.el8.x86_64'
+TARGET_KERNEL_TITLE = 'Red Hat Enterprise Linux ({}) 8.1 (Ootpa)'.format(TARGET_KERNEL_VERSION)
 TARGET_KERNEL_PATH = '/boot/vmlinuz-{}'.format(TARGET_KERNEL_VERSION)
 TARGET_INITRD_PATH = '/boot/initramfs-{}.img'.format(TARGET_KERNEL_VERSION)
 
 OLD_KERNEL_VERSION = '0.1.2.3.el7.x86_64'
+OLD_KERNEL_TITLE = 'Red Hat Enterprise Linux ({}) 7.6 (Maipo)'.format(OLD_KERNEL_VERSION)
 OLD_KERNEL_PATH = '/boot/vmlinuz-{}'.format(OLD_KERNEL_VERSION)
 
 CASES = (
@@ -118,6 +120,18 @@ class MockedRun(object):
         if self.case.entry_default:
             return {'stdout': '{}\n'.format(TARGET_KERNEL_PATH)}
         return {'stdout': '{}\n'.format(OLD_KERNEL_PATH)}
+
+    def grubby_default_index(self, cmd):
+        assert len(cmd) == 2
+        if self.case.entry_default:
+            return {'stdout': '1\n'}
+        return {'stdout': '0\n'}
+
+    def grubby_default_title(self, cmd):
+        assert len(cmd) == 2
+        if self.case.entry_default:
+            return {'stdout': '{}\n'.format(TARGET_KERNEL_TITLE)}
+        return {'stdout': '{}\n'.format(OLD_KERNEL_TITLE)}
 
     def grubby_set_default(self, cmd):
         assert len(cmd) == 3
