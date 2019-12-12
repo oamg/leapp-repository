@@ -18,8 +18,7 @@ class UnsupportedUpgradeCheck(Actor):
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 
     def process(self):
-        conf = self.configuration
-        leapp_vars = conf.leapp_env_vars
+        leapp_vars = self.configuration.leapp_env_vars
         devel_vars = [v for v in leapp_vars if v.name.startswith('LEAPP_DEVEL_')]
         experimental = bool([v for v in leapp_vars if v.name == 'LEAPP_EXPERIMENTAL' and v.value == '1'])
         override = bool([v for v in leapp_vars if v.name == 'LEAPP_UNSUPPORTED' and v.value == '1'])
