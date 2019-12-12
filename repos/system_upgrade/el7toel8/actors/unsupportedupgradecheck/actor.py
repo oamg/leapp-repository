@@ -23,39 +23,52 @@ class UnsupportedUpgradeCheck(Actor):
         experimental = bool([v for v in leapp_vars if v.name == 'LEAPP_EXPERIMENTAL' and v.value == '1'])
         override = bool([v for v in leapp_vars if v.name == 'LEAPP_UNSUPPORTED' and v.value == '1'])
 
-        if devel_vars and not override:
+        if override:
             reporting.create_report([
-                reporting.Title('Upgrade inhibited due to usage of development variables'),
+                reporting.Title('Upgrade is unsupported'),
                 reporting.Summary(
-                    'One or more environment variables in the form of LEAPP_DEVEL_* have been detected.\n'
-                    'These variables are for development purposes only and can interfere with the upgrade '
-                    'process in unexpected ways. As such, a successful and safe upgrade process cannot be '
-                    'guaranteed and the upgrade is unsupported.\n'
-                    'You can bypass this error by setting the LEAPP_UNSUPPORTED variable but by doing so, '
-                    'you continue at your own risk.\n'
-                    'Found development variables:\n- {}\n'.format('\n- '.join([v.name for v in devel_vars]))
+                    'Environment variable LEAPP_UNSUPPORTED has been detected. A successful and safe '
+                    'upgrade process cannot be guaranteed. From now on you are continuing at your own '
+                    'risk.\n'
                 ),
                 reporting.Severity(reporting.Severity.HIGH),
-                reporting.Flags([reporting.Flags.INHIBITOR]),
                 reporting.Tags([reporting.Tags.UPGRADE_PROCESS, reporting.Tags.SANITY]),
-                reporting.Remediation(hint=('Invoke leapp without any LEAPP_DEVEL_* environment variables '
-                                            'or set LEAPP_UNSUPPORTED=1.'))
             ])
 
-        if experimental and not override:
-            reporting.create_report([
-                reporting.Title('Upgrade inhibited due to enabled experimental actors'),
-                reporting.Summary(
-                    'One or more enabled experimental actors have been detected.\n'
-                    'These actors are unstable or in development and can interfere with the upgrade '
-                    'process in unexpected ways. As such, a successful and safe upgrade process cannot be '
-                    'guaranteed and the upgrade is unsupported.\n'
-                    'You can bypass this error by setting the LEAPP_UNSUPPORTED variable but by doing so, '
-                    'you continue at your own risk.\n'
-                ),
-                reporting.Severity(reporting.Severity.HIGH),
-                reporting.Flags([reporting.Flags.INHIBITOR]),
-                reporting.Tags([reporting.Tags.UPGRADE_PROCESS, reporting.Tags.SANITY]),
-                reporting.Remediation(hint=('Invoke leapp without any --whitelist-experimental options '
-                                            'or set LEAPP_UNSUPPORTED=1.'))
-            ])
+        else:
+            if devel_vars:
+                reporting.create_report([
+                    reporting.Title('Upgrade inhibited due to usage of development variables'),
+                    reporting.Summary(
+                        'One or more environment variables in the form of LEAPP_DEVEL_* have been detected.\n'
+                        'These variables are for development purposes only and can interfere with the upgrade '
+                        'process in unexpected ways. As such, a successful and safe upgrade process cannot be '
+                        'guaranteed and the upgrade is unsupported.\n'
+                        'You can bypass this error by setting the LEAPP_UNSUPPORTED variable but by doing so, '
+                        'you continue at your own risk.\n'
+                        'Found development variables:\n- {}\n'.format('\n- '.join([v.name for v in devel_vars]))
+                    ),
+                    reporting.Severity(reporting.Severity.HIGH),
+                    reporting.Flags([reporting.Flags.INHIBITOR]),
+                    reporting.Tags([reporting.Tags.UPGRADE_PROCESS, reporting.Tags.SANITY]),
+                    reporting.Remediation(hint=('Invoke leapp without any LEAPP_DEVEL_* environment variables '
+                                                'or set LEAPP_UNSUPPORTED=1.'))
+                ])
+
+            if experimental:
+                reporting.create_report([
+                    reporting.Title('Upgrade inhibited due to enabled experimental actors'),
+                    reporting.Summary(
+                        'One or more enabled experimental actors have been detected.\n'
+                        'These actors are unstable or in development and can interfere with the upgrade '
+                        'process in unexpected ways. As such, a successful and safe upgrade process cannot be '
+                        'guaranteed and the upgrade is unsupported.\n'
+                        'You can bypass this error by setting the LEAPP_UNSUPPORTED variable but by doing so, '
+                        'you continue at your own risk.\n'
+                    ),
+                    reporting.Severity(reporting.Severity.HIGH),
+                    reporting.Flags([reporting.Flags.INHIBITOR]),
+                    reporting.Tags([reporting.Tags.UPGRADE_PROCESS, reporting.Tags.SANITY]),
+                    reporting.Remediation(hint=('Invoke leapp without any --whitelist-experimental options '
+                                                'or set LEAPP_UNSUPPORTED=1.'))
+                ])
