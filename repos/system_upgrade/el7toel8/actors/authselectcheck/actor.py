@@ -74,14 +74,16 @@ class AuthselectCheck(Actor):
 
         # Authselect profile is available but we require confirmation.
         confirmed = self.get_confirmation(model, command)
-        self.produce_suggested_configuration(model, confirmed, command)
+        if confirmed is not None:
+            # A user has made his choice
+            self.produce_suggested_configuration(model, confirmed, command)
 
     def get_confirmation(self, model, command):
         dialog = self.dialogs[0]
 
         dialog.components[0].label += "\n{}\n".format(command)
 
-        return self.request_answers(dialog).get('confirm', False)
+        return self.get_answers(dialog).get('confirm')
 
     def produce_authconfig_configuration(self, model, command):
         self.produce(
