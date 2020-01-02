@@ -28,7 +28,6 @@ class RemoveOldPAMModulesCheck(Actor):
                     key='confirm',
                     label='Disable pam_pkcs11 module in PAM configuration? '
                           'If no, the upgrade process will be interrupted.',
-                    default=False,
                     description='PAM module pam_pkcs11 is no longer available '
                                 'in RHEL-8 since it was replaced by SSSD.',
                     reason='Leaving this module in PAM configuration may '
@@ -44,7 +43,6 @@ class RemoveOldPAMModulesCheck(Actor):
                     key='confirm',
                     label='Disable pam_krb5 module in PAM configuration? '
                           'If no, the upgrade process will be interrupted.',
-                    default=False,
                     description='PAM module pam_krb5 is no longer available '
                                 'in RHEL-8 since it was replaced by SSSD.',
                     reason='Leaving this module in PAM configuration may '
@@ -63,7 +61,8 @@ class RemoveOldPAMModulesCheck(Actor):
             result = self.confirm(module)
             if result:
                 self.produce_report(module)
-            else:
+            elif result is False:
+                # user specifically chose to disagree with auto disablement
                 self.produce_inhibitor(module)
 
     def confirm(self, module):
@@ -72,7 +71,7 @@ class RemoveOldPAMModulesCheck(Actor):
             'pam_krb5': self.dialogs[1]
         }
 
-        return self.request_answers(questions[module]).get('confirm', False)
+        return self.get_answers(questions[module]).get('confirm')
 
     def produce_report(self, module):
         create_report([
