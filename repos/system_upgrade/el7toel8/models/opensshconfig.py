@@ -7,7 +7,9 @@ class OpenSshPermitRootLogin(Model):
 
     value = fields.StringEnum(['yes', 'prohibit-password',
                                'forced-commands-only', 'no'])
+    """ Value of a PermitRootLogin directive. """
     in_match = fields.Nullable(fields.List(fields.String()))
+    """ Criteria of Match blocks the PermitRootLogin directive occured in, if any. """
 
 
 class OpenSshConfig(Model):
@@ -21,11 +23,16 @@ class OpenSshConfig(Model):
     topic = SystemInfoTopic
 
     permit_root_login = fields.List(fields.Model(OpenSshPermitRootLogin))
+    """ All PermitRootLogin directives. """
     use_privilege_separation = fields.Nullable(fields.StringEnum(['sandbox',
                                                                   'yes',
                                                                   'no']))
+    """ Value of the UsePrivilegeSeparation directive, if present. Removed in RHEL 8. """
     protocol = fields.Nullable(fields.String())
+    """ Value of the Protocols directive, if present. Removed in RHEL 8. """
     ciphers = fields.Nullable(fields.String())
+    """ Value of the Ciphers directive, if present. Ciphers separated by comma. """
     macs = fields.Nullable(fields.String())
-
+    """ Value of the MACs directive, if present. """
     modified = fields.Nullable(fields.Boolean())
+    """ True if the configuration file was modified. """
