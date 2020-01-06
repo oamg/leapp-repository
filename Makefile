@@ -27,6 +27,13 @@ _COPR_REPO=$${COPR_REPO:-leapp}
 _COPR_REPO_TMP=$${COPR_REPO_TMP:-leapp-tmp}
 _COPR_CONFIG=$${COPR_CONFIG:-~/.config/copr_rh_oamg.conf}
 
+# In some cases we want to build rpms just for specific chroot. Currently just
+# one chroot is processed by makefile, but the copr utility is able to process
+# multiple chroots (for each -r one chroot is allowed).
+ifdef COPR_CHROOT
+	_COPR_CHROOT=-r=$${COPR_CHROOT}
+endif
+
 # just to reduce number of unwanted builds mark as the upstream one when
 # someone will call copr_build without additional parameters
 MASTER_BRANCH=master
@@ -76,10 +83,22 @@ help:
 	@echo "  lint                   lint source code"
 	@echo "  test                   lint source code and run tests"
 	@echo "  test_no_lint           run tests without linting the source code"
+	@echo ""
 	@echo "Targets test, lint and test_no_lint support environment variables ACTOR and"
 	@echo "TEST_LIBS."
 	@echo "If ACTOR=<actor> is specified, targets are run against the specified actor."
 	@echo "If TEST_LIBS=y is specified, targets are run against shared libraries."
+	@echo ""
+	@echo "Envars affecting actions with COPR (optional):"
+	@echo "  COPR_REPO             specify COPR repository, e,g. @oamg/leapp"
+	@echo "                          (default: leapp)"
+	@echo "  COPR_REPO_TMP         specify COPR repository for building of tmp"
+	@echo "                        deps (meta) packages"
+	@echo "                          (default: leapp-tmp)"
+	@echo "  COPR_CONFIG           path to the COPR config with API token"
+	@echo "                          (default: ~/.config/copr_rh_oamg.conf)"
+	@echo "  COPR_CHROOT           specify the CHROOT which should be used for"
+	@echo "                        the build, e.g. epel-7-x86_64"
 	@echo ""
 	@echo "Possible use:"
 	@echo "  make <target>"
@@ -144,17 +163,17 @@ _srpm_subpkg:
 
 _copr_build_deps_subpkg: _srpm_subpkg
 	@echo "--- Build RPM ${DEPS_PKGNAME}-${DEPS_VERSION}-${RELEASE} in TMP CORP ---"
-	@echo copr --config $(_COPR_CONFIG) build $(_COPR_REPO_TMP) \
+	@echo copr --config $(_COPR_CONFIG) build $(_COPR_CHROOT) $(_COPR_REPO_TMP) \
 		packaging/SRPMS/${DEPS_PKGNAME}-${DEPS_VERSION}-${RELEASE}*.src.rpm
-	@copr --config $(_COPR_CONFIG) build $(_COPR_REPO_TMP) \
+	@copr --config $(_COPR_CONFIG) build $(_COPR_CHROOT) $(_COPR_REPO_TMP) \
 		packaging/SRPMS/${DEPS_PKGNAME}-${DEPS_VERSION}-${RELEASE}*.src.rpm
 
 
 copr_build: srpm
 	@echo "--- Build RPM ${PKGNAME}-${VERSION}-${RELEASE}.el6.rpm in COPR ---"
-	@echo copr --config $(_COPR_CONFIG) build $(_COPR_REPO) \
+	@echo copr --config $(_COPR_CONFIG) build $(_COPR_CHROOT) $(_COPR_REPO) \
 		packaging/SRPMS/${PKGNAME}-${VERSION}-${RELEASE}*.src.rpm
-	@copr --config $(_COPR_CONFIG) build $(_COPR_REPO) \
+	@copr --config $(_COPR_CONFIG) build $(_COPR_CHROOT) $(_COPR_REPO) \
 		packaging/SRPMS/${PKGNAME}-${VERSION}-${RELEASE}*.src.rpm
 
 print_release:
