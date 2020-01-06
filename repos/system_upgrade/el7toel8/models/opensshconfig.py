@@ -34,5 +34,5 @@ class OpenSshConfig(Model):
     """ Value of the Ciphers directive, if present. Ciphers separated by comma. """
     macs = fields.Nullable(fields.String())
     """ Value of the MACs directive, if present. """
-    modified = fields.Nullable(fields.Boolean())
+    modified = fields.Boolean(default=False)
     """ True if the configuration file was modified. """
