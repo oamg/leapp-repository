@@ -52,11 +52,10 @@ class VsftpdConfigOptionParser(object):
         value = value.upper()
         if value in ['YES', 'TRUE', '1']:
             return True
-        elif value in ['NO', 'FALSE', '0']:
+        if value in ['NO', 'FALSE', '0']:
             return False
-        else:
-            raise ParsingError("Boolean option '%s' contains a non-boolean value '%s'"
-                               % (option, value))
+        raise ParsingError("Boolean option '%s' contains a non-boolean value '%s'"
+                           % (option, value))
 
     def _get_integer(self, option, value):
         try:
@@ -68,12 +67,12 @@ class VsftpdConfigOptionParser(object):
     def parse_value(self, option, value):
         if option in self._get_string_options():
             return value
-        elif option in self._get_boolean_options():
+        if option in self._get_boolean_options():
             return self._get_boolean(option, value)
-        elif option in self._get_integer_options():
+        if option in self._get_integer_options():
             return self._get_integer(option, value)
-        else:
-            raise ParsingError("Unknown option: '%s'" % option)
+
+        raise ParsingError("Unknown option: '%s'" % option)
 
 
 class VsftpdConfigParser(object):

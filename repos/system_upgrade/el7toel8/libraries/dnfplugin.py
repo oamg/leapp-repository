@@ -39,9 +39,9 @@ def build_plugin_data(target_repoids, debug, test, tasks):
     data = {
         'pkgs_info': {
             'local_rpms': [os.path.join('/installroot', pkg.lstrip('/')) for pkg in tasks.local_rpms],
-            'to_install': [pkg for pkg in tasks.to_install],
-            'to_remove': [pkg for pkg in tasks.to_remove],
-            'to_upgrade': [pkg for pkg in tasks.to_upgrade]
+            'to_install': tasks.to_install,
+            'to_remove': tasks.to_remove,
+            'to_upgrade': tasks.to_upgrade
         },
         'dnf_conf': {
             'allow_erasing': True,
@@ -155,7 +155,7 @@ def install_initramdisk_requirements(packages, target_userspace_info, used_repos
             '--setopt=module_platform_id=platform:el8',
             '--setopt=keepcache=1',
             '--disablerepo', '*'
-        ] + repos_opt + [package for package in packages]
+        ] + repos_opt + list(packages)
         if config.is_verbose():
             cmd.append('-v')
         context.call(cmd)
@@ -174,7 +174,7 @@ def perform_transaction_install(target_userspace_info, storage_info, used_repos,
         '/proc:/installroot/proc',
         '/run/udev:/installroot/run/udev'
     ]
-    already_mounted = set([entry.split(':')[0] for entry in bind_mounts])
+    already_mounted = {entry.split(':')[0] for entry in bind_mounts}
     for entry in storage_info.fstab:
         mp = entry.fs_file
         if not os.path.isdir(mp):

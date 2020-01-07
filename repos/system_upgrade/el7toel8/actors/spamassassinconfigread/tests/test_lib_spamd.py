@@ -39,9 +39,8 @@ class MockListDir(object):
             raise self.to_raise
         if os.path.normpath(path) == self.path:
             return self.file_names
-        else:
-            self.error = True
-            raise make_OSError(errno.ENOENT)
+        self.error = True
+        raise make_OSError(errno.ENOENT)
 
 
 def test_spamassassin_service_overriden():

@@ -108,12 +108,12 @@ class MockedRun(object):
         assert len(cmd) == 3
         if not self.case.entry_exists:
             raise stdlib.CalledProcessError('A leapp command failed', cmd, {})
-        else:
-            return {
-                'stdout': _GRUBBY_INFO_TEMPLATE.format(
-                    entry_index=0 if self.case.entry_default else 1,
-                    kernel_version=TARGET_KERNEL_VERSION)
-                }
+
+        return {
+            'stdout': _GRUBBY_INFO_TEMPLATE.format(
+                entry_index=0 if self.case.entry_default else 1,
+                kernel_version=TARGET_KERNEL_VERSION)
+            }
 
     def grubby_default_kernel(self, cmd):
         assert len(cmd) == 2

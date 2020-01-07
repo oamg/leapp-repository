@@ -67,10 +67,10 @@ class PersistentNetNamesConfig(Actor):
                         renamed_interfaces.append(RenamedInterface(**{'rhel7_name': rhel7_name,
                                                                       'rhel8_name': rhel8_name}))
                         continue
-                    else:
-                        # TODO(msekleta): we need to introduce another actor which will
-                        # # install generated link files to RHEL-8 initrd image
-                        self.generate_link_file(iface)
+
+                    # TODO(msekleta): we need to introduce another actor which will
+                    # # install generated link files to RHEL-8 initrd image
+                    self.generate_link_file(iface)
 
         self.produce(RenamedInterfaces(renamed=renamed_interfaces))
         self.produce(InitrdIncludes(files=self.initrd_files))

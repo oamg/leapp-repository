@@ -60,7 +60,7 @@ def test_get_fstab_info(monkeypatch):
             fs_freq='0',
             fs_passno='0')]
     assert expected == library._get_fstab_info('tests/files/fstab')
-    monkeypatch.setattr(library, '_is_file_readable', lambda(_): False)
+    monkeypatch.setattr(library, '_is_file_readable', lambda dummy: False)
     assert [] == library._get_fstab_info('unreadable_file')
 
 

@@ -1,6 +1,7 @@
 from mock import mock_open, patch
 import pytest
 import pyudev
+import six
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import library
@@ -21,13 +22,13 @@ class LoggerMocked(object):
 
 def test_biosdevname_disabled(monkeypatch):
     mock_config = mock_open(read_data="biosdevname=0")
-    with patch("__builtin__.open", mock_config):
+    with patch("builtins.open" if six.PY3 else "__builtin__.open", mock_config):
         assert library.is_biosdevname_disabled()
 
 
 def test_biosdevname_enabled(monkeypatch):
     mock_config = mock_open(read_data="biosdevname=1")
-    with patch("__builtin__.open", mock_config):
+    with patch("builtins.open" if six.PY3 else "__builtin__.open", mock_config):
         assert not library.is_biosdevname_disabled()
 
 
@@ -111,8 +112,8 @@ def test_enable_biosdevname(monkeypatch):
 
     library.enable_biosdevname()
     assert (
-        "Biosdevname naming scheme in use, explicitely enabling biosdevname on RHEL-8"
-        in api.current_logger.infomsg
+            "Biosdevname naming scheme in use, explicitely enabling biosdevname on RHEL-8"
+            in api.current_logger.infomsg
     )
     assert result[0].key == "biosdevname"
     assert result[0].value == "1"

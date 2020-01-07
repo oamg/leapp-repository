@@ -84,7 +84,7 @@ def test_SELinuxContentScanner(current_actor_context, destructive_selinux_env):
     assert modules
     # check that all modules installed during test setup where reported
     for priority, name in TEST_MODULES:
-        if priority != "100" and priority != "200":
+        if priority not in ('100', '200'):
             assert find_module(modules, name, priority)
 
     rpms = current_actor_context.consume(SELinuxRequestRPMs)[0]

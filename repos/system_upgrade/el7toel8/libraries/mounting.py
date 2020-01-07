@@ -115,7 +115,6 @@ class IsolationType(object):
 
     class NONE(_Implementation):
         """ Execute the given commands and perform the given operations on the real system and not isolated. """
-        pass
 
 
 class IsolatedActions(object):
