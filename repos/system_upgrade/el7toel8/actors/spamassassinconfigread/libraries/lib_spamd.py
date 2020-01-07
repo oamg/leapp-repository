@@ -19,7 +19,7 @@ def _parse_ssl_version(content):
     _, assignment, _ = lib.parse_sysconfig_spamassassin(content)
     if re.search(r'(?<![\w-])--ssl-version(=|\s+)sslv3(?![\w-])', assignment):
         return 'sslv3'
-    elif re.search(r'(?<![\w-])--ssl-version(=|\s+)tlsv1(?![\w-])', assignment):
+    if re.search(r'(?<![\w-])--ssl-version(=|\s+)tlsv1(?![\w-])', assignment):
         return 'tlsv1'
     return None
 

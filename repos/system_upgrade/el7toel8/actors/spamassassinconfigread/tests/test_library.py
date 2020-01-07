@@ -33,9 +33,8 @@ class MockListDir(object):
     def listdir(self, path):
         if os.path.normpath(path) == self.path:
             return self.file_names
-        else:
-            self.error = True
-            raise make_OSError(errno.ENOENT)
+        self.error = True
+        raise make_OSError(errno.ENOENT)
 
 
 def test_get_spamassassin_facts():

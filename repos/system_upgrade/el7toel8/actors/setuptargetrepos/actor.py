@@ -87,5 +87,3 @@ class SetupTargetRepos(Actor):
 
         # TODO: Some informational messages would be added for the report and
         # + logs, so we and user will know exactly what is going on.
-
-        return

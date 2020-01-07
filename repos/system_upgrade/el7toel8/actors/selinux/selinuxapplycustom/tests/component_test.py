@@ -78,7 +78,7 @@ def test_SELinuxApplyCustom(current_actor_context, destructive_selinux_teardown)
 
     # check that all reported modules where introduced to the system
     for priority, name in TEST_MODULES:
-        if priority != "100" and priority != "200":
+        if priority not in ('100', '200'):
             assert find_module_semodule(semodule_lfull, name, priority)
     # check that all valid commands where introduced to the system
     for command in SEMANAGE_COMMANDS[1:-1]:

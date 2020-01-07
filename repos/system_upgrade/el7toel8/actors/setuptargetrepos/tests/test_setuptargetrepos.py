@@ -90,6 +90,5 @@ def test_repos_mapping(current_actor_context):
 
     rhel_repos = current_actor_context.consume(TargetRepositories)[0].rhel_repos
     assert len(rhel_repos) == 2
-    assert set([repo.repoid for repo in rhel_repos]) == set([
-        'rhel-8-for-{}-baseos-htb-rpms'.format(arch),
-        'rhel-8-for-{}-appstream-htb-rpms'.format(arch)])
+    assert {repo.repoid for repo in rhel_repos} == {'rhel-8-for-x86_64-baseos-htb-rpms',
+                                                    'rhel-8-for-x86_64-appstream-htb-rpms'}

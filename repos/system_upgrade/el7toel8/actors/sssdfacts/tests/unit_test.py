@@ -1,21 +1,19 @@
 import textwrap
 
-from six.moves import configparser
 from six import StringIO
 
 from leapp.libraries.actor.library import SSSDFactsLibrary
+from leapp.libraries.common import utils
 from leapp.models import SSSDConfig, SSSDDomainConfig
 
 
 def get_config(content):
-    config = configparser.ConfigParser()
-    config.readfp(StringIO(textwrap.dedent(content)))
-
-    return config
+    parser = utils.parse_config(StringIO(textwrap.dedent(content)))
+    return parser
 
 
 def test_empty_config():
-    config = configparser.ConfigParser()
+    config = utils.parse_config()
     facts = SSSDFactsLibrary(config).process()
 
     assert not facts.domains
@@ -147,7 +145,7 @@ def test_complex():
 
 
 def test_get_domain_section():
-    config = configparser.ConfigParser()
+    config = utils.parse_config()
     library = SSSDFactsLibrary(config)
 
     assert library.get_domain_section("ldap") == "domain/ldap"

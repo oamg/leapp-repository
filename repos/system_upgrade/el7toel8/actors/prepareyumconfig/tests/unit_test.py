@@ -27,7 +27,8 @@ def test_prepare_yum_config(monkeypatch):
     with monkeypatch.context() as context:
         context.setattr(leapp.libraries.stdlib, 'run', run)
         context.setattr(leapp.libraries.stdlib.api, 'get_tool_path', _get_tool_path)
-        from leapp.libraries.common import utils  # Needed locally to allow monkey patching to actually work
+        # Needed locally to allow monkey patching to actually work
+        from leapp.libraries.common import utils  # pylint: disable=import-outside-toplevel
         utils.apply_yum_workaround()
     assert run.called == 1
     assert os.path.basename(run.args[-1]) == 'handleyumconfig'

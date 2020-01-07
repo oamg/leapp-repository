@@ -1,9 +1,40 @@
 import functools
 import sys
 
+import six
+
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import mounting
 from leapp.libraries.stdlib import STDOUT, CalledProcessError, api, config, run
+
+
+def parse_config(cfg=None):
+    """
+    Applies a workaround to parse a config file using py3 AND py2
+
+    ConfigParser has a new def to read strings/iles in Py3, making
+    the old ones (Py2) obsoletes, these function was created to use the
+    ConfigParser on Py2 and Py3
+
+    :type cfg: str
+    """
+    parser = six.moves.configparser.ConfigParser()
+
+    # we do not handle exception here, handle with it when these function is called
+    if cfg and six.PY3:
+        # Python 3
+        if isinstance(cfg, six.string_types):
+            parser.read_string(cfg)
+        else:
+            parser.read_file(cfg)
+    elif cfg:
+        # Python 2
+        from cStringIO import StringIO  # pylint: disable=import-outside-toplevel
+        if isinstance(cfg, six.string_types):
+            parser.readfp(StringIO(cfg))  # pylint: disable=deprecated-method
+        else:
+            parser.readfp(cfg)  # pylint: disable=deprecated-method
+    return parser
 
 
 def makedirs(path, mode=0o777, exists_ok=True):
@@ -82,10 +113,9 @@ def call_with_oserror_handled(cmd):
                     'hint': 'Please ensure that {} is installed and executable.'.format(cmd[0])
                 }
             )
-        else:
-            raise StopActorExecutionError(
-                message='Failed to execute command {} with: {}'.format(''.join(cmd), str(e))
-            )
+        raise StopActorExecutionError(
+            message='Failed to execute command {} with: {}'.format(''.join(cmd), str(e))
+        )
 
 
 def call_with_failure_hint(cmd, hint):
@@ -107,6 +137,7 @@ def clean_guard(cleanup_function):
     Decorator to handle any exception going through and running cleanup tasks through the given cleanup_function
     parameter.
     """
+
     def clean_wrapper(f):
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
@@ -121,7 +152,9 @@ def clean_guard(cleanup_function):
                     # error. Logging for debuggability.
                     api.current_logger().warn('Caught and swallowed an exception during cleanup.', exc_info=True)
                 raise  # rethrow original exception
+
         return wrapper
+
     return clean_wrapper
 
 

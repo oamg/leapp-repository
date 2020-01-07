@@ -2,10 +2,10 @@ import os
 import re
 import textwrap
 
-from six.moves import configparser
 from six import StringIO
 
 from leapp.libraries.stdlib import run, CalledProcessError
+from leapp.libraries.common import utils
 from leapp.models import Authselect
 
 
@@ -37,8 +37,8 @@ class ConfigFile(object):
     """
 
     def __init__(self, content):
-        self.config = configparser.ConfigParser()
-        self.config.readfp(StringIO(textwrap.dedent(content)))
+        parser = utils.parse_config(StringIO(textwrap.dedent(content)))
+        self.config = parser
 
     def get_string(self, section, option):
         if not self.config.has_option(section, option):
@@ -73,7 +73,6 @@ class DConf(ConfigFile):
     """
         Parse dconf configuration.
     """
-    pass
 
 
 class AuthselectScannerLibrary(object):
@@ -220,8 +219,8 @@ class AuthselectScannerLibrary(object):
                 features.append("with-smartcard-required")
 
             if self.dconf.get_string(
-                'org/gnome/settings-daemon/peripherals/smartcard',
-                'removal-action'
+                    'org/gnome/settings-daemon/peripherals/smartcard',
+                    'removal-action'
             ) == 'lock-screen':
                 features.append("with-smartcard-lock-on-removal")
 

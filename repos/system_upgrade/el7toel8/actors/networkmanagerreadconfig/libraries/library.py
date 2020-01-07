@@ -1,5 +1,6 @@
-from six.moves.configparser import ConfigParser, ParsingError
+from six.moves.configparser import ParsingError
 
+from leapp.libraries.common import utils
 from leapp.libraries.stdlib import CalledProcessError, run, api
 
 
@@ -25,17 +26,8 @@ def read_nm_config(file_path=None):
 
 
 def parse_nm_config(cfg):
-    parser = ConfigParser()
-
     try:
-        if hasattr(parser, 'read_string'):
-            # Python 3
-            parser.read_string(cfg)
-        else:
-            # Python 2
-            from cStringIO import StringIO
-            parser.readfp(StringIO(cfg))
-        return parser
+        return utils.parse_config(cfg)
     except (ParsingError, TypeError) as e:
         api.current_logger().warning('Error parsing NetworkManager configuration: {}'.format(e))
         return None

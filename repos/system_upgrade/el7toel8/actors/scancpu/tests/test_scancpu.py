@@ -16,7 +16,7 @@ class mocked_get_cpuinfo(object):
 
         Those files contain /proc/cpuinfo content from several machines.
         """
-        with open(os.path.join('tests/files', self.filename), 'rb') as fp:
+        with open(os.path.join('tests/files', self.filename), 'r') as fp:
             return fp.readlines()
 
 

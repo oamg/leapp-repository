@@ -3,9 +3,8 @@
 #
 import re
 
-from six.moves.configparser import SafeConfigParser
-
 from leapp.libraries.stdlib import api
+from leapp.libraries.common import utils
 
 
 def check_dlm_cfgfile():
@@ -18,13 +17,7 @@ def check_dlm_cfgfile():
     except (OSError, IOError):
         return False
 
-    cfg = SafeConfigParser()
-    try:
-        cfg.read_string(cfgs)
-    except AttributeError:
-        # Python2 ConfigParser doesn't have cfg.read_string
-        from cStringIO import StringIO
-        cfg.readfp(StringIO(cfgs))
+    cfg = utils.parse_config(cfgs)
 
     if not cfg.has_option('dlm', 'protocol'):
         return False

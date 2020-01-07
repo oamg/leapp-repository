@@ -10,7 +10,7 @@ from leapp.libraries.stdlib import api
 
 
 def aslist(f):
-    ''' Decorator used to convert generator to list '''
+    """ Decorator used to convert generator to list """
     @functools.wraps(f)
     def inner(*args, **kwargs):
         return list(f(*args, **kwargs))
@@ -18,15 +18,15 @@ def aslist(f):
 
 
 def _is_file_readable(path):
-    ''' Verify if file exists and is readable '''
+    """ Verify if file exists and is readable """
     return os.path.isfile(path) and os.access(path, os.R_OK)
 
 
 def _get_cmd_output(cmd, delim, expected_len):
-    ''' Verify if command exists and return output '''
+    """ Verify if command exists and return output """
     if not any(os.access(os.path.join(path, cmd[0]), os.X_OK) for path in os.environ['PATH'].split(os.pathsep)):
         api.current_logger().warning("'%s': command not found" % cmd[0])
-        raise StopIteration
+        return
 
     try:
         # FIXME: Will keep call to subprocess until our stdlib supports "env" parameter
@@ -36,7 +36,7 @@ def _get_cmd_output(cmd, delim, expected_len):
 
     except subprocess.CalledProcessError as e:
         api.current_logger().debug("Command '%s' return non-zero exit status: %s" % (" ".join(cmd), e.returncode))
-        raise StopIteration
+        return
 
     for entry in output.split('\n'):
         entry = entry.strip()
@@ -51,7 +51,7 @@ def _get_cmd_output(cmd, delim, expected_len):
 
 @aslist
 def _get_partitions_info(partitions_path):
-    ''' Collect storage info from /proc/partitions file '''
+    """ Collect storage info from /proc/partitions file """
     if _is_file_readable(partitions_path):
         with open(partitions_path, 'r') as partitions:
             skipped_header = False
@@ -77,7 +77,7 @@ def _get_partitions_info(partitions_path):
 
 @aslist
 def _get_fstab_info(fstab_path):
-    ''' Collect storage info from /etc/fstab file '''
+    """ Collect storage info from /etc/fstab file """
     if _is_file_readable(fstab_path):
         with open(fstab_path, 'r') as fstab:
             for line, entry in enumerate(fstab, 1):
@@ -138,7 +138,7 @@ def _get_fstab_info(fstab_path):
 
 @aslist
 def _get_mount_info(path):
-    ''' Collect storage info '''
+    """ Collect storage info """
     with open(path, 'r') as fp:
         for line in [l.strip() for l in fp.readlines()]:
             device, mount, tp, options, _, _ = line.split(' ')
@@ -152,7 +152,7 @@ def _get_mount_info(path):
 
 @aslist
 def _get_lsblk_info():
-    ''' Collect storage info from lsblk command '''
+    """ Collect storage info from lsblk command """
     for entry in _get_cmd_output(['lsblk', '-r', '--noheadings'], ' ', 7):
         name, maj_min, rm, size, ro, tp, mountpoint = entry
         yield LsblkEntry(
@@ -167,7 +167,7 @@ def _get_lsblk_info():
 
 @aslist
 def _get_pvs_info():
-    ''' Collect storage info from pvs command '''
+    """ Collect storage info from pvs command """
     for entry in _get_cmd_output(['pvs', '--noheadings', '--separator', r':'], ':', 6):
         pv, vg, fmt, attr, psize, pfree = entry
         yield PvsEntry(
@@ -181,7 +181,7 @@ def _get_pvs_info():
 
 @aslist
 def _get_vgs_info():
-    ''' Collect storage info from vgs command '''
+    """ Collect storage info from vgs command """
     for entry in _get_cmd_output(['vgs', '--noheadings', '--separator', r':'], ':', 7):
         vg, pv, lv, sn, attr, vsize, vfree = entry
         yield VgsEntry(
@@ -196,7 +196,7 @@ def _get_vgs_info():
 
 @aslist
 def _get_lvdisplay_info():
-    ''' Collect storage info from lvdisplay command '''
+    """ Collect storage info from lvdisplay command """
     for entry in _get_cmd_output(['lvdisplay', '-C', '--noheadings', '--separator', r':'], ':', 12):
         lv, vg, attr, lsize, pool, origin, data, meta, move, log, cpy_sync, convert = entry
         yield LvdisplayEntry(
@@ -216,7 +216,7 @@ def _get_lvdisplay_info():
 
 @aslist
 def _get_systemd_mount_info():
-    ''' Collect storage info from systemd-mount command '''
+    """ Collect storage info from systemd-mount command """
     for entry in _get_cmd_output(['systemd-mount', '--list'], ' ', 7):
         # We need to filter the entry because there is a ton of whitespace.
         node, path, model, wwn, fs_type, label, uuid = [x for x in entry if x != '']
@@ -235,7 +235,7 @@ def _get_systemd_mount_info():
 
 
 def get_storage_info():
-    ''' Collect multiple info about storage and return it '''
+    """ Collect multiple info about storage and return it """
     return StorageInfo(
         partitions=_get_partitions_info('/proc/partitions'),
         fstab=_get_fstab_info('/etc/fstab'),

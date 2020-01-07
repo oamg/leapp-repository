@@ -92,7 +92,7 @@ def test_config_applies_to_daemon_with_host_except():
     assert lib.config_applies_to_daemon(facts, 'vsftpd') is True
 
     daemon_list = DaemonList(value=['all', 'except', 'all', 'except', 'all',
-                                    'except' 'vsftpd@localhost'])
+                                    'except', 'vsftpd@localhost'])
     facts = TcpWrappersFacts(daemon_lists=[daemon_list])
     assert lib.config_applies_to_daemon(facts, 'vsftpd') is True
 

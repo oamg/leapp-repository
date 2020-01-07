@@ -7,10 +7,10 @@ import os
 import pwd
 import re
 
-from six.moves import configparser
 import six
 
 from leapp.libraries.stdlib import CalledProcessError, api, run
+from leapp.libraries.common import utils
 from leapp.models import SysctlVariablesFacts, SysctlVariable, ActiveKernelModulesFacts, ActiveKernelModule, \
     KernelModuleParameter, UsersFacts, User, GroupsFacts, Group, RepositoriesFacts, RepositoryFile, RepositoryData, \
     SELinuxFacts, fields, FirewallStatus, FirewallsFacts, FirmwareFacts
@@ -179,8 +179,8 @@ def _get_repositories():
     @aslist
     def _parse(r):
         with open(r, mode='r') as fp:
-            cp = configparser.ConfigParser()
-            cp.readfp(fp)
+            cp = utils.parse_config(fp)
+
             for section in cp.sections():
                 prepared = {'repoid': section, 'additional_fields': {}}
                 data = dict(cp.items(section))
@@ -212,7 +212,7 @@ def get_selinux_status():
     # will be None if something went wrong or contain SELinuxFacts otherwise
     res = None
     try:
-        import selinux
+        import selinux  # pylint: disable=import-outside-toplevel
     except ImportError:
         api.report_error("SELinux Import Error", details="libselinux-python package must be installed.")
         return res

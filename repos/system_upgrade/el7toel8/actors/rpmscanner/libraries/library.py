@@ -5,7 +5,7 @@ def get_package_repository_data():
     """ Return dictionary mapping package name with repository from which it was installed """
     # import has to be inside the function to avoid troubles with non-existing
     # module in Python3 (where we do not need this function anymore)
-    import yum
+    import yum  # pylint: disable=import-outside-toplevel
     yum_base = yum.YumBase()
     pkg_repos = {}
 

@@ -76,7 +76,7 @@ def matches_version(match_list, detected):
         # match_list = ['7.6', '7.7', '7.8', '7.9']
         _validate_versions(match_list)
         return detected in match_list
-    elif _cmp_versions(match_list):
+    if _cmp_versions(match_list):
         detected = _version_to_tuple(detected)
         # match_list = ['>= 7.6', '< 7.10']
         _validate_versions([s.split()[1] for s in match_list])
@@ -86,10 +86,10 @@ def matches_version(match_list, detected):
             if not OP_MAP[op](detected, ver):
                 return False
         return True
-    else:
-        raise ValueError("Versions have to be a list or tuple of strings in the form "
-                         "'['>'|'>='|'<'|'<='] <integer>.<integer>' or "
-                         "'<integer>.<integer>' but provided was '{}'".format(match_list))
+
+    raise ValueError("Versions have to be a list or tuple of strings in the form "
+                     "'['>'|'>='|'<'|'<='] <integer>.<integer>' or "
+                     "'<integer>.<integer>' but provided was '{}'".format(match_list))
 
 
 def matches_source_version(*match_list):
