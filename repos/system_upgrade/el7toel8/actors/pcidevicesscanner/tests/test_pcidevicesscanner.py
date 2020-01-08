@@ -1,15 +1,40 @@
+import pytest
+
 from leapp.models import PCIDevices, PCIDevice
 from leapp.libraries.actor.pcidevicesscanner import parse_pci_devices, produce_pci_devices
 
 
 def test_parse_pci_devices(current_actor_libraries):
-    devices = [
-        '00:00.0 "Host bridge" "Intel Corporation" "440FX - 82441FX PMC [Natoma]" -r02 "Red Hat, Inc." '
-        '"Qemu virtual machine"',
-        '00:01.0 "ISA bridge" "Intel Corporation" "82371SB PIIX3 ISA [Natoma/Triton II]" "Red Hat, Inc." '
-        '"Qemu virtual machine"',
-        '00:01.1 "IDE interface" "Intel Corporation" "82371SB PIIX3 IDE [Natoma/Triton II]" -p80 "Red Hat, '
-        'Inc." "Qemu virtual machine"']
+    devices = '''Slot:	00:00.0
+Class:	Host bridge
+Vendor:	Intel Corporation
+Device:	440FX - 82441FX PMC [Natoma]
+SVendor:	Red Hat, Inc.
+SDevice:	Qemu virtual machine
+PhySlot:	3
+Rev:	02
+NUMANode:	0
+
+Slot:	00:01.0
+Class:	ISA bridge
+Vendor:	Intel Corporation
+Device:	82371SB PIIX3 ISA [Natoma/Triton II]
+SVendor:	Red Hat, Inc.
+SDevice:	Qemu virtual machine
+
+Slot:	00:01.1
+Class:	IDE interface
+Vendor:	Intel Corporation
+Device:	82371SB PIIX3 IDE [Natoma/Triton II]
+SVendor:	Red Hat, Inc.
+SDevice:	Qemu virtual machine
+ProgIf:	80
+Driver:	ata_piix
+Module:	ata_piix
+Module:	pata_acpi
+Module:	ata_generic
+
+'''
 
     output = parse_pci_devices(devices)
     assert isinstance(output, list)
@@ -23,6 +48,11 @@ def test_parse_pci_devices(current_actor_libraries):
     assert dev.subsystem_vendor == 'Red Hat, Inc.'
     assert dev.subsystem_name == 'Qemu virtual machine'
     assert dev.progif == '80'
+    assert dev.driver == 'ata_piix'
+    assert len(dev.modules) == 3
+    assert 'ata_piix' in dev.modules
+    assert 'pata_acpi' in dev.modules
+    assert 'ata_generic' in dev.modules
 
     dev = output.pop()
     assert dev.slot == '00:01.0'
@@ -31,6 +61,11 @@ def test_parse_pci_devices(current_actor_libraries):
     assert dev.name == '82371SB PIIX3 ISA [Natoma/Triton II]'
     assert dev.subsystem_vendor == 'Red Hat, Inc.'
     assert dev.subsystem_name == 'Qemu virtual machine'
+    assert dev.driver == ''
+    assert dev.modules == []
+    assert dev.rev == ''
+    assert dev.physical_slot == ''
+    assert dev.numa_node == ''
 
     dev = output.pop()
     assert dev.slot == '00:00.0'
@@ -40,30 +75,42 @@ def test_parse_pci_devices(current_actor_libraries):
     assert dev.subsystem_vendor == 'Red Hat, Inc.'
     assert dev.subsystem_name == 'Qemu virtual machine'
     assert dev.rev == '02'
+    assert dev.physical_slot == '3'
+    assert dev.numa_node == '0'
 
 
 def test_parse_empty_list(current_actor_libraries):
-    output = parse_pci_devices([])
+    output = parse_pci_devices('')
     assert isinstance(output, list)
     assert not output
 
 
-def test_parse_unknown_optional_parameter(current_actor_libraries):
-    devices = ['00:01.1 -a01 "IDE interface" -b02 "Intel Corporation" -c03 "82371SB PIIX3 IDE [Natoma/Triton II]" '
-               '-p80 "Red Hat, Inc." -d04 "Qemu virtual machine"']
+def test_parse_unknown_keys(current_actor_libraries):
+    devices = '''Slot:	00:1c.0
+Class:	PCI bridge
+Material:	Silicon
+Vendor:	Intel Corporation
+Origin:	People's Republic of China
+Device:	Sunrise Point-LP PCI Express Root Port #1
+Flavor:	Burnt toast
+Rev:	f1
+Flavor:	Spicy beef
+Driver:	pcieport
+
+'''
 
     output = parse_pci_devices(devices)
     assert isinstance(output, list)
     assert len(output) == 1
 
     dev = output.pop()
-    assert dev.slot == '00:01.1'
-    assert dev.dev_cls == 'IDE interface'
+    assert dev.slot == '00:1c.0'
+    assert dev.dev_cls == 'PCI bridge'
     assert dev.vendor == 'Intel Corporation'
-    assert dev.name == '82371SB PIIX3 IDE [Natoma/Triton II]'
-    assert dev.subsystem_vendor == 'Red Hat, Inc.'
-    assert dev.subsystem_name == 'Qemu virtual machine'
-    assert dev.progif == '80'
+    assert dev.name == 'Sunrise Point-LP PCI Express Root Port #1'
+    assert dev.rev == 'f1'
+    assert dev.driver == 'pcieport'
+    assert dev.modules == []
 
 
 def test_produce_pci_devices(current_actor_libraries):
