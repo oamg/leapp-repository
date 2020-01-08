@@ -31,10 +31,16 @@ BuildRequires:  python-devel
 # - same for Provides in deps subpackage
 Requires:       leapp-repository-dependencies = 5
 
+# IMPORTANT: this is capability provided by the leapp framework rpm.
+# Check that 'version' this instead of the real framework rpm version.
+Requires:       leapp-framework >= 1.0, leapp-framework < 2
+Requires:       python2-leapp
+
 # That's temporary to ensure the obsoleted subpackage is not installed
 # and will be removed when the current version of leapp-repository is installed
 Obsoletes:      leapp-repository-data <= 0.6.1
 Provides:       leapp-repository-data <= 0.6.1
+
 
 %description
 Repositories for leapp
