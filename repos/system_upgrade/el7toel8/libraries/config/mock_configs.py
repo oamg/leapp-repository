@@ -39,3 +39,18 @@ CONFIG_ALL_SIGNED = IPUConfig(
     ),
     architecture='x86_64'
 )
+
+CONFIG_S390X = IPUConfig(
+    os_release=OSRelease(
+        release_id='rhel',
+        name='Red Hat Enterprise Linux Server',
+        pretty_name='RHEL',
+        version='7.6 (Maipo)',
+        version_id='7.6'
+    ),
+    version=Version(
+        source='7.6',
+        target='8.0'
+    ),
+    architecture='s390x'
+)
