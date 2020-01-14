@@ -413,7 +413,7 @@ def resolve_conflicting_requests(tasks):
 
     if pkgs_in_conflict:
         api.current_logger().debug('The following packages were marked to be kept/installed and removed at the same'
-                                   ' time. Leapp will upgrade them.\n{}'.format('\n'.join(pkgs_in_conflict)))
+                                   ' time. Leapp will upgrade them.\n{}'.format('\n'.join(sorted(pkgs_in_conflict))))
 
 
 def get_repositories_blacklisted():
@@ -445,6 +445,7 @@ def map_repositories(packages):
 
 def report_skipped_packages(message, packages):
     """Generate report message about skipped packages"""
+    packages = sorted(packages)
     title = 'Packages will not be installed'
     summary = '{} {}\n{}'.format(len(packages), message, '\n'.join(['- ' + p for p in packages]))
     reporting.create_report([
@@ -475,8 +476,8 @@ def add_output_pkgs_to_transaction_conf(transaction_configuration, events):
                 transaction_configuration.to_remove.extend(event.out_pkgs)
                 message += '- [{action}] {ins} -> {outs}\n'.format(
                     action=event.action,
-                    ins=', '.join(event.in_pkgs.keys()),
-                    outs=', '.join(event.out_pkgs.keys())
+                    ins=', '.join(sorted(event.in_pkgs.keys())),
+                    outs=', '.join(sorted(event.out_pkgs.keys()))
                 )
 
     api.current_logger().debug(message)
@@ -513,20 +514,20 @@ def filter_out_transaction_conf_pkgs(tasks, transaction_configuration):
             tasks['to_install'].pop(pkg)
         api.current_logger().debug('The following packages will not be installed because of the'
                                    ' /etc/leapp/transaction/to_remove transaction configuration file:'
-                                   '\n- ' + '\n- '.join(pkgs_not_to_be_installed))
+                                   '\n- ' + '\n- '.join(sorted(pkgs_not_to_be_installed)))
     if pkgs_not_to_be_removed:
         for pkg in pkgs_not_to_be_removed:
             tasks['to_remove'].pop(pkg)
         api.current_logger().debug('The following packages will not be removed because of the to_keep and to_install'
                                    ' transaction configuration files in /etc/leapp/transaction/:'
-                                   '\n- ' + '\n- '.join(pkgs_not_to_be_removed))
+                                   '\n- ' + '\n- '.join(sorted(pkgs_not_to_be_removed)))
 
 
 def produce_messages(tasks):
     # Type casting to list to be Py2&Py3 compatible as on Py3 keys() returns dict_keys(), not a list
-    to_install_pkgs = list(tasks['to_install'].keys())
-    to_remove_pkgs = list(tasks['to_remove'].keys())
-    to_enable_repos = list(set(tasks['to_install'].values() + tasks['to_keep'].values()))
+    to_install_pkgs = sorted(tasks['to_install'].keys())
+    to_remove_pkgs = sorted(tasks['to_remove'].keys())
+    to_enable_repos = sorted(set(tasks['to_install'].values() + tasks['to_keep'].values()))
 
     if to_install_pkgs or to_remove_pkgs:
         api.produce(PESRpmTransactionTasks(to_install=to_install_pkgs,
