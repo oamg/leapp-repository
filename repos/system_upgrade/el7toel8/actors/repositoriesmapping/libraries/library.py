@@ -1,69 +1,80 @@
-import csv
 import os
 
-from leapp.exceptions import StopActorExecution
-from leapp import reporting
+from leapp.exceptions import StopActorExecutionError
+from leapp.libraries.common import config
 from leapp.libraries.stdlib import api
 from leapp.models import RepositoriesMap, RepositoryMap
 from leapp.models.fields import ModelViolationError
 
-
-def inhibit_upgrade(title):
-    summary = 'Read documentation at: https://access.redhat.com/articles/3664871 for more information ' \
-        'about how to retrieve the files'
-    reporting.create_report([
-        reporting.Title(title),
-        reporting.Summary(summary),
-        reporting.Severity(reporting.Severity.HIGH),
-        reporting.Tags([reporting.Tags.UPGRADE_PROCESS]),
-        reporting.Flags([reporting.Flags.INHIBITOR])
-    ])
-    raise StopActorExecution()
+REPOMAP_FILE = '/etc/leapp/files/repomap.csv'
+"""Path to the repository mapping file."""
 
 
-def scan_repositories(path):
+def _inhibit_upgrade(msg):
+    raise StopActorExecutionError(
+        msg,
+        details={'hint': ('Read documentation at the following link for more'
+                          ' information about how to retrieve the valid file:'
+                          ' https://access.redhat.com/articles/3664871')})
+
+
+def _read_repofile(path):
     if not os.path.isfile(path):
-        inhibit_upgrade('Repositories map file not found ({})'.format(path))
+        _inhibit_upgrade('The repository mapping file not found ({}).'.format(path))
 
     if os.path.getsize(path) == 0:
-        inhibit_upgrade('Repositories map file is invalid ({})'.format(path))
+        _inhibit_upgrade('The repository mapping file is invalid ({}).'.format(path))
+
+    with open(path) as fp:
+        return [line.strip() for line in fp.readlines()]
+
+
+def scan_repositories(read_repofile_func=_read_repofile):
+    """
+    Scan the repository mapping file and produce RepositoriesMap msg.
+
+    See the description of the actor for more details.
+    """
+    _exp_src_prod_type = config.get_product_type('source')
+    _exp_dst_prod_type = config.get_product_type('target')
 
     repositories = []
-    with open(path) as f:
-        data = csv.reader(f)
-        next(data)  # skip header
+    line_num = 0
+    for line in read_repofile_func(REPOMAP_FILE)[1:]:
+        line_num += 1
 
-        for row in data:
-            # skip empty lines and comments
-            if not row or row[0].startswith('#'):
+        # skip empty lines and comments
+        if not line or line.startswith('#'):
+            continue
+
+        try:
+            (from_repoid, to_repoid, to_pes_repo,
+             from_minor_version, to_minor_version, arch,
+             repo_type, src_prod_type, dst_prod_type) = line.split(',')
+
+            # filter out records irrelevant for this run
+            if (arch != api.current_actor().configuration.architecture
+                    or _exp_src_prod_type != src_prod_type
+                    or _exp_dst_prod_type != dst_prod_type):
                 continue
 
-            try:
-                from_repoid, to_repoid, to_pes_repo, from_minor_version, to_minor_version, arch, repo_type = row
-            except ValueError as err:
-                inhibit_upgrade('Repositories map file is invalid, offending line number: {} ({})'.format(
-                    data.line_num, err))
-
-            if arch != api.current_actor().configuration.architecture:
-                continue
-
-            try:
-                repositories.append(
-                    RepositoryMap(
-                        from_repoid=from_repoid,
-                        to_repoid=to_repoid,
-                        to_pes_repo=to_pes_repo,
-                        from_minor_version=from_minor_version,
-                        to_minor_version=to_minor_version,
-                        arch=arch,
-                        repo_type=repo_type,
-                    )
+            repositories.append(
+                RepositoryMap(
+                    from_repoid=from_repoid,
+                    to_repoid=to_repoid,
+                    to_pes_repo=to_pes_repo,
+                    from_minor_version=from_minor_version,
+                    to_minor_version=to_minor_version,
+                    arch=arch,
+                    repo_type=repo_type,
                 )
-            except ModelViolationError as err:
-                inhibit_upgrade('Repositories map file is invalid, offending line number: {} ({})'.format(
-                    data.line_num, err))
+            )
+        except (ModelViolationError, ValueError) as err:
+            _inhibit_upgrade('The repository mapping file is invalid, offending line number: {} ({}).'
+                             ' It is possible the file is out of date.'
+                             .format(line_num, err))
 
     if not repositories:
-        inhibit_upgrade('Repositories map file is invalid ({})'.format(path))
+        _inhibit_upgrade('The repository mapping file is invalid. Could not find any repository mapping record.')
 
     api.produce(RepositoriesMap(repositories=repositories))

@@ -1,7 +1,6 @@
 from leapp.actors import Actor
 from leapp.libraries.actor.library import scan_repositories
 from leapp.models import RepositoriesMap
-from leapp.reporting import Report
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 
@@ -12,8 +11,8 @@ class RepositoriesMapping(Actor):
 
     name = 'repository_mapping'
     consumes = ()
-    produces = (RepositoriesMap, Report,)
+    produces = (RepositoriesMap)
     tags = (IPUWorkflowTag, FactsPhaseTag)
 
     def process(self):
-        scan_repositories('/etc/leapp/files/repomap.csv')
+        scan_repositories()
