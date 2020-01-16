@@ -4,6 +4,7 @@ import os
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import constants
 from leapp.libraries.common import dnfplugin, mounting, overlaygen, rhsm, utils
+from leapp.libraries.common.config import get_product_type
 from leapp.libraries.stdlib import CalledProcessError, api, run, config
 from leapp.models import (RequiredTargetUserspacePackages, SourceRHSMInfo, StorageInfo, TargetRepositories,
                           TargetUserSpaceInfo, UsedTargetRepositories, UsedTargetRepository, XFSPresence)
@@ -58,40 +59,58 @@ def _get_product_certificate_path():
     """
     Retrieves the required / used product certificate for RHSM.
     """
-    variant = api.current_actor().configuration.os_release.variant_id
     architecture = api.current_actor().configuration.architecture
     target_version = api.current_actor().configuration.version.target
-    # TODO: so far only base channel is available in rhel8
-    target_channel = 'base'
-    certs_folder = api.get_common_folder_path(PROD_CERTS_FOLDER)
+    target_product_type = get_product_type('target')
+    certs_dir = api.get_common_folder_path(PROD_CERTS_FOLDER)
 
+    # TODO: do we need EUS/... here or is it ga one enough to get eus repos?
     prod_certs = {
-        'server': {
-            'x86_64': {
-                'base': '479.pem',
-                # 'EUS': TBD
-            },
-            'aarch64': {
-                'base': '419.pem',
-                # 'EUS': TBD
-            },
-            'ppc64le': {
-                'base': '279.pem',
-                # 'EUS': TBD
-            },
-            's390x': {
-                'base': '72.pem',
-                # 'EUS': TBD
-            }
+        'x86_64': {
+            'ga': '479.pem',
+            'beta': '486.pem',
+            'htb': '230.pem',
+        },
+        'aarch64': {
+            'ga': '419.pem',
+            'beta': '363.pem',
+            'htb': '489.pem',
+        },
+        'ppc64le': {
+            'ga': '279.pem',
+            'beta': '362.pem',
+            'htb': '233.pem',
+        },
+        's390x': {
+            'ga': '72.pem',
+            'beta': '433.pem',
+            'htb': '232.pem',
         }
     }
 
     try:
-        cert = prod_certs[variant][architecture][target_channel]
+        cert = prod_certs[architecture][target_product_type]
     except KeyError as e:
         raise StopActorExecutionError(message=('Failed to determine what certificate to use for {}.'.format(e)))
 
-    return os.path.join(certs_folder, target_version, cert)
+    cert_path = os.path.join(certs_dir, target_version, cert)
+    if not os.path.isfile(cert_path):
+        details = {'missing certificate': cert, 'path': cert_path}
+        if target_product_type != 'ga':
+            details['hint'] = (
+                'You chose to upgrade to beta or htb system but probably'
+                ' chose version for which beta/htb certificates are not'
+                ' attached (e.g. because the GA has been released already).'
+                ' Set the target os version for which the {} certificate'
+                ' is provided using the LEAPP_DEVEL_TARGET_RELEASE envar.'
+                .format(cert)
+            )
+            details['search cmd'] = 'find {} | grep {}'.format(certs_dir, cert)
+        raise StopActorExecutionError(
+            message='Cannot find the product certificate file for the chosen target system.',
+            details=details
+        )
+    return cert_path
 
 
 def _create_target_userspace_directories(target_userspace):

@@ -27,9 +27,6 @@ class SetupTargetRepos(Actor):
     tags = (IPUWorkflowTag, FactsPhaseTag)
 
     def process(self):
-        # TODO: Think about Beta and Alpha repositories. How will we tell we
-        # + want to go to GA, Alpha, Beta, ... repos?
-
         custom_repos = []
         for repo in self.consume(CustomTargetRepository):
             custom_repos.append(repo)
