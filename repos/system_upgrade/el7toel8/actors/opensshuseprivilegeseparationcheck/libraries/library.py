@@ -1,4 +1,3 @@
-# from leapp.actors import Actor
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.stdlib import api
 from leapp import reporting

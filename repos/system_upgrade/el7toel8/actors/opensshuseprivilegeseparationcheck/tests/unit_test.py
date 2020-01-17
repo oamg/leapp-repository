@@ -11,6 +11,9 @@ def test_no_config(current_actor_context):
         library.process(iter([]))
 
 
+osprl = OpenSshPermitRootLogin(value='no')
+
+
 @pytest.mark.parametrize('values,expected_report', [
     ([''], False),
     (['sandbox'], False),
@@ -22,12 +25,12 @@ def test_separation(current_actor_context, values, expected_report):
     for value in values:
         if value:
             current_actor_context.feed(OpenSshConfig(
-                permit_root_login=[OpenSshPermitRootLogin(value='no')],
+                permit_root_login=[osprl],
                 use_privilege_separation=value
             ))
         else:
             current_actor_context.feed(OpenSshConfig(
-                permit_root_login=[OpenSshPermitRootLogin(value='no')]
+                permit_root_login=[osprl]
             ))
     current_actor_context.run()
     if expected_report:
