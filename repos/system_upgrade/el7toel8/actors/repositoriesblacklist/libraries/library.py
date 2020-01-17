@@ -1,5 +1,14 @@
+from leapp.libraries.common.config import get_product_type
 from leapp.libraries.stdlib import api
 from leapp.models import RepositoriesBlacklisted, RepositoriesFacts, RepositoriesMap
+
+
+def _is_optional_repo(repo):
+    sys_type = get_product_type('source')
+    suffix = 'optional-rpms'
+    if sys_type != 'ga':
+        suffix = 'optional-{}-rpms'.format(sys_type)
+    return repo.from_repoid.endswith(suffix)
 
 
 def _get_list_of_optional_repos():
@@ -13,7 +22,7 @@ def _get_list_of_optional_repos():
     repo_map = next(api.consume(RepositoriesMap), None)
     if repo_map:
         for repo in repo_map.repositories:
-            if repo.from_repoid.endswith('optional-rpms'):
+            if _is_optional_repo(repo):
                 opt_repo[repo.from_repoid] = repo.to_repoid
     return opt_repo
 
