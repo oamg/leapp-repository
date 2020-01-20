@@ -1,3 +1,4 @@
+from leapp.libraries import stdlib
 from leapp.models import CustomTargetRepository, TargetRepositories, RepositoryData, \
     RepositoryFile, RepositoriesFacts, RepositoryMap, RepositoriesMap, RepositoriesSetupTasks, \
     RepositoriesBlacklisted
@@ -54,27 +55,28 @@ def test_repos_mapping(current_actor_context):
         RepositoryData(repoid='rhel-7-blacklisted-rpms', name='RHEL 7 Blacklisted')]
     repos_files = [RepositoryFile(file='/etc/yum.repos.d/redhat.repo', data=repos_data)]
     facts = RepositoriesFacts(repositories=repos_files)
+    arch = stdlib.run(['uname', '-m'])['stdout'].strip()
 
     mapping = [RepositoryMap(from_repoid='rhel-7-server-rpms',
-                             to_repoid='rhel-8-for-x86_64-baseos-htb-rpms',
+                             to_repoid='rhel-8-for-{}-baseos-htb-rpms'.format(arch),
                              to_pes_repo='rhel8-baseos',
                              from_minor_version='all',
                              to_minor_version='all',
-                             arch='x86_64',
+                             arch=arch,
                              repo_type='rpm'),
                RepositoryMap(from_repoid='rhel-7-server-rpms',
-                             to_repoid='rhel-8-for-x86_64-appstream-htb-rpms',
+                             to_repoid='rhel-8-for-{}-appstream-htb-rpms'.format(arch),
                              to_pes_repo='rhel8-appstream',
                              from_minor_version='all',
                              to_minor_version='all',
-                             arch='x86_64',
+                             arch=arch,
                              repo_type='rpm'),
                RepositoryMap(from_repoid='rhel-7-blacklist-rpms',
                              to_repoid='rhel-8-blacklist-rpms',
                              to_pes_repo='rhel8-blacklist',
                              from_minor_version='all',
                              to_minor_version='all',
-                             arch='x86_64',
+                             arch=arch,
                              repo_type='rpm')]
     repos_map = RepositoriesMap(repositories=mapping)
 
@@ -88,5 +90,6 @@ def test_repos_mapping(current_actor_context):
 
     rhel_repos = current_actor_context.consume(TargetRepositories)[0].rhel_repos
     assert len(rhel_repos) == 2
-    assert set([repo.repoid for repo in rhel_repos]) == set(['rhel-8-for-x86_64-baseos-htb-rpms',
-                                                             'rhel-8-for-x86_64-appstream-htb-rpms'])
+    assert set([repo.repoid for repo in rhel_repos]) == set([
+        'rhel-8-for-{}-baseos-htb-rpms'.format(arch),
+        'rhel-8-for-{}-appstream-htb-rpms'.format(arch)])
