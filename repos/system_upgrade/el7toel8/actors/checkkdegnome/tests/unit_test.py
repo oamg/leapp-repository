@@ -1,177 +1,97 @@
-from leapp.libraries.actor import library
-from leapp.libraries.common.testutils import create_report_mocked
-from leapp import reporting
+from leapp.snactor.fixture import current_actor_context
+from leapp.libraries.actor.library import check_kde_gnome
+from leapp.models import InstalledDesktopsFacts, InstalledKdeAppsFacts, Report
 
 
-def is_executable_only_gnome(path):
-    return path == "/usr/bin/gnome-session"
+no_desktop_env = InstalledDesktopsFacts(gnome_installed=False,
+                                        kde_installed=False)
+gnome_desktop_env = InstalledDesktopsFacts(gnome_installed=True,
+                                           kde_installed=False)
+KDE_desktop_env = InstalledDesktopsFacts(gnome_installed=False,
+                                         kde_installed=True)
+both_desktop_env = InstalledDesktopsFacts(gnome_installed=True,
+                                          kde_installed=True)
 
 
-def is_executable_only_kde(path):
-    return path == "/usr/bin/startkde"
+no_KDE_apps = InstalledKdeAppsFacts(installed_apps=[])
+some_KDE_apps = InstalledKdeAppsFacts(installed_apps=["okular", "kate"])
 
 
-def check_app_in_use_mocked(app):
-    #  Only one app in use
-    return app == "okular"
-
-
-def get_xsession_gnome(path):
-    return "gnome"
-
-
-def get_xsession_kde(path):
-    return "plasma"
-
-
-def test_no_desktop(monkeypatch):
+def test_no_desktop_no_apps(current_actor_context):
     """
-    Scenario: There is no desktop.
-    Expected behavior: No report
+    No action expected.
     """
-
-    #  Desktop presence is found by trying to execute gnome-session or startkde
-    monkeypatch.setattr(library, "is_executable", lambda x: False)
-    monkeypatch.setattr(reporting, "create_report", create_report_mocked())
-
-    library.check_kde_gnome()
-
-    assert reporting.create_report.called == 0
+    current_actor_context.feed(no_desktop_env)
+    current_actor_context.feed(no_KDE_apps)
+    current_actor_context.run()
+    assert not current_actor_context.consume(Report)
 
 
-def test_only_gnome_without_apps(monkeypatch):
+def test_gnome_desktop_no_apps(current_actor_context):
     """
-    Scenario: KDE and KDE apps are NOT installed
-    Expected behavior: No report
+    No action expected.
     """
-
-    monkeypatch.setattr(library, "is_executable", is_executable_only_gnome)
-    monkeypatch.setattr(library, "is_installed", lambda x: False)
-    monkeypatch.setattr(reporting, "create_report", create_report_mocked())
-
-    library.check_kde_gnome()
-
-    assert reporting.create_report.called == 0
+    current_actor_context.feed(gnome_desktop_env)
+    current_actor_context.feed(no_KDE_apps)
+    current_actor_context.run()
+    assert not current_actor_context.consume(Report)
 
 
-def test_only_gnome_without_active_apps(monkeypatch):
+def test_gnome_desktop_KDE_apps(current_actor_context):
     """
-    Scenatio: no KDE desktop is installed, but there are some KDE apps, which are not active
-    Expected behavior: No report (unused app is not considered to be important)
+    One report about deleting KDE apps expected.
     """
-
-    monkeypatch.setattr(library, "is_executable", is_executable_only_gnome)
-    monkeypatch.setattr(library, "is_installed", lambda x: True)
-    monkeypatch.setattr(library, "check_app_in_use", lambda x: False)
-    monkeypatch.setattr(reporting, "create_report", create_report_mocked())
-
-    library.check_kde_gnome()
-
-    assert reporting.create_report.called == 0
+    current_actor_context.feed(gnome_desktop_env)
+    current_actor_context.feed(some_KDE_apps)
+    current_actor_context.run()
+    message = current_actor_context.consume(Report)[0]
+    assert "Upgrade can be performed, but KDE/Qt apps will be uninstalled." in message.report["title"]
 
 
-def test_only_gnome_with_active_apps(monkeypatch):
+def test_KDE_desktop_no_apps(current_actor_context):
     """
-    Scenatio: no KDE desktop is installed, but there are some KDE apps, which are actively used
-    Expected behavior: Report is made (severity = MEDIUM)
+    "Inhibitor" flag in report expected.
     """
-
-    monkeypatch.setattr(library, "is_executable", is_executable_only_gnome)
-    monkeypatch.setattr(library, "is_installed", lambda x: True)
-    monkeypatch.setattr(library, "check_app_in_use", check_app_in_use_mocked)
-    monkeypatch.setattr(reporting, "create_report", create_report_mocked())
-
-    library.check_kde_gnome()
-
-    assert reporting.create_report.called == 1
-    title_KDE_apps = "Upgrade can be performed, but KDE apps will be uninstalled."
-    assert reporting.create_report.report_fields["title"] == title_KDE_apps
+    current_actor_context.feed(KDE_desktop_env)
+    current_actor_context.feed(no_KDE_apps)
+    current_actor_context.run()
+    message = current_actor_context.consume(Report)[0]
+    assert "inhibitor" in message.report["flags"]
 
 
-def test_only_kde(monkeypatch):
+def test_KDE_desktop_KDE_apps(current_actor_context):
     """
-    Scenario: There is only KDE installed.
-    Expected behavior: Report is generated with HIGH severity and inhibitor tag.
+    "Inhibitor" flag in report expected.
     """
-
-    monkeypatch.setattr(library, "is_executable", is_executable_only_kde)
-    monkeypatch.setattr(reporting, "create_report", create_report_mocked())
-
-    library.check_kde_gnome()
-
-    assert reporting.create_report.called == 1
-    assert "inhibitor" in reporting.create_report.report_fields["flags"]
+    current_actor_context.feed(KDE_desktop_env)
+    current_actor_context.feed(some_KDE_apps)
+    current_actor_context.run()
+    message = current_actor_context.consume(Report)[0]
+    assert "inhibitor" in message.report["flags"]
+    # assert [True for message in messages if "inhibitor" in message.report["flags"]]
 
 
-def test_both_gnome_main_without_active_apps(monkeypatch):
+def test_both_desktops_no_apps(current_actor_context):
     """
-    Scenario: There are both KDE and GNOME installed, GNOME is the main desktop
-    and there are no KDE apps
-    Expected behavior: No report is generated.
+    Report about removing KDE desktop environment expected.
     """
-
-    monkeypatch.setattr(library, "is_executable", lambda x: True)
-    monkeypatch.setattr(library, "is_installed", lambda x: False)
-    monkeypatch.setattr(library, "get_xsession", get_xsession_gnome)
-    monkeypatch.setattr(reporting, "create_report", create_report_mocked())
-
-    library.check_kde_gnome()
-
-    assert reporting.create_report.called == 0
+    current_actor_context.feed(both_desktop_env)
+    current_actor_context.feed(no_KDE_apps)
+    current_actor_context.run()
+    message = current_actor_context.consume(Report)[0]
+    assert "Upgrade can be performed, but KDE will be uninstalled." in message.report["title"]
 
 
-def test_both_gnome_main_with_active_apps(monkeypatch):
+def test_both_desktop_KDE_apps(current_actor_context):
     """
-    Scenario: There are both KDE and GNOME installed, GNOME is the main desktop
-    and there are some KDE apps
-    Expected behavior: Report is generated about deleting KDE apps
+    Two reports expected, first about removing KDE desktop, second about KDE/Qt apps
     """
-
-    monkeypatch.setattr(library, "is_executable", lambda x: True)
-    monkeypatch.setattr(library, "is_installed", lambda x: True)
-    monkeypatch.setattr(library, "get_xsession", get_xsession_gnome)
-    monkeypatch.setattr(library, "check_app_in_use", check_app_in_use_mocked)
-    monkeypatch.setattr(reporting, "create_report", create_report_mocked())
-
-    library.check_kde_gnome()
-
-    assert reporting.create_report.called == 1
-    title_KDE_apps = "Upgrade can be performed, but KDE apps will be uninstalled."
-    assert reporting.create_report.report_fields["title"] == title_KDE_apps
-
-
-def test_both_kde_main_without_active_apps(monkeypatch):
-    """
-    Scenario: There are both KDE and GNOME installed, KDE is the main desktop
-    and there are no KDE apps
-    Expected behavior: There is a report generated.
-    """
-
-    monkeypatch.setattr(library, "is_executable", lambda x: True)
-    monkeypatch.setattr(library, "is_installed", lambda x: False)
-    monkeypatch.setattr(library, "get_xsession", get_xsession_kde)
-    monkeypatch.setattr(reporting, "create_report", create_report_mocked())
-
-    library.check_kde_gnome()
-
-    assert reporting.create_report.called == 1
-    title_KDE = "Upgrade can be performed, but KDE will be uninstalled."
-    assert reporting.create_report.report_fields["title"] == title_KDE
-
-
-def test_both_kde_main_with_active_apps(monkeypatch):
-    """
-    Scenario: There are both KDE and GNOME installed, KDE is the main desktop
-    and there are some KDE apps
-    Expected behavior: Two reports are generated: one about KDE and one about KDE apps.
-    """
-
-    monkeypatch.setattr(library, "is_executable", lambda x: True)
-    monkeypatch.setattr(library, "is_installed", lambda x: True)
-    monkeypatch.setattr(library, "get_xsession", get_xsession_kde)
-    monkeypatch.setattr(library, "check_app_in_use", check_app_in_use_mocked)
-    monkeypatch.setattr(reporting, "create_report", create_report_mocked())
-
-    library.check_kde_gnome()
-
-    assert reporting.create_report.called == 2
+    current_actor_context.feed(both_desktop_env)
+    current_actor_context.feed(some_KDE_apps)
+    current_actor_context.run()
+    messages = current_actor_context.consume(Report)
+    remove_KDE_title = "Upgrade can be performed, but KDE will be uninstalled."
+    remove_apps_title = "Upgrade can be performed, but KDE/Qt apps will be uninstalled."
+    assert len(messages) == 2
+    assert [True for message in messages if remove_KDE_title in message.report["title"]]
+    assert [True for message in messages if remove_apps_title in message.report["title"]]
