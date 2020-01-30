@@ -9,7 +9,6 @@ from leapp.libraries.common.config import version
 from leapp.libraries.common.testutils import (create_report_mocked,
                                               produce_mocked)
 from leapp.libraries.stdlib import api
-from leapp.models import OSReleaseFacts
 
 
 def test_skip_check(monkeypatch):
