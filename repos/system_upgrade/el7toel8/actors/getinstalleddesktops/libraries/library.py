@@ -8,7 +8,7 @@ def get_installed_desktops():
     api.current_logger().info("==================================")
 
     # Detect installed desktops by one of the base rpm packages
-    kde_desktop_installed = has_package(InstalledRPM, "plasma-workspace")
+    kde_desktop_installed = has_package(InstalledRPM, "kde-workspace")
     gnome_desktop_installed = has_package(InstalledRPM, "gnome-session")
     api.current_logger().info("* KDE installed: {0}".format(kde_desktop_installed))
     api.current_logger().info("* Gnome installed: {0}".format(gnome_desktop_installed))
