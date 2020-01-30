@@ -68,7 +68,6 @@ def test_KDE_desktop_KDE_apps(current_actor_context):
     current_actor_context.run()
     message = current_actor_context.consume(Report)[0]
     assert "inhibitor" in message.report["flags"]
-    # assert [True for message in messages if "inhibitor" in message.report["flags"]]
 
 
 def test_both_desktops_no_apps(current_actor_context):

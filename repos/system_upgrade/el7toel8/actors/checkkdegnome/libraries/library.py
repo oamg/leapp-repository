@@ -21,7 +21,10 @@ def check_kde_gnome():
             # We cannot continue with the upgrade process
             reporting.create_report([
                 reporting.Title("Cannot upgrade because there is no other desktop than KDE installed."),
-                reporting.Summary("With only KDE installed, there would be no other desktop env. after upgrade."),
+                reporting.Summary("The KDE desktop environment is not available on RHEL 8. "
+                                  "The KDE-related packages will be uninstalled during the upgrade and because "
+                                  "the only currently installed desktop environment is KDE, there will be no "
+                                  "other desktop environment after upgrade."),
                 reporting.Severity(reporting.Severity.HIGH),
                 reporting.Tags([
                     reporting.Tags.UPGRADE_PROCESS
@@ -30,20 +33,22 @@ def check_kde_gnome():
                     reporting.Flags.INHIBITOR
                 ]),
                 reporting.Remediation(
-                    hint="Install GNOME desktop to be able to upgrade.")
+                    hint="Install GNOME desktop to be able to upgrade.",
+                    commands=[['yum', '-y', 'groupinstall', '"Server with GUI"']])
                 ])
             return
-        else:
-            # Assume both GNOME and KDE are installed in this state
-            api.current_logger().info("Upgrade can be performed, but KDE desktop will"
-                                      " be removed in favor of GNOME")
-            reporting.create_report([
-                reporting.Title("Upgrade can be performed, but KDE will be uninstalled."),
-                reporting.Summary("KDE has to be uninstalled in favor of GNOME to perform the upgrade."),
-                reporting.Severity(reporting.Severity.MEDIUM),
-                reporting.Tags([
-                    reporting.Tags.UPGRADE_PROCESS
-                ])])
+
+        # Assume both GNOME and KDE are installed in this state
+        api.current_logger().info("Upgrade can be performed, but KDE desktop will"
+                                  " be removed in favor of GNOME")
+        reporting.create_report([
+            reporting.Title("Upgrade can be performed, but KDE will be uninstalled."),
+            reporting.Summary("The KDE desktop environment is not available on RHEL 8. KDE will be uninstalled "
+                              "in favor of GNOME during the upgrade."),
+            reporting.Severity(reporting.Severity.MEDIUM),
+            reporting.Tags([
+                reporting.Tags.UPGRADE_PROCESS
+            ])])
         api.current_logger().info("----------------------------------")
 
     # At this state we just need to detect whether any KDE/Qt app is installed to inform user
@@ -51,13 +56,14 @@ def check_kde_gnome():
     # or not.
 
     KDEAppsFacts = next(api.consume(InstalledKdeAppsFacts))
-    apps_in_use = KDEAppsFacts.installed_apps
-    if apps_in_use:
+    if KDEAppsFacts.installed_apps:
         # upgrade can be performed, but user will loose KDE apps
         api.current_logger().info("Installed KDE/Qt apps detected.")
         reporting.create_report([
             reporting.Title("Upgrade can be performed, but KDE/Qt apps will be uninstalled."),
-            reporting.Summary("KDE/Qt apps will be removed to perform the upgrade."),
+            reporting.Summary("The KDE desktop environment is not available on RHEL 8. "
+                              "All the KDE/Qt apps will be removed during the upgrade, including but not limited "
+                              "to:\n- {0}".format("\n- ".join(KDEAppsFacts.installed_apps))),
             reporting.Severity(reporting.Severity.MEDIUM),
             reporting.Tags([
                 reporting.Tags.UPGRADE_PROCESS
