@@ -2,9 +2,7 @@ import operator
 
 import six
 
-from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.stdlib import api
-from leapp.models import OSReleaseFacts
 
 OP_MAP = {
     '>': operator.gt,
@@ -133,19 +131,11 @@ def matches_release(allowed_releases, release):
 def current_version():
     """Return the current Linux release and version.
 
-    :raises StopActorExecutionError: this exception will be raised if no facts found to read data.
     :return: The tuple contains release name and version value.
     :rtype: (string, string)
     """
-    facts_messages = api.consume(OSReleaseFacts)
-    facts = next(facts_messages, None)
-    if list(facts_messages):
-        api.current_logger().warning('Unexpectedly received more than one OSReleaseFacts message.')
-    if not facts:
-        raise StopActorExecutionError(
-            'Could not check OS version', details={'details': 'No OSReleaseFacts facts found.'}
-        )
-    return facts.release_id, facts.version_id
+    release = api.current_actor().configuration.os_release
+    return release.release_id, release.version_id
 
 
 def is_supported_version():
