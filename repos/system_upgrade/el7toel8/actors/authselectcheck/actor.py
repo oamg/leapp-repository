@@ -4,7 +4,7 @@ from leapp.dialogs.components import BooleanComponent
 from leapp.models import Authselect, AuthselectDecision
 from leapp.reporting import Report, create_report
 from leapp import reporting
-from leapp.tags import IPUWorkflowTag, ChecksPhaseTag, ExperimentalTag
+from leapp.tags import IPUWorkflowTag, ChecksPhaseTag
 
 
 resources = [
@@ -26,7 +26,7 @@ class AuthselectCheck(Actor):
     name = 'authselect_check'
     consumes = (Authselect,)
     produces = (AuthselectDecision, Report,)
-    tags = (IPUWorkflowTag, ChecksPhaseTag, ExperimentalTag)
+    tags = (IPUWorkflowTag, ChecksPhaseTag)
     dialogs = (
         Dialog(
             scope='authselect_check',
