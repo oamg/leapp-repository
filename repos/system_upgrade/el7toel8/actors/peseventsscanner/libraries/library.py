@@ -383,8 +383,9 @@ def filter_out_pkgs_in_blacklisted_repos(to_install):
     # FIXME The to_install contains just a limited subset of packages - those that are *not* currently installed and
     # are to be installed. But we should also warn about the packages that *are* installed.
     blacklisted_pkgs = set()
+    blacklisted_repos = get_repositories_blacklisted()
     for pkg, repo in to_install.items():
-        if repo in get_repositories_blacklisted():
+        if repo in blacklisted_repos:
             blacklisted_pkgs.add(pkg)
 
     for pkg in blacklisted_pkgs:
