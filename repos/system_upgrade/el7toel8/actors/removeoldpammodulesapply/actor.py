@@ -2,7 +2,7 @@ from leapp.actors import Actor
 from leapp.libraries.actor.library import comment_modules, read_file
 from leapp.libraries.common.pam import PAM
 from leapp.models import RemovedPAMModules
-from leapp.tags import IPUWorkflowTag, PreparationPhaseTag, ExperimentalTag
+from leapp.tags import IPUWorkflowTag, PreparationPhaseTag
 
 
 class RemoveOldPAMModulesApply(Actor):
@@ -14,7 +14,7 @@ class RemoveOldPAMModulesApply(Actor):
     name = 'removed_pam_modules_apply'
     consumes = (RemovedPAMModules,)
     produces = ()
-    tags = (IPUWorkflowTag, PreparationPhaseTag, ExperimentalTag)
+    tags = (IPUWorkflowTag, PreparationPhaseTag)
 
     def process(self):
         for model in self.consume(RemovedPAMModules):
