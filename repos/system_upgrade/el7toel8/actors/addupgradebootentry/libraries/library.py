@@ -10,6 +10,14 @@ from leapp.models import BootContent
 def add_boot_entry():
     debug = 'debug' if os.getenv('LEAPP_DEBUG', '0') == '1' else ''
 
+    args = debug + ' enforcing=0 rd.plymouth=0 plymouth.enable=0'
+
+    with open('/proc/cmdline') as f:
+        fips = 'fips=1' in f.read()
+
+    if fips:
+        args += ' fips=1 FIPSTRACE=2'
+
     kernel_dst_path, initram_dst_path = get_boot_file_paths()
     try:
         _remove_old_upgrade_boot_entry(kernel_dst_path)
@@ -20,7 +28,7 @@ def add_boot_entry():
             '--title', 'RHEL-Upgrade-Initramfs',
             '--copy-default',
             '--make-default',
-            '--args', '{DEBUG} enforcing=0 rd.plymouth=0 plymouth.enable=0'.format(DEBUG=debug)
+            '--args', args
         ])
 
         if architecture.matches_architecture(architecture.ARCH_S390X):

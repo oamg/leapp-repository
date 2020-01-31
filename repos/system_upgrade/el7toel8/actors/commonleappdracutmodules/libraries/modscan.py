@@ -47,6 +47,13 @@ def _create_dracut_modules():
 
 def _create_initram_packages():
     required_pkgs = _REQUIRED_PACKAGES
+
+    with open('/proc/cmdline') as f:
+        fips = 'fips=1' in f.read()
+
+    if fips:
+        required_pkgs.append('dracut-fips')
+
     if architecture.matches_architecture(architecture.ARCH_X86_64):
         required_pkgs.append('biosdevname')
     return RequiredUpgradeInitramPackages(packages=required_pkgs)

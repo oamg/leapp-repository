@@ -13,7 +13,7 @@ from leapp.libraries.stdlib import CalledProcessError, api, run
 from leapp.libraries.common import utils
 from leapp.models import SysctlVariablesFacts, SysctlVariable, ActiveKernelModulesFacts, ActiveKernelModule, \
     KernelModuleParameter, UsersFacts, User, GroupsFacts, Group, RepositoriesFacts, RepositoryFile, RepositoryData, \
-    SELinuxFacts, fields, FirewallStatus, FirewallsFacts, FirmwareFacts
+    SELinuxFacts, fields, FirewallStatus, FirewallsFacts, FirmwareFacts, FIPSFacts
 
 
 def aslist(f):
@@ -274,3 +274,10 @@ def get_firewalls_status():
 def get_firmware():
     firmware = 'efi' if os.path.isdir('/sys/firmware/efi') else 'bios'
     return FirmwareFacts(firmware=firmware)
+
+
+def get_fips_status():
+    ''' Get FIPS status information '''
+    with open('/proc/cmdline') as f:
+        enabled = 'fips=1' in f.read()
+    return FIPSFacts(enabled=enabled)

@@ -1,7 +1,7 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import systemfacts
 from leapp.models import SysctlVariablesFacts, ActiveKernelModulesFacts, UsersFacts, GroupsFacts, RepositoriesFacts, \
-    SELinuxFacts, FirewallsFacts, FirmwareFacts
+    SELinuxFacts, FirewallsFacts, FirmwareFacts, FIPSFacts
 from leapp.tags import IPUWorkflowTag, FactsPhaseTag
 
 
@@ -17,7 +17,8 @@ class SystemFactsActor(Actor):
       - Groups;
       - Package repositories;
       - SELinux status;
-      - Firewalls status.
+      - Firewalls status;
+      - FIPS status.
     """
 
     name = 'system_facts'
@@ -29,7 +30,8 @@ class SystemFactsActor(Actor):
                 RepositoriesFacts,
                 SELinuxFacts,
                 FirewallsFacts,
-                FirmwareFacts)
+                FirmwareFacts,
+                FIPSFacts)
     tags = (IPUWorkflowTag, FactsPhaseTag,)
 
     def process(self):
@@ -41,3 +43,4 @@ class SystemFactsActor(Actor):
         self.produce(systemfacts.get_selinux_status())
         self.produce(systemfacts.get_firewalls_status())
         self.produce(systemfacts.get_firmware())
+        self.produce(systemfacts.get_fips_status())
