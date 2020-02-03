@@ -18,7 +18,7 @@ class CheckLeftoverPackages(Actor):
 
     def process(self):
         LEAPP_PACKAGES = ['leapp', 'leapp-repository', 'snactor', 'leapp-repository-deps-el8', 'leapp-deps-el8',
-                          'python2-leapp', 'leapp-repository-sos-plugin']
+                          'python2-leapp']
         installed_rpms = get_installed_rpms()
         if not installed_rpms:
             return

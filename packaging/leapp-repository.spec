@@ -1,8 +1,6 @@
 %global leapp_datadir %{_datadir}/leapp-repository
 %global repositorydir %{leapp_datadir}/repositories
 %global custom_repositorydir %{leapp_datadir}/custom-repositories
-%global sos_report_plugindir %{python2_sitelib}/sos/plugins/
-%global py3_sos_report_plugindir /usr/lib/python3.6/site-packages/sos/plugins/
 # Defining py_byte_compile macro because it is not defined in old rpm (el7)
 # Only defined to python2 since python3 is not used in RHEL7
 %{!?py_byte_compile: %global py_byte_compile py2_byte_compile() {\
@@ -24,7 +22,6 @@ URL:            https://oamg.github.io/leapp/
 Source0:        https://github.com/oamg/%{name}/archive/v%{version}.tar.gz#/%{name}-%{version}.tar.gz
 Source1:        deps-pkgs.tar.gz
 BuildArch:      noarch
-Requires:       %{name}-sos-plugin = %{version}-%{release}
 BuildRequires:  python-devel
 
 # IMPORTANT: everytime the requirements are changed, increment number by one
@@ -41,17 +38,12 @@ Requires:       python2-leapp
 Obsoletes:      leapp-repository-data <= 0.6.1
 Provides:       leapp-repository-data <= 0.6.1
 
+# Former leapp subpackage that was packacking a leapp sos plugin - the plugin
+# is part of the sos package since RHEL 7.8
+Obsoletes:      leapp-repository-sos-plugin <= 0.9.0
 
 %description
 Repositories for leapp
-
-
-%package sos-plugin
-Summary: SOS report plugin for leapp
-Requires: sos
-
-%description sos-plugin
-SOS report plugin for leapp.
 
 
 # This metapackage should contain all RPM dependencies exluding deps on *leapp*
@@ -125,18 +117,6 @@ done;
 
 %py_byte_compile %{__python} %{buildroot}%{repositorydir}/*
 
-install -m 0755 -d %{buildroot}%{sos_report_plugindir}
-install -m 0644 sources/sos-report/leapp.py %{buildroot}%{sos_report_plugindir}
-%py_byte_compile %{__python} %{buildroot}%{sos_report_plugindir}/leapp.py
-
-
-%post sos-plugin
-install -m 0755 -d %{py3_sos_report_plugindir}
-cp %{sos_report_plugindir}/leapp.py %{py3_sos_report_plugindir}/leapp.py
-
-%preun sos-plugin
-rm -f %{py3_sos_report_plugindir}/leapp.py*
-
 
 %files
 %doc README.md
@@ -149,11 +129,6 @@ rm -f %{py3_sos_report_plugindir}/leapp.py*
 %{_sysconfdir}/leapp/repos.d/*
 %{_sysconfdir}/leapp/transaction/*
 %{repositorydir}/*
-
-
-%files sos-plugin
-%dir %{sos_report_plugindir}
-%{sos_report_plugindir}/leapp.py*
 
 
 %files deps
