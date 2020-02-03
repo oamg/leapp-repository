@@ -35,7 +35,7 @@ do_upgrade() {
     # TODO: update: systemd-nspawn
     nspawn_opts="--capability=all --bind=/sys --bind=/dev --bind=/dev/pts --bind=/run/systemd --bind=/proc"
     nspawn_opts="$nspawn_opts  --bind=/run/udev --keep-unit --register=no --timezone=off --resolv-conf=off"
-    /bin/systemd-nspawn $nspawn_opts -D $NEWROOT /usr/bin/bash -c "mount -a; $LEAPPBIN upgrade --resume $args"
+    /usr/bin/systemd-nspawn $nspawn_opts -D $NEWROOT /usr/bin/bash -c "mount -a; $LEAPPBIN upgrade --resume $args"
     rv=$?
 
     # NOTE: flush the cached content to disk to ensure everything is written
@@ -56,7 +56,7 @@ do_upgrade() {
         # all FSTAB partitions. As mount was working before, hopefully will
         # work now as well. Later this should be probably modified as we will
         # need to handle more stuff around storage at all.
-        /bin/systemd-nspawn $nspawn_opts -D $NEWROOT /usr/bin/bash -c "mount -a; /usr/bin/python3 $LEAPP3_BIN upgrade --resume $args"
+        /usr/bin/systemd-nspawn $nspawn_opts -D $NEWROOT /usr/bin/bash -c "mount -a; /usr/bin/python3 $LEAPP3_BIN upgrade --resume $args"
         rv=$?
     fi
 
