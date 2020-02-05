@@ -6,6 +6,7 @@ from leapp.exceptions import StopActorExecution
 from leapp.libraries.actor import library
 from leapp.libraries.actor.library import (Event,
                                            RELEASES,
+                                           Task,
                                            add_output_pkgs_to_transaction_conf,
                                            filter_out_pkgs_in_blacklisted_repos,
                                            filter_events_by_architecture,
@@ -167,9 +168,9 @@ def test_resolve_conflicting_requests(monkeypatch):
 
     tasks = process_events(events, installed_pkgs)
 
-    assert tasks['to_install'] == {'python3-sip-devel': 'repo', 'python3-pyqt5-sip': 'repo', 'python3-sip': 'repo'}
-    assert tasks['to_remove'] == {'sip-devel': 'repo'}
-    assert tasks['to_keep'] == {'sip': 'repo'}
+    assert tasks[Task.install] == {'python3-sip-devel': 'repo', 'python3-pyqt5-sip': 'repo', 'python3-sip': 'repo'}
+    assert tasks[Task.remove] == {'sip-devel': 'repo'}
+    assert tasks[Task.keep] == {'sip': 'repo'}
 
 
 def test_map_repositories(monkeypatch):
@@ -211,9 +212,9 @@ def test_process_events(monkeypatch):
     installed_pkgs = {'original', 'removed', 'present'}
     tasks = process_events(events, installed_pkgs)
 
-    assert tasks['to_install'] == {'split02': 'rhel8-mapped', 'split01': 'rhel8-mapped'}
-    assert tasks['to_remove'] == {'removed': 'rhel7-repo', 'original': 'rhel7-repo'}
-    assert tasks['to_keep'] == {'present': 'rhel8-mapped'}
+    assert tasks[Task.install] == {'split02': 'rhel8-mapped', 'split01': 'rhel8-mapped'}
+    assert tasks[Task.remove] == {'removed': 'rhel7-repo', 'original': 'rhel7-repo'}
+    assert tasks[Task.keep] == {'present': 'rhel8-mapped'}
 
 
 def test_get_events(monkeypatch):
