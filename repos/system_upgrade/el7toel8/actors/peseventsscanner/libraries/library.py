@@ -21,7 +21,7 @@ Event = namedtuple('Event', ['action',        # A string representing an event t
                              ])
 
 EVENT_TYPES = ('Present', 'Removed', 'Deprecated', 'Replaced', 'Split', 'Merged', 'Moved', 'Renamed')
-RELEASES = ((7, 5), (7, 6), (7, 7), (7, 8), (8, 0), (8, 1))  # TODO: bad, bad hardcode
+RELEASES = ((7, 5), (7, 6), (7, 7), (7, 8), (8, 0), (8, 1), (8, 2))  # TODO: bad, bad hardcode
 
 
 class Task(Enum):
