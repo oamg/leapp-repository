@@ -5,7 +5,7 @@ from enum import Enum
 
 from leapp.exceptions import StopActorExecution, StopActorExecutionError
 from leapp import reporting
-from leapp.libraries.common.config import architecture
+from leapp.libraries.common.config import architecture, version
 from leapp.libraries.stdlib import api
 from leapp.libraries.stdlib.config import is_verbose
 from leapp.models import (InstalledRedHatSignedRPM, PESRpmTransactionTasks, RepositoriesMap,
@@ -41,7 +41,8 @@ def pes_events_scanner(pes_json_filepath):
     arch = api.current_actor().configuration.architecture
     arch_events = filter_events_by_architecture(events, arch)
     add_output_pkgs_to_transaction_conf(transaction_configuration, arch_events)
-    tasks = process_events(arch_events, installed_pkgs)
+    target = version._version_to_tuple(api.current_actor().configuration.version.target)
+    tasks = process_events(target, arch_events, installed_pkgs)
     filter_out_transaction_conf_pkgs(tasks, transaction_configuration)
     produce_messages(tasks)
 
@@ -258,10 +259,11 @@ def add_packages_to_tasks(tasks, packages, task_type):
         tasks[task_type].update(packages)
 
 
-def process_events(events, installed_pkgs):
+def process_events(target, events, installed_pkgs):
     """
     Process PES events to get lists of pkgs to keep, to install and to remove.
 
+    :param target: A tuple representing target release in format (major, minor)
     :param events: List of Event tuples, not including those events with their "input" packages not installed
     :param installed_pkgs: Set of names of the installed Red Hat-signed packages
     :return: A dict with three dicts holding pkgs to keep, to install and to remove
@@ -272,7 +274,11 @@ def process_events(events, installed_pkgs):
         Task.install: {},
         Task.remove: {}
     }
-    for release in RELEASES:
+    # stop at target release
+    filtered_releases = [r for r in RELEASES if version.matches_version(
+        ['<= {}.{}'.format(target[0], target[1])], '{}.{}'.format(r[0], r[1]))]
+
+    for release in filtered_releases:
         current = {
             Task.keep: {},
             Task.install: {},
