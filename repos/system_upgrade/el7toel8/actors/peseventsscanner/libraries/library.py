@@ -245,7 +245,7 @@ def parse_architectures(architectures):
 def is_event_relevant(event, installed_pkgs, tasks):
     """Determine if event is applicable given the installed packages and tasks planned so far."""
     for package in event.in_pkgs.keys():
-        if package in tasks[Task.remove]:
+        if package in tasks[Task.remove] and event.action != 'Present':
             return False
         if package not in installed_pkgs and package not in tasks[Task.install]:
             return False
