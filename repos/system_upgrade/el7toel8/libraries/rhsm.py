@@ -5,6 +5,7 @@ import re
 import time
 
 from leapp.exceptions import StopActorExecutionError
+from leapp.libraries.common.config import get_product_type
 from leapp.libraries.stdlib import CalledProcessError, api
 from leapp.models import TargetRHSMInfo
 
@@ -293,7 +294,9 @@ def switched_certificate(context, rhsm_info, cert_path, version):
     unset_release(context)
     try:
         refresh(context)
-        set_release(context, version)
+        # only ga has releases in rhsm
+        if get_product_type('target') == 'ga':
+            set_release(context, version)
         target_rhsm_info = TargetRHSMInfo()
         scan_rhsm_info(context, target_rhsm_info)
         yield target_rhsm_info
@@ -302,8 +305,9 @@ def switched_certificate(context, rhsm_info, cert_path, version):
         context.call(['rm', '-rf', pki_path], checked=False)
         context.call(['cp', '-a', pki_backup_path, pki_path], checked=False)
         unset_release(context)
-        # Restore release
-        restore_release(context, rhsm_info)
+        # Restore release - only ga has releases in rhsm
+        if get_product_type('source') == 'ga':
+            restore_release(context, rhsm_info)
 
 
 @with_rhsm
