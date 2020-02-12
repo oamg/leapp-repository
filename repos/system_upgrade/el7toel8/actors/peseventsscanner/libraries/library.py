@@ -1,7 +1,7 @@
 import json
 import os
 from collections import namedtuple
-from enum import Enum
+from enum import IntEnum
 
 from leapp.exceptions import StopActorExecution, StopActorExecutionError
 from leapp import reporting
@@ -24,13 +24,13 @@ EVENT_TYPES = ('Present', 'Removed', 'Deprecated', 'Replaced', 'Split', 'Merged'
 RELEASES = ((7, 5), (7, 6), (7, 7), (7, 8), (8, 0), (8, 1), (8, 2))  # TODO: bad, bad hardcode
 
 
-class Task(Enum):
+class Task(IntEnum):
     keep = 0
     install = 1
     remove = 2
 
-
-VERBS_PAST = {Task.keep: 'kept', Task.install: 'installed', Task.remove: 'removed'}
+    def past(self):
+        return ['kept', 'installed', 'removed'][self]
 
 
 def pes_events_scanner(pes_json_filepath):
@@ -269,24 +269,18 @@ def process_events(target, events, installed_pkgs):
     :return: A dict with three dicts holding pkgs to keep, to install and to remove
     """
 
-    tasks = {  # Contains dicts in format {<pkg_name>: <repository>}
-        Task.keep: {},
-        Task.install: {},
-        Task.remove: {}
-    }
+    # subdicts in format {<pkg_name>: <repository>}
+    tasks = {t: {} for t in Task}  # noqa: E1133; pylint: disable=not-an-iterable
     # stop at target release
     filtered_releases = [r for r in RELEASES if version.matches_version(
         ['<= {}.{}'.format(target[0], target[1])], '{}.{}'.format(r[0], r[1]))]
 
     for release in filtered_releases:
-        current = {
-            Task.keep: {},
-            Task.install: {},
-            Task.remove: {}
-        }
+        current = {t: {} for t in Task}  # noqa: E1133; pylint: disable=not-an-iterable
         release_events = [e for e in events if e.to_release == release]
         api.current_logger().debug('---- Processing {n} eligible events for release {r}'.format(
             n=len(release_events), r=release))
+
         for event in release_events:
             if is_event_relevant(event, installed_pkgs, tasks):
                 if event.action in ('Deprecated', 'Present'):
@@ -345,12 +339,12 @@ def process_events(target, events, installed_pkgs):
                         p=package, r=current[Task.keep][package]))
                 del tasks[Task.remove][package]
 
-        for key in Task.keep, Task.install, Task.remove:
+        for key in Task:  # noqa: E1133; pylint: disable=not-an-iterable
             for package in current[key]:
                 if package in tasks[key]:
                     api.current_logger().warning(
                         '{p} :: {r} to be {v} TWICE - internal bug (not serious, continuing)'.format(
-                            p=package, r=current[key][package], v=VERBS_PAST[key]))
+                            p=package, r=current[key][package], v=key.past()))
             tasks[key].update(current[key])
 
     map_repositories(tasks[Task.install])
