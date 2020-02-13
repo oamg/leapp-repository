@@ -161,14 +161,13 @@ def test_filter_out_pkgs_in_blacklisted_repos(monkeypatch):
 def test_resolve_conflicting_requests(monkeypatch):
     monkeypatch.setattr(library, 'map_repositories', lambda x: x)
     monkeypatch.setattr(library, 'filter_out_pkgs_in_blacklisted_repos', lambda x: x)
-    monkeypatch.setattr(library, 'RELEASES', RELEASES)
 
     events = [
         Event('Split', {'sip-devel': 'repo'}, {'python3-sip-devel': 'repo', 'sip': 'repo'}, (7, 6), (8, 0), []),
         Event('Split', {'sip': 'repo'}, {'python3-pyqt5-sip': 'repo', 'python3-sip': 'repo'}, (7, 6), (8, 0), [])]
     installed_pkgs = {'sip', 'sip-devel'}
 
-    tasks = process_events(RELEASES[-1], events, installed_pkgs)
+    tasks = process_events(RELEASES, events, installed_pkgs)
 
     assert tasks[Task.install] == {'python3-sip-devel': 'repo', 'python3-pyqt5-sip': 'repo', 'python3-sip': 'repo'}
     assert tasks[Task.remove] == {'sip-devel': 'repo'}
@@ -204,7 +203,6 @@ def test_map_repositories(monkeypatch):
 def test_process_events(monkeypatch):
     monkeypatch.setattr(library, '_get_repositories_mapping', lambda: {'rhel8-repo': 'rhel8-mapped'})
     monkeypatch.setattr(library, 'get_repositories_blacklisted', get_repos_blacklisted_mocked(set()))
-    monkeypatch.setattr(library, 'RELEASES', RELEASES)
 
     events = [
         Event('Split', {'original': 'rhel7-repo'}, {'split01': 'rhel8-repo', 'split02': 'rhel8-repo'},
@@ -212,7 +210,7 @@ def test_process_events(monkeypatch):
         Event('Removed', {'removed': 'rhel7-repo'}, {}, (7, 6), (8, 0), []),
         Event('Present', {'present': 'rhel8-repo'}, {}, (7, 6), (8, 0), [])]
     installed_pkgs = {'original', 'removed', 'present'}
-    tasks = process_events(RELEASES[-1], events, installed_pkgs)
+    tasks = process_events(RELEASES, events, installed_pkgs)
 
     assert tasks[Task.install] == {'split02': 'rhel8-mapped', 'split01': 'rhel8-mapped'}
     assert tasks[Task.remove] == {'removed': 'rhel7-repo', 'original': 'rhel7-repo'}
