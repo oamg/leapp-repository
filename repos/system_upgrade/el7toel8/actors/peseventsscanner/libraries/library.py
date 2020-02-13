@@ -140,11 +140,7 @@ def get_events(pes_events_filepath):
 
 
 def filter_events_by_architecture(events, arch):
-    filtered_events = []
-    for event in events:
-        if not event.architectures or arch in event.architectures:
-            filtered_events.append(event)
-    return filtered_events
+    return [e for e in events if not e.architectures or arch in e.architectures]
 
 
 def filter_events_by_releases(events, releases):
