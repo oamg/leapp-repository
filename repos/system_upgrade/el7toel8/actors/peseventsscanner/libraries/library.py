@@ -289,23 +289,23 @@ def process_events(releases, events, installed_pkgs):
         for event in release_events:
             if is_event_relevant(event, installed_pkgs, tasks):
                 if event.action in ('Deprecated', 'Present'):
-                    # Add these packages to to_keep to make sure the repo they're in on RHEL 8 gets enabled
+                    # Keep these packages to make sure the repo they're in on RHEL 8 gets enabled
                     add_packages_to_tasks(current, event.in_pkgs, Task.keep)
 
                 if event.action == 'Moved':
-                    # Add these packages to to_keep to make sure the repo they're in on RHEL 8 gets enabled
+                    # Keep these packages to make sure the repo they're in on RHEL 8 gets enabled
                     # We don't care about the "in_pkgs" as it contains always just one pkg - the same as the "out" pkg
                     add_packages_to_tasks(current, event.out_pkgs, Task.keep)
 
                 if event.action in ('Split', 'Merged', 'Renamed', 'Replaced'):
                     non_installed_out_pkgs = filter_out_installed_pkgs(event.out_pkgs, installed_pkgs)
                     add_packages_to_tasks(current, non_installed_out_pkgs, Task.install)
-                    # Add already installed "out" pkgs to to_keep to ensure the repo they're in on RHEL 8 gets enabled
+                    # Keep already installed "out" pkgs to ensure the repo they're in on RHEL 8 gets enabled
                     installed_out_pkgs = get_installed_event_pkgs(event.out_pkgs, installed_pkgs)
                     add_packages_to_tasks(current, installed_out_pkgs, Task.keep)
 
                     if event.action in ('Split', 'Merged'):
-                        # Uninstall those RHEL 7 pkgs that are no longer on RHEL 8
+                        # Remove those RHEL 7 pkgs that are no longer on RHEL 8
                         in_pkgs_without_out_pkgs = filter_out_out_pkgs(event.in_pkgs, event.out_pkgs)
                         add_packages_to_tasks(current, in_pkgs_without_out_pkgs, Task.remove)
 
@@ -505,36 +505,27 @@ def filter_out_transaction_conf_pkgs(tasks, transaction_configuration):
     :param transaction_configuration: RpmTransactionTasks model instance with pkgs to install, keep and remove based
                                       on the user configuration files
     """
-    pkgs_not_to_be_kept = []
-    pkgs_not_to_be_installed = []
-    pkgs_not_to_be_removed = []
+    do_not_keep = [p for p in tasks[Task.keep] if p in transaction_configuration.to_remove]
+    do_not_install = [p for p in tasks[Task.install] if p in transaction_configuration.to_remove]
+    do_not_remove = [p for p in tasks[Task.remove] if p in transaction_configuration.to_install
+                     or p in transaction_configuration.to_keep]
 
-    for pkg_to_keep in tasks[Task.keep]:
-        if pkg_to_keep in transaction_configuration.to_remove:
-            pkgs_not_to_be_kept.append(pkg_to_keep)
-    for pkg_to_install in tasks[Task.install]:
-        if pkg_to_install in transaction_configuration.to_remove:
-            pkgs_not_to_be_installed.append(pkg_to_install)
-    for pkg_to_remove in tasks[Task.remove]:
-        if pkg_to_remove in transaction_configuration.to_install + transaction_configuration.to_keep:
-            pkgs_not_to_be_removed.append(pkg_to_remove)
-
-    for pkg in pkgs_not_to_be_kept:
+    for pkg in do_not_keep:
         # Removing a package from the to_keep dict may cause that some repositories won't get enabled
         tasks[Task.keep].pop(pkg)
 
-    if pkgs_not_to_be_installed:
-        for pkg in pkgs_not_to_be_installed:
+    if do_not_install:
+        for pkg in do_not_install:
             tasks[Task.install].pop(pkg)
         api.current_logger().debug('The following packages will not be installed because of the'
                                    ' /etc/leapp/transaction/to_remove transaction configuration file:'
-                                   '\n- ' + '\n- '.join(sorted(pkgs_not_to_be_installed)))
-    if pkgs_not_to_be_removed:
-        for pkg in pkgs_not_to_be_removed:
+                                   '\n- ' + '\n- '.join(sorted(do_not_install)))
+    if do_not_remove:
+        for pkg in do_not_remove:
             tasks[Task.remove].pop(pkg)
         api.current_logger().debug('The following packages will not be removed because of the to_keep and to_install'
                                    ' transaction configuration files in /etc/leapp/transaction/:'
-                                   '\n- ' + '\n- '.join(sorted(pkgs_not_to_be_removed)))
+                                   '\n- ' + '\n- '.join(sorted(do_not_remove)))
 
 
 def produce_messages(tasks):
