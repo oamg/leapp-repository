@@ -37,11 +37,14 @@ def pes_events_scanner(pes_json_filepath):
     """Entrypoint to the library"""
     installed_pkgs = get_installed_pkgs()
     transaction_configuration = get_transaction_configuration()
-    events = get_events(pes_json_filepath)
     arch = api.current_actor().configuration.architecture
-    arch_events = filter_events_by_architecture(events, arch)
-    add_output_pkgs_to_transaction_conf(transaction_configuration, arch_events)
     target = version._version_to_tuple(api.current_actor().configuration.version.target)
+    filtered_releases = filter_releases_by_target(RELEASES, target)
+
+    events = get_events(pes_json_filepath)
+    filtered_events = filter_events_by_releases(events, filtered_releases)
+    arch_events = filter_events_by_architecture(filtered_events, arch)
+    add_output_pkgs_to_transaction_conf(transaction_configuration, arch_events)
     tasks = process_events(target, arch_events, installed_pkgs)
     filter_out_transaction_conf_pkgs(tasks, transaction_configuration)
     produce_messages(tasks)
@@ -108,6 +111,11 @@ def get_transaction_configuration():
     return transaction_configuration
 
 
+def filter_releases_by_target(releases, target):
+    return [r for r in releases if version.matches_version(
+        ['<= {}.{}'.format(target[0], target[1])], '{}.{}'.format(r[0], r[1]))]
+
+
 def get_events(pes_events_filepath):
     """
     Get all the events from the source JSON file exported from PES.
@@ -137,6 +145,10 @@ def filter_events_by_architecture(events, arch):
         if not event.architectures or arch in event.architectures:
             filtered_events.append(event)
     return filtered_events
+
+
+def filter_events_by_releases(events, releases):
+    return [e for e in events if e.to_release in releases]
 
 
 def parse_pes_events_file(path):
