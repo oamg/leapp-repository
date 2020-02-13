@@ -45,7 +45,7 @@ def pes_events_scanner(pes_json_filepath):
     filtered_events = filter_events_by_releases(events, filtered_releases)
     arch_events = filter_events_by_architecture(filtered_events, arch)
     add_output_pkgs_to_transaction_conf(transaction_configuration, arch_events)
-    tasks = process_events(target, arch_events, installed_pkgs)
+    tasks = process_events(filtered_releases, arch_events, installed_pkgs)
     filter_out_transaction_conf_pkgs(tasks, transaction_configuration)
     produce_messages(tasks)
 
@@ -267,11 +267,11 @@ def add_packages_to_tasks(tasks, packages, task_type):
         tasks[task_type].update(packages)
 
 
-def process_events(target, events, installed_pkgs):
+def process_events(releases, events, installed_pkgs):
     """
     Process PES events to get lists of pkgs to keep, to install and to remove.
 
-    :param target: A tuple representing target release in format (major, minor)
+    :param releases: List of tuples representing ordered releases in format (major, minor)
     :param events: List of Event tuples, not including those events with their "input" packages not installed
     :param installed_pkgs: Set of names of the installed Red Hat-signed packages
     :return: A dict with three dicts holding pkgs to keep, to install and to remove
@@ -279,11 +279,8 @@ def process_events(target, events, installed_pkgs):
 
     # subdicts in format {<pkg_name>: <repository>}
     tasks = {t: {} for t in Task}  # noqa: E1133; pylint: disable=not-an-iterable
-    # stop at target release
-    filtered_releases = [r for r in RELEASES if version.matches_version(
-        ['<= {}.{}'.format(target[0], target[1])], '{}.{}'.format(r[0], r[1]))]
 
-    for release in filtered_releases:
+    for release in releases:
         current = {t: {} for t in Task}  # noqa: E1133; pylint: disable=not-an-iterable
         release_events = [e for e in events if e.to_release == release]
         api.current_logger().debug('---- Processing {n} eligible events for release {r}'.format(
