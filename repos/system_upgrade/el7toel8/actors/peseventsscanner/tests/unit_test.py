@@ -10,6 +10,8 @@ from leapp.libraries.actor.library import (Event,
                                            add_output_pkgs_to_transaction_conf,
                                            filter_out_pkgs_in_blacklisted_repos,
                                            filter_events_by_architecture,
+                                           filter_events_by_releases,
+                                           filter_releases_by_target,
                                            get_events,
                                            map_repositories, parse_action,
                                            parse_entry, parse_packageset,
@@ -290,3 +292,26 @@ def test_filter_events_by_architecture():
     assert {'pkg2': 'repo'} in [event.in_pkgs for event in filtered]
     assert {'pkg3': 'repo'} not in [event.in_pkgs for event in filtered]
     assert {'pkg4': 'repo'} in [event.in_pkgs for event in filtered]
+
+
+def test_filter_events_by_releases():
+    events = [
+        Event('Present', {'pkg1': 'repo'}, {}, (7, 6), (7, 7), []),
+        Event('Present', {'pkg2': 'repo'}, {}, (7, 7), (7, 8), []),
+        Event('Present', {'pkg3': 'repo'}, {}, (7, 8), (8, 0), []),
+        Event('Present', {'pkg4': 'repo'}, {}, (8, 0), (8, 1), []),
+        Event('Present', {'pkg5': 'repo'}, {}, (8, 1), (8, 2), [])
+    ]
+
+    filtered = filter_events_by_releases(events, [(7, 6), (7, 7), (8, 0), (8, 3)])
+    assert {'pkg1': 'repo'} in [event.in_pkgs for event in filtered]
+    assert {'pkg2': 'repo'} not in [event.in_pkgs for event in filtered]
+    assert {'pkg3': 'repo'} in [event.in_pkgs for event in filtered]
+    assert {'pkg4': 'repo'} not in [event.in_pkgs for event in filtered]
+    assert {'pkg5': 'repo'} not in [event.in_pkgs for event in filtered]
+
+
+def test_filter_releases_by_target():
+    releases = [(7, 6), (7, 7), (7, 8), (7, 9), (8, 0), (8, 1), (8, 2), (8, 3), (9, 0), (9, 1)]
+    filtered_releases = filter_releases_by_target(releases, (8, 1))
+    assert filtered_releases == [(7, 6), (7, 7), (7, 8), (7, 9), (8, 0), (8, 1)]
