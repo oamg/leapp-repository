@@ -1,5 +1,1 @@
 ### List of packages (each on new line) to be removed from the upgrade transaction
-
-#OAMG-590
-#https://bugzilla.redhat.com/show_bug.cgi?id=1757855
-sblim-wbemcli
