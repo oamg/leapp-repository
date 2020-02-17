@@ -1,6 +1,5 @@
 from leapp.actors import Actor
 from leapp.libraries.actor.library import check_os_version, skip_check
-from leapp.models import OSReleaseFacts
 from leapp.reporting import Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
@@ -13,7 +12,7 @@ class CheckOSRelease(Actor):
     """
 
     name = 'check_os_release'
-    consumes = (OSReleaseFacts,)
+    consumes = ()
     produces = (Report,)
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 
