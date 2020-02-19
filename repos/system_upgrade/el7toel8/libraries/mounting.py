@@ -120,6 +120,8 @@ class IsolationType(object):
 class IsolatedActions(object):
     """ This class allows to perform actions in a manner as if the given base_dir would be the current root """
 
+    _isolated = True
+
     def __init__(self, base_dir, implementation, **kwargs):
         self.base_dir = base_dir
         self.type = implementation(base_dir, **kwargs)
@@ -216,6 +218,15 @@ class IsolatedActions(object):
         """
         shutil.copy2(self.full_path(src), dst)
 
+    @classmethod
+    def is_isolated(cls):
+        """
+        Tell whether the context is isolated or not.
+
+        All classes except NotIsolatedActions return True.
+        """
+        return cls._isolated
+
 
 class ChrootActions(IsolatedActions):
     """ Isolation with chroot """
@@ -234,6 +245,7 @@ class NspawnActions(IsolatedActions):
 
 class NotIsolatedActions(IsolatedActions):
     """ Non isolated executed. """
+    _isolated = False
 
     def __init__(self, base_dir):
         super(NotIsolatedActions, self).__init__(base_dir=base_dir, implementation=IsolationType.NONE)

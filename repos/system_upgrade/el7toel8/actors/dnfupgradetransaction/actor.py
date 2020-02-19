@@ -3,7 +3,7 @@ import shutil
 from leapp.actors import Actor
 from leapp.libraries.common import dnfplugin
 from leapp.libraries.stdlib import run
-from leapp.models import (FilteredRpmTransactionTasks, SourceRHSMInfo, StorageInfo, TargetUserSpaceInfo,
+from leapp.models import (FilteredRpmTransactionTasks, RHSMInfo, StorageInfo, TargetUserSpaceInfo,
                           TransactionCompleted, UsedTargetRepositories)
 from leapp.tags import IPUWorkflowTag, RPMUpgradePhaseTag
 
@@ -17,20 +17,12 @@ class DnfUpgradeTransaction(Actor):
     """
 
     name = 'dnf_upgrade_transaction'
-    consumes = (FilteredRpmTransactionTasks, SourceRHSMInfo, StorageInfo, TargetUserSpaceInfo, UsedTargetRepositories)
+    consumes = (FilteredRpmTransactionTasks, RHSMInfo, StorageInfo, TargetUserSpaceInfo, UsedTargetRepositories)
     produces = (TransactionCompleted,)
     tags = (RPMUpgradePhaseTag, IPUWorkflowTag)
 
     def process(self):
-        # FIXME: we hitting issue now because the network is down and rhsm
-        # # is trying to connect to the server. Commenting this out for now
-        # # so people will not be affected in case they do not have set a
-        # # release and we will have time to fix it properly.
-        # Make sure Subscription Manager OS Release is unset
-        # cmd = ['subscription-manager', 'release', '--unset']
-        # run(cmd)
-
-        src_rhsm_info = next(self.consume(SourceRHSMInfo), None)
+        src_rhsm_info = next(self.consume(RHSMInfo), None)
         if src_rhsm_info:
             for prod_cert in src_rhsm_info.existing_product_certificates:
                 run(['rm', '-f', prod_cert])

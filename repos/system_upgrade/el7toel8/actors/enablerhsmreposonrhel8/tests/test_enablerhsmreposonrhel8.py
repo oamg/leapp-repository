@@ -1,4 +1,5 @@
 import sys
+from collections import namedtuple
 
 import pytest
 
@@ -6,8 +7,7 @@ from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import library
 from leapp.libraries.common import mounting, rhsm
 from leapp.libraries.stdlib import CalledProcessError, api
-from leapp.models import (TargetRHSMInfo, UsedTargetRepositories,
-                          UsedTargetRepository)
+from leapp.models import UsedTargetRepositories, UsedTargetRepository, Version
 
 
 def not_isolated_actions(raise_err=False):
@@ -61,27 +61,24 @@ class logger_mocked(object):
         return self
 
 
+class CurrentActorMocked(object):
+    configuration = namedtuple('configuration', ['version'])(
+        Version(source='7.6', target='8.0'))
+
+
 def test_setrelease(monkeypatch):
     commands_called, klass = not_isolated_actions()
     monkeypatch.setattr(mounting, 'NotIsolatedActions', klass)
-    monkeypatch.setattr(api, 'consume', lambda *x: (x for x in (TargetRHSMInfo(release='6.6'),)))
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked)
     library.set_rhsm_release()
     assert commands_called and len(commands_called) == 1
-    assert commands_called[0][0][-1] == '6.6'
-
-
-def test_setrelease_no_message(monkeypatch):
-    commands_called, klass = not_isolated_actions()
-    monkeypatch.setattr(mounting, 'NotIsolatedActions', klass)
-    monkeypatch.setattr(api, 'consume', lambda *x: (x for x in ()))
-    library.set_rhsm_release()
-    assert not commands_called
+    assert commands_called[0][0][-1] == '8.0'
 
 
 def test_setrelease_submgr_throwing_error(monkeypatch):
     _, klass = not_isolated_actions(raise_err=True)
     monkeypatch.setattr(mounting, 'NotIsolatedActions', klass)
-    monkeypatch.setattr(api, 'consume', lambda *x: (x for x in (TargetRHSMInfo(release='6.6'),)))
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked)
     # free the set_release funtion from the @_rhsm_retry decorator which would otherwise cause 25 sec delay of the test
     if sys.version_info.major < 3:
         monkeypatch.setattr(rhsm, 'set_release', rhsm.set_release.func_closure[0].cell_contents)
@@ -92,12 +89,10 @@ def test_setrelease_submgr_throwing_error(monkeypatch):
 
 
 def test_setrelease_skip_rhsm(monkeypatch):
-    commands_called, klass = not_isolated_actions()
+    commands_called, _ = not_isolated_actions()
     monkeypatch.setenv('LEAPP_DEVEL_SKIP_RHSM', '1')
     # To make this work we need to re-apply the decorator, so it respects the environment variable
     monkeypatch.setattr(rhsm, 'set_release', rhsm.with_rhsm(rhsm.set_release))
-    monkeypatch.setattr(mounting, 'NotIsolatedActions', klass)
-    monkeypatch.setattr(api, 'consume', lambda *x: (x for x in (TargetRHSMInfo(release='6.6'),)))
     library.set_rhsm_release()
     assert not commands_called
 

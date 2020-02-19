@@ -154,6 +154,7 @@ def install_initramdisk_requirements(packages, target_userspace_info, used_repos
             '--nogpgcheck',
             '--setopt=module_platform_id=platform:el8',
             '--setopt=keepcache=1',
+            '--releasever', api.current_actor().configuration.version.target,
             '--disablerepo', '*'
         ] + repos_opt + list(packages)
         if config.is_verbose():

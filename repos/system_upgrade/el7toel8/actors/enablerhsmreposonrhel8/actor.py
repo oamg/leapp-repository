@@ -1,6 +1,6 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import library
-from leapp.models import UsedTargetRepositories, TargetRHSMInfo
+from leapp.models import UsedTargetRepositories
 from leapp.tags import FirstBootPhaseTag, IPUWorkflowTag
 
 
@@ -20,7 +20,7 @@ class EnableRHSMReposOnRHEL8(Actor):
     """
 
     name = 'enable_rhsm_repos_on_rhel8'
-    consumes = (UsedTargetRepositories, TargetRHSMInfo)
+    consumes = (UsedTargetRepositories,)
     produces = ()
     tags = (IPUWorkflowTag, FirstBootPhaseTag)
 
