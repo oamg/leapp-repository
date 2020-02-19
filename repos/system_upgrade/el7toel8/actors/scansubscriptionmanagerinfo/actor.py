@@ -1,7 +1,7 @@
 from leapp.actors import Actor
 from leapp.tags import IPUWorkflowTag, FactsPhaseTag
 from leapp.libraries.actor import scanrhsm
-from leapp.models import SourceRHSMInfo
+from leapp.models import RHSMInfo
 
 
 class ScanSubscriptionManagerInfo(Actor):
@@ -14,7 +14,7 @@ class ScanSubscriptionManagerInfo(Actor):
 
     name = 'scan_subscription_manager_info'
     consumes = ()
-    produces = (SourceRHSMInfo,)
+    produces = (RHSMInfo,)
     tags = (IPUWorkflowTag, FactsPhaseTag)
 
     def process(self):

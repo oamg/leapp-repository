@@ -1,20 +1,21 @@
 from leapp.libraries.common import mounting, rhsm
 from leapp.libraries.stdlib import CalledProcessError, api, run
-from leapp.models import TargetRHSMInfo, UsedTargetRepositories
+from leapp.models import UsedTargetRepositories
 
 
 def set_rhsm_release():
     """Set the RHSM release to the target RHEL 8 minor version."""
-    info = next(api.consume(TargetRHSMInfo), None)
-    if info and info.release:
-        try:
-            rhsm.set_release(mounting.NotIsolatedActions(base_dir='/'), info.release)
-        except CalledProcessError as err:
-            api.current_logger().warning('Unable to set the {0} release through subscription-manager. When using dnf,'
-                                         ' content of the latest RHEL 8 minor version will be downloaded.\n{1}'
-                                         .format(info.release, str(err)))
-    else:
+    if rhsm.skip_rhsm():
         api.current_logger().debug('Skipping setting the RHSM release due to the use of LEAPP_DEVEL_SKIP_RHSM.')
+        return
+
+    target_version = api.current_actor().configuration.version.target
+    try:
+        rhsm.set_release(mounting.NotIsolatedActions(base_dir='/'), target_version)
+    except CalledProcessError as err:
+        api.current_logger().warning('Unable to set the {0} release through subscription-manager. When using dnf,'
+                                     ' content of the latest RHEL 8 minor version will be downloaded.\n{1}'
+                                     .format(target_version, str(err)))
 
 
 def enable_rhsm_repos():

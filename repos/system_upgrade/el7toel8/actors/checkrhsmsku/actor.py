@@ -1,6 +1,6 @@
 from leapp.actors import Actor
 from leapp.libraries.common import rhsm
-from leapp.models import Report, SourceRHSMInfo
+from leapp.models import Report, RHSMInfo
 from leapp.reporting import create_report
 from leapp import reporting
 from leapp.tags import IPUWorkflowTag, ChecksPhaseTag
@@ -15,13 +15,13 @@ class CheckRedHatSubscriptionManagerSKU(Actor):
     """
 
     name = 'check_rhsmsku'
-    consumes = (SourceRHSMInfo,)
+    consumes = (RHSMInfo,)
     produces = (Report,)
     tags = (IPUWorkflowTag, ChecksPhaseTag)
 
     def process(self):
         if not rhsm.skip_rhsm():
-            for info in self.consume(SourceRHSMInfo):
+            for info in self.consume(RHSMInfo):
                 if not info.attached_skus:
                     create_report([
                         reporting.Title('The system is not registered or subscribed.'),
