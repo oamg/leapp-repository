@@ -27,7 +27,7 @@ def check_kde_gnome():
                     " upgrade."),
                 reporting.Severity(reporting.Severity.HIGH),
                 reporting.Tags([
-                    reporting.Tags.UPGRADE_PROCESS
+                    reporting.Tags.DESKTOP
                 ]),
                 reporting.Flags([
                     reporting.Flags.INHIBITOR
@@ -48,7 +48,7 @@ def check_kde_gnome():
                               "in favor of GNOME during the upgrade."),
             reporting.Severity(reporting.Severity.MEDIUM),
             reporting.Tags([
-                reporting.Tags.UPGRADE_PROCESS
+                reporting.Tags.DESKTOP
             ])])
         api.current_logger().info("----------------------------------")
 
@@ -67,7 +67,7 @@ def check_kde_gnome():
                               "to:\n- {0}".format("\n- ".join(KDEAppsFacts.installed_apps))),
             reporting.Severity(reporting.Severity.MEDIUM),
             reporting.Tags([
-                reporting.Tags.UPGRADE_PROCESS
+                reporting.Tags.DESKTOP
             ])])
     else:
         api.current_logger().info("No KDE app in use detected.")
