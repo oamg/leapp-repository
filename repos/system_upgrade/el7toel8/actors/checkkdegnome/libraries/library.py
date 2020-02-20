@@ -4,9 +4,9 @@ from leapp.models import InstalledDesktopsFacts, InstalledKdeAppsFacts
 
 
 def check_kde_gnome():
-    desktopFacts = next(api.consume(InstalledDesktopsFacts))
-    kde_desktop_installed = desktopFacts.kde_installed
-    gnome_desktop_installed = desktopFacts.gnome_installed
+    desktop_facts = next(api.consume(InstalledDesktopsFacts))
+    kde_desktop_installed = desktop_facts.kde_installed
+    gnome_desktop_installed = desktop_facts.gnome_installed
 
     # No desktop installed, we don't even care about apps as they are most likely not used or even installed
     if not kde_desktop_installed and not gnome_desktop_installed:
@@ -20,11 +20,11 @@ def check_kde_gnome():
                                        " no other desktop than KDE installed.")
             # We cannot continue with the upgrade process
             reporting.create_report([
-                reporting.Title("Cannot upgrade because there is no other desktop than KDE installed."),
-                reporting.Summary("The KDE desktop environment is not available on RHEL 8. "
-                                  "The KDE-related packages will be uninstalled during the upgrade and because "
-                                  "the only currently installed desktop environment is KDE, there will be no "
-                                  "other desktop environment after upgrade."),
+                reporting.Title("The installed KDE environment is unavailable on RHEL 8."),
+                reporting.Summary(
+                    "Because the KDE desktop environment is not available on RHEL 8, all the KDE-related packages"
+                    " would be removed during the upgrade. There would be no desktop environment installed after the"
+                    " upgrade."),
                 reporting.Severity(reporting.Severity.HIGH),
                 reporting.Tags([
                     reporting.Tags.UPGRADE_PROCESS
@@ -33,7 +33,8 @@ def check_kde_gnome():
                     reporting.Flags.INHIBITOR
                 ]),
                 reporting.Remediation(
-                    hint="Install GNOME desktop to be able to upgrade.",
+                    hint=("Remove KDE (at least the `kde-workspace` package) or install the GNOME desktop environment"
+                          " to be able to upgrade."),
                     commands=[['yum', '-y', 'groupinstall', '"Server with GUI"']])
                 ])
             return
@@ -43,7 +44,7 @@ def check_kde_gnome():
                                   " be removed in favor of GNOME")
         reporting.create_report([
             reporting.Title("Upgrade can be performed, but KDE will be uninstalled."),
-            reporting.Summary("The KDE desktop environment is not available on RHEL 8. KDE will be uninstalled "
+            reporting.Summary("The KDE desktop environment is unavailable on RHEL 8. KDE will be uninstalled "
                               "in favor of GNOME during the upgrade."),
             reporting.Severity(reporting.Severity.MEDIUM),
             reporting.Tags([
@@ -61,7 +62,7 @@ def check_kde_gnome():
         api.current_logger().info("Installed KDE/Qt apps detected.")
         reporting.create_report([
             reporting.Title("Upgrade can be performed, but KDE/Qt apps will be uninstalled."),
-            reporting.Summary("The KDE desktop environment is not available on RHEL 8. "
+            reporting.Summary("The KDE desktop environment is unavailable on RHEL 8. "
                               "All the KDE/Qt apps will be removed during the upgrade, including but not limited "
                               "to:\n- {0}".format("\n- ".join(KDEAppsFacts.installed_apps))),
             reporting.Severity(reporting.Severity.MEDIUM),
