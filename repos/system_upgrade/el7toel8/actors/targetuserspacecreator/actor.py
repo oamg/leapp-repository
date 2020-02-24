@@ -1,6 +1,6 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import userspacegen
-from leapp.libraries.common.config import version
+from leapp.libraries.common.config import get_env, version
 from leapp.models import (RepositoriesMap, RequiredTargetUserspacePackages, SourceRHSMInfo,
                           StorageInfo, TargetRepositories, TargetRHSMInfo, TargetUserSpaceInfo, UsedTargetRepositories,
                           XFSPresence)
@@ -25,5 +25,6 @@ class TargetUserspaceCreator(Actor):
     tags = (IPUWorkflowTag, TargetTransactionFactsPhaseTag)
 
     def process(self):
-        if version.is_supported_version() and next(self.consume(RepositoriesMap), None):
+        skip_check = get_env('LEAPP_DEVEL_SKIP_CHECK_OS_RELEASE', False)
+        if (skip_check or version.is_supported_version()) and next(self.consume(RepositoriesMap), None):
             userspacegen.perform()
