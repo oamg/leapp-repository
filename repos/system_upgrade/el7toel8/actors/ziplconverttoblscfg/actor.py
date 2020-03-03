@@ -53,12 +53,20 @@ class ZiplConvertToBLSCFG(Actor):
                             # When the files are same, zipl failed - see the switch script
                             raise OSError('Failed to convert the ZIPL configuration to BLS.')
                         context.copy_from('/etc/zipl.conf', '/etc/zipl.conf')
-                    except (OSError, CalledProcessError):
-                        self.log.error(
-                            'Failed to execute zipl-switch-to-blscfg to convert the zipl configuration to BLS',
-                            exc_info=True
+                    except OSError as e:
+                        self.log.error('Could not call zipl-switch-to-blscfg command.',
+                                       exc_info=True)
+                        raise StopActorExecutionError(
+                            message='Failed to execute zipl-switch-to-blscfg.',
+                            details={'details': str(e)}
                         )
-                        raise StopActorExecutionError('Failed to convert the zipl configuration to BLS.')
+                    except CalledProcessError as e:
+                        self.log.error('zipl-switch-to-blscfg execution failed,',
+                                       exc_info=True)
+                        raise StopActorExecutionError(
+                            message='zipl-switch-to-blscfg execution failed with non zero exit code.',
+                            details={'details': str(e), 'stdout': e.stdout, 'stderr': e.stderr}
+                        )
 
                         # FIXME: we do not want to continue anymore, but we should clean
                         # better.
