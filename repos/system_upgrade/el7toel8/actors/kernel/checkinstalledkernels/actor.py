@@ -7,20 +7,26 @@ from leapp.libraries.actor import library
 
 class CheckInstalledKernels(Actor):
     """
-    Inhibit IPU (in-place upgrade) when multiple kernels are installed.
+    Inhibit IPU (in-place upgrade) when installed kernels conflict with a safe upgrade.
 
-    We are not able to upgrade correctly when any kernel is expected to be
-    uninstalled during the rpm upgrade transaction now. This is especially
-    problematic on s390x architecture.
+    a) Inhibit when multiple kernels are installed on a s390x machine
 
-    We discovered recently that removal of old kernels is not handled
-    correctly during the IPU. In case the maximum number of kernels
-    are installed, the oldest one is automatically uninstalled during
-    the rpm upgrade transaction.
+    When on s390x architecture, we are not able to upgrade correctly
+    when any kernel is expected to be uninstalled during the rpm
+    upgrade transaction now. We discovered recently that removal of
+    old kernels is not handled correctly during the IPU. In case the
+    maximum number of kernels are installed, the oldest one is
+    automatically uninstalled during the rpm upgrade transaction.
 
     To prevent any related troubles during the IPU, inhibit the IPU
     on s390x unless just one kernel is installed, until the issue will
     be fixed correctly.
+
+    b) Inhibit when machine is not booted into latest installed kernel
+
+    It is strictly required that during the upgrade the machine is
+    booted into the latest installed kernel. Upgrading with older
+    kernels could cause unexpected issues.
     """
 
     name = 'check_installed_kernels'
