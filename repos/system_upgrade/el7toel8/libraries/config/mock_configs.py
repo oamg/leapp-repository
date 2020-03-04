@@ -21,7 +21,8 @@ CONFIG = IPUConfig(
         source='7.6',
         target='8.0'
     ),
-    architecture='x86_64'
+    architecture='x86_64',
+    kernel='3.10.0-957.43.1.el7.x86_64',
 )
 
 CONFIG_ALL_SIGNED = IPUConfig(
@@ -37,7 +38,8 @@ CONFIG_ALL_SIGNED = IPUConfig(
         source='7.6',
         target='8.0'
     ),
-    architecture='x86_64'
+    architecture='x86_64',
+    kernel='3.10.0-957.43.1.el7.x86_64',
 )
 
 CONFIG_S390X = IPUConfig(
@@ -52,5 +54,6 @@ CONFIG_S390X = IPUConfig(
         source='7.6',
         target='8.0'
     ),
-    architecture='s390x'
+    architecture='s390x',
+    kernel='3.10.0-957.43.1.el7.x86_64',
 )
