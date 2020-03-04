@@ -12,7 +12,7 @@ OP_MAP = {
 }
 
 # Note: 'rhel-alt' is detected when on 'rhel' with kernel 4.x
-SUPPORTED_VERSIONS = {'rhel': ['7.6'], 'rhel-alt': ['7.6']}
+SUPPORTED_VERSIONS = {'rhel': ['7.8'], 'rhel-alt': ['7.6']}
 
 
 def _version_to_tuple(version):
