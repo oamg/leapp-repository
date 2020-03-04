@@ -7,8 +7,16 @@ from leapp.libraries.stdlib import api
 
 
 class CurrentActorMocked(object):
-    version = namedtuple('configuration', ['source', 'target'])('7.6', '8.0')
-    configuration = namedtuple('configuration', ['version'])(version)
+    def __init__(self, kernel='3.10.0-957.43.1.el7.x86_64', release_id='rhel',
+                 src_ver='7.6', dst_ver='8.1'):
+
+        version = namedtuple('Version', ['source', 'target'])(src_ver, dst_ver)
+        os_release = namedtuple('OS_release', ['release_id', 'version_id'])(release_id, src_ver)
+        args = (version, kernel, os_release)
+        self.configuration = namedtuple('configuration', ['version', 'kernel', 'os_release'])(*args)
+
+    def __call__(self):
+        return self
 
 
 def test_version_to_tuple():
@@ -59,21 +67,47 @@ def test_matches_version_pass():
     assert version.matches_version(['> 7.6', '< 7.10'], '7.7')
 
 
-def test_matches_source_version_pass(monkeypatch):
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked)
-    assert version.matches_source_version('7.6', '7.7')
+@pytest.mark.parametrize('result,version_list', [
+    (True, ['7.6', '7.7']),
+    (True, ['7.6']),
+    (False, ['7.5', '7.7']),
+    (False, ['7.5']),
+])
+def test_matches_source_version(monkeypatch, result, version_list):
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked())
+    assert version.matches_source_version(*version_list) == result
 
 
-def test_matches_source_version_fail(monkeypatch):
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked)
-    assert not version.matches_source_version('7.5', '7.7')
+@pytest.mark.parametrize('result,version_list', [
+    (True, ['8.0', '8.1']),
+    (True, ['8.1']),
+    (False, ['8.2']),
+    (False, ['8.2', '8.0']),
+])
+def test_matches_target_version(monkeypatch, result, version_list):
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked())
+    assert version.matches_target_version(*version_list) == result
 
 
-def test_matches_target_version_pass(monkeypatch):
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked)
-    assert version.matches_target_version('8.0', '8.1')
+@pytest.mark.parametrize('result,kernel,release_id', [
+    (True, '4.14.0-100.8.2.el7a.x86_64', 'rhel'),
+    (False, '3.10.0-100.8.2.el7a.x86_64', 'rhel'),
+    (False, '4.14.0-100.8.2.el7a.x86_64', 'fedora'),
+    (False, '5.14.0-100.8.2.el7a.x86_64', 'rhel'),
+])
+def test_is_rhel_alt(monkeypatch, result, kernel, release_id):
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(kernel=kernel, release_id=release_id))
+    assert version.is_rhel_alt() == result
 
 
-def test_matches_source_targetn_fail(monkeypatch):
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked)
-    assert not version.matches_target_version('8.2')
+@pytest.mark.parametrize('result,is_alt,src_ver', [
+    (True, True, '7.6'),
+    (True, False, '7.8'),
+    (False, True, '7.8'),
+    (False, False, '7.6'),
+])
+def test_is_supported_version(monkeypatch, result, is_alt, src_ver):
+    monkeypatch.setattr(version, 'is_rhel_alt', lambda: is_alt)
+    monkeypatch.setattr(version, 'SUPPORTED_VERSIONS', {'rhel': ['7.8'], 'rhel-alt': ['7.6']})
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(src_ver=src_ver))
+    assert version.is_supported_version() == result

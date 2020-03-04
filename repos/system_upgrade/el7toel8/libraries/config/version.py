@@ -11,7 +11,8 @@ OP_MAP = {
     '<=': operator.le
 }
 
-SUPPORTED_VERSIONS = {'rhel': ['7.6']}
+# Note: 'rhel-alt' is detected when on 'rhel' with kernel 4.x
+SUPPORTED_VERSIONS = {'rhel': ['7.6'], 'rhel-alt': ['7.6']}
 
 
 def _version_to_tuple(version):
@@ -113,7 +114,8 @@ def matches_target_version(*match_list):
 
 
 def matches_release(allowed_releases, release):
-    """Check if the given `release` is allowed to upgrade based in `allowed_releases`.
+    """
+    Check if the given `release` is allowed to upgrade based in `allowed_releases`.
 
     :param allowed_releases: All supported releases
     :type allowed_releases: list or dict
@@ -129,7 +131,8 @@ def matches_release(allowed_releases, release):
 
 
 def current_version():
-    """Return the current Linux release and version.
+    """
+    Return the current Linux release and version.
 
     :return: The tuple contains release name and version value.
     :rtype: (string, string)
@@ -138,13 +141,28 @@ def current_version():
     return release.release_id, release.version_id
 
 
+def is_rhel_alt():
+    """
+    Check if the current system is RHEL-ALT or not.
+
+    :return: `True` if the current system is RHEL-ALT and `False` otherwise.
+    :rtype: bool
+    """
+    conf = api.current_actor().configuration
+    # rhel-alt is rhel with kernel 4.x - there is not better detection...
+    return conf.os_release.release_id == 'rhel' and conf.kernel[0] == '4'
+
+
 def is_supported_version():
-    """ Verify if the current system version is supported for the upgrade.
+    """
+    Verify if the current system version is supported for the upgrade.
 
     :return: `True` if the current version is supported and `False` otherwise.
     :rtype: bool
     """
     release_id, version_id = current_version()
+    if is_rhel_alt():
+        release_id = 'rhel-alt'
 
     if not matches_release(SUPPORTED_VERSIONS, release_id):
         return False
