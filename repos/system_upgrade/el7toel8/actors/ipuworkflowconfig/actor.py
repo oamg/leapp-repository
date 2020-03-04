@@ -24,5 +24,6 @@ class IPUWorkflowConfig(Actor):
             leapp_env_vars=library.get_env_vars(),
             os_release=os_release,
             architecture=platform.machine(),
-            version=Version(source=os_release.version_id, target=target_version)
+            version=Version(source=os_release.version_id, target=target_version),
+            kernel=library.get_booted_kernel()
         ))

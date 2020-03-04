@@ -1,6 +1,7 @@
 import os
 
-from leapp import reporting
+from leapp.exceptions import StopActorExecutionError
+from leapp.libraries.stdlib import run, CalledProcessError
 from leapp.models import EnvVar, OSRelease
 
 CURRENT_TARGET_VERSION = '8.1'
@@ -42,15 +43,21 @@ def get_os_release(path):
                 variant_id=data.get('VARIANT_ID', '').strip('"') or None
             )
     except IOError as e:
-        reporting.create_report([
-            reporting.Title('Error while collecting system OS facts'),
-            reporting.Summary(str(e)),
-            reporting.Severity(reporting.Severity.HIGH),
-            reporting.Tags([reporting.Tags.OS_FACTS, reporting.Tags.SANITY]),
-            reporting.Flags([reporting.Flags.INHIBITOR]),
-            reporting.RelatedResource('file', path)
-        ])
-        return None
+        raise StopActorExecutionError(
+            message='Cannot collect the system OS facts.',
+            details={'details': str(e)}
+        )
+
+
+def get_booted_kernel():
+    """Get version and release of the currently used kernel in one string."""
+    try:
+        return run(['/usr/bin/uname', '-r'])['stdout'].strip()
+    except CalledProcessError as e:
+        raise StopActorExecutionError(
+            message='Unable to obtain release of the booted kernel.',
+            details={'details': str(e), 'stderr': e.stderr}
+        )
 
 
 def get_target_version():

@@ -2,10 +2,12 @@ import os
 
 import pytest
 
+from leapp import reporting
+from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import library
 from leapp.libraries.common.testutils import produce_mocked, create_report_mocked
+from leapp.libraries.stdlib import CalledProcessError
 from leapp.models import OSRelease
-from leapp import reporting
 
 
 def _clean_leapp_envs(monkeypatch):
@@ -16,6 +18,14 @@ def _clean_leapp_envs(monkeypatch):
     for k, _ in os.environ.items():
         if k.startswith('LEAPP'):
             monkeypatch.delenv(k)
+
+
+def _raise_call_error(*args):
+    raise CalledProcessError(
+        message='A Leapp Command Error occured.',
+        command=args,
+        result={'signal': None, 'exit_code': 1, 'pid': 0, 'stdout': 'fake', 'stderr': 'fake'}
+    )
 
 
 def test_leapp_env_vars(monkeypatch):
@@ -42,9 +52,6 @@ def test_get_target_version(monkeypatch):
 
 
 def test_get_os_release_info(monkeypatch):
-    monkeypatch.setattr('leapp.libraries.stdlib.api.produce', produce_mocked())
-    monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
-
     expected = OSRelease(
         release_id='rhel',
         name='Red Hat Enterprise Linux Server',
@@ -55,6 +62,14 @@ def test_get_os_release_info(monkeypatch):
         variant_id='server')
     assert expected == library.get_os_release('tests/files/os-release')
 
-    assert not library.get_os_release('tests/files/non-existent-file')
-    assert reporting.create_report.called == 1
-    assert 'inhibitor' in reporting.create_report.report_fields['flags']
+    with pytest.raises(StopActorExecutionError):
+        library.get_os_release('tests/files/non-existent-file')
+
+
+def test_get_booted_kernel(monkeypatch):
+    monkeypatch.setattr(library, 'run', lambda x: {'stdout': '4.14.0-100.8.2.el7a.x86_64\n'})
+    assert library.get_booted_kernel() == '4.14.0-100.8.2.el7a.x86_64'
+
+    monkeypatch.setattr(library, 'run', _raise_call_error)
+    with pytest.raises(StopActorExecutionError):
+        library.get_booted_kernel()
