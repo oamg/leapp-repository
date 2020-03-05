@@ -113,7 +113,7 @@ def get_transaction_configuration():
 
 def filter_releases_by_target(releases, target):
     return [r for r in releases if version.matches_version(
-        ['<= {}.{}'.format(target[0], target[1])], '{}.{}'.format(r[0], r[1]))]
+        ['<= {}.{}'.format(*target)], '{}.{}'.format(*r))]
 
 
 def get_events(pes_events_filepath):
