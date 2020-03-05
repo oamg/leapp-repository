@@ -38,11 +38,13 @@ def pes_events_scanner(pes_json_filepath):
     installed_pkgs = get_installed_pkgs()
     transaction_configuration = get_transaction_configuration()
     arch = api.current_actor().configuration.architecture
-    target = version._version_to_tuple(api.current_actor().configuration.version.target)
-    filtered_releases = filter_releases_by_target(RELEASES, target)
 
     events = get_events(pes_json_filepath)
     filtered_events = filter_events_by_releases(events, filtered_releases)
+    releases = get_releases(events) # This where you would get the releases from the data, doesn't exist ofc
+    
+    target = version._version_to_tuple(api.current_actor().configuration.version.target)
+    filtered_releases = filter_releases_by_target(releases, target)
     arch_events = filter_events_by_architecture(filtered_events, arch)
     add_output_pkgs_to_transaction_conf(transaction_configuration, arch_events)
     tasks = process_events(filtered_releases, arch_events, installed_pkgs)
