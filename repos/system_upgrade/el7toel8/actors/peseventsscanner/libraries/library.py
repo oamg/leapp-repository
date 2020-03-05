@@ -21,7 +21,6 @@ Event = namedtuple('Event', ['action',        # A string representing an event t
                              ])
 
 EVENT_TYPES = ('Present', 'Removed', 'Deprecated', 'Replaced', 'Split', 'Merged', 'Moved', 'Renamed')
-RELEASES = [(7, 5), (7, 6), (7, 7), (7, 8), (8, 0), (8, 1), (8, 2)]  # TODO: bad, bad hardcode
 
 
 class Task(IntEnum):
@@ -38,14 +37,14 @@ def pes_events_scanner(pes_json_filepath):
     installed_pkgs = get_installed_pkgs()
     transaction_configuration = get_transaction_configuration()
     arch = api.current_actor().configuration.architecture
-
     events = get_events(pes_json_filepath)
-    filtered_events = filter_events_by_releases(events, filtered_releases)
-    releases = get_releases(events) # This where you would get the releases from the data, doesn't exist ofc
-    
+    releases = get_releases(events)
     target = version._version_to_tuple(api.current_actor().configuration.version.target)
+
     filtered_releases = filter_releases_by_target(releases, target)
+    filtered_events = filter_events_by_releases(events, filtered_releases)
     arch_events = filter_events_by_architecture(filtered_events, arch)
+
     add_output_pkgs_to_transaction_conf(transaction_configuration, arch_events)
     tasks = process_events(filtered_releases, arch_events, installed_pkgs)
     filter_out_transaction_conf_pkgs(tasks, transaction_configuration)
@@ -139,6 +138,15 @@ def get_events(pes_events_filepath):
             reporting.RelatedResource('file', pes_events_filepath)
         ])
         raise StopActorExecution()
+
+
+def get_releases(events):
+    """
+    Get all target releases from a list of events.
+
+    :return: List of (major, minor) release tuples, sorted in ascending order
+    """
+    return sorted({event.to_release for event in events})
 
 
 def filter_events_by_architecture(events, arch):
