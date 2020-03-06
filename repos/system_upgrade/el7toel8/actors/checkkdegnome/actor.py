@@ -8,8 +8,7 @@ from leapp.actors import Actor
 from leapp.reporting import Report
 from leapp.tags import IPUWorkflowTag, ChecksPhaseTag
 from leapp.libraries.actor.library import check_kde_gnome
-from leapp.models import (InstalledRPM, InstalledDesktopsFacts,
-                          InstalledKdeAppsFacts)
+from leapp.models import InstalledDesktopsFacts, InstalledKdeAppsFacts
 
 
 class CheckKdeGnome(Actor):
@@ -24,7 +23,7 @@ class CheckKdeGnome(Actor):
     dnf upgrade transaction.
     """
     name = 'check_kde_gnome'
-    consumes = (InstalledRPM, InstalledDesktopsFacts, InstalledKdeAppsFacts)
+    consumes = (InstalledDesktopsFacts, InstalledKdeAppsFacts)
     produces = (Report,)
     tags = (IPUWorkflowTag, ChecksPhaseTag)
 
