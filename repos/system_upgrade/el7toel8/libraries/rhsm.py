@@ -141,28 +141,6 @@ def get_enabled_repo_uids(context, rhsm_info):
 
 
 @with_rhsm
-def _get_repositories_to_use(context, rhsm_info, target_repositories):
-    """
-    Filters the available repositories based on the target_repositories passed.
-
-    :param context: An instance of a mounting.IsolatedActions class
-    :type context: mounting.IsolatedActions class
-    :param rhsm_info: An instance of a RHSMInfo derived model.
-    :type rhsm_info: RHSMInfo derived model
-    :param target_repositories: Instance of the TargetRepositories message.
-    :type target_repositories: TargetRepositories
-    :return: List of filtered repositories to use.
-    :rtype: List(string)
-    """
-    repositories_to_use = []
-    for target_repo in target_repositories:
-        for rhel_repo in target_repo.rhel_repos:
-            if rhel_repo.uid in rhsm_info.available_repos:
-                repositories_to_use.append(rhel_repo.uid)
-    return repositories_to_use
-
-
-@with_rhsm
 @_rhsm_retry(max_attempts=_ATTEMPTS, sleep=_RETRY_SLEEP)
 def unset_release(context):
     """
