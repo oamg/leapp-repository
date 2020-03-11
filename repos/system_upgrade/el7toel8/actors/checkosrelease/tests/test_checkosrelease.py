@@ -36,7 +36,7 @@ def test_not_supported_release(monkeypatch):
 
     library.check_os_version()
     assert reporting.create_report.called == 1
-    assert 'Unsupported OS' in reporting.create_report.report_fields['title']
+    assert 'The installed OS version is not supported' in reporting.create_report.report_fields['title']
     assert 'flags' in reporting.create_report.report_fields
     assert 'inhibitor' in reporting.create_report.report_fields['flags']
 

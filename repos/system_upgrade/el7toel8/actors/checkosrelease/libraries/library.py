@@ -31,7 +31,7 @@ def check_os_version():
             for ver in version.SUPPORTED_VERSIONS[rel]:
                 supported_releases.append(rel.upper() + ' ' + ver)
         reporting.create_report([
-            reporting.Title('Unsupported OS'),
+            reporting.Title('The installed OS version is not supported for the in-place upgrade to RHEL 8'),
             reporting.Summary(
                 'The supported OS releases for the upgrade process:\n'
                 ' {}'.format('\n'.join(supported_releases))
