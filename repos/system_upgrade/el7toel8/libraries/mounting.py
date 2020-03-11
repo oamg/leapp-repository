@@ -6,6 +6,9 @@ from collections import namedtuple
 from leapp.libraries.stdlib import run, CalledProcessError, api
 from leapp.libraries.common.config import get_all_envs
 
+
+ALWAYS_BIND = ['/etc/hosts:/etc/hosts']
+
 ErrorData = namedtuple('ErrorData', ['summary', 'details'])
 
 
@@ -67,7 +70,7 @@ class IsolationType(object):
 
         def __init__(self, target, binds=(), env_vars=None):
             super(IsolationType.NSPAWN, self).__init__(target=target)
-            self.binds = binds
+            self.binds = list(binds) + ALWAYS_BIND
             self.env_vars = env_vars or get_all_envs()
 
         def make_command(self, cmd):
