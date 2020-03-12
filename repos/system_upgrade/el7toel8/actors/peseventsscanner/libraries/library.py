@@ -113,8 +113,8 @@ def get_transaction_configuration():
 
 
 def filter_releases_by_target(releases, target):
-    return [r for r in releases if version.matches_version(
-        ['<= {}.{}'.format(*target)], '{}.{}'.format(*r))]
+    match_list = ['<= {}.{}'.format(*target)]
+    return [r for r in releases if version.matches_version(match_list, '{}.{}'.format(*r))]
 
 
 def get_events(pes_events_filepath):
@@ -338,6 +338,7 @@ def process_events(releases, events, installed_pkgs):
         for package in do_not_remove:
             del current[Task.remove][package]
 
+        do_not_install = set()
         for package in current[Task.install]:
             if package in tasks[Task.remove]:
                 api.current_logger().warning(
@@ -345,7 +346,9 @@ def process_events(releases, events, installed_pkgs):
                         p=package, r=current[Task.install][package]))
                 current[Task.keep][package] = current[Task.install][package]
                 del tasks[Task.remove][package]
-                del current[Task.install][package]
+                do_not_install.add(package)
+        for package in do_not_install:
+            del current[Task.install][package]
 
         for package in current[Task.keep]:
             if package in tasks[Task.remove]:
