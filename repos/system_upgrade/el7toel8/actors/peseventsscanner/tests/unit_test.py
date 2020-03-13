@@ -207,13 +207,19 @@ def test_process_events(monkeypatch):
         Event('Split', {'original': 'rhel7-repo'}, {'split01': 'rhel8-repo', 'split02': 'rhel8-repo'},
               (7, 6), (8, 0), []),
         Event('Removed', {'removed': 'rhel7-repo'}, {}, (7, 6), (8, 0), []),
-        Event('Present', {'present': 'rhel8-repo'}, {}, (7, 6), (8, 0), [])]
-    installed_pkgs = {'original', 'removed', 'present'}
-    tasks = process_events([(8, 0)], events, installed_pkgs)
+        Event('Present', {'present': 'rhel8-repo'}, {}, (7, 6), (8, 0), []),
+        # this package is present at the start, gets removed and then reintroduced
+        Event('Removed', {'reintroduced': 'rhel7-repo'}, {}, (7, 6), (8, 0), []),
+        Event('Present', {'reintroduced': 'rhel8-repo'}, {}, (8, 0), (8, 1), []),
+        # however, this package was never there
+        Event('Removed', {'neverthere': 'rhel7-repo'}, {}, (7, 6), (8, 0), []),
+        Event('Present', {'neverthere': 'rhel8-repo'}, {}, (8, 0), (8, 1), [])]
+    installed_pkgs = {'original', 'removed', 'present', 'reintroduced'}
+    tasks = process_events([(8, 0), (8, 1)], events, installed_pkgs)
 
     assert tasks[Task.install] == {'split02': 'rhel8-mapped', 'split01': 'rhel8-mapped'}
     assert tasks[Task.remove] == {'removed': 'rhel7-repo', 'original': 'rhel7-repo'}
-    assert tasks[Task.keep] == {'present': 'rhel8-mapped'}
+    assert tasks[Task.keep] == {'present': 'rhel8-mapped', 'reintroduced': 'rhel8-mapped'}
 
 
 def test_get_events(monkeypatch):
