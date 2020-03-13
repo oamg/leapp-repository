@@ -12,7 +12,7 @@ from leapp.models import (InstalledRedHatSignedRPM, PESRpmTransactionTasks, Repo
                           RepositoriesSetupTasks, RpmTransactionTasks, RepositoriesBlacklisted)
 
 
-Event = namedtuple('Event', ['action',        # A string representing an event type (see EVENT_TYPES)
+Event = namedtuple('Event', ['action',        # An instance of Action
                              'in_pkgs',       # A dictionary with packages in format {<pkg_name>: <repository>}
                              'out_pkgs',      # A dictionary with packages in format {<pkg_name>: <repository>}
                              'from_release',  # A tuple representing a release in format (major, minor)
@@ -20,7 +20,16 @@ Event = namedtuple('Event', ['action',        # A string representing an event t
                              'architectures'  # A list of strings representing architectures
                              ])
 
-EVENT_TYPES = ('Present', 'Removed', 'Deprecated', 'Replaced', 'Split', 'Merged', 'Moved', 'Renamed')
+
+class Action(IntEnum):
+    present = 0
+    removed = 1
+    deprecated = 2
+    replaced = 3
+    split = 4
+    merged = 5
+    moved = 6
+    renamed = 7
 
 
 class Task(IntEnum):
@@ -235,10 +244,9 @@ def parse_entry(entry):
 
 def parse_action(action_id):
     """Get event type name based on PES event's action id"""
-    if action_id < 0 or action_id >= len(EVENT_TYPES):
+    if action_id < 0 or action_id >= len(Action):
         raise ValueError('Found event with invalid action ID: {}'. format(action_id))
-
-    return EVENT_TYPES[action_id]
+    return Action(action_id)
 
 
 def parse_packageset(packageset):
@@ -264,7 +272,7 @@ def parse_architectures(architectures):
 def is_event_relevant(event, installed_pkgs, tasks):
     """Determine if event is applicable given the installed packages and tasks planned so far."""
     for package in event.in_pkgs.keys():
-        if package in tasks[Task.remove] and event.action != 'Present':
+        if package in tasks[Task.remove] and event.action != Action.present:
             return False
         if package not in installed_pkgs and package not in tasks[Task.install]:
             return False
@@ -298,28 +306,28 @@ def process_events(releases, events, installed_pkgs):
 
         for event in release_events:
             if is_event_relevant(event, installed_pkgs, tasks):
-                if event.action in ('Deprecated', 'Present'):
+                if event.action in [Action.deprecated, Action.present]:
                     # Keep these packages to make sure the repo they're in on RHEL 8 gets enabled
                     add_packages_to_tasks(current, event.in_pkgs, Task.keep)
 
-                if event.action == 'Moved':
+                if event.action == Action.moved:
                     # Keep these packages to make sure the repo they're in on RHEL 8 gets enabled
                     # We don't care about the "in_pkgs" as it contains always just one pkg - the same as the "out" pkg
                     add_packages_to_tasks(current, event.out_pkgs, Task.keep)
 
-                if event.action in ('Split', 'Merged', 'Renamed', 'Replaced'):
+                if event.action in [Action.split, Action.merged, Action.renamed, Action.replaced]:
                     non_installed_out_pkgs = filter_out_installed_pkgs(event.out_pkgs, installed_pkgs)
                     add_packages_to_tasks(current, non_installed_out_pkgs, Task.install)
                     # Keep already installed "out" pkgs to ensure the repo they're in on RHEL 8 gets enabled
                     installed_out_pkgs = get_installed_event_pkgs(event.out_pkgs, installed_pkgs)
                     add_packages_to_tasks(current, installed_out_pkgs, Task.keep)
 
-                    if event.action in ('Split', 'Merged'):
+                    if event.action in [Action.split, Action.merged]:
                         # Remove those RHEL 7 pkgs that are no longer on RHEL 8
                         in_pkgs_without_out_pkgs = filter_out_out_pkgs(event.in_pkgs, event.out_pkgs)
                         add_packages_to_tasks(current, in_pkgs_without_out_pkgs, Task.remove)
 
-                if event.action in ('Renamed', 'Replaced', 'Removed'):
+                if event.action in [Action.renamed, Action.replaced, Action.removed]:
                     add_packages_to_tasks(current, event.in_pkgs, Task.remove)
 
         do_not_remove = set()
@@ -498,11 +506,11 @@ def add_output_pkgs_to_transaction_conf(transaction_configuration, events):
     message = 'Marking packages for removal:\n'
 
     for event in events:
-        if event.action in ('Split', 'Merged', 'Replaced', 'Renamed'):
+        if event.action in (Action.split, Action.merged, Action.replaced, Action.renamed):
             if all([pkg in transaction_configuration.to_remove for pkg in event.in_pkgs]):
                 transaction_configuration.to_remove.extend(event.out_pkgs)
                 message += '- [{action}] {ins} -> {outs}\n'.format(
-                    action=event.action,
+                    action=event.action.name,
                     ins=', '.join(sorted(event.in_pkgs.keys())),
                     outs=', '.join(sorted(event.out_pkgs.keys()))
                 )

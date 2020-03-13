@@ -4,7 +4,8 @@ import pytest
 
 from leapp.exceptions import StopActorExecution
 from leapp.libraries.actor import library
-from leapp.libraries.actor.library import (Event,
+from leapp.libraries.actor.library import (Action,
+                                           Event,
                                            Task,
                                            add_output_pkgs_to_transaction_conf,
                                            filter_out_pkgs_in_blacklisted_repos,
@@ -42,14 +43,8 @@ class get_repos_blacklisted_mocked(object):
 
 
 def test_parse_action(current_actor_context):
-    assert parse_action(0) == 'Present'
-    assert parse_action(1) == 'Removed'
-    assert parse_action(2) == 'Deprecated'
-    assert parse_action(3) == 'Replaced'
-    assert parse_action(4) == 'Split'
-    assert parse_action(5) == 'Merged'
-    assert parse_action(6) == 'Moved'
-    assert parse_action(7) == 'Renamed'
+    for i in range(8):
+        assert parse_action(i) == Action(i)
 
     with pytest.raises(ValueError):
         parse_action(-1)
@@ -76,7 +71,7 @@ def test_parse_entry(current_actor_context):
                 {'name': 'split02', 'repository': 'repo'}]}}
 
     event = parse_entry(entry)
-    assert event.action == 'Split'
+    assert event.action == Action.split
     assert event.in_pkgs == {'original': 'repo'}
     assert event.out_pkgs == {'split01': 'repo', 'split02': 'repo'}
 
@@ -86,7 +81,7 @@ def test_parse_entry(current_actor_context):
             'package': [{'name': 'removed', 'repository': 'repo'}]}}
 
     event = parse_entry(entry)
-    assert event.action == 'Removed'
+    assert event.action == Action.removed
     assert event.in_pkgs == {'removed': 'repo'}
     assert event.out_pkgs == {}
 
@@ -94,10 +89,10 @@ def test_parse_entry(current_actor_context):
 def test_parse_pes_events_file(current_actor_context):
     events = parse_pes_events_file('files/tests/sample01.json')
     assert len(events) == 2
-    assert events[0].action == 'Split'
+    assert events[0].action == Action.split
     assert events[0].in_pkgs == {'original': 'repo'}
     assert events[0].out_pkgs == {'split01': 'repo', 'split02': 'repo'}
-    assert events[1].action == 'Removed'
+    assert events[1].action == Action.removed
     assert events[1].in_pkgs == {'removed': 'repo'}
     assert events[1].out_pkgs == {}
 
@@ -162,8 +157,8 @@ def test_resolve_conflicting_requests(monkeypatch):
     monkeypatch.setattr(library, 'filter_out_pkgs_in_blacklisted_repos', lambda x: x)
 
     events = [
-        Event('Split', {'sip-devel': 'repo'}, {'python3-sip-devel': 'repo', 'sip': 'repo'}, (7, 6), (8, 0), []),
-        Event('Split', {'sip': 'repo'}, {'python3-pyqt5-sip': 'repo', 'python3-sip': 'repo'}, (7, 6), (8, 0), [])]
+        Event(Action.split, {'sip-devel': 'repo'}, {'python3-sip-devel': 'repo', 'sip': 'repo'}, (7, 6), (8, 0), []),
+        Event(Action.split, {'sip': 'repo'}, {'python3-pyqt5-sip': 'repo', 'python3-sip': 'repo'}, (7, 6), (8, 0), [])]
     installed_pkgs = {'sip', 'sip-devel'}
 
     tasks = process_events([(8, 0)], events, installed_pkgs)
@@ -204,16 +199,16 @@ def test_process_events(monkeypatch):
     monkeypatch.setattr(library, 'get_repositories_blacklisted', get_repos_blacklisted_mocked(set()))
 
     events = [
-        Event('Split', {'original': 'rhel7-repo'}, {'split01': 'rhel8-repo', 'split02': 'rhel8-repo'},
+        Event(Action.split, {'original': 'rhel7-repo'}, {'split01': 'rhel8-repo', 'split02': 'rhel8-repo'},
               (7, 6), (8, 0), []),
-        Event('Removed', {'removed': 'rhel7-repo'}, {}, (7, 6), (8, 0), []),
-        Event('Present', {'present': 'rhel8-repo'}, {}, (7, 6), (8, 0), []),
+        Event(Action.removed, {'removed': 'rhel7-repo'}, {}, (7, 6), (8, 0), []),
+        Event(Action.present, {'present': 'rhel8-repo'}, {}, (7, 6), (8, 0), []),
         # this package is present at the start, gets removed and then reintroduced
-        Event('Removed', {'reintroduced': 'rhel7-repo'}, {}, (7, 6), (8, 0), []),
-        Event('Present', {'reintroduced': 'rhel8-repo'}, {}, (8, 0), (8, 1), []),
+        Event(Action.removed, {'reintroduced': 'rhel7-repo'}, {}, (7, 6), (8, 0), []),
+        Event(Action.present, {'reintroduced': 'rhel8-repo'}, {}, (8, 0), (8, 1), []),
         # however, this package was never there
-        Event('Removed', {'neverthere': 'rhel7-repo'}, {}, (7, 6), (8, 0), []),
-        Event('Present', {'neverthere': 'rhel8-repo'}, {}, (8, 0), (8, 1), [])]
+        Event(Action.removed, {'neverthere': 'rhel7-repo'}, {}, (7, 6), (8, 0), []),
+        Event(Action.present, {'neverthere': 'rhel8-repo'}, {}, (8, 0), (8, 1), [])]
     installed_pkgs = {'original', 'removed', 'present', 'reintroduced'}
     tasks = process_events([(8, 0), (8, 1)], events, installed_pkgs)
 
@@ -251,10 +246,10 @@ def test_pes_data_not_found(monkeypatch):
 
 def test_add_output_pkgs_to_transaction_conf():
     events = [
-        Event('Split', {'split_in': 'repo'}, {'split_out1': 'repo', 'split_out2': 'repo'}, (7, 6), (8, 0), []),
-        Event('Merged', {'merged_in1': 'repo', 'merged_in2': 'repo'}, {'merged_out': 'repo'}, (7, 6), (8, 0), []),
-        Event('Renamed', {'renamed_in': 'repo'}, {'renamed_out': 'repo'}, (7, 6), (8, 0), []),
-        Event('Replaced', {'replaced_in': 'repo'}, {'replaced_out': 'repo'}, (7, 6), (8, 0), []),
+        Event(Action.split, {'split_in': 'repo'}, {'split_out1': 'repo', 'split_out2': 'repo'}, (7, 6), (8, 0), []),
+        Event(Action.merged, {'merged_in1': 'repo', 'merged_in2': 'repo'}, {'merged_out': 'repo'}, (7, 6), (8, 0), []),
+        Event(Action.renamed, {'renamed_in': 'repo'}, {'renamed_out': 'repo'}, (7, 6), (8, 0), []),
+        Event(Action.replaced, {'replaced_in': 'repo'}, {'replaced_out': 'repo'}, (7, 6), (8, 0), []),
     ]
 
     conf_empty = RpmTransactionTasks()
@@ -284,10 +279,10 @@ def test_add_output_pkgs_to_transaction_conf():
 
 def test_filter_events_by_architecture():
     events = [
-        Event('Present', {'pkg1': 'repo'}, {}, (7, 6), (8, 0), ['arch1']),
-        Event('Present', {'pkg2': 'repo'}, {}, (7, 6), (8, 0), ['arch2', 'arch1', 'arch3']),
-        Event('Present', {'pkg3': 'repo'}, {}, (7, 6), (8, 0), ['arch2', 'arch3', 'arch4']),
-        Event('Present', {'pkg4': 'repo'}, {}, (7, 6), (8, 0), [])
+        Event(Action.present, {'pkg1': 'repo'}, {}, (7, 6), (8, 0), ['arch1']),
+        Event(Action.present, {'pkg2': 'repo'}, {}, (7, 6), (8, 0), ['arch2', 'arch1', 'arch3']),
+        Event(Action.present, {'pkg3': 'repo'}, {}, (7, 6), (8, 0), ['arch2', 'arch3', 'arch4']),
+        Event(Action.present, {'pkg4': 'repo'}, {}, (7, 6), (8, 0), [])
     ]
 
     filtered = filter_events_by_architecture(events, 'arch1')
@@ -299,11 +294,11 @@ def test_filter_events_by_architecture():
 
 def test_filter_events_by_releases():
     events = [
-        Event('Present', {'pkg1': 'repo'}, {}, (7, 6), (7, 7), []),
-        Event('Present', {'pkg2': 'repo'}, {}, (7, 7), (7, 8), []),
-        Event('Present', {'pkg3': 'repo'}, {}, (7, 8), (8, 0), []),
-        Event('Present', {'pkg4': 'repo'}, {}, (8, 0), (8, 1), []),
-        Event('Present', {'pkg5': 'repo'}, {}, (8, 1), (8, 2), [])
+        Event(Action.present, {'pkg1': 'repo'}, {}, (7, 6), (7, 7), []),
+        Event(Action.present, {'pkg2': 'repo'}, {}, (7, 7), (7, 8), []),
+        Event(Action.present, {'pkg3': 'repo'}, {}, (7, 8), (8, 0), []),
+        Event(Action.present, {'pkg4': 'repo'}, {}, (8, 0), (8, 1), []),
+        Event(Action.present, {'pkg5': 'repo'}, {}, (8, 1), (8, 2), [])
     ]
 
     filtered = filter_events_by_releases(events, [(7, 6), (7, 7), (8, 0), (8, 3)])
