@@ -300,6 +300,7 @@ def get_existing_product_certificates(context):
     return certs
 
 
+@with_rhsm
 def set_container_mode(context):
     """
     Put RHSM into the container mode.
@@ -323,6 +324,7 @@ def set_container_mode(context):
                 message='Cannot set the container mode for the subscription-manager.')
 
 
+@with_rhsm
 def switch_certificate(context, rhsm_info, cert_path):
     """
     Perform all actions needed to switch the passed RHSM product certificate.
