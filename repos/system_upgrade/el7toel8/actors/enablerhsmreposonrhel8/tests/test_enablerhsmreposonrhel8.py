@@ -5,7 +5,7 @@ import pytest
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import library
-from leapp.libraries.common import mounting, rhsm
+from leapp.libraries.common import config, mounting, rhsm
 from leapp.libraries.stdlib import CalledProcessError, api
 from leapp.models import UsedTargetRepositories, UsedTargetRepository, Version
 
@@ -70,6 +70,7 @@ def test_setrelease(monkeypatch):
     commands_called, klass = not_isolated_actions()
     monkeypatch.setattr(mounting, 'NotIsolatedActions', klass)
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked)
+    monkeypatch.setattr(config, 'get_product_type', lambda dummy: 'ga')
     library.set_rhsm_release()
     assert commands_called and len(commands_called) == 1
     assert commands_called[0][0][-1] == '8.0'
@@ -79,6 +80,7 @@ def test_setrelease_submgr_throwing_error(monkeypatch):
     _, klass = not_isolated_actions(raise_err=True)
     monkeypatch.setattr(mounting, 'NotIsolatedActions', klass)
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked)
+    monkeypatch.setattr(config, 'get_product_type', lambda dummy: 'ga')
     # free the set_release funtion from the @_rhsm_retry decorator which would otherwise cause 25 sec delay of the test
     if sys.version_info.major < 3:
         monkeypatch.setattr(rhsm, 'set_release', rhsm.set_release.func_closure[0].cell_contents)
@@ -88,9 +90,11 @@ def test_setrelease_submgr_throwing_error(monkeypatch):
         library.set_rhsm_release()
 
 
-def test_setrelease_skip_rhsm(monkeypatch):
+@pytest.mark.parametrize('product', ['beta', 'htb'])
+def test_setrelease_skip_rhsm(monkeypatch, product):
     commands_called, _ = not_isolated_actions()
     monkeypatch.setenv('LEAPP_DEVEL_SKIP_RHSM', '1')
+    monkeypatch.setattr(config, 'get_product_type', lambda dummy: product)
     # To make this work we need to re-apply the decorator, so it respects the environment variable
     monkeypatch.setattr(rhsm, 'set_release', rhsm.with_rhsm(rhsm.set_release))
     library.set_rhsm_release()

@@ -1,4 +1,4 @@
-from leapp.libraries.common import mounting, rhsm
+from leapp.libraries.common import config, mounting, rhsm
 from leapp.libraries.stdlib import CalledProcessError, api, run
 from leapp.models import UsedTargetRepositories
 
@@ -9,6 +9,9 @@ def set_rhsm_release():
         api.current_logger().debug('Skipping setting the RHSM release due to the use of LEAPP_DEVEL_SKIP_RHSM.')
         return
 
+    if config.get_product_type('target') != 'ga':
+        api.current_logger().debug('Skipping setting the RHSM release as target product is set to beta/htb')
+        return
     target_version = api.current_actor().configuration.version.target
     try:
         rhsm.set_release(mounting.NotIsolatedActions(base_dir='/'), target_version)
