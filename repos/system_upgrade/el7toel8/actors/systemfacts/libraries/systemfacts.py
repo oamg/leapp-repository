@@ -1,7 +1,6 @@
 import errno
 import functools
 import grp
-import json
 import logging
 import os
 import pwd
@@ -10,10 +9,10 @@ import re
 import six
 
 from leapp.libraries.stdlib import CalledProcessError, api, run
-from leapp.libraries.common import utils
+from leapp.libraries.common import repofileutils
 from leapp.models import SysctlVariablesFacts, SysctlVariable, ActiveKernelModulesFacts, ActiveKernelModule, \
-    KernelModuleParameter, UsersFacts, User, GroupsFacts, Group, RepositoriesFacts, RepositoryFile, RepositoryData, \
-    SELinuxFacts, fields, FirewallStatus, FirewallsFacts, FirmwareFacts
+    KernelModuleParameter, UsersFacts, User, GroupsFacts, Group, RepositoriesFacts, \
+    SELinuxFacts, FirewallStatus, FirewallsFacts, FirmwareFacts
 
 
 def aslist(f):
@@ -171,40 +170,9 @@ def get_sysctls_status():
     return SysctlVariablesFacts(sysctl_variables=_get_sysctls())
 
 
-@aslist
-def _get_repositories():
-    def asbool(x):
-        return x == '1'
-
-    @aslist
-    def _parse(r):
-        with open(r, mode='r') as fp:
-            cp = utils.parse_config(fp)
-
-            for section in cp.sections():
-                prepared = {'repoid': section, 'additional_fields': {}}
-                data = dict(cp.items(section))
-                for key in data.keys():
-                    if key in RepositoryData.fields:
-                        if isinstance(RepositoryData.fields[key], fields.Boolean):
-                            data[key] = asbool(data[key])
-                        prepared[key] = data[key]
-                    else:
-                        prepared['additional_fields'][key] = data[key]
-                prepared['additional_fields'] = json.dumps(prepared['additional_fields'])
-                yield RepositoryData(**prepared)
-
-    repos = run(
-        ['find', '/etc/yum.repos.d/', '-type', 'f', '-name', '*.repo'],
-        split=True
-    )['stdout']
-    for repo in repos:
-        yield RepositoryFile(file=repo, data=_parse(repo))
-
-
 def get_repositories_status():
     ''' Get a basic information about YUM repositories installed in the system '''
-    return RepositoriesFacts(repositories=_get_repositories())
+    return RepositoriesFacts(repositories=repofileutils.get_parsed_repofiles())
 
 
 def get_selinux_status():

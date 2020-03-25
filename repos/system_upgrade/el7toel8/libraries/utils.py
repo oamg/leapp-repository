@@ -8,7 +8,7 @@ from leapp.libraries.common import mounting
 from leapp.libraries.stdlib import STDOUT, CalledProcessError, api, config, run
 
 
-def parse_config(cfg=None):
+def parse_config(cfg=None, strict=True):
     """
     Applies a workaround to parse a config file using py3 AND py2
 
@@ -17,8 +17,12 @@ def parse_config(cfg=None):
     ConfigParser on Py2 and Py3
 
     :type cfg: str
+    :type strict: bool
     """
-    parser = six.moves.configparser.ConfigParser()
+    if six.PY3:
+        parser = six.moves.configparser.ConfigParser(strict=strict)  # pylint: disable=unexpected-keyword-arg
+    else:
+        parser = six.moves.configparser.ConfigParser()
 
     # we do not handle exception here, handle with it when these function is called
     if cfg and six.PY3:
