@@ -3,10 +3,10 @@ import functools
 import os
 import re
 import time
-from collections import namedtuple
 
 from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
+from leapp.libraries.common import repofileutils
 from leapp.libraries.stdlib import CalledProcessError, api
 from leapp.models import RHSMInfo
 
@@ -109,50 +109,53 @@ def get_attached_skus(context):
         return _RE_SKU_CONSUMED.findall(result['stdout'])
 
 
-def get_available_repo_ids(context, releasever=None):
+def get_available_repo_ids(context):
     """
     Retrieve repo ids of all the repositories available through the subscription-manager.
 
     :param context: An instance of a mounting.IsolatedActions class
     :type context: mounting.IsolatedActions class
-    :param releasever: Release version to pass to the `yum repoinfo` command
-    :type releasever: string
     :return: Repositories that are available to the current system through the subscription-manager
     :rtype: List(string)
     """
-    cmd = ['yum', 'repoinfo']
-    if releasever:
-        cmd.extend(['--releasever', releasever])
+    # Regenerated redhat.repo file ...
+    # FIXME: try to come up with something less invasive than yum clean all
+    # but still safe to call..
+    cmd = ['yum', 'clean', 'all']
     try:
-        result = context.call(cmd)
+        context.call(cmd)
     except CalledProcessError as exc:
         raise StopActorExecutionError(
-            'Unable to get list of available yum repositories.',
+            'Unable to use yum successfully',
             details={'details': str(exc), 'stderr': exc.stderr}
         )
-    _inhibit_on_duplicate_repos(result['stderr'])
-    available_repos = list(_get_repos(result['stdout']))
-    available_rhsm_repos = [repo.repoid for repo in available_repos if repo.file == _DEFAULT_RHSM_REPOFILE]
+
+    repofiles = repofileutils.get_parsed_repofiles(context)
+    _inhibit_on_duplicate_repos(repofiles)
+    rhsm_repos = []
+    for rfile in repofiles:
+        if rfile.file == _DEFAULT_RHSM_REPOFILE and rfile.data:
+            rhsm_repos = [repo.repoid for repo in rfile.data]
+            rhsm_repos.sort()
+            break
+
     list_separator_fmt = '\n    - '
-    if available_rhsm_repos:
+    if rhsm_repos:
         api.current_logger().info('The following repoids are available through RHSM:{0}{1}'
-                                  .format(list_separator_fmt, list_separator_fmt.join(available_rhsm_repos)))
+                                  .format(list_separator_fmt, list_separator_fmt.join(rhsm_repos)))
     else:
         api.current_logger().info('There are no repos available through RHSM.')
-    return available_rhsm_repos
+    return rhsm_repos
 
 
-def _inhibit_on_duplicate_repos(repos_raw_stderr):
+def _inhibit_on_duplicate_repos(repofiles):
     """
     Inhibit the upgrade if any repoid is defined multiple times.
 
-    When that happens, it not only shows misconfigured system, but then we can't get details of all the available
-    repos as well.
+    When that happens, it not only shows misconfigured system, but then
+    we can't get details of all the available repos as well.
     """
-    duplicates = []
-    for duplicate in re.findall(
-            r'Repository ([^\s]+) is listed more than once', repos_raw_stderr, re.DOTALL | re.MULTILINE):
-        duplicates.append(duplicate)
+    duplicates = repofileutils.get_duplicate_repositories(repofiles).keys()
 
     if not duplicates:
         return
@@ -163,48 +166,14 @@ def _inhibit_on_duplicate_repos(repos_raw_stderr):
     reporting.create_report([
         reporting.Title('A YUM/DNF repository defined multiple times'),
         reporting.Summary(
-            'The `yum repoinfo` command reports that the following repositories are defined multiple times:{0}{1}'.
-            format(list_separator_fmt, list_separator_fmt.join(duplicates))
+            'The following repositories are defined multiple times:{0}{1}'
+            .format(list_separator_fmt, list_separator_fmt.join(duplicates))
         ),
         reporting.Severity(reporting.Severity.MEDIUM),
         reporting.Tags([reporting.Tags.REPOSITORY]),
         reporting.Flags([reporting.Flags.INHIBITOR]),
-        reporting.Remediation(hint='Remove the duplicit repository definitions.')
+        reporting.Remediation(hint='Remove the duplicate repository definitions.')
     ])
-
-
-def _get_repos(repos_stdout_raw):
-    """
-    Generator providing all the repos available through yum/dnf.
-
-    :rtype: Iterator[:py:class:`leapp.libraries.common.rhsm.Repo`]
-    """
-    # Split all the available repos per one repo
-    for repo_params_raw in re.findall(
-            r"Repo-id.*?Repo-filename.*?\n", repos_stdout_raw, re.DOTALL | re.MULTILINE):
-        yield _parse_repo_params(repo_params_raw)
-
-
-def _parse_repo_params(repo_params_raw):
-    """Parse multiline string holding repo parameters to distill the important ones."""
-    try:
-        repoid = _get_repo_param(r'^Repo-id\s+:\s+([^/]+?)(/.*?)?$', repo_params_raw, 'Repo-id')
-        repofile = _get_repo_param(r'^Repo-filename:\s+(.*?)$', repo_params_raw, 'Repo-filename')
-        return namedtuple('Repository', ['repoid', 'file'])(repoid, repofile)
-    except ValueError as err:
-        err_detail = ("Failed to parse the '{0}' repo parameter within the following part of the"
-                      " `yum repoinfo` output:\n{1}".format(err.args[0], repo_params_raw))
-        raise StopActorExecutionError(
-            message='Failed to parse the `yum repoinfo` output',
-            details={'details': err_detail})
-
-
-def _get_repo_param(pattern, repo_params_raw, param):
-    """Parse a string with all the repo params to get the value of a single repo param."""
-    repo_param = re.search(pattern, repo_params_raw, re.MULTILINE | re.DOTALL)
-    if repo_param:
-        return repo_param.group(1)
-    raise ValueError(param, repo_params_raw)
 
 
 @with_rhsm

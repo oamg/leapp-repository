@@ -1,0 +1,28 @@
+[AppStream]
+name=CentOS-$releasever - AppStream
+mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=AppStream&infra=$infra
+#baseurl=http://mirror.centos.org/$contentdir/$releasever/AppStream/$basearch/os/
+gpgcheck=1
+enabled=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
+cost=77
+
+[leapp-copr]
+name=Copr repo for devel Leapp builds
+baseurl=http://coprbe.devel.redhat.com/results/oam-group/leapp/rhel-7-x86_64/
+type=rpm-md
+skip_if_unavailable=True
+gpgcheck=0
+gpgkey=http://coprbe.devel.redhat.com/results/oam-group/leapp/pubkey.gpg
+repo_gpgcheck=0
+enabled=0
+enabled_metadata=1
+
+[spe-ci_al.cha:rs]
+name=Special characters test
+
+[duplicate]
+name=Duplicate 1
+
+[duplicate]
+name=Duplicate 2

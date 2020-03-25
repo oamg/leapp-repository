@@ -171,7 +171,7 @@ def test_consume_data(monkeypatch, raised, pkg_msgs, rhsm_info, xfs, storage):
 def test_gather_target_repositories(monkeypatch):
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked())
     # The available RHSM repos
-    monkeypatch.setattr(rhsm, 'get_available_repo_ids', lambda x, releasever: ['repoidX', 'repoidY', 'repoidZ'])
+    monkeypatch.setattr(rhsm, 'get_available_repo_ids', lambda x: ['repoidX', 'repoidY', 'repoidZ'])
     monkeypatch.setattr(rhsm, 'skip_rhsm', lambda: False)
     # The required RHEL repos based on the repo mapping and PES data + custom repos required by third party actors
     monkeypatch.setattr(api, 'consume', lambda x: iter([models.TargetRepositories(
@@ -186,7 +186,7 @@ def test_gather_target_repositories(monkeypatch):
 
 def test_gather_target_repositories_none_available(monkeypatch):
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked())
-    monkeypatch.setattr(rhsm, 'get_available_repo_ids', lambda x, releasever: [])
+    monkeypatch.setattr(rhsm, 'get_available_repo_ids', lambda x: [])
     monkeypatch.setattr(rhsm, 'skip_rhsm', lambda: False)
     with pytest.raises(StopActorExecutionError) as err:
         userspacegen.gather_target_repositories(None)
@@ -200,7 +200,7 @@ def test_gather_target_repositories_required_not_available(monkeypatch):
 
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked)
     # The available RHSM repos
-    monkeypatch.setattr(rhsm, 'get_available_repo_ids', lambda x, releasever: ['repoidA', 'repoidB', 'repoidC'])
+    monkeypatch.setattr(rhsm, 'get_available_repo_ids', lambda x: ['repoidA', 'repoidB', 'repoidC'])
     monkeypatch.setattr(rhsm, 'skip_rhsm', lambda: False)
     # The required RHEL repos based on the repo mapping and PES data + custom repos required by third party actors
     monkeypatch.setattr(api, 'consume', lambda x: iter([models.TargetRepositories(
