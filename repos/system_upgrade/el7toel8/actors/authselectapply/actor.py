@@ -3,7 +3,7 @@ from leapp.libraries.stdlib import run, CalledProcessError
 from leapp.models import Authselect, AuthselectDecision
 from leapp import reporting
 from leapp.reporting import Report, create_report
-from leapp.tags import IPUWorkflowTag, ApplicationsPhaseTag
+from leapp.tags import IPUWorkflowTag, ApplicationsPhaseTag, ExperimentalTag
 
 
 resources = [
@@ -24,7 +24,7 @@ class AuthselectApply(Actor):
     name = 'authselect_apply'
     consumes = (Authselect, AuthselectDecision,)
     produces = (Report,)
-    tags = (IPUWorkflowTag, ApplicationsPhaseTag)
+    tags = (IPUWorkflowTag, ApplicationsPhaseTag, ExperimentalTag)
 
     def process(self):
         model = next(self.consume(Authselect))

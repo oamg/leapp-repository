@@ -4,7 +4,7 @@ from leapp.dialogs.components import BooleanComponent
 from leapp.models import RemovedPAMModules
 from leapp.reporting import Report, create_report
 from leapp import reporting
-from leapp.tags import IPUWorkflowTag, ChecksPhaseTag
+from leapp.tags import IPUWorkflowTag, ChecksPhaseTag, ExperimentalTag
 
 
 class RemoveOldPAMModulesCheck(Actor):
@@ -18,7 +18,7 @@ class RemoveOldPAMModulesCheck(Actor):
     name = 'removed_pam_modules_check'
     consumes = (RemovedPAMModules,)
     produces = (Report,)
-    tags = (IPUWorkflowTag, ChecksPhaseTag)
+    tags = (IPUWorkflowTag, ChecksPhaseTag, ExperimentalTag)
     dialogs = (
         Dialog(
             scope='remove_pam_pkcs11_module_check',
