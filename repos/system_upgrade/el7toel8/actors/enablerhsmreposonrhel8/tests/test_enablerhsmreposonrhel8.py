@@ -93,7 +93,7 @@ def test_setrelease_submgr_throwing_error(monkeypatch):
 @pytest.mark.parametrize('product', ['beta', 'htb'])
 def test_setrelease_skip_rhsm(monkeypatch, product):
     commands_called, _ = not_isolated_actions()
-    monkeypatch.setenv('LEAPP_DEVEL_SKIP_RHSM', '1')
+    monkeypatch.setenv('LEAPP_NO_RHSM', '1')
     monkeypatch.setattr(config, 'get_product_type', lambda dummy: product)
     # To make this work we need to re-apply the decorator, so it respects the environment variable
     monkeypatch.setattr(rhsm, 'set_release', rhsm.with_rhsm(rhsm.set_release))
@@ -134,7 +134,7 @@ def test_running_submgr_fail(monkeypatch):
 
 
 def test_enable_repos_skip_rhsm(monkeypatch):
-    monkeypatch.setenv('LEAPP_DEVEL_SKIP_RHSM', '1')
+    monkeypatch.setenv('LEAPP_NO_RHSM', '1')
     monkeypatch.setattr(library, 'run', run_mocked())
     monkeypatch.setattr(api, 'current_logger', logger_mocked())
     library.enable_rhsm_repos()
