@@ -150,7 +150,7 @@ def test_consume_data(monkeypatch, raised, pkg_msgs, rhsm_info, xfs, storage):
     mocked_consume = MockedConsume(pkg_msgs, rhsm_info, xfs, storage)
     monkeypatch.setattr(api, 'consume', mocked_consume)
     monkeypatch.setattr(api, 'current_logger', mocked_logger())
-    monkeypatch.setenv('LEAPP_DEVEL_SKIP_RHSM', '0')
+    monkeypatch.setenv('LEAPP_NO_RHSM', '0')
     if not xfs:
         xfs = models.XFSPresence()
     if not raised:

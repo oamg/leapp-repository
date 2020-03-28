@@ -6,7 +6,7 @@ from leapp.models import UsedTargetRepositories
 def set_rhsm_release():
     """Set the RHSM release to the target RHEL 8 minor version."""
     if rhsm.skip_rhsm():
-        api.current_logger().debug('Skipping setting the RHSM release due to the use of LEAPP_DEVEL_SKIP_RHSM.')
+        api.current_logger().debug('Skipping setting the RHSM release due to --no-rhsm or environment variables.')
         return
 
     if config.get_product_type('target') != 'ga':
@@ -29,8 +29,8 @@ def enable_rhsm_repos():
     the known repositories.
     """
     if rhsm.skip_rhsm():
-        api.current_logger().debug('Skipping enabling repositories through subscription-manager due to the use of'
-                                   ' LEAPP_DEVEL_SKIP_RHSM.')
+        api.current_logger().debug('Skipping enabling repositories through subscription-manager due to --no-rhsm'
+                                   ' or environment variables.')
         return
     try:
         run(get_submgr_cmd(get_repos_to_enable()))
