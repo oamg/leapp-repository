@@ -2,7 +2,7 @@ import os
 
 from leapp.libraries.common import repofileutils
 from leapp.libraries.stdlib import api
-from leapp.models import CustomTargetRepository
+from leapp.models import CustomTargetRepository, CustomTargetRepositoryFile
 
 
 CUSTOM_REPO_PATH = "/etc/leapp/files/leapp_upgrade_repositories.repo"
@@ -23,6 +23,9 @@ def process():
         return
     api.current_logger().info("The {} file exists.".format(CUSTOM_REPO_PATH))
     repofile = repofileutils.parse_repofile(CUSTOM_REPO_PATH)
+    if not repofile.data:
+        return
+    api.produce(CustomTargetRepositoryFile(file=CUSTOM_REPO_PATH))
     for repo in repofile.data:
         api.produce(CustomTargetRepository(
             repoid=repo.repoid,

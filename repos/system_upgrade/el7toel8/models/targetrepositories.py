@@ -30,3 +30,8 @@ class TargetRepositories(Model):
 class UsedTargetRepositories(Model):
     topic = TransactionTopic
     repos = fields.List(fields.Model(UsedTargetRepository))
+
+
+class CustomTargetRepositoryFile(Model):
+    topic = TransactionTopic
+    file = fields.String()

@@ -1,6 +1,6 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import scancustomrepofile
-from leapp.models import CustomTargetRepository
+from leapp.models import CustomTargetRepository, CustomTargetRepositoryFile
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 
@@ -12,12 +12,15 @@ class ScanCustomRepofile(Actor):
     custom repositories for the target system. These repositories will be used
     automatically for the in-place upgrade despite the enable/disable settings.
 
+    Additionally the CustomTargetRepositoryFile message is produced if the file
+    exists to let the other actors know they should handle the file as well.
+
     If the file doesn't exist, nothing happens.
     """
 
     name = 'scan_custom_repofile'
     consumes = ()
-    produces = (CustomTargetRepository,)
+    produces = (CustomTargetRepository, CustomTargetRepositoryFile)
     tags = (FactsPhaseTag, IPUWorkflowTag)
 
     def process(self):
