@@ -4,7 +4,7 @@ from leapp.libraries.actor import scancustomrepofile
 from leapp.libraries.common import repofileutils
 from leapp.libraries.common.testutils import produce_mocked
 from leapp.libraries.stdlib import api
-from leapp.models import CustomTargetRepository, RepositoryData, RepositoryFile
+from leapp.models import CustomTargetRepository, CustomTargetRepositoryFile, RepositoryData, RepositoryFile
 
 
 _REPODATA = [
@@ -20,6 +20,8 @@ _CUSTOM_REPOS = [
     CustomTargetRepository(repoid="repo3", name="repo3name", baseurl=None, enabled=True),
     CustomTargetRepository(repoid="repo4", name="repo4name", baseurl=None, enabled=True),
 ]
+
+_CUSTOM_REPO_FILE_MSG = CustomTargetRepositoryFile(file=scancustomrepofile.CUSTOM_REPO_PATH)
 
 
 class LoggerMocked(object):
@@ -57,7 +59,8 @@ def test_valid_repofile_exists(monkeypatch):
     scancustomrepofile.process()
     msg = "The {} file exists.".format(scancustomrepofile.CUSTOM_REPO_PATH)
     assert api.current_logger.infomsg == msg
-    assert api.produce.called == len(_CUSTOM_REPOS)
+    assert api.produce.called == len(_CUSTOM_REPOS) + 1
+    assert _CUSTOM_REPO_FILE_MSG in api.produce.model_instances
     for crepo in _CUSTOM_REPOS:
         assert crepo in api.produce.model_instances
 
