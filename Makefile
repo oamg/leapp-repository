@@ -222,5 +222,11 @@ test_no_lint:
 
 test: lint test_no_lint
 
+dashboard_data:
+	. tut/bin/activate; \
+	snactor repo find --path repos/; \
+	pushd repos/system_upgrade/el7toel8/; \
+	python ../../../utils/dashboard-json-dump.py > ../../../discover.json; \
+	popd
 
-.PHONY: help build clean prepare source srpm copr_build print_release register install-deps lint test_no_lint test
+.PHONY: help build clean prepare source srpm copr_build print_release register install-deps lint test_no_lint test dashboard_data
