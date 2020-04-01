@@ -51,7 +51,8 @@ def update_default_kernel(kernel_info):
 
 
 def process():
-    if config.is_debug:  # pylint: disable=using-constant-test
+    if (config.is_debug and not
+            architecture.matches_architecture(architecture.ARCH_S390X)):  # pylint: disable=using-constant-test
         try:
             # the following command prints output of grubenv for debugging purposes and is repeated after setting
             # default kernel so we can be sure we have the right saved entry
@@ -92,7 +93,8 @@ def process():
                                       'Forcing default kernel to %s'),
                                      current_default_kernel, kernel_info.kernel_path)
         update_default_kernel(kernel_info)
-    if config.is_debug:  # pylint: disable=using-constant-test
+    if (config.is_debug and not
+            architecture.matches_architecture(architecture.ARCH_S390X)):  # pylint: disable=using-constant-test
         try:
             stdlib.run(['grub2-editenv', 'list'])
         except stdlib.CalledProcessError:
