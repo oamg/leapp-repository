@@ -7,6 +7,7 @@ import time
 from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import repofileutils
+from leapp.libraries.common.config import get_env
 from leapp.libraries.stdlib import CalledProcessError, api
 from leapp.models import RHSMInfo
 
@@ -81,17 +82,17 @@ def _handle_rhsm_exceptions(hint=None):
 
 def skip_rhsm():
     """Check whether we should skip RHSM related code."""
-    return os.getenv('LEAPP_NO_RHSM', '0') == '1'
+    return get_env('LEAPP_NO_RHSM', '0') == '1'
 
 
 def with_rhsm(f):
     """Decorator to allow skipping RHSM functions by executing a no-op."""
-    if skip_rhsm():
-        @functools.wraps(f)
-        def _no_op(*args, **kwargs):
-            return
-        return _no_op
-    return f
+    @functools.wraps(f)
+    def wrapper(*args, **kwargs):
+        if not skip_rhsm():
+            return f(*args, **kwargs)
+        return None
+    return wrapper
 
 
 @with_rhsm
