@@ -269,7 +269,7 @@ def get_existing_product_certificates(context):
     return certs
 
 
-@with_rhsm
+# DO NOT SET the with_rhsm decorator for this function
 def set_container_mode(context):
     """
     Put RHSM into the container mode.
