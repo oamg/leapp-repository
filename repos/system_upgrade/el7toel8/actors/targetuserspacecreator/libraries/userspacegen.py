@@ -4,14 +4,62 @@ import os
 from leapp.exceptions import StopActorExecution, StopActorExecutionError
 from leapp.libraries.actor import constants
 from leapp.libraries.common import dnfplugin, mounting, overlaygen, rhsm, utils
-from leapp.libraries.common.config import get_product_type
+from leapp.libraries.common.config import get_product_type, get_env
 from leapp.libraries.stdlib import CalledProcessError, api, config, run
-from leapp.models import (RequiredTargetUserspacePackages, RHSMInfo,
+from leapp.models import (CustomTargetRepositoryFile, RequiredTargetUserspacePackages, RHSMInfo,
                           StorageInfo, TargetRepositories, TargetUserSpaceInfo,
                           UsedTargetRepositories, UsedTargetRepository,
                           XFSPresence)
 
 PROD_CERTS_FOLDER = 'prod-certs'
+
+
+def _check_deprecated_rhsm_skip():
+    # we do not plan to cover this case by tests as it is purely
+    # devel/testing stuff, that becomes deprecated now
+    # just log the warning now (better than nothing?); deprecation process will
+    # be specified in close future
+    if get_env('LEAPP_DEVEL_SKIP_RHSM', '0') == '1':
+        api.current_logger().warn(
+            'The LEAPP_DEVEL_SKIP_RHSM has been deprecated. Use'
+            ' LEAPP_NO_RHSM istead or use the --no-rhsm option for'
+            ' leapp. as well custom repofile has not been defined.'
+            ' Please read documentation about new "skip rhsm" solution.'
+        )
+
+
+class _InputData(object):
+    def __init__(self):
+        self._consume_data()
+
+    def _consume_data(self):
+        """
+        Wrapper function to consume majority input data.
+
+        It doesn't consume TargetRepositories, which are consumed in the
+        own function.
+        """
+        self.packages = {'dnf'}
+        for message in api.consume(RequiredTargetUserspacePackages):
+            self.packages.update(message.packages)
+
+        # Get the RHSM information (available repos, attached SKUs, etc.) of the source (RHEL 7) system
+        self.rhsm_info = next(api.consume(RHSMInfo), None)
+        if not self.rhsm_info and not rhsm.skip_rhsm():
+            api.current_logger().warn('Could not receive RHSM information - Is this system registered?')
+            raise StopActorExecution()
+        if rhsm.skip_rhsm() and self.rhsm_info:
+            # this should not happen. if so, raise an error as something in
+            # other actors is wrong really
+            raise StopActorExecutionError("RHSM is not handled but the RHSMInfo message has been produced.")
+
+        # list comprehension needed on Py2
+
+        self.custom_repofiles = list(api.consume(CustomTargetRepositoryFile))
+        self.xfs_info = next(api.consume(XFSPresence), XFSPresence())
+        self.storage_info = next(api.consume(StorageInfo), None)
+        if not self.storage_info:
+            raise StopActorExecutionError('No storage info available cannot proceed.')
 
 
 def prepare_target_userspace(context, userspace_dir, enabled_repos, packages):
@@ -142,17 +190,18 @@ def gather_target_repositories(context):
     :return: List of target system repoids
     :rtype: List(string)
     """
-    # Get the RHSM repos available in the RHEL 8 container
-    # FIXME: this cannot happen with custom --no-rhsm setup
-    available_repos = rhsm.get_available_repo_ids(context)
-
     # FIXME: check that required repo IDs (baseos, appstream)
     # + or check that all required RHEL repo IDs are available.
     if not rhsm.skip_rhsm():
+        # Get the RHSM repos available in the RHEL 8 container
+        # TODO: very similar thing should happens for all other repofiles in container
+        #
+        available_repos = rhsm.get_available_repo_ids(context)
         if not available_repos or len(available_repos) < 2:
             raise StopActorExecutionError(
                 message='Cannot find required basic RHEL 8 repositories.',
                 details={
+                    # FIXME: update the text - mention the possibility of custom repos
                     'hint': ('It is required to have RHEL repositories on the system'
                              ' provided by the subscription-manager. Possibly you'
                              ' are missing a valid SKU for the target system or network'
@@ -160,6 +209,8 @@ def gather_target_repositories(context):
                              ' to a valid SKU providing RHEL 8 repositories.')
                 }
             )
+    else:
+        available_repos = []
 
     target_repoids = []
     for target_repo in api.consume(TargetRepositories):
@@ -171,9 +222,10 @@ def gather_target_repositories(context):
                 # The StopActorExecutionError called above might be moved here.
                 pass
         for custom_repo in target_repo.custom_repos:
+            # FIXME: this have to be done for the PR !!
+            # # now it works well when the custom repofile is used, but
+            # # we should require that all those repositories really exists
             # TODO: complete processing of custom repositories
-            # HINT: now it will work only for custom repos that exist
-            # + already on the system in a repo file
             # TODO: should check available_target_repoids + additional custom repos
             # + outside of rhsm..
             # #if custom_repo.repoid in available_target_repoids:
@@ -191,35 +243,41 @@ def gather_target_repositories(context):
     return target_repoids
 
 
-def _consume_data():
-    """Wrapper function to consume all input data."""
-    packages = {'dnf'}
-    for message in api.consume(RequiredTargetUserspacePackages):
-        packages.update(message.packages)
+def _install_custom_repofiles(context, custom_repofiles):
+    """
+    Install the required custom repository files into the container.
 
-    # Get the RHSM information (available repos, attached SKUs, etc.) of the source (RHEL 7) system
-    rhsm_info = next(api.consume(RHSMInfo), None)
-    if not rhsm_info and not rhsm.skip_rhsm():
-        api.current_logger().warn('Could not receive RHSM information - Is this system registered?')
-        raise StopActorExecution()
+    The repostory files are copied from the host into the /etc/yum.repos.d
+    directory into the container.
 
-    xfs_info = next(api.consume(XFSPresence), XFSPresence())
-    storage_info = next(api.consume(StorageInfo), None)
-    if not storage_info:
-        raise StopActorExecutionError('No storage info available cannot proceed.')
-    return packages, rhsm_info, xfs_info, storage_info
+    :param context: the container where the repofiles should be copied
+    :type context: mounting.IsolatedActions class
+    :param custom_repofiles: list of custom repo files
+    :type custom_repofiles: List(CustomTargetRepositoryFile)
+    """
+    for rfile in custom_repofiles:
+        _dst_path = os.path.join('/etc/yum.repos.d', os.path.basename(rfile.file))
+        context.copy_to(rfile.file, _dst_path)
 
 
-def _gather_target_repositories(context, rhsm_info, prod_cert_path):
+def _gather_target_repositories(context, indata, prod_cert_path):
     """
     This is wrapper function to gather the target repoids.
 
     Probably the function could be partially merged into gather_target_repositories
     and this could be really just wrapper with the switch of certificates.
     I am keeping that for now as it is as interim step.
+
+    :param context: the container where the repofiles should be copied
+    :type context: mounting.IsolatedActions class
+    :param indata: majority of input data for the actor
+    :type indata: class _InputData
+    :param prod_cert_path: path where is stored the target product cert
+    :type prod_cert_path: string
     """
     rhsm.set_container_mode(context)
-    rhsm.switch_certificate(context, rhsm_info, prod_cert_path)
+    rhsm.switch_certificate(context, indata.rhsm_info, prod_cert_path)
+    _install_custom_repofiles(context, indata.custom_repofiles)
     return gather_target_repositories(context)
 
 
@@ -234,16 +292,20 @@ def _create_target_userspace(context, packages, target_repoids):
 
 
 def perform():
-    packages, rhsm_info, xfs_info, storage_info = _consume_data()
+    # NOTE: this one action is out of unit-tests completely; we do not use
+    # in unit tests the LEAPP_DEVEL_SKIP_RHSM envar anymore
+    _check_deprecated_rhsm_skip()
+
+    indata = _InputData()
     prod_cert_path = _get_product_certificate_path()
     with overlaygen.create_source_overlay(
             mounts_dir=constants.MOUNTS_DIR,
             scratch_dir=constants.SCRATCH_DIR,
-            storage_info=storage_info,
-            xfs_info=xfs_info) as overlay:
+            storage_info=indata.storage_info,
+            xfs_info=indata.xfs_info) as overlay:
         with overlay.nspawn() as context:
-            target_repoids = _gather_target_repositories(context, rhsm_info, prod_cert_path)
-            _create_target_userspace(context, packages, target_repoids)
+            target_repoids = _gather_target_repositories(context, indata, prod_cert_path)
+            _create_target_userspace(context, indata.packages, target_repoids)
             api.produce(UsedTargetRepositories(
                 repos=[UsedTargetRepository(repoid=repo) for repo in target_repoids]))
             api.produce(TargetUserSpaceInfo(
