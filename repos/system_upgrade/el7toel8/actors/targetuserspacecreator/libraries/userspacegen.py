@@ -205,10 +205,13 @@ def gather_target_repositories(context):
                 details={
                     # FIXME: update the text - mention the possibility of custom repos
                     'hint': ('It is required to have RHEL repositories on the system'
-                             ' provided by the subscription-manager. Possibly you'
+                             ' provided by the subscription-manager unless the --no-rhsm'
+                             ' options is specified. Possibly you'
                              ' are missing a valid SKU for the target system or network'
                              ' connection failed. Check whether your system is attached'
-                             ' to a valid SKU providing RHEL 8 repositories.')
+                             ' to a valid SKU providing RHEL 8 repositories.'
+                             ' In case the Satellite is used, read the upgrade documentation'
+                             ' to setup the satellite and the system properly.')
                 }
             )
     else:
@@ -238,7 +241,10 @@ def gather_target_repositories(context):
             message='There are no enabled target repositories for the upgrade process to proceed.',
             details={'hint': (
                 'Ensure your system is correctly registered with the subscription manager and that'
-                ' your current subscription is entitled to install the requested target version {version}'
+                ' your current subscription is entitled to install the requested target version {version}.'
+                ' In case the --no-rhsm option (or the LEAPP_NO_RHSM=1 environment variable is set)'
+                ' ensure the custom repository file is provided regarding the documentation with'
+                ' properly defined repositories.'
                 ).format(version=api.current_actor().configuration.version.target)
             }
         )
@@ -274,7 +280,7 @@ def _gather_target_repositories(context, indata, prod_cert_path):
     :type context: mounting.IsolatedActions class
     :param indata: majority of input data for the actor
     :type indata: class _InputData
-    :param prod_cert_path: path where is stored the target product cert
+    :param prod_cert_path: path where the target product cert is stored
     :type prod_cert_path: string
     """
     rhsm.set_container_mode(context)

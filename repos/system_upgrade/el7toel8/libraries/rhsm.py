@@ -70,12 +70,20 @@ def _handle_rhsm_exceptions(hint=None):
             }
         )
     except CalledProcessError as e:
+        _def_hint = (
+            'Please ensure you have a valid RHEL subscription and your network is up.'
+            ' If you are using proxy for Red Hat subscription-manager, please make sure'
+            ' it is specified inside the /etc/rhsm/rhsm.conf file.'
+            ' Or use the --no-rhsm option when running leapp, if you do not want to'
+            ' use subscription-manager for the in-place upgrade and you want to'
+            ' deliver all target repositories by yourself.'
+        )
         raise StopActorExecutionError(
             message='A subscription-manager command failed to execute',
             details={
                 'details': str(e),
                 'stderr': e.stderr,
-                'hint': hint or 'Please ensure you have a valid RHEL subscription and your network is up.'
+                'hint': hint or _def_hint
             }
         )
 

@@ -9,7 +9,8 @@ class CheckRedHatSubscriptionManagerSKU(Actor):
     Ensure the system is subscribed to the subscription manager
 
     This actor verifies that the system is correctly subscribed to via the Red Hat Subscription Manager and
-    has attached SKUs. The actor will inhibit the upgrade if there are none.
+    has attached SKUs. The actor will inhibit the upgrade if there are none and RHSM is not supposed
+    to be skipped.
     """
 
     name = 'check_rhsmsku'
