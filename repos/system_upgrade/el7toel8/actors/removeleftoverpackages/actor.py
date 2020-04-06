@@ -1,5 +1,6 @@
 from leapp.actors import Actor
 from leapp.libraries import stdlib
+from leapp.libraries.common import rhsm
 from leapp.libraries.common.rpms import get_installed_rpms
 from leapp.models import LeftoverPackages, RemovedPackages, RPM
 from leapp.reporting import Report
@@ -29,6 +30,9 @@ class RemoveLeftoverPackages(Actor):
 
         to_remove = ['-'.join([pkg.name, pkg.version, pkg.release]) for pkg in leftover_packages.items]
         cmd = ['dnf', 'remove', '-y', '--noautoremove'] + to_remove
+        if rhsm.skip_rhsm():
+            # ensure we don't use suscription-manager when it should be skipped
+            cmd += ['--disableplugin', 'subscription-manager']
         try:
             stdlib.run(cmd)
         except stdlib.CalledProcessError:

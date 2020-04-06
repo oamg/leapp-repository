@@ -5,7 +5,7 @@ import os
 import shutil
 
 from leapp.exceptions import StopActorExecutionError
-from leapp.libraries.common import guards, mounting, overlaygen, utils
+from leapp.libraries.common import guards, mounting, overlaygen, rhsm, utils
 from leapp.libraries.stdlib import CalledProcessError, api, config
 
 DNF_PLUGIN_NAME = 'rhel_upgrade.py'
@@ -97,6 +97,7 @@ def _transaction(context, stage, target_repoids, tasks, test=False, cmd_prefix=N
     create_config(context=context, target_repoids=target_repoids, debug=config.is_debug(), test=test, tasks=tasks)
     backup_config(context=context)
 
+    # FIXME: rhsm
     with guards.guarded_execution(guards.connection_guard(), guards.space_guard()):
         cmd = [
             '/usr/bin/dnf',
@@ -106,6 +107,8 @@ def _transaction(context, stage, target_repoids, tasks, test=False, cmd_prefix=N
         ]
         if config.is_verbose():
             cmd.append('-v')
+        if rhsm.skip_rhsm():
+            cmd += ['--disableplugin', 'subscription-manager']
         if cmd_prefix:
             cmd = cmd_prefix + cmd
         try:
@@ -159,6 +162,8 @@ def install_initramdisk_requirements(packages, target_userspace_info, used_repos
         ] + repos_opt + list(packages)
         if config.is_verbose():
             cmd.append('-v')
+        if rhsm.skip_rhsm():
+            cmd += ['--disableplugin', 'subscription-manager']
         context.call(cmd)
 
 

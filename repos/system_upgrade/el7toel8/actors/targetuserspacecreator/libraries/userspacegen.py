@@ -83,6 +83,8 @@ def prepare_target_userspace(context, userspace_dir, enabled_repos, packages):
                ] + repos_opt + packages
         if config.is_verbose():
             cmd.append('-v')
+        if rhsm.skip_rhsm():
+            cmd += ['--disableplugin', 'subscription-manager']
         try:
             context.call(cmd, callback_raw=utils.logging_handler)
         except CalledProcessError as exc:
