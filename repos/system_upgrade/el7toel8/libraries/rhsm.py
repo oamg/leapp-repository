@@ -140,6 +140,12 @@ def get_available_repo_ids(context):
         )
 
     repofiles = repofileutils.get_parsed_repofiles(context)
+
+    # TODO: move this functionality out! Create check actor that will do
+    # the inhibit. The functionality is really not good here in the current
+    # shape of the leapp-repository. See the targetuserspacecreator and
+    # systemfacts actor if this is moved out.
+    # Issue: #486
     _inhibit_on_duplicate_repos(repofiles)
     rhsm_repos = []
     for rfile in repofiles:
