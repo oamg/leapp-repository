@@ -1,9 +1,9 @@
 from leapp import reporting
 from leapp.libraries.stdlib import api
+from leapp.libraries.common import rhsm
 
 
-def process():
-    # TODO: skip if users are not using rhsm at all (RHELLEAPP-201)
+def _report_set_release():
     target_version = api.current_actor().configuration.version.target
     reporting.create_report([
         reporting.Title(
@@ -20,3 +20,35 @@ def process():
         reporting.Tags([reporting.Tags.UPGRADE_PROCESS]),
         reporting.RelatedResource('package', 'subscription-manager')
     ])
+
+
+def _report_unhandled_release():
+    # TODO: set the POST group after it's created.
+    target_version = api.current_actor().configuration.version.target
+    commands = [
+        ['subscription-manager', 'release', '--unset'],
+        ['subscription-manager', 'release', '--set', target_version],
+    ]
+    hint = 'Set the new release (or unset it) after the upgrade using subscription-manager.'
+    reporting.create_report([
+        reporting.Title(
+            'The subscription-manager release is going to be kept as it is during the upgrade'),
+        reporting.Summary(
+            'The upgrade is executed with the --no-rhsm option (or with'
+            ' the LEAPP_NO_RHSM environment variable). In this case, the subscription-manager'
+            ' will not be configured during the upgrade. If the system is subscribed and release'
+            ' is set already, you could encounter issues to get RHEL 8 content using DNF/YUM'
+            ' after the upgrade.'
+        ),
+        reporting.Severity(reporting.Severity.LOW),
+        reporting.Remediation(commands=commands, hint=hint),
+        reporting.Tags([reporting.Tags.UPGRADE_PROCESS]),
+        reporting.RelatedResource('package', 'subscription-manager')
+    ])
+
+
+def process():
+    if rhsm.skip_rhsm():
+        _report_unhandled_release()
+    else:
+        _report_set_release()
