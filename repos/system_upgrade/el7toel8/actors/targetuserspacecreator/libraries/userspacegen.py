@@ -1,15 +1,40 @@
 import itertools
 import os
 
+from leapp import reporting
 from leapp.exceptions import StopActorExecution, StopActorExecutionError
 from leapp.libraries.actor import constants
-from leapp.libraries.common import dnfplugin, mounting, overlaygen, rhsm, utils
+from leapp.libraries.common import dnfplugin, mounting, overlaygen, repofileutils, rhsm, utils
 from leapp.libraries.common.config import get_product_type, get_env
 from leapp.libraries.stdlib import CalledProcessError, api, config, run
 from leapp.models import (CustomTargetRepositoryFile, RequiredTargetUserspacePackages, RHSMInfo,
                           StorageInfo, TargetRepositories, TargetUserSpaceInfo,
                           UsedTargetRepositories, UsedTargetRepository,
                           XFSPresence)
+
+# TODO: "refactor" (modify) the library significantly
+# The current shape is really bad and ineffective (duplicit parsing
+# of repofiles). The library is doing 3 (5) things:
+# # (0.) consume process input data
+# # 1. prepare the first container, to be able to obtain repositories for the
+# #    target system (this is extra neededwhen rhsm is used, but not reason to
+# #    do such thing only when rhsm is used. Be persistant here
+# # 2. gather target repositories that should AND can be used
+# #    - basically here is the main thing that is PITA; I started
+# #      the refactoring but realized that it needs much more changes because
+# #      of RHSM...
+# # 3. create the target userspace bootstrap
+# # (4.) produce messages with the data
+#
+# Because of the lack of time, I am extending the current bad situation,
+# but after the release, the related code should be really refactored.
+# It would be probably ideal, if this and other actors in the current and the
+# next phase are modified properly and we could create inhibitors in the check
+# phase and keep everything on the report. But currently it seems it doesn't
+# worth to invest so much energy into it. So let's just make this really
+# readable (includes split of the functionality into several libraries)
+# and do not mess.
+# Issue: #486
 
 PROD_CERTS_FOLDER = 'prod-certs'
 
@@ -52,8 +77,6 @@ class _InputData(object):
             # this should not happen. if so, raise an error as something in
             # other actors is wrong really
             raise StopActorExecutionError("RHSM is not handled but the RHSMInfo message has been produced.")
-
-        # list comprehension needed on Py2
 
         self.custom_repofiles = list(api.consume(CustomTargetRepositoryFile))
         self.xfs_info = next(api.consume(XFSPresence), XFSPresence())
@@ -182,59 +205,124 @@ def _create_target_userspace_directories(target_userspace):
         )
 
 
+def _inhibit_on_duplicate_repos(repofiles):
+    """
+    Inhibit the upgrade if any repoid is defined multiple times.
+
+    When that happens, it not only shows misconfigured system, but then
+    we can't get details of all the available repos as well.
+    """
+    # TODO: this is is duplicate of rhsm._inhibit_on_duplicate_repos
+    # Issue: #486
+    duplicates = repofileutils.get_duplicate_repositories(repofiles).keys()
+
+    if not duplicates:
+        return
+    list_separator_fmt = '\n    - '
+    api.current_logger().warn('The following repoids are defined multiple times:{0}{1}'
+                              .format(list_separator_fmt, list_separator_fmt.join(duplicates)))
+
+    reporting.create_report([
+        reporting.Title('A YUM/DNF repository defined multiple times'),
+        reporting.Summary(
+            'The following repositories are defined multiple times inside the'
+            ' "upgrade" container:{0}{1}'
+            .format(list_separator_fmt, list_separator_fmt.join(duplicates))
+        ),
+        reporting.Severity(reporting.Severity.MEDIUM),
+        reporting.Tags([reporting.Tags.REPOSITORY]),
+        reporting.Flags([reporting.Flags.INHIBITOR]),
+        reporting.Remediation(hint=(
+            'Remove the duplicate repository definitions or change repoids of'
+            ' conflicting repositories on the system to prevent the'
+            ' conflict.'
+            )
+        )
+    ])
+
+
+def _get_all_available_repoids(context):
+    repofiles = repofileutils.get_parsed_repofiles(context)
+    # TODO: this is not good solution, but keep it as it is now
+    # Issue: #486
+    if rhsm.skip_rhsm():
+        # only if rhsm is skipped, the duplicate repos are not detected
+        # automatically and we need to do it extra
+        _inhibit_on_duplicate_repos(repofiles)
+    repoids = []
+    for rfile in repofiles:
+        if rfile.data:
+            repoids += [repo.repoid for repo in rfile.data]
+    return set(repoids)
+
+
+def _get_rhsm_available_repoids(context):
+    # FIXME: check that required repo IDs (baseos, appstream)
+    # + or check that all required RHEL repo IDs are available.
+    if rhsm.skip_rhsm():
+        return []
+    # Get the RHSM repos available in the RHEL 8 container
+    # TODO: very similar thing should happens for all other repofiles in container
+    #
+    repoids = rhsm.get_available_repo_ids(context)
+    if not repoids or len(repoids) < 2:
+        raise StopActorExecutionError(
+            message='Cannot find required basic RHEL 8 repositories.',
+            details={
+                'hint': ('It is required to have RHEL repositories on the system'
+                         ' provided by the subscription-manager unless the --no-rhsm'
+                         ' options is specified. Possibly you'
+                         ' are missing a valid SKU for the target system or network'
+                         ' connection failed. Check whether your system is attached'
+                         ' to a valid SKU providing RHEL 8 repositories.'
+                         ' In case the Satellite is used, read the upgrade documentation'
+                         ' to setup the satellite and the system properly.')
+            }
+        )
+    return set(repoids)
+
+
 def gather_target_repositories(context):
     """
-    Perform basic checks on requirements for RHSM repositories and return the list of target repository ids to use
-    during the upgrade.
+    Get available required target repositories and inhibit or raise error if basic checks do not pass.
+
+    In case of repositories provided by Red Hat, it's checked whether the basic
+    required repositories are available (or at least defined) in the given
+    context. If not, raise StopActorExecutionError.
+
+    For the custom target repositories we expect all of them have to be defined.
+    If any custom target repository is missing, raise StopActorExecutionError.
+
+    If any repository is defined multiple times, produce the inhibitor Report
+    msg.
 
     :param context: An instance of a mounting.IsolatedActions class
     :type context: mounting.IsolatedActions class
     :return: List of target system repoids
     :rtype: List(string)
     """
-    # FIXME: check that required repo IDs (baseos, appstream)
-    # + or check that all required RHEL repo IDs are available.
-    if not rhsm.skip_rhsm():
-        # Get the RHSM repos available in the RHEL 8 container
-        # TODO: very similar thing should happens for all other repofiles in container
-        #
-        available_repos = rhsm.get_available_repo_ids(context)
-        if not available_repos or len(available_repos) < 2:
-            raise StopActorExecutionError(
-                message='Cannot find required basic RHEL 8 repositories.',
-                details={
-                    # FIXME: update the text - mention the possibility of custom repos
-                    'hint': ('It is required to have RHEL repositories on the system'
-                             ' provided by the subscription-manager unless the --no-rhsm'
-                             ' options is specified. Possibly you'
-                             ' are missing a valid SKU for the target system or network'
-                             ' connection failed. Check whether your system is attached'
-                             ' to a valid SKU providing RHEL 8 repositories.'
-                             ' In case the Satellite is used, read the upgrade documentation'
-                             ' to setup the satellite and the system properly.')
-                }
-            )
-    else:
-        available_repos = []
+    rhsm_available_repoids = _get_rhsm_available_repoids(context)
+    all_available_repoids = _get_all_available_repoids(context)
 
     target_repoids = []
+    missing_custom_repoids = []
     for target_repo in api.consume(TargetRepositories):
         for rhel_repo in target_repo.rhel_repos:
-            if rhel_repo.repoid in available_repos:
+            if rhel_repo.repoid in rhsm_available_repoids:
                 target_repoids.append(rhel_repo.repoid)
             else:
-                # TODO: We shall report that the RHEL repos that we deem necessary for the upgrade are not available.
-                # The StopActorExecutionError called above might be moved here.
+                # TODO: We shall report that the RHEL repos that we deem necessary for
+                # the upgrade are not available; but currently it would just print bunch of
+                # data everytime as we maps EUS and other repositories as well. But these
+                # do not have to be necessary available on the target system in the time
+                # of the upgrade. Let's skip it for now until it's clear how we will deal
+                # with it.
                 pass
         for custom_repo in target_repo.custom_repos:
-            # FIXME: this have to be done for the PR !!
-            # # now it works well when the custom repofile is used, but
-            # # we should require that all those repositories really exists
-            # TODO: complete processing of custom repositories
-            # TODO: should check available_target_repoids + additional custom repos
-            # + outside of rhsm..
-            # #if custom_repo.repoid in available_target_repoids:
-            target_repoids.append(custom_repo.repoid)
+            if custom_repo.repoid in all_available_repoids:
+                target_repoids.append(custom_repo.repoid)
+            else:
+                missing_custom_repoids.append(custom_repo.repoid)
     api.current_logger().debug("Gathered target repositories: {}".format(', '.join(target_repoids)))
     if not target_repoids:
         raise StopActorExecutionError(
@@ -248,6 +336,20 @@ def gather_target_repositories(context):
                 ).format(version=api.current_actor().configuration.version.target)
             }
         )
+    if missing_custom_repoids:
+        raise StopActorExecutionError(
+            message='Some required custom target repositories are not available.',
+            details={'hint': (
+                ' The most probably you are using custom or third party actor'
+                ' that produces CustomTargetRepository message. However,'
+                ' inside the upgrade container, we are not able to find such'
+                ' repository inside any repository file. Consider use of the'
+                ' custom repository file regarding the official upgrade'
+                ' documentation.'
+                )
+            }
+        )
+
     return target_repoids
 
 
