@@ -332,7 +332,9 @@ def gather_target_repositories(context):
                 ' your current subscription is entitled to install the requested target version {version}.'
                 ' In case the --no-rhsm option (or the LEAPP_NO_RHSM=1 environment variable is set)'
                 ' ensure the custom repository file is provided regarding the documentation with'
-                ' properly defined repositories.'
+                ' properly defined repositories or in case repositories are already defined'
+                ' in any repofiles under /etc/yum.repos.d/ directory, use the --enablerepo option'
+                ' for leapp'
                 ).format(version=api.current_actor().configuration.version.target)
             }
         )
@@ -341,11 +343,14 @@ def gather_target_repositories(context):
             message='Some required custom target repositories are not available.',
             details={'hint': (
                 ' The most probably you are using custom or third party actor'
-                ' that produces CustomTargetRepository message. However,'
-                ' inside the upgrade container, we are not able to find such'
+                ' that produces CustomTargetRepository message or you did a typo'
+                ' in one of repoids specified on command line for the leapp --enablerepo'
+                ' option.'
+                ' Inside the upgrade container, we are not able to find such'
                 ' repository inside any repository file. Consider use of the'
                 ' custom repository file regarding the official upgrade'
-                ' documentation.'
+                ' documentation or check whether you did not do a typo in any'
+                ' repoids you specified for the --enablerepo option of leapp.'
                 )
             }
         )

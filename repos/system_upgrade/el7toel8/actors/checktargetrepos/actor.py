@@ -8,18 +8,23 @@ class Checktargetrepos(Actor):
     """
     Check whether target yum repositories are specified.
 
-    RHSM | CTR | CTRF || result
-    -----+-----+------++-------
-     Yes | --- | ---- || -
-    -----+-----+------++-------
-     No  | No  | No   || inhibit
-    -----+-----+------++-------
-     No  | No  | Yes  || inhibit
-    -----+-----+------++-------
-     No  | Yes | No   || warn/report info
-    -----+-----+------++-------
-     No  | Yes | Yes  || -
+    RHSM | ER | CTR | CTRF || result
+    -----+----+-----+------++-------
+     Yes | -- | --- | ---- || -
+    -----+----+-----+------++-------
+     No  | -- | No  | No   || inhibit
+    -----+----+-----+------++-------
+     No  | -- | No  | Yes  || inhibit
+    -----+----+-----+------++-------
+     No  | No | Yes | No   || warn/report info
+    -----+----+-----+------++-------
+     No  | No | Yes | Yes  || -
+    -----+----+-----+------++-------
+     No  | Yes| Yes | No   || -
+    -----+----+-----+------++-------
+     No  | Yes| Yes | Yes  || -
 
+       ER   - config.get_env('LEAPP_ENABLE_REPOS') is non-empty
        CTR  - CustomTargetRepositories found
        CTRF - the expected CustomTargetRepositoryFile found
        RHSM - RHSM is used (it is not skipped)
