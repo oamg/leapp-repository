@@ -6,7 +6,7 @@ from leapp.libraries.actor.library import process_daemons
 
 class QuaggaDaemons(Actor):
     """
-    Checking for daemons that are currently running in the system. 
+    Checking for daemons that are currently running in the system.
     The tools will check for config files later on since these should stay in the system.
     """
 
@@ -17,4 +17,4 @@ class QuaggaDaemons(Actor):
 
     def process(self):
         if has_package(InstalledRedHatSignedRPM, 'quagga'):
-	        self.produce(process_daemons())
+                self.produce(process_daemons())
