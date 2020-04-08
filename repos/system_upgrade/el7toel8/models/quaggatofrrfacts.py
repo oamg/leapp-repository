@@ -4,7 +4,7 @@ from leapp.topics import SystemInfoTopic
 
 class QuaggaToFrrFacts(Model):
     '''
-    A list of configuration files used by quagga. This list is used to add yes/no to 
+    A list of configuration files used by quagga. This list is used to add yes/no to
     /etc/frr/daemons file. It indicates which daemons from frr should be run.
     '''
     topic = SystemInfoTopic
