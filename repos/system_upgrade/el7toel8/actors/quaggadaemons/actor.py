@@ -17,4 +17,4 @@ class QuaggaDaemons(Actor):
 
     def process(self):
         if has_package(InstalledRedHatSignedRPM, 'quagga'):
-                self.produce(process_daemons())
+            self.produce(process_daemons())
