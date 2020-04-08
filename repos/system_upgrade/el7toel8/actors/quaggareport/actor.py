@@ -9,6 +9,7 @@ COMMON_REPORT_TAGS = [
     reporting.Tags.SERVICES
 ]
 
+
 class QuaggaReport(Actor):
     """
     This actor is supposed to report that babeld was used on RHEL-7

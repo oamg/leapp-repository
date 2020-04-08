@@ -4,6 +4,7 @@ from leapp.models import InstalledRedHatSignedRPM, QuaggaToFrrFacts
 from leapp.libraries.common.rpms import has_package
 from leapp.libraries.actor.library import process_daemons
 
+
 class QuaggaDaemons(Actor):
     """
     Checking for daemons that are currently running in the system.

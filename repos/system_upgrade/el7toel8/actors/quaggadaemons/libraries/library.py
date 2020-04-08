@@ -12,6 +12,7 @@ quagga_daemons = [
     'zebra'
 ]
 
+
 def _check_service(name, state):
     try:
         run(['systemctl', 'is-{}'.format(state), name])
@@ -21,6 +22,7 @@ def _check_service(name, state):
         return False
 
     return True
+
 
 def process_daemons():
     active_daemons = [daemon for daemon in quagga_daemons if _check_service(daemon, 'active')]

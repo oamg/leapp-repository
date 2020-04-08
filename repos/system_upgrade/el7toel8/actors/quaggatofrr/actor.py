@@ -1,8 +1,8 @@
 from leapp.actors import Actor
 from leapp.models import QuaggaToFrrFacts
 from leapp.tags import ApplicationsPhaseTag, IPUWorkflowTag
-from leapp.libraries.stdlib import api
 from leapp.libraries.actor.library import process_facts
+
 
 class QuaggaToFrr(Actor):
     """
