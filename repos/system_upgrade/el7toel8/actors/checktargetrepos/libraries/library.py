@@ -1,7 +1,7 @@
 from leapp.models import CustomTargetRepositoryFile, TargetRepositories
 from leapp.libraries.stdlib import api
 from leapp import reporting
-from leapp.libraries.common import rhsm
+from leapp.libraries.common import config, rhsm
 
 
 _IPU_DOC_URL = ('https://access.redhat.com/documentation/en-us/'
@@ -24,6 +24,10 @@ def _the_custom_repofile_defined():
     return False
 
 
+def _the_enablerepo_option_used():
+    return config.get_env('LEAPP_ENABLE_REPOS', None) is not None
+
+
 def process():
     if not rhsm.skip_rhsm():
         # getting RH repositories through RHSM; resolved by seatbelts
@@ -33,6 +37,7 @@ def process():
     # rhsm skipped; take your seatbelts please
     is_ctr = _any_custom_repo_defined()
     is_ctrf = _the_custom_repofile_defined()
+    is_re = _the_enablerepo_option_used()
     if not is_ctr:
         # no rhsm, no custom repositories.. this will really not work :)
         # TODO: add link to the RH article about use of custom repositories!!
@@ -40,9 +45,9 @@ def process():
         # will be described there or at least the link to the right document
         # will be delivered here.
         if is_ctrf:
-            summary_ctrf = 'The custom repository file has been detected. Maybe it is empty?'
+            summary_ctrf = '\n\nThe custom repository file has been detected. Maybe it is empty?'
         else:
-            summary_ctrf = 'The custom repository file has not been detected.'
+            summary_ctrf = ''
         reporting.create_report([
             reporting.Title('Using RHSM has been skipped but no custom repositories have been delivered.'),
             reporting.Summary(
@@ -66,17 +71,18 @@ def process():
             reporting.ExternalLink(url=_IPU_DOC_URL, title='UPGRADING TO RHEL 8'),
             reporting.RelatedResource('file', CUSTOM_REPO_PATH),
         ])
-    elif not is_ctrf:
+    elif not (is_ctrf or is_re):
         # Some custom repositories have been discovered, but the custom repo
-        # file not. Inform about the official recommended way.
+        # file not - neither the --enablerepo option is usedd. Inform about
+        # the official recommended way.
         reporting.create_report([
-            reporting.Title('CustomTargetRepositories discovered, but the CustomTargetRepositoryFile is missing.'),
+            reporting.Title('CustomTargetRepositories discovered, but no new provided mechanisms used.'),
             reporting.Summary(
                 'Red Hat provides now official way how to use custom'
                 ' repositories during the in-place upgrade through'
-                ' the referred custom repository file. The CustomTargetRepositories'
-                ' have been detected (from custom actors?) but the repository'
-                ' file not.'
+                ' the referred custom repository file or through the'
+                ' --enablerepo option for leapp. The CustomTargetRepositories'
+                ' have been produced from custom (own) actors?'
             ),
             reporting.Remediation(hint=(
                 'Follow the new simple way to enable custom repositories'
