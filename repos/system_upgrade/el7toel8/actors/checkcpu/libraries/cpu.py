@@ -17,7 +17,7 @@ def process():
 
     if not cpuinfo.machine_type:
         # this is not expected to happen, but in case...
-        api.curernt_logger().warning("The machine (CPU) type is empty.")
+        api.current_logger().warning("The machine (CPU) type is empty.")
 
     if cpuinfo.machine_type not in SUPPORTED_MACHINE_TYPES:
         summary = ("The system is not possible to upgrade because of unsupported"
