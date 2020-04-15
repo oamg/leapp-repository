@@ -1,4 +1,9 @@
+from collections import namedtuple
+import logging
 import os
+
+from leapp.libraries.common.config import architecture
+from leapp.models import EnvVar
 
 
 class produce_mocked(object):
@@ -22,6 +27,102 @@ class create_report_mocked(object):
         for report in report_fields:
             # last element of path is our field name
             self.report_fields.update(report.to_dict())
+
+
+class CurrentActorMocked(object):  # pylint: disable=too-many-public-methods
+    def __init__(self, arch=architecture.ARCH_X86_64, envars=None, kernel='3.10.0-957.43.1.el7.x86_64',
+                 release_id='rhel', src_ver='7.8', dst_ver='8.1'):
+        envarsList = [EnvVar(name=k, value=v) for k, v in envars.items()] if envars else []
+        version = namedtuple('Version', ['source', 'target'])(src_ver, dst_ver)
+        release = namedtuple('OS_release', ['release_id', 'version_id'])(release_id, src_ver)
+
+        self._common_folder = '../../files'
+        self.configuration = namedtuple(
+            'configuration', ['architecture', 'kernel', 'leapp_env_vars', 'os_release', 'version']
+        )(arch, kernel, envarsList, release, version)
+
+    def __call__(self):
+        return self
+
+    def get_common_folder_path(self, folder):
+        return os.path.join(self._common_folder, folder)
+
+    def consume(self, model):
+        return filter(  # pylint:disable=W0110,W1639
+            lambda msg: isinstance(msg, model), self._msgs
+        )
+
+    @property
+    def log(self):
+        return logging.getLogger(__name__)
+
+    # other functions and properties from the API - can be implemented as needed
+
+    def serialize(self):
+        raise NotImplementedError
+
+    def get_answers(self, dialog):
+        raise NotImplementedError
+
+    def show_message(self, message):
+        raise NotImplementedError
+
+    @property
+    def actor_files_paths(self):
+        raise NotImplementedError
+
+    @property
+    def files_paths(self):
+        raise NotImplementedError
+
+    @property
+    def common_files_paths(self):
+        raise NotImplementedError
+
+    @property
+    def actor_tools_paths(self):
+        raise NotImplementedError
+
+    @property
+    def common_tools_paths(self):
+        raise NotImplementedError
+
+    @property
+    def tools_paths(self):
+        raise NotImplementedError
+
+    def get_folder_path(self, name):
+        raise NotImplementedError
+
+    def get_actor_folder_path(self, name):
+        raise NotImplementedError
+
+    def get_file_path(self, name):
+        raise NotImplementedError
+
+    def get_common_file_path(self, name):
+        raise NotImplementedError
+
+    def get_actor_file_path(self, name):
+        raise NotImplementedError
+
+    def get_tool_path(self, name):
+        raise NotImplementedError
+
+    def get_common_tool_path(self, name):
+        raise NotImplementedError
+
+    def get_actor_tool_path(self, name):
+        raise NotImplementedError
+
+    def run(self, *args):
+        raise NotImplementedError
+
+    def produce(self, *models):
+        raise NotImplementedError
+
+    def report_error(self, message, severity, details):
+        raise NotImplementedError
 
 
 def make_IOError(error):

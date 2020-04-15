@@ -8,6 +8,7 @@ from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import library
 from leapp.libraries.common import config, mounting, rhsm
 from leapp.libraries.common.config import architecture
+from leapp.libraries.common.testutils import CurrentActorMocked
 from leapp.libraries.stdlib import CalledProcessError, api
 from leapp.models import UsedTargetRepositories, UsedTargetRepository, EnvVar
 
@@ -65,33 +66,6 @@ class logger_mocked(object):
 
     def __call__(self):
         return self
-
-
-# TODO: this is kinda overpowered mock, but we plan to provide something like
-# that in the testutils library in future, so using as it is.
-class CurrentActorMocked(object):
-    def __init__(self, kernel='3.10.0-957.43.1.el7.x86_64', release_id='rhel',
-                 src_ver='7.6', dst_ver='8.1', arch=architecture.ARCH_X86_64,
-                 envars=None):
-
-        if envars:
-            envarsList = [EnvVar(name=key, value=value) for key, value in envars.items()]
-        else:
-            envarsList = []
-
-        version = namedtuple('Version', ['source', 'target'])(src_ver, dst_ver)
-        os_release = namedtuple('OS_release', ['release_id', 'version_id'])(release_id, src_ver)
-        args = (version, kernel, os_release, arch, envarsList)
-        conf_fields = ['version', 'kernel', 'os_release', 'architecture', 'leapp_env_vars']
-        self.configuration = namedtuple('configuration', conf_fields)(*args)
-        self._common_folder = '../../files'
-        self.log = logger_mocked()
-
-    def __call__(self):
-        return self
-
-    def get_common_folder_path(self, folder):
-        return os.path.join(self._common_folder, folder)
 
 
 def test_setrelease(monkeypatch):

@@ -3,7 +3,7 @@ from collections import namedtuple
 import pytest
 
 from leapp.libraries.actor import library
-from leapp.libraries.common.testutils import produce_mocked
+from leapp.libraries.common.testutils import produce_mocked, CurrentActorMocked
 from leapp.libraries.stdlib import api
 from leapp.models import (
     EnvVar,
@@ -15,18 +15,6 @@ from leapp.models import (
     RepositoryMap,
 )
 from leapp.snactor.fixture import current_actor_context
-
-
-class CurrentActorMocked(object):
-    def __init__(self, envars=None):
-        if envars:
-            envarsList = [EnvVar(name=key, value=value) for key, value in envars.items()]
-        else:
-            envarsList = []
-        self.configuration = namedtuple('configuration', ['leapp_env_vars'])(envarsList)
-
-    def __call__(self):
-        return self
 
 
 @pytest.mark.parametrize('valid_opt_repoid,product_type', [
@@ -64,7 +52,8 @@ def test_with_optionals(monkeypatch, valid_opt_repoid, product_type):
         yield RepositoriesMap(repositories=mapping)
 
     monkeypatch.setattr(api, "consume", repositories_mock)
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked({'LEAPP_DEVEL_SOURCE_PRODUCT_TYPE': product_type}))
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(
+        envars={'LEAPP_DEVEL_SOURCE_PRODUCT_TYPE': product_type}))
     optionals = set(library._get_list_of_optional_repos().keys())
     assert {valid_opt_repoid} == optionals
     assert not non_opt_repoids & optionals

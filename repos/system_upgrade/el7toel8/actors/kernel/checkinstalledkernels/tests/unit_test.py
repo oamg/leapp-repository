@@ -3,19 +3,11 @@ from collections import namedtuple
 from leapp import reporting
 from leapp.libraries.actor import library
 from leapp.libraries.common.config import architecture
-from leapp.libraries.common.testutils import create_report_mocked
+from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked
 from leapp.libraries.stdlib import api
 from leapp.models import InstalledRedHatSignedRPM, RPM
 
 RH_PACKAGER = 'Red Hat, Inc. <http://bugzilla.redhat.com/bugzilla>'
-
-
-class CurrentActorMocked(object):
-    def __init__(self, arch=architecture.ARCH_X86_64, kernel='3.10.0-957.43.1.el7.x86_64'):
-        self.configuration = namedtuple('configuration', ['architecture', 'kernel'])(arch, kernel)
-
-    def __call__(self):
-        return self
 
 
 class mocked_logger(object):

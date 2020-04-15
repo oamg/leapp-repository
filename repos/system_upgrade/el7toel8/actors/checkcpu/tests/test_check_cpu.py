@@ -7,16 +7,9 @@ from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import cpu
 from leapp.libraries.common import testutils
 from leapp.libraries.common.config import architecture
+from leapp.libraries.common.testutils import CurrentActorMocked
 from leapp.libraries.stdlib import api
 from leapp.models import CPUInfo
-
-
-class CurrentActorMocked(object):
-    def __init__(self, arch):
-        self.configuration = namedtuple('configuration', ['architecture'])(arch)
-
-    def __call__(self):
-        return self
 
 
 def test_non_ibmz_arch(monkeypatch):

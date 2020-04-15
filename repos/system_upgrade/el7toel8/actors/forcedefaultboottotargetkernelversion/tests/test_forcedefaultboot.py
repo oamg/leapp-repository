@@ -6,6 +6,7 @@ import pytest
 from leapp.libraries import stdlib
 from leapp.libraries.actor import forcedefaultboot
 from leapp.libraries.common.config import architecture
+from leapp.libraries.common.testutils import CurrentActorMocked
 from leapp.libraries.stdlib import api
 from leapp.models import InstalledTargetKernelVersion
 
@@ -176,25 +177,15 @@ class mocked_logger(object):
         return self
 
 
-class CurrentActorMocked(object):
-    def __init__(self, case):
-        if case.arch_s390x:
-            self.configuration = namedtuple('configuration', ['architecture'])(architecture.ARCH_S390X)
-        else:
-            self.configuration = namedtuple('configuration', ['architecture'])(architecture.ARCH_X86_64)
-
-    def __call__(self):
-        return self
-
-
 @pytest.mark.parametrize('case_result', CASES)
 def test_force_default_boot_target_scenario(case_result, monkeypatch):
     case, result = case_result
+    arch = architecture.ARCH_S390X if case.arch_s390x else architecture.ARCH_X86_64
     mocked_run = MockedRun(case)
     monkeypatch.setattr(api, 'consume', mocked_consume(case))
     monkeypatch.setattr(stdlib, 'run', mocked_run)
     monkeypatch.setattr(os.path, 'exists', mocked_exists(case, os.path.exists))
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(case))
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(arch=arch))
     monkeypatch.setattr(api, 'current_logger', mocked_logger())
     forcedefaultboot.process()
     assert result.grubby_setdefault == mocked_run.called_setdefault

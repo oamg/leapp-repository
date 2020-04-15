@@ -5,6 +5,7 @@ import pytest
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import library
 from leapp.libraries.common.config import architecture
+from leapp.libraries.common.testutils import CurrentActorMocked
 from leapp.libraries.stdlib import api
 from leapp.models import BootContent
 
@@ -23,14 +24,6 @@ class write_to_file_mocked(object):
 
     def __call__(self, filename, content):
         self.content = content
-
-
-class CurrentActorMocked(object):
-    def __init__(self, arch):
-        self.configuration = namedtuple('configuration', ['architecture'])(arch)
-
-    def __call__(self):
-        return self
 
 
 def test_add_boot_entry_non_s390x(monkeypatch):

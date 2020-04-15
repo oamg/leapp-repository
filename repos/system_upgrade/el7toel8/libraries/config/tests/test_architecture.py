@@ -1,22 +1,17 @@
-from collections import namedtuple
-
 import pytest
 
 from leapp.libraries.common.config import architecture
+from leapp.libraries.common.testutils import CurrentActorMocked
 from leapp.libraries.stdlib import api
 
 
-class CurrentActorMocked(object):
-    configuration = namedtuple('configuration', ['architecture'])(architecture.ARCH_ACCEPTED[0])
-
-
 def test_matches_architecture_pass(monkeypatch):
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked)
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(arch=architecture.ARCH_ACCEPTED[0]))
     assert architecture.matches_architecture(*architecture.ARCH_ACCEPTED)
 
 
 def test_matches_architecture_fail(monkeypatch):
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked)
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(arch=architecture.ARCH_ACCEPTED[0]))
     assert not architecture.matches_architecture()
     assert not architecture.matches_architecture(*architecture.ARCH_ACCEPTED[1:])
 

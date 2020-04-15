@@ -5,18 +5,8 @@ import pytest
 from leapp import reporting
 from leapp.libraries.actor import library
 from leapp.libraries.common import rhsm
-from leapp.libraries.common.testutils import create_report_mocked
+from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked
 from leapp.libraries.stdlib import api
-
-
-class CurrentActorMocked(object):
-    def __init__(self, src_ver='7.6', dst_ver='8.1'):
-
-        version = namedtuple('Version', ['source', 'target'])(src_ver, dst_ver)
-        self.configuration = namedtuple('configuration', ['version'])(version)
-
-    def __call__(self):
-        return self
 
 
 @pytest.mark.parametrize('version', ['8.{}'.format(i) for i in range(4)])

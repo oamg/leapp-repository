@@ -4,12 +4,9 @@ from collections import namedtuple
 
 from leapp.libraries.actor import modscan
 from leapp.libraries.common.config import architecture
+from leapp.libraries.common.testutils import CurrentActorMocked
 from leapp.libraries.stdlib import api
 from leapp.models import UpgradeDracutModule, RequiredUpgradeInitramPackages
-
-
-class CurrentActorMocked(object):
-    configuration = namedtuple('configuration', ['architecture'])('x86_64')
 
 
 def _files_get_folder_path(name):
@@ -52,7 +49,7 @@ def test_required_packages(monkeypatch):
 
     # for non-intel archs, the set of required rpms should be same as the default
     # one
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked)
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked())
     monkeypatch.setattr(architecture, 'matches_architecture', lambda x: False)
     assert set(modscan._REQUIRED_PACKAGES) == set(modscan._create_initram_packages().packages)
 
@@ -61,7 +58,7 @@ def test_required_packages(monkeypatch):
 
 
 def test_process_produces_modules(monkeypatch):
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked)
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked())
     messages = []
     monkeypatch.setattr(api, 'produce', lambda *x: messages.extend(x))
     monkeypatch.setattr(api, 'get_actor_folder_path', _files_get_folder_path)
