@@ -3,6 +3,7 @@ from collections import namedtuple
 from leapp.libraries import stdlib
 from leapp.libraries.actor import kernelcmdlineconfig
 from leapp.libraries.common.config import architecture
+from leapp.libraries.common.testutils import CurrentActorMocked
 from leapp.libraries.stdlib import api
 from leapp.models import InstalledTargetKernelVersion, KernelCmdlineArg
 
@@ -16,14 +17,6 @@ class MockedRun(object):
     def __call__(self, cmd, *args, **kwargs):
         self.commands.append(cmd)
         return {}
-
-
-class CurrentActorMocked(object):
-    def __init__(self, arch):
-        self.configuration = namedtuple('configuration', ['architecture'])(arch)
-
-    def __call__(self):
-        return self
 
 
 def mocked_consume(*models):

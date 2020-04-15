@@ -1,22 +1,8 @@
-from collections import namedtuple
-
 import pytest
 
 from leapp.libraries.common.config import version
+from leapp.libraries.common.testutils import CurrentActorMocked
 from leapp.libraries.stdlib import api
-
-
-class CurrentActorMocked(object):
-    def __init__(self, kernel='3.10.0-957.43.1.el7.x86_64', release_id='rhel',
-                 src_ver='7.6', dst_ver='8.1'):
-
-        version = namedtuple('Version', ['source', 'target'])(src_ver, dst_ver)
-        os_release = namedtuple('OS_release', ['release_id', 'version_id'])(release_id, src_ver)
-        args = (version, kernel, os_release)
-        self.configuration = namedtuple('configuration', ['version', 'kernel', 'os_release'])(*args)
-
-    def __call__(self):
-        return self
 
 
 def test_version_to_tuple():
@@ -74,7 +60,7 @@ def test_matches_version_pass():
     (False, ['7.5']),
 ])
 def test_matches_source_version(monkeypatch, result, version_list):
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked())
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(src_ver='7.6'))
     assert version.matches_source_version(*version_list) == result
 
 
@@ -85,7 +71,7 @@ def test_matches_source_version(monkeypatch, result, version_list):
     (False, ['8.2', '8.0']),
 ])
 def test_matches_target_version(monkeypatch, result, version_list):
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked())
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(src_ver='7.6'))
     assert version.matches_target_version(*version_list) == result
 
 
@@ -96,7 +82,8 @@ def test_matches_target_version(monkeypatch, result, version_list):
     (False, '5.14.0-100.8.2.el7a.x86_64', 'rhel'),
 ])
 def test_is_rhel_alt(monkeypatch, result, kernel, release_id):
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(kernel=kernel, release_id=release_id))
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(src_ver='7.6', kernel=kernel,
+                                                                 release_id=release_id))
     assert version.is_rhel_alt() == result
 
 

@@ -8,7 +8,7 @@ from leapp.libraries.actor import library
 from leapp import reporting
 from leapp.libraries.stdlib import api
 from leapp.libraries.common import rhsm
-from leapp.libraries.common.testutils import create_report_mocked
+from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked
 
 
 class MockedConsume(object):
@@ -24,18 +24,6 @@ class MockedConsume(object):
 
     def __call__(self, model):
         return iter([msg for msg in self._msgs if isinstance(msg, model)])
-
-
-class CurrentActorMocked(object):
-    def __init__(self, envars=None):
-        if envars:
-            envarsList = [EnvVar(name=key, value=value) for key, value in envars.items()]
-        else:
-            envarsList = []
-        self.configuration = namedtuple('configuration', ['leapp_env_vars'])(envarsList)
-
-    def __call__(self):
-        return self
 
 
 _RHEL_REPOS = [
@@ -72,8 +60,8 @@ def test_checktargetrepos_no_rhsm(monkeypatch, enable_repos, custom_target_repos
     mocked_consume = MockedConsume(_TARGET_REPOS_CUSTOM if custom_target_repos else _TARGET_REPOS_NO_CUSTOM)
     if custom_target_repofile:
         mocked_consume._msgs.append(_CUSTOM_TARGET_REPOFILE)
-    envvars = {'LEAPP_ENABLE_REPOS': 'hill,spencer'} if enable_repos else {}
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(envvars))
+    envars = {'LEAPP_ENABLE_REPOS': 'hill,spencer'} if enable_repos else {}
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(envars=envars))
 
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
     monkeypatch.setattr(rhsm, 'skip_rhsm', lambda: True)

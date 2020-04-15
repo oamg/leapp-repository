@@ -3,16 +3,13 @@ from collections import namedtuple
 from leapp import reporting
 from leapp.libraries.actor import library
 from leapp.libraries.common.config import architecture
-from leapp.libraries.common.testutils import create_report_mocked
+from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked
 from leapp.libraries.stdlib import api
 
 
 def test_valid_architectures(monkeypatch):
-    class CurrentActorMocked(object):
-        configuration = namedtuple('configuration', ['architecture'])(architecture.ARCH_ACCEPTED[0])
-
     monkeypatch.setattr(reporting, "create_report", create_report_mocked())
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked)
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(arch=architecture.ARCH_ACCEPTED[0]))
 
     library.check_architecture()
 
@@ -20,11 +17,8 @@ def test_valid_architectures(monkeypatch):
 
 
 def test_invalid_architecture(monkeypatch):
-    class CurrentActorMocked(object):
-        configuration = namedtuple('configuration', ['architecture'])('invalid_architecture')
-
     monkeypatch.setattr(reporting, "create_report", create_report_mocked())
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked)
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(arch='invalid_architecture'))
 
     library.check_architecture()
     assert reporting.create_report.called == 1

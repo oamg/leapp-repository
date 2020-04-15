@@ -6,7 +6,7 @@ import pytest
 from leapp.exceptions import StopActorExecutionError, StopActorExecution
 from leapp.libraries.actor import userspacegen
 from leapp.libraries.common import overlaygen, rhsm
-from leapp.libraries.common import testutils
+from leapp.libraries.common.testutils import CurrentActorMocked, produce_mocked
 from leapp.libraries.common.config import architecture
 from leapp.libraries.stdlib import api
 from leapp import models
@@ -14,30 +14,6 @@ from leapp import models
 
 _CERTS_PATH = os.path.join('../../files', userspacegen.PROD_CERTS_FOLDER)
 _DEFAULT_CERT_PATH = os.path.join(_CERTS_PATH, '8.1', '479.pem')
-
-
-class CurrentActorMocked(object):
-    def __init__(self, kernel='3.10.0-957.43.1.el7.x86_64', release_id='rhel',
-                 src_ver='7.6', dst_ver='8.1', arch=architecture.ARCH_X86_64,
-                 envars=None):
-
-        if envars:
-            envarsList = [models.EnvVar(name=key, value=value) for key, value in envars.items()]
-        else:
-            envarsList = []
-
-        version = namedtuple('Version', ['source', 'target'])(src_ver, dst_ver)
-        os_release = namedtuple('OS_release', ['release_id', 'version_id'])(release_id, src_ver)
-        args = (version, kernel, os_release, arch, envarsList)
-        conf_fields = ['version', 'kernel', 'os_release', 'architecture', 'leapp_env_vars']
-        self.configuration = namedtuple('configuration', conf_fields)(*args)
-        self._common_folder = '../../files'
-
-    def __call__(self):
-        return self
-
-    def get_common_folder_path(self, folder):
-        return os.path.join(self._common_folder, folder)
 
 
 class MockedMountingBase(object):
@@ -253,7 +229,7 @@ def test_gather_target_repositories_required_not_available(monkeypatch):
     # If the repos that Leapp identifies as required for the upgrade (based on the repo mapping and PES data) are not
     # available, an exception shall be raised
 
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked)
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked())
     # The available RHSM repos
     monkeypatch.setattr(rhsm, 'get_available_repo_ids', lambda x: ['repoidA', 'repoidB', 'repoidC'])
     monkeypatch.setattr(rhsm, 'skip_rhsm', lambda: False)
@@ -289,8 +265,8 @@ def test_perform_ok(monkeypatch):
     monkeypatch.setattr(overlaygen, 'create_source_overlay', MockedMountingBase)
     monkeypatch.setattr(userspacegen, '_gather_target_repositories', lambda *x: repoids)
     monkeypatch.setattr(userspacegen, '_create_target_userspace', lambda *x: None)
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(envars={'LEAPP_NO_RHSM': '0'}))
-    monkeypatch.setattr(api, 'produce', testutils.produce_mocked())
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked())
+    monkeypatch.setattr(api, 'produce', produce_mocked())
     userspacegen.perform()
     msg_target_repos = models.UsedTargetRepositories(
             repos=[models.UsedTargetRepository(repoid=repo) for repo in repoids])

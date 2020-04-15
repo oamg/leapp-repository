@@ -5,23 +5,11 @@ import pytest
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import library
 from leapp.libraries.common.config import architecture
-from leapp.libraries.common.testutils import produce_mocked
+from leapp.libraries.common.testutils import produce_mocked, CurrentActorMocked
 from leapp.libraries.stdlib import api
 from leapp.models import EnvVar, RepositoriesMap, RepositoryMap
 
 PRODUCT_TYPE = ['ga', 'beta', 'htb']
-
-
-class CurrentActorMocked(object):
-    def __init__(self, arch, envars=None):
-        if envars:
-            envarsList = [EnvVar(name=key, value=value) for key, value in envars.items()]
-        else:
-            envarsList = []
-        self.configuration = namedtuple('configuration', ['architecture', 'leapp_env_vars'])(arch, envarsList)
-
-    def __call__(self):
-        return self
 
 
 class ReadRepoFileMock(object):

@@ -4,6 +4,7 @@ import pytest
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import library
+from leapp.libraries.common.testutils import CurrentActorMocked
 from leapp.libraries.common.config import architecture
 from leapp.libraries.stdlib import api
 from leapp.models import BootContent, FirmwareFacts
@@ -30,14 +31,6 @@ class mocked_logger(object):
 
     def debug(self, *args):
         self.dbgmsg = args
-
-    def __call__(self):
-        return self
-
-
-class CurrentActorMocked(object):
-    def __init__(self, arch):
-        self.configuration = namedtuple('configuration', ['architecture'])(arch)
 
     def __call__(self):
         return self
