@@ -1,6 +1,6 @@
 from leapp.libraries.actor import library
 from leapp import reporting
-from leapp.libraries.common.testutils import create_report_mocked
+from leapp.libraries.common.testutils import create_report_mocked, logger_mocked
 from leapp.libraries.stdlib import api
 from leapp.models import PartitionEntry, FstabEntry, MountEntry, LsblkEntry, PvsEntry, VgsEntry, \
     LvdisplayEntry, SystemdMountEntry
@@ -65,16 +65,6 @@ def test_get_fstab_info(monkeypatch):
 
 
 def test_invalid_fstab_info(monkeypatch):
-    class logger_mocked(object):
-        def __init__(self):
-            self.errmsg = None
-
-        def error(self, msg):
-            self.errmsg = msg
-
-        def __call__(self):
-            return self
-
     monkeypatch.setattr(reporting, "create_report", create_report_mocked())
     monkeypatch.setattr(api, 'current_logger', logger_mocked())
 
@@ -83,7 +73,7 @@ def test_invalid_fstab_info(monkeypatch):
     assert reporting.create_report.report_fields['severity'] == 'high'
     assert 'Problems with parsing data in /etc/fstab' in reporting.create_report.report_fields['title']
     assert 'inhibitor' in reporting.create_report.report_fields['flags']
-    assert "The fstab configuration file seems to be invalid" in api.current_logger.errmsg
+    assert any("The fstab configuration file seems to be invalid" in msg for msg in api.current_logger.errmsg)
 
 
 def test_get_mount_info(monkeypatch):

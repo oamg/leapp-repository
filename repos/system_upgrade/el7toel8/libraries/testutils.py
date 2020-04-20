@@ -29,7 +29,33 @@ class create_report_mocked(object):
             self.report_fields.update(report.to_dict())
 
 
-class CurrentActorMocked(object):  # pylint: disable=too-many-public-methods
+class logger_mocked(object):
+    def __init__(self):
+        self.dbgmsg = []
+        self.infomsg = []
+        self.warnmsg = []
+        self.errmsg = []
+
+    def debug(self, *args):
+        self.dbgmsg.extend(args)
+
+    def info(self, *args):
+        self.infomsg.extend(args)
+
+    def warn(self, *args):
+        self.warnmsg.extend(args)
+
+    def warning(self, *args):
+        self.warnmsg.extend(args)
+
+    def error(self, *args):
+        self.errmsg.extend(args)
+
+    def __call__(self):
+        return self
+
+
+class CurrentActorMocked(object):  # pylint:disable=R0904
     def __init__(self, arch=architecture.ARCH_X86_64, envars=None, kernel='3.10.0-957.43.1.el7.x86_64',
                  release_id='rhel', src_ver='7.8', dst_ver='8.1'):
         envarsList = [EnvVar(name=k, value=v) for k, v in envars.items()] if envars else []

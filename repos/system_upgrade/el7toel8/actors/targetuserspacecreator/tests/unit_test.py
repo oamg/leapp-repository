@@ -6,7 +6,7 @@ import pytest
 from leapp.exceptions import StopActorExecutionError, StopActorExecution
 from leapp.libraries.actor import userspacegen
 from leapp.libraries.common import overlaygen, rhsm
-from leapp.libraries.common.testutils import CurrentActorMocked, produce_mocked
+from leapp.libraries.common.testutils import CurrentActorMocked, produce_mocked, logger_mocked
 from leapp.libraries.common.config import architecture
 from leapp.libraries.stdlib import api
 from leapp import models
@@ -52,25 +52,6 @@ def test_get_product_certificate_path(monkeypatch, result, dst_ver, arch, prod_t
     curr_actor_mocked = CurrentActorMocked(dst_ver=dst_ver, arch=arch, envars=envars)
     monkeypatch.setattr(api, 'current_actor', curr_actor_mocked)
     assert userspacegen._get_product_certificate_path() == result
-
-
-class mocked_logger(object):
-    def __init__(self):
-        self.errmsg = []
-        self.warnmsg = []
-        self.debugmsg = []
-
-    def error(self, msg):
-        self.errmsg.append(msg)
-
-    def warn(self, msg):
-        self.warnmsg.append(msg)
-
-    def debug(self, msg):
-        self.debugmsg.append(msg)
-
-    def __call__(self):
-        return self
 
 
 _PACKAGES_MSGS = [
@@ -173,7 +154,7 @@ def test_consume_data(monkeypatch, raised, no_rhsm, testdata):
                                    testdata.storage,
                                    custom_repofiles)
     monkeypatch.setattr(api, 'consume', mocked_consume)
-    monkeypatch.setattr(api, 'current_logger', mocked_logger())
+    monkeypatch.setattr(api, 'current_logger', logger_mocked())
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(envars={'LEAPP_NO_RHSM': no_rhsm}))
     if not xfs:
         xfs = models.XFSPresence()
