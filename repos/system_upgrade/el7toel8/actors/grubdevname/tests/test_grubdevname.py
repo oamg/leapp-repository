@@ -1,3 +1,5 @@
+import os
+
 import pytest
 
 from leapp.exceptions import StopActorExecution
@@ -25,10 +27,9 @@ def raise_call_error(args=None):
 
 class RunMocked(object):
 
-    def __init__(self, no_grub=False, raise_err=False):
+    def __init__(self, raise_err=False):
         self.called = 0
         self.args = None
-        self.no_grub = no_grub
         self.raise_err = raise_err
 
     def __call__(self, args, encoding=None):
@@ -43,20 +44,34 @@ class RunMocked(object):
         elif self.args == ['lsblk', '-spnlo', 'name', BOOT_PARTITION]:
             stdout = BOOT_DEVICE
 
-        elif self.args == [
-            'dd', 'status=none', 'if={}'.format(BOOT_DEVICE), 'bs=512', 'count=1'
-        ]:
-            stdout = VALID_DD if not self.no_grub else INVALID_DD
-
         return {'stdout': stdout}
+
+
+def open_mocked(fn, flags):
+    return open('tests/valid' if fn == BOOT_DEVICE else 'tests/invalid', 'r')
+
+
+def open_invalid(fn, flags):
+    return open('tests/invalid', 'r')
+
+
+def read_mocked(f, size):
+    return f.read(size)
+
+
+def close_mocked(f):
+    f.close()
 
 
 def test_get_grub_device(monkeypatch):
     run_mocked = RunMocked()
     monkeypatch.setattr(library, 'run', run_mocked)
     monkeypatch.setattr(api, 'produce', testutils.produce_mocked())
+    monkeypatch.setattr(os, 'open', open_mocked)
+    monkeypatch.setattr(os, 'read', read_mocked)
+    monkeypatch.setattr(os, 'close', close_mocked)
     library.get_grub_device()
-    assert library.run.called == 3
+    assert library.run.called == 2
     assert BOOT_DEVICE == api.produce.model_instances[0].grub_device
 
 
@@ -64,6 +79,9 @@ def test_get_grub_device_fail(monkeypatch):
     run_mocked = RunMocked(raise_err=True)
     monkeypatch.setattr(library, 'run', run_mocked)
     monkeypatch.setattr(api, 'produce', testutils.produce_mocked())
+    monkeypatch.setattr(os, 'open', open_mocked)
+    monkeypatch.setattr(os, 'read', read_mocked)
+    monkeypatch.setattr(os, 'close', close_mocked)
     with pytest.raises(StopActorExecution):
         library.get_grub_device()
     assert library.run.called == 1
@@ -75,15 +93,21 @@ def test_grub_device_env_var(monkeypatch):
     monkeypatch.setenv('LEAPP_GRUB_DEVICE', BOOT_DEVICE_ENV)
     monkeypatch.setattr(library, 'run', run_mocked)
     monkeypatch.setattr(api, 'produce', testutils.produce_mocked())
+    monkeypatch.setattr(os, 'open', open_mocked)
+    monkeypatch.setattr(os, 'read', read_mocked)
+    monkeypatch.setattr(os, 'close', close_mocked)
     library.get_grub_device()
     assert library.run.called == 0
     assert BOOT_DEVICE_ENV == api.produce.model_instances[0].grub_device
 
 
 def test_device_no_grub(monkeypatch):
-    run_mocked = RunMocked(no_grub=True)
+    run_mocked = RunMocked()
     monkeypatch.setattr(library, 'run', run_mocked)
     monkeypatch.setattr(api, 'produce', testutils.produce_mocked())
+    monkeypatch.setattr(os, 'open', open_invalid)
+    monkeypatch.setattr(os, 'read', read_mocked)
+    monkeypatch.setattr(os, 'close', close_mocked)
     library.get_grub_device()
-    assert library.run.called == 3
+    assert library.run.called == 2
     assert not api.produce.model_instances
