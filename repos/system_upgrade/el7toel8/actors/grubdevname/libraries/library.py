@@ -10,13 +10,15 @@ def has_grub(blk_dev):
     Check whether GRUB is present on block device
     """
     try:
-        result = run(['dd', 'status=none', 'if={}'.format(blk_dev), 'bs=512', 'count=1'], encoding=None)
-    except CalledProcessError:
+        blk = os.open(blk_dev, os.O_RDONLY)
+        mbr = os.read(blk, 512)
+    except OSError:
         api.current_logger().warning(
             'Could not read first sector of {} in order to identify the bootloader'.format(blk_dev)
         )
         raise StopActorExecution()
-    return b'GRUB' in result['stdout']
+    os.close(blk)
+    return 'GRUB' in mbr
 
 
 def blk_dev_from_partition(partition):
