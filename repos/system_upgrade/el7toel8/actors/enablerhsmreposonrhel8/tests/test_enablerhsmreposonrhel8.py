@@ -8,7 +8,7 @@ from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import library
 from leapp.libraries.common import config, mounting, rhsm
 from leapp.libraries.common.config import architecture
-from leapp.libraries.common.testutils import CurrentActorMocked
+from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked
 from leapp.libraries.stdlib import CalledProcessError, api
 from leapp.models import UsedTargetRepositories, UsedTargetRepository, EnvVar
 
@@ -49,25 +49,6 @@ class run_mocked(object):
             raise_call_error(args)
 
 
-class logger_mocked(object):
-    def __init__(self):
-        self.warnmsg = None
-        self.dbgmsg = None
-        self.infomsg = None
-
-    def info(self, *args):
-        self.infomsg = args
-
-    def warning(self, *args):
-        self.warnmsg = args
-
-    def debug(self, *args):
-        self.dbgmsg = args
-
-    def __call__(self):
-        return self
-
-
 def test_setrelease(monkeypatch):
     commands_called, klass = not_isolated_actions()
     monkeypatch.setattr(mounting, 'NotIsolatedActions', klass)
@@ -97,6 +78,7 @@ def test_setrelease_submgr_throwing_error(monkeypatch):
 def test_setrelease_skip_rhsm(monkeypatch, product):
     commands_called, _ = not_isolated_actions()
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(envars={'LEAPP_NO_RHSM': '1'}))
+    monkeypatch.setattr(api, 'current_logger', logger_mocked())
     monkeypatch.setattr(config, 'get_product_type', lambda dummy: product)
     # To make this work we need to re-apply the decorator, so it respects the environment variable
     monkeypatch.setattr(rhsm, 'set_release', rhsm.with_rhsm(rhsm.set_release))

@@ -4,7 +4,7 @@ import pytest
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import library
-from leapp.libraries.common.testutils import CurrentActorMocked
+from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked
 from leapp.libraries.common.config import architecture
 from leapp.libraries.stdlib import api
 from leapp.models import BootContent, FirmwareFacts
@@ -15,25 +15,6 @@ class run_mocked(object):
 
     def __call__(self, args, split=True):
         self.args.append(args)
-
-
-class mocked_logger(object):
-    def __init__(self):
-        self.errmsg = None
-        self.warnmsg = None
-        self.dbgmsg = None
-
-    def error(self, *args):
-        self.errmsg = args
-
-    def warning(self, *args):
-        self.warnmsg = args
-
-    def debug(self, *args):
-        self.dbgmsg = args
-
-    def __call__(self):
-        return self
 
 
 @pytest.mark.parametrize('firmware', ['bios', 'efi'])
@@ -49,7 +30,7 @@ def test_remove_boot_entry(firmware, arch, monkeypatch):
     monkeypatch.setattr(api, 'consume', consume_systemfacts_mocked)
     monkeypatch.setattr(library, 'run', run_mocked())
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(arch))
-    monkeypatch.setattr(api, 'current_logger', mocked_logger())
+    monkeypatch.setattr(api, 'current_logger', logger_mocked())
 
     library.remove_boot_entry()
 

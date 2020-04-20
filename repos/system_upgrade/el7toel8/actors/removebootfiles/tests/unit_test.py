@@ -2,6 +2,7 @@ import pytest
 
 from leapp.exceptions import StopActorExecution
 from leapp.libraries.stdlib import api
+from leapp.libraries.common.testutils import logger_mocked
 from leapp.libraries.actor import library
 from leapp.models import BootContent
 
@@ -14,21 +15,6 @@ class remove_file_mocked(object):
     def __call__(self, filename):
         self.called += 1
         self.files_to_remove.append(filename)
-
-
-class logger_mocked(object):
-    def __init__(self):
-        self.warnmsg = None
-        self.errmsg = None
-
-    def warning(self, msg):
-        self.warnmsg = msg
-
-    def error(self, msg):
-        self.errmsg = msg
-
-    def __call__(self):
-        return self
 
 
 def test_remove_boot_files(monkeypatch):
@@ -53,7 +39,7 @@ def test_remove_boot_files(monkeypatch):
         library.remove_boot_files()
 
     assert library.remove_file.called == 0
-    assert "Did not receive a message" in api.current_logger.warnmsg
+    assert any("Did not receive a message" in msg for msg in api.current_logger.warnmsg)
 
 
 def test_remove_file_that_does_not_exist(monkeypatch):
@@ -64,4 +50,4 @@ def test_remove_file_that_does_not_exist(monkeypatch):
 
     library.remove_file('/filepath')
 
-    assert "Could not remove /filepath" in api.current_logger.errmsg
+    assert any("Could not remove /filepath" in msg for msg in api.current_logger.errmsg)

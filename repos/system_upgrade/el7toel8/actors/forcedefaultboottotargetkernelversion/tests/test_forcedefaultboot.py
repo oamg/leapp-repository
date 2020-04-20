@@ -6,7 +6,7 @@ import pytest
 from leapp.libraries import stdlib
 from leapp.libraries.actor import forcedefaultboot
 from leapp.libraries.common.config import architecture
-from leapp.libraries.common.testutils import CurrentActorMocked
+from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked
 from leapp.libraries.stdlib import api
 from leapp.models import InstalledTargetKernelVersion
 
@@ -158,25 +158,6 @@ def mocked_exists(case, orig_path_exists):
     return impl
 
 
-class mocked_logger(object):
-    def __init__(self):
-        self.errmsg = None
-        self.warnmsg = None
-        self.dbgmsg = None
-
-    def error(self, *args):
-        self.errmsg = args
-
-    def warning(self, *args):
-        self.warnmsg = args
-
-    def debug(self, *args):
-        self.dbgmsg = args
-
-    def __call__(self):
-        return self
-
-
 @pytest.mark.parametrize('case_result', CASES)
 def test_force_default_boot_target_scenario(case_result, monkeypatch):
     case, result = case_result
@@ -186,7 +167,7 @@ def test_force_default_boot_target_scenario(case_result, monkeypatch):
     monkeypatch.setattr(stdlib, 'run', mocked_run)
     monkeypatch.setattr(os.path, 'exists', mocked_exists(case, os.path.exists))
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(arch=arch))
-    monkeypatch.setattr(api, 'current_logger', mocked_logger())
+    monkeypatch.setattr(api, 'current_logger', logger_mocked())
     forcedefaultboot.process()
     assert result.grubby_setdefault == mocked_run.called_setdefault
     assert result.zipl_called == mocked_run.called_zipl
