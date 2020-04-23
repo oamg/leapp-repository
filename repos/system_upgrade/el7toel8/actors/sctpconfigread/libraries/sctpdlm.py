@@ -7,12 +7,15 @@ from leapp.libraries.stdlib import api
 from leapp.libraries.common import utils
 
 
-def check_dlm_cfgfile():
-    """Parse DLM config file"""
-    fname = "/etc/dlm/dlm.conf"
+def check_dlm_cfgfile(_open=open):
+    """Parse DLM config file.
+    :param _open: object behind opening a file. Might be replaced
+        by mocked one for the purpose of testing
+    """
+    fname = '/etc/dlm/dlm.conf'
 
     try:
-        with open(fname, 'r') as fp:
+        with _open(fname, 'r') as fp:
             cfgs = '[dlm]\n' + fp.read()
     except (OSError, IOError):
         return False
@@ -26,12 +29,16 @@ def check_dlm_cfgfile():
     return proto in ['sctp', 'detect', '1', '2']
 
 
-def check_dlm_sysconfig():
-    """Parse /etc/sysconfig/dlm"""
+def check_dlm_sysconfig(_open=open):
+    """Parse /etc/sysconfig/dlm
+    :param _open: object behind opening a file. Might be replaced
+        by mocked one for the purpose of testing
+    """
+
     regex = re.compile('^[^#]*DLM_CONTROLD_OPTS.*=.*(?:--protocol|-r)[ =]*([^"\' ]+).*', re.IGNORECASE)
 
     try:
-        with open('/etc/sysconfig/dlm', 'r') as fp:
+        with _open('/etc/sysconfig/dlm', 'r') as fp:
             lines = fp.readlines()
     except (OSError, IOError):
         return False
