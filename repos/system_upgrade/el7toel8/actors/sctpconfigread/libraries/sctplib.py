@@ -13,6 +13,7 @@ def anyfile(files):
     """
     Determines if any of the given paths exist and are a file.
 
+    :type files: tuple of str
     :return: True if any of the given paths exists and it is a file.
     :rtype: bool
     """
