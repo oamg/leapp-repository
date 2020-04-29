@@ -1,4 +1,4 @@
-from collections import namedtuple
+import logging
 
 import pytest
 
@@ -46,3 +46,12 @@ def test_ibmz_cpu_unsupported(monkeypatch):
     assert reporting.create_report.called
     assert title_msg == reporting.create_report.report_fields['title']
     assert reporting.Flags.INHIBITOR in reporting.create_report.report_fields['flags']
+
+
+def test_ibmz_cpu_is_empty(monkeypatch, caplog):
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(architecture.ARCH_S390X))
+    monkeypatch.setattr(reporting, "create_report", testutils.create_report_mocked())
+    monkeypatch.setattr(api, 'consume', lambda x: iter([CPUInfo(machine_type=None)]))
+    with caplog.at_level(logging.DEBUG):
+        cpu.process()
+    assert 'The machine (CPU) type is empty.' in caplog.text
