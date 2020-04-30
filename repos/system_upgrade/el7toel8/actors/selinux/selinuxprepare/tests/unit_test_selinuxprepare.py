@@ -1,7 +1,6 @@
-from leapp.libraries.stdlib import run, CalledProcessError
 from leapp.libraries.actor import library
-from leapp.libraries.stdlib import api
-from leapp.models import SELinuxModules, SELinuxModule
+from leapp.libraries.stdlib import CalledProcessError, api, run
+from leapp.models import SELinuxModule, SELinuxModules
 
 
 class run_mocked(object):
@@ -16,8 +15,10 @@ class run_mocked(object):
         self.args = args
 
         if self.args[0] == 'semodule':
-            stdout = ["libsemanage.semanage_direct_remove_key: Removing last dummy module " +
-                      "(no other dummy module exists at another priority)."]
+            stdout = [
+                'libsemanage.semanage_direct_remove_key: Removing last dummy module '
+                + '(no other dummy module exists at another priority).'
+            ]
             self.removed_modules.add(self.args[-1])
         else:
             self.non_semodule_calls += 1
@@ -26,19 +27,20 @@ class run_mocked(object):
 
 
 def test_remove_custom_modules(monkeypatch):
-    mock_modules = {"a": 99,
-                    "b": 300,
-                    "c": 400,
-                    "abrt": 190}
+    mock_modules = {'a': 99, 'b': 300, 'c': 400, 'abrt': 190}
 
     def consume_SELinuxModules_mocked(*models):
 
-        semodule_list = [SELinuxModule(name=k, priority=mock_modules[k], content="", removed=[])
-                         for k in mock_modules]
+        semodule_list = [
+            SELinuxModule(
+                name=k, priority=mock_modules[k], content='', removed=[]
+            )
+            for k in mock_modules
+        ]
         yield SELinuxModules(modules=semodule_list)
 
-    monkeypatch.setattr(api, "consume", consume_SELinuxModules_mocked)
-    monkeypatch.setattr(library, "run", run_mocked())
+    monkeypatch.setattr(api, 'consume', consume_SELinuxModules_mocked)
+    monkeypatch.setattr(library, 'run', run_mocked())
 
     library.remove_custom_modules()
     assert library.run.called == len(mock_modules)
