@@ -1,20 +1,28 @@
 git:
   depth: 3
-language:
-  minimal
+language: shell
+os: linux
+dist: xenial
 env:
   global:
     - CONTAINER=centos:7
-  jobs:
-    - PYTHON_VENV=python2.7
-    - PYTHON_VENV=python3.6
 services:
   - docker
-sudo: required
 
 install:
   - docker pull ${CONTAINER}
   - docker build -t leapp-tests -f utils/docker-tests/Dockerfile utils/docker-tests
 
-script:
-  - docker run --rm -ti -v ${PWD}:/payload --env=PYTHON_VENV leapp-tests
+jobs:
+  include:
+    - script:
+        - docker run --rm -ti -v ${PWD}:/payload --env=PYTHON_VENV leapp-tests
+      env: PYTHON_VENV=python2.7
+    - script:
+        - docker run --rm -ti -v ${PWD}:/payload --env=PYTHON_VENV leapp-tests
+      env: PYTHON_VENV=python3.6
+    - stage: deploy
+      script: 
+        - docker run --rm -ti -v ${PWD}:/payload --entrypoint "/bin/bash" leapp-tests -c "make install-deps && make dashboard_data"
+        - bash ./utils/update_dashboard.sh
+      if: branch = master AND type = push
