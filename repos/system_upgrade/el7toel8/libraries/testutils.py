@@ -75,9 +75,9 @@ class CurrentActorMocked(object):  # pylint:disable=R0904
         return os.path.join(self._common_folder, folder)
 
     def consume(self, model):
-        return filter(  # pylint:disable=W0110,W1639
+        return iter(filter(  # pylint:disable=W0110,W1639
             lambda msg: isinstance(msg, model), self._msgs
-        )
+        ))
 
     @property
     def log(self):
