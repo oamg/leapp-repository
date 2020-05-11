@@ -1,5 +1,3 @@
-from leapp.snactor.fixture import current_actor_context
-from leapp.libraries.actor.library import check_kde_gnome
 from leapp.models import InstalledDesktopsFacts, InstalledKdeAppsFacts, Report
 
 

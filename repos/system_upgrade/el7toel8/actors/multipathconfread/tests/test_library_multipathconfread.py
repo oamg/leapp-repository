@@ -1,6 +1,23 @@
-from leapp.libraries.actor import library
+import os
+
+import pytest
+
+from leapp.libraries.actor import multipathconfread
 from leapp.models import MultipathConfFacts, MultipathConfig, MultipathConfigOption
-from leapp.libraries.stdlib import api
+
+# TODO [Artem] We shouldn't chdir in tests
+TEST_DIR = os.path.dirname(os.path.abspath(__file__))
+
+
+@pytest.fixture
+def adjust_cwd():
+    previous_cwd = os.getcwd()
+    os.chdir(TEST_DIR)
+    yield
+    os.chdir(previous_cwd)
+
+
+CUR_DIR = ""
 
 
 def build_config(val):
@@ -29,76 +46,63 @@ def build_config(val):
 
 
 default_rhel7_conf = build_config(
-        ['tests/files/default_rhel7.conf', 'directio', 'tests/files/conf.d',
-         False, False, False, True, True, True, True, True, True, False, False,
-         True, False, []])
+    [os.path.join(CUR_DIR, 'files/default_rhel7.conf'), 'directio', os.path.join(CUR_DIR, 'files/conf.d'), False,
+     False, False, True, True, True, True, True, True, False, False, True, False, [], ])
 
 all_devs_conf = build_config(
-        ['tests/files/conf.d/all_devs.conf', None, None, None, None, None,
-         None, False, False, False, True, True, False, False, True, True,
-         [('path_checker', 'rdac'), ('detect_checker', 'yes'),
-          ('features', '2 pg_init_retries 50'),
-          ('path_selector', 'service-time 0'), ('fast_io_fail_tmo', '5'),
-          ('no_path_retry', 'queue')]])
+    [os.path.join(CUR_DIR, 'files/conf.d/all_devs.conf'), None, None, None, None, None, None, False, False, False,
+     True, True, False, False, True, True,
+     [('path_checker', 'rdac'), ('detect_checker', 'yes'), ('features', '2 pg_init_retries 50'),
+      ('path_selector', 'service-time 0'), ('fast_io_fail_tmo', '5'), ('no_path_retry', 'queue'), ], ])
 
 empty_conf = build_config(
-        ['tests/files/conf.d/empty.conf', None, None, None, None, None, None,
-         False, False, False, False, False, False, False, False, False, []])
+    [os.path.join(CUR_DIR, 'files/conf.d/empty.conf'), None, None, None, None, None, None, False, False, False, False,
+     False, False, False, False, False, [], ])
 
 default_rhel8_conf = build_config(
-        ['tests/files/default_rhel8.conf', 'tur', '/etc/multipath/conf.d',
-         True, True, None, False, False, False, False, False, False, False,
-         False, False, False, []])
+    [os.path.join(CUR_DIR, 'files/default_rhel8.conf'), 'tur', '/etc/multipath/conf.d', True, True, None, False, False,
+     False, False, False, False, False, False, False, False, [], ])
 
 all_the_things_conf = build_config(
-        ['tests/files/all_the_things.conf', 'directio', 'tests/files/conf.d',
-         False, False, False, True, True, True, True, True, True, True, True,
-         True, True, [('no_path_retry', 'fail'), ('features', '0')]])
+    [os.path.join(CUR_DIR, 'files/all_the_things.conf'), 'directio', os.path.join(CUR_DIR, 'files/conf.d'), False,
+     False, False, True, True, True, True, True, True, True, True, True, True,
+     [('no_path_retry', 'fail'), ('features', '0')], ])
 
 already_updated_conf = build_config(
-        ['tests/files/already_updated.conf', None, 'tests/files/conf.d',
-         None, None, None, None, False, False, False, False, False, False,
-         False, False, False, []])
+    [os.path.join(CUR_DIR, 'files/already_updated.conf'), None, os.path.join(CUR_DIR, 'files/conf.d'), None, None,
+     None, None, False, False, False, False, False, False, False, False, False, [], ])
 
 ugly1_conf = build_config(
-        ['tests/files/ugly1.conf', 'directio', 'tests/files/conf.d',
-         False, False, False, True, True, True, True, True, True, True, True,
-         True, True, [('dev_loss_tmo', '60'),
-                      ('path_selector', 'service-time 0')]])
+    [os.path.join(CUR_DIR, 'files/ugly1.conf'), 'directio', os.path.join(CUR_DIR, 'files/conf.d'), False, False, False,
+     True, True, True, True, True, True, True, True, True, True,
+     [('dev_loss_tmo', '60'), ('path_selector', 'service-time 0')], ])
 
 # same results as all_devs_conf
 ugly2_conf = build_config(
-        ['tests/files/ugly2.conf', None, None, None, None, None, None,
-         False, False, False, True, True, False, False, True, True,
-         [('path_checker', 'rdac'), ('detect_checker', 'yes'),
-          ('features', '2 pg_init_retries 50'),
-          ('path_selector', 'service-time 0'), ('fast_io_fail_tmo', '5'),
-          ('no_path_retry', 'queue')]])
+    [os.path.join(CUR_DIR, 'files/ugly2.conf'), None, None, None, None, None, None, False, False, False, True, True,
+     False, False, True, True,
+     [('path_checker', 'rdac'), ('detect_checker', 'yes'), ('features', '2 pg_init_retries 50'),
+      ('path_selector', 'service-time 0'), ('fast_io_fail_tmo', '5'), ('no_path_retry', 'queue'), ], ])
 
 just_checker_conf = build_config(
-        ['tests/files/just_checker.conf', 'rdac', '/etc/multipath/conf.d',
-         True, True, None, False, False, False, False, False, False, False,
-         False, False, False, []])
+    [os.path.join(CUR_DIR, 'files/just_checker.conf'), 'rdac', '/etc/multipath/conf.d', True, True, None, False, False,
+     False, False, False, False, False, False, False, False, [], ])
 
 just_detect_conf = build_config(
-        ['tests/files/just_detect.conf', None, None, None, False,
-         None, None, False, False, False, False, False, False, False, False,
-         False, []])
+    [os.path.join(CUR_DIR, 'files/just_detect.conf'), None, None, None, False, None, None, False, False, False, False,
+     False, False, False, False, False, [], ])
 
 just_reassign_conf = build_config(
-        ['tests/files/just_reassign.conf', None, None, None, None,
-         None, True, False, False, False, False, False, False, False, False,
-         False, []])
+    [os.path.join(CUR_DIR, 'files/just_reassign.conf'), None, None, None, None, None, True, False, False, False, False,
+     False, False, False, False, False, [], ])
 
 just_exists_conf = build_config(
-        ['tests/files/just_exists.conf', None, None, None, None,
-         None, None, False, False, False, False, False, False, False, True,
-         False, []])
+    [os.path.join(CUR_DIR, 'files/just_exists.conf'), None, None, None, None, None, None, False, False, False, False,
+     False, False, False, True, False, [], ])
 
 just_all_devs_conf = build_config(
-        ['tests/files/just_all_devs.conf', None, None, None, None,
-         None, None, False, False, False, False, False, False, False, False,
-         True, []])
+    [os.path.join(CUR_DIR, 'files/just_all_devs.conf'), None, None, None, None, None, None, False, False, False, False,
+     False, False, False, False, True, [], ])
 
 
 def assert_config(config, expected):
@@ -126,70 +130,70 @@ def assert_config(config, expected):
         assert conf_opt.value == expt_opt.value
 
 
-def test_config_dir():
+def test_config_dir(adjust_cwd):
     expected_configs = (default_rhel7_conf, all_devs_conf, empty_conf)
-    facts = library.get_multipath_conf_facts(config_file='tests/files/default_rhel7.conf')
+    facts = multipathconfread.get_multipath_conf_facts(config_file=os.path.join(CUR_DIR, 'files/default_rhel7.conf'))
     assert facts
     assert len(facts.configs) == 3
     for i in range(len(facts.configs)):
         assert_config(facts.configs[i], expected_configs[i])
 
 
-def test_already_rhel8():
-    config = library._parse_config('tests/files/default_rhel8.conf')
+def test_already_rhel8(adjust_cwd):
+    config = multipathconfread._parse_config(os.path.join(CUR_DIR, 'files/default_rhel8.conf'))
     assert config
     assert_config(config, default_rhel8_conf)
 
 
-def test_all_the_things():
-    config = library._parse_config('tests/files/all_the_things.conf')
+def test_all_the_things(adjust_cwd):
+    config = multipathconfread._parse_config(os.path.join(CUR_DIR, 'files/all_the_things.conf'))
     assert config
     assert_config(config, all_the_things_conf)
 
 
-def test_already_updated():
-    config = library._parse_config('tests/files/already_updated.conf')
+def test_already_updated(adjust_cwd):
+    config = multipathconfread._parse_config(os.path.join(CUR_DIR, 'files/already_updated.conf'))
     assert config
     assert_config(config, already_updated_conf)
 
 
-def tests_ugly1():
-    config = library._parse_config('tests/files/ugly1.conf')
+def tests_ugly1(adjust_cwd):
+    config = multipathconfread._parse_config(os.path.join(CUR_DIR, 'files/ugly1.conf'))
     assert config
     assert_config(config, ugly1_conf)
 
 
-def tests_ugly2():
-    config = library._parse_config('tests/files/ugly2.conf')
+def tests_ugly2(adjust_cwd):
+    config = multipathconfread._parse_config(os.path.join(CUR_DIR, 'files/ugly2.conf'))
     assert config
     assert_config(config, ugly2_conf)
 
 
-def tests_just_checker():
-    config = library._parse_config('tests/files/just_checker.conf')
+def tests_just_checker(adjust_cwd):
+    config = multipathconfread._parse_config(os.path.join(CUR_DIR, 'files/just_checker.conf'))
     assert config
     assert_config(config, just_checker_conf)
 
 
-def tests_just_detect():
-    config = library._parse_config('tests/files/just_detect.conf')
+def tests_just_detect(adjust_cwd):
+    config = multipathconfread._parse_config(os.path.join(CUR_DIR, 'files/just_detect.conf'))
     assert config
     assert_config(config, just_detect_conf)
 
 
-def tests_just_reassign():
-    config = library._parse_config('tests/files/just_reassign.conf')
+def tests_just_reassign(adjust_cwd):
+    config = multipathconfread._parse_config(os.path.join(CUR_DIR, 'files/just_reassign.conf'))
     assert config
     assert_config(config, just_reassign_conf)
 
 
-def tests_just_exists():
-    config = library._parse_config('tests/files/just_exists.conf')
+def tests_just_exists(adjust_cwd):
+    config = multipathconfread._parse_config(os.path.join(CUR_DIR, 'files/just_exists.conf'))
     assert config
     assert_config(config, just_exists_conf)
 
 
-def tests_just_all_devs():
-    config = library._parse_config('tests/files/just_all_devs.conf')
+def tests_just_all_devs(adjust_cwd):
+    config = multipathconfread._parse_config(os.path.join(CUR_DIR, 'files/just_all_devs.conf'))
     assert config
     assert_config(config, just_all_devs_conf)

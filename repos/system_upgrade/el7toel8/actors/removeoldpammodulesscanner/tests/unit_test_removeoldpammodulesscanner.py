@@ -1,8 +1,7 @@
 import textwrap
 
-from leapp.libraries.actor.library import RemoveOldPAMModulesScannerLibrary
+from leapp.libraries.actor.removeoldpammodulesscanner import RemoveOldPAMModulesScannerLibrary
 from leapp.libraries.common.pam import PAM
-from leapp.models import RemovedPAMModules
 
 
 def get_config(config):

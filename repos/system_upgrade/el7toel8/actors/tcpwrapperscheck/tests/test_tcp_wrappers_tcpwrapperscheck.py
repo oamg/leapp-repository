@@ -1,4 +1,4 @@
-from leapp.libraries.actor.library import config_affects_daemons
+from leapp.libraries.actor.tcpwrapperscheck import config_affects_daemons
 from leapp.models import TcpWrappersFacts, DaemonList
 
 

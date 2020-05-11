@@ -1,6 +1,6 @@
 import xml.etree.ElementTree as ElementTree
 
-from leapp.libraries.actor import private
+from leapp.libraries.actor import firewalldupdatelockdownwhitelist
 
 
 def test_firewalldupdatelockdownwhitelist_library():
@@ -15,7 +15,10 @@ def test_firewalldupdatelockdownwhitelist_library():
            </whitelist>
         ''')
 
-    assert private.updateFirewallConfigCommand(root, '/usr/bin/python -Es /usr/bin/firewall-config')
+    assert firewalldupdatelockdownwhitelist.updateFirewallConfigCommand(
+        root,
+        '/usr/bin/python -Es /usr/bin/firewall-config'
+    )
 
 
 def test_firewalldupdatelockdownwhitelist_library_negative():
@@ -26,8 +29,11 @@ def test_firewalldupdatelockdownwhitelist_library_negative():
            </whitelist>
         ''')
 
-    assert not private.updateFirewallConfigCommand(root, '')
-    assert not private.updateFirewallConfigCommand(root, '/usr/bin/python -Es /usr/bin/firewall-config')
+    assert not firewalldupdatelockdownwhitelist.updateFirewallConfigCommand(root, '')
+    assert not firewalldupdatelockdownwhitelist.updateFirewallConfigCommand(
+        root,
+        '/usr/bin/python -Es /usr/bin/firewall-config'
+    )
 
     root = ElementTree.fromstring(
         '''<?xml version="1.0" encoding="utf-8"?>
@@ -39,4 +45,7 @@ def test_firewalldupdatelockdownwhitelist_library_negative():
            </whitelist>
         ''')
 
-    assert not private.updateFirewallConfigCommand(root, '/usr/libexec/platform-python -s /usr/bin/firewall-config')
+    assert not firewalldupdatelockdownwhitelist.updateFirewallConfigCommand(
+        root,
+        '/usr/libexec/platform-python -s /usr/bin/firewall-config'
+    )

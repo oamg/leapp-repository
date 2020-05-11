@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.libraries.actor.library import check_biosdevname
+from leapp.libraries.actor.biosdevname import check_biosdevname
 from leapp.models import KernelCmdlineArg, PersistentNetNamesFacts
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 

@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.libraries.actor.library import scan_xfs
+from leapp.libraries.actor.xfsinfoscanner import scan_xfs
 from leapp.models import StorageInfo, XFSPresence
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 

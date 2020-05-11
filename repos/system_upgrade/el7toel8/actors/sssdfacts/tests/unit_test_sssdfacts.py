@@ -2,7 +2,7 @@ import textwrap
 
 from six import StringIO
 
-from leapp.libraries.actor.library import SSSDFactsLibrary
+from leapp.libraries.actor.sssdfacts import SSSDFactsLibrary
 from leapp.libraries.common import utils
 from leapp.models import SSSDConfig, SSSDDomainConfig
 

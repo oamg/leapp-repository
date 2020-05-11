@@ -1,6 +1,6 @@
 from leapp.actors import Actor
 from leapp.exceptions import StopActorExecutionError
-from leapp.libraries.actor.library import semantics_changes
+from leapp.libraries.actor.opensshpermitrootlogincheck import semantics_changes
 from leapp.models import Report, OpenSshConfig
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 from leapp.libraries.stdlib import api

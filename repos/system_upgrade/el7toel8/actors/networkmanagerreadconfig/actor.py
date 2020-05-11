@@ -1,4 +1,4 @@
-from leapp.libraries.actor.library import read_nm_config, parse_nm_config, check_nm_dhcp
+from leapp.libraries.actor.networkmanagerreadconfig import read_nm_config, parse_nm_config, check_nm_dhcp
 from leapp.actors import Actor
 from leapp.models import NetworkManagerConfig
 from leapp.tags import IPUWorkflowTag, FactsPhaseTag

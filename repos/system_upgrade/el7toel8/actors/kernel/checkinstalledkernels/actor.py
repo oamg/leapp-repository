@@ -2,7 +2,7 @@ from leapp.actors import Actor
 from leapp.models import InstalledRedHatSignedRPM
 from leapp.tags import IPUWorkflowTag, ChecksPhaseTag
 from leapp.reporting import Report
-from leapp.libraries.actor import library
+from leapp.libraries.actor import checkinstalledkernels
 
 
 class CheckInstalledKernels(Actor):
@@ -35,4 +35,4 @@ class CheckInstalledKernels(Actor):
     tags = (IPUWorkflowTag, ChecksPhaseTag)
 
     def process(self):
-        library.process()
+        checkinstalledkernels.process()

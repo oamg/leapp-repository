@@ -1,5 +1,4 @@
-from leapp.snactor.fixture import current_actor_context
-from leapp.libraries.actor import utils
+from leapp.libraries.actor import nssglibccheck
 from leapp import reporting
 from leapp.libraries.common.testutils import create_report_mocked
 
@@ -18,7 +17,7 @@ foo:        sss files #winbind
 
 
 def test_blacklister(current_actor_context):
-    caught = list(utils.check_modules(
+    caught = list(nssglibccheck.check_modules(
         [l.strip() for l in TEST_DATA.splitlines()],
         ('wins', 'winbind',),
     ))
@@ -31,7 +30,7 @@ def test_blacklister(current_actor_context):
 
 def test_inhibition(monkeypatch):
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
-    utils.process_lines(
+    nssglibccheck.process_lines(
         [l.strip() for l in TEST_DATA.splitlines()],
         ('wins', 'winbind',),
         '/nss_path'

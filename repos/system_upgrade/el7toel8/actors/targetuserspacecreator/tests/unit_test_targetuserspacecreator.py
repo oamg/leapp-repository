@@ -1,19 +1,26 @@
-from collections import namedtuple
 import os
+from collections import namedtuple
 
 import pytest
 
-from leapp.exceptions import StopActorExecutionError, StopActorExecution
+from leapp import models
+from leapp.exceptions import StopActorExecution, StopActorExecutionError
 from leapp.libraries.actor import userspacegen
 from leapp.libraries.common import overlaygen, rhsm
-from leapp.libraries.common.testutils import CurrentActorMocked, produce_mocked, logger_mocked
 from leapp.libraries.common.config import architecture
-from leapp.libraries.stdlib import api
-from leapp import models
+from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked, produce_mocked
 
-
-_CERTS_PATH = os.path.join('../../files', userspacegen.PROD_CERTS_FOLDER)
+CUR_DIR = os.path.dirname(os.path.abspath(__file__))
+_CERTS_PATH = os.path.join(CUR_DIR, '../../../files', userspacegen.PROD_CERTS_FOLDER)
 _DEFAULT_CERT_PATH = os.path.join(_CERTS_PATH, '8.1', '479.pem')
+
+
+@pytest.fixture
+def adjust_cwd():
+    previous_cwd = os.getcwd()
+    os.chdir(os.path.join(CUR_DIR, "../"))
+    yield
+    os.chdir(previous_cwd)
 
 
 class MockedMountingBase(object):
@@ -47,11 +54,11 @@ class MockedMountingBase(object):
     (os.path.join(_CERTS_PATH, '8.2', '232.pem'), '8.2', architecture.ARCH_S390X, 'htb'),
     (os.path.join(_CERTS_PATH, '8.2', '433.pem'), '8.2', architecture.ARCH_S390X, 'beta'),
 ])
-def test_get_product_certificate_path(monkeypatch, result, dst_ver, arch, prod_type):
+def test_get_product_certificate_path(monkeypatch, adjust_cwd, result, dst_ver, arch, prod_type):
     envars = {'LEAPP_DEVEL_TARGET_PRODUCT_TYPE': prod_type}
     curr_actor_mocked = CurrentActorMocked(dst_ver=dst_ver, arch=arch, envars=envars)
-    monkeypatch.setattr(api, 'current_actor', curr_actor_mocked)
-    assert userspacegen._get_product_certificate_path() == result
+    monkeypatch.setattr(userspacegen.api, 'current_actor', curr_actor_mocked)
+    assert userspacegen._get_product_certificate_path() in result
 
 
 _PACKAGES_MSGS = [
@@ -153,9 +160,9 @@ def test_consume_data(monkeypatch, raised, no_rhsm, testdata):
                                    xfs,
                                    testdata.storage,
                                    custom_repofiles)
-    monkeypatch.setattr(api, 'consume', mocked_consume)
-    monkeypatch.setattr(api, 'current_logger', logger_mocked())
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(envars={'LEAPP_NO_RHSM': no_rhsm}))
+    monkeypatch.setattr(userspacegen.api, 'consume', mocked_consume)
+    monkeypatch.setattr(userspacegen.api, 'current_logger', logger_mocked())
+    monkeypatch.setattr(userspacegen.api, 'current_actor', CurrentActorMocked(envars={'LEAPP_NO_RHSM': no_rhsm}))
     if not xfs:
         xfs = models.XFSPresence()
     if not custom_repofiles:
@@ -167,26 +174,26 @@ def test_consume_data(monkeypatch, raised, no_rhsm, testdata):
         assert result.xfs_info == xfs
         assert result.storage_info == testdata.storage
         assert result.custom_repofiles == custom_repofiles
-        assert not api.current_logger.warnmsg
-        assert not api.current_logger.errmsg
+        assert not userspacegen.api.current_logger.warnmsg
+        assert not userspacegen.api.current_logger.errmsg
     else:
         with pytest.raises(raised[0]) as err:
             userspacegen._InputData()
         if isinstance(err.value, StopActorExecutionError):
             assert raised[1] in err.value.message
         else:
-            assert api.current_logger.warnmsg
-            assert any([raised[1] in x for x in api.current_logger.warnmsg])
+            assert userspacegen.api.current_logger.warnmsg
+            assert any([raised[1] in x for x in userspacegen.api.current_logger.warnmsg])
 
 
 @pytest.mark.skip(reason="Currently not implemented in the actor. It's TODO.")
 def test_gather_target_repositories(monkeypatch):
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked())
+    monkeypatch.setattr(userspacegen.api, 'current_actor', CurrentActorMocked())
     # The available RHSM repos
     monkeypatch.setattr(rhsm, 'get_available_repo_ids', lambda x: ['repoidX', 'repoidY', 'repoidZ'])
     monkeypatch.setattr(rhsm, 'skip_rhsm', lambda: False)
     # The required RHEL repos based on the repo mapping and PES data + custom repos required by third party actors
-    monkeypatch.setattr(api, 'consume', lambda x: iter([models.TargetRepositories(
+    monkeypatch.setattr(userspacegen.api, 'consume', lambda x: iter([models.TargetRepositories(
         rhel_repos=[models.RHELTargetRepository(repoid='repoidX'),
                     models.RHELTargetRepository(repoid='repoidY')],
         custom_repos=[models.CustomTargetRepository(repoid='repoidCustom')])]))
@@ -197,7 +204,7 @@ def test_gather_target_repositories(monkeypatch):
 
 
 def test_gather_target_repositories_none_available(monkeypatch):
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked())
+    monkeypatch.setattr(userspacegen.api, 'current_actor', CurrentActorMocked())
     monkeypatch.setattr(rhsm, 'get_available_repo_ids', lambda x: [])
     monkeypatch.setattr(rhsm, 'skip_rhsm', lambda: False)
     with pytest.raises(StopActorExecutionError) as err:
@@ -210,12 +217,12 @@ def test_gather_target_repositories_required_not_available(monkeypatch):
     # If the repos that Leapp identifies as required for the upgrade (based on the repo mapping and PES data) are not
     # available, an exception shall be raised
 
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked())
+    monkeypatch.setattr(userspacegen.api, 'current_actor', CurrentActorMocked())
     # The available RHSM repos
     monkeypatch.setattr(rhsm, 'get_available_repo_ids', lambda x: ['repoidA', 'repoidB', 'repoidC'])
     monkeypatch.setattr(rhsm, 'skip_rhsm', lambda: False)
     # The required RHEL repos based on the repo mapping and PES data + custom repos required by third party actors
-    monkeypatch.setattr(api, 'consume', lambda x: iter([models.TargetRepositories(
+    monkeypatch.setattr(userspacegen.api, 'consume', lambda x: iter([models.TargetRepositories(
         rhel_repos=[models.RHELTargetRepository(repoid='repoidX'),
                     models.RHELTargetRepository(repoid='repoidY')],
         custom_repos=[models.CustomTargetRepository(repoid='repoidCustom')])]))
@@ -246,12 +253,12 @@ def test_perform_ok(monkeypatch):
     monkeypatch.setattr(overlaygen, 'create_source_overlay', MockedMountingBase)
     monkeypatch.setattr(userspacegen, '_gather_target_repositories', lambda *x: repoids)
     monkeypatch.setattr(userspacegen, '_create_target_userspace', lambda *x: None)
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked())
-    monkeypatch.setattr(api, 'produce', produce_mocked())
+    monkeypatch.setattr(userspacegen.api, 'current_actor', CurrentActorMocked())
+    monkeypatch.setattr(userspacegen.api, 'produce', produce_mocked())
     userspacegen.perform()
     msg_target_repos = models.UsedTargetRepositories(
-            repos=[models.UsedTargetRepository(repoid=repo) for repo in repoids])
-    assert api.produce.called == 2
-    assert api.produce.model_instances[0] == msg_target_repos
+        repos=[models.UsedTargetRepository(repoid=repo) for repo in repoids])
+    assert userspacegen.api.produce.called == 2
+    assert userspacegen.api.produce.model_instances[0] == msg_target_repos
     # this one is full of contants, so it's safe to check just the instance
-    assert isinstance(api.produce.model_instances[1], models.TargetUserSpaceInfo)
+    assert isinstance(userspacegen.api.produce.model_instances[1], models.TargetUserSpaceInfo)

@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.libraries.actor import library
+from leapp.libraries.actor import migratebrltty
 from leapp.models import BrlttyMigrationDecision
 from leapp.reporting import Report, create_report
 from leapp import reporting
@@ -19,7 +19,7 @@ class MigrateBrltty(Actor):
     def process(self):
         for decision in self.consume(BrlttyMigrationDecision):
             report_summary = ''
-            library.migrate_file(decision.migrate_file, decision.migrate_bt, decision.migrate_espeak)
+            migratebrltty.migrate_file(decision.migrate_file, decision.migrate_bt, decision.migrate_espeak)
             if decision.migrate_bt:
                 report_summary = 'Unsupported aliases for bluetooth devices (\'bth:\' and \'bluez:\') was '
                 report_summary += 'renamed to \'bluetooth:\' in {}'

@@ -1,6 +1,6 @@
 import textwrap
 
-from leapp.libraries.actor.library import comment_modules, read_file
+from leapp.libraries.actor.removeoldpammodulesapply import comment_modules, read_file
 
 
 def get_config(config):

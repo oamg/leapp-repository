@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.libraries.actor.library import check_unsigned_packages
+from leapp.libraries.actor.redhatsignedrpmcheck import check_unsigned_packages
 from leapp.models import InstalledUnsignedRPM
 from leapp.reporting import Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag

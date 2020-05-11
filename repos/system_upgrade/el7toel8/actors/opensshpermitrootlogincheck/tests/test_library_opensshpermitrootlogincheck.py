@@ -1,4 +1,4 @@
-from leapp.libraries.actor.library import semantics_changes
+from leapp.libraries.actor.opensshpermitrootlogincheck import semantics_changes
 from leapp.models import OpenSshConfig, OpenSshPermitRootLogin
 
 

@@ -1,11 +1,10 @@
 from leapp.actors import Actor
-from leapp.libraries.actor import library
+from leapp.libraries.actor import checkbrltty
 from leapp.libraries.common.rpms import has_package
 from leapp.models import InstalledRedHatSignedRPM, BrlttyMigrationDecision
 from leapp.reporting import Report, create_report
 from leapp import reporting
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
-
 
 related = [reporting.RelatedResource('package', 'brltty')]
 
@@ -35,7 +34,7 @@ class CheckBrltty(Actor):
                 )
             ] + related)
 
-            (migrate_file, migrate_bt, migrate_espeak) = library.check_for_unsupported_cfg()
+            (migrate_file, migrate_bt, migrate_espeak,) = checkbrltty.check_for_unsupported_cfg()
             report_summary = ''
             if migrate_bt:
                 report_summary = 'Unsupported aliases for bluetooth devices (\'bth:\' and \'bluez:\') will be '

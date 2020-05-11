@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.libraries.actor.library import (
+from leapp.libraries.actor.checkipaserver import (
     ipa_inhibit_upgrade,
     ipa_warn_pkg_installed,
 )

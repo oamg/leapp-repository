@@ -1,6 +1,6 @@
 import errno
 
-from leapp.libraries.actor.library import migrate_configs
+from leapp.libraries.actor.vsftpdconfigupdate import migrate_configs
 from leapp.libraries.common.testutils import make_IOError
 from leapp.libraries.common.vsftpdutils import VSFTPD_DEFAULT_CONFIG_PATH
 from leapp.models import VsftpdConfig, VsftpdFacts

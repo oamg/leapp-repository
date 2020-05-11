@@ -1,7 +1,10 @@
-import os
-
-from leapp.libraries.actor.library import SendmailConfDir
-from leapp.models import InstalledRedHatSignedRPM, RPM, SendmailMigrationDecision, DaemonList, TcpWrappersFacts
+from leapp.models import (
+    DaemonList,
+    InstalledRedHatSignedRPM,
+    RPM,
+    SendmailMigrationDecision,
+    TcpWrappersFacts,
+)
 from leapp.reporting import Report
 
 

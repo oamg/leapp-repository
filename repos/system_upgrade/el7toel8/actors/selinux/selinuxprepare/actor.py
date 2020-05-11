@@ -1,7 +1,7 @@
 from leapp.actors import Actor
 from leapp.models import SELinuxModules, SELinuxCustom
 from leapp.tags import PreparationPhaseTag, IPUWorkflowTag
-from leapp.libraries.actor import library
+from leapp.libraries.actor import selinuxprepare
 
 
 class SELinuxPrepare(Actor):
@@ -19,5 +19,5 @@ class SELinuxPrepare(Actor):
     tags = (PreparationPhaseTag, IPUWorkflowTag)
 
     def process(self):
-        library.remove_semanage_customizations()
-        library.remove_custom_modules()
+        selinuxprepare.remove_semanage_customizations()
+        selinuxprepare.remove_custom_modules()

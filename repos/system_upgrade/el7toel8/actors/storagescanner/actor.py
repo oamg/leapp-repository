@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.libraries.actor import library
+from leapp.libraries.actor import storagescanner
 from leapp.models import StorageInfo
 from leapp.reporting import Report
 from leapp.tags import IPUWorkflowTag, FactsPhaseTag
@@ -19,4 +19,4 @@ class StorageScanner(Actor):
     tags = (IPUWorkflowTag, FactsPhaseTag)
 
     def process(self):
-        self.produce(library.get_storage_info())
+        self.produce(storagescanner.get_storage_info())

@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.libraries.actor import library
+from leapp.libraries.actor import cupsfiltersmigrate
 from leapp.models import InstalledRedHatSignedRPM
 from leapp.tags import ApplicationsPhaseTag, IPUWorkflowTag
 
@@ -26,4 +26,4 @@ class CupsfiltersMigrate(Actor):
     tags = (ApplicationsPhaseTag, IPUWorkflowTag)
 
     def process(self):
-        library.update_cups_browsed()
+        cupsfiltersmigrate.update_cups_browsed()

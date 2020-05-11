@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.libraries.actor import library
+from leapp.libraries.actor import multipathconfread
 from leapp.models import InstalledRedHatSignedRPM, MultipathConfFacts
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
@@ -16,7 +16,7 @@ class MultipathConfRead(Actor):
     tags = (FactsPhaseTag, IPUWorkflowTag)
 
     def process(self):
-        if library.is_processable():
-            res = library.get_multipath_conf_facts()
+        if multipathconfread.is_processable():
+            res = multipathconfread.get_multipath_conf_facts()
             if res:
                 self.produce(res)

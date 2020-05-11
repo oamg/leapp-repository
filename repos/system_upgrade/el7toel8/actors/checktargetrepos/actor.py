@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.libraries.actor import library
+from leapp.libraries.actor import checktargetrepos
 from leapp.models import CustomTargetRepositoryFile, Report, TargetRepositories
 from leapp.tags import IPUWorkflowTag, ChecksPhaseTag
 
@@ -41,4 +41,4 @@ class Checktargetrepos(Actor):
     tags = (IPUWorkflowTag, ChecksPhaseTag)
 
     def process(self):
-        library.process()
+        checktargetrepos.process()

@@ -2,7 +2,7 @@ import os
 import xml.etree.ElementTree as ElementTree
 
 from leapp.actors import Actor
-from leapp.libraries.actor import private
+from leapp.libraries.actor import firewalldfactsactor
 from leapp.models import FirewalldFacts
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
@@ -25,14 +25,14 @@ class FirewalldFactsActor(Actor):
         try:
             tree = ElementTree.parse('/etc/firewalld/lockdown-whitelist.xml')
             root = tree.getroot()
-            facts.firewall_config_command = private.getLockdownFirewallConfigCommand(root)
+            facts.firewall_config_command = firewalldfactsactor.getLockdownFirewallConfigCommand(root)
         except IOError:
             pass
 
         try:
             tree = ElementTree.parse('/etc/firewalld/direct.xml')
             root = tree.getroot()
-            facts.ebtablesTablesInUse = private.getEbtablesTablesInUse(root)
+            facts.ebtablesTablesInUse = firewalldfactsactor.getEbtablesTablesInUse(root)
         except IOError:
             pass
 
@@ -45,7 +45,7 @@ class FirewalldFactsActor(Actor):
                 try:
                     tree = ElementTree.parse(os.path.join(directory, filename))
                     root = tree.getroot()
-                    ipsetTypesInUse |= set(private.getIpsetTypesInUse(root))
+                    ipsetTypesInUse |= set(firewalldfactsactor.getIpsetTypesInUse(root))
                 except IOError:
                     pass
             facts.ipsetTypesInUse = list(ipsetTypesInUse)

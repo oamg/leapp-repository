@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.libraries.actor import library
+from leapp.libraries.actor import multipathconfupdate
 from leapp.models import MultipathConfFacts
 from leapp.tags import ApplicationsPhaseTag, IPUWorkflowTag
 
@@ -26,4 +26,4 @@ class MultipathConfUpdate(Actor):
             self.log.debug('Skipping execution. No MultipathConfFacts has '
                            'been produced')
             return
-        library.update_configs(facts)
+        multipathconfupdate.update_configs(facts)

@@ -1,8 +1,13 @@
 from leapp.actors import Actor
-from leapp.libraries.actor.library import AuthselectScannerLibrary, Authconfig, DConf, read_file
+from leapp.libraries.actor.authselectscanner import (
+    Authconfig,
+    AuthselectScannerLibrary,
+    DConf,
+    read_file,
+)
 from leapp.libraries.common.pam import PAM
 from leapp.models import Authselect
-from leapp.tags import IPUWorkflowTag, FactsPhaseTag, ExperimentalTag
+from leapp.tags import ExperimentalTag, FactsPhaseTag, IPUWorkflowTag
 
 
 class AuthselectScanner(Actor):

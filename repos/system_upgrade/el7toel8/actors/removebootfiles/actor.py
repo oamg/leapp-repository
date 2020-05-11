@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.libraries.actor.library import remove_boot_files
+from leapp.libraries.actor.removebootfiles import remove_boot_files
 from leapp.models import BootContent
 from leapp.tags import IPUWorkflowTag, PreparationPhaseTag
 

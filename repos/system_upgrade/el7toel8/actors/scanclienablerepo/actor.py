@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.libraries.actor import library
+from leapp.libraries.actor import scanclienablerepo
 from leapp.models import CustomTargetRepository
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
@@ -15,4 +15,4 @@ class ScanCLIenablrepo(Actor):
     tags = (FactsPhaseTag, IPUWorkflowTag)
 
     def process(self):
-        library.process()
+        scanclienablerepo.process()

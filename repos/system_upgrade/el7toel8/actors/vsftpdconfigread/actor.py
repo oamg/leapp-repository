@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.libraries.actor import library
+from leapp.libraries.actor import vsftpdconfigread
 from leapp.models import InstalledRedHatSignedRPM, VsftpdFacts
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
@@ -16,5 +16,5 @@ class VsftpdConfigRead(Actor):
 
     def process(self):
         installed_rpm_facts = next(self.consume(InstalledRedHatSignedRPM))
-        if library.is_processable(installed_rpm_facts):
-            self.produce(library.get_vsftpd_facts())
+        if vsftpdconfigread.is_processable(installed_rpm_facts):
+            self.produce(vsftpdconfigread.get_vsftpd_facts())

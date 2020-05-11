@@ -2,12 +2,12 @@ import os
 
 import pytest
 
-from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
-from leapp.libraries.actor import library
-from leapp.libraries.common.testutils import produce_mocked, create_report_mocked
+from leapp.libraries.actor import ipuworkflowconfig
 from leapp.libraries.stdlib import CalledProcessError
 from leapp.models import OSRelease
+
+CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 def _clean_leapp_envs(monkeypatch):
@@ -38,16 +38,16 @@ def test_leapp_env_vars(monkeypatch):
     monkeypatch.setenv('TEST', 'test')
     monkeypatch.setenv('TEST2', 'test')
 
-    assert len(library.get_env_vars()) == 1
+    assert len(ipuworkflowconfig.get_env_vars()) == 1
 
 
 def test_get_target_version(monkeypatch):
     monkeypatch.delenv('LEAPP_DEVEL_TARGET_RELEASE', raising=False)
-    assert library.get_target_version() == library.CURRENT_TARGET_VERSION
+    assert ipuworkflowconfig.get_target_version() == ipuworkflowconfig.CURRENT_TARGET_VERSION
     monkeypatch.setenv('LEAPP_DEVEL_TARGET_RELEASE', '')
-    assert library.get_target_version() == library.CURRENT_TARGET_VERSION
+    assert ipuworkflowconfig.get_target_version() == ipuworkflowconfig.CURRENT_TARGET_VERSION
     monkeypatch.setenv('LEAPP_DEVEL_TARGET_RELEASE', '1.2.3')
-    assert library.get_target_version() == '1.2.3'
+    assert ipuworkflowconfig.get_target_version() == '1.2.3'
     monkeypatch.delenv('LEAPP_DEVEL_TARGET_RELEASE', raising=True)
 
 
@@ -60,16 +60,16 @@ def test_get_os_release_info(monkeypatch):
         version_id='7.6',
         variant='Server',
         variant_id='server')
-    assert expected == library.get_os_release('tests/files/os-release')
+    assert expected == ipuworkflowconfig.get_os_release(os.path.join(CUR_DIR, 'files/os-release'))
 
     with pytest.raises(StopActorExecutionError):
-        library.get_os_release('tests/files/non-existent-file')
+        ipuworkflowconfig.get_os_release(os.path.join(CUR_DIR, 'files/non-existent-file'))
 
 
 def test_get_booted_kernel(monkeypatch):
-    monkeypatch.setattr(library, 'run', lambda x: {'stdout': '4.14.0-100.8.2.el7a.x86_64\n'})
-    assert library.get_booted_kernel() == '4.14.0-100.8.2.el7a.x86_64'
+    monkeypatch.setattr(ipuworkflowconfig, 'run', lambda x: {'stdout': '4.14.0-100.8.2.el7a.x86_64\n'})
+    assert ipuworkflowconfig.get_booted_kernel() == '4.14.0-100.8.2.el7a.x86_64'
 
-    monkeypatch.setattr(library, 'run', _raise_call_error)
+    monkeypatch.setattr(ipuworkflowconfig, 'run', _raise_call_error)
     with pytest.raises(StopActorExecutionError):
-        library.get_booted_kernel()
+        ipuworkflowconfig.get_booted_kernel()

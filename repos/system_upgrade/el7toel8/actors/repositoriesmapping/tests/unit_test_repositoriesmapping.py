@@ -1,9 +1,7 @@
-from collections import namedtuple
-
 import pytest
 
 from leapp.exceptions import StopActorExecutionError
-from leapp.libraries.actor import library
+from leapp.libraries.actor import repositoriesmapping
 from leapp.libraries.common.config import architecture
 from leapp.libraries.common.testutils import produce_mocked, CurrentActorMocked
 from leapp.libraries.stdlib import api
@@ -89,7 +87,7 @@ def test_scan_valid_file_without_comments(monkeypatch, arch, src_type, dst_type)
     input_data, expected_records = gen_test_data(arch, src_type, dst_type)
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(arch, envars))
     monkeypatch.setattr(api, 'produce', produce_mocked())
-    library.scan_repositories(read_repofile_func=ReadRepoFileMock(input_data))
+    repositoriesmapping.scan_repositories(read_repofile_func=ReadRepoFileMock(input_data))
     assert api.produce.called == 1
     assert api.produce.model_instances == [gen_RepositoriesMap(expected_records)]
 
@@ -106,7 +104,7 @@ def test_scan_valid_file_with_comments(monkeypatch, arch, src_type, dst_type):
     repofile.repomap_file.insert(2, '')
     repofile.repomap_file.insert(3, '# comment')
     # run
-    library.scan_repositories(read_repofile_func=repofile)
+    repositoriesmapping.scan_repositories(read_repofile_func=repofile)
     assert api.produce.called == 1
     assert api.produce.model_instances == [gen_RepositoriesMap(expected_records)]
 
@@ -122,7 +120,7 @@ def test_scan_missing_or_empty_file(monkeypatch, isFile, err_summary):
     if isFile:
         monkeypatch.setattr('os.path.getsize', lambda dummy: 0)
     with pytest.raises(StopActorExecutionError) as err:
-        library.scan_repositories()
+        repositoriesmapping.scan_repositories()
     assert not api.produce.called
     assert err_summary in str(err)
 
@@ -139,6 +137,6 @@ def test_scan_invalid_file_csv(monkeypatch, line):
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(architecture.ARCH_X86_64))
     monkeypatch.setattr(api, 'produce', produce_mocked())
     with pytest.raises(StopActorExecutionError) as err:
-        library.scan_repositories(read_repofile_func=ReadRepoFileMock([line]))
+        repositoriesmapping.scan_repositories(read_repofile_func=ReadRepoFileMock([line]))
     assert not api.produce.called
     assert 'The repository mapping file is invalid' in str(err)

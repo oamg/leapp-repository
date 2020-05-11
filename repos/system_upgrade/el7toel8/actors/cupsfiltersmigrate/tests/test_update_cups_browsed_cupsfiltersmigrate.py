@@ -1,8 +1,9 @@
 import pytest
 
-from leapp.libraries.actor.library import BROWSED_CONFIG
-from leapp.libraries.actor.library import update_cups_browsed
-
+from leapp.libraries.actor.cupsfiltersmigrate import (
+    BROWSED_CONFIG,
+    update_cups_browsed,
+)
 
 testdata = [
     {'cups-filters': '/etc/cups/cups-browsed.conf'},

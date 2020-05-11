@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.libraries.actor import library
+from leapp.libraries.actor import checkmemory
 from leapp.models import MemoryInfo, Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
@@ -17,4 +17,4 @@ class CheckMemory(Actor):
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 
     def process(self):
-        library.process()
+        checkmemory.process()

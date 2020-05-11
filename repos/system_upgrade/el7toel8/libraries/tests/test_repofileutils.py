@@ -1,6 +1,9 @@
 import json
+import os
 
 from leapp.libraries.common import repofileutils
+
+CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 def test_invert_dict():
@@ -10,7 +13,7 @@ def test_invert_dict():
 
 
 def test_parse_repofile():
-    repofile = repofileutils.parse_repofile('tests/sample_repos.txt')
+    repofile = repofileutils.parse_repofile(os.path.join(CUR_DIR, 'sample_repos.txt'))
 
     repo_appstream = [repo for repo in repofile.data if repo.repoid == 'AppStream'][0]
     assert repo_appstream.name == 'CentOS-$releasever - AppStream'

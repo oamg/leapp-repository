@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.libraries.actor.library import check_os_version, skip_check
+from leapp.libraries.actor.checkosrelease import check_os_version, skip_check
 from leapp.reporting import Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 

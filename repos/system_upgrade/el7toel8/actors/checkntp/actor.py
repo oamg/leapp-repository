@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.libraries.actor.library import check_ntp
+from leapp.libraries.actor.checkntp import check_ntp
 from leapp.models import Report, InstalledRedHatSignedRPM, NtpMigrationDecision
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 

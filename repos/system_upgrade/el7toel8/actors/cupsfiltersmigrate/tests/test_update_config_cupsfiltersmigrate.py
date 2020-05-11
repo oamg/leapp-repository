@@ -1,7 +1,6 @@
 import pytest
 
-from leapp.libraries.actor.library import NEW_MACROS
-from leapp.libraries.actor.library import update_config
+from leapp.libraries.actor.cupsfiltersmigrate import NEW_MACROS, update_config
 
 
 def _gen_append_str(list_out=None):

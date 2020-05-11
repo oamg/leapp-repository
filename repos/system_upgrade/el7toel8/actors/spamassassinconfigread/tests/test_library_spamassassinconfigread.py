@@ -1,7 +1,7 @@
 import errno
 import os
 
-from leapp.libraries.actor import library
+from leapp.libraries.actor import spamassassinconfigread
 from leapp.libraries.common.testutils import make_IOError, make_OSError
 
 
@@ -45,7 +45,7 @@ def test_get_spamassassin_facts():
     fileops.files[spamd_path] = 'SPAMDOPTIONS="--ssl-version tlsv1"'
     listdir = MockListDir(path='/etc/systemd/system', file_names=['spamassassin.service'])
 
-    facts = library.get_spamassassin_facts(read_func=fileops.read, listdir=listdir.listdir)
+    facts = spamassassinconfigread.get_spamassassin_facts(read_func=fileops.read, listdir=listdir.listdir)
 
     assert len(fileops.files_read) == 2
     assert spamc_path in fileops.files_read
@@ -62,7 +62,7 @@ def test_get_spamassassin_facts_nonexistent_config():
     fileops = MockFileOperations()
     listdir = MockListDir(path='/etc/systemd/system', file_names=[])
 
-    facts = library.get_spamassassin_facts(read_func=fileops.read, listdir=listdir.listdir)
+    facts = spamassassinconfigread.get_spamassassin_facts(read_func=fileops.read, listdir=listdir.listdir)
 
     assert len(fileops.files_read) == 2
     assert spamc_path in fileops.files_read

@@ -1,7 +1,7 @@
 from leapp.actors import Actor
-from leapp.models import RpmTransactionTasks, InstalledRedHatSignedRPM
+from leapp.libraries.actor.rpmtransactionconfigtaskscollector import load_tasks
+from leapp.models import InstalledRedHatSignedRPM, RpmTransactionTasks
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
-from leapp.libraries.actor.scanner import load_tasks
 
 CONFIGURATION_BASE_PATH = '/etc/leapp/transaction'
 

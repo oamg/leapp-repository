@@ -1,14 +1,9 @@
-from collections import namedtuple
-import os
-
 import pytest
 
-from leapp.libraries.actor import library
-from leapp.libraries.common.config import architecture
+from leapp.libraries.actor import scanclienablerepo
 from leapp.libraries.common.testutils import CurrentActorMocked, produce_mocked
 from leapp.libraries.stdlib import api
 from leapp.models import CustomTargetRepository
-from leapp import models
 
 
 class LoggerMocked(object):
@@ -30,7 +25,7 @@ def test_no_enabledrepos(monkeypatch):
     monkeypatch.setattr(api, 'produce', produce_mocked())
     monkeypatch.setattr(api, 'current_logger', LoggerMocked())
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked())
-    library.process()
+    scanclienablerepo.process()
     assert not api.current_logger.infomsg
     assert not api.produce.called
 
@@ -44,7 +39,7 @@ def test_enabledrepos(monkeypatch, envars, result):
     monkeypatch.setattr(api, 'produce', produce_mocked())
     monkeypatch.setattr(api, 'current_logger', LoggerMocked())
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(envars=envars))
-    library.process()
+    scanclienablerepo.process()
     assert api.current_logger.infomsg
     assert api.produce.called == len(result)
     for i in result:

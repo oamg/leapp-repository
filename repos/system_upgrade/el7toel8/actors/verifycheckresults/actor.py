@@ -1,6 +1,6 @@
 from leapp.actors import Actor
 from leapp.reporting import Report
-from leapp.libraries.actor.library import check
+from leapp.libraries.actor.verifycheckresults import check
 from leapp.tags import ReportPhaseTag, IPUWorkflowTag
 
 

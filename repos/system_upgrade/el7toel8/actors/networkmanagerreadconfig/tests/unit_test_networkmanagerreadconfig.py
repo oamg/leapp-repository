@@ -1,10 +1,13 @@
-from leapp.libraries.actor import library
-from leapp.models import NetworkManagerConfig
+import os
+
+from leapp.libraries.actor import networkmanagerreadconfig
+
+CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 def test_nm_with_dhcp():
-    config = library.read_nm_config(file_path='tests/files/nm_cfg_with_dhcp')
-    parser = library.parse_nm_config(config)
+    config = networkmanagerreadconfig.read_nm_config(file_path=os.path.join(CUR_DIR, 'files/nm_cfg_with_dhcp'))
+    parser = networkmanagerreadconfig.parse_nm_config(config)
 
     assert config
     assert parser
@@ -12,8 +15,8 @@ def test_nm_with_dhcp():
 
 
 def test_nm_without_dhcp():
-    config = library.read_nm_config(file_path='tests/files/nm_cfg_without_dhcp')
-    parser = library.parse_nm_config(config)
+    config = networkmanagerreadconfig.read_nm_config(file_path=os.path.join(CUR_DIR, 'files/nm_cfg_without_dhcp'))
+    parser = networkmanagerreadconfig.parse_nm_config(config)
 
     assert config
     assert parser
@@ -21,8 +24,8 @@ def test_nm_without_dhcp():
 
 
 def test_nm_with_error():
-    config = library.read_nm_config(file_path='tests/files/nm_cfg_file_error')
-    parser = library.parse_nm_config(config)
+    config = networkmanagerreadconfig.read_nm_config(file_path=os.path.join(CUR_DIR, 'files/nm_cfg_file_error'))
+    parser = networkmanagerreadconfig.parse_nm_config(config)
 
     assert config
     assert parser

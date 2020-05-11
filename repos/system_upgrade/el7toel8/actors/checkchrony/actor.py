@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.libraries.actor.library import check_chrony
+from leapp.libraries.actor.checkchrony import check_chrony
 from leapp.libraries.common.rpms import has_package
 from leapp.models import InstalledRedHatSignedRPM
 from leapp.reporting import Report

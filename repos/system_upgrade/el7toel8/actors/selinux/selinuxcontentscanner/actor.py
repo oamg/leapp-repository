@@ -1,7 +1,7 @@
 from leapp.actors import Actor
 from leapp.models import SELinuxModules, SELinuxCustom, SELinuxFacts, SELinuxRequestRPMs, RpmTransactionTasks
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
-from leapp.libraries.actor import library
+from leapp.libraries.actor import selinuxcontentscanner
 
 
 class SELinuxContentScanner(Actor):
@@ -13,6 +13,7 @@ class SELinuxContentScanner(Actor):
     models. Customizations that are incompatible with SELinux policy on RHEL-8
     are removed.
     '''
+
     name = 'selinuxcontentscanner'
     consumes = (SELinuxFacts,)
     produces = (SELinuxModules, SELinuxCustom, SELinuxRequestRPMs, RpmTransactionTasks)
@@ -24,7 +25,7 @@ class SELinuxContentScanner(Actor):
             if not fact.enabled:
                 return
 
-        (semodule_list, rpms_to_keep, rpms_to_install) = library.get_selinux_modules()
+        (semodule_list, rpms_to_keep, rpms_to_install,) = selinuxcontentscanner.get_selinux_modules()
 
         self.produce(SELinuxModules(modules=semodule_list))
         self.produce(
@@ -42,7 +43,7 @@ class SELinuxContentScanner(Actor):
             )
         )
 
-        (semanage_valid, semanage_removed) = library.get_selinux_customizations()
+        (semanage_valid, semanage_removed,) = selinuxcontentscanner.get_selinux_customizations()
 
         self.produce(
             SELinuxCustom(

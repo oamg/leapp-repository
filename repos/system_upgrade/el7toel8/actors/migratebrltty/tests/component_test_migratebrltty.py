@@ -1,10 +1,7 @@
-import os
-
 import pytest
 from six import text_type
 
 from leapp.models import BrlttyMigrationDecision
-from leapp.reporting import Report
 
 
 @pytest.mark.parametrize('test_input,expected,migrate_bt,migrate_espeak', [

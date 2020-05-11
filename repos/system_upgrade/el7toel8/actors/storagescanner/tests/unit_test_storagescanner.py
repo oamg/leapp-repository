@@ -1,9 +1,13 @@
-from leapp.libraries.actor import library
+import os
+
 from leapp import reporting
+from leapp.libraries.actor import storagescanner
 from leapp.libraries.common.testutils import create_report_mocked, logger_mocked
 from leapp.libraries.stdlib import api
-from leapp.models import PartitionEntry, FstabEntry, MountEntry, LsblkEntry, PvsEntry, VgsEntry, \
-    LvdisplayEntry, SystemdMountEntry
+from leapp.models import (FstabEntry, LsblkEntry, LvdisplayEntry, MountEntry, PartitionEntry, PvsEntry,
+                          SystemdMountEntry, VgsEntry, )
+
+CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 def test_get_partitions_info(monkeypatch):
@@ -16,10 +20,10 @@ def test_get_partitions_info(monkeypatch):
         PartitionEntry(major='252', minor='2', blocks='40893440', name='vda2'),
         PartitionEntry(major='253', minor='0', blocks='39837696', name='dm-0'),
         PartitionEntry(major='253', minor='1', blocks='1048576', name='dm-1')]
-    assert expected == library._get_partitions_info('tests/files/partitions')
+    assert expected == storagescanner._get_partitions_info(os.path.join(CUR_DIR, 'files/partitions'))
 
-    monkeypatch.setattr(library, '_is_file_readable', is_file_readable_mocked)
-    assert [] == library._get_partitions_info('unreadable_file')
+    monkeypatch.setattr(storagescanner, '_is_file_readable', is_file_readable_mocked)
+    assert [] == storagescanner._get_partitions_info('unreadable_file')
 
 
 def test_get_fstab_info(monkeypatch):
@@ -59,16 +63,16 @@ def test_get_fstab_info(monkeypatch):
             fs_mntops='defaults',
             fs_freq='0',
             fs_passno='0')]
-    assert expected == library._get_fstab_info('tests/files/fstab')
-    monkeypatch.setattr(library, '_is_file_readable', lambda dummy: False)
-    assert [] == library._get_fstab_info('unreadable_file')
+    assert expected == storagescanner._get_fstab_info(os.path.join(CUR_DIR, 'files/fstab'))
+    monkeypatch.setattr(storagescanner, '_is_file_readable', lambda dummy: False)
+    assert [] == storagescanner._get_fstab_info('unreadable_file')
 
 
 def test_invalid_fstab_info(monkeypatch):
     monkeypatch.setattr(reporting, "create_report", create_report_mocked())
     monkeypatch.setattr(api, 'current_logger', logger_mocked())
 
-    library._get_fstab_info('tests/files/invalid_fstab')
+    storagescanner._get_fstab_info(os.path.join(CUR_DIR, 'files/invalid_fstab'))
     assert reporting.create_report.called == 1
     assert reporting.create_report.report_fields['severity'] == 'high'
     assert 'Problems with parsing data in /etc/fstab' in reporting.create_report.report_fields['title']
@@ -232,7 +236,7 @@ def test_get_mount_info(monkeypatch):
         )
     ]
 
-    assert expected == library._get_mount_info('tests/files/mounts')
+    assert expected == storagescanner._get_mount_info(os.path.join(CUR_DIR, 'files/mounts'))
 
 
 def test_get_lsblk_info(monkeypatch):
@@ -244,7 +248,7 @@ def test_get_lsblk_info(monkeypatch):
             ['rhel_ibm--p8--kvm--03--guest--02-root', '253:0', '0', '38G', '0', 'lvm', '/'],
             ['rhel_ibm--p8--kvm--03--guest--02-swap', '253:1', '0', '1G', '0', 'lvm', '[SWAP]']]
 
-    monkeypatch.setattr(library, '_get_cmd_output', get_cmd_output_mocked)
+    monkeypatch.setattr(storagescanner, '_get_cmd_output', get_cmd_output_mocked)
     expected = [
         LsblkEntry(
             name='vda',
@@ -286,7 +290,7 @@ def test_get_lsblk_info(monkeypatch):
             ro='0',
             tp='lvm',
             mountpoint='[SWAP]')]
-    assert expected == library._get_lsblk_info()
+    assert expected == storagescanner._get_lsblk_info()
 
 
 def test_get_pvs_info(monkeypatch):
@@ -294,7 +298,7 @@ def test_get_pvs_info(monkeypatch):
         return [
             ['/dev/vda2', 'rhel_ibm-p8-kvm-03-guest-02', 'lvm2', 'a--', '<39.00g', '4.00m']]
 
-    monkeypatch.setattr(library, '_get_cmd_output', get_cmd_output_mocked)
+    monkeypatch.setattr(storagescanner, '_get_cmd_output', get_cmd_output_mocked)
     expected = [
         PvsEntry(
             pv='/dev/vda2',
@@ -303,7 +307,7 @@ def test_get_pvs_info(monkeypatch):
             attr='a--',
             psize='<39.00g',
             pfree='4.00m')]
-    assert expected == library._get_pvs_info()
+    assert expected == storagescanner._get_pvs_info()
 
 
 def test_get_vgs_info(monkeypatch):
@@ -311,7 +315,7 @@ def test_get_vgs_info(monkeypatch):
         return [
             ['rhel_ibm-p8-kvm-03-guest-02', '1', '2', '0', 'wz--n-', '<39.00g', '4.00m']]
 
-    monkeypatch.setattr(library, '_get_cmd_output', get_cmd_output_mocked)
+    monkeypatch.setattr(storagescanner, '_get_cmd_output', get_cmd_output_mocked)
     expected = [
         VgsEntry(
             vg='rhel_ibm-p8-kvm-03-guest-02',
@@ -321,7 +325,7 @@ def test_get_vgs_info(monkeypatch):
             attr='wz--n-',
             vsize='<39.00g',
             vfree='4.00m')]
-    assert expected == library._get_vgs_info()
+    assert expected == storagescanner._get_vgs_info()
 
 
 def test_get_lvdisplay_info(monkeypatch):
@@ -330,7 +334,7 @@ def test_get_lvdisplay_info(monkeypatch):
             ['root', 'rhel_ibm-p8-kvm-03-guest-02', '-wi-ao----', '37.99g', '', '', '', '', '', '', '', ''],
             ['swap', 'rhel_ibm-p8-kvm-03-guest-02', '-wi-ao----', '1.00g', '', '', '', '', '', '', '', '']]
 
-    monkeypatch.setattr(library, '_get_cmd_output', get_cmd_output_mocked)
+    monkeypatch.setattr(storagescanner, '_get_cmd_output', get_cmd_output_mocked)
     expected = [
         LvdisplayEntry(
             lv='root',
@@ -358,7 +362,7 @@ def test_get_lvdisplay_info(monkeypatch):
             log='',
             cpy_sync='',
             convert='')]
-    assert expected == library._get_lvdisplay_info()
+    assert expected == storagescanner._get_lvdisplay_info()
 
 
 def test_get_systemd_mount_info(monkeypatch):
@@ -386,7 +390,7 @@ def test_get_systemd_mount_info(monkeypatch):
              'n/a',
              'c3890bf3-9273-4877-ad1f-68144e1eb858']]
 
-    monkeypatch.setattr(library, '_get_cmd_output', get_cmd_output_mocked)
+    monkeypatch.setattr(storagescanner, '_get_cmd_output', get_cmd_output_mocked)
     expected = [
         SystemdMountEntry(
             node='/dev/dm-1',
@@ -412,4 +416,4 @@ def test_get_systemd_mount_info(monkeypatch):
             fs_type='ext4',
             label='n/a',
             uuid='c3890bf3-9273-4877-ad1f-68144e1eb858')]
-    assert expected == library._get_systemd_mount_info()
+    assert expected == storagescanner._get_systemd_mount_info()
