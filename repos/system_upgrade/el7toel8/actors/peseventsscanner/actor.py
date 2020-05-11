@@ -1,7 +1,13 @@
 from leapp.actors import Actor
-from leapp.libraries.actor.library import pes_events_scanner
-from leapp.models import (InstalledRedHatSignedRPM, PESRpmTransactionTasks, RepositoriesMap,
-                          RepositoriesBlacklisted, RepositoriesSetupTasks, RpmTransactionTasks)
+from leapp.libraries.actor.peseventsscanner import pes_events_scanner
+from leapp.models import (
+    InstalledRedHatSignedRPM,
+    PESRpmTransactionTasks,
+    RepositoriesMap,
+    RepositoriesBlacklisted,
+    RepositoriesSetupTasks,
+    RpmTransactionTasks,
+)
 from leapp.reporting import Report
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 

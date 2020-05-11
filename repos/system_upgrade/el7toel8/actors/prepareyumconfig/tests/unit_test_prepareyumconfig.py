@@ -1,17 +1,32 @@
 import os
 
-import leapp.libraries.stdlib
+import pytest
+
+from leapp.libraries.common.utils import api, apply_yum_workaround, mounting
+
+CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
-class run_mocked(object):
+@pytest.fixture
+def adjust_cwd():
+    previous_cwd = os.getcwd()
+    os.chdir(os.path.join(CUR_DIR, "../"))
+    yield
+    os.chdir(previous_cwd)
+
+
+class MockedNotIsolatedActions(object):
     def __init__(self):
         self.called = 0
         self.args = None
 
-    def __call__(self, args, split=False):
+    def call(self, args):
         self.called += 1
         self.args = args
         return {'stdout': ''}
+
+    def __call__(self, *args, **kwargs):
+        return self
 
 
 def _get_tool_path(name):
@@ -22,13 +37,10 @@ def _get_tool_path(name):
     return None
 
 
-def test_prepare_yum_config(monkeypatch):
-    run = run_mocked()
-    with monkeypatch.context() as context:
-        context.setattr(leapp.libraries.stdlib, 'run', run)
-        context.setattr(leapp.libraries.stdlib.api, 'get_tool_path', _get_tool_path)
-        # Needed locally to allow monkey patching to actually work
-        from leapp.libraries.common import utils  # pylint: disable=import-outside-toplevel
-        utils.apply_yum_workaround()
-    assert run.called == 1
-    assert os.path.basename(run.args[-1]) == 'handleyumconfig'
+def test_prepare_yum_config(monkeypatch, adjust_cwd):
+    actions = MockedNotIsolatedActions()
+    monkeypatch.setattr(api, "get_tool_path", _get_tool_path)
+    monkeypatch.setattr(mounting, "NotIsolatedActions", actions)
+    apply_yum_workaround()
+    assert actions.called == 1
+    assert os.path.basename(actions.args[-1]) == 'handleyumconfig'

@@ -1,7 +1,7 @@
 from six.moves import configparser
 
 from leapp.actors import Actor
-from leapp.libraries.actor.library import SSSDFactsLibrary
+from leapp.libraries.actor.sssdfacts import SSSDFactsLibrary
 from leapp.models import SSSDConfig
 from leapp.tags import IPUWorkflowTag, FactsPhaseTag
 

@@ -1,9 +1,7 @@
-import os
-
 import pytest
 from six import text_type
 
-from leapp.libraries.actor import library
+from leapp.libraries.actor import checkbrltty
 
 BRLTTY_CONF = 'brltty.conf'
 
@@ -20,8 +18,8 @@ def test_actor_check_migration_bth(tmpdir, monkeypatch, test_input, expected_mig
     test_cfg_file = text_type(tmpdir.join(BRLTTY_CONF))
     with open(test_cfg_file, 'w') as file_out:
         file_out.write(test_input)
-    monkeypatch.setattr(library, 'BrlttyConf', test_cfg_file)
-    (migrate_file, migrate_bt, migrate_espeak) = library.check_for_unsupported_cfg()
+    monkeypatch.setattr(checkbrltty, 'BrlttyConf', test_cfg_file)
+    (migrate_file, migrate_bt, migrate_espeak,) = checkbrltty.check_for_unsupported_cfg()
 
     if expected_migrate_bt or expected_migrate_espeak:
         assert test_cfg_file == migrate_file

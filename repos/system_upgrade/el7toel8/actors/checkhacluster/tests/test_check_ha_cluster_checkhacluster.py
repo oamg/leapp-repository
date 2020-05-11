@@ -1,5 +1,5 @@
 from leapp.reporting import Report
-from leapp.libraries.actor.library import COROSYNC_CONF_LOCATION
+from leapp.libraries.actor.checkhacluster import COROSYNC_CONF_LOCATION
 
 
 def assert_inhibits(reports, node_type):

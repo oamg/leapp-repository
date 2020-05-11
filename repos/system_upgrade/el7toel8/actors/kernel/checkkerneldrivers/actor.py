@@ -1,5 +1,9 @@
 from leapp.actors import Actor
-from leapp.libraries.actor.library import check_drivers, get_present_drivers, get_removed_drivers
+from leapp.libraries.actor.checkkerneldrivers import (
+    check_drivers,
+    get_present_drivers,
+    get_removed_drivers,
+)
 from leapp.models import PCIDevices
 from leapp.reporting import Report, create_report
 from leapp import reporting

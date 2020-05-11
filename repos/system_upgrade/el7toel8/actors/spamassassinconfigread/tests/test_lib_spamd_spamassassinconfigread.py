@@ -1,7 +1,7 @@
 import errno
 import os
 
-from leapp.libraries.actor import lib_spamd
+from leapp.libraries.actor import spamassassinconfigread_spamd
 from leapp.libraries.common.testutils import make_IOError, make_OSError
 
 
@@ -45,31 +45,31 @@ class MockListDir(object):
 
 def test_spamassassin_service_overriden():
     listdir = MockListDir(path='/etc/systemd/system', file_names=['spamassassin.service'])
-    overriden = lib_spamd.spamassassin_service_overriden(listdir.listdir)
+    overriden = spamassassinconfigread_spamd.spamassassin_service_overriden(listdir.listdir)
     assert overriden is True
 
     listdir = MockListDir(path='/etc/systemd/system',
                           file_names=['foo.service', 'spamassassin.service', 'bar.service'])
-    overriden = lib_spamd.spamassassin_service_overriden(listdir.listdir)
+    overriden = spamassassinconfigread_spamd.spamassassin_service_overriden(listdir.listdir)
     assert overriden is True
     assert not listdir.error
 
 
 def test_spamassassin_service_overriden_nonexistent():
     listdir = MockListDir(path='/etc/systemd/system', file_names=[])
-    overriden = lib_spamd.spamassassin_service_overriden(listdir.listdir)
+    overriden = spamassassinconfigread_spamd.spamassassin_service_overriden(listdir.listdir)
     assert overriden is False
 
     listdir = MockListDir(path='/etc/systemd/system',
                           file_names=['foo.service', 'bar.service'])
-    overriden = lib_spamd.spamassassin_service_overriden(listdir.listdir)
+    overriden = spamassassinconfigread_spamd.spamassassin_service_overriden(listdir.listdir)
     assert overriden is False
     assert not listdir.error
 
 
 def test_spamassassin_service_overriden_nonexistent_dir():
     listdir = MockListDir(to_raise=make_OSError(errno.ENOENT))
-    overriden = lib_spamd.spamassassin_service_overriden(listdir.listdir)
+    overriden = spamassassinconfigread_spamd.spamassassin_service_overriden(listdir.listdir)
     assert overriden is False
 
 
@@ -78,27 +78,27 @@ def test_spamassassin_service_overriden_nonexistent_inaccessible():
     # so that the SpamassassinConfigUpdate actor doesn't make changes to
     # /etc/sysconfig/spamassassin that may not be justified.
     listdir = MockListDir(to_raise=make_OSError(errno.EACCES))
-    overriden = lib_spamd.spamassassin_service_overriden(listdir.listdir)
+    overriden = spamassassinconfigread_spamd.spamassassin_service_overriden(listdir.listdir)
     assert overriden is True
 
 
 def test_parse_ssl_version_sslv3():
     content = 'SPAMDOPTIONS="--ssl-version sslv3"'
-    value = lib_spamd._parse_ssl_version(content)
+    value = spamassassinconfigread_spamd._parse_ssl_version(content)
     assert value == 'sslv3'
 
     content = 'SPAMDOPTIONS="-cd -m5 --ssl-version sslv3 -H"'
-    value = lib_spamd._parse_ssl_version(content)
+    value = spamassassinconfigread_spamd._parse_ssl_version(content)
     assert value == 'sslv3'
 
 
 def test_parse_ssl_version_tlsv1():
     content = 'SPAMDOPTIONS="--ssl-version tlsv1"'
-    value = lib_spamd._parse_ssl_version(content)
+    value = spamassassinconfigread_spamd._parse_ssl_version(content)
     assert value == 'tlsv1'
 
     content = 'SPAMDOPTIONS="-cd -m5 --ssl-version tlsv1 -H"'
-    value = lib_spamd._parse_ssl_version(content)
+    value = spamassassinconfigread_spamd._parse_ssl_version(content)
     assert value == 'tlsv1'
 
 
@@ -107,48 +107,48 @@ def test_parse_ssl_version_invalid_argument():
     # specified at all, so that the config update actor doesn't touch it. We
     # don't want to break the config even more.
     content = 'SPAMDOPTIONS="--ssl-version foo"\n'
-    value = lib_spamd._parse_ssl_version(content)
+    value = spamassassinconfigread_spamd._parse_ssl_version(content)
     assert value is None
 
 
 def test_parse_ssl_version_comments():
     content = '# foo\nSPAMDOPTIONS="--ssl-version tlsv1"\n# bar\n'
-    value = lib_spamd._parse_ssl_version(content)
+    value = spamassassinconfigread_spamd._parse_ssl_version(content)
     assert value == 'tlsv1'
 
 
 def test_parse_ssl_version_repeated():
     # The last --ssl-version option takes effect
     content = 'SPAMDOPTIONS="--ssl-version tlsv1 --ssl-version sslv3"\n'
-    value = lib_spamd._parse_ssl_version(content)
+    value = spamassassinconfigread_spamd._parse_ssl_version(content)
     assert value == 'sslv3'
 
     content = 'SPAMDOPTIONS="--ssl-version sslv3 --ssl-version tlsv1"\n'
-    value = lib_spamd._parse_ssl_version(content)
+    value = spamassassinconfigread_spamd._parse_ssl_version(content)
     assert value == 'sslv3'
 
 
 def test_parse_ssl_version_last_assignment_takes_effect():
     # The last assignment to SPAMDOPTIONS takes effect
     content = 'SPAMDOPTIONS="--ssl-version tlsv1"\nSPAMDOPTIONS="--ssl-version sslv3"\n'
-    value = lib_spamd._parse_ssl_version(content)
+    value = spamassassinconfigread_spamd._parse_ssl_version(content)
     assert value == 'sslv3'
 
 
 def test_parse_ssl_version_multiline():
     content = 'SPAMDOPTIONS="--ssl \\\n --ssl-version tlsv1"\n'
-    value = lib_spamd._parse_ssl_version(content)
+    value = spamassassinconfigread_spamd._parse_ssl_version(content)
     assert value == 'tlsv1'
 
     content = 'SPAMDOPTIONS="--ssl-version \\\n sslv3"\n'
-    value = lib_spamd._parse_ssl_version(content)
+    value = spamassassinconfigread_spamd._parse_ssl_version(content)
     assert value == 'sslv3'
 
 
 def test_parse_ssl_version_multiline_comment():
-    content = 'SPAMDOPTIONS="--ssl-version tlsv1"\n' \
-              '# foo \\\nSPAMDOPTIONS="--ssl-version sslv3" \\\n still a comment'
-    value = lib_spamd._parse_ssl_version(content)
+    content = ('SPAMDOPTIONS="--ssl-version tlsv1"\n'
+               '# foo \\\nSPAMDOPTIONS="--ssl-version sslv3" \\\n still a comment')
+    value = spamassassinconfigread_spamd._parse_ssl_version(content)
     assert value == 'tlsv1'
 
 
@@ -157,18 +157,18 @@ def test_get_spamd_ssl_version():
     fileops = MockFileOperations()
     fileops.files[path] = '# foo\nSPAMDOPTIONS="--ssl-version tlsv1"\n# bar\n'
 
-    value = lib_spamd.get_spamd_ssl_version(fileops.read)
+    value = spamassassinconfigread_spamd.get_spamd_ssl_version(fileops.read)
 
     assert value == 'tlsv1'
 
 
 def test_get_spamd_ssl_version_nonexistent():
     fileops = MockFileOperations()
-    value = lib_spamd.get_spamd_ssl_version(fileops.read)
+    value = spamassassinconfigread_spamd.get_spamd_ssl_version(fileops.read)
     assert value is None
 
 
 def test_get_spamd_ssl_version_inaccessible():
     fileops = MockFileOperations(to_raise=make_IOError(errno.EACCES))
-    value = lib_spamd.get_spamd_ssl_version(fileops.read)
+    value = spamassassinconfigread_spamd.get_spamd_ssl_version(fileops.read)
     assert value is None

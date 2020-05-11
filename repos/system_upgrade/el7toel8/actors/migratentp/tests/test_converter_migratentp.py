@@ -1,16 +1,32 @@
 import os
 
+import pytest
+
 from leapp.libraries.actor import ntp2chrony
 
-NTP_CONF = "tests/data/ntp.conf"
-STEP_TICKERS = "tests/data/step_tickers"
-NTP_MATCH_DIR = "tests/data/ntpconfs/"
-CHRONY_MATCH_DIR = "tests/data/chronyconfs/"
+CUR_DIR = os.path.dirname(os.path.abspath(__file__))
+
+NTP_CONF = os.path.join(CUR_DIR, "data/ntp.conf")
+STEP_TICKERS = os.path.join(CUR_DIR, "data/step_tickers")
+
+# TODO [Artem] the following consts should use abs path as well.
+#   reader of [[:digit:]]chrony.conf files does not support wildcards, so we
+#   have to change the working directory here for now.
+NTP_MATCH_DIR = "data/ntpconfs/"
+CHRONY_MATCH_DIR = "data/chronyconfs/"
+
+
+@pytest.fixture
+def adjust_cwd():
+    previous_cwd = os.getcwd()
+    os.chdir(CUR_DIR)
+    yield
+    os.chdir(previous_cwd)
 
 
 class TestConverter(object):
     def test_basic(self):
-        config = ntp2chrony.NtpConfiguration('', NTP_CONF, step_tickers=STEP_TICKERS)
+        config = ntp2chrony.NtpConfiguration(CUR_DIR, NTP_CONF, step_tickers=STEP_TICKERS)
         present = [config.restrictions, config.driftfile, config.trusted_keys, config.keys,
                    config.step_tickers, config.restrictions]
         for section in present:
@@ -28,7 +44,7 @@ class TestConverter(object):
             expected = ('%(num)s MD5 %(key)s' %
                         {'key': 'HEX:' if len(key) > 20 else 'ASCII:' + key, 'num': num})
             # keys not from trusted keys are commented out by default
-            if not any(num in range(x, y+1) for (x, y) in config.trusted_keys):
+            if not any(num in range(x, y + 1) for (x, y) in config.trusted_keys):
                 expected = '#' + expected
             assert expected in chrony_keys
 
@@ -49,14 +65,14 @@ class TestConfigConversion(object):
             return fname
         return default
 
-    def test_match(self):
+    def test_match(self, adjust_cwd):
 
         for f in [fe for fe in os.listdir(NTP_MATCH_DIR) if fe.endswith('conf')]:
             # get recorded actual result
             num = f.split('.')[0].split('_')[0]
             ntp_conf = os.path.join(NTP_MATCH_DIR, f)
             step_tickers = self._check_existance(
-                    os.path.join(NTP_MATCH_DIR, '%s_step_tickers' % num))
+                os.path.join(NTP_MATCH_DIR, '%s_step_tickers' % num))
             config = ntp2chrony.NtpConfiguration('',
                                                  ntp_conf,
                                                  step_tickers=step_tickers)

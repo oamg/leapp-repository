@@ -1,11 +1,8 @@
 import logging
 
-import pytest
-
-from leapp.libraries.actor.scanner import load_tasks_file, load_tasks
-from leapp.models import RPM, InstalledRedHatSignedRPM
+from leapp.libraries.actor.rpmtransactionconfigtaskscollector import load_tasks, load_tasks_file
 from leapp.libraries.stdlib import api
-
+from leapp.models import RPM, InstalledRedHatSignedRPM
 
 RH_PACKAGER = 'Red Hat, Inc. <http://bugzilla.redhat.com/bugzilla>'
 

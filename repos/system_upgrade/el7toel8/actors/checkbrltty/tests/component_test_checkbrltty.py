@@ -1,8 +1,3 @@
-import os
-
-import pytest
-
-from leapp.libraries.actor.library import BrlttyConf
 from leapp.models import InstalledRedHatSignedRPM, RPM, BrlttyMigrationDecision
 from leapp.reporting import Report
 

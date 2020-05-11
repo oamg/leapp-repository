@@ -3,7 +3,7 @@ from collections import namedtuple
 import pytest
 
 from leapp.exceptions import RequestStopAfterPhase
-from leapp.libraries.actor import library
+from leapp.libraries.actor import verifycheckresults
 from leapp.libraries.stdlib import api
 
 
@@ -27,7 +27,7 @@ def test_actor(monkeypatch):
     monkeypatch.setattr(api, "consume", report_mocked)
 
     with pytest.raises(RequestStopAfterPhase):
-        library.check()
+        verifycheckresults.check()
 
 
 def test_actor_no_inhibitor(monkeypatch):
@@ -35,4 +35,4 @@ def test_actor_no_inhibitor(monkeypatch):
         yield namedtuple('msg', ['report'])(Report('title_without_inhibitor'))
 
     monkeypatch.setattr(api, "consume", report_mocked)
-    library.check()
+    verifycheckresults.check()

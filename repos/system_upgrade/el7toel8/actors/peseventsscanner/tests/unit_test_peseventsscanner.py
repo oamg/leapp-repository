@@ -3,25 +3,28 @@ import os.path
 import pytest
 
 from leapp.exceptions import StopActorExecution
-from leapp.libraries.actor import library
-from leapp.libraries.actor.library import (Action,
-                                           Event,
-                                           Task,
-                                           add_output_pkgs_to_transaction_conf,
-                                           filter_out_pkgs_in_blacklisted_repos,
-                                           filter_events_by_architecture,
-                                           filter_events_by_releases,
-                                           filter_releases_by_target,
-                                           get_events,
-                                           map_repositories, parse_action,
-                                           parse_entry, parse_packageset,
-                                           parse_pes_events_file,
-                                           process_events,
-                                           report_skipped_packages)
+from leapp.libraries.actor import peseventsscanner
+from leapp.libraries.actor.peseventsscanner import (
+    Action,
+    Event,
+    Task,
+    add_output_pkgs_to_transaction_conf,
+    filter_out_pkgs_in_blacklisted_repos,
+    filter_events_by_architecture,
+    filter_events_by_releases,
+    filter_releases_by_target,
+    get_events,
+    map_repositories, parse_action,
+    parse_entry, parse_packageset,
+    parse_pes_events_file,
+    process_events,
+    report_skipped_packages)
 from leapp import reporting
 from leapp.libraries.common.testutils import produce_mocked, create_report_mocked
 from leapp.libraries.stdlib import api
 from leapp.models import RpmTransactionTasks
+
+CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 class show_message_mocked(object):
@@ -87,7 +90,7 @@ def test_parse_entry(current_actor_context):
 
 
 def test_parse_pes_events_file(current_actor_context):
-    events = parse_pes_events_file('files/tests/sample01.json')
+    events = parse_pes_events_file(os.path.join(CUR_DIR, 'files/sample01.json'))
     assert len(events) == 2
     assert events[0].action == Action.split
     assert events[0].in_pkgs == {'original': 'repo'}
@@ -129,7 +132,8 @@ def test_report_skipped_packages_no_verbose_mode(monkeypatch):
 def test_filter_out_pkgs_in_blacklisted_repos(monkeypatch):
     monkeypatch.setattr(api, 'show_message', show_message_mocked())
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
-    monkeypatch.setattr(library, 'get_repositories_blacklisted', get_repos_blacklisted_mocked(set(['blacklisted'])))
+    monkeypatch.setattr(peseventsscanner, 'get_repositories_blacklisted',
+                        get_repos_blacklisted_mocked(set(['blacklisted'])))
     monkeypatch.setenv('LEAPP_VERBOSE', '1')
 
     to_install = {
@@ -153,8 +157,8 @@ def test_filter_out_pkgs_in_blacklisted_repos(monkeypatch):
 
 
 def test_resolve_conflicting_requests(monkeypatch):
-    monkeypatch.setattr(library, 'map_repositories', lambda x: x)
-    monkeypatch.setattr(library, 'filter_out_pkgs_in_blacklisted_repos', lambda x: x)
+    monkeypatch.setattr(peseventsscanner, 'map_repositories', lambda x: x)
+    monkeypatch.setattr(peseventsscanner, 'filter_out_pkgs_in_blacklisted_repos', lambda x: x)
 
     events = [
         Event(Action.split, {'sip-devel': 'repo'}, {'python3-sip-devel': 'repo', 'sip': 'repo'}, (7, 6), (8, 0), []),
@@ -170,7 +174,7 @@ def test_resolve_conflicting_requests(monkeypatch):
 
 def test_map_repositories(monkeypatch):
     monkeypatch.setattr(api, 'show_message', show_message_mocked())
-    monkeypatch.setattr(library, '_get_repositories_mapping', lambda: {'repo': 'mapped'})
+    monkeypatch.setattr(peseventsscanner, '_get_repositories_mapping', lambda: {'repo': 'mapped'})
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
     monkeypatch.setenv('LEAPP_VERBOSE', '1')
 
@@ -195,8 +199,8 @@ def test_map_repositories(monkeypatch):
 
 
 def test_process_events(monkeypatch):
-    monkeypatch.setattr(library, '_get_repositories_mapping', lambda: {'rhel8-repo': 'rhel8-mapped'})
-    monkeypatch.setattr(library, 'get_repositories_blacklisted', get_repos_blacklisted_mocked(set()))
+    monkeypatch.setattr(peseventsscanner, '_get_repositories_mapping', lambda: {'rhel8-repo': 'rhel8-mapped'})
+    monkeypatch.setattr(peseventsscanner, 'get_repositories_blacklisted', get_repos_blacklisted_mocked(set()))
 
     events = [
         Event(Action.split, {'original': 'rhel7-repo'}, {'split01': 'rhel8-repo', 'split02': 'rhel8-repo'},
@@ -221,14 +225,14 @@ def test_get_events(monkeypatch):
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
 
     with pytest.raises(StopActorExecution):
-        get_events('files/tests/sample02.json')
+        get_events(os.path.join(CUR_DIR, 'files/sample02.json'))
     assert reporting.create_report.called == 1
     assert 'inhibitor' in reporting.create_report.report_fields['flags']
 
     reporting.create_report.called = 0
     reporting.create_report.model_instances = []
     with pytest.raises(StopActorExecution):
-        get_events('files/tests/sample03.json')
+        get_events(os.path.join(CUR_DIR, 'files/sample03.json'))
     assert reporting.create_report.called == 1
     assert 'inhibitor' in reporting.create_report.report_fields['flags']
 
@@ -236,6 +240,7 @@ def test_get_events(monkeypatch):
 def test_pes_data_not_found(monkeypatch):
     def file_not_exists(_filepath):
         return False
+
     monkeypatch.setattr(os.path, 'isfile', file_not_exists)
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
     with pytest.raises(StopActorExecution):

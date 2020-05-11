@@ -1,21 +1,19 @@
 import os
 
-import pytest
-
 from leapp import reporting
-from leapp.exceptions import StopActorExecution, StopActorExecutionError
-from leapp.libraries.actor import library
+from leapp.libraries.actor import checkosrelease
 from leapp.libraries.common.config import version
-from leapp.libraries.common.testutils import (create_report_mocked,
-                                              produce_mocked)
-from leapp.libraries.stdlib import api
+from leapp.libraries.common.testutils import (
+    create_report_mocked,
+    produce_mocked,
+)
 
 
 def test_skip_check(monkeypatch):
     monkeypatch.setattr(os, "getenv", lambda _unused: True)
     monkeypatch.setattr(reporting, "create_report", create_report_mocked())
 
-    assert library.skip_check()
+    assert checkosrelease.skip_check()
     assert reporting.create_report.called == 1
     assert 'Skipped OS release check' in reporting.create_report.report_fields['title']
     assert reporting.create_report.report_fields['severity'] == 'high'
@@ -26,7 +24,7 @@ def test_no_skip_check(monkeypatch):
     monkeypatch.setattr(os, "getenv", lambda _unused: False)
     monkeypatch.setattr(reporting, "create_report", create_report_mocked())
 
-    assert not library.skip_check()
+    assert not checkosrelease.skip_check()
     assert reporting.create_report.called == 0
 
 
@@ -34,7 +32,7 @@ def test_not_supported_release(monkeypatch):
     monkeypatch.setattr(version, "is_supported_version", lambda: False)
     monkeypatch.setattr(reporting, "create_report", create_report_mocked())
 
-    library.check_os_version()
+    checkosrelease.check_os_version()
     assert reporting.create_report.called == 1
     assert 'The installed OS version is not supported' in reporting.create_report.report_fields['title']
     assert 'flags' in reporting.create_report.report_fields
@@ -45,5 +43,5 @@ def test_supported_release(monkeypatch):
     monkeypatch.setattr(version, "is_supported_version", lambda: True)
     monkeypatch.setattr(reporting, "create_report", create_report_mocked())
 
-    library.check_os_version()
+    checkosrelease.check_os_version()
     assert reporting.create_report.called == 0

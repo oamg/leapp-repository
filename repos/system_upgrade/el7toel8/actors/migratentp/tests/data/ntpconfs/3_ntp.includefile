@@ -38,7 +38,7 @@ driftfile /var/lib/ntp/drift
 
 # Key file containing the keys and key identifiers used when operating
 # with symmetric key cryptography.
-keys tests/data/ntpconfs/3_ntp.keys
+keys data/ntpconfs/3_ntp.keys
 
 # Specify the key identifiers which are trusted.
 trustedkey 42

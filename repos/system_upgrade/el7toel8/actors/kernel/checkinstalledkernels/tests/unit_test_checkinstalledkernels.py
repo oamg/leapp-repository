@@ -1,13 +1,7 @@
-from collections import namedtuple
-
 from leapp import reporting
-from leapp.libraries.actor import library
+from leapp.libraries.actor import checkinstalledkernels
 from leapp.libraries.common.config import architecture
-from leapp.libraries.common.testutils import (
-    CurrentActorMocked,
-    create_report_mocked,
-    logger_mocked,
-)
+from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked, logger_mocked
 from leapp.libraries.stdlib import api
 from leapp.models import RPM, InstalledRedHatSignedRPM
 
@@ -37,11 +31,7 @@ def mocked_consume(pkgs):  # pkgs = [(name, version-number)]
     return f
 
 
-s390x_pkgs_single = [
-    ('kernel', 957),
-    ('something', 957),
-    ('kernel-something', 957),
-]
+s390x_pkgs_single = [('kernel', 957), ('something', 957), ('kernel-something', 957)]
 s390x_pkgs_multi = [('kernel', 957), ('something', 957), ('kernel', 956)]
 
 
@@ -50,14 +40,12 @@ def test_single_kernel_s390x(monkeypatch):
     monkeypatch.setattr(api, 'current_logger', logger_mocked())
     monkeypatch.setattr(api, 'consume', mocked_consume(s390x_pkgs_single))
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
-    library.process()
+    checkinstalledkernels.process()
     assert not reporting.create_report.called
 
-    monkeypatch.setattr(
-        api, 'current_actor', CurrentActorMocked(arch=architecture.ARCH_S390X)
-    )
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(arch=architecture.ARCH_S390X))
     monkeypatch.setattr(api, 'consume', mocked_consume(s390x_pkgs_single))
-    library.process()
+    checkinstalledkernels.process()
     assert not reporting.create_report.called
 
 
@@ -66,62 +54,39 @@ def test_multi_kernel_s390x(monkeypatch):
     monkeypatch.setattr(api, 'current_logger', logger_mocked())
     monkeypatch.setattr(api, 'consume', mocked_consume(s390x_pkgs_multi))
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
-    library.process()
+    checkinstalledkernels.process()
     assert not reporting.create_report.called
 
-    monkeypatch.setattr(
-        api, 'current_actor', CurrentActorMocked(arch=architecture.ARCH_S390X)
-    )
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(arch=architecture.ARCH_S390X))
     monkeypatch.setattr(api, 'consume', mocked_consume(s390x_pkgs_multi))
-    library.process()
+    checkinstalledkernels.process()
     assert reporting.create_report.called
-    assert (
-        reporting.create_report.report_fields['title']
-        == 'Multiple kernels installed'
-    )
+    assert reporting.create_report.report_fields['title'] == 'Multiple kernels installed'
 
 
 versioned_kernel_pkgs = [('kernel', 456), ('kernel', 789), ('kernel', 1234)]
 
 
 def test_newest_kernel(monkeypatch):
-    monkeypatch.setattr(
-        api,
-        'current_actor',
-        CurrentActorMocked(kernel='3.10.0-1234.21.1.el7.x86_64'),
-    )
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(kernel='3.10.0-1234.21.1.el7.x86_64'))
     monkeypatch.setattr(api, 'current_logger', logger_mocked())
     monkeypatch.setattr(api, 'consume', mocked_consume(versioned_kernel_pkgs))
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
-    library.process()
+    checkinstalledkernels.process()
     assert not reporting.create_report.called
 
-    monkeypatch.setattr(
-        api,
-        'current_actor',
-        CurrentActorMocked(kernel='3.10.0-456.43.1.el7.x86_64'),
-    )
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(kernel='3.10.0-456.43.1.el7.x86_64'))
     monkeypatch.setattr(api, 'current_logger', logger_mocked())
     monkeypatch.setattr(api, 'consume', mocked_consume(versioned_kernel_pkgs))
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
-    library.process()
+    checkinstalledkernels.process()
     assert reporting.create_report.called
-    assert (
-        reporting.create_report.report_fields['title']
-        == 'Newest installed kernel not in use'
-    )
+    assert reporting.create_report.report_fields['title'] == 'Newest installed kernel not in use'
 
-    monkeypatch.setattr(
-        api,
-        'current_actor',
-        CurrentActorMocked(kernel='3.10.0-789.35.2.el7.x86_64'),
-    )
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(kernel='3.10.0-789.35.2.el7.x86_64'))
     monkeypatch.setattr(api, 'current_logger', logger_mocked())
     monkeypatch.setattr(api, 'consume', mocked_consume(versioned_kernel_pkgs))
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
-    library.process()
+    checkinstalledkernels.process()
     assert reporting.create_report.called
-    assert (
-        reporting.create_report.report_fields['title']
-        == 'Newest installed kernel not in use'
-    )
+    assert reporting.create_report.report_fields['title'] == 'Newest installed kernel not in use'

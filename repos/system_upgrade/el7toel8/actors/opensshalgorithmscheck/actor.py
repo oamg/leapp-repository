@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.libraries.actor import library
+from leapp.libraries.actor import opensshalgorithmscheck
 from leapp.models import Report, OpenSshConfig
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
@@ -17,4 +17,4 @@ class OpenSshAlgorithmsCheck(Actor):
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 
     def process(self):
-        library.process(self.consume(OpenSshConfig))
+        opensshalgorithmscheck.process(self.consume(OpenSshConfig))

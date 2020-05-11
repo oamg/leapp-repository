@@ -3,7 +3,7 @@ import shutil
 import stat
 import tempfile
 
-from leapp.libraries.actor.lib_backup import backup_file
+from leapp.libraries.actor.spamassassinconfigupdate_backup import backup_file
 
 
 def test_backup_file():

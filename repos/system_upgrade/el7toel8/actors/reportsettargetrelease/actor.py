@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.libraries.actor import library
+from leapp.libraries.actor import reportsettargetrelease
 from leapp.models import Report
 from leapp.tags import IPUWorkflowTag, TargetTransactionChecksPhaseTag
 
@@ -20,4 +20,4 @@ class ReportSetTargetRelease(Actor):
     tags = (IPUWorkflowTag, TargetTransactionChecksPhaseTag)
 
     def process(self):
-        library.process()
+        reportsettargetrelease.process()

@@ -7,7 +7,7 @@ Email: jaberan@redhat.com
 from leapp.actors import Actor
 from leapp.reporting import Report
 from leapp.tags import IPUWorkflowTag, ChecksPhaseTag
-from leapp.libraries.actor.library import check_kde_gnome
+from leapp.libraries.actor.checkkdegnome import check_kde_gnome
 from leapp.models import InstalledDesktopsFacts, InstalledKdeAppsFacts
 
 

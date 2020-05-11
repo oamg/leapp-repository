@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.libraries.actor import library
+from leapp.libraries.actor import vsftpdconfigcheck
 from leapp.models import TcpWrappersFacts, VsftpdFacts
 from leapp.reporting import Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
@@ -23,4 +23,4 @@ class VsftpdConfigCheck(Actor):
         except StopIteration:
             return
         tcp_wrappers_facts = next(self.consume(TcpWrappersFacts))
-        library.check_config_supported(tcp_wrappers_facts, vsftpd_facts)
+        vsftpdconfigcheck.check_config_supported(tcp_wrappers_facts, vsftpd_facts)

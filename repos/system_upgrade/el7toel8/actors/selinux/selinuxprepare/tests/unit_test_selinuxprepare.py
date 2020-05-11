@@ -1,4 +1,4 @@
-from leapp.libraries.actor import library
+from leapp.libraries.actor import selinuxprepare
 from leapp.libraries.stdlib import CalledProcessError, api, run
 from leapp.models import SELinuxModule, SELinuxModules
 
@@ -31,19 +31,15 @@ def test_remove_custom_modules(monkeypatch):
 
     def consume_SELinuxModules_mocked(*models):
 
-        semodule_list = [
-            SELinuxModule(
-                name=k, priority=mock_modules[k], content='', removed=[]
-            )
-            for k in mock_modules
-        ]
+        semodule_list = [SELinuxModule(name=k, priority=mock_modules[k], content='', removed=[])
+                         for k in mock_modules]
         yield SELinuxModules(modules=semodule_list)
 
     monkeypatch.setattr(api, 'consume', consume_SELinuxModules_mocked)
-    monkeypatch.setattr(library, 'run', run_mocked())
+    monkeypatch.setattr(selinuxprepare, 'run', run_mocked())
 
-    library.remove_custom_modules()
-    assert library.run.called == len(mock_modules)
-    assert library.run.non_semodule_calls == 0
+    selinuxprepare.remove_custom_modules()
+    assert selinuxprepare.run.called == len(mock_modules)
+    assert selinuxprepare.run.non_semodule_calls == 0
     # verify that remove_custom_modules tried to remove all given modules
-    assert (set(mock_modules) - library.run.removed_modules) == set()
+    assert (set(mock_modules) - selinuxprepare.run.removed_modules) == set()

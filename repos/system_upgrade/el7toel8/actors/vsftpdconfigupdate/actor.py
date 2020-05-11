@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.libraries.actor import library
+from leapp.libraries.actor import vsftpdconfigupdate
 from leapp.models import VsftpdFacts
 from leapp.tags import ApplicationsPhaseTag, IPUWorkflowTag
 
@@ -30,4 +30,4 @@ class VsftpdConfigUpdate(Actor):
             vsftpd_facts = next(self.consume(VsftpdFacts))
         except StopIteration:
             return
-        library.migrate_configs(vsftpd_facts)
+        vsftpdconfigupdate.migrate_configs(vsftpd_facts)

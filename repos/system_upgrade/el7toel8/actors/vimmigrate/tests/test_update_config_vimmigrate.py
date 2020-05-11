@@ -1,7 +1,6 @@
 import pytest
 
-from leapp.libraries.actor.library import new_macros
-from leapp.libraries.actor.library import update_config
+from leapp.libraries.actor.vimmigrate import new_macros, update_config
 
 
 class MockFile(object):

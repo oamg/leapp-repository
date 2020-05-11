@@ -1,6 +1,6 @@
 import errno
 
-from leapp.libraries.actor import lib_spamc
+from leapp.libraries.actor import spamassassinconfigupdate_spamc
 from leapp.libraries.common.spamassassinutils import SPAMC_CONFIG_FILE
 from leapp.libraries.common.testutils import make_IOError, make_OSError
 from leapp.models.spamassassinfacts import SpamassassinFacts
@@ -8,45 +8,46 @@ from leapp.models.spamassassinfacts import SpamassassinFacts
 
 # The test cases reuse values from the SpamassassinConfigRead test cases
 
+
 def test_rewrite_spamc_config():
-    new_content = lib_spamc._rewrite_spamc_config('--ssl sslv3\n')
+    new_content = spamassassinconfigupdate_spamc._rewrite_spamc_config('--ssl sslv3\n')
     assert new_content == '--ssl\n'
 
     # equal sign format
-    new_content = lib_spamc._rewrite_spamc_config('--ssl=tlsv1\n')
+    new_content = spamassassinconfigupdate_spamc._rewrite_spamc_config('--ssl=tlsv1\n')
     assert new_content == '--ssl\n'
 
     # no argument
-    new_content = lib_spamc._rewrite_spamc_config('--ssl\n')
+    new_content = spamassassinconfigupdate_spamc._rewrite_spamc_config('--ssl\n')
     assert new_content == '--ssl\n'
 
 
 def test_rewrite_spamc_config_without_valid_argument():
     # If we encounter an unrecognized parameter, we leave it be - the
     # configuration is invalid anyway, so let's not mess it up even more.
-    new_content = lib_spamc._rewrite_spamc_config('--ssl foo\n')
+    new_content = spamassassinconfigupdate_spamc._rewrite_spamc_config('--ssl foo\n')
     assert new_content == '--ssl foo\n'
 
     # --ssl followed by another option
-    new_content = lib_spamc._rewrite_spamc_config('--ssl -B\n')
+    new_content = spamassassinconfigupdate_spamc._rewrite_spamc_config('--ssl -B\n')
     assert new_content == '--ssl -B\n'
 
     # space surrounding the equal sign. This amounts to an unrecognized
     # argument (empty string)
-    new_content = lib_spamc._rewrite_spamc_config('--ssl= tlsv1\n')
+    new_content = spamassassinconfigupdate_spamc._rewrite_spamc_config('--ssl= tlsv1\n')
     assert new_content == '--ssl= tlsv1\n'
 
     # space surrounding the equal sign. This amounts to an unrecognized
     # argument ("=tlsv1")
-    new_content = lib_spamc._rewrite_spamc_config('--ssl =tlsv1\n')
+    new_content = spamassassinconfigupdate_spamc._rewrite_spamc_config('--ssl =tlsv1\n')
     assert new_content == '--ssl =tlsv1\n'
 
 
 def test_rewrite_spamc_config_multiline():
-    new_content = lib_spamc._rewrite_spamc_config('-B --ssl \n sslv3 -c\n-H\n')
+    new_content = spamassassinconfigupdate_spamc._rewrite_spamc_config('-B --ssl \n sslv3 -c\n-H\n')
     assert new_content == '-B --ssl \n -c\n-H\n'
 
-    new_content = lib_spamc._rewrite_spamc_config('--ssl\n-B\n')
+    new_content = spamassassinconfigupdate_spamc._rewrite_spamc_config('--ssl\n-B\n')
     assert new_content == '--ssl\n-B\n'
 
 
@@ -56,40 +57,40 @@ def test_rewrite_spamc_config_tls_supersedes_ssl():
     # there's nothing technically wrong with it. And it's really a corner case
     # anyway.  If someone fixes it, this test case can be updated to expect
     # '--ssl' as output.
-    new_content = lib_spamc._rewrite_spamc_config('--ssl sslv3 --ssl tlsv1\n')
+    new_content = spamassassinconfigupdate_spamc._rewrite_spamc_config('--ssl sslv3 --ssl tlsv1\n')
     assert new_content == '--ssl --ssl\n'
 
     # reverse order
-    new_content = lib_spamc._rewrite_spamc_config('--ssl tlsv1 --ssl sslv3\n')
+    new_content = spamassassinconfigupdate_spamc._rewrite_spamc_config('--ssl tlsv1 --ssl sslv3\n')
     assert new_content == '--ssl --ssl\n'
 
 
 def test_rewrite_spamc_config_comment():
-    new_content = lib_spamc._rewrite_spamc_config('# --ssl tlsv1\n')
+    new_content = spamassassinconfigupdate_spamc._rewrite_spamc_config('# --ssl tlsv1\n')
     assert new_content == '# --ssl tlsv1\n'
 
     # comment mixed with actual option
-    new_content = lib_spamc._rewrite_spamc_config('# --ssl tlsv1\n--ssl sslv3\n')
+    new_content = spamassassinconfigupdate_spamc._rewrite_spamc_config('# --ssl tlsv1\n--ssl sslv3\n')
     assert new_content == '# --ssl tlsv1\n--ssl\n'
 
     # comment mixed with actual option
-    new_content = lib_spamc._rewrite_spamc_config('--ssl tlsv1\n# --ssl sslv3\n')
+    new_content = spamassassinconfigupdate_spamc._rewrite_spamc_config('--ssl tlsv1\n# --ssl sslv3\n')
     assert new_content == '--ssl\n# --ssl sslv3\n'
 
 
 def test_rewrite_spamc_config_crazy_corner_cases():
     # The option and new_content can have a comment in between
-    new_content = lib_spamc._rewrite_spamc_config('--ssl\n# foo\ntlsv1\n')
+    new_content = spamassassinconfigupdate_spamc._rewrite_spamc_config('--ssl\n# foo\ntlsv1\n')
     assert new_content == '--ssl\n# foo\n\n'
 
-    new_content = lib_spamc._rewrite_spamc_config('--ssl\n# foo\n# bar\nsslv3\n')
+    new_content = spamassassinconfigupdate_spamc._rewrite_spamc_config('--ssl\n# foo\n# bar\nsslv3\n')
     assert new_content == '--ssl\n# foo\n# bar\n\n'
 
-    new_content = lib_spamc._rewrite_spamc_config('--ssl\n# foo\n# tlsv1\nsslv3\n')
+    new_content = spamassassinconfigupdate_spamc._rewrite_spamc_config('--ssl\n# foo\n# tlsv1\nsslv3\n')
     assert new_content == '--ssl\n# foo\n# tlsv1\n\n'
 
     # --ssl followed by another option
-    new_content = lib_spamc._rewrite_spamc_config('--ssl\n# foo\n-B\n')
+    new_content = spamassassinconfigupdate_spamc._rewrite_spamc_config('--ssl\n# foo\n-B\n')
     assert new_content == '--ssl\n# foo\n-B\n'
 
 
@@ -146,7 +147,7 @@ def test_migrate_spamc_config():
     fileops.files[SPAMC_CONFIG_FILE] = '--ssl sslv3\n# foo\n-B\n'
     backup_func = MockBackup()
 
-    lib_spamc.migrate_spamc_config(facts, fileops, backup_func)
+    spamassassinconfigupdate_spamc.migrate_spamc_config(facts, fileops, backup_func)
 
     assert backup_func.called == 1
     assert backup_func.paths[0] == SPAMC_CONFIG_FILE
@@ -162,7 +163,7 @@ def test_migrate_spamc_config_no_ssl_option():
     fileops = MockFileOperations()
     backup_func = MockBackup()
 
-    lib_spamc.migrate_spamc_config(facts, fileops, backup_func)
+    spamassassinconfigupdate_spamc.migrate_spamc_config(facts, fileops, backup_func)
 
     assert backup_func.called == 0
     assert fileops.read_called == 0
@@ -175,7 +176,7 @@ def test_migrate_spamc_config_no_write_if_backup_fails():
     fileops = MockFileOperations()
     backup_func = MockBackup(to_raise=make_OSError(errno.EACCES))
 
-    lib_spamc.migrate_spamc_config(facts, fileops, backup_func)
+    spamassassinconfigupdate_spamc.migrate_spamc_config(facts, fileops, backup_func)
 
     assert fileops.write_called == 0
 
@@ -184,7 +185,7 @@ def test_migrate_spamc_config_no_write_if_backup_fails():
     fileops = MockFileOperations()
     backup_func = MockBackup(to_raise=make_IOError(errno.EACCES))
 
-    lib_spamc.migrate_spamc_config(facts, fileops, backup_func)
+    spamassassinconfigupdate_spamc.migrate_spamc_config(facts, fileops, backup_func)
 
     assert fileops.write_called == 0
 
@@ -195,7 +196,7 @@ def test_migrate_spamc_config_read_failure():
     fileops = MockFileOperations(read_error=make_OSError(errno.EACCES))
     backup_func = MockBackup()
 
-    lib_spamc.migrate_spamc_config(facts, fileops, backup_func)
+    spamassassinconfigupdate_spamc.migrate_spamc_config(facts, fileops, backup_func)
 
     # The main purpose of this test is to check that exceptions are handled
     # properly. The following assertions are supplementary.
@@ -207,7 +208,7 @@ def test_migrate_spamc_config_read_failure():
     fileops = MockFileOperations(read_error=make_IOError(errno.EACCES))
     backup_func = MockBackup()
 
-    lib_spamc.migrate_spamc_config(facts, fileops, backup_func)
+    spamassassinconfigupdate_spamc.migrate_spamc_config(facts, fileops, backup_func)
 
     assert fileops.read_called == 1
     assert fileops.write_called == 0
@@ -220,7 +221,7 @@ def test_migrate_spamc_config_write_failure():
     fileops.files[SPAMC_CONFIG_FILE] = '--ssl sslv3\n# foo\n-B\n'
     backup_func = MockBackup()
 
-    lib_spamc.migrate_spamc_config(facts, fileops, backup_func)
+    spamassassinconfigupdate_spamc.migrate_spamc_config(facts, fileops, backup_func)
 
     # The main purpose of this test is to check that exceptions are handled
     # properly. The following assertions are supplementary.
@@ -233,7 +234,7 @@ def test_migrate_spamc_config_write_failure():
     fileops.files[SPAMC_CONFIG_FILE] = '--ssl sslv3\n# foo\n-B\n'
     backup_func = MockBackup()
 
-    lib_spamc.migrate_spamc_config(facts, fileops, backup_func)
+    spamassassinconfigupdate_spamc.migrate_spamc_config(facts, fileops, backup_func)
 
     assert fileops.read_called == 1
     assert fileops.write_called == 1

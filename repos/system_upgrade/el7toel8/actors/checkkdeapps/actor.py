@@ -1,7 +1,7 @@
 from leapp.actors import Actor
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 from leapp.models import InstalledKdeAppsFacts, InstalledRPM
-from leapp.libraries.actor.library import get_kde_apps_info
+from leapp.libraries.actor.checkkdeapps import get_kde_apps_info
 
 
 class CheckKdeApps(Actor):

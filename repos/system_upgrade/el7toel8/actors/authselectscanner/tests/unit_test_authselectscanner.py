@@ -1,11 +1,9 @@
-import os
 import textwrap
 
 from mock import patch
 
-from leapp.libraries.actor.library import AuthselectScannerLibrary, Authconfig, DConf, read_file
+from leapp.libraries.actor.authselectscanner import Authconfig, AuthselectScannerLibrary, DConf, read_file
 from leapp.libraries.common.pam import PAM
-from leapp.models import Authselect
 
 
 def get_config(config):
@@ -122,14 +120,14 @@ def test_DConf_get_string__ok():
     assert obj.get_string('section', 'test_b') == 'str'
 
 
-@patch('leapp.libraries.actor.library.is_service_enabled')
+@patch('leapp.libraries.actor.authselectscanner.is_service_enabled')
 def test_AuthselectScannerLibrary_step_detect_profile__None(mock_service):
     obj = AuthselectScannerLibrary([], Authconfig(''), DConf(''), PAM(''), '')
     mock_service.return_value = False
     assert obj.step_detect_profile() is None
 
 
-@patch('leapp.libraries.actor.library.is_service_enabled')
+@patch('leapp.libraries.actor.authselectscanner.is_service_enabled')
 def test_AuthselectScannerLibrary_step_detect_profile__sssd(mock_service):
     pam = get_config('''
     auth sufficient pam_unix.so
@@ -142,7 +140,7 @@ def test_AuthselectScannerLibrary_step_detect_profile__sssd(mock_service):
     assert obj.step_detect_profile() == 'sssd'
 
 
-@patch('leapp.libraries.actor.library.is_service_enabled')
+@patch('leapp.libraries.actor.authselectscanner.is_service_enabled')
 def test_AuthselectScannerLibrary_step_detect_profile__winbind(mock_service):
     pam = get_config('''
     auth sufficient pam_unix.so
@@ -155,7 +153,7 @@ def test_AuthselectScannerLibrary_step_detect_profile__winbind(mock_service):
     assert obj.step_detect_profile() == 'winbind'
 
 
-@patch('leapp.libraries.actor.library.is_service_enabled')
+@patch('leapp.libraries.actor.authselectscanner.is_service_enabled')
 def test_AuthselectScannerLibrary_step_detect_profile__nis(mock_service):
     pam = get_config('''
     auth sufficient pam_unix.so
@@ -167,7 +165,7 @@ def test_AuthselectScannerLibrary_step_detect_profile__nis(mock_service):
     assert obj.step_detect_profile() == 'nis'
 
 
-@patch('leapp.libraries.actor.library.is_service_enabled')
+@patch('leapp.libraries.actor.authselectscanner.is_service_enabled')
 def test_AuthselectScannerLibrary_step_detect_profile__sssd_winbind(mock_service):
     pam = get_config('''
     auth sufficient pam_unix.so
@@ -181,7 +179,7 @@ def test_AuthselectScannerLibrary_step_detect_profile__sssd_winbind(mock_service
     assert obj.step_detect_profile() is None
 
 
-@patch('leapp.libraries.actor.library.is_service_enabled')
+@patch('leapp.libraries.actor.authselectscanner.is_service_enabled')
 def test_AuthselectScannerLibrary_step_detect_profile__sssd_nis(mock_service):
     pam = get_config('''
     auth sufficient pam_unix.so
@@ -194,7 +192,7 @@ def test_AuthselectScannerLibrary_step_detect_profile__sssd_nis(mock_service):
     assert obj.step_detect_profile() is None
 
 
-@patch('leapp.libraries.actor.library.is_service_enabled')
+@patch('leapp.libraries.actor.authselectscanner.is_service_enabled')
 def test_AuthselectScannerLibrary_step_detect_profile__winbind_nis(mock_service):
     pam = get_config('''
     auth sufficient pam_unix.so
@@ -207,7 +205,7 @@ def test_AuthselectScannerLibrary_step_detect_profile__winbind_nis(mock_service)
     assert obj.step_detect_profile() is None
 
 
-@patch('leapp.libraries.actor.library.is_service_enabled')
+@patch('leapp.libraries.actor.authselectscanner.is_service_enabled')
 def test_AuthselectScannerLibrary_step_detect_profile__sssd_winbind_nis(mock_service):
     pam = get_config('''
     auth sufficient pam_unix.so
@@ -526,8 +524,8 @@ def test_AuthselectScannerLibrary_step_detect_if_confirmation_is_required__pass(
     assert not obj.step_detect_if_confirmation_is_required()
 
 
-@patch('leapp.libraries.actor.library.is_service_enabled')
-@patch('leapp.libraries.actor.library.AuthselectScannerLibrary.step_detect_if_confirmation_is_required')
+@patch('leapp.libraries.actor.authselectscanner.is_service_enabled')
+@patch('leapp.libraries.actor.authselectscanner.AuthselectScannerLibrary.step_detect_if_confirmation_is_required')
 def test_AuthselectScannerLibrary_process__simple(mock_confirm, mock_service):
     pam = get_config('''
     auth sufficient pam_unix.so
@@ -546,8 +544,8 @@ def test_AuthselectScannerLibrary_process__simple(mock_confirm, mock_service):
     assert authselect.confirm
 
 
-@patch('leapp.libraries.actor.library.is_service_enabled')
-@patch('leapp.libraries.actor.library.AuthselectScannerLibrary.step_detect_if_confirmation_is_required')
+@patch('leapp.libraries.actor.authselectscanner.is_service_enabled')
+@patch('leapp.libraries.actor.authselectscanner.AuthselectScannerLibrary.step_detect_if_confirmation_is_required')
 def test_AuthselectScannerLibrary_process__features(mock_confirm, mock_service):
     pam = get_config('''
     auth required pam_faillock.so preauth silent deny=4 unlock_time=1200
@@ -579,8 +577,8 @@ def test_AuthselectScannerLibrary_process__features(mock_confirm, mock_service):
     assert authselect.confirm
 
 
-@patch('leapp.libraries.actor.library.is_service_enabled')
-@patch('leapp.libraries.actor.library.AuthselectScannerLibrary.step_detect_if_confirmation_is_required')
+@patch('leapp.libraries.actor.authselectscanner.is_service_enabled')
+@patch('leapp.libraries.actor.authselectscanner.AuthselectScannerLibrary.step_detect_if_confirmation_is_required')
 def test_AuthselectScannerLibrary_process__unknown_module(mock_confirm, mock_service):
     pam = get_config('''
     auth required pam_faillock.so preauth silent deny=4 unlock_time=1200
@@ -604,8 +602,8 @@ def test_AuthselectScannerLibrary_process__unknown_module(mock_confirm, mock_ser
     assert authselect.confirm
 
 
-@patch('leapp.libraries.actor.library.is_service_enabled')
-@patch('leapp.libraries.actor.library.AuthselectScannerLibrary.step_detect_if_confirmation_is_required')
+@patch('leapp.libraries.actor.authselectscanner.is_service_enabled')
+@patch('leapp.libraries.actor.authselectscanner.AuthselectScannerLibrary.step_detect_if_confirmation_is_required')
 def test_AuthselectScannerLibrary_process__autoconfirm(mock_confirm, mock_service):
     pam = get_config('''
     auth sufficient pam_unix.so

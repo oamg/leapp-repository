@@ -1,6 +1,6 @@
 import pytest
 
-from leapp.libraries.actor.library import update_sane, NEW_QUIRKS
+from leapp.libraries.actor.sanebackendsmigrate import update_sane, NEW_QUIRKS
 
 
 testdata = [

@@ -1,5 +1,5 @@
-from leapp.libraries.stdlib import run, CalledProcessError
-from leapp.libraries.actor import library
+from leapp.libraries.actor import selinuxcontentscanner
+from leapp.libraries.stdlib import CalledProcessError
 
 
 class run_mocked(object):
@@ -45,24 +45,26 @@ class run_mocked_fail(object):
 
 
 def test_list_selinux_modules(monkeypatch):
-    monkeypatch.setattr(library, "run", run_mocked())
+    monkeypatch.setattr(selinuxcontentscanner, "run", run_mocked())
 
-    assert library.list_selinux_modules() == [("permissive_abrt_t", "400"),
-                                              ("zebra", "400"),
-                                              ("zebra", "300"),
-                                              ("vpn", "100"),
-                                              ("zebra", "099"),
-                                              ("minissdpd", "100")]
+    assert selinuxcontentscanner.list_selinux_modules() == [
+        ("permissive_abrt_t", "400"),
+        ("zebra", "400"),
+        ("zebra", "300"),
+        ("vpn", "100"),
+        ("zebra", "099"),
+        ("minissdpd", "100"),
+    ]
 
-    monkeypatch.setattr(library, "run", run_mocked_fail())
+    monkeypatch.setattr(selinuxcontentscanner, "run", run_mocked_fail())
 
-    assert library.list_selinux_modules() == []
+    assert selinuxcontentscanner.list_selinux_modules() == []
 
 
 def test_get_selinux_customizations(monkeypatch):
-    monkeypatch.setattr(library, "run", run_mocked())
+    monkeypatch.setattr(selinuxcontentscanner, "run", run_mocked())
 
-    (semanage_valid, semanage_removed) = library.get_selinux_customizations()
+    (semanage_valid, semanage_removed) = selinuxcontentscanner.get_selinux_customizations()
 
     assert len(semanage_valid) == 11
     assert semanage_valid[0] == "boolean -D"

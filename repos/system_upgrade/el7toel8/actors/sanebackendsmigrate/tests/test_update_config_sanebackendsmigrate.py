@@ -1,8 +1,15 @@
 import pytest
 
-from leapp.libraries.actor.library import CANON, CANON_DR, CARDSCAN, DLL
-from leapp.libraries.actor.library import EPJITSU, FUJITSU, XEROX_MFP
-from leapp.libraries.actor.library import update_config
+from leapp.libraries.actor.sanebackendsmigrate import (
+    CANON,
+    CANON_DR,
+    CARDSCAN,
+    DLL,
+    EPJITSU,
+    FUJITSU,
+    XEROX_MFP,
+    update_config
+)
 
 
 def _pattern_exists(content, macro):

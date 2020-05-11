@@ -1,4 +1,4 @@
-from leapp.libraries.actor import library
+from leapp.libraries.actor import migratentp
 from leapp import reporting
 from leapp.libraries.common.testutils import create_report_mocked
 
@@ -56,12 +56,12 @@ def test_migration(monkeypatch):
                 (['ntpd', 'ntpdate', 'ntp-wait'], ['chronyd', 'chronyd', 'chrony-wait'], 1),
             ]:
         monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
-        monkeypatch.setattr(library, 'extract_tgz64', extract_tgz64_mocked())
-        monkeypatch.setattr(library, 'enable_service', enable_service_mocked())
-        monkeypatch.setattr(library, 'write_file', write_file_mocked())
-        monkeypatch.setattr(library, 'ntp2chrony', ntp2chrony_mocked(ignored_lines))
+        monkeypatch.setattr(migratentp, 'extract_tgz64', extract_tgz64_mocked())
+        monkeypatch.setattr(migratentp, 'enable_service', enable_service_mocked())
+        monkeypatch.setattr(migratentp, 'write_file', write_file_mocked())
+        monkeypatch.setattr(migratentp, 'ntp2chrony', ntp2chrony_mocked(ignored_lines))
 
-        library.migrate_ntp(ntp_services, 'abcdef')
+        migratentp.migrate_ntp(ntp_services, 'abcdef')
 
         if ntp_services:
             assert reporting.create_report.called == 1
@@ -72,22 +72,22 @@ def test_migration(monkeypatch):
                 assert 'configuration migrated to chrony' in \
                         reporting.create_report.report_fields['title']
 
-            assert library.extract_tgz64.called == 1
-            assert library.extract_tgz64.s == 'abcdef'
-            assert library.enable_service.called == len(chrony_services)
-            assert library.enable_service.names == chrony_services
-            assert library.write_file.called == (0 if 'ntpd' in ntp_services else 1)
-            if library.write_file.called:
-                assert library.write_file.name == '/etc/ntp.conf.nosources'
-                assert 'without ntp configuration' in library.write_file.content
-            assert library.ntp2chrony.called == 1
-            assert library.ntp2chrony.args == (
+            assert migratentp.extract_tgz64.called == 1
+            assert migratentp.extract_tgz64.s == 'abcdef'
+            assert migratentp.enable_service.called == len(chrony_services)
+            assert migratentp.enable_service.names == chrony_services
+            assert migratentp.write_file.called == (0 if 'ntpd' in ntp_services else 1)
+            if migratentp.write_file.called:
+                assert migratentp.write_file.name == '/etc/ntp.conf.nosources'
+                assert 'without ntp configuration' in migratentp.write_file.content
+            assert migratentp.ntp2chrony.called == 1
+            assert migratentp.ntp2chrony.args == (
                     '/',
                     '/etc/ntp.conf' if 'ntpd' in ntp_services else '/etc/ntp.conf.nosources',
                     '/etc/ntp/step-tickers' if 'ntpdate' in ntp_services else '')
         else:
             assert reporting.create_report.called == 0
-            assert library.extract_tgz64.called == 0
-            assert library.enable_service.called == 0
-            assert library.write_file.called == 0
-            assert library.ntp2chrony.called == 0
+            assert migratentp.extract_tgz64.called == 0
+            assert migratentp.enable_service.called == 0
+            assert migratentp.write_file.called == 0
+            assert migratentp.ntp2chrony.called == 0

@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.libraries.actor.library import migrate_ntp
+from leapp.libraries.actor.migratentp import migrate_ntp
 from leapp.models import Report, NtpMigrationDecision
 from leapp.tags import ApplicationsPhaseTag, IPUWorkflowTag
 

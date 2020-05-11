@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.libraries.actor.library import check_ha_cluster
+from leapp.libraries.actor.checkhacluster import check_ha_cluster
 from leapp.reporting import Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 

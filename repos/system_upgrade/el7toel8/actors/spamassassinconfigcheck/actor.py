@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.libraries.actor import library
+from leapp.libraries.actor import spamassassinconfigcheck
 from leapp.models import Report, SpamassassinFacts
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
@@ -28,6 +28,6 @@ class SpamassassinConfigCheck(Actor):
     def process(self):
         facts = next(self.consume(SpamassassinFacts), None)
         if facts:
-            library.produce_reports(facts)
+            spamassassinconfigcheck.produce_reports(facts)
         else:
             self.log.debug('Skipping execution - no SpamassassinFacts message has been produced.')

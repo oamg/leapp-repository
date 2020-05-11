@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.libraries.actor.library import comment_modules, read_file
+from leapp.libraries.actor.removeoldpammodulesapply import comment_modules, read_file
 from leapp.libraries.common.pam import PAM
 from leapp.models import RemovedPAMModules
 from leapp.tags import IPUWorkflowTag, PreparationPhaseTag, ExperimentalTag

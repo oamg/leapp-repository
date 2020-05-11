@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.libraries.actor.library import remove_boot_entry
+from leapp.libraries.actor.removeupgradebootentry import remove_boot_entry
 from leapp.models import BootContent, FirmwareFacts
 from leapp.tags import InitRamStartPhaseTag, IPUWorkflowTag
 

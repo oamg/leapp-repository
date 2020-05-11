@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.libraries.actor import library
+from leapp.libraries.actor import multipathconfcheck
 from leapp.models import MultipathConfFacts
 from leapp.reporting import Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
@@ -25,4 +25,4 @@ class MultipathConfCheck(Actor):
             self.log.debug('Skipping execution. No MultipathConfFacts has ' +
                            'been produced')
             return
-        library.check_configs(facts)
+        multipathconfcheck.check_configs(facts)

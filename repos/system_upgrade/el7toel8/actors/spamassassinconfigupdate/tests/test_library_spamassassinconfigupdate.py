@@ -1,4 +1,4 @@
-from leapp.libraries.actor import library
+from leapp.libraries.actor import spamassassinconfigupdate
 from leapp.libraries.common.spamassassinutils import SPAMC_CONFIG_FILE, SYSCONFIG_SPAMASSASSIN, SYSCONFIG_VARIABLE
 from leapp.models.spamassassinfacts import SpamassassinFacts
 
@@ -62,7 +62,7 @@ def test_migrate_configs():
     fileops.files[SYSCONFIG_SPAMASSASSIN] = content
     backup_func = MockBackup()
 
-    library.migrate_configs(facts, fileops, backup_func)
+    spamassassinconfigupdate.migrate_configs(facts, fileops, backup_func)
 
     assert backup_func.called == 2
     assert SPAMC_CONFIG_FILE in backup_func.paths

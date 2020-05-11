@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.libraries.actor import library
+from leapp.libraries.actor import checksendmail
 from leapp.libraries.common.rpms import has_package
 from leapp.libraries.common.tcpwrappersutils import config_applies_to_daemon
 from leapp.models import InstalledRedHatSignedRPM, SendmailMigrationDecision, TcpWrappersFacts
@@ -7,12 +7,11 @@ from leapp.reporting import Report, create_report
 from leapp import reporting
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
-
 COMMON_REPORT_TAGS = [reporting.Tags.SERVICES, reporting.Tags.EMAIL]
 
 related = [
-    reporting.RelatedResource('file', f) for f in library.get_conf_files()
-] + [reporting.RelatedResource('package', 'sendmail')]
+              reporting.RelatedResource('file', f) for f in checksendmail.get_conf_files()
+          ] + [reporting.RelatedResource('package', 'sendmail')]
 
 
 class CheckSendmail(Actor):
@@ -47,7 +46,7 @@ class CheckSendmail(Actor):
             ] + related)
 
             return
-        migrate_files = library.check_files_for_compressed_ipv6()
+        migrate_files = checksendmail.check_files_for_compressed_ipv6()
         if migrate_files:
             create_report([
                 reporting.Title('sendmail configuration will be migrated'),

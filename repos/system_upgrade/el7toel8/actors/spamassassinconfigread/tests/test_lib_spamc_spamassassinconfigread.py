@@ -1,6 +1,6 @@
 import errno
 
-from leapp.libraries.actor import lib_spamc
+from leapp.libraries.actor import spamassassinconfigread_spamc
 from leapp.libraries.common.testutils import make_IOError
 
 
@@ -27,36 +27,36 @@ class MockFileOperations(object):
 
 
 def test_parse_spamc_ssl_argument():
-    value = lib_spamc._parse_spamc_ssl_argument('--ssl sslv3')
+    value = spamassassinconfigread_spamc._parse_spamc_ssl_argument('--ssl sslv3')
     assert value == 'sslv3'
 
     # equal sign format
-    value = lib_spamc._parse_spamc_ssl_argument('--ssl=tlsv1')
+    value = spamassassinconfigread_spamc._parse_spamc_ssl_argument('--ssl=tlsv1')
     assert value == 'tlsv1'
 
 
 def test_parse_spamc_ssl_argument_without_valid_argument():
     # unknown argument
-    value = lib_spamc._parse_spamc_ssl_argument('--ssl foo')
+    value = spamassassinconfigread_spamc._parse_spamc_ssl_argument('--ssl foo')
     assert value is None
 
     # --ssl followed by another option
-    value = lib_spamc._parse_spamc_ssl_argument('--ssl -B')
+    value = spamassassinconfigread_spamc._parse_spamc_ssl_argument('--ssl -B')
     assert value is None
 
     # space surrounding the equal sign. This amounts to an unrecognized
     # argument (empty string)
-    value = lib_spamc._parse_spamc_ssl_argument('--ssl= tlsv1')
+    value = spamassassinconfigread_spamc._parse_spamc_ssl_argument('--ssl= tlsv1')
     assert value is None
 
     # space surrounding the equal sign. This amounts to an unrecognized
     # argument ("=tlsv1")
-    value = lib_spamc._parse_spamc_ssl_argument('--ssl =tlsv1')
+    value = spamassassinconfigread_spamc._parse_spamc_ssl_argument('--ssl =tlsv1')
     assert value is None
 
 
 def test_parse_spamc_ssl_argument_multiline():
-    value = lib_spamc._parse_spamc_ssl_argument('-B --ssl \n sslv3 -c\n-H')
+    value = spamassassinconfigread_spamc._parse_spamc_ssl_argument('-B --ssl \n sslv3 -c\n-H')
     assert value == 'sslv3'
 
 
@@ -64,36 +64,36 @@ def test_parse_spamc_ssl_argument_tls_supersedes_ssl():
     # Due to the way the spamc cmdline parser works, if '--ssl tlsv1' is
     # specified, all other --ssl options are effectively ignored and tlsv1 is
     # used.
-    value = lib_spamc._parse_spamc_ssl_argument('--ssl sslv3 --ssl tlsv1')
+    value = spamassassinconfigread_spamc._parse_spamc_ssl_argument('--ssl sslv3 --ssl tlsv1')
     assert value == 'tlsv1'
 
     # reverse order
-    value = lib_spamc._parse_spamc_ssl_argument('--ssl tlsv1 --ssl sslv3')
+    value = spamassassinconfigread_spamc._parse_spamc_ssl_argument('--ssl tlsv1 --ssl sslv3')
     assert value == 'tlsv1'
 
 
 def test_parse_spamc_ssl_argument_comment():
-    value = lib_spamc._parse_spamc_ssl_argument('# --ssl tlsv1')
+    value = spamassassinconfigread_spamc._parse_spamc_ssl_argument('# --ssl tlsv1')
     assert value is None
 
     # comment mixed with actual option
-    value = lib_spamc._parse_spamc_ssl_argument('# --ssl tlsv1\n--ssl sslv3')
+    value = spamassassinconfigread_spamc._parse_spamc_ssl_argument('# --ssl tlsv1\n--ssl sslv3')
     assert value == 'sslv3'
 
     # comment mixed with actual option
-    value = lib_spamc._parse_spamc_ssl_argument('--ssl tlsv1\n# --ssl sslv3')
+    value = spamassassinconfigread_spamc._parse_spamc_ssl_argument('--ssl tlsv1\n# --ssl sslv3')
     assert value == 'tlsv1'
 
 
 def test_parse_spamc_ssl_argument_crazy_corner_cases():
     # The option and value can have a comment in between
-    value = lib_spamc._parse_spamc_ssl_argument('--ssl\n# foo\ntlsv1')
+    value = spamassassinconfigread_spamc._parse_spamc_ssl_argument('--ssl\n# foo\ntlsv1')
     assert value == 'tlsv1'
 
-    value = lib_spamc._parse_spamc_ssl_argument('--ssl\n# foo\n# bar\nsslv3')
+    value = spamassassinconfigread_spamc._parse_spamc_ssl_argument('--ssl\n# foo\n# bar\nsslv3')
     assert value == 'sslv3'
 
-    value = lib_spamc._parse_spamc_ssl_argument('--ssl\n# foo\n# tlsv1\nsslv3')
+    value = spamassassinconfigread_spamc._parse_spamc_ssl_argument('--ssl\n# foo\n# tlsv1\nsslv3')
     assert value == 'sslv3'
 
 
@@ -102,7 +102,7 @@ def test_get_spamc_ssl_argument():
     fileops = MockFileOperations()
     fileops.files[path] = '--ssl sslv3'
 
-    value = lib_spamc.get_spamc_ssl_argument(fileops.read)
+    value = spamassassinconfigread_spamc.get_spamc_ssl_argument(fileops.read)
 
     assert fileops.files_read == {path: 1}
     assert value == 'sslv3'
@@ -113,7 +113,7 @@ def test_get_spamc_ssl_argument_empty():
     fileops = MockFileOperations()
     fileops.files[path] = ''
 
-    value = lib_spamc.get_spamc_ssl_argument(fileops.read)
+    value = spamassassinconfigread_spamc.get_spamc_ssl_argument(fileops.read)
 
     assert fileops.files_read == {path: 1}
     assert value is None
@@ -123,7 +123,7 @@ def test_get_spamc_ssl_argument_nonexistent():
     path = '/etc/mail/spamassassin/spamc.conf'
     fileops = MockFileOperations()
 
-    value = lib_spamc.get_spamc_ssl_argument(fileops.read)
+    value = spamassassinconfigread_spamc.get_spamc_ssl_argument(fileops.read)
 
     assert fileops.files_read == {path: 1}
     assert value is None
@@ -133,7 +133,7 @@ def test_get_spamc_ssl_argument_inaccessible():
     path = '/etc/mail/spamassassin/spamc.conf'
     fileops = MockFileOperations(to_raise=make_IOError(errno.EACCES))
 
-    value = lib_spamc.get_spamc_ssl_argument(fileops.read)
+    value = spamassassinconfigread_spamc.get_spamc_ssl_argument(fileops.read)
 
     assert fileops.files_read == {path: 1}
     assert value is None

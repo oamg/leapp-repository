@@ -1,14 +1,14 @@
 import pytest
 
 from leapp.exceptions import StopActorExecutionError
-from leapp.libraries.actor import library
+from leapp.libraries.actor import opensshalgorithmscheck
 from leapp.models import OpenSshConfig, OpenSshPermitRootLogin, Report
 from leapp.snactor.fixture import current_actor_context
 
 
 def test_no_config(current_actor_context):
     with pytest.raises(StopActorExecutionError):
-        library.process(iter([]))
+        opensshalgorithmscheck.process(iter([]))
 
 
 osprl = OpenSshPermitRootLogin(value='no')

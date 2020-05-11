@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.libraries.actor import library
+from leapp.libraries.actor import checksystemarch
 from leapp.reporting import Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
@@ -18,4 +18,4 @@ class CheckSystemArch(Actor):
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 
     def process(self):
-        library.check_architecture()
+        checksystemarch.check_architecture()

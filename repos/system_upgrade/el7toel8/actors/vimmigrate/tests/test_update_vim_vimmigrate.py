@@ -1,6 +1,6 @@
 import pytest
 
-from leapp.libraries.actor.library import update_vim, vim_configs
+from leapp.libraries.actor.vimmigrate import update_vim, vim_configs
 
 
 packages = [

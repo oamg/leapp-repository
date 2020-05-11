@@ -4,7 +4,7 @@ import pyudev
 import six
 
 from leapp.exceptions import StopActorExecutionError
-from leapp.libraries.actor import library
+from leapp.libraries.actor import biosdevname
 from leapp.libraries.stdlib import api
 from leapp.models import Interface, PCIAddress
 
@@ -23,13 +23,13 @@ class LoggerMocked(object):
 def test_biosdevname_disabled(monkeypatch):
     mock_config = mock_open(read_data="biosdevname=0")
     with patch("builtins.open" if six.PY3 else "__builtin__.open", mock_config):
-        assert library.is_biosdevname_disabled()
+        assert biosdevname.is_biosdevname_disabled()
 
 
 def test_biosdevname_enabled(monkeypatch):
     mock_config = mock_open(read_data="biosdevname=1")
     with patch("builtins.open" if six.PY3 else "__builtin__.open", mock_config):
-        assert not library.is_biosdevname_disabled()
+        assert not biosdevname.is_biosdevname_disabled()
 
 
 class pyudev_enum_mock(object):
@@ -51,12 +51,12 @@ class pyudev_enum_mock(object):
 
 def test_is_vendor_is_dell(monkeypatch):
     monkeypatch.setattr(pyudev, "Enumerator", pyudev_enum_mock("Dell"))
-    assert library.is_vendor_dell()
+    assert biosdevname.is_vendor_dell()
 
 
 def test_is_vendor_is_not_dell(monkeypatch):
     monkeypatch.setattr(pyudev, "Enumerator", pyudev_enum_mock("HP"))
-    assert not library.is_vendor_dell()
+    assert not biosdevname.is_vendor_dell()
 
 
 def test_all_interfaces_biosdevname(monkeypatch):
@@ -67,19 +67,19 @@ def test_all_interfaces_biosdevname(monkeypatch):
             name="eth0", mac="mac", vendor="dell", pci_info=pci_info, devpath="path", driver="drv"
         )
     ]
-    assert not library.all_interfaces_biosdevname(interfaces)
+    assert not biosdevname.all_interfaces_biosdevname(interfaces)
     interfaces = [
         Interface(
             name="em0", mac="mac", vendor="dell", pci_info=pci_info, devpath="path", driver="drv"
         )
     ]
-    assert library.all_interfaces_biosdevname(interfaces)
+    assert biosdevname.all_interfaces_biosdevname(interfaces)
     interfaces = [
         Interface(
             name="p0p22", mac="mac", vendor="dell", pci_info=pci_info, devpath="path", driver="drv"
         )
     ]
-    assert library.all_interfaces_biosdevname(interfaces)
+    assert biosdevname.all_interfaces_biosdevname(interfaces)
 
     interfaces = [
         Interface(
@@ -89,7 +89,7 @@ def test_all_interfaces_biosdevname(monkeypatch):
             name="em2", mac="mac", vendor="dell", pci_info=pci_info, devpath="path", driver="drv"
         ),
     ]
-    assert library.all_interfaces_biosdevname(interfaces)
+    assert biosdevname.all_interfaces_biosdevname(interfaces)
 
     interfaces = [
         Interface(
@@ -102,7 +102,7 @@ def test_all_interfaces_biosdevname(monkeypatch):
             name="eth0", mac="mac", vendor="dell", pci_info=pci_info, devpath="path", driver="drv"
         ),
     ]
-    assert not library.all_interfaces_biosdevname(interfaces)
+    assert not biosdevname.all_interfaces_biosdevname(interfaces)
 
 
 def test_enable_biosdevname(monkeypatch):
@@ -110,7 +110,7 @@ def test_enable_biosdevname(monkeypatch):
     monkeypatch.setattr(api, 'current_logger', LoggerMocked())
     monkeypatch.setattr(api, 'produce', result.append)
 
-    library.enable_biosdevname()
+    biosdevname.enable_biosdevname()
     assert (
             "Biosdevname naming scheme in use, explicitely enabling biosdevname on RHEL-8"
             in api.current_logger.infomsg
@@ -124,6 +124,6 @@ def test_check_biosdevname(monkeypatch):
         yield None
 
     monkeypatch.setattr(api, "consume", persistent_net_names_mocked)
-    monkeypatch.setattr(library, "is_biosdevname_disabled", lambda: False)
+    monkeypatch.setattr(biosdevname, "is_biosdevname_disabled", lambda: False)
     with pytest.raises(StopActorExecutionError):
-        library.check_biosdevname()
+        biosdevname.check_biosdevname()

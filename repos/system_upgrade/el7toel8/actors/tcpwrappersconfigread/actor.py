@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.libraries.actor import library
+from leapp.libraries.actor import tcpwrappersconfigread
 from leapp.models import TcpWrappersFacts
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
@@ -15,4 +15,4 @@ class TcpWrappersConfigRead(Actor):
     tags = (FactsPhaseTag, IPUWorkflowTag)
 
     def process(self):
-        self.produce(library.get_tcp_wrappers_facts())
+        self.produce(tcpwrappersconfigread.get_tcp_wrappers_facts())

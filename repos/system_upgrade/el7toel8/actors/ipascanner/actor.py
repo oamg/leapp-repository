@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.libraries.actor.library import (
+from leapp.libraries.actor.ipascanner import (
     is_ipa_client_configured,
     is_ipa_server_configured,
 )

@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.libraries.actor import library
+from leapp.libraries.actor import migratesendmail
 from leapp.models import SendmailMigrationDecision
 from leapp.reporting import Report, create_report
 from leapp import reporting
@@ -22,7 +22,7 @@ class MigrateSendmail(Actor):
             return
 
         for f in decision.migrate_files:
-            library.migrate_file(f)
+            migratesendmail.migrate_file(f)
         list_separator_fmt = '\n    - '
         create_report([
             reporting.Title('sendmail configuration files migrated'),

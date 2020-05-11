@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.libraries.actor import cpu
+from leapp.libraries.actor import scancpu
 from leapp.models import CPUInfo
 from leapp.tags import IPUWorkflowTag, FactsPhaseTag
 
@@ -13,4 +13,4 @@ class ScanCPU(Actor):
     tags = (IPUWorkflowTag, FactsPhaseTag)
 
     def process(self):
-        cpu.process()
+        scancpu.process()

@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.libraries.actor.library import get_grub_device
+from leapp.libraries.actor.grubdevname import get_grub_device
 from leapp.models import GrubDevice
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 

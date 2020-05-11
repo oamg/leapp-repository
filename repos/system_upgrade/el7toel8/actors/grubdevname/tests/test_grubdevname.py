@@ -3,10 +3,9 @@ import os
 import pytest
 
 from leapp.exceptions import StopActorExecution
-from leapp.libraries.stdlib import api, CalledProcessError
+from leapp.libraries.actor import grubdevname
 from leapp.libraries.common import testutils
-from leapp.libraries.actor import library
-
+from leapp.libraries.stdlib import CalledProcessError, api
 
 BOOT_PARTITION = '/dev/vda1'
 
@@ -15,6 +14,8 @@ BOOT_DEVICE_ENV = '/dev/sda'
 
 VALID_DD = b'GRUB GeomHard DiskRead Error'
 INVALID_DD = b'Nothing here'
+
+CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 def raise_call_error(args=None):
@@ -48,11 +49,11 @@ class RunMocked(object):
 
 
 def open_mocked(fn, flags):
-    return open('tests/valid' if fn == BOOT_DEVICE else 'tests/invalid', 'r')
+    return open(os.path.join(CUR_DIR, 'valid') if fn == BOOT_DEVICE else os.path.join(CUR_DIR, 'invalid'), 'r')
 
 
 def open_invalid(fn, flags):
-    return open('tests/invalid', 'r')
+    return open(os.path.join(CUR_DIR, 'invalid'), 'r')
 
 
 def read_mocked(f, size):
@@ -65,49 +66,49 @@ def close_mocked(f):
 
 def test_get_grub_device(monkeypatch):
     run_mocked = RunMocked()
-    monkeypatch.setattr(library, 'run', run_mocked)
+    monkeypatch.setattr(grubdevname, 'run', run_mocked)
     monkeypatch.setattr(api, 'produce', testutils.produce_mocked())
     monkeypatch.setattr(os, 'open', open_mocked)
     monkeypatch.setattr(os, 'read', read_mocked)
     monkeypatch.setattr(os, 'close', close_mocked)
-    library.get_grub_device()
-    assert library.run.called == 2
+    grubdevname.get_grub_device()
+    assert grubdevname.run.called == 2
     assert BOOT_DEVICE == api.produce.model_instances[0].grub_device
 
 
 def test_get_grub_device_fail(monkeypatch):
     run_mocked = RunMocked(raise_err=True)
-    monkeypatch.setattr(library, 'run', run_mocked)
+    monkeypatch.setattr(grubdevname, 'run', run_mocked)
     monkeypatch.setattr(api, 'produce', testutils.produce_mocked())
     monkeypatch.setattr(os, 'open', open_mocked)
     monkeypatch.setattr(os, 'read', read_mocked)
     monkeypatch.setattr(os, 'close', close_mocked)
     with pytest.raises(StopActorExecution):
-        library.get_grub_device()
-    assert library.run.called == 1
+        grubdevname.get_grub_device()
+    assert grubdevname.run.called == 1
     assert not api.produce.model_instances
 
 
 def test_grub_device_env_var(monkeypatch):
     run_mocked = RunMocked()
     monkeypatch.setenv('LEAPP_GRUB_DEVICE', BOOT_DEVICE_ENV)
-    monkeypatch.setattr(library, 'run', run_mocked)
+    monkeypatch.setattr(grubdevname, 'run', run_mocked)
     monkeypatch.setattr(api, 'produce', testutils.produce_mocked())
     monkeypatch.setattr(os, 'open', open_mocked)
     monkeypatch.setattr(os, 'read', read_mocked)
     monkeypatch.setattr(os, 'close', close_mocked)
-    library.get_grub_device()
-    assert library.run.called == 0
+    grubdevname.get_grub_device()
+    assert grubdevname.run.called == 0
     assert BOOT_DEVICE_ENV == api.produce.model_instances[0].grub_device
 
 
 def test_device_no_grub(monkeypatch):
     run_mocked = RunMocked()
-    monkeypatch.setattr(library, 'run', run_mocked)
+    monkeypatch.setattr(grubdevname, 'run', run_mocked)
     monkeypatch.setattr(api, 'produce', testutils.produce_mocked())
     monkeypatch.setattr(os, 'open', open_invalid)
     monkeypatch.setattr(os, 'read', read_mocked)
     monkeypatch.setattr(os, 'close', close_mocked)
-    library.get_grub_device()
-    assert library.run.called == 2
+    grubdevname.get_grub_device()
+    assert grubdevname.run.called == 2
     assert not api.produce.model_instances

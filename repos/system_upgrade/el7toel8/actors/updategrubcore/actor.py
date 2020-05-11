@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.libraries.actor.library import update_grub_core
+from leapp.libraries.actor.updategrubcore import update_grub_core
 from leapp.models import TransactionCompleted, UpdateGrub
 from leapp.reporting import Report
 from leapp.tags import RPMUpgradePhaseTag, IPUWorkflowTag
