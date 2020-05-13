@@ -3,21 +3,23 @@ PKGNAME=leapp-repository
 DEPS_PKGNAME=leapp-el7toel8-deps
 VERSION=`grep -m1 "^Version:" packaging/$(PKGNAME).spec | grep -om1 "[0-9].[0-9.]**"`
 DEPS_VERSION=`grep -m1 "^Version:" packaging/$(DEPS_PKGNAME).spec | grep -om1 "[0-9].[0-9.]**"`
-ACTOR_PATH=repos
-LIBRARY_PATH=`python utils/library_path.py`
+REPOS_PATH=repos
+ACTOR_PATH=
+LIBRARY_PATH=
+REPORT_ARG=
+
 ifdef ACTOR
 	ACTOR_PATH=`python utils/actor_path.py $(ACTOR)`
-	TEST_ACTOR_ARG=--actor=$(ACTOR)
-	ifneq ($(TEST_LIBS),y)
-		LIBRARY_PATH=
-	endif
 endif
+
 ifeq ($(TEST_LIBS),y)
-	TEST_LIBRARIES_ARG=--libraries
-	ifndef ACTOR
-		ACTOR_PATH=
-	endif
+	LIBRARY_PATH=`python utils/library_path.py`
 endif
+
+ifdef REPORT
+	REPORT_ARG=--junit-xml=$(REPORT)
+endif
+
 # needed only in case the Python2 should be used
 _USE_PYTHON_INTERPRETER=$${_PYTHON_INTERPRETER}
 
@@ -219,7 +221,7 @@ install-deps-fedora:
 lint:
 	. tut/bin/activate; \
 	echo "--- Linting ... ---" && \
-	SEARCH_PATH={$(ACTOR_PATH),$(LIBRARY_PATH)} && \
+	SEARCH_PATH=$(REPOS_PATH) && \
 	echo "Using search path '$${SEARCH_PATH}'" && \
 	echo "--- Running pylint ---" && \
 	bash -c "[[ ! -z $${SEARCH_PATH} ]] && find $${SEARCH_PATH} -name '*.py' | sort -u | xargs pylint" && \
@@ -235,7 +237,7 @@ test_no_lint:
 	cd repos/system_upgrade/el7toel8/; \
 	snactor workflow sanity-check ipu && \
 	cd - && \
-	python utils/run_pytest.py $(TEST_ACTOR_ARG) $(TEST_LIBRARIES_ARG) --report=$(REPORT)
+	pytest $(REPORT_ARG) $(ACTOR_PATH) $(LIBRARY_PATH)
 
 test: lint test_no_lint
 
