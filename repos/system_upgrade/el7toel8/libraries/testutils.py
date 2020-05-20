@@ -62,15 +62,15 @@ class logger_mocked(object):
 
 class CurrentActorMocked(object):  # pylint:disable=R0904
     def __init__(self, arch=architecture.ARCH_X86_64, envars=None, kernel='3.10.0-957.43.1.el7.x86_64',
-                 release_id='rhel', src_ver='7.8', dst_ver='8.1', msgs=None):
+                 release_id='rhel', src_ver='7.8', dst_ver='8.1', msgs=None, flavour='default'):
         envarsList = [EnvVar(name=k, value=v) for k, v in envars.items()] if envars else []
         version = namedtuple('Version', ['source', 'target'])(src_ver, dst_ver)
         release = namedtuple('OS_release', ['release_id', 'version_id'])(release_id, src_ver)
 
         self._common_folder = '../../files'
         self.configuration = namedtuple(
-            'configuration', ['architecture', 'kernel', 'leapp_env_vars', 'os_release', 'version']
-        )(arch, kernel, envarsList, release, version)
+            'configuration', ['architecture', 'kernel', 'leapp_env_vars', 'os_release', 'version', 'flavour']
+        )(arch, kernel, envarsList, release, version, flavour)
         self._msgs = msgs or []
 
     def __call__(self):
