@@ -1,9 +1,16 @@
 import os
 import errno
 
+import distro
+import pytest
+
 from leapp.snactor.fixture import current_actor_context
 
 
+@pytest.mark.skipif(
+    distro.linux_distribution()[0] == 'Fedora',
+    reason='default.target.wants does not exists on Fedora distro',
+    )
 def test_remove_resume_service(current_actor_context):
     service_name = 'leapp_resume.service'
     service_path = os.path.join('/etc/systemd/system/', service_name)
