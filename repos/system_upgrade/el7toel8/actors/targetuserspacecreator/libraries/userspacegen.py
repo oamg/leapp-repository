@@ -10,7 +10,7 @@ from leapp.libraries.stdlib import CalledProcessError, api, config, run
 from leapp.models import (CustomTargetRepositoryFile, RequiredTargetUserspacePackages, RHSMInfo,
                           StorageInfo, TargetRepositories, TargetUserSpaceInfo,
                           UsedTargetRepositories, UsedTargetRepository,
-                          XFSPresence)
+                          XFSPresence, RHUIInfo)
 
 # TODO: "refactor" (modify) the library significantly
 # The current shape is really bad and ineffective (duplicit parsing
@@ -116,6 +116,26 @@ def prepare_target_userspace(context, userspace_dir, enabled_repos, packages):
                 details={'details': str(exc), 'stderr': exc.stderr}
             )
 
+
+def copy_rhui_data(context):
+
+    dnf_plugin_path = '/usr/lib/python2.7/site-packages/dnf-plugins/'
+
+    rhui_pki_folder = '/etc/pki/rhui'
+
+    rhui_pki_prod_dir = os.path.join(rhui_pki_folder, 'product')
+
+    certs_dir = api.get_common_folder_path('rhui-certs')
+
+    context.call(['mkdir', '-p', rhui_pki_prod_dir])
+
+    context.copy_to(os.path.join(certs_dir, 'rhui-client-config-server-8.key'), rhui_pki_folder,)
+    context.copy_to(os.path.join(certs_dir, 'rhui-client-config-server-8.crt'), rhui_pki_prod_dir)
+    context.copy_to(os.path.join(certs_dir, 'content-rhel8.key'), rhui_pki_folder)
+    context.copy_to(os.path.join(certs_dir, 'content-rhel8.crt'), rhui_pki_prod_dir)
+    context.copy_to(os.path.join(certs_dir, 'cdn.redhat.com-chain.crt'), rhui_pki_folder)
+
+    context.copy_to(api.get_file_path('amazon-id.py'), dnf_plugin_path)
 
 def _prep_repository_access(context, target_userspace):
     """
@@ -420,6 +440,9 @@ def perform():
             xfs_info=indata.xfs_info) as overlay:
         with overlay.nspawn() as context:
             target_repoids = _gather_target_repositories(context, indata, prod_cert_path)
+            rhui_info = next(api.consume(RHUIInfo), None)
+            if rhui_info and rhui_info.provider == 'aws':
+                copy_rhui_data(context)
             _create_target_userspace(context, indata.packages, target_repoids)
             api.produce(UsedTargetRepositories(
                 repos=[UsedTargetRepository(repoid=repo) for repo in target_repoids]))

@@ -7,9 +7,12 @@ import shutil
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import guards, mounting, overlaygen, rhsm, utils
 from leapp.libraries.stdlib import CalledProcessError, api, config
+from leapp.models import RHUIInfo
 
 DNF_PLUGIN_NAME = 'rhel_upgrade.py'
+AWS_DNF_PLUGIN_NAME = 'amazon-id.py'
 DNF_PLUGIN_PATH = os.path.join('/lib/python3.6/site-packages/dnf-plugins', DNF_PLUGIN_NAME)
+AWS_DNF_PLUGIN_PATH = os.path.join('/lib/python3.6/site-packages/dnf-plugins', AWS_DNF_PLUGIN_NAME)
 DNF_PLUGIN_DATA_NAME = 'dnf-plugin-data.txt'
 DNF_PLUGIN_DATA_PATH = os.path.join('/var/lib/leapp', DNF_PLUGIN_DATA_NAME)
 DNF_PLUGIN_DATA_LOG_PATH = os.path.join('/var/log/leapp', DNF_PLUGIN_DATA_NAME)
@@ -109,6 +112,8 @@ def _transaction(context, stage, target_repoids, tasks, test=False, cmd_prefix=N
             cmd.append('-v')
         if rhsm.skip_rhsm():
             cmd += ['--disableplugin', 'subscription-manager']
+            if stage == 'upgrade':
+                cmd += ['--disableplugin', 'amazon-id']
         if cmd_prefix:
             cmd = cmd_prefix + cmd
         try:

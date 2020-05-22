@@ -77,6 +77,30 @@ class RhelUpgradeCommand(dnf.cli.Command):
         self.base.repos.all().disable()
         for repo in self.base.repos.all():
             if repo.id in enabled_repos:
+                if self.opts.tid[0] == 'upgrade':
+                    # super ugly POC hardcore
+                    # during the upgrade phase we has to disable "Amazon-id" plugin as we do not have networking in initramdisk (and we probably do not want it
+                    # to do anything anyway as we already have packages downloaded and cached). However, when we disable it, the plugin cannot substitute "REGION" placeholder
+                    # in mirrorlist url and consequently we cannot identify a correct cache folder in /var/cache/dnf as it has different digest calculated based on already 
+                    # substituted placeholder. E.g:
+                    #
+                    # "https://rhui3.REGION.aws.ce.redhat.com" becames "https://rhui3.eu-central-1.aws.ce.redhat.com"
+                    #
+                    # we could solve this hardcode by updating "dnf-plugin-data.txt" during the download phase with the proper substituted mirrorlist
+                    if repo.id == 'rhel-8-appstream-rhui-rpms':
+                        repo.mirrorlist = 'https://rhui3.eu-central-1.aws.ce.redhat.com/pulp/mirror/content/dist/rhel8/rhui/8/x86_64/appstream/os'
+                    if repo.id == 'rhel-8-appstream-rhui-source-rpms':
+                        repo.mirrorlist = 'https://rhui3.eu-central-1.aws.ce.redhat.com/pulp/mirror/content/dist/rhel8/rhui/8/x86_64/appstream/source/SRPMS'
+                    if repo.id == 'rhel-8-appstream-rhui-debug-rpms':
+                       repo.mirrorlist = 'https://rhui3.eu-central-1.aws.ce.redhat.com/pulp/mirror/content/dist/rhel8/rhui/8/x86_64/appstream/debug'
+                    if repo.id == 'rhel-8-baseos-rhui-rpms':
+                       repo.mirrorlist = 'https://rhui3.eu-central-1.aws.ce.redhat.com/pulp/mirror/content/dist/rhel8/rhui/8/x86_64/baseos/os'
+                    if repo.id == 'rhel-8-baseos-rhui-source-rpms':
+                       repo.mirrorlist = 'https://rhui3.eu-central-1.aws.ce.redhat.com/pulp/mirror/content/dist/rhel8/rhui/8/x86_64/baseos/source/SRPMS'
+                    if repo.id == 'rhel-8-baseos-rhui-debug-rpms':
+                       repo.mirrorlist = 'https://rhui3.eu-central-1.aws.ce.redhat.com/pulp/mirror/content/dist/rhel8/rhui/8/x86_64/baseos/debug'
+                    if repo.id == 'rhui-client-config-server-8':
+                       repo.mirrorlist = 'https://rhui3.eu-central-1.aws.ce.redhat.com/pulp/mirror/protected/rhui-client-config/rhel/server/8/x86_64/os'
                 repo.skip_if_unavailable = False
                 if not self.base.conf.gpgcheck:
                     repo.gpgcheck = False

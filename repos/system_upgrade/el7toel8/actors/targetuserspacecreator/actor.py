@@ -4,7 +4,7 @@ from leapp.libraries.common.config import get_env, version
 from leapp.models import (CustomTargetRepositoryFile, RepositoriesMap, RequiredTargetUserspacePackages,
                           RHSMInfo, StorageInfo, TargetRepositories,
                           TargetUserSpaceInfo, UsedTargetRepositories,
-                          XFSPresence, Report)
+                          XFSPresence, Report, RHUIInfo)
 from leapp.tags import IPUWorkflowTag, TargetTransactionFactsPhaseTag
 
 
@@ -21,7 +21,7 @@ class TargetUserspaceCreator(Actor):
 
     name = 'target_userspace_creator'
     consumes = (CustomTargetRepositoryFile, RepositoriesMap, RequiredTargetUserspacePackages,
-                StorageInfo, RHSMInfo, TargetRepositories, XFSPresence)
+                StorageInfo, RHSMInfo, TargetRepositories, XFSPresence, RHUIInfo)
     produces = (TargetUserSpaceInfo, UsedTargetRepositories, Report)
     tags = (IPUWorkflowTag, TargetTransactionFactsPhaseTag)
 
