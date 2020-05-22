@@ -9,4 +9,5 @@ pylint
 pytest==3.6.4
 pytest-ordering==0.5
 pyudev==0.22.0
+distro==1.5.0
 git+https://github.com/oamg/leapp

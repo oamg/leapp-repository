@@ -1,11 +1,25 @@
+import warnings
+
 from leapp.exceptions import StopActorExecutionError
+
+no_yum = False
+no_yum_warning_msg = "package `yum` is unavailable"
+try:
+    import yum
+except ImportError:
+    no_yum = True
+    warnings.warn(no_yum_warning_msg, ImportWarning)
 
 
 def get_package_repository_data():
-    """ Return dictionary mapping package name with repository from which it was installed """
-    # import has to be inside the function to avoid troubles with non-existing
-    # module in Python3 (where we do not need this function anymore)
-    import yum  # pylint: disable=import-outside-toplevel
+    """ Return dictionary mapping package name with repository from which it was installed.
+    Note:
+        There's no yum module for py3. The dnf module could have been used
+        instead but there's a bug in dnf preventing us to do so:
+        https://bugzilla.redhat.com/show_bug.cgi?id=1789840
+    """
+    if no_yum:
+        raise StopActorExecutionError(message=no_yum_warning_msg)
     yum_base = yum.YumBase()
     pkg_repos = {}
 

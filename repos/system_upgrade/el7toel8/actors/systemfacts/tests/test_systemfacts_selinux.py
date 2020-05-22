@@ -1,16 +1,25 @@
-import six
+import warnings
+
 import pytest
 
 from leapp.libraries.actor.systemfacts import get_selinux_status
 from leapp.models import SELinuxFacts
 
-if six.PY2:
+no_selinux = False
+try:
     import selinux
+except ImportError:
+    no_selinux = True
+    warnings.warn("Tests which uses `selinux` will be skipped "
+                  "due to library unavailability.", ImportWarning)
 
+
+reason_to_skip_msg = "Selinux is not available"
 
 # FIXME: create valid tests...
 
-@pytest.mark.skipif(six.PY3, reason="skipped in python 3 - raise ModuleNotFoundError on selinux")
+
+@pytest.mark.skipif(no_selinux, reason=reason_to_skip_msg)
 def test_selinux_enabled_enforcing(monkeypatch):
     """
     Test case SELinux is enabled in enforcing mode
@@ -28,7 +37,7 @@ def test_selinux_enabled_enforcing(monkeypatch):
     assert SELinuxFacts(**expected_data) == get_selinux_status()
 
 
-@pytest.mark.skipif(six.PY3, reason="skipped in python 3 - raise ModuleNotFoundError on selinux")
+@pytest.mark.skipif(no_selinux, reason=reason_to_skip_msg)
 def test_selinux_enabled_permissive(monkeypatch):
     """
     Test case SELinux is enabled in permissive mode
@@ -46,7 +55,7 @@ def test_selinux_enabled_permissive(monkeypatch):
     assert SELinuxFacts(**expected_data) == get_selinux_status()
 
 
-@pytest.mark.skipif(six.PY3, reason="skipped in python 3 - raise ModuleNotFoundError on selinux")
+@pytest.mark.skipif(no_selinux, reason=reason_to_skip_msg)
 def test_selinux_disabled(monkeypatch):
     """
     Test case SELinux is disabled
@@ -69,7 +78,7 @@ class MockNoConfigFileOSError(object):
         raise OSError
 
 
-@pytest.mark.skipif(six.PY3, reason="skipped in python 3 - raise ModuleNotFoundError on selinux")
+@pytest.mark.skipif(no_selinux, reason=reason_to_skip_msg)
 def test_selinux_disabled_no_config_file(monkeypatch):
     """
     Test case SELinux is disabled

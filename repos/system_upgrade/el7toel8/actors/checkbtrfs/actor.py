@@ -24,9 +24,11 @@ class CheckBtrfs(Actor):
                 if active_module.filename == 'btrfs':
                     create_report([
                         reporting.Title('Btrfs has been removed from RHEL8'),
-                        reporting.Summary('The Btrfs file system was introduced as Technology Preview with the '
+                        reporting.Summary(
+                            'The Btrfs file system was introduced as Technology Preview with the '
                             'initial release of Red Hat Enterprise Linux 6 and Red Hat Enterprise Linux 7. As of '
-                            'versions 6.6 and 7.4 this technology has been deprecated and removed in RHEL8.'),
+                            'versions 6.6 and 7.4 this technology has been deprecated and removed in RHEL8.'
+                        ),
                         reporting.ExternalLink(
                             title='Considerations in adopting RHEL 8 - btrfs has been removed.',
                             url='https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/considerations_in_adopting_rhel_8/file-systems-and-storage_considerations-in-adopting-rhel-8#btrfs-has-been-removed_file-systems-and-storage'  # noqa: E501; pylint: disable=line-too-long
