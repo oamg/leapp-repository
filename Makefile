@@ -83,6 +83,8 @@ help:
 	@echo "                         - can be changed by the COPR_CONFIG env"
 	@echo "  install-deps           create python virtualenv and install there"
 	@echo "                         leapp-repository with dependencies"
+	@echo "  install-deps-fedora    create python virtualenv and install there"
+	@echo "                         leapp-repository with dependencies for Fedora OS"
 	@echo "  lint                   lint source code"
 	@echo "  test                   lint source code and run tests"
 	@echo "  test_no_lint           run tests without linting the source code"
@@ -199,6 +201,21 @@ install-deps:
 	pip install --upgrade -r requirements.txt
 	python utils/install_actor_deps.py --actor=$(ACTOR)
 
+install-deps-fedora:
+	@# Check the necessary rpms are installed for py3 (and py2 below)
+	if ! rpm -q git findutils python3-virtualenv; then \
+		if ! dnf install -y git findutils python3-virtualenv; then \
+			echo 'Please install the following rpms via the command: ' \
+				'sudo dnf install -y git findutils python3-virtualenv'; \
+			exit 1; \
+		fi; \
+	fi
+	@# Prepare the virtual environment
+	virtualenv --system-site-packages --python /usr/bin/python tut
+	. tut/bin/activate ; \
+	pip install --upgrade setuptools; \
+	pip install --upgrade -r requirements.txt; \
+
 lint:
 	. tut/bin/activate; \
 	echo "--- Linting ... ---" && \
@@ -229,4 +246,4 @@ dashboard_data:
 	python ../../../utils/dashboard-json-dump.py > ../../../discover.json; \
 	popd
 
-.PHONY: help build clean prepare source srpm copr_build print_release register install-deps lint test_no_lint test dashboard_data
+.PHONY: help build clean prepare source srpm copr_build print_release register install-deps install-deps-fedora lint test_no_lint test dashboard_data
