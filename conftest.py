@@ -1,42 +1,73 @@
-import os
+import logging
 
-def load_repo(path):
-    """
-    Load repository on demand.
+from leapp.repository.scan import find_and_scan_repositories
+from leapp.utils.repository import find_repository_basedir
 
-    Do not require paths initialized if no environment is set.
-    Allows some parts to be tested without working leapp installation.
-    """
-    from leapp.utils.repository import find_repository_basedir
-    from leapp.repository.scan import find_and_scan_repositories
+logger = logging.getLogger(__name__)
+logging.getLogger("asyncio").setLevel(logging.INFO)
+logging.getLogger("parso").setLevel(logging.INFO)
 
-    repo = find_and_scan_repositories(find_repository_basedir(path), include_locals=True)
-    repo.load()
-    return repo
-        
 
-def pytest_sessionstart(session):
+def pytest_collectstart(collector):
+    if collector.nodeid:
+        current_repo_basedir = find_repository_basedir(collector.nodeid)
+        # loading the current repo
+        if (
+            not hasattr(collector.session, "leapp_repository")
+            or current_repo_basedir != collector.session.repo_base_dir
+        ):
+            repo = find_and_scan_repositories(
+                find_repository_basedir(collector.nodeid), include_locals=True
+            )
+            repo.load()
+            collector.session.leapp_repository = repo
+            collector.session.repo_base_dir = current_repo_basedir
 
-    actor_path = os.environ.get('LEAPP_TESTED_ACTOR', None)
-    library_path = os.environ.get('LEAPP_TESTED_LIBRARY', None)
+        # we're forcing the actor context switch only when traversing new
+        # actor
+        if "/actors/" in str(collector.fspath) and (
+            not hasattr(collector.session, "current_actor_path")
+            or collector.session.current_actor_path
+            not in str(collector.fspath)
+        ):
+            actor = None
+            for a in collector.session.leapp_repository.actors:
+                if a.full_path == collector.fspath.dirpath().dirname:
+                    actor = a
+                    break
 
-    if actor_path:
-        repo = load_repo(actor_path)
+            if not actor:
+                logger.info("No actor found, exiting collection...")
+                return
+            # we need to tear down the context from the previous
+            # actor
+            try:
+                collector.session.current_actor_context.__exit__(
+                    None, None, None
+                )
+            except AttributeError:
+                pass
+            else:
+                logger.info(
+                    "Actor %r context teardown complete",
+                    collector.session.current_actor.name,
+                )
 
-        actor = None
-        # find which actor is being tested
-        for a in repo.actors:
-            if a.full_path == actor_path.rstrip('/'):
-                actor = a
-                break
+            logger.info("Injecting actor context for %r", actor.name)
+            collector.session.current_actor = actor
+            collector.session.current_actor_context = actor.injected_context()
+            collector.session.current_actor_context.__enter__()
+            collector.session.current_actor_path = (
+                collector.session.current_actor.full_path
+            )
+            logger.info("Actor %r context injected", actor.name)
 
-        if not actor:
-            return
 
-        # load actor context so libraries can be imported on module level
-        session.leapp_repository = repo
-        session.actor_context = actor.injected_context()
-        session.actor_context.__enter__()
-    elif library_path:
-        load_repo(library_path)
-        os.chdir(library_path)
+def pytest_runtestloop(session):
+    session.current_actor_context.__exit__(
+        None, None, None
+    )
+    logger.info(
+        "Actor %r context teardown complete",
+        session.current_actor.name,
+    )
