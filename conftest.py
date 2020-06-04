@@ -19,7 +19,7 @@ def pytest_collectstart(collector):
             repo = find_and_scan_repositories(
                 find_repository_basedir(collector.nodeid), include_locals=True
             )
-            repo.load()
+            repo.load(skip_actors_discovery=True)
             collector.session.leapp_repository = repo
             collector.session.repo_base_dir = current_repo_basedir
 
@@ -64,10 +64,7 @@ def pytest_collectstart(collector):
 
 
 def pytest_runtestloop(session):
-    session.current_actor_context.__exit__(
-        None, None, None
-    )
+    session.current_actor_context.__exit__(None, None, None)
     logger.info(
-        "Actor %r context teardown complete",
-        session.current_actor.name,
+        "Actor %r context teardown complete", session.current_actor.name,
     )
