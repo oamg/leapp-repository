@@ -1,9 +1,9 @@
 from leapp.actors import Actor
-from leapp.reporting import Report
-from leapp.models import InstalledRedHatSignedRPM
+from leapp.models import Report, InstalledRedHatSignedRPM
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
-from leapp.libraries.actor.library import get_mariadb_packages, generate_report
+from leapp.libraries.common.rpms import has_package
+from leapp.libraries.actor.library import generate_report
 
 
 class MariaDbCheck(Actor):
@@ -18,9 +18,5 @@ class MariaDbCheck(Actor):
     tags = (IPUWorkflowTag, ChecksPhaseTag)
 
     def process(self):
-        packages = get_mariadb_packages()
-
-        if packages:
-            generate_report(packages)
-        
-
+        if has_package(InstalledRedHatSignedRPM, 'mariadb-server'):
+            generate_report()

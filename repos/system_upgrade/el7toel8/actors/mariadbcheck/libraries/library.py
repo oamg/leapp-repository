@@ -1,6 +1,6 @@
 import os
 from leapp.models import InstalledRedHatSignedRPM
-from leapp.libraries.common import reporting
+from leapp import reporting
 from leapp.libraries.stdlib import CalledProcessError, api, run
 
 
@@ -92,7 +92,7 @@ def get_warn_options(used_opts):
         'innodb-sys-stats', 'innodb-table-stats', 'innodb-thread-concurrency-timer-based',
         'innodb-use-sys-stats-table', 'xtradb-admin-command'
     ]
-    
+
     warn_changed = []
     warn_renamed = {}
     warn_removed = []
@@ -116,14 +116,7 @@ def get_warn_options(used_opts):
     return (warn_changed, warn_renamed, warn_removed)
 
 
-def get_mariadb_packages():
-    """ Get list of installed MariaDB packages """
-
-    for rpm_pkgs in api.consume(InstalledRedHatSignedRPM):
-        return [pkg for pkg in rpm_pkgs.items if pkg.name.startswith('mariadb')]
-
-
-def generate_report(packages):
+def generate_report():
     """ Generate reports informing user about possible manual intervention requirements """
 
     DOC_URL = 'https://access.redhat.com/articles/4055661'
@@ -133,48 +126,67 @@ def generate_report(packages):
     unsupported_plugins = get_unsupported_plugins(get_plugin_dir(config))
     (opts_changed, opts_renamed, opts_removed) = get_warn_options(config)
 
-    for pkg in packages:
-        # Show documentation url if mariadb-server installed
-        if pkg.name == 'mariadb-server':
-            title = 'MariaDB server installation detected'
-            severity = 'high'
-            summary = 'MariaDB server will be upgraded. Additional steps might be required.\n\n' \
-                      'Read more: {}'.format(DOC_URL)
+    # Show documentation url if mariadb-server installed
+    title = 'MariaDB server installation detected'
+    summary = 'MariaDB server will be upgraded. Additional steps might be required.\n\n'
 
-            reporting.report_generic(title=title, severity=severity, summary=summary)
+    reporting.create_report([
+        reporting.Title(title),
+        reporting.Summary(summary),
+        reporting.Severity(reporting.Severity.HIGH),
+        reporting.Tags([reporting.Tags.SERVICES]),
+        reporting.ExternalLink(title='Read more here.', url=DOC_URL)
+        ])
 
-            if unsupported_plugins:
-                title = 'MariaDB server unsupported plugins detected'
-                severity = 'high'
-                summary = 'Following installed plugins won\'t be part of MariaDB distribution ' \
-                          'after upgrade:\n{}'.format(", ".join(unsupported_plugins))
+    if unsupported_plugins:
+        title = 'MariaDB server unsupported plugins detected'
+        summary = 'Following installed plugins won\'t be part of MariaDB distribution ' \
+                  'after upgrade:\n{}'.format(", ".join(unsupported_plugins))
 
-                reporting.report_generic(title=title, severity=severity, summary=summary)
+        reporting.create_report([
+            reporting.Title(title),
+            reporting.Summary(summary),
+            reporting.Severity(reporting.Severity.HIGH),
+            reporting.Tags([reporting.Tags.SERVICES])
+            ])
 
-            if opts_changed:
-                title = 'MariaDB server changed default values of some options'
-                severity = 'medium'
-                summary = 'Following config options changed default value:\n{}'.format(
-                    ", ".join(opts_changed)
-                )
+    if opts_changed:
+        title = 'MariaDB server changed default values of some options'
+        summary = 'Following config options changed default value:\n{}'.format(
+            ", ".join(opts_changed)
+        )
 
-                reporting.report_generic(title=title, severity=severity, summary=summary)
+        reporting.create_report([
+            reporting.Title(title),
+            reporting.Summary(summary),
+            reporting.Severity(reporting.Severity.MEDIUM),
+            reporting.Tags([reporting.Tags.SERVICES])
+            ])
 
-            if opts_renamed:
-                title = 'MariaDB server renamed some options'
-                severity = 'high'
-                summary = 'Following used config options were renamed:\n{}'.format(
-                    ", ".join(opts_renamed)
-                )
+    if opts_renamed:
+        title = 'MariaDB server renamed some options'
+        severity = 'high'
+        summary = 'Following used config options were renamed:\n{}'.format(
+            ", ".join(opts_renamed)
+        )
 
-                reporting.report_generic(title=title, severity=severity, summary=summary)
+        reporting.create_report([
+            reporting.Title(title),
+            reporting.Summary(summary),
+            reporting.Severity(reporting.Severity.HIGH),
+            reporting.Tags([reporting.Tags.SERVICES])
+            ])
 
-            if opts_removed:
-                title = 'MariaDB server removed some options'
-                severity = 'high'
-                summary = 'Following used config options were removed:\n{}'.format(
-                    ", ".join(opts_removed)
-                )
+    if opts_removed:
+        title = 'MariaDB server removed some options'
+        severity = 'high'
+        summary = 'Following used config options were removed:\n{}'.format(
+            ", ".join(opts_removed)
+        )
 
-                reporting.report_generic(title=title, severity=severity, summary=summary)
-
+        reporting.create_report([
+            reporting.Title(title),
+            reporting.Summary(summary),
+            reporting.Severity(reporting.Severity.HIGH),
+            reporting.Tags([reporting.Tags.SERVICES])
+            ])
