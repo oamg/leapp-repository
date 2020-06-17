@@ -64,7 +64,10 @@ def pytest_collectstart(collector):
 
 
 def pytest_runtestloop(session):
-    session.current_actor_context.__exit__(None, None, None)
-    logger.info(
-        "Actor %r context teardown complete", session.current_actor.name,
-    )
+    try:
+        session.current_actor_context.__exit__(None, None, None)
+        logger.info(
+            "Actor %r context teardown complete", session.current_actor.name,
+        )
+    except AttributeError:
+        pass
