@@ -1,10 +1,12 @@
 import os
+import platform
 
 import pytest
 
 from leapp.exceptions import StopActorExecution
 from leapp.libraries.actor import grubdevname
 from leapp.libraries.common import testutils
+from leapp.libraries.common.config import architecture
 from leapp.libraries.stdlib import CalledProcessError, api
 
 BOOT_PARTITION = '/dev/vda1'
@@ -33,9 +35,10 @@ class RunMocked(object):
         self.args = None
         self.raise_err = raise_err
 
-    def __call__(self, args, encoding=None):
+    def __call__(self, args=None, encoding=None):
         self.called += 1
         self.args = args
+        stdout = ''
         if self.raise_err:
             raise_call_error(args)
 
@@ -112,3 +115,10 @@ def test_device_no_grub(monkeypatch):
     grubdevname.get_grub_device()
     assert grubdevname.run.called == 2
     assert not api.produce.model_instances
+
+
+def test_skip_on_s390x(monkeypatch, current_actor_context):
+    monkeypatch.setattr(platform, "machine", lambda: architecture.ARCH_S390X)
+    monkeypatch.setattr(grubdevname, 'get_grub_device', RunMocked())
+    current_actor_context.run()
+    assert grubdevname.get_grub_device.called == 0
