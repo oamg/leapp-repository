@@ -3,6 +3,7 @@ import sys
 
 import six
 
+from leapp.actors import Actor
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import mounting
 from leapp.libraries.stdlib import STDOUT, CalledProcessError, api, config, run
@@ -168,3 +169,47 @@ def read_file(path):
     """
     with open(path, 'r') as f:
         return f.read()
+
+
+def _blank_fn(self, *args, **kwargs):
+    return None
+
+
+def skip_actor_execution_if(*conditions):
+    """Skip running the actor if any of the conditions is True.
+
+    Example:
+    >>> @skip_actor_execution_if(platform.machine() == architecture.ARCH_S390X)
+    >>> class Grubdevname(Actor):
+    >>>     # ....
+    >>>     def process(self):
+    >>>         # ....
+    >>>         pass
+
+    In this example the actor process will be skipped if the cpu architecture
+    will be s390x.
+    """
+
+    def decorator(actor):
+        if not issubclass(actor, Actor):
+            api.current_logger().warning(
+                '`skip_actor_if` decorator can be used only for Actor '
+                'subclasses, but got %r', type(actor)
+            )
+            return actor
+
+        if not hasattr(actor, 'origin_process'):
+            actor.origin_process = actor.process
+
+        @functools.wraps(actor.process)
+        def process_wrapper(self, *args, **kwargs):
+            if any(conditions):
+                api.current_logger().debug(
+                    'Actor %r processing skipped, because all conditions in'
+                    '`skip_actor_if` decorator are True', actor
+                )
+                return _blank_fn(self, *args, **kwargs)
+            return actor.origin_process(self, *args, **kwargs)
+        actor.process = process_wrapper
+        return actor
+    return decorator
