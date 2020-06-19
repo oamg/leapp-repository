@@ -1,7 +1,7 @@
 from leapp.libraries.stdlib import CalledProcessError, api, run
 from leapp.models import QuaggaToFrrFacts
 
-quagga_daemons = [
+QUAGGA_DAEMONS = [
     'babeld',
     'bgpd',
     'isisd',
@@ -25,8 +25,8 @@ def _check_service(name, state):
 
 
 def process_daemons():
-    active_daemons = [daemon for daemon in quagga_daemons if _check_service(daemon, 'active')]
-    enabled_daemons = [daemon for daemon in quagga_daemons if _check_service(daemon, 'enabled')]
+    active_daemons = [daemon for daemon in QUAGGA_DAEMONS if _check_service(daemon, 'active']
+    enabled_daemons = [daemon for daemon in QUAGGA_DAEMONS if _check_service(daemon, 'enabled')]
 
     if active_daemons:
         api.current_logger().debug('active quaggadaemons: {}'.format(', '.join(active_daemons)))

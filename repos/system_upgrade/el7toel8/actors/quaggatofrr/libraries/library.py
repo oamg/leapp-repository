@@ -10,25 +10,16 @@ CONFIG_FILE = '/etc/sysconfig/quagga.rpmsave'
 QUAGGA_CONF_FILES = '/etc/quagga/'
 FRR_CONF_FILES = '/etc/frr/'
 
+regex = re.compile(r'\w+(?<!WATCH)(?<!BABELD)_OPTS=".*"')
 
 def _get_config_data(path):
-    ret = {}
-    with open(path, 'r') as f:
-        file_data = f.readlines()
+    conf_data = {}
+    with open(path) as f:
+        for line in data:
+            if regex.match(line):
+                k, v = line.rstrip().split("=")
+                conf_data[k.split("_")[0].lower()] = v.strip('"')
 
-        # exclude WATCH and BABELD
-        data_filter = '(?!WATCH|BABELD).*_OPTS="(.*)"'
-        # data that we need is always DAEMON_OPTS="data"
-        search_filter = '(.*)_OPTS="(.*)"'
-
-        if bool(file_data):
-            data_regex = re.compile(r'{}'.format(data_filter))
-            data = list(filter(data_regex.match, file_data))
-
-            for line in data:
-                parse = re.search(search_filter, line)
-                if parse:
-                    ret[parse.group(1).lower()] = parse.group(2)
     return ret
 
 
@@ -40,7 +31,7 @@ def _edit_new_config(path, active_daemons, config_data):
     for daemon in active_daemons:
         data = re.sub(r'{}=no'.format(daemon), r'{}=yes'.format(daemon), data, flags=re.MULTILINE)
 
-    if bool(config_data):
+    if config_data:
         for daemon in config_data:
             data = re.sub(r'^{}_options=".*"'.format(daemon),
                           r'{}_options="{}"'.format(daemon, config_data[daemon]),

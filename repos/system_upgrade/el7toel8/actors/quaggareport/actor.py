@@ -37,4 +37,4 @@ class QuaggaReport(Actor):
                     reporting.Remediation(hint='Please use RIP, OSPF or EIGRP instead of Babel')
                 ])
         else:
-            self.log.debug('babeld not used, upgrade may continue')
+            self.log.debug('babeld not used, moving on.')
