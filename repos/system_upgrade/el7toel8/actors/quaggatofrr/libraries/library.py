@@ -15,12 +15,12 @@ regex = re.compile(r'\w+(?<!WATCH)(?<!BABELD)_OPTS=".*"')
 def _get_config_data(path):
     conf_data = {}
     with open(path) as f:
-        for line in data:
+        for line in f:
             if regex.match(line):
                 k, v = line.rstrip().split("=")
                 conf_data[k.split("_")[0].lower()] = v.strip('"')
 
-    return ret
+    return conf_data
 
 
 def _edit_new_config(path, active_daemons, config_data):
