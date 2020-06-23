@@ -1,3 +1,4 @@
+import errno
 import itertools
 import os
 import shutil
@@ -167,6 +168,20 @@ class IsolatedActions(object):
         Removes the given file as it would be on the real system.
         """
         os.unlink(self.full_path(path))
+
+    def remove_tree(self, path):
+        """
+        Removes the given directory recursively inside the isolated environment
+        as it would be on the real system.
+
+        If the destination doesn't exist, nothing happens.
+        """
+        try:
+            shutil.rmtree(self.full_path(path))
+        except EnvironmentError as e:
+            # this is recommended way to handle it in Py2 & Py3
+            if e.errno != errno.ENOENT:
+                raise
 
     def mkdir(self, path, mode=0o777):
         """
