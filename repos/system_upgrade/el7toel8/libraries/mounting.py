@@ -140,11 +140,14 @@ class IsolatedActions(object):
         """
         Transform the path given to be prefixed with the base_dir, to get the real path on the system.
 
+        The function is secured, so it is not possible to return path outside
+        of the self.base_dir directory.
+
         Example: self.base_dir = '/var/lib/leapp/scratch/userspace'
                  path = '/etc/yum.repos.d/redhat.repo'
                  The result would be: /var/lib/leapp/scratch/userspace/etc/yum.repos.d/redhat.repo
         """
-        return os.path.join(self.base_dir, path.lstrip('/'))
+        return os.path.join(self.base_dir, os.path.abspath(path).lstrip('/'))
 
     def open(self, path, *args, **kwargs):
         """
