@@ -25,7 +25,7 @@ def _check_service(name, state):
 
 
 def process_daemons():
-    active_daemons = [daemon for daemon in QUAGGA_DAEMONS if _check_service(daemon, 'active']
+    active_daemons = [daemon for daemon in QUAGGA_DAEMONS if _check_service(daemon, 'active')]
     enabled_daemons = [daemon for daemon in QUAGGA_DAEMONS if _check_service(daemon, 'enabled')]
 
     if active_daemons:
