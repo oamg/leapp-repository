@@ -1,12 +1,12 @@
 from leapp.actors import Actor
 from leapp.models import QuaggaToFrrFacts
 from leapp.tags import ApplicationsPhaseTag, IPUWorkflowTag
-from leapp.libraries.actor.library import process_facts
+from leapp.libraries.actor.quaggatofrr import process_facts
 
 
 class QuaggaToFrr(Actor):
     """
-    No documentation has been provided for the quagga_to_frr actor.
+    Move configuration from quagga format to the new format in FRR
     """
 
     name = 'quagga_to_frr'

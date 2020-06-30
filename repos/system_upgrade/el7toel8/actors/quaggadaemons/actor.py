@@ -2,7 +2,7 @@ from leapp.actors import Actor
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 from leapp.models import InstalledRedHatSignedRPM, QuaggaToFrrFacts
 from leapp.libraries.common.rpms import has_package
-from leapp.libraries.actor.library import process_daemons
+from leapp.libraries.actor.quaggadaemons import process_daemons
 
 
 class QuaggaDaemons(Actor):

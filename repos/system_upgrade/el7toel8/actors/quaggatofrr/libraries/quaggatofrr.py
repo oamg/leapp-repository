@@ -12,6 +12,7 @@ FRR_CONF_FILES = '/etc/frr/'
 
 regex = re.compile(r'\w+(?<!WATCH)(?<!BABELD)_OPTS=".*"')
 
+
 def _get_config_data(path):
     conf_data = {}
     with open(path) as f:
