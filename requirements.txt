@@ -5,8 +5,7 @@ flake8-import-order
 funcsigs==1.0.2
 mock==2.0.0
 pylint
-# pytest is fixed at 3.6.4 because never version (3.7.*) requires scandir, which depends on gcc
-pytest==3.6.4
+pytest==4.6.11
 pytest-ordering==0.5
 pyudev==0.22.0
 distro==1.5.0
