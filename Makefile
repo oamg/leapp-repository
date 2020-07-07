@@ -198,6 +198,8 @@ install-deps:
 	case $(_PYTHON_VENV) in python3*) yum install -y ${shell echo $(_PYTHON_VENV) | tr -d .}; esac
 	@# in centos:7 actor's python 3.x dependencies are in epel
 	case $(_PYTHON_VENV) in python3*) yum install -y epel-release; esac
+	@# in centos:7 python dependencies required gcc
+	case $(_PYTHON_VENV) in python3*) yum install gcc -y; esac
 	virtualenv --system-site-packages -p /usr/bin/$(_PYTHON_VENV) tut; \
 	. tut/bin/activate; \
 	pip install --upgrade setuptools; \
@@ -206,10 +208,10 @@ install-deps:
 
 install-deps-fedora:
 	@# Check the necessary rpms are installed for py3 (and py2 below)
-	if ! rpm -q git findutils python3-virtualenv; then \
-		if ! dnf install -y git findutils python3-virtualenv; then \
+	if ! rpm -q git findutils python3-virtualenv gcc; then \
+		if ! dnf install -y git findutils python3-virtualenv gcc; then \
 			echo 'Please install the following rpms via the command: ' \
-				'sudo dnf install -y git findutils python3-virtualenv'; \
+				'sudo dnf install -y git findutils python3-virtualenv gcc'; \
 			exit 1; \
 		fi; \
 	fi
