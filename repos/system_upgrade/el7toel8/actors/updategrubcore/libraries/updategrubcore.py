@@ -1,4 +1,4 @@
-from leapp.libraries.stdlib import api, run, CalledProcessError
+from leapp.libraries.stdlib import api, run, CalledProcessError, config
 from leapp.exceptions import StopActorExecution
 from leapp import reporting
 
@@ -10,8 +10,11 @@ def update_grub_core(grub_dev):
     On legacy systems, GRUB core does not get automatically updated when GRUB packages
     are updated.
     """
+    cmd = ['grub2-install', grub_dev]
+    if config.is_debug():
+        cmd += ['-v']
     try:
-        run(['grub2-install', grub_dev])
+        run(cmd)
     except CalledProcessError as err:
         reporting.create_report([
             reporting.Title('GRUB core update failed'),

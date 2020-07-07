@@ -3,8 +3,15 @@ import shutil
 from leapp.actors import Actor
 from leapp.libraries.common import dnfplugin
 from leapp.libraries.stdlib import run
-from leapp.models import (FilteredRpmTransactionTasks, RHSMInfo, StorageInfo, TargetUserSpaceInfo,
-                          TransactionCompleted, UsedTargetRepositories)
+from leapp.models import (
+    DNFPluginTask,
+    FilteredRpmTransactionTasks,
+    RHSMInfo,
+    StorageInfo,
+    TargetUserSpaceInfo,
+    TransactionCompleted,
+    UsedTargetRepositories,
+)
 from leapp.tags import IPUWorkflowTag, RPMUpgradePhaseTag
 
 
@@ -17,7 +24,14 @@ class DnfUpgradeTransaction(Actor):
     """
 
     name = 'dnf_upgrade_transaction'
-    consumes = (FilteredRpmTransactionTasks, RHSMInfo, StorageInfo, TargetUserSpaceInfo, UsedTargetRepositories)
+    consumes = (
+        DNFPluginTask,
+        FilteredRpmTransactionTasks,
+        RHSMInfo,
+        StorageInfo,
+        TargetUserSpaceInfo,
+        UsedTargetRepositories,
+    )
     produces = (TransactionCompleted,)
     tags = (RPMUpgradePhaseTag, IPUWorkflowTag)
 
@@ -29,11 +43,14 @@ class DnfUpgradeTransaction(Actor):
 
         used_repos = self.consume(UsedTargetRepositories)
         storage_info = next(self.consume(StorageInfo), None)
+        plugin_info = list(self.consume(DNFPluginTask))
         tasks = next(self.consume(FilteredRpmTransactionTasks), FilteredRpmTransactionTasks())
         target_userspace_info = next(self.consume(TargetUserSpaceInfo), None)
 
-        dnfplugin.perform_transaction_install(tasks=tasks, used_repos=used_repos, storage_info=storage_info,
-                                              target_userspace_info=target_userspace_info)
+        dnfplugin.perform_transaction_install(
+            tasks=tasks, used_repos=used_repos, storage_info=storage_info, target_userspace_info=target_userspace_info,
+            plugin_info=plugin_info
+        )
         self.produce(TransactionCompleted())
         userspace = next(self.consume(TargetUserSpaceInfo), None)
         if userspace:

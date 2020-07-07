@@ -31,7 +31,7 @@ def install(target_basedir):
         )
 
 
-def build_plugin_data(target_repoids, debug, test, tasks):
+def build_plugin_data(target_repoids, debug, test, tasks, on_aws):
     """
     Generates a dictionary with the DNF plugin data.
     """
@@ -54,18 +54,26 @@ def build_plugin_data(target_repoids, debug, test, tasks):
             'releasever': api.current_actor().configuration.version.target,
             'installroot': '/installroot',
             'test_flag': test
+        },
+        'rhui': {
+            'aws': {
+              'on_aws': on_aws,
+              'region': None,
+            }
         }
     }
     return data
 
 
-def create_config(context, target_repoids, debug, test, tasks):
+def create_config(context, target_repoids, debug, test, tasks, on_aws=False):
     """
     Creates the configuration data file for our DNF plugin.
     """
     context.makedirs(os.path.dirname(DNF_PLUGIN_DATA_PATH), exists_ok=True)
     with context.open(DNF_PLUGIN_DATA_PATH, 'w+') as f:
-        config_data = build_plugin_data(target_repoids=target_repoids, debug=debug, test=test, tasks=tasks)
+        config_data = build_plugin_data(
+            target_repoids=target_repoids, debug=debug, test=test, tasks=tasks, on_aws=on_aws
+        )
         json.dump(config_data, f, sort_keys=True, indent=2)
 
 
@@ -89,12 +97,20 @@ def backup_debug_data(context):
             api.current_logger().warn('Failed to copy debugdata. Message: {}'.format(str(e)), exc_info=True)
 
 
-def _transaction(context, stage, target_repoids, tasks, test=False, cmd_prefix=None):
+def _transaction(context, stage, target_repoids, tasks, plugin_info, test=False, cmd_prefix=None, on_aws=False):
     """
     Perform the actual DNF rpm download via our DNF plugin
     """
 
-    create_config(context=context, target_repoids=target_repoids, debug=config.is_debug(), test=test, tasks=tasks)
+    # we do not want
+    if stage != 'upgrade':
+        create_config(
+            context=context,
+            target_repoids=target_repoids,
+            debug=config.is_debug(),
+            test=test, tasks=tasks,
+            on_aws=on_aws
+        )
     backup_config(context=context)
 
     # FIXME: rhsm
@@ -109,6 +125,10 @@ def _transaction(context, stage, target_repoids, tasks, test=False, cmd_prefix=N
             cmd.append('-v')
         if rhsm.skip_rhsm():
             cmd += ['--disableplugin', 'subscription-manager']
+        if plugin_info:
+            for info in plugin_info:
+                if stage in info.disable_in:
+                    cmd += ['--disableplugin', info.name]
         if cmd_prefix:
             cmd = cmd_prefix + cmd
         try:
@@ -167,7 +187,7 @@ def install_initramdisk_requirements(packages, target_userspace_info, used_repos
         context.call(cmd)
 
 
-def perform_transaction_install(target_userspace_info, storage_info, used_repos, tasks):
+def perform_transaction_install(target_userspace_info, storage_info, used_repos, tasks, plugin_info):
     """
     Performs the actual installation with the DNF rhel-upgrade plugin using the target userspace
     """
@@ -202,11 +222,12 @@ def perform_transaction_install(target_userspace_info, storage_info, used_repos,
         # communicate with udev
         cmd_prefix = ['nsenter', '--ipc=/installroot/proc/1/ns/ipc']
         _transaction(
-                context=context, stage='upgrade', target_repoids=target_repoids, tasks=tasks, cmd_prefix=cmd_prefix
-            )
+            context=context, stage='upgrade', target_repoids=target_repoids, plugin_info=plugin_info, tasks=tasks,
+            cmd_prefix=cmd_prefix
+        )
 
 
-def perform_transaction_check(target_userspace_info, used_repos, tasks, xfs_info, storage_info):
+def perform_transaction_check(target_userspace_info, used_repos, tasks, xfs_info, storage_info, plugin_info):
     """
     Perform DNF transaction check using our plugin
     """
@@ -217,10 +238,12 @@ def perform_transaction_check(target_userspace_info, used_repos, tasks, xfs_info
                                               xfs_info=xfs_info, storage_info=storage_info,
                                               mount_target=os.path.join(context.base_dir, 'installroot')) as overlay:
             utils.apply_yum_workaround(overlay.nspawn())
-            _transaction(context=context, stage='check', target_repoids=target_repoids, tasks=tasks)
+            _transaction(
+                context=context, stage='check', target_repoids=target_repoids, plugin_info=plugin_info, tasks=tasks
+            )
 
 
-def perform_rpm_download(target_userspace_info, used_repos, tasks, xfs_info, storage_info):
+def perform_rpm_download(target_userspace_info, used_repos, tasks, xfs_info, storage_info, plugin_info, on_aws=False):
     """
     Perform RPM download including the transaction test using dnf with our plugin
     """
@@ -231,4 +254,7 @@ def perform_rpm_download(target_userspace_info, used_repos, tasks, xfs_info, sto
                                               xfs_info=xfs_info, storage_info=storage_info,
                                               mount_target=os.path.join(context.base_dir, 'installroot')) as overlay:
             utils.apply_yum_workaround(overlay.nspawn())
-            _transaction(context=context, stage='download', target_repoids=target_repoids, tasks=tasks, test=True)
+            _transaction(
+                context=context, stage='download', target_repoids=target_repoids, plugin_info=plugin_info, tasks=tasks,
+                test=True, on_aws=on_aws
+            )

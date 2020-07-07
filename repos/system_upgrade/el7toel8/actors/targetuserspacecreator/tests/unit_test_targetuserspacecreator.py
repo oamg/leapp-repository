@@ -71,6 +71,7 @@ _PACKAGES_MSGS = [
     models.RequiredTargetUserspacePackages(packages=['pkgD']),
 ]
 _RHSMINFO_MSG = models.RHSMInfo(attached_skus=['testing-sku'])
+_RHUIINFO_MSG = models.RHUIInfo(provider='aws')
 _XFS_MSG = models.XFSPresence()
 _STORAGEINFO_MSG = models.StorageInfo()
 _CTRF_MSGS = [
@@ -96,57 +97,61 @@ class MockedConsume(object):
         return iter([msg for msg in self._msgs if isinstance(msg, model)])
 
 
-testInData = namedtuple('TestInData', ['pkg_msgs', 'rhsm_info', 'xfs', 'storage', 'custom_repofiles'])
+testInData = namedtuple(
+    'TestInData', ['pkg_msgs', 'rhsm_info', 'rhui_info', 'xfs', 'storage', 'custom_repofiles']
+)
 
 
 @pytest.mark.parametrize('raised,no_rhsm,testdata', [
     # valid cases with RHSM
-    (None, '0', testInData(_PACKAGES_MSGS, _RHSMINFO_MSG, _XFS_MSG, _STORAGEINFO_MSG, None)),
-    (None, '0', testInData(_PACKAGES_MSGS[0], _RHSMINFO_MSG, _XFS_MSG, _STORAGEINFO_MSG, None)),
-    (None, '0', testInData([], _RHSMINFO_MSG, _XFS_MSG, _STORAGEINFO_MSG, None)),
-    (None, '0', testInData(_PACKAGES_MSGS, _RHSMINFO_MSG, None, _STORAGEINFO_MSG, None)),
-    (None, '0', testInData(_PACKAGES_MSGS, _RHSMINFO_MSG, _XFS_MSG, _STORAGEINFO_MSG, _CTRF_MSGS)),
-    (None, '0', testInData(_PACKAGES_MSGS[0], _RHSMINFO_MSG, _XFS_MSG, _STORAGEINFO_MSG, _CTRF_MSGS)),
-    (None, '0', testInData([], _RHSMINFO_MSG, _XFS_MSG, _STORAGEINFO_MSG, _CTRF_MSGS)),
-    (None, '0', testInData(_PACKAGES_MSGS, _RHSMINFO_MSG, None, _STORAGEINFO_MSG, _CTRF_MSGS)),
+    (None, '0', testInData(_PACKAGES_MSGS, _RHSMINFO_MSG, None, _XFS_MSG, _STORAGEINFO_MSG, None)),
+    (None, '0', testInData(_PACKAGES_MSGS[0], _RHSMINFO_MSG, None, _XFS_MSG, _STORAGEINFO_MSG, None)),
+    (None, '0', testInData([], _RHSMINFO_MSG, None, _XFS_MSG, _STORAGEINFO_MSG, None)),
+    (None, '0', testInData(_PACKAGES_MSGS, _RHSMINFO_MSG, None, None, _STORAGEINFO_MSG, None)),
+    (None, '0', testInData(_PACKAGES_MSGS, _RHSMINFO_MSG, None, _XFS_MSG, _STORAGEINFO_MSG, _CTRF_MSGS)),
+    (None, '0', testInData(_PACKAGES_MSGS[0], _RHSMINFO_MSG, None, _XFS_MSG, _STORAGEINFO_MSG, _CTRF_MSGS)),
+    (None, '0', testInData([], _RHSMINFO_MSG, None, _XFS_MSG, _STORAGEINFO_MSG, _CTRF_MSGS)),
+    (None, '0', testInData(_PACKAGES_MSGS, _RHSMINFO_MSG, None, None, _STORAGEINFO_MSG, _CTRF_MSGS)),
 
     # valid cases without RHSM (== skip_rhsm)
-    (None, '1', testInData(_PACKAGES_MSGS, None, _XFS_MSG, _STORAGEINFO_MSG, None)),
-    (None, '1', testInData(_PACKAGES_MSGS, None, None, _STORAGEINFO_MSG, None)),
-    (None, '1', testInData([], None, _XFS_MSG, _STORAGEINFO_MSG, None)),
-    (None, '1', testInData([], None, None, _STORAGEINFO_MSG, None)),
-    (None, '1', testInData(_PACKAGES_MSGS, None, _XFS_MSG, _STORAGEINFO_MSG, _CTRF_MSGS)),
-    (None, '1', testInData(_PACKAGES_MSGS, None, None, _STORAGEINFO_MSG, _CTRF_MSGS)),
-    (None, '1', testInData([], None, _XFS_MSG, _STORAGEINFO_MSG, _CTRF_MSGS)),
-    (None, '1', testInData([], None, None, _STORAGEINFO_MSG, _CTRF_MSGS)),
+    (None, '1', testInData(_PACKAGES_MSGS, None, _RHUIINFO_MSG, _XFS_MSG, _STORAGEINFO_MSG, None)),
+    (None, '1', testInData(_PACKAGES_MSGS, None, _RHUIINFO_MSG, None, _STORAGEINFO_MSG, None)),
+    (None, '1', testInData([], None, _RHUIINFO_MSG, _XFS_MSG, _STORAGEINFO_MSG, None)),
+    (None, '1', testInData([], None, _RHUIINFO_MSG, None, _STORAGEINFO_MSG, None)),
+    (None, '1', testInData(_PACKAGES_MSGS, None, _RHUIINFO_MSG, _XFS_MSG, _STORAGEINFO_MSG, _CTRF_MSGS)),
+    (None, '1', testInData(_PACKAGES_MSGS, None, _RHUIINFO_MSG, None, _STORAGEINFO_MSG, _CTRF_MSGS)),
+    (None, '1', testInData([], None, _RHUIINFO_MSG, _XFS_MSG, _STORAGEINFO_MSG, _CTRF_MSGS)),
+    (None, '1', testInData([], None, _RHUIINFO_MSG, None, _STORAGEINFO_MSG, _CTRF_MSGS)),
 
     # no-rhsm but RHSMInfo defined (should be _RHSMINFO_MSG)
-    ((_SAEE, 'RHSM is not'), '1', testInData(_PACKAGES_MSGS, _RHSMINFO_MSG, _XFS_MSG, _STORAGEINFO_MSG, None)),
-    ((_SAEE, 'RHSM is not'), '1', testInData(_PACKAGES_MSGS[0], _RHSMINFO_MSG, _XFS_MSG, _STORAGEINFO_MSG, None)),
-    ((_SAEE, 'RHSM is not'), '1', testInData([], _RHSMINFO_MSG, _XFS_MSG, _STORAGEINFO_MSG, None)),
-    ((_SAEE, 'RHSM is not'), '1', testInData(_PACKAGES_MSGS, _RHSMINFO_MSG, None, _STORAGEINFO_MSG, None)),
-    ((_SAEE, 'RHSM is not'), '1', testInData(_PACKAGES_MSGS, _RHSMINFO_MSG, _XFS_MSG, _STORAGEINFO_MSG, _CTRF_MSGS)),
-    ((_SAEE, 'RHSM is not'), '1', testInData(_PACKAGES_MSGS[0], _RHSMINFO_MSG, _XFS_MSG,
+    ((_SAEE, 'RHSM is not'), '1', testInData(_PACKAGES_MSGS, _RHSMINFO_MSG, None, _XFS_MSG, _STORAGEINFO_MSG, None)),
+    ((_SAEE, 'RHSM is not'), '1', testInData(_PACKAGES_MSGS[0], _RHSMINFO_MSG, None, _XFS_MSG, _STORAGEINFO_MSG,
+                                             None)),
+    ((_SAEE, 'RHSM is not'), '1', testInData([], _RHSMINFO_MSG, None, _XFS_MSG, _STORAGEINFO_MSG, None)),
+    ((_SAEE, 'RHSM is not'), '1', testInData(_PACKAGES_MSGS, _RHSMINFO_MSG, None, None, _STORAGEINFO_MSG, None)),
+    ((_SAEE, 'RHSM is not'), '1', testInData(_PACKAGES_MSGS, _RHSMINFO_MSG, None, _XFS_MSG, _STORAGEINFO_MSG,
+                                             _CTRF_MSGS)),
+    ((_SAEE, 'RHSM is not'), '1', testInData(_PACKAGES_MSGS[0], _RHSMINFO_MSG, None, _XFS_MSG,
                                              _STORAGEINFO_MSG, _CTRF_MSGS)),
-    ((_SAEE, 'RHSM is not'), '1', testInData([], _RHSMINFO_MSG, _XFS_MSG, _STORAGEINFO_MSG, _CTRF_MSGS)),
-    ((_SAEE, 'RHSM is not'), '1', testInData(_PACKAGES_MSGS, _RHSMINFO_MSG, None, _STORAGEINFO_MSG, _CTRF_MSGS)),
+    ((_SAEE, 'RHSM is not'), '1', testInData([], _RHSMINFO_MSG, None, _XFS_MSG, _STORAGEINFO_MSG, _CTRF_MSGS)),
+    ((_SAEE, 'RHSM is not'), '1', testInData(_PACKAGES_MSGS, _RHSMINFO_MSG, None, None, _STORAGEINFO_MSG, _CTRF_MSGS)),
 
     # missing RHSMInfo but it should exist
     # NOTE: should be this Error?!
-    ((_SAE, 'RHSM information'), '0', testInData(_PACKAGES_MSGS, None, _XFS_MSG, _STORAGEINFO_MSG, None)),
-    ((_SAE, 'RHSM information'), '0', testInData(_PACKAGES_MSGS, None, None, _STORAGEINFO_MSG, None)),
-    ((_SAE, 'RHSM information'), '0', testInData([], None, _XFS_MSG, _STORAGEINFO_MSG, None)),
-    ((_SAE, 'RHSM information'), '0', testInData([], None, None, _STORAGEINFO_MSG, None)),
+    ((_SAE, 'RHSM information'), '0', testInData(_PACKAGES_MSGS, None, None, _XFS_MSG, _STORAGEINFO_MSG, None)),
+    ((_SAE, 'RHSM information'), '0', testInData(_PACKAGES_MSGS, None, None, None, _STORAGEINFO_MSG, None)),
+    ((_SAE, 'RHSM information'), '0', testInData([], None, None, _XFS_MSG, _STORAGEINFO_MSG, None)),
+    ((_SAE, 'RHSM information'), '0', testInData([], None, None, None, _STORAGEINFO_MSG, None)),
 
     # in the end, error when StorageInfo is missing
-    ((_SAEE, 'No storage'), '0', testInData(_PACKAGES_MSGS, _RHSMINFO_MSG, _XFS_MSG, None, None)),
-    ((_SAEE, 'No storage'), '0', testInData(_PACKAGES_MSGS, _RHSMINFO_MSG, None, None, None)),
-    ((_SAEE, 'No storage'), '0', testInData([], _RHSMINFO_MSG, _XFS_MSG, None, None)),
-    ((_SAEE, 'No storage'), '0', testInData([], _RHSMINFO_MSG, None, None, None)),
-    ((_SAEE, 'No storage'), '0', testInData(_PACKAGES_MSGS, _RHSMINFO_MSG, _XFS_MSG, None, _CTRF_MSGS)),
-    ((_SAEE, 'No storage'), '0', testInData(_PACKAGES_MSGS, _RHSMINFO_MSG, None, None, _CTRF_MSGS)),
-    ((_SAEE, 'No storage'), '0', testInData([], _RHSMINFO_MSG, _XFS_MSG, None, _CTRF_MSGS)),
-    ((_SAEE, 'No storage'), '0', testInData([], _RHSMINFO_MSG, None, None, _CTRF_MSGS)),
+    ((_SAEE, 'No storage'), '0', testInData(_PACKAGES_MSGS, _RHSMINFO_MSG, None, _XFS_MSG, None, None)),
+    ((_SAEE, 'No storage'), '0', testInData(_PACKAGES_MSGS, _RHSMINFO_MSG, None, None, None, None)),
+    ((_SAEE, 'No storage'), '0', testInData([], _RHSMINFO_MSG, None, _XFS_MSG, None, None)),
+    ((_SAEE, 'No storage'), '0', testInData([], _RHSMINFO_MSG, None, None, None, None)),
+    ((_SAEE, 'No storage'), '0', testInData(_PACKAGES_MSGS, _RHSMINFO_MSG, None, _XFS_MSG, None, _CTRF_MSGS)),
+    ((_SAEE, 'No storage'), '0', testInData(_PACKAGES_MSGS, _RHSMINFO_MSG, None, None, None, _CTRF_MSGS)),
+    ((_SAEE, 'No storage'), '0', testInData([], _RHSMINFO_MSG, None, _XFS_MSG, None, _CTRF_MSGS)),
+    ((_SAEE, 'No storage'), '0', testInData([], _RHSMINFO_MSG, None, None, None, _CTRF_MSGS)),
 ])
 def test_consume_data(monkeypatch, raised, no_rhsm, testdata):
     # do not write never into testdata inside the test !!
@@ -160,6 +165,7 @@ def test_consume_data(monkeypatch, raised, no_rhsm, testdata):
         _exp_pkgs.update(testdata.pkg_msgs.packages)
     mocked_consume = MockedConsume(testdata.pkg_msgs,
                                    testdata.rhsm_info,
+                                   testdata.rhui_info,
                                    xfs,
                                    testdata.storage,
                                    custom_repofiles)
@@ -174,6 +180,7 @@ def test_consume_data(monkeypatch, raised, no_rhsm, testdata):
         result = userspacegen._InputData()
         assert result.packages == _exp_pkgs
         assert result.rhsm_info == testdata.rhsm_info
+        assert result.rhui_info == testdata.rhui_info
         assert result.xfs_info == xfs
         assert result.storage_info == testdata.storage
         assert result.custom_repofiles == custom_repofiles
@@ -201,18 +208,45 @@ def test_gather_target_repositories(monkeypatch):
                     models.RHELTargetRepository(repoid='repoidY')],
         custom_repos=[models.CustomTargetRepository(repoid='repoidCustom')])]))
 
-    target_repoids = userspacegen.gather_target_repositories(None)
+    target_repoids = userspacegen.gather_target_repositories(None, None)
 
     assert target_repoids == ['repoidX', 'repoidY', 'repoidCustom']
 
 
 def test_gather_target_repositories_none_available(monkeypatch):
+
     monkeypatch.setattr(userspacegen.api, 'current_actor', CurrentActorMocked())
     monkeypatch.setattr(rhsm, 'get_available_repo_ids', lambda x: [])
     monkeypatch.setattr(rhsm, 'skip_rhsm', lambda: False)
     with pytest.raises(StopActorExecutionError) as err:
-        userspacegen.gather_target_repositories(None)
+        userspacegen.gather_target_repositories(None, None)
     assert "Cannot find required basic RHEL 8 repositories" in str(err)
+
+
+def test_gather_target_repositories_rhui(monkeypatch):
+
+    indata = testInData(
+        _PACKAGES_MSGS, _RHSMINFO_MSG, _RHUIINFO_MSG, _XFS_MSG, _STORAGEINFO_MSG, None
+    )
+
+    monkeypatch.setattr(userspacegen.api, 'current_actor', CurrentActorMocked())
+    monkeypatch.setattr(userspacegen, '_get_all_available_repoids', lambda x: [])
+    monkeypatch.setattr(
+        userspacegen, '_get_rh_available_repoids', lambda x, y: ['rhui-1', 'rhui-2', 'rhui-3']
+    )
+    monkeypatch.setattr(rhsm, 'skip_rhsm', lambda: True)
+    monkeypatch.setattr(
+        userspacegen.api, 'consume', lambda x: iter(
+            [models.TargetRepositories(
+                rhel_repos=[
+                    models.RHELTargetRepository(repoid='rhui-1'),
+                    models.RHELTargetRepository(repoid='rhui-2')
+                ]
+            )
+            ])
+    )
+    target_repoids = userspacegen.gather_target_repositories(None, indata)
+    assert target_repoids == set(['rhui-1', 'rhui-2'])
 
 
 @pytest.mark.skip(reason="Currently not implemented in the actor. It's TODO.")
@@ -238,13 +272,14 @@ def test_gather_target_repositories_required_not_available(monkeypatch):
 def mocked_consume_data():
     packages = {'dnf', 'pkgA', 'pkgB'}
     rhsm_info = _RHSMINFO_MSG
+    rhui_info = _RHUIINFO_MSG
     xfs_info = models.XFSPresence()
     storage_info = models.StorageInfo()
     custom_repofiles = []
-    fields = ['packages', 'rhsm_info', 'xfs_info', 'storage_info', 'custom_repofiles']
+    fields = ['packages', 'rhsm_info', 'rhui_info', 'xfs_info', 'storage_info', 'custom_repofiles']
 
     return namedtuple('TestInData', fields)(
-                packages, rhsm_info, xfs_info, storage_info, custom_repofiles
+                packages, rhsm_info, rhui_info, xfs_info, storage_info, custom_repofiles
     )
 
 

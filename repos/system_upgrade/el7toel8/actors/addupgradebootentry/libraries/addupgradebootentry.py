@@ -7,13 +7,13 @@ from leapp.libraries.stdlib import api, run, CalledProcessError
 from leapp.models import BootContent
 
 
-def add_boot_entry():
+def add_boot_entry(configs=None):
     debug = 'debug' if os.getenv('LEAPP_DEBUG', '0') == '1' else ''
 
     kernel_dst_path, initram_dst_path = get_boot_file_paths()
     try:
-        _remove_old_upgrade_boot_entry(kernel_dst_path)
-        run([
+        _remove_old_upgrade_boot_entry(kernel_dst_path, configs=configs)
+        cmd = [
             '/usr/sbin/grubby',
             '--add-kernel', '{0}'.format(kernel_dst_path),
             '--initrd', '{0}'.format(initram_dst_path),
@@ -21,7 +21,12 @@ def add_boot_entry():
             '--copy-default',
             '--make-default',
             '--args', '{DEBUG} enforcing=0 rd.plymouth=0 plymouth.enable=0'.format(DEBUG=debug)
-        ])
+        ]
+        if configs:
+            for config in configs:
+                run(cmd + ['-c', config])
+        else:
+            run(cmd)
 
         if architecture.matches_architecture(architecture.ARCH_S390X):
             # on s390x we need to call zipl explicitly because of issue in grubby,
@@ -35,17 +40,22 @@ def add_boot_entry():
         )
 
 
-def _remove_old_upgrade_boot_entry(kernel_dst_path):
+def _remove_old_upgrade_boot_entry(kernel_dst_path, configs=None):
     """
     Remove entry referring to the upgrade kernel.
 
     We have to ensure there are no duplicit boot entries. Main reason is crash
     of zipl when duplicit entries exist.
     """
-    run([
+    cmd = [
         '/usr/sbin/grubby',
         '--remove-kernel', '{0}'.format(kernel_dst_path)
-    ])
+    ]
+    if configs:
+        for config in configs:
+            run(cmd + ['-c', config])
+    else:
+        run(cmd)
 
 
 def get_boot_file_paths():

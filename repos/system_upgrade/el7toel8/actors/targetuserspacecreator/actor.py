@@ -1,10 +1,20 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import userspacegen
 from leapp.libraries.common.config import get_env, version
-from leapp.models import (CustomTargetRepositoryFile, RepositoriesMap, RequiredTargetUserspacePackages,
-                          RHSMInfo, StorageInfo, TargetRepositories,
-                          TargetUserSpaceInfo, UsedTargetRepositories,
-                          XFSPresence, Report, TMPTargetRepositoriesFacts)
+from leapp.models import (
+    CustomTargetRepositoryFile,
+    Report,
+    RepositoriesMap,
+    RequiredTargetUserspacePackages,
+    RHSMInfo,
+    RHUIInfo,
+    StorageInfo,
+    TargetRepositories,
+    TargetUserSpaceInfo,
+    TMPTargetRepositoriesFacts,
+    UsedTargetRepositories,
+    XFSPresence,
+)
 from leapp.tags import IPUWorkflowTag, TargetTransactionFactsPhaseTag
 from leapp.utils.deprecation import suppress_deprecation
 
@@ -23,8 +33,8 @@ class TargetUserspaceCreator(Actor):
 
     name = 'target_userspace_creator'
     consumes = (CustomTargetRepositoryFile, RepositoriesMap, RequiredTargetUserspacePackages,
-                StorageInfo, RHSMInfo, TargetRepositories, XFSPresence)
-    produces = (TargetUserSpaceInfo, UsedTargetRepositories, Report, TMPTargetRepositoriesFacts, )
+                StorageInfo, RHSMInfo, TargetRepositories, XFSPresence, RHUIInfo)
+    produces = (TargetUserSpaceInfo, UsedTargetRepositories, Report, TMPTargetRepositoriesFacts,)
     tags = (IPUWorkflowTag, TargetTransactionFactsPhaseTag)
 
     def process(self):

@@ -76,7 +76,7 @@ def _handle_rhsm_exceptions(hint=None):
             ' it is specified inside the /etc/rhsm/rhsm.conf file.'
             ' Or use the --no-rhsm option when running leapp, if you do not want to'
             ' use subscription-manager for the in-place upgrade and you want to'
-            ' deliver all target repositories by yourself.'
+            ' deliver all target repositories by yourself or using RHUI on public cloud.'
         )
         raise StopActorExecutionError(
             message='A subscription-manager command failed to execute',

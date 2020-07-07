@@ -48,6 +48,35 @@ class RhelUpgradeCommand(dnf.cli.Command):
                        'in repositories metadata: '.format(op.__name__) + ' '.join(pkgs_notfound))
             print('Warning: ' + err_str, file=sys.stderr)
 
+    def _save_aws_region(self, region):
+        self.plugin_data['rhui']['aws']['region'] = region
+        with open(self.opts.filename, 'w+') as fo:
+            json.dump(self.plugin_data, fo, sort_keys=True, indent=2)
+
+    def _read_aws_region(self, repo):
+        region = None
+        if repo.baseurl:
+            # baseurl is tuple (changed by Amazon-id plugin)
+            # here we take just the first baseurl as the REGION will be same for all of them
+            region = repo.baseurl[0].split('.', 2)[1]
+        elif repo.mirrorlist:
+            region = repo.mirrorlist.split('.', 2)[1]
+        if not region:
+            print('Could not read AWS REGION from either baseurl or mirrorlist', file=sys.stderr)
+            sys.exit(1)
+        return region
+
+    def _fix_rhui_url(self, repo, region):
+        if repo.baseurl:
+            repo.baseurl = tuple(
+                url.replace('REGION', region, 1) for url in repo.baseurl
+            )
+        elif repo.mirrorlist:
+            repo.mirrorlist = repo.mirrorlist.replace('REGION', region, 1)
+        else:
+            raise dnf.exceptions.RepoError("RHUI repository %s does not have an url" % repo.name)
+        return repo
+
     def pre_configure(self):
         with open(self.opts.filename) as fo:
             self.plugin_data = json.load(fo)
@@ -55,6 +84,8 @@ class RhelUpgradeCommand(dnf.cli.Command):
         self.base.conf.releasever = self.plugin_data['dnf_conf']['releasever']
 
     def configure(self):
+
+        on_aws = self.plugin_data['rhui']['aws']['on_aws']
         self.cli.demands.root_user = True
         self.cli.demands.resolving = self.opts.tid[0] != 'check'
         self.cli.demands.available_repos = True
@@ -75,12 +106,35 @@ class RhelUpgradeCommand(dnf.cli.Command):
 
         enabled_repos = self.plugin_data['dnf_conf']['enable_repos']
         self.base.repos.all().disable()
+
+        aws_region = None
+
         for repo in self.base.repos.all():
             if repo.id in enabled_repos:
                 repo.skip_if_unavailable = False
                 if not self.base.conf.gpgcheck:
                     repo.gpgcheck = False
                 repo.enable()
+                if self.opts.tid[0] == 'download' and on_aws:
+                    # during the upgrade phase we has to disable "Amazon-id" plugin as we do not have networking
+                    # in initramdisk (yet, but we probably do not want it to do anything anyway as we already have
+                    # packages downloaded and cached). However, when we disable it, the plugin cannot substitute
+                    # "REGION" placeholder in mirrorlist url and consequently we cannot identify a correct cache
+                    # folder in "/var/cache/dnf" as it has different digest calculated based on already substituted
+                    # placeholder.
+                    # E.g
+                    # "https://rhui3.REGION.aws.ce.redhat.com" becames "https://rhui3.eu-central-1.aws.ce.redhat.com"
+                    #
+                    # region should be same for all repos so we are fine to collect it from
+                    # the last one
+                    aws_region = self._read_aws_region(repo)
+                if self.opts.tid[0] == 'upgrade' and on_aws:
+                    aws_region = self.plugin_data['rhui']['aws']['region']
+                    if aws_region:
+                        repo = self._fix_rhui_url(repo, aws_region)
+
+        if aws_region and self.opts.tid[0] == 'download':
+            self._save_aws_region(aws_region)
 
     def run(self):
         # takes local rpms, creates Package objects from them, and then adds them to the sack as virtual repository
