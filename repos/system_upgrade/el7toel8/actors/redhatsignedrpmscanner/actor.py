@@ -5,6 +5,7 @@ from leapp.models import (
     InstalledUnsignedRPM,
 )
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
+from leapp.libraries.common import rhui
 
 
 class RedHatSignedRpmScanner(Actor):
@@ -57,6 +58,12 @@ class RedHatSignedRpmScanner(Actor):
             """Whitelist the katello package."""
             return pkg.name.startswith('katello-ca-consumer')
 
+        def is_azure_pkg(pkg):
+            """Whitelist Azure config package."""
+            el7_pkg = rhui.RHUI_CLOUD_MAP['azure']['el7_pkg']
+            el8_pkg = rhui.RHUI_CLOUD_MAP['azure']['el8_pkg']
+            return pkg.name in [el7_pkg, el8_pkg]
+
         for rpm_pkgs in self.consume(InstalledRPM):
             for pkg in rpm_pkgs.items:
                 if any(
@@ -64,6 +71,7 @@ class RedHatSignedRpmScanner(Actor):
                         has_rhsig(pkg),
                         is_gpg_pubkey(pkg),
                         has_katello_prefix(pkg),
+                        is_azure_pkg(pkg),
                     ]
                 ):
                     signed_pkgs.items.append(pkg)

@@ -4,14 +4,30 @@ import os
 from leapp import reporting
 from leapp.exceptions import StopActorExecution, StopActorExecutionError
 from leapp.libraries.actor import constants
-from leapp.libraries.common import dnfplugin, mounting, overlaygen, repofileutils, rhsm, utils
+from leapp.libraries.common import (
+    dnfplugin,
+    mounting,
+    overlaygen,
+    repofileutils,
+    rhsm,
+    rhui,
+    utils,
+)
 from leapp.libraries.common.config import get_product_type, get_env
 from leapp.libraries.stdlib import CalledProcessError, api, config, run
-from leapp.models import (CustomTargetRepositoryFile, RequiredTargetUserspacePackages, RHSMInfo,
-                          StorageInfo, TargetRepositories, TargetUserSpaceInfo,
-                          UsedTargetRepositories, UsedTargetRepository,
-                          XFSPresence, TMPTargetRepositoriesFacts)
-
+from leapp.models import (
+    CustomTargetRepositoryFile,
+    RequiredTargetUserspacePackages,
+    RHUIInfo,
+    RHSMInfo,
+    StorageInfo,
+    TargetRepositories,
+    TargetUserSpaceInfo,
+    TMPTargetRepositoriesFacts,
+    UsedTargetRepositories,
+    UsedTargetRepository,
+    XFSPresence,
+)
 # TODO: "refactor" (modify) the library significantly
 # The current shape is really bad and ineffective (duplicit parsing
 # of repofiles). The library is doing 3 (5) things:
@@ -70,6 +86,7 @@ class _InputData(object):
 
         # Get the RHSM information (available repos, attached SKUs, etc.) of the source (RHEL 7) system
         self.rhsm_info = next(api.consume(RHSMInfo), None)
+        self.rhui_info = next(api.consume(RHUIInfo), None)
         if not self.rhsm_info and not rhsm.skip_rhsm():
             api.current_logger().warn('Could not receive RHSM information - Is this system registered?')
             raise StopActorExecution()
@@ -260,7 +277,7 @@ def _get_rhsm_available_repoids(context):
     # FIXME: check that required repo IDs (baseos, appstream)
     # + or check that all required RHEL repo IDs are available.
     if rhsm.skip_rhsm():
-        return []
+        return set()
     # Get the RHSM repos available in the RHEL 8 container
     # TODO: very similar thing should happens for all other repofiles in container
     #
@@ -282,7 +299,39 @@ def _get_rhsm_available_repoids(context):
     return set(repoids)
 
 
-def gather_target_repositories(context):
+def _get_rhui_available_repoids(context, cloud_repo):
+    repofiles = repofileutils.get_parsed_repofiles(context)
+
+    # TODO: same refactoring as Issue #486?
+    _inhibit_on_duplicate_repos(repofiles)
+    repoids = []
+    for rfile in repofiles:
+        if rfile.file == cloud_repo and rfile.data:
+            repoids = [repo.repoid for repo in rfile.data]
+            repoids.sort()
+            break
+    return set(repoids)
+
+
+def _get_rh_available_repoids(context, indata):
+    """
+    RH repositories are provided either by RHSM or are stored in the expected repo file provided by
+    RHUI special packages (every cloud provider has itw own rpm).
+    """
+
+    rh_repoids = _get_rhsm_available_repoids(context)
+
+    if indata and indata.rhui_info:
+        cloud_repo = os.path.join(
+            '/etc/yum.repos.d/', rhui.RHUI_CLOUD_MAP[indata.rhui_info.provider]['leapp_pkg_repo']
+        )
+        rhui_repoids = _get_rhui_available_repoids(context, cloud_repo)
+        rh_repoids.update(rhui_repoids)
+
+    return rh_repoids
+
+
+def gather_target_repositories(context, indata):
     """
     Get available required target repositories and inhibit or raise error if basic checks do not pass.
 
@@ -301,14 +350,14 @@ def gather_target_repositories(context):
     :return: List of target system repoids
     :rtype: List(string)
     """
-    rhsm_available_repoids = _get_rhsm_available_repoids(context)
+    rh_available_repoids = _get_rh_available_repoids(context, indata)
     all_available_repoids = _get_all_available_repoids(context)
 
     target_repoids = []
     missing_custom_repoids = []
     for target_repo in api.consume(TargetRepositories):
         for rhel_repo in target_repo.rhel_repos:
-            if rhel_repo.repoid in rhsm_available_repoids:
+            if rhel_repo.repoid in rh_available_repoids:
                 target_repoids.append(rhel_repo.repoid)
             else:
                 # TODO: We shall report that the RHEL repos that we deem necessary for
@@ -355,7 +404,7 @@ def gather_target_repositories(context):
             }
         )
 
-    return target_repoids
+    return set(target_repoids)
 
 
 def _install_custom_repofiles(context, custom_repofiles):
@@ -392,8 +441,10 @@ def _gather_target_repositories(context, indata, prod_cert_path):
     """
     rhsm.set_container_mode(context)
     rhsm.switch_certificate(context, indata.rhsm_info, prod_cert_path)
+    if indata.rhui_info:
+        rhui.copy_rhui_data(context, indata.rhui_info.provider)
     _install_custom_repofiles(context, indata.custom_repofiles)
-    return gather_target_repositories(context)
+    return gather_target_repositories(context, indata)
 
 
 def _create_target_userspace(context, packages, target_repoids):

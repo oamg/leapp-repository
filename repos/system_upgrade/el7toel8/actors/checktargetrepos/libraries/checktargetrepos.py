@@ -1,4 +1,4 @@
-from leapp.models import CustomTargetRepositoryFile, TargetRepositories
+from leapp.models import CustomTargetRepositoryFile, TargetRepositories, RHUIInfo
 from leapp.libraries.stdlib import api
 from leapp import reporting
 from leapp.libraries.common import config, rhsm
@@ -29,8 +29,11 @@ def _the_enablerepo_option_used():
 
 
 def process():
-    if not rhsm.skip_rhsm():
-        # getting RH repositories through RHSM; resolved by seatbelts
+
+    rhui_info = next(api.consume(RHUIInfo), None)
+
+    if not rhsm.skip_rhsm() or rhui_info:
+        # getting RH repositories through RHSM or RHUI; resolved by seatbelts
         # implemented in other actors
         return
 
