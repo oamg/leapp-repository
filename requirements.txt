@@ -6,7 +6,6 @@ funcsigs==1.0.2
 mock==2.0.0
 pylint
 pytest==4.6.11
-pytest-ordering==0.5
 pyudev==0.22.0
 distro==1.5.0
 ipaddress==1.0.23
