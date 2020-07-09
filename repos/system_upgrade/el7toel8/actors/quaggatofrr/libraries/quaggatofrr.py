@@ -34,12 +34,11 @@ def _edit_new_config(path, active_daemons, config_data):
 
     if config_data:
         for daemon in config_data:
-            data = re.sub(r'^{}_options=".*"'.format(daemon),
-                          r'{}_options="{}"'.format(daemon, config_data[daemon]),
+            data = re.sub(r'{}_options=\(".*"\)'.format(daemon),
+                          r'{}_options=("{}")'.format(daemon, config_data[daemon]),
                           data, flags=re.MULTILINE)
 
-    with open(path, 'w') as f:
-        f.write(data)
+    return data
 
 
 # 1. parse /etc/sysconfig/quagga.rpmsave if it exists
@@ -52,7 +51,9 @@ def _change_config(quagga_facts):
 
     # This file should definitely exist, if not, something went wrong with the upgrade
     if os.path.isfile(DAEMON_FILE):
-        _edit_new_config(DAEMON_FILE, quagga_facts.active_daemons, config_data)
+        data = _edit_new_config(DAEMON_FILE, quagga_facts.active_daemons, config_data)
+        with open(DAEMON_FILE, 'w') as f:
+            f.write(data)
 
 
 # In quagga, each daemon needed to be started individually
