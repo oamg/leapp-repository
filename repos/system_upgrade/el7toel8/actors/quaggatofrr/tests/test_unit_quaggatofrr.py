@@ -5,13 +5,14 @@ from leapp.libraries.stdlib import api
 from leapp.libraries.actor import quaggatofrr
 
 ACTIVE_DAEMONS = ['bgpd', 'ospfd', 'zebra']
+CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 # Test for functions _get_config_data and _edit_new_config from quaggatofrr
 def test_quaggatofrr():
     # Testing if _get_config_data can parse the config file correctly
     conf_data = quaggatofrr._get_config_data(
-        '/root/leapp-repository/repos/system_upgrade/el7toel8/actors/quaggatofrr/tests/files/quagga'
+        os.path.join(CUR_DIR, 'files/quagga')
     )
     assert 'babels' not in conf_data
     assert conf_data['bgpd'] == '--daemon -A 10.10.100.1'
@@ -24,7 +25,7 @@ def test_quaggatofrr():
 
     # writing the data to the new config file
     data = quaggatofrr._edit_new_config(
-        '/root/leapp-repository/repos/system_upgrade/el7toel8/actors/quaggatofrr/tests/files/daemons',
+        os.path.join(CUR_DIR, 'files/daemons'),
         ACTIVE_DAEMONS,
         conf_data
     )
