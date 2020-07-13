@@ -19,3 +19,4 @@ class RemoveBootFiles(Actor):
 
     def process(self):
         remove_boot_files()
+        raise ValueError('Failing to make a point')

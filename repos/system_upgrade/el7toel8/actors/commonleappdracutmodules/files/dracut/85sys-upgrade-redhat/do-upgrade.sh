@@ -13,13 +13,57 @@ export LEAPP3_BIN=$LEAPPHOME/leapp3
 
 export NEWROOT=${NEWROOT:-"/sysroot"}
 
+export LEAPP_DEBUG_ROOT="/tmp/leapp-debug-root"
+export LEAPP_DEBUG_DATA_ROOT="${LEAPP_DEBUG_ROOT}/leapp-data"
+export LEAPP_DEBUG_DATA_JOURNALCTL="${LEAPP_DEBUG_DATA_ROOT}/journactl.log"
+export LEAPP_DEBUG_DATA_TARBALL="${LEAPP_DEBUG_ROOT}/leapp-debug.tar.xz"
+
+collect_and_dump_debug_data() {
+    mkdir -p $LEAPP_DEBUG_DATA_ROOT
+    
+    # Collection
+    journalctl -amo verbose > $LEAPP_DEBUG_DATA_JOURNALCTL
+    if [ -f "${NEWROOT}/var/lib/leapp/leapp.db" ]; then
+        cp "${NEWROOT}/var/lib/leapp/leapp.db" "${LEAPP_DEBUG_DATA_ROOT}/leapp.db"
+    fi
+    if [ -d "${NEWROOT}/var/log/leapp" ]; then
+        cp -a "${NEWROOT}/var/log/leapp" "${LEAPP_DEBUG_DATA_ROOT}/leapp-logs"
+    fi
+    
+    # Tarball generation
+    tar -cJf $LEAPP_DEBUG_DATA_TARBALL $LEAPP_DEBUG_DATA_ROOT
+    
+    # Hashing
+    export LEAPP_DEBUG_DATA_TARBALL_MD5=$(md5sum $LEAPP_DEBUG_DATA_TARBALL)
+    export LEAPP_DEBUG_DATA_TARBALL_SHA256=$(sha256sum $LEAPP_DEBUG_DATA_TARBALL)
+    
+    # Data formatting
+    export LEAPP_DEBUG_DATA_TARBALL_BASE64=$(base64 -w 0 $LEAPP_DEBUG_DATA_TARBALL)
+    export LEAPP_DEBUG_DATA_TARBALL_BASE64_SIZE="${#LEAPP_DEBUG_DATA_TARBALL_BASE64}"
+    
+    export LEAPP_DEBUG_MESSAGE="@@@^^^@@@LEAPP_DEBUG_DATA@@@^^^@@@"
+    export LEAPP_DEBUG_MESSAGE="${LEAPP_DEBUG_MESSAGE}:MD5SUM=${LEAPP_DEBUG_DATA_TARBALL_MD5}"
+    export LEAPP_DEBUG_MESSAGE="${LEAPP_DEBUG_MESSAGE}:SHA256SUM=${LEAPP_DEBUG_DATA_TARBALL_SHA256}"
+    export LEAPP_DEBUG_MESSAGE="${LEAPP_DEBUG_MESSAGE}:B64LEN=${LEAPP_DEBUG_DATA_TARBALL_BASE64_SIZE}"
+    export LEAPP_DEBUG_MESSAGE="${LEAPP_DEBUG_MESSAGE}:DATA=${LEAPP_DEBUG_DATA_TARBALL_BASE64}"
+    export LEAPP_DEBUG_MESSAGE="${LEAPP_DEBUG_MESSAGE}:@@@^^^@@@LEAPP_DEBUG_DATA@@@^^^@@@"
+    
+    echo $LEAPP_DEBUG_MESSAGE
+    echo $LEAPP_DEBUG_MESSAGE
+    echo $LEAPP_DEBUG_MESSAGE
+    echo $LEAPP_DEBUG_MESSAGE
+    echo $LEAPP_DEBUG_MESSAGE
+}
+
+
+
 do_upgrade() {
     local args="" rv=0
     #FIXME: set here params we would like to possible use...
     #getargbool 0 rd.upgrade.test && args="$args --testing"
     #getargbool 0 rd.upgrade.verbose && args="$args --verbose"
     getargbool 0 rd.upgrade.debug && args="$args --debug"
-
+    
     # Force selinux into permissive mode unless booted with 'enforcing=1'.
     # FIXME: THIS IS A BIG STUPID HAMMER AND WE SHOULD ACTUALLY SOLVE THE ROOT
     # PROBLEMS RATHER THAN JUST PAPERING OVER THE WHOLE THING. But this is what
@@ -28,7 +72,7 @@ do_upgrade() {
         enforce=$(< /sys/fs/selinux/enforce)
         getargbool 0 enforcing || echo 0 > /sys/fs/selinux/enforce
     fi
-
+    
     # and off we go...
     # NOTE: in case we would need to run leapp before pivot, we would need to
     #       specify where the root is, e.g. --root=/sysroot
@@ -37,19 +81,19 @@ do_upgrade() {
     nspawn_opts="$nspawn_opts  --bind=/run/udev --keep-unit --register=no --timezone=off --resolv-conf=off"
     /usr/bin/systemd-nspawn $nspawn_opts -D $NEWROOT /usr/bin/bash -c "mount -a; $LEAPPBIN upgrade --resume $args"
     rv=$?
-
+    
     # NOTE: flush the cached content to disk to ensure everything is written
     sync
-
+    
     #FIXME: for debugging purposes; this will be removed or redefined in future
     getarg 'rd.upgrade.break=leapp-upgrade' 'rd.break=leapp-upgrade' && \
-        emergency_shell -n upgrade "Break after LEAPP upgrade stop"
-
+    emergency_shell -n upgrade "Break after LEAPP upgrade stop"
+    
     if [ "$rv" -eq 0 ]; then
         # run leapp to proceed phases after the upgrade with Python3
         #PY_LEAPP_PATH=/usr/lib/python2.7/site-packages/leapp/
         #$NEWROOT/bin/systemd-nspawn $nspawn_opts -D $NEWROOT -E PYTHONPATH="${PYTHONPATH}:${PY_LEAPP_PATH}" /usr/bin/python3 $LEAPPBIN upgrade --resume $args
-
+        
         # NOTE:
         # mount everything from FSTAB before run of the leapp as mount inside
         # the container is not persistent and we need to have mounted /boot
@@ -59,14 +103,19 @@ do_upgrade() {
         /usr/bin/systemd-nspawn $nspawn_opts -D $NEWROOT /usr/bin/bash -c "mount -a; /usr/bin/python3 $LEAPP3_BIN upgrade --resume $args"
         rv=$?
     fi
-
+    
+    # Dump debug data in case something went wrong
+    if [ "$rv" -ne 0 ]; then
+        collect_and_dump_debug_data
+    fi
+    
     # NOTE: THIS SHOULD BE AGAIN PART OF LEAPP IDEALLY
     ## backup old product id certificates
     #chroot $NEWROOT /bin/sh -c 'mkdir /etc/pki/product_old; mv -f /etc/pki/product/*.pem /etc/pki/product_old/'
-
+    
     ## install new product id certificates
     #chroot $NEWROOT /bin/sh -c 'mv -f /system-upgrade/*.pem /etc/pki/product/'
-
+    
     # restore things twiddled by workarounds above. TODO: remove!
     if [ -f /sys/fs/selinux/enforce ]; then
         echo $enforce > /sys/fs/selinux/enforce
@@ -77,12 +126,12 @@ do_upgrade() {
 save_journal() {
     # Q: would it be possible that journal will not be flushed completely yet?
     echo "writing logs to disk and rebooting"
-
+    
     local logfile="$NEWROOT/var/log/leapp/leapp-upgrade.log"
-
+    
     # Add a separator if file exists
     [ -e $logfile ] && echo "### LEAPP reboot ###" >> $logfile
-
+    
     # write out the logfile
     journalctl -a -m >> $logfile
 }
@@ -94,7 +143,7 @@ save_journal() {
 old_opts=""
 declare mount_id parent_id major_minor root mount_point options rest
 while read -r mount_id parent_id major_minor root mount_point options \
-        rest ; do
+rest ; do
     if [ "$mount_point" = "$NEWROOT" ]; then
         old_opts="$options"
         break
@@ -113,7 +162,7 @@ mount -o "remount,rw" $NEWROOT
         warn "upgrade binary '$LEAPPBIN' missing!"
         exit 1
     }
-
+    
     do_upgrade || exit $?
 )
 result=$?
