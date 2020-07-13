@@ -1,16 +1,18 @@
-import os
 import errno
+import os
 
-import distro
 import pytest
-
-from leapp.snactor.fixture import current_actor_context
 
 
 @pytest.mark.skipif(
-    distro.linux_distribution()[0] == 'Fedora',
-    reason='default.target.wants does not exists on Fedora distro',
-    )
+    not os.path.isdir('/etc/systemd/system/default.target.wants')
+    or not os.getuid() == 0,
+    reason='default.target.wants dir should exists and test should be run '
+           'under the root user.',
+)
+# TODO make the test not destructive
+@pytest.mark.skipif(os.getenv("DESTRUCTIVE_TESTING", False) in [False, "0"],
+                    reason='Test disabled by default because it would modify the system')
 def test_remove_resume_service(current_actor_context):
     service_name = 'leapp_resume.service'
     service_path = os.path.join('/etc/systemd/system/', service_name)
