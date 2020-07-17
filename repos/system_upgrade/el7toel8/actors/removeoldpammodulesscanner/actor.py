@@ -2,7 +2,7 @@ from leapp.actors import Actor
 from leapp.libraries.actor.removeoldpammodulesscanner import RemoveOldPAMModulesScannerLibrary
 from leapp.libraries.common.pam import PAM
 from leapp.models import RemovedPAMModules
-from leapp.tags import ExperimentalTag, FactsPhaseTag, IPUWorkflowTag
+from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 
 class RemoveOldPAMModulesScanner(Actor):
@@ -16,7 +16,7 @@ class RemoveOldPAMModulesScanner(Actor):
     name = 'removed_pam_modules_scanner'
     consumes = ()
     produces = (RemovedPAMModules,)
-    tags = (IPUWorkflowTag, FactsPhaseTag, ExperimentalTag)
+    tags = (IPUWorkflowTag, FactsPhaseTag)
 
     def process(self):
         pam = PAM.from_system_configuration()
