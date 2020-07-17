@@ -1,14 +1,17 @@
 from leapp.actors import Actor
-from leapp.models import InstalledRedHatSignedRPM, InstalledUnsignedRPM, InstalledRPM
-from leapp.tags import IPUWorkflowTag, FactsPhaseTag
+from leapp.models import (
+    InstalledRedHatSignedRPM,
+    InstalledRPM,
+    InstalledUnsignedRPM,
+)
+from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 
 class RedHatSignedRpmScanner(Actor):
-    """
-    Provides data about installed RPM Packages signed by Red Hat.
+    """Provide data about installed RPM Packages signed by Red Hat.
 
-    After filtering the list of installed RPM packages by signature, a message with relevant data
-    will be produced.
+    After filtering the list of installed RPM packages by signature, a message
+    with relevant data will be produced.
     """
 
     name = 'red_hat_signed_rpm_scanner'
@@ -26,16 +29,43 @@ class RedHatSignedRpmScanner(Actor):
         signed_pkgs = InstalledRedHatSignedRPM()
         unsigned_pkgs = InstalledUnsignedRPM()
 
+        env_vars = self.configuration.leapp_env_vars
+        # if we start upgrade with LEAPP_DEVEL_RPMS_ALL_SIGNED=1, we consider
+        # all packages to be signed
+        all_signed = [
+            env
+            for env in env_vars
+            if env.name == 'LEAPP_DEVEL_RPMS_ALL_SIGNED' and env.value == '1'
+        ]
+
+        def has_rhsig(pkg):
+            return any(key in pkg.pgpsig for key in RH_SIGS)
+
+        def is_gpg_pubkey(pkg):
+            """Check if gpg-pubkey pkg exists or LEAPP_DEVEL_RPMS_ALL_SIGNED=1
+
+            gpg-pubkey is not signed as it would require another package
+            to verify its signature
+            """
+            return (    # pylint: disable-msg=consider-using-ternary
+                    pkg.name == 'gpg-pubkey'
+                    and pkg.packager.startswith('Red Hat, Inc.')
+                    or all_signed
+            )
+
+        def has_katello_prefix(pkg):
+            """Whitelist the katello package."""
+            return pkg.name.startswith('katello-ca-consumer')
+
         for rpm_pkgs in self.consume(InstalledRPM):
             for pkg in rpm_pkgs.items:
-                env_vars = self.configuration.leapp_env_vars
-                # if we start upgrade with LEAPP_DEVEL_RPMS_ALL_SIGNED=1, we consider all packages to be signed
-                all_signed = [
-                    env for env in env_vars if env.name == 'LEAPP_DEVEL_RPMS_ALL_SIGNED' and env.value == '1'
-                ]
-                # "gpg-pubkey" is not signed as it would require another package to verify its signature
-                if any(key in pkg.pgpsig for key in RH_SIGS) or \
-                        (pkg.name == 'gpg-pubkey' and pkg.packager.startswith('Red Hat, Inc.') or all_signed):
+                if any(
+                    [
+                        has_rhsig(pkg),
+                        is_gpg_pubkey(pkg),
+                        has_katello_prefix(pkg),
+                    ]
+                ):
                     signed_pkgs.items.append(pkg)
                     continue
 
