@@ -7,7 +7,7 @@ from leapp.libraries.actor.authselectscanner import (
 )
 from leapp.libraries.common.pam import PAM
 from leapp.models import Authselect
-from leapp.tags import ExperimentalTag, FactsPhaseTag, IPUWorkflowTag
+from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 
 class AuthselectScanner(Actor):
@@ -48,7 +48,7 @@ class AuthselectScanner(Actor):
     name = 'authselect_scanner'
     consumes = ()
     produces = (Authselect,)
-    tags = (IPUWorkflowTag, FactsPhaseTag, ExperimentalTag)
+    tags = (IPUWorkflowTag, FactsPhaseTag)
 
     known_modules = [
         'pam_access',
