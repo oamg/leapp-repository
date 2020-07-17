@@ -7,8 +7,6 @@
 aic79xx
 aoe
 arcmsr
-qlcnic
-qlge
 
 # ata drivers
 
@@ -25,6 +23,9 @@ sata_sx4
 sata_uli
 sata_via
 sata_vsc
+
+# end of ata drivers
+
 bfa
 cxgb3
 cxgb3i
@@ -47,6 +48,9 @@ mvumi
 
 osd
 libosd
+
+# end of OSD drivers
+
 osst
 
 # pata drivers
@@ -81,9 +85,14 @@ pata_sil680
 pata_sis
 pata_via
 pdc_adma
+
+# end of pata drivers
+
 pm80xx
 pmcraid
 qla3xxx
+qlcnic
+qlge
 stex
 sx8
 tulip
@@ -99,3 +108,5 @@ rt73usb
 rt61pci
 rtl8187
 wil6210
+
+# end of wireless drivers
