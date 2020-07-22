@@ -98,16 +98,16 @@ def test_enable_sctp(
 
     monkeypatch.setattr(sctpupdate, 'run', mock_run)
 
-    sctp_diag_blacklist_conf = tmpdir.join('sctp_diag-blacklist.conf')
-    sctp_blacklist_conf = tmpdir.join('sctp-blacklist.conf')
+    sctp_diag_excluded_list_conf = tmpdir.join('sctp_diag-blacklist.conf')
+    sctp_excluded_list_conf = tmpdir.join('sctp-blacklist.conf')
     if conf_files_exists:
-        sctp_diag_blacklist_conf.write(conf_content)
-        sctp_blacklist_conf.write(conf_content)
+        sctp_diag_excluded_list_conf.write(conf_content)
+        sctp_excluded_list_conf.write(conf_content)
 
     with caplog.at_level(logger_level):
         if not should_raise_exc:
             sctpupdate.enable_sctp(_modprobe_d_path=str(tmpdir))
-            with open(str(sctp_blacklist_conf)) as conf:
+            with open(str(sctp_excluded_list_conf)) as conf:
                 assert conf.readlines() == [exp_new_conf_content]
         else:
             with pytest.raises(should_raise_exc):

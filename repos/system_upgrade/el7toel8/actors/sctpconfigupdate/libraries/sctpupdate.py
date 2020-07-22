@@ -6,7 +6,7 @@ from leapp.models import SCTPConfig
 
 def enable_sctp(_modprobe_d_path="/etc/modprobe.d"):
     """
-    Enables the SCTP module by removing it from being black listed.
+    Enables the SCTP module by removing it from being excluded.
     :type _modprobe_d_path: str
     :param _modprobe_d_path: overwrite only in case of testing, by passing
         some tmp_dir instead

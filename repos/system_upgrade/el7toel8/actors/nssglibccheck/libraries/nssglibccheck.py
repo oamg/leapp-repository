@@ -7,24 +7,24 @@ from leapp import reporting
 AffectedLine = namedtuple('AffectedLine', 'lineno column module')
 
 
-def check_modules(lines, blacklist):
+def check_modules(lines, excluded_list):
     '''
     Find and return all `lines` that contain an item
-    from `blacklist` such that the item is not preceded by the # characted,
+    from `excluded_list` such that the item is not preceded by the # characted,
     which indicates that the item (or whole line) is commented.
     '''
     for lineno, line in enumerate(lines):
-        for blacklisted in blacklist:
+        for excluded in excluded_list:
             comment_index = line.find('#')
-            item_index = line.find(blacklisted)
+            item_index = line.find(excluded)
             if item_index > -1:
                 if comment_index == -1 or comment_index > item_index:
-                    yield AffectedLine(lineno + 1, item_index + 1, blacklisted)
+                    yield AffectedLine(lineno + 1, item_index + 1, excluded)
 
 
-def process_lines(lines, blacklist, config_path):
+def process_lines(lines, excluded_list, config_path):
     modules = []
-    for affected in check_modules(lines, blacklist):
+    for affected in check_modules(lines, excluded_list):
         modules.append(
             "- {module} (at line {line})".format(
                 line=affected.lineno, module=affected.module

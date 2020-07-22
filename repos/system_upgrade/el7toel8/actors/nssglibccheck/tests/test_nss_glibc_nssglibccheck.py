@@ -16,7 +16,7 @@ foo:        sss files #winbind
 '''
 
 
-def test_blacklister(current_actor_context):
+def test_excluded_lister(current_actor_context):
     caught = list(nssglibccheck.check_modules(
         [l.strip() for l in TEST_DATA.splitlines()],
         ('wins', 'winbind',),

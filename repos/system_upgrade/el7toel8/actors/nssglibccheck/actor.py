@@ -9,7 +9,7 @@ from leapp.libraries.actor import nssglibccheck
 NSS_CONFIG_PATH = '/etc/nsswitch.conf'
 
 # List of affected modules
-BLACKLIST = ('wins', 'winbind',)
+EXCLUDED = ('wins', 'winbind',)
 
 
 class NSSGlibcCheckActor(Actor):
@@ -24,4 +24,4 @@ class NSSGlibcCheckActor(Actor):
 
         with open(NSS_CONFIG_PATH, 'r') as fp:
             stripped = [line.strip() for line in fp.readlines()]
-            nssglibccheck.process_lines(stripped, BLACKLIST, NSS_CONFIG_PATH)
+            nssglibccheck.process_lines(stripped, EXCLUDED, NSS_CONFIG_PATH)

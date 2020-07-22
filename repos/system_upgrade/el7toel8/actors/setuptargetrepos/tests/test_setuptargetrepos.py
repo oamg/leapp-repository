@@ -1,7 +1,7 @@
 from leapp.libraries import stdlib
 from leapp.models import CustomTargetRepository, TargetRepositories, RepositoryData, \
     RepositoryFile, RepositoriesFacts, RepositoryMap, RepositoriesMap, RepositoriesSetupTasks, \
-    RepositoriesBlacklisted
+    RepositoriesExcluded
 
 
 def test_minimal_execution(current_actor_context):
@@ -14,16 +14,16 @@ def test_custom_repos(current_actor_context):
                                     baseurl='https://.../dist/rhel/server/8/os',
                                     enabled=True)
 
-    blacklisted = CustomTargetRepository(repoid='rhel-8-blacklisted-rpms',
-                                         name='RHEL 8 Blacklisted (RPMs)',
-                                         baseurl='https://.../dist/rhel/blacklisted/8/os',
-                                         enabled=True)
+    excluded = CustomTargetRepository(repoid='rhel-8-blacklisted-rpms',
+                                      name='RHEL 8 Blacklisted (RPMs)',
+                                      baseurl='https://.../dist/rhel/blacklisted/8/os',
+                                      enabled=True)
 
-    repos_blacklisted = RepositoriesBlacklisted(repoids=['rhel-8-blacklisted-rpms'])
+    repos_excluded = RepositoriesExcluded(repoids=['rhel-8-blacklisted-rpms'])
 
     current_actor_context.feed(custom)
-    current_actor_context.feed(blacklisted)
-    current_actor_context.feed(repos_blacklisted)
+    current_actor_context.feed(excluded)
+    current_actor_context.feed(repos_excluded)
     current_actor_context.run()
 
     assert current_actor_context.consume(TargetRepositories)
@@ -37,10 +37,10 @@ def test_repositories_setup_tasks(current_actor_context):
     repositories_setup_tasks = RepositoriesSetupTasks(to_enable=['rhel-8-server-rpms',
                                                                  'rhel-8-blacklisted-rpms'])
 
-    repos_blacklisted = RepositoriesBlacklisted(repoids=['rhel-8-blacklisted-rpms'])
+    repos_excluded = RepositoriesExcluded(repoids=['rhel-8-blacklisted-rpms'])
 
     current_actor_context.feed(repositories_setup_tasks)
-    current_actor_context.feed(repos_blacklisted)
+    current_actor_context.feed(repos_excluded)
     current_actor_context.run()
     assert current_actor_context.consume(TargetRepositories)
 
@@ -80,11 +80,11 @@ def test_repos_mapping(current_actor_context):
                              repo_type='rpm')]
     repos_map = RepositoriesMap(repositories=mapping)
 
-    repos_blacklisted = RepositoriesBlacklisted(repoids=['rhel-8-blacklisted-rpms'])
+    repos_excluded = RepositoriesExcluded(repoids=['rhel-8-blacklisted-rpms'])
 
     current_actor_context.feed(facts)
     current_actor_context.feed(repos_map)
-    current_actor_context.feed(repos_blacklisted)
+    current_actor_context.feed(repos_excluded)
     current_actor_context.run()
     assert current_actor_context.consume(TargetRepositories)
 
