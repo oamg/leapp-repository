@@ -439,7 +439,7 @@ def filter_out_pkgs_in_excluded_repos(to_install):
             message=SKIPPED_PKGS_MSG.format(', '.join(excluded_repos)),
             packages=excluded_pkgs,
             remediation=(
-                'AT YOUR OWN RISK!!! Use leapp upgrade {}'.format(' '.join(
+                'At your own risk! Use leapp upgrade {}'.format(' '.join(
                     ['--enablerepo ' + repo for repo in excluded_repos])
                 )
             )
