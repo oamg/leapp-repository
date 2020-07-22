@@ -1,6 +1,5 @@
-import os
-
 from leapp.actors import Actor
+from leapp.libraries.actor.workaround import apply_python3_workaround
 from leapp.tags import IPUWorkflowTag, RPMUpgradePhaseTag
 
 
@@ -20,20 +19,4 @@ class PreparePythonWorkround(Actor):
     tags = (IPUWorkflowTag, RPMUpgradePhaseTag)
 
     def process(self):
-        leapp_home = "/root/tmp_leapp_py3"
-        py3_leapp = os.path.join(leapp_home, "leapp3")
-        os.mkdir(leapp_home)
-        os.symlink(
-            "/usr/lib/python2.7/site-packages/leapp",
-            os.path.join(leapp_home, "leapp"))
-        with open(py3_leapp, "w") as f:
-            f_content = [
-                "#!/usr/bin/python3",
-                "import sys",
-                "sys.path.append('{}')".format(leapp_home),
-                "",
-                "import leapp.cli",
-                "sys.exit(leapp.cli.main())",
-            ]
-            f.write("{}\n\n".format("\n".join(f_content)))
-        os.chmod(py3_leapp, 0o770)
+        apply_python3_workaround()
