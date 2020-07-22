@@ -3,7 +3,7 @@ import re
 
 SendmailConfDir = '/etc/mail'
 SendmailConfFiles = ['sendmail.cf', 'sendmail.mc', 'submit.cf', 'submit.mc']
-# false positives blacklist
+# false positives excluded list
 rfp = re.compile(r'(^\s*RIPv6:::1\b)|(@\s+\[IPv6:::1\]\s+>)')
 
 

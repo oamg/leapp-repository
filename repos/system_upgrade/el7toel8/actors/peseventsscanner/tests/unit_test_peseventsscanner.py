@@ -2,6 +2,7 @@ import os.path
 
 import pytest
 
+from leapp import reporting
 from leapp.exceptions import StopActorExecution
 from leapp.libraries.actor import peseventsscanner
 from leapp.libraries.actor.peseventsscanner import (
@@ -10,18 +11,23 @@ from leapp.libraries.actor.peseventsscanner import (
     Event,
     Task,
     add_output_pkgs_to_transaction_conf,
-    filter_out_pkgs_in_blacklisted_repos,
     filter_events_by_architecture,
     filter_events_by_releases,
+    filter_out_pkgs_in_excluded_repos,
     filter_releases_by_target,
     get_events,
-    map_repositories, parse_action,
-    parse_entry, parse_packageset,
+    map_repositories,
+    parse_action,
+    parse_entry,
+    parse_packageset,
     parse_pes_events_file,
     process_events,
-    report_skipped_packages)
-from leapp import reporting
-from leapp.libraries.common.testutils import produce_mocked, create_report_mocked
+    report_skipped_packages,
+)
+from leapp.libraries.common.testutils import (
+    create_report_mocked,
+    produce_mocked,
+)
 from leapp.libraries.stdlib import api
 from leapp.models import RpmTransactionTasks
 
@@ -38,12 +44,12 @@ class show_message_mocked(object):
         self.msg = msg
 
 
-class get_repos_blacklisted_mocked(object):
-    def __init__(self, blacklisted):
-        self.blacklisted = blacklisted
+class get_repos_excluded_mocked(object):
+    def __init__(self, excluded):
+        self.excluded = excluded
 
     def __call__(self):
-        return self.blacklisted
+        return self.excluded
 
 
 def test_parse_action(current_actor_context):
@@ -129,22 +135,22 @@ def test_report_skipped_packages_no_verbose_mode(monkeypatch):
     assert reporting.create_report.report_fields['summary'] == message
 
 
-def test_filter_out_pkgs_in_blacklisted_repos(monkeypatch, caplog):
+def test_filter_out_pkgs_in_excluded_repos(monkeypatch, caplog):
     monkeypatch.setattr(api, 'show_message', show_message_mocked())
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
-    monkeypatch.setattr(peseventsscanner, 'get_repositories_blacklisted',
-                        get_repos_blacklisted_mocked(set(['blacklisted'])))
+    monkeypatch.setattr(peseventsscanner, 'get_repositories_excluded',
+                        get_repos_excluded_mocked(set(['excluded'])))
     monkeypatch.setenv('LEAPP_VERBOSE', '1')
 
     to_install = {
         'pkg01': 'repo01',
         'pkg02': 'repo02',
-        'skipped01': 'blacklisted',
-        'skipped02': 'blacklisted'}
-    filter_out_pkgs_in_blacklisted_repos(to_install)
+        'skipped01': 'excluded',
+        'skipped02': 'excluded'}
+    filter_out_pkgs_in_excluded_repos(to_install)
 
     msg = '2 {}\n- {}'.format(
-        SKIPPED_PKGS_MSG.format('blacklisted'),
+        SKIPPED_PKGS_MSG.format('excluded'),
         '\n- '.join(['skipped01', 'skipped02'])
     )
 
@@ -158,7 +164,7 @@ def test_filter_out_pkgs_in_blacklisted_repos(monkeypatch, caplog):
 
 def test_resolve_conflicting_requests(monkeypatch):
     monkeypatch.setattr(peseventsscanner, 'map_repositories', lambda x: x)
-    monkeypatch.setattr(peseventsscanner, 'filter_out_pkgs_in_blacklisted_repos', lambda x: x)
+    monkeypatch.setattr(peseventsscanner, 'filter_out_pkgs_in_excluded_repos', lambda x: x)
 
     events = [
         Event(Action.split, {'sip-devel': 'repo'}, {'python3-sip-devel': 'repo', 'sip': 'repo'}, (7, 6), (8, 0), []),
@@ -200,7 +206,7 @@ def test_map_repositories(monkeypatch, caplog):
 
 def test_process_events(monkeypatch):
     monkeypatch.setattr(peseventsscanner, '_get_repositories_mapping', lambda: {'rhel8-repo': 'rhel8-mapped'})
-    monkeypatch.setattr(peseventsscanner, 'get_repositories_blacklisted', get_repos_blacklisted_mocked(set()))
+    monkeypatch.setattr(peseventsscanner, 'get_repositories_excluded', get_repos_excluded_mocked(set()))
 
     events = [
         Event(Action.split, {'original': 'rhel7-repo'}, {'split01': 'rhel8-repo', 'split02': 'rhel8-repo'},

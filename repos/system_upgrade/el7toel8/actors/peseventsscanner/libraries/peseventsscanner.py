@@ -9,7 +9,7 @@ from leapp.libraries.common.config import architecture, version
 from leapp.libraries.stdlib import api
 from leapp.libraries.stdlib.config import is_verbose
 from leapp.models import (InstalledRedHatSignedRPM, PESRpmTransactionTasks, RepositoriesMap,
-                          RepositoriesSetupTasks, RpmTransactionTasks, RepositoriesBlacklisted)
+                          RepositoriesSetupTasks, RpmTransactionTasks, RepositoriesExcluded)
 
 
 Event = namedtuple('Event', ['action',        # An instance of Action
@@ -375,7 +375,7 @@ def process_events(releases, events, installed_pkgs):
 
     map_repositories(tasks[Task.install])
     map_repositories(tasks[Task.keep])
-    filter_out_pkgs_in_blacklisted_repos(tasks[Task.install])
+    filter_out_pkgs_in_excluded_repos(tasks[Task.install])
     resolve_conflicting_requests(tasks)
 
     return tasks
@@ -416,28 +416,28 @@ SKIPPED_PKGS_MSG = (
 )
 
 
-def filter_out_pkgs_in_blacklisted_repos(to_install):
+def filter_out_pkgs_in_excluded_repos(to_install):
     """
-    Do not install packages that are available in blacklisted repositories
+    Do not install packages that are available in excluded repositories
 
-    No need to filter out the to_keep packages as the blacklisted repos won't get enabled - that is ensured in the
+    No need to filter out the to_keep packages as the excluded repos won't get enabled - that is ensured in the
     setuptargetrepos actor. So even if they fall into the 'yum upgrade' bucket, they won't be available thus upgraded.
     """
     # FIXME The to_install contains just a limited subset of packages - those that are *not* currently installed and
     #   are to be installed. But we should also warn about the packages that *are* installed.
-    blacklisted_pkgs = set()
-    blacklisted_repos = get_repositories_blacklisted()
+    excluded_pkgs = set()
+    excluded_repos = get_repositories_excluded()
     for pkg, repo in to_install.items():
-        if repo in blacklisted_repos:
-            blacklisted_pkgs.add(pkg)
+        if repo in excluded_repos:
+            excluded_pkgs.add(pkg)
 
-    for pkg in blacklisted_pkgs:
+    for pkg in excluded_pkgs:
         del to_install[pkg]
 
-    if blacklisted_pkgs:
+    if excluded_pkgs:
         report_skipped_packages(
-            message=SKIPPED_PKGS_MSG.format(', '.join(blacklisted_repos)),
-            packages=blacklisted_pkgs,
+            message=SKIPPED_PKGS_MSG.format(', '.join(excluded_repos)),
+            packages=excluded_pkgs,
         )
 
 
@@ -462,12 +462,12 @@ def resolve_conflicting_requests(tasks):
                                    ' time. Leapp will upgrade them.\n{}'.format('\n'.join(sorted(pkgs_in_conflict))))
 
 
-def get_repositories_blacklisted():
-    """Consume message and return a set of blacklisted repositories"""
-    repos_blacklisted = set()
-    for blacklist in api.consume(RepositoriesBlacklisted):
-        repos_blacklisted.update(blacklist.repoids)
-    return repos_blacklisted
+def get_repositories_excluded():
+    """Consume message and return a set of excluded repositories"""
+    repos_excluded = set()
+    for excluded_list in api.consume(RepositoriesExcluded):
+        repos_excluded.update(excluded_list.repoids)
+    return repos_excluded
 
 
 def map_repositories(packages):

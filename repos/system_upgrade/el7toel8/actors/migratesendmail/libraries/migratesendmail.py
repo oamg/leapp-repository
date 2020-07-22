@@ -7,7 +7,7 @@ from six import text_type
 
 BackupSuffix = '.bak'
 
-# false positives blacklist
+# false positives excluded list
 rfp = re.compile(r'(^\s*RIPv6:::1\b)|(@\s+\[IPv6:::1\]\s+>)')
 
 rs = re.compile(r'IPv6:[0-9a-fA-F:]*::[0-9a-fA-F:]*')

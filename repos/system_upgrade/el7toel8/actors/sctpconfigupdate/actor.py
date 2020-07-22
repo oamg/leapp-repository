@@ -6,9 +6,9 @@ from leapp.tags import ApplicationsPhaseTag, IPUWorkflowTag
 
 class SCTPConfigUpdate(Actor):
     """
-    Updates the kernel module blacklist for SCTP.
+    Updates the kernel module excluded list for SCTP.
 
-    If the SCTP module is wanted on RHEL8 the modprobe configuration gets updated to remove SCTP from the black listed
+    If the SCTP module is wanted on RHEL8 the modprobe configuration gets updated to remove SCTP from the excluded
     kernel modules.
     """
     name = 'sctp_config_update'

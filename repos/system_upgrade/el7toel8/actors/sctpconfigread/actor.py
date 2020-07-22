@@ -10,7 +10,7 @@ class SCTPConfigRead(Actor):
 
     This actor determines whether or not the SCTP is currently used by this machine or has been quite
     recently used (1 month timeframe). In case it has been used it will issue a SCTPConfig message that
-    defines the decision whether or not the SCTP module should be removed from the module blacklist on RHEL8.
+    defines the decision whether or not the SCTP module should be removed from the module excluded list on RHEL8.
     """
     name = 'sctp_read_status'
     consumes = (ActiveKernelModulesFacts,)
