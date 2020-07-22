@@ -1,17 +1,21 @@
 from leapp.actors import Actor
-from leapp.libraries.actor.repositoriesblacklist import process
-from leapp.models import RepositoriesBlacklisted, RepositoriesFacts, RepositoriesMap
-from leapp.tags import IPUWorkflowTag, FactsPhaseTag
+from leapp.libraries.actor.excluderepositories import process
+from leapp.models import (
+    CustomTargetRepository,
+    RepositoriesExcluded,
+    RepositoriesFacts,
+    RepositoriesMap,
+)
+from leapp.reporting import Report
+from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 
-class RepositoriesBlacklist(Actor):
-    """
-    Generate list of repository IDs that should be ignored by Leapp during upgrade process
-    """
+class ExcludeRepositories(Actor):
+    """Generate list of repository IDs that should be ignored by Leapp during upgrade process."""
 
-    name = 'repositories_blacklist'
-    consumes = (RepositoriesFacts, RepositoriesMap, )
-    produces = (RepositoriesBlacklisted,)
+    name = "exclude_repositories"
+    consumes = (RepositoriesFacts, RepositoriesMap, CustomTargetRepository)
+    produces = (RepositoriesExcluded, Report)
     tags = (IPUWorkflowTag, FactsPhaseTag)
 
     def process(self):
