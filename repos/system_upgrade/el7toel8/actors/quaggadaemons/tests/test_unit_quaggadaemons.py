@@ -1,6 +1,3 @@
-import errno
-import os
-
 from leapp.libraries.actor import quaggadaemons
 from leapp.models import QuaggaToFrrFacts
 

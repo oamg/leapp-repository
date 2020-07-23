@@ -1,4 +1,3 @@
-import errno
 import os
 
 from leapp.libraries.actor import quaggatofrr
