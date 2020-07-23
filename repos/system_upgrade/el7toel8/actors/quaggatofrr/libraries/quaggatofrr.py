@@ -1,5 +1,5 @@
-import re
 import os
+import re
 import shutil
 
 from leapp.libraries.stdlib import CalledProcessError, api, run
@@ -78,7 +78,7 @@ def _copy_config_files(src_path, dest_path):
         full_path = os.path.join(src_path, file_name)
         if os.path.isfile(full_path):
             shutil.copy(full_path, dest_path)
-            api.current_logger().debug('Copying {} to {}{}'.format(full_path, dest_path, file_name))
+            api.current_logger().debug('Copying %s to %s%s', full_path, dest_path, file_name)
 
 
 def process_facts(quagga_facts):

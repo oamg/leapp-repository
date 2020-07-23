@@ -1,6 +1,6 @@
 from leapp import reporting
 from leapp.actors import Actor
-from leapp.models import Report, QuaggaToFrrFacts
+from leapp.models import QuaggaToFrrFacts, Report
 from leapp.reporting import create_report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
@@ -12,6 +12,8 @@ COMMON_REPORT_TAGS = [
 
 class QuaggaReport(Actor):
     """
+    Checking for babeld on RHEL-7.
+
     This actor is supposed to report that babeld was used on RHEL-7
     and it is no longer available in RHEL-8.
     """

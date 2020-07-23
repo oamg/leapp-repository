@@ -1,10 +1,8 @@
 import errno
 import os
 
-from leapp.libraries.stdlib import api
 from leapp.libraries.actor import quaggadaemons
 from leapp.models import QuaggaToFrrFacts
-
 
 # daemons for mocked _check_service function
 TEST_DAEMONS = ['bgpd', 'ospfd', 'zebra']

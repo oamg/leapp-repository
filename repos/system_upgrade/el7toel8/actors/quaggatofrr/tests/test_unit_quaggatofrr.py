@@ -1,7 +1,6 @@
 import errno
 import os
 
-from leapp.libraries.stdlib import api
 from leapp.libraries.actor import quaggatofrr
 
 ACTIVE_DAEMONS = ['bgpd', 'ospfd', 'zebra']

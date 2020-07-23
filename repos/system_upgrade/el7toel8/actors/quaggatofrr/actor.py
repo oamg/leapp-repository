@@ -1,12 +1,14 @@
 from leapp.actors import Actor
+from leapp.libraries.actor.quaggatofrr import process_facts
 from leapp.models import QuaggaToFrrFacts
 from leapp.tags import ApplicationsPhaseTag, IPUWorkflowTag
-from leapp.libraries.actor.quaggatofrr import process_facts
 
 
 class QuaggaToFrr(Actor):
     """
-    Move configuration from quagga format to the new format in FRR
+    Edit frr configuration on the new system.
+
+    Take gathered info about quagga from RHEL 7 and apply these to frr in RHEL 8.
     """
 
     name = 'quagga_to_frr'
