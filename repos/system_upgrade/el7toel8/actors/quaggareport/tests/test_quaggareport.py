@@ -1,6 +1,7 @@
+import logging
+
 import pytest
 
-from leapp.libraries.common.config import mock_configs
 from leapp.models import QuaggaToFrrFacts
 from leapp.snactor.fixture import ActorContext
 
@@ -9,8 +10,8 @@ from leapp.snactor.fixture import ActorContext
     ("quagga_facts", "active_daemons", "has_report", "msg_in_log"),
     [
         (True, ["babeld"], True, None),
-        (True, ["something_esle"], False, None),
-        (False, [], False, "babeld not used, moving on"),
+        (True, ["something_else"], False, "babeld not used, moving on"),
+        (False, [], False, None),
     ],
 )
 def test_quaggareport(
@@ -23,7 +24,7 @@ def test_quaggareport(
 ):
     """Test quaggareport.
 
-    :type current_actor_context:ActorContext 
+    :type current_actor_context:ActorContext
     """
     if quagga_facts:
         current_actor_context.feed(
@@ -32,8 +33,9 @@ def test_quaggareport(
                 enabled_daemons=["bgpd", "ospfd", "zebra"],
             )
         )
-    current_actor_context.run(config_model=mock_configs.CONFIG)
+    with caplog.at_level(logging.DEBUG, logger="leapp.actors.quagga_report"):
+        current_actor_context.run()
     if has_report:
         assert current_actor_context.messages()[0]["type"] == "Report"
     if msg_in_log:
-        assert caplog
+        assert msg_in_log in caplog.text

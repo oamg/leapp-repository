@@ -28,18 +28,17 @@ class QuaggaReport(Actor):
             quagga_facts = next(self.consume(QuaggaToFrrFacts))
         except StopIteration:
             return
-        if quagga_facts:
-            if 'babeld' in quagga_facts.active_daemons or 'babeld' in quagga_facts.enabled_daemons:
-                create_report([
-                    reporting.Title('Babeld is not available in FRR'),
-                    reporting.Summary(
-                        'babeld daemon which was a part of quagga implementation in RHEL7 '
-                        'is not available in RHEL8 in FRR due to licensing issues.'
-                    ),
-                    reporting.Severity(reporting.Severity.HIGH),
-                    reporting.Tags(COMMON_REPORT_TAGS),
-                    reporting.Flags([reporting.Flags.INHIBITOR]),
-                    reporting.Remediation(hint='Please use RIP, OSPF or EIGRP instead of Babel')
-                ])
+        if 'babeld' in quagga_facts.active_daemons or 'babeld' in quagga_facts.enabled_daemons:
+            create_report([
+                reporting.Title('Babeld is not available in FRR'),
+                reporting.Summary(
+                    'babeld daemon which was a part of quagga implementation in RHEL7 '
+                    'is not available in RHEL8 in FRR due to licensing issues.'
+                ),
+                reporting.Severity(reporting.Severity.HIGH),
+                reporting.Tags(COMMON_REPORT_TAGS),
+                reporting.Flags([reporting.Flags.INHIBITOR]),
+                reporting.Remediation(hint='Please use RIP, OSPF or EIGRP instead of Babel')
+            ])
         else:
             self.log.debug('babeld not used, moving on.')
