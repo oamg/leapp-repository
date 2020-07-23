@@ -24,7 +24,10 @@ class QuaggaReport(Actor):
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 
     def process(self):
-        quagga_facts = next(self.consume(QuaggaToFrrFacts))
+        try:
+            quagga_facts = next(self.consume(QuaggaToFrrFacts))
+        except StopIteration:
+            return
         if quagga_facts:
             if 'babeld' in quagga_facts.active_daemons or 'babeld' in quagga_facts.enabled_daemons:
                 create_report([
