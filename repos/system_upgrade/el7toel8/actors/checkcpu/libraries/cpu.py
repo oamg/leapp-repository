@@ -34,8 +34,7 @@ def process():
             reporting.Flags([reporting.Flags.INHIBITOR]),
             reporting.ExternalLink(
                 title="Considerations in adopting RHEL 8",
-                url=("https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/"
-                     "html-single/considerations_in_adopting_rhel_8/"
-                     "index#changes-in-gcc-in-rhel-8_changes-in-toolchain-since-rhel-7"))
+                url=("https://access.redhat.com/ecosystem/hardware/#/search?p=1&"
+                     "c_version=Red%20Hat%20Enterprise%20Linux%208&ch_architecture=s390x"))
         ]
         reporting.create_report(report)
