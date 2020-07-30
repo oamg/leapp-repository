@@ -25,3 +25,11 @@ class RepositoriesFacts(Model):
     topic = SystemFactsTopic
 
     repositories = fields.List(fields.Model(RepositoryFile))
+
+class TMPTargetRepositoriesFacts(RepositoriesFacts):
+    """
+    Do not consume this model anywhere outside of localreposinhibit
+
+    The model is temporary and will be removed in close future
+    """
+    pass
