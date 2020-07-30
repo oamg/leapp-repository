@@ -25,11 +25,10 @@ def _report_set_release():
 def _report_unhandled_release():
     # TODO: set the POST group after it's created.
     target_version = api.current_actor().configuration.version.target
-    commands = [
-        ['subscription-manager', 'release', '--unset'],
-        ['subscription-manager', 'release', '--set', target_version],
-    ]
-    hint = 'Set the new release (or unset it) after the upgrade using subscription-manager.'
+    hint_command = 'subscription-manager release --set {}'.format(target_version)
+    # FIXME: This should use Dialogs and Answers to offer post-upgrade remediation
+    # so that users can choose whether to --set or --unset the release number
+    hint = 'Set the new release (or unset it) after the upgrade using subscription-manager: ' + hint_command
     reporting.create_report([
         reporting.Title(
             'The subscription-manager release is going to be kept as it is during the upgrade'),
@@ -41,7 +40,7 @@ def _report_unhandled_release():
             ' after the upgrade.'
         ),
         reporting.Severity(reporting.Severity.LOW),
-        reporting.Remediation(commands=commands, hint=hint),
+        reporting.Remediation(hint=hint),
         reporting.Tags([reporting.Tags.UPGRADE_PROCESS]),
         reporting.RelatedResource('package', 'subscription-manager')
     ])

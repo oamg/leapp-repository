@@ -27,8 +27,10 @@ def process():
         summary = ('DNF cannot produce a valid upgrade transaction when'
                    ' multiple kernel-devel packages are installed.')
         hint = ('Remove all but one kernel-devel packages before running Leapp again.')
-        commands = ([['yum', '-y', 'remove', '{n}-{v}.{r}'.format(
-            n=pkg.name, v=pkg.version, r=pkg.release)] for pkg in pkgs[:-1]])
+        all_but_latest_kernel_devel = pkgs[:-1]
+        packages = ['{n}-{v}-{r}'.format(n=pkg.name, v=pkg.version, r=pkg.release)
+                    for pkg in all_but_latest_kernel_devel]
+        commands = [['yum', '-y', 'remove'] + packages]
         reporting.create_report([
             reporting.Title(title),
             reporting.Summary(summary),

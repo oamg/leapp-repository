@@ -12,8 +12,9 @@ def check_dialogs(inhibit_if_no_userchoice=True):
         dialog_resources = [reporting.RelatedResource('dialog', s) for s in sections]
         dialogs_remediation = ('Please register user choices with leapp answer cli command or by manually editing '
                                'the answerfile.')
+        # FIXME: Enable more choices once we can do multi-command remediations
         cmd_remediation = [['leapp', 'answer', '--section', "{}={}".format(s, choice)]
-                           for s, choices in dialog.answerfile_sections.items() for choice in choices]
+                           for s, choices in dialog.answerfile_sections.items() for choice in choices[:1]]
         report_data = [reporting.Title('Missing required answers in the answer file'),
                        reporting.Severity(reporting.Severity.HIGH),
                        reporting.Summary(summary.format('\n'.join(sections))),
