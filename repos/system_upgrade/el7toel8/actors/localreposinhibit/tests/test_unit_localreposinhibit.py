@@ -19,34 +19,35 @@ def test_unit_localreposinhibit(current_actor_context, baseurl, exp_msgs_len):
 
     :type current_actor_context: ActorContext
     """
-    current_actor_context.feed(
-        TMPTargetRepositoriesFacts(
-            repositories=[
-                RepositoryFile(
-                    file="the/path/to/some/file",
-                    data=[
-                        RepositoryData(
-                            name="BASEOS",
-                            baseurl=(
-                                "http://example.com/path/to/repo/BaseOS/x86_64/os/"
+    with pytest.deprecated_call():
+        current_actor_context.feed(
+            TMPTargetRepositoriesFacts(
+                repositories=[
+                    RepositoryFile(
+                        file="the/path/to/some/file",
+                        data=[
+                            RepositoryData(
+                                name="BASEOS",
+                                baseurl=(
+                                    "http://example.com/path/to/repo/BaseOS/x86_64/os/"
+                                ),
+                                repoid="BASEOS",
                             ),
-                            repoid="BASEOS",
-                        ),
-                        RepositoryData(
-                            name="APPSTREAM",
-                            baseurl=(
-                                "http://example.com/path/to/repo/AppStream/x86_64/os/"
+                            RepositoryData(
+                                name="APPSTREAM",
+                                baseurl=(
+                                    "http://example.com/path/to/repo/AppStream/x86_64/os/"
+                                ),
+                                repoid="APPSTREAM",
                             ),
-                            repoid="APPSTREAM",
-                        ),
-                        RepositoryData(
-                            name="CRB", repoid="CRB", baseurl=baseurl
-                        ),
-                    ],
-                )
-            ]
+                            RepositoryData(
+                                name="CRB", repoid="CRB", baseurl=baseurl
+                            ),
+                        ],
+                    )
+                ]
+            )
         )
-    )
     current_actor_context.feed(
         UsedTargetRepositories(
             repos=[
