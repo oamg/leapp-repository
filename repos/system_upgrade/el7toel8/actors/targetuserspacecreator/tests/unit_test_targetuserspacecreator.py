@@ -9,6 +9,7 @@ from leapp.libraries.actor import userspacegen
 from leapp.libraries.common import overlaygen, rhsm
 from leapp.libraries.common.config import architecture
 from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked, produce_mocked
+from leapp.libraries.common.repofileutils import DNF_AVAILABLE
 
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 _CERTS_PATH = os.path.join(CUR_DIR, '../../../files', userspacegen.PROD_CERTS_FOLDER)
@@ -246,6 +247,7 @@ def mocked_consume_data():
 
 
 # TODO: come up with additional tests for the main function
+@pytest.mark.skipif(not DNF_AVAILABLE, reason='dnf package is not available.')
 def test_perform_ok(monkeypatch):
     repoids = ['repoidX', 'repoidY']
     monkeypatch.setattr(userspacegen, '_InputData', mocked_consume_data)
