@@ -6,10 +6,9 @@ import pytest
 from leapp import models
 from leapp.exceptions import StopActorExecution, StopActorExecutionError
 from leapp.libraries.actor import userspacegen
-from leapp.libraries.common import overlaygen, rhsm
+from leapp.libraries.common import overlaygen, repofileutils, rhsm
 from leapp.libraries.common.config import architecture
 from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked, produce_mocked
-from leapp.libraries.common.repofileutils import DNF_AVAILABLE
 
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 _CERTS_PATH = os.path.join(CUR_DIR, '../../../files', userspacegen.PROD_CERTS_FOLDER)
@@ -247,7 +246,6 @@ def mocked_consume_data():
 
 
 # TODO: come up with additional tests for the main function
-@pytest.mark.skipif(not DNF_AVAILABLE, reason='dnf package is not available.')
 def test_perform_ok(monkeypatch):
     repoids = ['repoidX', 'repoidY']
     monkeypatch.setattr(userspacegen, '_InputData', mocked_consume_data)
@@ -257,6 +255,7 @@ def test_perform_ok(monkeypatch):
     monkeypatch.setattr(userspacegen, '_create_target_userspace', lambda *x: None)
     monkeypatch.setattr(userspacegen.api, 'current_actor', CurrentActorMocked())
     monkeypatch.setattr(userspacegen.api, 'produce', produce_mocked())
+    monkeypatch.setattr(repofileutils, 'get_repodirs', lambda: ['/etc/yum.repos.d'])
     userspacegen.perform()
     msg_target_repos = models.UsedTargetRepositories(
         repos=[models.UsedTargetRepository(repoid=repo) for repo in repoids])
