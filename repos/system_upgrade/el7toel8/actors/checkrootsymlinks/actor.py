@@ -28,6 +28,10 @@ class CheckRootSymlinks(Actor):
         absolute_links = [item for item in rootdir.items if item.target and os.path.isabs(item.target)]
 
         if absolute_links:
+            commands = [' '.join(['ln', '-snf',
+                                  os.path.relpath(item.target, '/'),
+                                  os.path.join('/', item.name)]) for item in absolute_links]
+            remediation = [['sh', '-c', ' && '.join(commands)]]
             reporting.create_report([
                 reporting.Title('Upgrade requires links in root directory to be relative'),
                 reporting.Summary(
@@ -37,7 +41,5 @@ class CheckRootSymlinks(Actor):
                 ),
                 reporting.Severity(reporting.Severity.HIGH),
                 reporting.Flags([reporting.Flags.INHIBITOR]),
-                reporting.Remediation(commands=[['ln', '-snf',
-                                                 os.path.relpath(item.target, '/'),
-                                                 os.path.join('/', item.name)] for item in absolute_links])
+                reporting.Remediation(commands=remediation)
             ])
