@@ -1,5 +1,6 @@
 import pytest
 
+from leapp import reporting
 from leapp.libraries.actor import repositoriesblacklist
 from leapp.libraries.common.testutils import produce_mocked, CurrentActorMocked
 from leapp.libraries.stdlib import api
@@ -12,7 +13,6 @@ from leapp.models import (
     RepositoryFile,
     RepositoryMap,
 )
-from leapp.snactor.fixture import current_actor_context
 
 
 @pytest.mark.parametrize('valid_opt_repoid,product_type', [
@@ -126,11 +126,13 @@ def test_repositoriesblacklist_not_empty(monkeypatch):
     name = 'test'
     monkeypatch.setattr(repositoriesblacklist, "_get_disabled_optional_repo", lambda: [name])
     monkeypatch.setattr(api, "produce", produce_mocked())
+    monkeypatch.setattr(reporting, "create_report", produce_mocked())
 
     repositoriesblacklist.process()
     assert api.produce.called == 1
     assert isinstance(api.produce.model_instances[0], RepositoriesBlacklisted)
     assert api.produce.model_instances[0].repoids[0] == name
+    assert reporting.create_report.called == 1
 
 
 def test_repositoriesblacklist_empty(monkeypatch):

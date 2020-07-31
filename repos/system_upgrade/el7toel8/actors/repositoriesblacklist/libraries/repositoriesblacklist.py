@@ -1,6 +1,11 @@
+from leapp import reporting
 from leapp.libraries.common.config import get_product_type
 from leapp.libraries.stdlib import api
-from leapp.models import RepositoriesBlacklisted, RepositoriesFacts, RepositoriesMap
+from leapp.models import (
+    RepositoriesBlacklisted,
+    RepositoriesFacts,
+    RepositoriesMap,
+)
 
 
 def _is_optional_repo(repo):
@@ -47,3 +52,26 @@ def process():
     if reposid_blacklist:
         api.current_logger().info("The optional repository is not enabled. Blacklisting the CRB repository.")
         api.produce(RepositoriesBlacklisted(repoids=reposid_blacklist))
+
+        report = [
+            reporting.Title("Excluded RHEL 8 repositories"),
+            reporting.Summary(
+                "The following repositories are not supported by "
+                "Red Hat and are excluded from the list of repositories "
+                "used during the upgrade.\n- {}".format(
+                    "\n- ".join(reposid_blacklist)
+                )
+            ),
+            reporting.Severity(reporting.Severity.INFO),
+            reporting.Tags([reporting.Tags.REPOSITORY]),
+            reporting.Flags([reporting.Flags.FAILURE]),
+            reporting.ExternalLink(
+                url=(
+                    "https://access.redhat.com/documentation/en-us/"
+                    "red_hat_enterprise_linux/8/html/package_manifest/"
+                    "codereadylinuxbuilder-repository."
+                ),
+                title="CodeReady Linux Builder repository",
+            ),
+        ]
+        reporting.create_report(report)
