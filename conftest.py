@@ -1,4 +1,5 @@
 import logging
+import os
 
 from leapp.repository.scan import find_and_scan_repositories
 from leapp.utils.repository import find_repository_basedir
@@ -27,7 +28,7 @@ def pytest_collectstart(collector):
         # actor
         if "/actors/" in str(collector.fspath) and (
             not hasattr(collector.session, "current_actor_path")
-            or collector.session.current_actor_path
+            or collector.session.current_actor_path + os.sep
             not in str(collector.fspath)
         ):
             actor = None
