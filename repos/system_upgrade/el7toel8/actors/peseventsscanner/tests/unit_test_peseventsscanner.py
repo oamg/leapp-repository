@@ -5,6 +5,7 @@ import pytest
 from leapp.exceptions import StopActorExecution
 from leapp.libraries.actor import peseventsscanner
 from leapp.libraries.actor.peseventsscanner import (
+    SKIPPED_PKGS_MSG,
     Action,
     Event,
     Task,
@@ -100,7 +101,7 @@ def test_parse_pes_events_file(current_actor_context):
     assert events[1].out_pkgs == {}
 
 
-def test_report_skipped_packages(monkeypatch):
+def test_report_skipped_packages(monkeypatch, caplog):
     monkeypatch.setattr(api, 'produce', produce_mocked())
     monkeypatch.setattr(api, 'show_message', show_message_mocked())
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
@@ -108,8 +109,7 @@ def test_report_skipped_packages(monkeypatch):
     report_skipped_packages('packages will not be installed:', ['skipped01', 'skipped02'])
 
     message = '2 packages will not be installed:\n- skipped01\n- skipped02'
-    assert api.show_message.called == 1
-    assert api.show_message.msg == message
+    assert message in caplog.messages
     assert reporting.create_report.called == 1
     assert reporting.create_report.report_fields['title'] == 'Packages will not be installed'
     assert reporting.create_report.report_fields['summary'] == message
@@ -129,7 +129,7 @@ def test_report_skipped_packages_no_verbose_mode(monkeypatch):
     assert reporting.create_report.report_fields['summary'] == message
 
 
-def test_filter_out_pkgs_in_blacklisted_repos(monkeypatch):
+def test_filter_out_pkgs_in_blacklisted_repos(monkeypatch, caplog):
     monkeypatch.setattr(api, 'show_message', show_message_mocked())
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
     monkeypatch.setattr(peseventsscanner, 'get_repositories_blacklisted',
@@ -143,14 +143,14 @@ def test_filter_out_pkgs_in_blacklisted_repos(monkeypatch):
         'skipped02': 'blacklisted'}
     filter_out_pkgs_in_blacklisted_repos(to_install)
 
-    msgs = [
-        '2 packages will not be installed due to blacklisted repositories:',
-        '- skipped01',
-        '- skipped02']
-    assert api.show_message.called == 1
-    assert api.show_message.msg == '\n'.join(msgs)
+    msg = '2 {}\n- {}'.format(
+        SKIPPED_PKGS_MSG.format('blacklisted'),
+        '\n- '.join(['skipped01', 'skipped02'])
+    )
+
+    assert msg in caplog.messages
     assert reporting.create_report.called == 1
-    assert reporting.create_report.report_fields['summary'] == '\n'.join(msgs)
+    assert reporting.create_report.report_fields['summary'] == msg
     assert reporting.create_report.report_fields['title'] == 'Packages will not be installed'
 
     assert to_install == {'pkg01': 'repo01', 'pkg02': 'repo02'}
@@ -172,7 +172,7 @@ def test_resolve_conflicting_requests(monkeypatch):
     assert tasks[Task.keep] == {'sip': 'repo'}
 
 
-def test_map_repositories(monkeypatch):
+def test_map_repositories(monkeypatch, caplog):
     monkeypatch.setattr(api, 'show_message', show_message_mocked())
     monkeypatch.setattr(peseventsscanner, '_get_repositories_mapping', lambda: {'repo': 'mapped'})
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
@@ -185,15 +185,15 @@ def test_map_repositories(monkeypatch):
         'skipped02': 'not_mapped'}
     map_repositories(to_install)
 
-    msgs = [
-        '2 packages will not be installed or upgraded due to repositories unknown to leapp:',
-        '- skipped01',
-        '- skipped02']
-    assert api.show_message.called == 1
-    assert api.show_message.msg == '\n'.join(msgs)
+    msg = (
+        '2 packages will not be installed or upgraded due to repositories unknown to leapp:\n'
+        '- skipped01\n'
+        '- skipped02'
+    )
+    assert msg in caplog.messages
     assert reporting.create_report.called == 1
     assert reporting.create_report.report_fields['title'] == 'Packages will not be installed'
-    assert reporting.create_report.report_fields['summary'] == '\n'.join(msgs)
+    assert reporting.create_report.report_fields['summary'] == msg
 
     assert to_install == {'pkg01': 'mapped', 'pkg02': 'mapped'}
 
