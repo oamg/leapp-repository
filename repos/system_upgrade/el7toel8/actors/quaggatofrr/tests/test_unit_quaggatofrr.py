@@ -1,31 +1,68 @@
 import os
+import shutil
 
 from leapp.libraries.actor import quaggatofrr
+from leapp.libraries.stdlib import api
 
 ACTIVE_DAEMONS = ['bgpd', 'ospfd', 'zebra']
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
+FROM_DIR = '/tmp/from_dir/'
+TO_DIR = '/tmp/to_dir/'
+CONFIG_DATA = {
+    'bgpd': '--daemon -A 10.10.100.1',
+    'isisd': '--daemon -A ::1',
+    'ospf6d': '-A ::1',
+    'ospfd': '-A 127.0.0.1',
+    'ripd': '-A 127.0.0.1',
+    'ripngd': '-A ::1',
+    'zebra': '-s 90000000 --daemon -A 127.0.0.1'
+}
 
 
-# Test for functions _get_config_data and _edit_new_config from quaggatofrr
-def test_quaggatofrr():
-    # Testing if _get_config_data can parse the config file correctly
+def _create_mock_files():
+    os.mkdir(FROM_DIR)
+    os.mkdir(TO_DIR)
+
+    for num in range(1, 10):
+        full_path = "{}test_file_{}".format(FROM_DIR, num)
+        with open(full_path, 'w') as fp:
+            fp.write("test_file_{}".format(num))
+
+
+def test_copy_config_files():
+    _create_mock_files()
+    quaggatofrr._copy_config_files(FROM_DIR, TO_DIR)
+    conf_files = os.listdir(TO_DIR)
+    for file_name in conf_files:
+        full_path = os.path.join(TO_DIR, file_name)
+        assert os.path.isfile(full_path)
+
+    # cleanup
+    shutil.rmtree(FROM_DIR)
+    shutil.rmtree(TO_DIR)
+
+
+def test_get_config_data():
     conf_data = quaggatofrr._get_config_data(
         os.path.join(CUR_DIR, 'files/quagga')
     )
-    assert 'babels' not in conf_data
-    assert conf_data['bgpd'] == '--daemon -A 10.10.100.1'
-    assert conf_data['isisd'] == '--daemon -A ::1'
-    assert conf_data['ospf6d'] == '-A ::1'
-    assert conf_data['ospfd'] == '-A 127.0.0.1'
-    assert conf_data['ripd'] == '-A 127.0.0.1'
-    assert conf_data['ripngd'] == '-A ::1'
-    assert conf_data['zebra'] == '-s 90000000 --daemon -A 127.0.0.1'
 
+    assert 'babels' not in conf_data
+    assert conf_data['bgpd'] == CONFIG_DATA['bgpd']
+    assert conf_data['isisd'] == CONFIG_DATA['isisd']
+    assert conf_data['ospf6d'] == CONFIG_DATA['ospf6d']
+    assert conf_data['ospfd'] == CONFIG_DATA['ospfd']
+    assert conf_data['ripd'] == CONFIG_DATA['ripd']
+    assert conf_data['ripngd'] == CONFIG_DATA['ripngd']
+    assert conf_data['zebra'] == CONFIG_DATA['zebra']
+
+
+def test_edit_new_config():
     # writing the data to the new config file
     data = quaggatofrr._edit_new_config(
         os.path.join(CUR_DIR, 'files/daemons'),
         ACTIVE_DAEMONS,
-        conf_data
+        CONFIG_DATA
     )
 
     assert 'zebra=yes' in data
