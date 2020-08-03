@@ -3,8 +3,10 @@ from leapp.actors import Actor
 from leapp.models import TMPTargetRepositoriesFacts, UsedTargetRepositories
 from leapp.reporting import Report
 from leapp.tags import IPUWorkflowTag, TargetTransactionChecksPhaseTag
+from leapp.utils.deprecation import suppress_deprecation
 
 
+@suppress_deprecation(TMPTargetRepositoriesFacts)
 class LocalReposInhibit(Actor):
     """Inhibits the upgrade if local repositories were found."""
 
