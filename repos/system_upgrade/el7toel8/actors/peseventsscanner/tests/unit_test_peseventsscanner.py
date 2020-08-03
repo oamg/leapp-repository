@@ -109,10 +109,14 @@ def test_report_skipped_packages(monkeypatch, caplog):
     report_skipped_packages(
         title='Packages will not be installed',
         message='packages will not be installed:',
-        packages=['skipped01', 'skipped02']
+        package_repo_pairs=[('skipped01', 'bad_repo01'), ('skipped02', 'bad_repo02')]
     )
 
-    message = '2 packages will not be installed:\n- skipped01\n- skipped02'
+    message = (
+        '2 packages will not be installed:\n'
+        '- skipped01 (repoid: bad_repo01)\n'
+        '- skipped02 (repoid: bad_repo02)'
+    )
     assert message in caplog.messages
     assert reporting.create_report.called == 1
     assert reporting.create_report.report_fields['title'] == 'Packages will not be installed'
@@ -127,9 +131,14 @@ def test_report_skipped_packages_no_verbose_mode(monkeypatch):
     report_skipped_packages(
         title='Packages will not be installed',
         message='packages will not be installed:',
-        packages=['skipped01', 'skipped02'])
+        package_repo_pairs=[('skipped01', 'bad_repo01'), ('skipped02', 'bad_repo02')]
+    )
 
-    message = '2 packages will not be installed:\n- skipped01\n- skipped02'
+    message = (
+        '2 packages will not be installed:\n'
+        '- skipped01 (repoid: bad_repo01)\n'
+        '- skipped02 (repoid: bad_repo02)'
+    )
     assert api.show_message.called == 0
     assert reporting.create_report.called == 1
     assert reporting.create_report.report_fields['title'] == 'Packages will not be installed'
@@ -147,13 +156,21 @@ def test_filter_out_pkgs_in_blacklisted_repos(monkeypatch, caplog):
         'pkg01': 'repo01',
         'pkg02': 'repo02',
         'skipped01': 'blacklisted',
-        'skipped02': 'blacklisted'}
-    filter_out_pkgs_in_blacklisted_repos(to_install)
-
-    msg = '2 {}\n- {}'.format(
-        SKIPPED_PKGS_MSG.format('blacklisted'),
-        '\n- '.join(['skipped01', 'skipped02'])
+        'skipped02': 'blacklisted',
+    }
+    msg = '2 {}\n{}'.format(
+        SKIPPED_PKGS_MSG,
+        '\n'.join(
+            [
+                '- {pkg} (repoid: {repo})'.format(pkg=pkg, repo=repo)
+                for pkg, repo in filter(    # pylint: disable=deprecated-lambda
+                    lambda item: item[1] == 'blacklisted', to_install.items()
+                )
+            ]
+        )
     )
+
+    filter_out_pkgs_in_blacklisted_repos(to_install)
 
     assert msg in caplog.messages
     assert reporting.create_report.called == 1
@@ -196,8 +213,8 @@ def test_map_repositories(monkeypatch, caplog):
 
     msg = (
         '2 packages may not be installed or upgraded due to repositories unknown to leapp:\n'
-        '- skipped01\n'
-        '- skipped02'
+        '- skipped01 (repoid: not_mapped)\n'
+        '- skipped02 (repoid: not_mapped)'
     )
     assert msg in caplog.messages
     assert reporting.create_report.called == 1
