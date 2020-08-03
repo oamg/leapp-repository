@@ -412,7 +412,7 @@ SKIPPED_PKGS_MSG = (
     'RHEL 8 repositories that are intentionally excluded from the '
     'list of repositories used during the upgrade. '
     'See the report message titled "Excluded RHEL 8 repositories" '
-    'for details.\n The list of these packages (repositories: {}):'
+    'for details.\nThe list of these packages:'
 )
 
 
@@ -425,20 +425,20 @@ def filter_out_pkgs_in_blacklisted_repos(to_install):
     """
     # FIXME The to_install contains just a limited subset of packages - those that are *not* currently installed and
     #   are to be installed. But we should also warn about the packages that *are* installed.
-    blacklisted_pkgs = set()
+    blacklisted_pkg_repo_pairs = set()
     blacklisted_repos = get_repositories_blacklisted()
     for pkg, repo in to_install.items():
         if repo in blacklisted_repos:
-            blacklisted_pkgs.add(pkg)
+            blacklisted_pkg_repo_pairs.add((pkg, repo))
 
-    for pkg in blacklisted_pkgs:
+    for pkg, _ in blacklisted_pkg_repo_pairs:
         del to_install[pkg]
 
-    if blacklisted_pkgs:
+    if blacklisted_pkg_repo_pairs:
         report_skipped_packages(
             title='Packages available in excluded repositories will not be installed',
-            message=SKIPPED_PKGS_MSG.format(', '.join(blacklisted_repos)),
-            packages=blacklisted_pkgs,
+            message=SKIPPED_PKGS_MSG,
+            package_repo_pairs=blacklisted_pkg_repo_pairs,
         )
 
 
@@ -474,33 +474,40 @@ def get_repositories_blacklisted():
 def map_repositories(packages):
     """Map repositories from PES data to RHSM repository id"""
     repositories_mapping = _get_repositories_mapping()
-    repo_without_mapping = set()
+    pkg_with_repo_without_mapping = set()
     for pkg, repo in packages.items():
         if repo not in repositories_mapping:
-            repo_without_mapping.add(pkg)
+            pkg_with_repo_without_mapping.add((pkg, repo))
             continue
 
         packages[pkg] = repositories_mapping[repo]
 
-    for pkg in repo_without_mapping:
+    for pkg, _ in pkg_with_repo_without_mapping:
         del packages[pkg]
 
-    if repo_without_mapping:
+    if pkg_with_repo_without_mapping:
         report_skipped_packages(
             title='Packages from unknown repositories may not be installed',
             message='packages may not be installed or upgraded due to repositories unknown to leapp:',
-            packages=repo_without_mapping,
+            package_repo_pairs=pkg_with_repo_without_mapping,
             remediation=(
                 "Please file a bug in http://bugzilla.redhat.com/ for leapp-repository component of "
                 "the Red Hat Enterprise Linux 7 product."
             ),
-            )
+        )
 
 
-def report_skipped_packages(title, message, packages, remediation=None):
+def report_skipped_packages(title, message, package_repo_pairs, remediation=None):
     """Generate report message about skipped packages"""
-    packages = sorted(packages)
-    summary = '{} {}\n{}'.format(len(packages), message, '\n'.join(['- ' + p for p in packages]))
+    package_repo_pairs = sorted(package_repo_pairs)
+    summary = '{} {}\n{}'.format(
+        len(package_repo_pairs), message, '\n'.join(
+            [
+                '- {pkg} (repoid: {repo})'.format(pkg=pkg, repo=repo)
+                for pkg, repo in package_repo_pairs
+            ]
+        )
+    )
     report_content = [
         reporting.Title(title),
         reporting.Summary(summary),
@@ -509,7 +516,7 @@ def report_skipped_packages(title, message, packages, remediation=None):
     ]
     if remediation:
         report_content += [reporting.Remediation(hint=remediation)]
-    report_content += [reporting.RelatedResource('package', p) for p in packages]
+    report_content += [reporting.RelatedResource('package', p) for p, _ in package_repo_pairs]
     reporting.create_report(report_content)
     if is_verbose():
         api.current_logger().info(summary)
