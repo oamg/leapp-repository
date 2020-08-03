@@ -18,7 +18,12 @@ class LocalReposInhibit(Actor):
     produces = (Report,)
     tags = (IPUWorkflowTag, TargetTransactionChecksPhaseTag)
 
-    def process(self):
+    def file_baseurl_in_use(self):
+        """Check if any of target repos is local.
+
+        UsedTargetRepositories doesn't contain baseurl attribute. So gathering
+        them from model TMPTargetRepositoriesFacts.
+        """
         used_target_repos = next(self.consume(UsedTargetRepositories)).repos
         target_repos = next(self.consume(TMPTargetRepositoriesFacts)).repositories
         target_repo_id_to_url_map = {
@@ -27,10 +32,13 @@ class LocalReposInhibit(Actor):
             for repo in repofile.data
             if repo.baseurl
         }
-        if any(
+        return any(
             target_repo_id_to_url_map[repo.repoid].startswith("file:")
             for repo in used_target_repos
-        ):
+        )
+
+    def process(self):
+        if self.file_baseurl_in_use():
             warn_msg = (
                 "Local repository found (baseurl starts with file:///). "
                 "Currently leapp is not supporting this option."
