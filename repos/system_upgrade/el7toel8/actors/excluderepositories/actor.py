@@ -5,6 +5,7 @@ from leapp.models import (
     RepositoriesFacts,
     RepositoriesMap,
 )
+from leapp.reporting import Report
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 
@@ -13,7 +14,7 @@ class ExcludeRepositories(Actor):
 
     name = "exclude_repositories"
     consumes = (RepositoriesFacts, RepositoriesMap,)
-    produces = (RepositoriesExcluded,)
+    produces = (RepositoriesExcluded, Report)
     tags = (IPUWorkflowTag, FactsPhaseTag)
 
     def process(self):

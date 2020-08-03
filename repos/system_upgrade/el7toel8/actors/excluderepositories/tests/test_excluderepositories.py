@@ -2,11 +2,12 @@ import pytest
 
 from leapp import reporting
 from leapp.libraries.actor import excluderepositories
-from leapp.libraries.common.testutils import produce_mocked, CurrentActorMocked
+from leapp.libraries.common.testutils import CurrentActorMocked, produce_mocked
 from leapp.libraries.stdlib import api
 from leapp.models import (
+    CustomTargetRepository,
     EnvVar,
-    RepositoriesBlacklisted,
+    RepositoriesExcluded,
     RepositoriesFacts,
     RepositoriesMap,
     RepositoryData,
@@ -52,7 +53,7 @@ def test_with_optionals(monkeypatch, valid_opt_repoid, product_type):
     monkeypatch.setattr(api, "consume", repositories_mock)
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(
         envars={'LEAPP_DEVEL_SOURCE_PRODUCT_TYPE': product_type}))
-    optionals = set(excluderepositories._get_list_of_optional_repos().keys())
+    optionals = set(excluderepositories._get_optional_repo_mapping())
     assert {valid_opt_repoid} == optionals
     assert not non_opt_repoids & optionals
 
@@ -83,7 +84,7 @@ def test_without_optionals(monkeypatch):
 
     monkeypatch.setattr(api, "consume", repositories_mock)
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked())
-    assert not excluderepositories._get_list_of_optional_repos()
+    assert not excluderepositories._get_optional_repo_mapping()
 
 
 def test_with_empty_optional_repo(monkeypatch):
@@ -92,9 +93,9 @@ def test_with_empty_optional_repo(monkeypatch):
         repos_files = [RepositoryFile(file='/etc/yum.repos.d/redhat.repo', data=repos_data)]
         yield RepositoriesFacts(repositories=repos_files)
 
-    monkeypatch.setattr(excluderepositories, "_get_list_of_optional_repos", lambda: {})
+    monkeypatch.setattr(excluderepositories, "_get_optional_repo_mapping", lambda: {})
     monkeypatch.setattr(api, "consume", repositories_mock)
-    assert not excluderepositories._get_disabled_optional_repo()
+    assert not excluderepositories._get_repos_to_exclude()
 
 
 def test_with_repo_disabled(monkeypatch):
@@ -103,10 +104,10 @@ def test_with_repo_disabled(monkeypatch):
         repos_files = [RepositoryFile(file='/etc/yum.repos.d/redhat.repo', data=repos_data)]
         yield RepositoriesFacts(repositories=repos_files)
 
-    monkeypatch.setattr(excluderepositories, "_get_list_of_optional_repos",
+    monkeypatch.setattr(excluderepositories, "_get_optional_repo_mapping",
                         lambda: {'rhel-7-optional-rpms': 'rhel-7'})
     monkeypatch.setattr(api, "consume", repositories_mock)
-    disabled = excluderepositories._get_disabled_optional_repo()
+    disabled = excluderepositories._get_repos_to_exclude()
     assert 'rhel-7' in disabled
 
 
@@ -116,27 +117,27 @@ def test_with_repo_enabled(monkeypatch):
         repos_files = [RepositoryFile(file='/etc/yum.repos.d/redhat.repo', data=repos_data)]
         yield RepositoriesFacts(repositories=repos_files)
 
-    monkeypatch.setattr(excluderepositories, "_get_list_of_optional_repos",
+    monkeypatch.setattr(excluderepositories, "_get_optional_repo_mapping",
                         lambda: {'rhel-7-optional-rpms': 'rhel-7'})
     monkeypatch.setattr(api, "consume", repositories_mock)
-    assert not excluderepositories._get_disabled_optional_repo()
+    assert not excluderepositories._get_repos_to_exclude()
 
 
-def test_repositoriesblacklist_not_empty(monkeypatch):
+def test_repositoriesexcluded_not_empty(monkeypatch):
     name = 'test'
-    monkeypatch.setattr(excluderepositories, "_get_disabled_optional_repo", lambda: [name])
+    monkeypatch.setattr(excluderepositories, "_get_repos_to_exclude", lambda: [name])
     monkeypatch.setattr(api, "produce", produce_mocked())
     monkeypatch.setattr(reporting, "create_report", produce_mocked())
 
     excluderepositories.process()
     assert api.produce.called == 1
-    assert isinstance(api.produce.model_instances[0], RepositoriesBlacklisted)
+    assert isinstance(api.produce.model_instances[0], RepositoriesExcluded)
     assert api.produce.model_instances[0].repoids[0] == name
     assert reporting.create_report.called == 1
 
 
 def test_repositoriesblacklist_empty(monkeypatch):
-    monkeypatch.setattr(excluderepositories, "_get_disabled_optional_repo", lambda: [])
+    monkeypatch.setattr(excluderepositories, "_get_repos_to_exclude", lambda: [])
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked())
     monkeypatch.setattr(api, "produce", produce_mocked())
 
