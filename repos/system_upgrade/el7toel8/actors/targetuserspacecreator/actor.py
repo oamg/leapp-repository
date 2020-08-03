@@ -6,8 +6,10 @@ from leapp.models import (CustomTargetRepositoryFile, RepositoriesMap, RequiredT
                           TargetUserSpaceInfo, UsedTargetRepositories,
                           XFSPresence, Report, TMPTargetRepositoriesFacts)
 from leapp.tags import IPUWorkflowTag, TargetTransactionFactsPhaseTag
+from leapp.utils.deprecation import suppress_deprecation
 
 
+@suppress_deprecation(TMPTargetRepositoriesFacts)
 class TargetUserspaceCreator(Actor):
     """
     Initializes a directory to be populated as a minimal environment to run binaries from the target system.
