@@ -1,6 +1,7 @@
 from leapp.actors import Actor
 from leapp.libraries.actor.excluderepositories import process
 from leapp.models import (
+    CustomTargetRepository,
     RepositoriesBlacklisted,
     RepositoriesExcluded,
     RepositoriesFacts,
@@ -17,6 +18,7 @@ class ExcludeRepositories(Actor):
 
     name = "exclude_repositories"
     consumes = (
+        CustomTargetRepository,
         RepositoriesFacts,
         RepositoriesMap,
     )

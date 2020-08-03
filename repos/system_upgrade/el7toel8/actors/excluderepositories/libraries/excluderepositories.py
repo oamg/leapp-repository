@@ -2,11 +2,37 @@ from leapp import reporting
 from leapp.libraries.common.config import get_product_type
 from leapp.libraries.stdlib import api
 from leapp.models import (
+    CustomTargetRepository,
     RepositoriesBlacklisted,
     RepositoriesExcluded,
     RepositoriesFacts,
     RepositoriesMap,
 )
+
+manually_enabled_repos_in_use = []
+
+
+def _report_using_unsupported_repos():
+    if manually_enabled_repos_in_use:
+        report = [
+            reporting.Title("Using repository not supported by Red Hat"),
+            reporting.Summary(
+                "The following repository has been used for the "
+                "upgrade, but it is not supported by the Red Hat.:\n"
+                "- {}".format("\n - ".join(manually_enabled_repos_in_use))
+            ),
+            reporting.ExternalLink(
+                url=(
+                    "https://access.redhat.com/documentation/en-us/"
+                    "red_hat_enterprise_linux/8/html/package_manifest/"
+                    "codereadylinuxbuilder-repository."
+                ),
+                title="CodeReady Linux Builder repository",
+            ),
+            reporting.Severity(reporting.Severity.MEDIUM),
+            reporting.Tags([reporting.Tags.REPOSITORY]),
+        ]
+        reporting.create_report(report)
 
 
 def _is_optional_repo(repo):
@@ -15,6 +41,24 @@ def _is_optional_repo(repo):
     if sys_type != 'ga':
         suffix = 'optional-{}-rpms'.format(sys_type)
     return repo.from_repoid.endswith(suffix)
+
+
+def _manually_enabled_repo(repo, custom_target_repos):
+    """Check if the repo is manually enabled (by --enablerepo option).
+
+    In case the repo was manually enabled, also update the
+    manually_enabled_repos_in_use variable
+    """
+    global manually_enabled_repos_in_use  # pylint: disable-msg=global-statement
+    for enabled_repo in custom_target_repos:
+        if enabled_repo.repoid == repo.to_repoid:
+            if repo.to_repoid not in manually_enabled_repos_in_use:
+                manually_enabled_repos_in_use.append(repo.to_repoid)
+                api.current_logger().info(
+                    "Manually enabled repository %s found. ", repo.to_repoid
+                )
+            return True
+    return False
 
 
 def _get_optional_repo_mapping():
@@ -28,9 +72,12 @@ def _get_optional_repo_mapping():
     """
     opt_repo_mapping = {}
     repo_map = next(api.consume(RepositoriesMap), None)
+    custom_target_repos = tuple(api.consume(CustomTargetRepository))
     if repo_map:
         for repo in repo_map.repositories:
-            if _is_optional_repo(repo):
+            if _is_optional_repo(repo) and not _manually_enabled_repo(
+                repo, custom_target_repos
+            ):
                 opt_repo_mapping[repo.from_repoid] = repo.to_repoid
     return opt_repo_mapping
 
@@ -52,8 +99,14 @@ def _get_repos_to_exclude():
 
 
 def process():
-    """Exclude the RHEL8 CRB repo if the RHEL7 optional repo is not enabled."""
+    """Exclude the RHEL8 CRB repo if the RHEL7 optional repo is not enabled.
+
+    If manually enabled RHEL8 repo (by --enablerepo option) the repo do not
+    excluded.
+    """
     repos_to_exclude = _get_repos_to_exclude()
+    if manually_enabled_repos_in_use:
+        _report_using_unsupported_repos()
     if repos_to_exclude:
         api.current_logger().info(
             "The optional repository is not enabled. Excluding %r "
@@ -82,6 +135,13 @@ def process():
                     "codereadylinuxbuilder-repository."
                 ),
                 title="CodeReady Linux Builder repository",
+            ),
+            reporting.Remediation(
+                hint="At your own risk! Use leapp upgrade {}".format(
+                    " ".join(
+                        ["--enablerepo " + repo for repo in repos_to_exclude]
+                    )
+                )
             ),
         ]
         reporting.create_report(report)

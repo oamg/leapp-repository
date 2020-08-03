@@ -158,6 +158,9 @@ def test_filter_out_pkgs_in_excluded_repos(monkeypatch, caplog):
     assert reporting.create_report.called == 1
     assert reporting.create_report.report_fields['summary'] == msg
     assert reporting.create_report.report_fields['title'] == 'Packages will not be installed'
+    assert reporting.create_report.report_fields[
+               'remediations'
+           ][0]['remediations']['context'] == 'At your own risk! Use leapp upgrade --enablerepo excluded'
 
     assert to_install == {'pkg01': 'repo01', 'pkg02': 'repo02'}
 
