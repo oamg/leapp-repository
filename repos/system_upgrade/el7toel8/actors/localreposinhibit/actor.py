@@ -19,10 +19,8 @@ class LocalReposInhibit(Actor):
     tags = (IPUWorkflowTag, TargetTransactionChecksPhaseTag)
 
     def process(self):
-        # fmt: off
         used_target_repos = next(self.consume(UsedTargetRepositories)).repos
         target_repos = next(self.consume(TMPTargetRepositoriesFacts)).repositories
-        # fmt: on
         target_repo_id_to_url_map = {
             repo.repoid: repo.baseurl
             for repofile in target_repos

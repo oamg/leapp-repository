@@ -422,7 +422,6 @@ def perform():
             target_repoids = _gather_target_repositories(context, indata, prod_cert_path)
             _create_target_userspace(context, indata.packages, target_repoids)
             # TODO: this is tmp solution as proper one needs significant refactoring
-            # refactorings..
             target_repo_facts = repofileutils.get_parsed_repofiles(context)
             api.produce(TMPTargetRepositoriesFacts(repositories=target_repo_facts))
             # ## fixme ends here
