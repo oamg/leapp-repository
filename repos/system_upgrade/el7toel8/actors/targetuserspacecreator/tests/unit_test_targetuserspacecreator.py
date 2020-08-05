@@ -96,55 +96,57 @@ class MockedConsume(object):
 testInData = namedtuple('TestInData', ['pkg_msgs', 'rhsm_info', 'xfs', 'storage', 'custom_repofiles'])
 
 
-@pytest.mark.parametrize('raised,no_rhsm,testdata', [
+# pylint: disable=line-too-long,bad-whitespace
+@pytest.mark.parametrize('raised,no_rhsm,testdata', [ # noqa: E501,E202
     # valid cases with RHSM
-    (None, '0', testInData(_PACKAGES_MSGS, _RHSMINFO_MSG, _XFS_MSG, _STORAGEINFO_MSG, None)),
-    (None, '0', testInData(_PACKAGES_MSGS[0], _RHSMINFO_MSG, _XFS_MSG, _STORAGEINFO_MSG, None)),
-    (None, '0', testInData([], _RHSMINFO_MSG, _XFS_MSG, _STORAGEINFO_MSG, None)),
-    (None, '0', testInData(_PACKAGES_MSGS, _RHSMINFO_MSG, None, _STORAGEINFO_MSG, None)),
-    (None, '0', testInData(_PACKAGES_MSGS, _RHSMINFO_MSG, _XFS_MSG, _STORAGEINFO_MSG, _CTRF_MSGS)),
-    (None, '0', testInData(_PACKAGES_MSGS[0], _RHSMINFO_MSG, _XFS_MSG, _STORAGEINFO_MSG, _CTRF_MSGS)),
-    (None, '0', testInData([], _RHSMINFO_MSG, _XFS_MSG, _STORAGEINFO_MSG, _CTRF_MSGS)),
-    (None, '0', testInData(_PACKAGES_MSGS, _RHSMINFO_MSG, None, _STORAGEINFO_MSG, _CTRF_MSGS)),
+    (None,                       '0', testInData(_PACKAGES_MSGS,    _RHSMINFO_MSG, _XFS_MSG,  _STORAGEINFO_MSG, None      )),
+    (None,                       '0', testInData(_PACKAGES_MSGS[0], _RHSMINFO_MSG, _XFS_MSG,  _STORAGEINFO_MSG, None      )),
+    (None,                       '0', testInData([],                _RHSMINFO_MSG, _XFS_MSG,  _STORAGEINFO_MSG, None      )),
+    (None,                       '0', testInData(_PACKAGES_MSGS,    _RHSMINFO_MSG, None,      _STORAGEINFO_MSG, None      )),
+    (None,                       '0', testInData(_PACKAGES_MSGS,    _RHSMINFO_MSG, _XFS_MSG,  _STORAGEINFO_MSG, _CTRF_MSGS)),
+    (None,                       '0', testInData(_PACKAGES_MSGS[0], _RHSMINFO_MSG, _XFS_MSG,  _STORAGEINFO_MSG, _CTRF_MSGS)),
+    (None,                       '0', testInData([],                _RHSMINFO_MSG, _XFS_MSG,  _STORAGEINFO_MSG, _CTRF_MSGS)),
+    (None,                       '0', testInData(_PACKAGES_MSGS,    _RHSMINFO_MSG, None,      _STORAGEINFO_MSG, _CTRF_MSGS)),
 
     # valid cases without RHSM (== skip_rhsm)
-    (None, '1', testInData(_PACKAGES_MSGS, None, _XFS_MSG, _STORAGEINFO_MSG, None)),
-    (None, '1', testInData(_PACKAGES_MSGS, None, None, _STORAGEINFO_MSG, None)),
-    (None, '1', testInData([], None, _XFS_MSG, _STORAGEINFO_MSG, None)),
-    (None, '1', testInData([], None, None, _STORAGEINFO_MSG, None)),
-    (None, '1', testInData(_PACKAGES_MSGS, None, _XFS_MSG, _STORAGEINFO_MSG, _CTRF_MSGS)),
-    (None, '1', testInData(_PACKAGES_MSGS, None, None, _STORAGEINFO_MSG, _CTRF_MSGS)),
-    (None, '1', testInData([], None, _XFS_MSG, _STORAGEINFO_MSG, _CTRF_MSGS)),
-    (None, '1', testInData([], None, None, _STORAGEINFO_MSG, _CTRF_MSGS)),
+    (None,                       '1', testInData(_PACKAGES_MSGS,    None,          _XFS_MSG,  _STORAGEINFO_MSG, None)),
+    (None,                       '1', testInData(_PACKAGES_MSGS,    None,          None,      _STORAGEINFO_MSG, None)),
+    (None,                       '1', testInData([],                None,          _XFS_MSG,  _STORAGEINFO_MSG, None)),
+    (None,                       '1', testInData([],                None,          None,      _STORAGEINFO_MSG, None)),
+    (None,                       '1', testInData(_PACKAGES_MSGS,    None,          _XFS_MSG,  _STORAGEINFO_MSG, _CTRF_MSGS)),
+    (None,                       '1', testInData(_PACKAGES_MSGS,    None,          None,      _STORAGEINFO_MSG, _CTRF_MSGS)),
+    (None,                       '1', testInData([],                None,          _XFS_MSG,  _STORAGEINFO_MSG, _CTRF_MSGS)),
+    (None,                       '1', testInData([],                None,          None,      _STORAGEINFO_MSG, _CTRF_MSGS)),
 
+    # Different identation used below!
     # no-rhsm but RHSMInfo defined (should be _RHSMINFO_MSG)
-    ((_SAEE, 'RHSM is not'), '1', testInData(_PACKAGES_MSGS, _RHSMINFO_MSG, _XFS_MSG, _STORAGEINFO_MSG, None)),
-    ((_SAEE, 'RHSM is not'), '1', testInData(_PACKAGES_MSGS[0], _RHSMINFO_MSG, _XFS_MSG, _STORAGEINFO_MSG, None)),
-    ((_SAEE, 'RHSM is not'), '1', testInData([], _RHSMINFO_MSG, _XFS_MSG, _STORAGEINFO_MSG, None)),
-    ((_SAEE, 'RHSM is not'), '1', testInData(_PACKAGES_MSGS, _RHSMINFO_MSG, None, _STORAGEINFO_MSG, None)),
-    ((_SAEE, 'RHSM is not'), '1', testInData(_PACKAGES_MSGS, _RHSMINFO_MSG, _XFS_MSG, _STORAGEINFO_MSG, _CTRF_MSGS)),
-    ((_SAEE, 'RHSM is not'), '1', testInData(_PACKAGES_MSGS[0], _RHSMINFO_MSG, _XFS_MSG,
-                                             _STORAGEINFO_MSG, _CTRF_MSGS)),
-    ((_SAEE, 'RHSM is not'), '1', testInData([], _RHSMINFO_MSG, _XFS_MSG, _STORAGEINFO_MSG, _CTRF_MSGS)),
-    ((_SAEE, 'RHSM is not'), '1', testInData(_PACKAGES_MSGS, _RHSMINFO_MSG, None, _STORAGEINFO_MSG, _CTRF_MSGS)),
+    ((_SAEE, 'RHSM is not'),     '1', testInData(_PACKAGES_MSGS,    _RHSMINFO_MSG, _XFS_MSG, _STORAGEINFO_MSG, None)),
+    ((_SAEE, 'RHSM is not'),     '1', testInData(_PACKAGES_MSGS[0], _RHSMINFO_MSG, _XFS_MSG, _STORAGEINFO_MSG, None)),
+    ((_SAEE, 'RHSM is not'),     '1', testInData([],                _RHSMINFO_MSG, _XFS_MSG, _STORAGEINFO_MSG, None)),
+    ((_SAEE, 'RHSM is not'),     '1', testInData(_PACKAGES_MSGS,    _RHSMINFO_MSG, None,     _STORAGEINFO_MSG, None)),
+    ((_SAEE, 'RHSM is not'),     '1', testInData(_PACKAGES_MSGS,    _RHSMINFO_MSG, _XFS_MSG, _STORAGEINFO_MSG, _CTRF_MSGS)),
+    ((_SAEE, 'RHSM is not'),     '1', testInData(_PACKAGES_MSGS[0], _RHSMINFO_MSG, _XFS_MSG, _STORAGEINFO_MSG, _CTRF_MSGS)),
+    ((_SAEE, 'RHSM is not'),     '1', testInData([],                _RHSMINFO_MSG, _XFS_MSG, _STORAGEINFO_MSG, _CTRF_MSGS)),
+    ((_SAEE, 'RHSM is not'),     '1', testInData(_PACKAGES_MSGS,    _RHSMINFO_MSG, None,     _STORAGEINFO_MSG, _CTRF_MSGS)),
 
     # missing RHSMInfo but it should exist
     # NOTE: should be this Error?!
-    ((_SAE, 'RHSM information'), '0', testInData(_PACKAGES_MSGS, None, _XFS_MSG, _STORAGEINFO_MSG, None)),
-    ((_SAE, 'RHSM information'), '0', testInData(_PACKAGES_MSGS, None, None, _STORAGEINFO_MSG, None)),
-    ((_SAE, 'RHSM information'), '0', testInData([], None, _XFS_MSG, _STORAGEINFO_MSG, None)),
-    ((_SAE, 'RHSM information'), '0', testInData([], None, None, _STORAGEINFO_MSG, None)),
+    ((_SAE, 'RHSM information'), '0', testInData(_PACKAGES_MSGS,    None,          _XFS_MSG, _STORAGEINFO_MSG, None)),
+    ((_SAE, 'RHSM information'), '0', testInData(_PACKAGES_MSGS,    None,          None,     _STORAGEINFO_MSG, None)),
+    ((_SAE, 'RHSM information'), '0', testInData([],                None,          _XFS_MSG, _STORAGEINFO_MSG, None)),
+    ((_SAE, 'RHSM information'), '0', testInData([],                None,          None,     _STORAGEINFO_MSG, None)),
 
     # in the end, error when StorageInfo is missing
-    ((_SAEE, 'No storage'), '0', testInData(_PACKAGES_MSGS, _RHSMINFO_MSG, _XFS_MSG, None, None)),
-    ((_SAEE, 'No storage'), '0', testInData(_PACKAGES_MSGS, _RHSMINFO_MSG, None, None, None)),
-    ((_SAEE, 'No storage'), '0', testInData([], _RHSMINFO_MSG, _XFS_MSG, None, None)),
-    ((_SAEE, 'No storage'), '0', testInData([], _RHSMINFO_MSG, None, None, None)),
-    ((_SAEE, 'No storage'), '0', testInData(_PACKAGES_MSGS, _RHSMINFO_MSG, _XFS_MSG, None, _CTRF_MSGS)),
-    ((_SAEE, 'No storage'), '0', testInData(_PACKAGES_MSGS, _RHSMINFO_MSG, None, None, _CTRF_MSGS)),
-    ((_SAEE, 'No storage'), '0', testInData([], _RHSMINFO_MSG, _XFS_MSG, None, _CTRF_MSGS)),
-    ((_SAEE, 'No storage'), '0', testInData([], _RHSMINFO_MSG, None, None, _CTRF_MSGS)),
+    ((_SAEE, 'No storage'),      '0', testInData(_PACKAGES_MSGS,    _RHSMINFO_MSG, _XFS_MSG, None,             None)),
+    ((_SAEE, 'No storage'),      '0', testInData(_PACKAGES_MSGS,    _RHSMINFO_MSG, None,     None,             None)),
+    ((_SAEE, 'No storage'),      '0', testInData([],                _RHSMINFO_MSG, _XFS_MSG, None,             None)),
+    ((_SAEE, 'No storage'),      '0', testInData([],                _RHSMINFO_MSG, None,     None,             None)),
+    ((_SAEE, 'No storage'),      '0', testInData(_PACKAGES_MSGS,    _RHSMINFO_MSG, _XFS_MSG, None,             _CTRF_MSGS)),
+    ((_SAEE, 'No storage'),      '0', testInData(_PACKAGES_MSGS,    _RHSMINFO_MSG, None,     None,             _CTRF_MSGS)),
+    ((_SAEE, 'No storage'),      '0', testInData([],                _RHSMINFO_MSG, _XFS_MSG, None,             _CTRF_MSGS)),
+    ((_SAEE, 'No storage'),      '0', testInData([],                _RHSMINFO_MSG, None,     None,             _CTRF_MSGS)),
 ])
+# pylint: enable=line-too-long,bad-whitespace
 def test_consume_data(monkeypatch, raised, no_rhsm, testdata):
     # do not write never into testdata inside the test !!
     xfs = testdata.xfs
