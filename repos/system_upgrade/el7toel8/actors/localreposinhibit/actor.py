@@ -54,8 +54,8 @@ class LocalReposInhibit(Actor):
                     reporting.Remediation(
                         hint=(
                             "By using Apache HTTP Server you can expose "
-                            "your local repository via http. For details "
-                            "see external link."
+                            "your local repository via http. See the linked "
+                            "article for details. "
                         )
                     ),
                     reporting.ExternalLink(
