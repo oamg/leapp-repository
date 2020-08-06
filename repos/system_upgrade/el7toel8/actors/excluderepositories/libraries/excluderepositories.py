@@ -2,6 +2,7 @@ from leapp import reporting
 from leapp.libraries.common.config import get_product_type
 from leapp.libraries.stdlib import api
 from leapp.models import (
+    RepositoriesBlacklisted,
     RepositoriesExcluded,
     RepositoriesFacts,
     RepositoriesMap,
@@ -60,6 +61,7 @@ def process():
             repos_to_exclude,
         )
         api.produce(RepositoriesExcluded(repoids=repos_to_exclude))
+        api.produce(RepositoriesBlacklisted(repoids=repos_to_exclude))
 
         report = [
             reporting.Title("Excluded RHEL 8 repositories"),

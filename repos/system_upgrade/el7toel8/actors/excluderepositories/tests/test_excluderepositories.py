@@ -7,6 +7,7 @@ from leapp.libraries.stdlib import api
 from leapp.models import (
     CustomTargetRepository,
     EnvVar,
+    RepositoriesBlacklisted,
     RepositoriesExcluded,
     RepositoriesFacts,
     RepositoriesMap,
@@ -130,8 +131,9 @@ def test_repositoriesexcluded_not_empty(monkeypatch):
     monkeypatch.setattr(reporting, "create_report", produce_mocked())
 
     excluderepositories.process()
-    assert api.produce.called == 1
+    assert api.produce.called == 2
     assert isinstance(api.produce.model_instances[0], RepositoriesExcluded)
+    assert isinstance(api.produce.model_instances[1], RepositoriesBlacklisted)
     assert api.produce.model_instances[0].repoids[0] == name
     assert reporting.create_report.called == 1
 
