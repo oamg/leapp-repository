@@ -487,8 +487,8 @@ def map_repositories(packages):
 
     if repo_without_mapping:
         report_skipped_packages(
-            title='Packages from unknown repositories will not be installed',
-            message='packages will not be installed or upgraded due to repositories unknown to leapp:',
+            title='Packages from unknown repositories may be not installed',
+            message='packages may be not installed or upgraded due to repositories unknown to leapp:',
             packages=repo_without_mapping,
             remediation=(
                 "Please file a bug in http://bugzilla.redhat.com/ for leapp-repository component of "
