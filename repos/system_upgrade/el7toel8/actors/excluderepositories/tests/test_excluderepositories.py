@@ -172,8 +172,8 @@ def test_repositoriesblacklist_empty(monkeypatch):
     ("enabled_repo", "exp_len_of_messages"),
     [
         ("codeready-builder-for-rhel-8-x86_64-rpms", 1),
-        ("some_other_enabled_repo", 2),
-        (None, 2),
+        ("some_other_enabled_repo", 3),
+        (None, 3),
     ],
 )
 def test_enablerepo_option(
