@@ -101,8 +101,12 @@ def _get_repos_to_exclude():
 def process():
     """Exclude the RHEL8 CRB repo if the RHEL7 optional repo is not enabled.
 
-    If manually enabled RHEL8 repo (by --enablerepo option) the repo do not
-    excluded.
+    If the RHEL8 repo was manually enabled (
+        specified by --enablerepo option of the leapp command or
+        inside the /etc/leapp/files/leapp_upgrade_repositories.repo),
+    )
+    then it won't be excluded in case of having matching RHEL7
+    repo which is optional.
     """
     repos_to_exclude = _get_repos_to_exclude()
     if manually_enabled_repos_in_use:
