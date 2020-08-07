@@ -9,56 +9,47 @@ from leapp.models import (
     RepositoriesMap,
 )
 
-manually_enabled_repos_in_use = []
 
-
-def _report_using_unsupported_repos():
-    if manually_enabled_repos_in_use:
-        report = [
-            reporting.Title("Using repository not supported by Red Hat"),
-            reporting.Summary(
-                "The following repository has been used for the "
-                "upgrade, but it is not supported by the Red Hat.:\n"
-                "- {}".format("\n - ".join(manually_enabled_repos_in_use))
+def _report_using_unsupported_repos(repos):
+    report = [
+        reporting.Title("Using repository not supported by Red Hat"),
+        reporting.Summary(
+            "The following repository has been used for the "
+            "upgrade, but it is not supported by the Red Hat.:\n"
+            "- {}".format("\n - ".join(repos))
+        ),
+        reporting.ExternalLink(
+            url=(
+                "https://access.redhat.com/documentation/en-us/"
+                "red_hat_enterprise_linux/8/html/package_manifest/"
+                "codereadylinuxbuilder-repository."
             ),
-            reporting.ExternalLink(
-                url=(
-                    "https://access.redhat.com/documentation/en-us/"
-                    "red_hat_enterprise_linux/8/html/package_manifest/"
-                    "codereadylinuxbuilder-repository."
-                ),
-                title="CodeReady Linux Builder repository",
-            ),
-            reporting.Severity(reporting.Severity.MEDIUM),
-            reporting.Tags([reporting.Tags.REPOSITORY]),
-        ]
-        reporting.create_report(report)
+            title="CodeReady Linux Builder repository",
+        ),
+        reporting.Severity(reporting.Severity.MEDIUM),
+        reporting.Tags([reporting.Tags.REPOSITORY]),
+    ]
+    reporting.create_report(report)
 
 
 def _is_optional_repo(repo):
-    sys_type = get_product_type('source')
-    suffix = 'optional-rpms'
-    if sys_type != 'ga':
-        suffix = 'optional-{}-rpms'.format(sys_type)
+    sys_type = get_product_type("source")
+    suffix = "optional-rpms"
+    if sys_type != "ga":
+        suffix = "optional-{}-rpms".format(sys_type)
     return repo.from_repoid.endswith(suffix)
 
 
-def _manually_enabled_repo(repo, custom_target_repos):
-    """Check if the repo is manually enabled (by --enablerepo option).
+def _get_manually_enabled_repos():
+    """Get set of repo that are manually enabled.
 
-    In case the repo was manually enabled, also update the
-    manually_enabled_repos_in_use variable
+    manually enabled means (
+        specified by --enablerepo option of the leapp command or
+        inside the /etc/leapp/files/leapp_upgrade_repositories.repo),
+    )
+    :rtype: set [repoid]
     """
-    global manually_enabled_repos_in_use  # pylint: disable-msg=global-statement
-    for enabled_repo in custom_target_repos:
-        if enabled_repo.repoid == repo.to_repoid:
-            if repo.to_repoid not in manually_enabled_repos_in_use:
-                manually_enabled_repos_in_use.append(repo.to_repoid)
-                api.current_logger().info(
-                    "Manually enabled repository %s found. ", repo.to_repoid
-                )
-            return True
-    return False
+    return set(repo.repoid for repo in api.consume(CustomTargetRepository))
 
 
 def _get_optional_repo_mapping():
@@ -72,30 +63,29 @@ def _get_optional_repo_mapping():
     """
     opt_repo_mapping = {}
     repo_map = next(api.consume(RepositoriesMap), None)
-    custom_target_repos = tuple(api.consume(CustomTargetRepository))
     if repo_map:
         for repo in repo_map.repositories:
-            if _is_optional_repo(repo) and not _manually_enabled_repo(
-                repo, custom_target_repos
-            ):
+            if _is_optional_repo(repo):
                 opt_repo_mapping[repo.from_repoid] = repo.to_repoid
     return opt_repo_mapping
 
 
 def _get_repos_to_exclude():
-    """Get a list of repoids to not use during the upgrade.
+    """Get a set of repoids to not use during the upgrade.
 
     These are such RHEL 8 repositories that mapped to disabled RHEL7 Optional
     repositories.
+    :rtype: set [repoids]
     """
     opt_repo_mapping = _get_optional_repo_mapping()
     repos_to_exclude = []
     repos_on_system = next(api.consume(RepositoriesFacts), None)
-    for repo_file in repos_on_system.repositories:
-        for repo in repo_file.data:
-            if repo.repoid in opt_repo_mapping and not repo.enabled:
-                repos_to_exclude.append(opt_repo_mapping[repo.repoid])
-    return repos_to_exclude
+    if repos_on_system:
+        for repo_file in repos_on_system.repositories:
+            for repo in repo_file.data:
+                if repo.repoid in opt_repo_mapping and not repo.enabled:
+                    repos_to_exclude.append(opt_repo_mapping[repo.repoid])
+    return set(repos_to_exclude)
 
 
 def process():
@@ -109,16 +99,20 @@ def process():
     repo which is optional.
     """
     repos_to_exclude = _get_repos_to_exclude()
-    if manually_enabled_repos_in_use:
-        _report_using_unsupported_repos()
-    if repos_to_exclude:
+    manually_enabled_repos = _get_manually_enabled_repos() & repos_to_exclude
+
+    overriden_repos_to_exclude = repos_to_exclude - manually_enabled_repos
+
+    if manually_enabled_repos:
+        _report_using_unsupported_repos(manually_enabled_repos)
+    if overriden_repos_to_exclude:
         api.current_logger().info(
             "The optional repository is not enabled. Excluding %r "
             "from the upgrade",
             repos_to_exclude,
         )
-        api.produce(RepositoriesExcluded(repoids=repos_to_exclude))
-        api.produce(RepositoriesBlacklisted(repoids=repos_to_exclude))
+        api.produce(RepositoriesExcluded(repoids=list(repos_to_exclude)))
+        api.produce(RepositoriesBlacklisted(repoids=list(repos_to_exclude)))
 
         report = [
             reporting.Title("Excluded RHEL 8 repositories"),
