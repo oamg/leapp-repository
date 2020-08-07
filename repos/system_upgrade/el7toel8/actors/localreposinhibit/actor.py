@@ -41,12 +41,12 @@ class LocalReposInhibit(Actor):
         if self.file_baseurl_in_use():
             warn_msg = (
                 "Local repository found (baseurl starts with file:///). "
-                "Currently leapp is not supporting this option."
+                "Currently leapp does not support this option."
             )
             self.log.warning(warn_msg)
             reporting.create_report(
                 [
-                    reporting.Title("Local repository identified"),
+                    reporting.Title("Local repository detected"),
                     reporting.Summary(warn_msg),
                     reporting.Severity(reporting.Severity.HIGH),
                     reporting.Tags([reporting.Tags.REPOSITORY]),
