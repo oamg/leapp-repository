@@ -29,7 +29,7 @@ class RepositoriesFacts(Model):
 
 
 @deprecated(
-    since="2020-02-01",
+    since="2020-09-01",
     message=(
         "The model is temporary and not assumed to be used in any "
         "other actors."
