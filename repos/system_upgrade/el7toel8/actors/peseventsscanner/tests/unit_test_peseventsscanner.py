@@ -195,14 +195,14 @@ def test_map_repositories(monkeypatch, caplog):
     map_repositories(to_install)
 
     msg = (
-        '2 packages will not be installed or upgraded due to repositories unknown to leapp:\n'
+        '2 packages may be not be installed or upgraded due to repositories unknown to leapp:\n'
         '- skipped01\n'
         '- skipped02'
     )
     assert msg in caplog.messages
     assert reporting.create_report.called == 1
     assert reporting.create_report.report_fields['title'] == (
-        'Packages from unknown repositories will not be installed'
+        'Packages from unknown repositories may be not be installed'
     )
     assert reporting.create_report.report_fields['summary'] == msg
 
