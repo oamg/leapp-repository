@@ -87,13 +87,11 @@ def _get_manually_enabled_repos():
 
 
 def _get_optional_repo_mapping():
-    """Get a dict of optional repositories based on RepositoriesMap: { 'from_repoid' : 'to_repoid'}.
+    """Get a mapping of RHEL 7 Optional repos to corresponding RHEL 8 repos.
 
-    It consumes RepositoriesMap messages and create map (dict) of optional repositories
-    on RHEL 7 system to CRB repositories on RHEL 8. See the RepositoriesMap model..
-
-    If the repository was manually enabled (specified in --enablerepo option),
-    then it will be skipped from adding to the optional repo mapping.
+    It consumes RepositoriesMap messages and creates a mapping of 'Optional' repositories
+    on RHEL 7 to CRB repositories on RHEL 8.
+    It returns the mapping as a dict {'from_repoid' : 'to_repoid'}.
     """
     opt_repo_mapping = {}
     repo_map = next(api.consume(RepositoriesMap), None)
@@ -107,8 +105,8 @@ def _get_optional_repo_mapping():
 def _get_repos_to_exclude():
     """Get a set of repoids to not use during the upgrade.
 
-    These are such RHEL 8 repositories that mapped to disabled RHEL7 Optional
-    repositories.
+    These are such RHEL 8 repositories that are mapped to disabled
+    RHEL 7 Optional repositories.
     :rtype: set [repoids]
     """
     opt_repo_mapping = _get_optional_repo_mapping()
@@ -123,13 +121,13 @@ def _get_repos_to_exclude():
 
 
 def process():
-    """Exclude the RHEL8 CRB repo if the RHEL7 optional repo is not enabled.
+    """Exclude the RHEL 8 CRB repo if the RHEL 7 optional repo is not enabled.
 
     If the RHEL8 repo was manually enabled (
         specified by --enablerepo option of the leapp command or
         inside the /etc/leapp/files/leapp_upgrade_repositories.repo),
     )
-    then it won't be excluded in case of having matching RHEL7
+    then it won't be excluded in case of having matching RHEL 7
     repo which is optional.
     """
     repos_to_exclude = _get_repos_to_exclude()
