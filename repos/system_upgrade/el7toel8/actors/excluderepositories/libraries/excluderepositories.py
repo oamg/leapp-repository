@@ -32,6 +32,40 @@ def _report_using_unsupported_repos(repos):
     reporting.create_report(report)
 
 
+def _report_excluded_repos(repos):
+    api.current_logger().info(
+        "The optional repository is not enabled. Excluding %r "
+        "from the upgrade",
+        repos,
+    )
+
+    report = [
+        reporting.Title("Excluded RHEL 8 repositories"),
+        reporting.Summary(
+            "The following repositories are not supported by "
+            "Red Hat and are excluded from the list of repositories "
+            "used during the upgrade.\n- {}".format("\n- ".join(repos))
+        ),
+        reporting.Severity(reporting.Severity.INFO),
+        reporting.Tags([reporting.Tags.REPOSITORY]),
+        reporting.Flags([reporting.Flags.FAILURE]),
+        reporting.ExternalLink(
+            url=(
+                "https://access.redhat.com/documentation/en-us/"
+                "red_hat_enterprise_linux/8/html/package_manifest/"
+                "codereadylinuxbuilder-repository."
+            ),
+            title="CodeReady Linux Builder repository",
+        ),
+        reporting.Remediation(
+            hint="At your own risk! Use leapp upgrade {}".format(
+                " ".join(["--enablerepo " + repo for repo in repos])
+            )
+        ),
+    ]
+    reporting.create_report(report)
+
+
 def _is_optional_repo(repo):
     sys_type = get_product_type("source")
     suffix = "optional-rpms"
@@ -106,40 +140,6 @@ def process():
     if manually_enabled_repos:
         _report_using_unsupported_repos(manually_enabled_repos)
     if overriden_repos_to_exclude:
-        api.current_logger().info(
-            "The optional repository is not enabled. Excluding %r "
-            "from the upgrade",
-            repos_to_exclude,
-        )
+        _report_excluded_repos(overriden_repos_to_exclude)
         api.produce(RepositoriesExcluded(repoids=list(repos_to_exclude)))
         api.produce(RepositoriesBlacklisted(repoids=list(repos_to_exclude)))
-
-        report = [
-            reporting.Title("Excluded RHEL 8 repositories"),
-            reporting.Summary(
-                "The following repositories are not supported by "
-                "Red Hat and are excluded from the list of repositories "
-                "used during the upgrade.\n- {}".format(
-                    "\n- ".join(repos_to_exclude)
-                )
-            ),
-            reporting.Severity(reporting.Severity.INFO),
-            reporting.Tags([reporting.Tags.REPOSITORY]),
-            reporting.Flags([reporting.Flags.FAILURE]),
-            reporting.ExternalLink(
-                url=(
-                    "https://access.redhat.com/documentation/en-us/"
-                    "red_hat_enterprise_linux/8/html/package_manifest/"
-                    "codereadylinuxbuilder-repository."
-                ),
-                title="CodeReady Linux Builder repository",
-            ),
-            reporting.Remediation(
-                hint="At your own risk! Use leapp upgrade {}".format(
-                    " ".join(
-                        ["--enablerepo " + repo for repo in repos_to_exclude]
-                    )
-                )
-            ),
-        ]
-        reporting.create_report(report)
