@@ -33,6 +33,9 @@ class MockedMountingBase(object):
     def __call__(self, **dummy_kwarg):
         yield self
 
+    def call(self, *args, **kwargs):
+        return {'stdout': ''}
+
     def nspawn(self):
         return self
 
@@ -259,7 +262,8 @@ def test_perform_ok(monkeypatch):
     userspacegen.perform()
     msg_target_repos = models.UsedTargetRepositories(
         repos=[models.UsedTargetRepository(repoid=repo) for repo in repoids])
-    assert userspacegen.api.produce.called == 2
-    assert userspacegen.api.produce.model_instances[0] == msg_target_repos
+    assert userspacegen.api.produce.called == 3
+    assert isinstance(userspacegen.api.produce.model_instances[0], models.TMPTargetRepositoriesFacts)
+    assert userspacegen.api.produce.model_instances[1] == msg_target_repos
     # this one is full of contants, so it's safe to check just the instance
-    assert isinstance(userspacegen.api.produce.model_instances[1], models.TargetUserSpaceInfo)
+    assert isinstance(userspacegen.api.produce.model_instances[2], models.TargetUserSpaceInfo)

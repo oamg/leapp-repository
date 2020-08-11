@@ -10,7 +10,7 @@ from leapp.libraries.stdlib import CalledProcessError, api, config, run
 from leapp.models import (CustomTargetRepositoryFile, RequiredTargetUserspacePackages, RHSMInfo,
                           StorageInfo, TargetRepositories, TargetUserSpaceInfo,
                           UsedTargetRepositories, UsedTargetRepository,
-                          XFSPresence)
+                          XFSPresence, TMPTargetRepositoriesFacts)
 
 # TODO: "refactor" (modify) the library significantly
 # The current shape is really bad and ineffective (duplicit parsing
@@ -421,6 +421,10 @@ def perform():
         with overlay.nspawn() as context:
             target_repoids = _gather_target_repositories(context, indata, prod_cert_path)
             _create_target_userspace(context, indata.packages, target_repoids)
+            # TODO: this is tmp solution as proper one needs significant refactoring
+            target_repo_facts = repofileutils.get_parsed_repofiles(context)
+            api.produce(TMPTargetRepositoriesFacts(repositories=target_repo_facts))
+            # ## fixme ends here
             api.produce(UsedTargetRepositories(
                 repos=[UsedTargetRepository(repoid=repo) for repo in target_repoids]))
             api.produce(TargetUserSpaceInfo(

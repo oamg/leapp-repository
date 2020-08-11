@@ -4,10 +4,12 @@ from leapp.libraries.common.config import get_env, version
 from leapp.models import (CustomTargetRepositoryFile, RepositoriesMap, RequiredTargetUserspacePackages,
                           RHSMInfo, StorageInfo, TargetRepositories,
                           TargetUserSpaceInfo, UsedTargetRepositories,
-                          XFSPresence, Report)
+                          XFSPresence, Report, TMPTargetRepositoriesFacts)
 from leapp.tags import IPUWorkflowTag, TargetTransactionFactsPhaseTag
+from leapp.utils.deprecation import suppress_deprecation
 
 
+@suppress_deprecation(TMPTargetRepositoriesFacts)
 class TargetUserspaceCreator(Actor):
     """
     Initializes a directory to be populated as a minimal environment to run binaries from the target system.
@@ -22,7 +24,7 @@ class TargetUserspaceCreator(Actor):
     name = 'target_userspace_creator'
     consumes = (CustomTargetRepositoryFile, RepositoriesMap, RequiredTargetUserspacePackages,
                 StorageInfo, RHSMInfo, TargetRepositories, XFSPresence)
-    produces = (TargetUserSpaceInfo, UsedTargetRepositories, Report)
+    produces = (TargetUserSpaceInfo, UsedTargetRepositories, Report, TMPTargetRepositoriesFacts, )
     tags = (IPUWorkflowTag, TargetTransactionFactsPhaseTag)
 
     def process(self):

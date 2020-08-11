@@ -1,5 +1,6 @@
 from leapp.models import Model, fields
 from leapp.topics import SystemFactsTopic
+from leapp.utils.deprecation import deprecated
 
 
 class RepositoryData(Model):
@@ -25,3 +26,19 @@ class RepositoriesFacts(Model):
     topic = SystemFactsTopic
 
     repositories = fields.List(fields.Model(RepositoryFile))
+
+
+@deprecated(
+    since="2020-09-01",
+    message=(
+        "The model is temporary and not assumed to be used in any "
+        "other actors."
+    ),
+)
+class TMPTargetRepositoriesFacts(RepositoriesFacts):
+    """Do not consume this model anywhere outside of localreposinhibit.
+
+    The model is temporary and will be removed in close future
+    """
+
+    pass
