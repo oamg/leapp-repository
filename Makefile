@@ -203,7 +203,8 @@ install-deps:
 	virtualenv --system-site-packages -p /usr/bin/$(_PYTHON_VENV) tut; \
 	. tut/bin/activate; \
 	pip install --upgrade setuptools; \
-	pip install --upgrade -r requirements.txt
+	pip install --upgrade -r requirements.txt; \
+	pre-commit install --install-hooks
 	python utils/install_actor_deps.py --actor=$(ACTOR)
 
 install-deps-fedora:
@@ -220,19 +221,11 @@ install-deps-fedora:
 	. tut/bin/activate ; \
 	pip install --upgrade setuptools; \
 	pip install --upgrade -r requirements.txt; \
+	pre-commit install --install-hooks
 
 lint:
 	. tut/bin/activate; \
-	echo "--- Linting ... ---" && \
-	SEARCH_PATH=$(REPOS_PATH) && \
-	echo "Using search path '$${SEARCH_PATH}'" && \
-	echo "--- Running pylint ---" && \
-	bash -c "[[ ! -z $${SEARCH_PATH} ]] && find $${SEARCH_PATH} -name '*.py' | sort -u | xargs pylint" && \
-	echo "--- Running flake8 ---" && \
-	bash -c "[[ ! -z $${SEARCH_PATH} ]] && flake8 $${SEARCH_PATH}" && \
-	echo "--- Checking py3 compatibility ---" && \
-	bash -c "[[ ! -z $${SEARCH_PATH} ]] && find $${SEARCH_PATH} -name '*.py' | sort -u | xargs pylint --py3k" && \
-	echo "--- Linting done. ---"
+	pre-commit run --all
 
 test_no_lint:
 	. tut/bin/activate; \
