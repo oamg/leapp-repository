@@ -28,10 +28,3 @@ repos:
           - "flake8-tidy-imports==4.1.0"
 #          - "flake8-docstrings==1.5.0"
           - "pep8-naming==0.10.0"
-#  - repo: https://github.com/pycqa/pylint
-#    rev: pylint-2.5.0
-#    hooks:
-#      - id: pylint
-#        name: "Lint code (pylint)"
-#        args:
-#          - --py3k

@@ -204,7 +204,6 @@ install-deps:
 	. tut/bin/activate; \
 	pip install --upgrade setuptools; \
 	pip install --upgrade -r requirements.txt; \
-	pre-commit install --install-hooks
 	python utils/install_actor_deps.py --actor=$(ACTOR)
 
 install-deps-fedora:
@@ -221,7 +220,6 @@ install-deps-fedora:
 	. tut/bin/activate ; \
 	pip install --upgrade setuptools; \
 	pip install --upgrade -r requirements.txt; \
-	pre-commit install --install-hooks
 
 lint:
 	. tut/bin/activate; \
