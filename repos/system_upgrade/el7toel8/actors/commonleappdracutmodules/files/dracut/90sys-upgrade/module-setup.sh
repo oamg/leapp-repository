@@ -72,4 +72,3 @@ install() {
     #            "$unitdir/system-upgrade-shell.service"
     #ln -sf "../system-upgrade-shell.service" $sysinit_wantsdir
 }
-

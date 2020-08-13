@@ -49,4 +49,3 @@ cat $REPONAME-$VERSION.tar | gzip > $REPONAME-$VERSION.tar.gz
 echo $PWD $OUTDIR
 SRPMDIR="$OUTDIR"
 rpmbuild --define "_srcrpmdir $SRPMDIR" --define "version $VERSION" --define "gittag master" -ts ./$REPONAME-$VERSION.tar.gz
-

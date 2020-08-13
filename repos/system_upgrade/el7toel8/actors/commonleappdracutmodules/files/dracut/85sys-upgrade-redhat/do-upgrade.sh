@@ -125,4 +125,3 @@ save_journal
 sync
 mount -o "remount,$old_opts" $NEWROOT
 exit $result
-

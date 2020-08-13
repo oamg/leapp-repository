@@ -31,4 +31,3 @@ build_srpm:
     - export LEAPP_INITRD_SKIP=1
     - make srpm
     image: fedora:28
-

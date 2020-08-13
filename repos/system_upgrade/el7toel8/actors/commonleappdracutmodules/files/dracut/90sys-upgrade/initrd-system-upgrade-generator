@@ -6,4 +6,3 @@
   exit 1
 }
 ln -sf /etc/systemd/system/upgrade.target "$2/default.target"
-

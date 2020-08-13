@@ -2,7 +2,7 @@ vendor_id       : IBM/S390
 # processors    : 2
 bogomips per cpu: 2913.00
 max thread id   : 0
-features	: esan3 zarch stfle msa ldisp eimm dfp edat etf3eh highgprs te sie 
+features	: esan3 zarch stfle msa ldisp eimm dfp edat etf3eh highgprs te sie
 facilities      : 0 1 2 3 4 6 7 8 9 10 12 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 30 31 32 33 34 35 36 37 40 41 42 43 44 45 46 47 48 49 50 51 52 57 73 74 75 76 77 81 82
 cache0          : level=1 type=Data scope=Private size=96K line_size=256 associativity=6
 cache1          : level=1 type=Instruction scope=Private size=64K line_size=256 associativity=4

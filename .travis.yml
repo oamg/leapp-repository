@@ -22,7 +22,7 @@ jobs:
         - docker run --rm -ti -v ${PWD}:/payload --env=PYTHON_VENV leapp-tests
       env: PYTHON_VENV=python3.6
     - stage: deploy
-      script: 
+      script:
         - docker run --rm -ti -v ${PWD}:/payload --entrypoint "/bin/bash" leapp-tests -c "make install-deps && make dashboard_data"
         - bash ./utils/update_dashboard.sh
       if: branch = master AND type = push
