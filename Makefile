@@ -203,7 +203,7 @@ install-deps:
 	virtualenv --system-site-packages -p /usr/bin/$(_PYTHON_VENV) tut; \
 	. tut/bin/activate; \
 	pip install --upgrade setuptools; \
-	pip install --upgrade -r requirements.txt; \
+	pip install --upgrade -r requirements.txt
 	python utils/install_actor_deps.py --actor=$(ACTOR)
 
 install-deps-fedora:
