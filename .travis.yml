@@ -19,7 +19,10 @@ jobs:
         - docker run --rm -ti -v ${PWD}:/payload --env=PYTHON_VENV leapp-tests -c "make install-deps && make test_no_lint"
       env: PYTHON_VENV=python2.7
     - script:
-        - docker run --rm -ti -v ${PWD}:/payload --env=PYTHON_VENV leapp-tests -c "make install-deps && make test"
+        - docker run --rm -ti -v ${PWD}:/payload --env=PYTHON_VENV leapp-tests -c "make install-deps && make test_no_lint"
+      env: PYTHON_VENV=python3.6
+    - script:
+        - docker run --rm -ti -v ${PWD}:/payload --env=PYTHON_VENV leapp-tests -c "make install-deps && make lint"
       env: PYTHON_VENV=python3.6
     - stage: deploy
       script:
