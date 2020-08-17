@@ -106,7 +106,11 @@ def test_report_skipped_packages(monkeypatch, caplog):
     monkeypatch.setattr(api, 'show_message', show_message_mocked())
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
     monkeypatch.setenv('LEAPP_VERBOSE', '1')
-    report_skipped_packages('packages will not be installed:', ['skipped01', 'skipped02'])
+    report_skipped_packages(
+        title='Packages will not be installed',
+        message='packages will not be installed:',
+        packages=['skipped01', 'skipped02']
+    )
 
     message = '2 packages will not be installed:\n- skipped01\n- skipped02'
     assert message in caplog.messages
@@ -120,7 +124,10 @@ def test_report_skipped_packages_no_verbose_mode(monkeypatch):
     monkeypatch.setattr(api, 'show_message', show_message_mocked())
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
     monkeypatch.setenv('LEAPP_VERBOSE', '0')
-    report_skipped_packages('packages will not be installed:', ['skipped01', 'skipped02'])
+    report_skipped_packages(
+        title='Packages will not be installed',
+        message='packages will not be installed:',
+        packages=['skipped01', 'skipped02'])
 
     message = '2 packages will not be installed:\n- skipped01\n- skipped02'
     assert api.show_message.called == 0
@@ -151,7 +158,9 @@ def test_filter_out_pkgs_in_blacklisted_repos(monkeypatch, caplog):
     assert msg in caplog.messages
     assert reporting.create_report.called == 1
     assert reporting.create_report.report_fields['summary'] == msg
-    assert reporting.create_report.report_fields['title'] == 'Packages will not be installed'
+    assert reporting.create_report.report_fields['title'] == (
+        'Packages available in excluded repositories will not be installed'
+    )
 
     assert to_install == {'pkg01': 'repo01', 'pkg02': 'repo02'}
 
@@ -186,13 +195,15 @@ def test_map_repositories(monkeypatch, caplog):
     map_repositories(to_install)
 
     msg = (
-        '2 packages will not be installed or upgraded due to repositories unknown to leapp:\n'
+        '2 packages may not be installed or upgraded due to repositories unknown to leapp:\n'
         '- skipped01\n'
         '- skipped02'
     )
     assert msg in caplog.messages
     assert reporting.create_report.called == 1
-    assert reporting.create_report.report_fields['title'] == 'Packages will not be installed'
+    assert reporting.create_report.report_fields['title'] == (
+        'Packages from unknown repositories may not be installed'
+    )
     assert reporting.create_report.report_fields['summary'] == msg
 
     assert to_install == {'pkg01': 'mapped', 'pkg02': 'mapped'}

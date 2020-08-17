@@ -436,6 +436,7 @@ def filter_out_pkgs_in_blacklisted_repos(to_install):
 
     if blacklisted_pkgs:
         report_skipped_packages(
+            title='Packages available in excluded repositories will not be installed',
             message=SKIPPED_PKGS_MSG.format(', '.join(blacklisted_repos)),
             packages=blacklisted_pkgs,
         )
@@ -485,16 +486,20 @@ def map_repositories(packages):
         del packages[pkg]
 
     if repo_without_mapping:
-        report_skipped_packages('packages will not be installed or upgraded due to repositories unknown to leapp:',
-                                repo_without_mapping,
-                                "Please file a bug in http://bugzilla.redhat.com/ for leapp-repository component of "
-                                "the Red Hat Enterprise Linux 7 product.")
+        report_skipped_packages(
+            title='Packages from unknown repositories may not be installed',
+            message='packages may not be installed or upgraded due to repositories unknown to leapp:',
+            packages=repo_without_mapping,
+            remediation=(
+                "Please file a bug in http://bugzilla.redhat.com/ for leapp-repository component of "
+                "the Red Hat Enterprise Linux 7 product."
+            ),
+            )
 
 
-def report_skipped_packages(message, packages, remediation=None):
+def report_skipped_packages(title, message, packages, remediation=None):
     """Generate report message about skipped packages"""
     packages = sorted(packages)
-    title = 'Packages will not be installed'
     summary = '{} {}\n{}'.format(len(packages), message, '\n'.join(['- ' + p for p in packages]))
     report_content = [
         reporting.Title(title),
