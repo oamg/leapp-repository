@@ -25,6 +25,17 @@ def inhibit(node_type):
                 " to a RHEL High Availability or Resilient Storage Cluster"
             ),
         ),
+        reporting.Remediation(
+            hint=(
+                "Destroy the existing HA cluster"
+                " or (if you have already removed HA cluster packages) remove"
+                " configuration files {0} and {1}".format(
+                    CIB_LOCATION,
+                    COROSYNC_CONF_LOCATION,
+                )
+            ),
+            commands=[["sh", "-c", "pcs cluster stop --all --wait && pcs cluster destroy --all"]]
+        ),
         reporting.RelatedResource('file', COROSYNC_CONF_LOCATION),
         reporting.RelatedResource('file', CIB_LOCATION)
     ])
