@@ -11,10 +11,21 @@ from leapp.snactor.fixture import ActorContext
 
 
 @pytest.mark.parametrize(
-    ("baseurl", "exp_msgs_len"),
-    [("file:///root/crb", 1), ("http://localhost/crb", 0)],
+    ("baseurl", "mirrorlist", "metalink", "exp_msgs_len"),
+    [
+        ("file:///root/crb", None, None, 1),
+        ("http://localhost/crb", None, None, 0),
+        (None, "file:///root/crb", None, 1),
+        (None, "http://localhost/crb", None, 0),
+        (None, None, "file:///root/crb", 1),
+        (None, None, "http://localhost/crb", 0),
+        ("http://localhost/crb", "file:///root/crb", None, 1),
+        ("file:///root/crb", "http://localhost/crb", None, 0),
+        ("http://localhost/crb", None, "file:///root/crb", 1),
+        ("file:///root/crb", None, "http://localhost/crb", 0),
+    ],
 )
-def test_unit_localreposinhibit(current_actor_context, baseurl, exp_msgs_len):
+def test_unit_localreposinhibit(current_actor_context, baseurl, mirrorlist, metalink, exp_msgs_len):
     """Ensure the Report is generated when local path is used as a baseurl.
 
     :type current_actor_context: ActorContext
@@ -41,7 +52,8 @@ def test_unit_localreposinhibit(current_actor_context, baseurl, exp_msgs_len):
                                 repoid="APPSTREAM",
                             ),
                             RepositoryData(
-                                name="CRB", repoid="CRB", baseurl=baseurl
+                                name="CRB", repoid="CRB", baseurl=baseurl,
+                                mirrorlist=mirrorlist, metalink=metalink
                             ),
                         ],
                     )

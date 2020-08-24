@@ -27,10 +27,9 @@ class LocalReposInhibit(Actor):
         used_target_repos = next(self.consume(UsedTargetRepositories)).repos
         target_repos = next(self.consume(TMPTargetRepositoriesFacts)).repositories
         target_repo_id_to_url_map = {
-            repo.repoid: repo.baseurl
+            repo.repoid: repo.mirrorlist or repo.metalink or repo.baseurl or ""
             for repofile in target_repos
             for repo in repofile.data
-            if repo.baseurl
         }
         return any(
             target_repo_id_to_url_map[repo.repoid].startswith("file:")
