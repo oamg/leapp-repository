@@ -35,10 +35,12 @@ disable=
  too-many-statements,
 # new for python3 version of pylint
  useless-object-inheritance,
- consider-using-set-comprehension, # pylint3 force to use comprehension in place we don't want (py2 doesnt have these options, for inline skip)
+ consider-using-set-comprehension,  # pylint3 force to use comprehension in place we don't want (py2 doesnt have these options, for inline skip)
  unnecessary-pass,
  invalid-envvar-default,  # pylint3 warnings envvar returns str/none by default
- bad-option-value, # python 2 doesn't have import-outside-toplevel, but in some case we need to import outside toplevel
+ bad-option-value,  # python 2 doesn't have import-outside-toplevel, but in some case we need to import outside toplevel
+ super-with-arguments,  # required in python 2
+ raise-missing-from,  # no 'raise from' in python 2
 
 [FORMAT]
 # Maximum number of characters on a single line.
