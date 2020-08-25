@@ -1,4 +1,5 @@
 minimum_pre_commit_version: "1.21.0"
+exclude: grub.correct_trailing_space|grub.wrong1|.+\.conf|\.leapp
 repos:
   - repo: "https://github.com/pre-commit/pre-commit-hooks"
     rev: "v3.2.0"
