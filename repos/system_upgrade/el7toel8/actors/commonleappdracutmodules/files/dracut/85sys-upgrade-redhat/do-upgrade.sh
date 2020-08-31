@@ -14,9 +14,22 @@ export LEAPP3_BIN=$LEAPPHOME/leapp3
 export NEWROOT=${NEWROOT:-"/sysroot"}
 
 NSPAWN_OPTS="--capability=all --bind=/sys --bind=/dev --bind=/dev/pts --bind=/run/systemd --bind=/proc"
-[ -d /dev/mapper ] NSPAWN_OPTS="$NSPAWN_OPTS --bind=/dev/mapper"
+[ -d /dev/mapper ] && NSPAWN_OPTS="$NSPAWN_OPTS --bind=/dev/mapper"
 export NSPAWN_OPTS="$NSPAWN_OPTS --bind=/run/udev --keep-unit --register=no --timezone=off --resolv-conf=off"
 
+
+bring_up_network() {
+    if [ -f /etc/leapp-initram-network-manager ]; then
+        . /lib/dracut/hooks/cmdline/99-nm-config.sh
+        . /lib/dracut/hooks/initqueue/settled/99-nm-run.sh
+    fi
+    if [ -f /etc/leapp-initram-network-scripts ]; then
+        for interface in /sys/class/net/*;
+        do
+            ifup ${interface##*/};
+        done;
+    fi
+}
 
 do_upgrade() {
     local args="" rv=0
@@ -24,6 +37,8 @@ do_upgrade() {
     #getargbool 0 rd.upgrade.test && args="$args --testing"
     #getargbool 0 rd.upgrade.verbose && args="$args --verbose"
     getargbool 0 rd.upgrade.debug && args="$args --debug"
+
+    bring_up_network
 
     # Force selinux into permissive mode unless booted with 'enforcing=1'.
     # FIXME: THIS IS A BIG STUPID HAMMER AND WE SHOULD ACTUALLY SOLVE THE ROOT

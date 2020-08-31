@@ -71,6 +71,15 @@ install() {
     # Q: Would we hack that in way of copy whole initramfs into the root, mount
     #    mount it and set envars
 
+    # Install network configuration triggers
+    if [ -f /etc/leapp-initram-network-manager ]; then
+        dracut_install /etc/leapp-initram-network-manager
+    fi
+
+    if [ -f /etc/leapp-initram-network-scripts ]; then
+        dracut_install /etc/leapp-initram-network-scripts
+    fi
+
     # install this one to ensure we are able to sync write
     inst_binary sync
 

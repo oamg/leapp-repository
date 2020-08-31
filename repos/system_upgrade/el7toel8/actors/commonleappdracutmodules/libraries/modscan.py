@@ -49,6 +49,8 @@ def _create_initram_packages():
     required_pkgs = _REQUIRED_PACKAGES
     if architecture.matches_architecture(architecture.ARCH_X86_64):
         required_pkgs.append('biosdevname')
+    if os.getenv('LEAPP_INITRAM_NETWORK', None) == 'network-manager':
+        required_pkgs.append('NetworkManager')
     return RequiredUpgradeInitramPackages(packages=required_pkgs)
 
 
