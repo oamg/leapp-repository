@@ -9,7 +9,8 @@ from leapp.models import BootContent, KernelCmdlineArg, TargetKernelCmdlineArgTa
 
 def add_boot_entry(configs=None):
     debug = 'debug' if os.getenv('LEAPP_DEBUG', '0') == '1' else ''
-
+    enable_network = os.getenv('LEAPP_INITRAM_NETWORK') in ('network-manager', 'scripts')
+    ip_arg = ' ip=on' if enable_network else ''
     kernel_dst_path, initram_dst_path = get_boot_file_paths()
     _remove_old_upgrade_boot_entry(kernel_dst_path, configs=configs)
     try:
@@ -20,7 +21,7 @@ def add_boot_entry(configs=None):
             '--title', 'RHEL-Upgrade-Initramfs',
             '--copy-default',
             '--make-default',
-            '--args', '{DEBUG} enforcing=0 rd.plymouth=0 plymouth.enable=0'.format(DEBUG=debug)
+            '--args', '{DEBUG}{NET} enforcing=0 rd.plymouth=0 plymouth.enable=0'.format(DEBUG=debug, NET=ip_arg)
         ]
         if configs:
             for config in configs:

@@ -67,6 +67,19 @@ build() {
         DRACUT_MODULES_ADD=$(echo "--add $LEAPP_ADD_DRACUT_MODULES" | sed 's/,/ --add /g')
     fi
 
+    case $LEAPP_INITRAM_NETWORK in
+        network-manager)
+            DRACUT_MODULES_ADD="$DRACUT_MODULES_ADD --add network-manager"
+            touch /etc/leapp-initram-network-manager
+        ;;
+        scripts)
+            DRACUT_MODULES_ADD="$DRACUT_MODULES_ADD --add network";
+            touch /etc/leapp-initram-network-scripts
+        ;;
+        *)
+        ;;
+    esac
+
     DRACUT_INSTALL="systemd-nspawn"
     if [[ -n "$LEAPP_DRACUT_INSTALL_FILES" ]]; then
         DRACUT_INSTALL="$DRACUT_INSTALL $LEAPP_DRACUT_INSTALL_FILES"
