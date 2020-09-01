@@ -3,8 +3,11 @@ from leapp.libraries.actor.grubdevname import get_grub_device
 from leapp.libraries.common.config import architecture
 from leapp.models import GrubDevice
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
+from leapp.utils.deprecation import suppress_deprecation
 
 
+# TODO: remove this actor completely after the deprecation period expires
+@suppress_deprecation(GrubDevice)
 class Grubdevname(Actor):
     """
     Get name of block device where GRUB is located
