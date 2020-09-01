@@ -4,12 +4,15 @@ from leapp.models import FirmwareFacts, GrubDevice, UpdateGrub
 from leapp.reporting import Report, create_report
 from leapp import reporting
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
+from leapp.utils.deprecation import suppress_deprecation
 
 
 GRUB_SUMMARY = ('On legacy (BIOS) systems, GRUB core (located in the gap between the MBR and the '
                 'first partition) does not get automatically updated when GRUB is upgraded.')
 
 
+# TODO: remove this actor completely after the deprecation period expires
+@suppress_deprecation(GrubDevice, UpdateGrub)
 class CheckGrubCore(Actor):
     """
     Check whether we are on legacy (BIOS) system and instruct Leapp to upgrade GRUB core
@@ -32,7 +35,7 @@ class CheckGrubCore(Actor):
                 self.produce(UpdateGrub(grub_device=dev.grub_device))
                 create_report([
                     reporting.Title(
-                        'GRUB core on {} will be updated during upgrade'.format(dev.grub_device)
+                        'GRUB core will be updated during upgrade'
                     ),
                     reporting.Summary(GRUB_SUMMARY),
                     reporting.Severity(reporting.Severity.HIGH),
@@ -48,6 +51,5 @@ class CheckGrubCore(Actor):
                     reporting.Severity(reporting.Severity.HIGH),
                     reporting.Tags([reporting.Tags.BOOT]),
                     reporting.Remediation(
-                        hint='Please use "LEAPP_GRUB_DEVICE" environment variable to point Leapp to '
-                             'device where GRUB core is located'),
+                        hint='Please run "grub2-install <GRUB_DEVICE> command manually after upgrade'),
                 ])
