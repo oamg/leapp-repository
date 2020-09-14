@@ -32,7 +32,8 @@ class CheckRHUI(Actor):
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 
     def process(self):
-        for provider, info in rhui.RHUI_CLOUD_MAP.items():
+        arch = self.configuration.architecture
+        for provider, info in rhui.RHUI_CLOUD_MAP[arch].items():
             if has_package(InstalledRPM, info['el7_pkg']):
                 if not rhsm.skip_rhsm():
                     create_report([
@@ -62,12 +63,17 @@ class CheckRHUI(Actor):
                     ])
                     return
                 if provider == 'aws':
+                    # We have to disable Amazon-id plugin in the initramdisk phase as the network
+                    # is down at the time
                     self.produce(DNFPluginTask(name='amazon-id', disable_in=['upgrade']))
                 if provider == 'azure':
-                    # Azure RHEL8 package has different name and it is not signed
+                    # This option is important on Azure. Due to the special Azure hybrid image
+                    # GRUB cannot find grubenv and is getting just default options.
+                    self.produce(KernelCmdlineArg(**{'key': 'rootdelay', 'value': '300'}))
+                # if RHEL7 and RHEL8 packages differ, we cannot rely on simply updating them
+                if info['el7_pkg'] != info['el8_pkg']:
                     self.produce(RpmTransactionTasks(to_install=[info['el8_pkg']]))
                     self.produce(RpmTransactionTasks(to_remove=[info['el7_pkg']]))
-                    self.produce(KernelCmdlineArg(**{'key': 'rootdelay', 'value': '300'}))
                 self.produce(RHUIInfo(provider=provider))
                 self.produce(RequiredTargetUserspacePackages(packages=[info['el8_pkg']]))
                 return
