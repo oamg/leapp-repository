@@ -52,14 +52,15 @@ def process():
         else:
             summary_ctrf = ''
         reporting.create_report([
-            reporting.Title('Using RHSM has been skipped but no custom repositories have been delivered.'),
+            reporting.Title('Using RHSM has been skipped but no custom or RHUI repositories have been delivered.'),
             reporting.Summary(
                 'Leapp is run in the mode when the Red Hat Subscription Manager'
                 ' is not used (the --no-rhsm option or the LEAPP_NO_RHSM=1'
                 ' environment variable has been set) so leapp is not able to'
                 ' obtain YUM/DNF repositories with the content for the target'
                 ' system in the standard way. The content has to be delivered'
-                ' by the user manually.'
+                ' either by user manually or, in case of public clouds, by a'
+                ' special Leapp package for RHUI environments.'
                 ),
             reporting.Remediation(hint=(
                 'Create the repository file according to instructions in the'
