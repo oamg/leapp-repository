@@ -319,11 +319,13 @@ def _get_rh_available_repoids(context, indata):
     RHUI special packages (every cloud provider has itw own rpm).
     """
 
+    arch = api.current_actor().configuration.architecture
+
     rh_repoids = _get_rhsm_available_repoids(context)
 
     if indata and indata.rhui_info:
         cloud_repo = os.path.join(
-            '/etc/yum.repos.d/', rhui.RHUI_CLOUD_MAP[indata.rhui_info.provider]['leapp_pkg_repo']
+            '/etc/yum.repos.d/', rhui.RHUI_CLOUD_MAP[arch][indata.rhui_info.provider]['leapp_pkg_repo']
         )
         rhui_repoids = _get_rhui_available_repoids(context, cloud_repo)
         rh_repoids.update(rhui_repoids)
