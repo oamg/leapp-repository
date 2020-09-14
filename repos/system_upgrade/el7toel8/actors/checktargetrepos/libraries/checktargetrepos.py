@@ -59,8 +59,8 @@ def process():
                 ' environment variable has been set) so leapp is not able to'
                 ' obtain YUM/DNF repositories with the content for the target'
                 ' system in the standard way. The content has to be delivered'
-                ' either by user manually or by a special Leapp package for'
-                ' RHUI environments.'
+                ' either by user manually or, in case of public clouds, by a'
+                ' special Leapp package for RHUI environments.'
                 ),
             reporting.Remediation(hint=(
                 'Create the repository file according to instructions in the'
