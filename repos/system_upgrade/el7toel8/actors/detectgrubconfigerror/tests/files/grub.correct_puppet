@@ -1,0 +1,27 @@
+# WARNING: This file maintained by Puppet.
+# Editing is no use unless you avoid running the Puppet agent
+
+GRUB_DEFAULT=0
+GRUB_TIMEOUT=5
+##GRUB_HIDDEN_TIMEOUT=0
+##
+GRUB_DISTRIBUTOR="$(sed 's, release .*$,,g' /etc/system-release)"
+
+GRUB_CMDLINE_LINUX_RECOVERY="true"
+
+GRUB_CMDLINE_LINUX="elevator=noop"
+
+# Uncomment to disable graphical terminal (grub-pc only)
+
+#GRUB_TERMINAL="console"
+
+GRUB_GFXMODE=640x480
+GRUB_DISABLE_RECOVERY="true"
+
+
+# Set a background image
+# Image must respect various specifications
+GRUB_BACKGROUND="(hd0,0)/grub/splash.xpm.gz"
+
+# Disable OS prober
+GRUB_DISABLE_OS_PROBER="true"
