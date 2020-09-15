@@ -4,9 +4,10 @@ import shutil
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import dnfplugin, mounting
 from leapp.libraries.common.config import architecture
+from leapp.libraries.common.fstab import drop_xfs_options
 from leapp.libraries.stdlib import api
 from leapp.models import (BootContent, RequiredUpgradeInitramPackages, TargetUserSpaceInfo, UpgradeDracutModule,
-                          UsedTargetRepositories)
+                          UsedTargetRepositories, FstabSignal)
 
 INITRAM_GEN_SCRIPT_NAME = 'generate-initram.sh'
 
@@ -65,16 +66,25 @@ def _install_files(context):
     in the initrd explicitly, so return the list of those files for other
     purposes.
     """
-    # TODO: currently we need this just for /etc/dasd.conf, but it's expected
+    # TODO: currently we need this just for two files, but it's expected
     # we will need this for more files in future. The concept used here will
     # need to be changed, as we should consume specific messages instead.
     # But for now this should be enough. Keeping that for future.
+    files = []
+
     if architecture.matches_architecture(architecture.ARCH_S390X):
         # we don't need to check existence of the file - it is required on this
         # this architecture
         context.copy_to('/etc/dasd.conf', '/etc/dasd.conf')
-        return ['/etc/dasd.conf']
-    return []
+        files.append('/etc/dasd.conf')
+
+    if next(api.consume(FstabSignal), None):
+        with open('/etc/fstab') as fstab7:
+            with context.open('/etc/fstab', 'w') as fstab8:
+                fstab8.writelines(drop_xfs_options(fstab7.readlines()))
+        files.append('/etc/fstab')
+
+    return files
 
 
 def install_multipath_files(context):
