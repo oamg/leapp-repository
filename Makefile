@@ -240,7 +240,7 @@ test_no_lint:
 	cd repos/system_upgrade/el7toel8/; \
 	snactor workflow sanity-check ipu && \
 	cd - && \
-	pytest $(REPORT_ARG) $(ACTOR_PATH) $(LIBRARY_PATH)
+	python -m pytest $(REPORT_ARG) $(ACTOR_PATH) $(LIBRARY_PATH)
 
 test: lint test_no_lint
 
