@@ -13,6 +13,7 @@ AWS_MAP = {
 AZURE_MAP = {
     'el7_pkg': 'rhui-azure-rhel7',
     'el8_pkg': 'rhui-azure-rhel8',
+    'agent_pkg': 'WALinuxAgent',
     'leapp_pkg': 'leapp-rhui-azure',
     'leapp_pkg_repo': 'leapp-azure.repo'
 }
