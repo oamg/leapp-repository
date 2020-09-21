@@ -60,7 +60,6 @@ class RedHatSignedRpmScanner(Actor):
 
         def is_azure_pkg(pkg):
             """Whitelist Azure config package."""
-
             arch = self.configuration.architecture
 
             el7_pkg = rhui.RHUI_CLOUD_MAP[arch]['azure']['el7_pkg']

@@ -66,10 +66,6 @@ class CheckRHUI(Actor):
                     # We have to disable Amazon-id plugin in the initramdisk phase as the network
                     # is down at the time
                     self.produce(DNFPluginTask(name='amazon-id', disable_in=['upgrade']))
-                if provider == 'azure':
-                    # This option is important on Azure. Due to the special Azure hybrid image
-                    # GRUB cannot find grubenv and is getting just default options.
-                    self.produce(KernelCmdlineArg(**{'key': 'rootdelay', 'value': '300'}))
                 # if RHEL7 and RHEL8 packages differ, we cannot rely on simply updating them
                 if info['el7_pkg'] != info['el8_pkg']:
                     self.produce(RpmTransactionTasks(to_install=[info['el8_pkg']]))
