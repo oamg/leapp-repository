@@ -20,7 +20,7 @@ def read_config(path):
                 'multipath configuration file {} does not exist.'.format(path)
             )
         else:
-            api.current_logger().warn(
+            api.current_logger().warning(
                 'Failed to read multipath configuration file {}: {}'.
                 format(path, e)
             )
@@ -32,7 +32,7 @@ def write_config(path, contents):
         with open(path, 'w') as f:
             f.write(contents)
     except IOError as e:
-        api.current_logger().warn(
+        api.current_logger().warning(
             'Failed to write multipath configuration file {}: {}'.
             format(path, e)
         )

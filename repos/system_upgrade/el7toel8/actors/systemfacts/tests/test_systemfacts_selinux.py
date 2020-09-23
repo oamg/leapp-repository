@@ -10,8 +10,9 @@ try:
     import selinux
 except ImportError:
     no_selinux = True
-    warnings.warn("Tests which uses `selinux` will be skipped "
-                  "due to library unavailability.", ImportWarning)
+    warnings.warn(
+        'Tests which uses `selinux` will be skipped'
+        ' due to library unavailability.', ImportWarning)
 
 
 reason_to_skip_msg = "Selinux is not available"

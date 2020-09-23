@@ -94,7 +94,7 @@ def backup_debug_data(context):
         try:
             context.copytree_from('/debugdata', DNF_DEBUG_DATA_PATH)
         except OSError as e:
-            api.current_logger().warn('Failed to copy debugdata. Message: {}'.format(str(e)), exc_info=True)
+            api.current_logger().warning('Failed to copy debugdata. Message: {}'.format(str(e)), exc_info=True)
 
 
 def _transaction(context, stage, target_repoids, tasks, plugin_info, test=False, cmd_prefix=None, on_aws=False):

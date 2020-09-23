@@ -35,7 +35,7 @@ def migrate_spamc_config(facts, fileops, backup_func):
         api.current_logger().info('spamc configuration file backup created at %s.'
                                   % backup_path)
     except (OSError, IOError) as e:
-        api.current_logger().warn(
+        api.current_logger().warning(
             'spamc configuration file migration will not be performed. Failed to create backup: %s' % e)
         return
     try:
@@ -43,4 +43,4 @@ def migrate_spamc_config(facts, fileops, backup_func):
         new_content = _rewrite_spamc_config(content)
         fileops.write(SPAMC_CONFIG_FILE, new_content)
     except (OSError, IOError) as e:
-        api.current_logger().warn('Failed to migrate spamc configuration file: %s' % e)
+        api.current_logger().warning('Failed to migrate spamc configuration file: %s' % e)

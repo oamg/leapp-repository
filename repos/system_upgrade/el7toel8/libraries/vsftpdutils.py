@@ -32,7 +32,7 @@ def get_config_contents(path, read_func=read_file):
         return read_func(path)
     except IOError as e:
         if e.errno != errno.ENOENT:
-            api.current_logger().warn('Failed to read vsftpd configuration file: %s' % e)
+            api.current_logger().warning('Failed to read vsftpd configuration file: %s' % e)
         return None
 
 

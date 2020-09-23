@@ -8,7 +8,7 @@ from leapp.models import RepositoryFile, RepositoryData, fields
 try:
     import dnf
 except ImportError:
-    api.current_logger().warn('repofileutils.py: failed to import dnf')
+    api.current_logger().warning('repofileutils.py: failed to import dnf')
 
 
 def _parse_repository(repoid, repo_data):

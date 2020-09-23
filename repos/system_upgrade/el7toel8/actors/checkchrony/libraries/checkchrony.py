@@ -15,7 +15,7 @@ def is_config_default():
         result = run(['rpm', '-V', '--nomtime', 'chrony'], checked=False)
         return '/etc/chrony.conf' not in result['stdout']
     except OSError as e:
-        api.current_logger().warn("rpm verification failed: %s", str(e))
+        api.current_logger().warning("rpm verification failed: %s", str(e))
         return True
 
 

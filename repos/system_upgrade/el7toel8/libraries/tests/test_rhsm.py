@@ -5,7 +5,7 @@ import pytest
 from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import repofileutils, rhsm
-from leapp.libraries.common.testutils import create_report_mocked
+from leapp.libraries.common.testutils import create_report_mocked, logger_mocked
 from leapp.libraries.stdlib import CalledProcessError, api
 from leapp.models import RepositoryFile, RepositoryData
 
@@ -32,21 +32,6 @@ def raise_call_error(args=None, exit_code=1):
         command=args,
         result={'signal': None, 'exit_code': exit_code, 'pid': 0, 'stdout': 'fake out', 'stderr': 'fake err'}
     )
-
-
-class LoggerMocked(object):
-    def __init__(self):
-        self.infomsg = None
-        self.warnmsg = None
-
-    def info(self, msg):
-        self.infomsg = msg
-
-    def warn(self, msg):
-        self.warnmsg = msg
-
-    def __call__(self):
-        return self
 
 
 def _gen_repo(repoid):
@@ -77,7 +62,7 @@ def test_get_available_repo_ids(monkeypatch, other_repofiles, rhsm_repofile):
         repos.append(rhsm_repofile)
     rhsm_repos = [repo.repoid for repo in rhsm_repofile.data] if rhsm_repofile else []
 
-    monkeypatch.setattr(api, 'current_logger', LoggerMocked())
+    monkeypatch.setattr(api, 'current_logger', logger_mocked())
     monkeypatch.setattr(rhsm, '_inhibit_on_duplicate_repos', lambda x: None)
     monkeypatch.setattr(repofileutils, 'get_parsed_repofiles', lambda x: repos)
 
@@ -87,11 +72,13 @@ def test_get_available_repo_ids(monkeypatch, other_repofiles, rhsm_repofile):
     assert context_mocked.commands_called == [['yum', 'clean', 'all']]
     assert result == rhsm_repos
     if result:
-        assert api.current_logger.infomsg == (
+        msg = (
             'The following repoids are available through RHSM:{0}{1}'
-            .format(LIST_SEPARATOR, LIST_SEPARATOR.join(rhsm_repos)))
+            .format(LIST_SEPARATOR, LIST_SEPARATOR.join(rhsm_repos))
+        )
+        assert msg in api.current_logger.infomsg
     else:
-        assert api.current_logger.infomsg == 'There are no repos available through RHSM.'
+        assert 'There are no repos available through RHSM.' in api.current_logger.infomsg
 
 
 def test_get_available_repo_ids_error():
@@ -105,7 +92,7 @@ def test_get_available_repo_ids_error():
 
 def test_inhibit_on_duplicate_repos(monkeypatch):
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
-    monkeypatch.setattr(api, 'current_logger', LoggerMocked())
+    monkeypatch.setattr(api, 'current_logger', logger_mocked())
     repofiles = [
         _gen_repofile("foo", [_gen_repo('repoX'), _gen_repo('repoY')]),
         _gen_repofile("bar", [_gen_repo('repoX')]),
@@ -126,9 +113,9 @@ def test_inhibit_on_duplicate_repos(monkeypatch):
 
 def test_inhibit_on_duplicate_repos_no_dups(monkeypatch):
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
-    monkeypatch.setattr(api, 'current_logger', LoggerMocked())
+    monkeypatch.setattr(api, 'current_logger', logger_mocked())
 
     rhsm._inhibit_on_duplicate_repos([_gen_repofile("foo")])
 
-    assert api.current_logger.warnmsg is None
+    assert not api.current_logger.warnmsg
     assert reporting.create_report.called == 0

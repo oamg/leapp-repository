@@ -27,7 +27,7 @@ def blk_dev_from_partition(partition):
     try:
         result = run(['lsblk', '-spnlo', 'name', partition])
     except CalledProcessError:
-        api.current_logger().warn(
+        api.current_logger().warning(
             'Could not get parent device of {} partition'.format(partition)
         )
         raise StopActorExecution()
@@ -46,7 +46,7 @@ def get_boot_partition():
         # call grub2-probe to identify /boot partition
         result = run(['grub2-probe', '--target=device', '/boot'])
     except CalledProcessError:
-        api.current_logger().warn(
+        api.current_logger().warning(
             'Could not get name of underlying /boot partition'
         )
         raise StopActorExecution()

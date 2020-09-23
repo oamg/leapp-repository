@@ -28,7 +28,7 @@ class SSSDFacts(Actor):
             config.read('/etc/sssd/sssd.conf')
         except configparser.Error:
             # SSSD is not configured properly. Nothing to do.
-            self.log.warn('SSSD configuration unreadable.')
+            self.log.warning('SSSD configuration unreadable.')
             return
 
         self.produce(SSSDFactsLibrary(config).process())
