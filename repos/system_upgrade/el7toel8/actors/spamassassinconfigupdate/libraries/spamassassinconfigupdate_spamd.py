@@ -63,7 +63,7 @@ def migrate_spamd_config(facts, fileops, backup_func):
         if e.errno == errno.ENOENT:
             api.current_logger().info(nothing_to_migrate_msg)
         else:
-            api.current_logger().warn('Failed to read spamd configuration file: %s' % e)
+            api.current_logger().warning('Failed to read spamd configuration file: %s' % e)
         return
     new_content = _rewrite_spamd_config(facts, content)
     if new_content == content:
@@ -74,10 +74,10 @@ def migrate_spamd_config(facts, fileops, backup_func):
         api.current_logger().info('spamd configuration file backup created at %s.'
                                   % backup_path)
     except (OSError, IOError) as e:
-        api.current_logger().warn(
+        api.current_logger().warning(
             'spamd configuration file migration will not be performed. Failed to create backup: %s' % e)
         return
     try:
         fileops.write(utils.SYSCONFIG_SPAMASSASSIN, new_content)
     except (OSError, IOError) as e:
-        api.current_logger().warn('Failed to rewrite the spamd configuration file: %s' % e)
+        api.current_logger().warning('Failed to rewrite the spamd configuration file: %s' % e)

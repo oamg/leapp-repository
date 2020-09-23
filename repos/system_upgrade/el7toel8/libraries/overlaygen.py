@@ -29,7 +29,7 @@ def _get_mountpoints(storage_info):
         if os.path.isdir(entry.fs_file) and entry.fs_vfstype not in OVERLAY_DO_NOT_MOUNT:
             mount_points.add(MountPoints(entry.fs_file, entry.fs_vfstype))
         elif os.path.isdir(entry.fs_file) and entry.fs_vfstype == 'vfat':
-            api.current_logger().warn(
+            api.current_logger().warning(
                 'Ignoring vfat {} filesystem mount during upgrade process'.format(entry.fs_file)
             )
 
@@ -97,7 +97,7 @@ def _overlay_disk_size():
         disk_size = int(env_size)
     except ValueError:
         disk_size = 2048
-        api.current_logger().warn(
+        api.current_logger().warning(
             'Invalid "LEAPP_OVL_SIZE" environment variable "%s". Setting default "%d" value', env_size, disk_size
         )
     return disk_size
@@ -114,7 +114,7 @@ def cleanup_scratch(scratch_dir, mounts_dir):
             run(['/bin/umount', '-fl', mounts_dir])
             api.current_logger().debug('Unmounted mounted disk image.')
         except (OSError, CalledProcessError) as e:
-            api.current_logger().warn('Failed to umount %s - message: %s', mounts_dir, str(e))
+            api.current_logger().warning('Failed to umount %s - message: %s', mounts_dir, str(e))
     api.current_logger().debug('Recursively removing scratch directory %s.', scratch_dir)
     shutil.rmtree(scratch_dir, onerror=utils.report_and_ignore_shutil_rmtree_error)
     api.current_logger().debug('Recursively removed scratch directory %s.', scratch_dir)

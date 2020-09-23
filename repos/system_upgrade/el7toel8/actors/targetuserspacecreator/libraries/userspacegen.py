@@ -61,7 +61,7 @@ def _check_deprecated_rhsm_skip():
     # just log the warning now (better than nothing?); deprecation process will
     # be specified in close future
     if get_env('LEAPP_DEVEL_SKIP_RHSM', '0') == '1':
-        api.current_logger().warn(
+        api.current_logger().warning(
             'The LEAPP_DEVEL_SKIP_RHSM has been deprecated. Use'
             ' LEAPP_NO_RHSM istead or use the --no-rhsm option for'
             ' leapp. as well custom repofile has not been defined.'
@@ -88,7 +88,7 @@ class _InputData(object):
         self.rhsm_info = next(api.consume(RHSMInfo), None)
         self.rhui_info = next(api.consume(RHUIInfo), None)
         if not self.rhsm_info and not rhsm.skip_rhsm():
-            api.current_logger().warn('Could not receive RHSM information - Is this system registered?')
+            api.current_logger().warning('Could not receive RHSM information - Is this system registered?')
             raise StopActorExecution()
         if rhsm.skip_rhsm() and self.rhsm_info:
             # this should not happen. if so, raise an error as something in
@@ -236,8 +236,10 @@ def _inhibit_on_duplicate_repos(repofiles):
     if not duplicates:
         return
     list_separator_fmt = '\n    - '
-    api.current_logger().warn('The following repoids are defined multiple times:{0}{1}'
-                              .format(list_separator_fmt, list_separator_fmt.join(duplicates)))
+    api.current_logger().warning(
+        'The following repoids are defined multiple times:{0}{1}'
+        .format(list_separator_fmt, list_separator_fmt.join(duplicates))
+    )
 
     reporting.create_report([
         reporting.Title('A YUM/DNF repository defined multiple times'),

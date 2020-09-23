@@ -97,7 +97,7 @@ def report_and_ignore_shutil_rmtree_error(func, path, exc_info):
     """
     Helper function for shutil.rmtree to only report errors but don't fail.
     """
-    api.current_logger().warn(
+    api.current_logger().warning(
         'While trying to remove directories: %s failed at %s with an exception %s message: %s',
         func.__name__, path, exc_info[0].__name__, exc_info[1]
     )
@@ -154,7 +154,7 @@ def clean_guard(cleanup_function):
                 except Exception:  # pylint: disable=broad-except
                     # Broad exception handler to handle all cases however, swallowed, to avoid loosing the original
                     # error. Logging for debuggability.
-                    api.current_logger().warn('Caught and swallowed an exception during cleanup.', exc_info=True)
+                    api.current_logger().warning('Caught and swallowed an exception during cleanup.', exc_info=True)
                 raise  # rethrow original exception
 
         return wrapper

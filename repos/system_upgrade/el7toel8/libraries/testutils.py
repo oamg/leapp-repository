@@ -4,6 +4,7 @@ import os
 
 from leapp.libraries.common.config import architecture
 from leapp.models import EnvVar
+from leapp.utils.deprecation import deprecated
 
 
 class produce_mocked(object):
@@ -42,6 +43,10 @@ class logger_mocked(object):
     def info(self, *args):
         self.infomsg.extend(args)
 
+    @deprecated(since='2020-09-23', message=(
+        'The logging.warn method has been deprecated since Python 3.3.'
+        'Use the warning method instead.'
+    ))
     def warn(self, *args):
         self.warnmsg.extend(args)
 

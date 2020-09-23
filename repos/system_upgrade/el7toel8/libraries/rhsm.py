@@ -175,8 +175,10 @@ def _inhibit_on_duplicate_repos(repofiles):
     if not duplicates:
         return
     list_separator_fmt = '\n    - '
-    api.current_logger().warn('The following repoids are defined multiple times:{0}{1}'
-                              .format(list_separator_fmt, list_separator_fmt.join(duplicates)))
+    api.current_logger().warning(
+        'The following repoids are defined multiple times:{0}{1}'
+        .format(list_separator_fmt, list_separator_fmt.join(duplicates))
+    )
 
     reporting.create_report([
         reporting.Title('A YUM/DNF repository defined multiple times'),
@@ -327,7 +329,7 @@ def switch_certificate(context, rhsm_info, cert_path):
         try:
             context.remove(existing)
         except OSError:
-            api.current_logger().warn('Failed to remove existing certificate: %s', existing, exc_info=True)
+            api.current_logger().warning('Failed to remove existing certificate: %s', existing, exc_info=True)
 
     for path in ('/etc/pki/product', '/etc/pki/product-default'):
         if os.path.isdir(context.full_path(path)):

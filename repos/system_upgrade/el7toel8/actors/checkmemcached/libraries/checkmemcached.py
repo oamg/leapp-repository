@@ -21,7 +21,7 @@ def is_sysconfig_default():
         result = run(['rpm', '-V', '--nomtime', 'memcached'], checked=False)
         return sysconfig_path not in result['stdout']
     except OSError as e:
-        api.current_logger().warn("rpm verification failed: %s", str(e))
+        api.current_logger().warning("rpm verification failed: %s", str(e))
         return True
 
 

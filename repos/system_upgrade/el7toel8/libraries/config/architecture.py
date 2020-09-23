@@ -25,5 +25,5 @@ def matches_architecture(*match_list):
                         "but provided was {}: '{}'".format([type(e) for e in match_list], match_list))
     unsupported = set(match_list).difference(ARCH_ACCEPTED)
     if unsupported:
-        api.current_logger().warn("Unsupported architecture specified: {}".format(unsupported))
+        api.current_logger().warning("Unsupported architecture specified: {}".format(unsupported))
     return api.current_actor().configuration.architecture in match_list

@@ -48,7 +48,7 @@ def interfaces():
         except Exception as e:  # pylint: disable=broad-except
             # FIXME(msekleta): We should probably handle errors more granularly
             # Maybe we should inhibit upgrade process at this point
-            api.current_logger().warn('Failed to gather information about network interface: ' + str(e))
+            api.current_logger().warning('Failed to gather information about network interface: ' + str(e))
             continue
 
         yield Interface(**attrs)

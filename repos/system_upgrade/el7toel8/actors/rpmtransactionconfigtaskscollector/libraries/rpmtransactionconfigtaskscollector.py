@@ -14,7 +14,7 @@ def load_tasks_file(path, logger):
                         not entry.strip().startswith('#')}
                 )
         except IOError as e:
-            logger.warn('Failed to open %s to load additional transaction data. Error: %s', path, str(e))
+            logger.warning('Failed to open %s to load additional transaction data. Error: %s', path, str(e))
     return []
 
 
