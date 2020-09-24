@@ -3,6 +3,7 @@ import os
 from leapp.libraries.stdlib import run, api, CalledProcessError
 from leapp.exceptions import StopActorExecution
 from leapp.models import GrubDevice
+from leapp.utils.deprecation import suppress_deprecation
 
 
 def has_grub(blk_dev):
@@ -54,6 +55,7 @@ def get_boot_partition():
     return result['stdout'].strip()
 
 
+@suppress_deprecation(GrubDevice)
 def get_grub_device():
     """
     Get block device where GRUB is located. We assume GRUB is on the same device
