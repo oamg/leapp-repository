@@ -12,24 +12,24 @@ def get_kernel_rpm_release(rpm):
     return int(rpm.release.split('.')[0])
 
 
-def get_kernel_devel_rpms():
+def get_kernel_debug_rpms():
     """
-    Get all installed kernel-devel packages ordered by release number (ascending).
+    Get all installed kernel-debug packages ordered by release number (ascending).
     """
     rpms = next(api.consume(InstalledRedHatSignedRPM), InstalledRedHatSignedRPM())
-    return sorted([pkg for pkg in rpms.items if pkg.name == 'kernel-devel'], key=get_kernel_rpm_release)
+    return sorted([pkg for pkg in rpms.items if pkg.name == 'kernel-debug'], key=get_kernel_rpm_release)
 
 
 def process():
-    pkgs = get_kernel_devel_rpms()
+    pkgs = get_kernel_debug_rpms()
     if len(pkgs) > 1:
-        title = 'Multiple devel kernels installed'
+        title = 'Multiple debug kernels installed'
         summary = ('DNF cannot produce a valid upgrade transaction when'
-                   ' multiple kernel-devel packages are installed.')
-        hint = ('Remove all but one kernel-devel packages before running Leapp again.')
-        all_but_latest_kernel_devel = pkgs[:-1]
+                   ' multiple kernel-debug packages are installed.')
+        hint = ('Remove all but one kernel-debug packages before running Leapp again.')
+        all_but_latest_kernel_debug = pkgs[:-1]
         packages = ['{n}-{v}-{r}'.format(n=pkg.name, v=pkg.version, r=pkg.release)
-                    for pkg in all_but_latest_kernel_devel]
+                    for pkg in all_but_latest_kernel_debug]
         commands = [['yum', '-y', 'remove'] + packages]
         reporting.create_report([
             reporting.Title(title),
@@ -38,5 +38,5 @@ def process():
             reporting.Tags([reporting.Tags.KERNEL]),
             reporting.Flags([reporting.Flags.INHIBITOR]),
             reporting.Remediation(hint=hint, commands=commands),
-            reporting.RelatedResource('package', 'kernel-devel')
+            reporting.RelatedResource('package', 'kernel-debug')
         ])
