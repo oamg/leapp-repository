@@ -1,8 +1,15 @@
+import re
+
 from leapp.libraries.stdlib import api, run
-from leapp.models import PCIDevices, PCIDevice
+from leapp.models import PCIDevice, PCIDevices
+
+# SVendor or SDevice are also captured properly
+PCI_ID_REG = re.compile(r"(?<=Vendor:\t|Device:\t)\w+")
 
 
-def parse_pci_device(block):
+# TODO this could be solved more efficiently and error prune via python re
+#   and groupdict
+def parse_pci_device(textual_block, numeric_block):
     ''' Parse one block from lspci output describing one PCI device '''
     device = {
         'Slot': '',
@@ -18,7 +25,7 @@ def parse_pci_device(block):
         'Module': [],
         'NUMANode': ''
     }
-    for line in block.split('\n'):
+    for line in textual_block.split('\n'):
         key, value = line.split(':\t')
 
         if key in device:
@@ -46,12 +53,20 @@ def parse_pci_device(block):
         progif=device['ProgIf'],
         driver=device['Driver'],
         modules=device['Module'],
-        numa_node=device['NUMANode'])
+        numa_node=device['NUMANode'],
+        pci_id=":".join(PCI_ID_REG.findall(numeric_block))
+    )
 
 
-def parse_pci_devices(output):
+def parse_pci_devices(pci_textual, pci_numeric):
     ''' Parse lspci output and return a list of PCI devices '''
-    return [parse_pci_device(block) for block in output.split('\n\n')[:-1]]
+    return [
+        parse_pci_device(*block) for block
+        in zip(
+            pci_textual.split('\n\n')[:-1],
+            pci_numeric.split('\n\n')[:-1]
+        )
+    ]
 
 
 def produce_pci_devices(producer, devices):
@@ -61,6 +76,7 @@ def produce_pci_devices(producer, devices):
 
 def scan_pci_devices(producer):
     ''' Scan system PCI Devices '''
-    output = run(['lspci', '-vmmk'], checked=False)['stdout']
-    devices = parse_pci_devices(output)
+    pci_textual = run(['lspci', '-vmmk'], checked=False)['stdout']
+    pci_numeric = run(['lspci', '-vmmkn'], checked=False)['stdout']
+    devices = parse_pci_devices(pci_textual, pci_numeric)
     produce_pci_devices(producer, devices)

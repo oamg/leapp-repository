@@ -6,20 +6,20 @@ from leapp.snactor.fixture import current_actor_context
 
 
 devices_ok = [
-    PCIDevice(slot="00:00.0", dev_cls="foo", vendor="bar", name="foobar", driver="i915"),
-    PCIDevice(slot="00:01.0", dev_cls="foo", vendor="bar", name="foobar", driver="serial"),
-    PCIDevice(slot="00:02.0", dev_cls="foo", vendor="bar", name="foobar", driver="pcieport"),
-    PCIDevice(slot="00:03.0", dev_cls="foo", vendor="bar", name="foobar", driver="nvme")
+    PCIDevice(slot="00:00.0", dev_cls="foo", vendor="bar", name="foobar", driver="i915", pci_id="some id"),
+    PCIDevice(slot="00:01.0", dev_cls="foo", vendor="bar", name="foobar", driver="serial", pci_id="some id"),
+    PCIDevice(slot="00:02.0", dev_cls="foo", vendor="bar", name="foobar", driver="pcieport", pci_id="some id"),
+    PCIDevice(slot="00:03.0", dev_cls="foo", vendor="bar", name="foobar", driver="nvme", pci_id="some id")
 ]
 devices_driverless = [
-    PCIDevice(slot="00:04.0", dev_cls="foo", vendor="bar", name="foobar", driver=""),
-    PCIDevice(slot="00:05.0", dev_cls="foo", vendor="bar", name="foobar", driver="")
+    PCIDevice(slot="00:04.0", dev_cls="foo", vendor="bar", name="foobar", driver="", pci_id="some id"),
+    PCIDevice(slot="00:05.0", dev_cls="foo", vendor="bar", name="foobar", driver="", pci_id="some id")
 ]
 devices_removed = [
-    PCIDevice(slot="00:06.0", dev_cls="foo", vendor="bar", name="foobar", driver="floppy"),
-    PCIDevice(slot="00:07.0", dev_cls="foo", vendor="bar", name="foobar", driver="initio"),
-    PCIDevice(slot="00:08.0", dev_cls="foo", vendor="bar", name="foobar", driver="pata_acpi"),
-    PCIDevice(slot="00:09.0", dev_cls="foo", vendor="bar", name="foobar", driver="iwl4965")
+    PCIDevice(slot="00:06.0", dev_cls="foo", vendor="bar", name="foobar", driver="floppy", pci_id="some id"),
+    PCIDevice(slot="00:07.0", dev_cls="foo", vendor="bar", name="foobar", driver="initio", pci_id="some id"),
+    PCIDevice(slot="00:08.0", dev_cls="foo", vendor="bar", name="foobar", driver="pata_acpi", pci_id="some id"),
+    PCIDevice(slot="00:09.0", dev_cls="foo", vendor="bar", name="foobar", driver="iwl4965", pci_id="some id")
 ]
 
 
