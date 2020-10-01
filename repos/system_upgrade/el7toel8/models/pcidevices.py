@@ -64,3 +64,17 @@ class PCIDevices(Model):
     topic = SystemInfoTopic
 
     devices = fields.List(fields.Model(PCIDevice))
+
+
+class RestrictedPCIDevices(Model):
+    """Data about restricted (unsupported or unavailable) PCI devices.
+
+    driver_names - is a container with the devices, which are restricted by
+        the driver name identifier
+    pci_ids - is a container with the devices, which are restricted by
+        the pci_id identifier
+    """
+    topic = SystemInfoTopic
+
+    driver_names = fields.JSON()
+    pci_ids = fields.JSON()
