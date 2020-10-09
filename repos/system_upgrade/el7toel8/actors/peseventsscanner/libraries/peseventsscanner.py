@@ -1,6 +1,6 @@
 import json
 import os
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 from enum import IntEnum
 
 from leapp.exceptions import StopActorExecution, StopActorExecutionError
@@ -12,7 +12,8 @@ from leapp.models import (InstalledRedHatSignedRPM, PESRpmTransactionTasks, Repo
                           RepositoriesSetupTasks, RpmTransactionTasks, RepositoriesBlacklisted)
 
 
-Event = namedtuple('Event', ['action',        # An instance of Action
+Event = namedtuple('Event', ['id',            # int
+                             'action',        # An instance of Action
                              'in_pkgs',       # A dictionary with packages in format {<pkg_name>: <repository>}
                              'out_pkgs',      # A dictionary with packages in format {<pkg_name>: <repository>}
                              'from_release',  # A tuple representing a release in format (major, minor)
@@ -55,6 +56,7 @@ def pes_events_scanner(pes_json_filepath):
     arch_events = filter_events_by_architecture(filtered_events, arch)
 
     add_output_pkgs_to_transaction_conf(transaction_configuration, arch_events)
+    drop_conflicting_release_events(arch_events)
     tasks = process_events(filtered_releases, arch_events, installed_pkgs)
     filter_out_transaction_conf_pkgs(tasks, transaction_configuration)
     produce_messages(tasks)
@@ -232,6 +234,7 @@ def parse_entry(entry):
                   }
     """
 
+    event_id = entry.get('id') or 0
     action = parse_action(entry['action'])
     in_pkgs = parse_packageset(entry.get('in_packageset') or {})
     out_pkgs = parse_packageset(entry.get('out_packageset') or {})
@@ -239,7 +242,7 @@ def parse_entry(entry):
     to_release = parse_release(entry.get('release') or {})
     architectures = parse_architectures(entry.get('architectures') or [])
 
-    return Event(action, in_pkgs, out_pkgs, from_release, to_release, architectures)
+    return Event(event_id, action, in_pkgs, out_pkgs, from_release, to_release, architectures)
 
 
 def parse_action(action_id):
@@ -285,6 +288,36 @@ def add_packages_to_tasks(tasks, packages, task_type):
         tasks[task_type].update(packages)
 
 
+def _packages_to_str(packages):
+    """
+    Represent a dictionary holding a set of packages with a string hash.
+
+    Example: in: {'mesa-libwayland-egl-devel': 'rhel7-optional', 'wayland-devel': 'rhel7-base'}
+             out: 'mesa-libwayland-egl-devel:rhel7-optional,wayland-devel:rhel7-base'
+    """
+    return ','.join('{}:{}'.format(p[0], p[1]) for p in sorted(packages.items()))
+
+
+def drop_conflicting_release_events(events):
+    """
+    In case of events with identical initial release and input packages, drop those with older target releases.
+
+    In case of identical target releases too, drop events with lower IDs.
+    """
+    events_by_input = defaultdict(list)  # {(release, input packages): [event]}
+    for event in events:
+        input_packages_str = _packages_to_str(event.in_pkgs)
+        events_by_input[(event.from_release, input_packages_str)].append(event)
+    for input_events in events_by_input.values():
+        if len(input_events) > 1:
+            input_events.sort(key=lambda e: (e.to_release, e.id))
+            api.current_logger().debug('Conflicting events with same input packages and initial release: #' +
+                                       ', #'.join(str(e.id) for e in input_events))
+            for event in input_events[:-1]:
+                api.current_logger().debug('Dropping event #{}'.format(event.id))
+                events.remove(event)
+
+
 def process_events(releases, events, installed_pkgs):
     """
     Process PES events to get lists of pkgs to keep, to install and to remove.
@@ -294,7 +327,6 @@ def process_events(releases, events, installed_pkgs):
     :param installed_pkgs: Set of names of the installed Red Hat-signed packages
     :return: A dict with three dicts holding pkgs to keep, to install and to remove
     """
-
     # subdicts in format {<pkg_name>: <repository>}
     tasks = {t: {} for t in Task}  # noqa: E1133; pylint: disable=not-an-iterable
 
