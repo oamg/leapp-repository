@@ -13,6 +13,11 @@ export LEAPP3_BIN=$LEAPPHOME/leapp3
 
 export NEWROOT=${NEWROOT:-"/sysroot"}
 
+NSPAWN_OPTS="--capability=all --bind=/sys --bind=/dev --bind=/dev/pts --bind=/run/systemd --bind=/proc"
+[ -d /dev/mapper ] NSPAWN_OPTS="$NSPAWN_OPTS --bind=/dev/mapper"
+export NSPAWN_OPTS="$NSPAWN_OPTS --bind=/run/udev --keep-unit --register=no --timezone=off --resolv-conf=off"
+
+
 do_upgrade() {
     local args="" rv=0
     #FIXME: set here params we would like to possible use...
@@ -33,9 +38,7 @@ do_upgrade() {
     # NOTE: in case we would need to run leapp before pivot, we would need to
     #       specify where the root is, e.g. --root=/sysroot
     # TODO: update: systemd-nspawn
-    nspawn_opts="--capability=all --bind=/sys --bind=/dev --bind=/dev/pts --bind=/run/systemd --bind=/proc"
-    nspawn_opts="$nspawn_opts  --bind=/run/udev --keep-unit --register=no --timezone=off --resolv-conf=off"
-    /usr/bin/systemd-nspawn $nspawn_opts -D $NEWROOT /usr/bin/bash -c "mount -a; $LEAPPBIN upgrade --resume $args"
+    /usr/bin/systemd-nspawn $NSPAWN_OPTS -D $NEWROOT /usr/bin/bash -c "mount -a; $LEAPPBIN upgrade --resume $args"
     rv=$?
 
     # NOTE: flush the cached content to disk to ensure everything is written
@@ -48,7 +51,7 @@ do_upgrade() {
     if [ "$rv" -eq 0 ]; then
         # run leapp to proceed phases after the upgrade with Python3
         #PY_LEAPP_PATH=/usr/lib/python2.7/site-packages/leapp/
-        #$NEWROOT/bin/systemd-nspawn $nspawn_opts -D $NEWROOT -E PYTHONPATH="${PYTHONPATH}:${PY_LEAPP_PATH}" /usr/bin/python3 $LEAPPBIN upgrade --resume $args
+        #$NEWROOT/bin/systemd-nspawn $NSPAWN_OPTS -D $NEWROOT -E PYTHONPATH="${PYTHONPATH}:${PY_LEAPP_PATH}" /usr/bin/python3 $LEAPPBIN upgrade --resume $args
 
         # NOTE:
         # mount everything from FSTAB before run of the leapp as mount inside
@@ -56,7 +59,7 @@ do_upgrade() {
         # all FSTAB partitions. As mount was working before, hopefully will
         # work now as well. Later this should be probably modified as we will
         # need to handle more stuff around storage at all.
-        /usr/bin/systemd-nspawn $nspawn_opts -D $NEWROOT /usr/bin/bash -c "mount -a; /usr/bin/python3 $LEAPP3_BIN upgrade --resume $args"
+        /usr/bin/systemd-nspawn $NSPAWN_OPTS -D $NEWROOT /usr/bin/bash -c "mount -a; /usr/bin/python3 $LEAPP3_BIN upgrade --resume $args"
         rv=$?
     fi
 
@@ -78,13 +81,28 @@ save_journal() {
     # Q: would it be possible that journal will not be flushed completely yet?
     echo "writing logs to disk and rebooting"
 
-    local logfile="$NEWROOT/var/log/leapp/leapp-upgrade.log"
+    local logfile="/sysroot/tmp-leapp-upgrade.log"
 
-    # Add a separator if file exists
-    [ -e $logfile ] && echo "### LEAPP reboot ###" >> $logfile
+    # Create logfile if it doesn't exist
+    [ -n $logfile ] && > $logfile
 
-    # write out the logfile
-    journalctl -a -m >> $logfile
+    # If file exists save the journal
+    if [ -e $logfile ]; then
+        # Add a separator
+        echo "### LEAPP reboot ###" > $logfile
+
+        # write out the logfile
+        journalctl -a -m >> $logfile
+
+        # We need to run the actual saving of leapp-upgrade.log in a container and mount everything before, to be
+        # sure /var/log is mounted in case it is on a separate partition.
+        local store_cmd="mount -a"
+        local store_cmd="$store_cmd; cat /tmp-leapp-upgrade.log >> /var/log/leapp/leapp-upgrade.log"
+
+        /usr/bin/systemd-nspawn $NSPAWN_OPTS -D $NEWROOT /usr/bin/bash -c "$store_cmd"
+
+        rm -f $logfile
+    fi
 }
 
 
@@ -120,6 +138,9 @@ result=$?
 
 ##### safe the data and remount $NEWROOT as it was previously mounted #####
 save_journal
+
+#FIXME: for debugging purposes; this will be removed or redefined in future
+getarg 'rd.break=leapp-logs' && emergency_shell -n upgrade "Break after LEAPP save_journal"
 
 # NOTE: flush the cached content to disk to ensure everything is written
 sync
