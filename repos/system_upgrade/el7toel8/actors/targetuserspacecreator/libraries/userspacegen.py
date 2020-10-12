@@ -387,7 +387,7 @@ def gather_target_repositories(context, indata):
                 ' ensure the custom repository file is provided regarding the documentation with'
                 ' properly defined repositories or in case repositories are already defined'
                 ' in any repofiles under /etc/yum.repos.d/ directory, use the --enablerepo option'
-                ' for leapp'
+                ' for leapp. Also make sure "/etc/leapp/files/repomap.csv" file is up-to-date.'
                 ).format(version=api.current_actor().configuration.version.target)
             }
         )
