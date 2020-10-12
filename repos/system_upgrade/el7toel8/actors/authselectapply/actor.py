@@ -53,6 +53,11 @@ class AuthselectApply(Actor):
             ] + resources)  # pylint: disable-msg=too-many-arguments
             return
 
+        try:
+            run(['systemctl', 'enable', 'oddjobd.service'])
+        except (OSError, CalledProcessError) as e:
+            self.log.warning('Error enabling oddjobd.service: {}'.format(e))
+
         create_report([  # pylint: disable-msg=too-many-arguments
             reporting.Title('System was converted to authselect.'),
             reporting.Summary(
