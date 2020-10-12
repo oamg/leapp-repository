@@ -101,7 +101,8 @@ class AuthselectCheck(Actor):
                 'replaced authconfig. The upgrade process detected '
                 'that authconfig was used to generate current '
                 'configuration and it will automatically convert it '
-                'to authselect. Authselect call is: {}'.format(command)
+                'to authselect. Authselect call is: {}. The process will '
+                'also enable "oddjobd" systemd service on startup'.format(command)
             ),
             reporting.Tags([
                 reporting.Tags.AUTHENTICATION,
@@ -152,7 +153,8 @@ class AuthselectCheck(Actor):
                     'replaced authconfig. The upgrade process suggested '
                     'an authselect profile that is similar to your '
                     'current configuration and your system will be switched '
-                    'to this profile. Authselect call is: {}'.format(command)
+                    'to this profile. Authselect call is: {}. The process will '
+                    'also enable "oddjobd" systemd service on startup'.format(command)
                 ),
                 reporting.Tags([
                     reporting.Tags.AUTHENTICATION,
