@@ -68,6 +68,7 @@ class CurrentActorMocked(object):  # pylint:disable=R0904
         release = namedtuple('OS_release', ['release_id', 'version_id'])(release_id, src_ver)
 
         self._common_folder = '../../files'
+        self._actor_folder = 'files'
         self.configuration = namedtuple(
             'configuration', ['architecture', 'kernel', 'leapp_env_vars', 'os_release', 'version', 'flavour']
         )(arch, kernel, envarsList, release, version, flavour)
@@ -87,6 +88,9 @@ class CurrentActorMocked(object):  # pylint:disable=R0904
     @property
     def log(self):
         return logging.getLogger(__name__)
+
+    def get_actor_file_path(self, name):
+        return os.path.join(self._actor_folder, name)
 
     # other functions and properties from the API - can be implemented as needed
 
@@ -133,9 +137,6 @@ class CurrentActorMocked(object):  # pylint:disable=R0904
         raise NotImplementedError
 
     def get_common_file_path(self, name):
-        raise NotImplementedError
-
-    def get_actor_file_path(self, name):
         raise NotImplementedError
 
     def get_tool_path(self, name):
