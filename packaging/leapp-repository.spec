@@ -115,7 +115,11 @@ do
     ln -s  %{repositorydir}/$REPOSITORY  %{buildroot}%{_sysconfdir}/leapp/repos.d/$REPOSITORY
 done;
 
-%py_byte_compile %{__python} %{buildroot}%{repositorydir}/*
+# __python2 could be problematic on systems with Python3 only, but we have
+# no choice as __python became error on F33+:
+#   https://fedoraproject.org/wiki/Changes/PythonMacroError
+# Maybe we will need to build SRPM over mock only on Fedora in future
+%py_byte_compile %{__python2} %{buildroot}%{repositorydir}/*
 
 
 %files
