@@ -17,6 +17,7 @@ class RestrictedPCIsScanner(Actor):
             unit_test_restricted_pcis_scanner.test_update_local_data
         by commenting the line:
             @pytest.mark.skip(reason="Use only for updating the local data")
+        and running the test.
     """
 
     name = "restricted_pcis_scanner"

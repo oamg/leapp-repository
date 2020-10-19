@@ -66,6 +66,38 @@ class PCIDevices(Model):
     devices = fields.List(fields.Model(PCIDevice))
 
 
+class RestrictedPCIDevice(Model):
+    """
+    Data model describing restricted PCI devices.
+
+
+    pci_id - unsupported pci_ids. It has the following
+        structure: {Vendor}:{Device}:{SVendor}:{SDevice}, where all these 4
+        parameters are numeric ids (see shell command spci -vmmkn). If SVendor
+        and SDevice fields do not exist, then pci_id has the following structure:
+        {Vendor}:{Device}.
+    driver_name - the name of restricted driver
+    device_name - the name of restricted device
+    supported_{rhel_version} - 1 is supported on the given RHEL, 0 - not
+        supported
+    available_{rhel_version} - 1 is available on the given RHEL, 0 - not
+        available. it could be the driver is available, but not supported
+    comments - the field for comments
+    """
+    topic = SystemInfoTopic
+
+    pci_id = fields.String()
+    driver_name = fields.String()
+    device_name = fields.String()
+    available_rhel7 = fields.Integer()
+    supported_rhel7 = fields.Integer()
+    available_rhel8 = fields.Integer()
+    supported_rhel8 = fields.Integer()
+    available_rhel9 = fields.Integer()
+    supported_rhel9 = fields.Integer()
+    comment = fields.String()
+
+
 class RestrictedPCIDevices(Model):
     """Data about restricted (unsupported or unavailable) PCI devices.
 
@@ -76,5 +108,5 @@ class RestrictedPCIDevices(Model):
     """
     topic = SystemInfoTopic
 
-    driver_names = fields.JSON()
-    pci_ids = fields.JSON()
+    driver_names = fields.Dict(fields.String(), fields.Model(RestrictedPCIDevice))
+    pci_ids = fields.Dict(fields.String(), fields.Model(RestrictedPCIDevice))

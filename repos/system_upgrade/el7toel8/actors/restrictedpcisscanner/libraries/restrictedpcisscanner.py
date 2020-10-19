@@ -5,7 +5,7 @@ import urllib3
 
 from leapp.libraries.common.config import get_env
 from leapp.libraries.stdlib import api
-from leapp.models import RestrictedPCIDevices
+from leapp.models import RestrictedPCIDevices, RestrictedPCIDevice
 
 REQUEST_TIMEOUT = 0.5
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -107,8 +107,10 @@ def produce_restricted_pcis():
         api.current_logger().info("Offline method succeeded.")
     finally:
         api.produce(
-            RestrictedPCIDevices(
-                driver_names=unsupported_driver_names,
-                pci_ids=unsupported_pci_ids,
+            RestrictedPCIDevices.create(
+                {
+                    "driver_names": unsupported_driver_names["devices"],
+                    "pci_ids": unsupported_pci_ids["devices"],
+                },
             )
         )
