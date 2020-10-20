@@ -17,7 +17,7 @@ class QuaggaToFrr(Actor):
     tags = (ApplicationsPhaseTag, IPUWorkflowTag)
 
     def process(self):
-        quagga_facts = next(self.consume(QuaggaToFrrFacts))
+        quagga_facts = next(self.consume(QuaggaToFrrFacts), None)
 
         if quagga_facts:
             process_facts(quagga_facts)
