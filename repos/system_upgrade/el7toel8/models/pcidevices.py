@@ -108,5 +108,13 @@ class RestrictedPCIDevices(Model):
     """
     topic = SystemInfoTopic
 
-    driver_names = fields.Dict(fields.String(), fields.Model(RestrictedPCIDevice))
-    pci_ids = fields.Dict(fields.String(), fields.Model(RestrictedPCIDevice))
+    driver_names = fields.Dict(
+        fields.String(),
+        fields.Model(RestrictedPCIDevice),
+        default={},
+    )
+    pci_ids = fields.Dict(
+        fields.String(),
+        fields.Model(RestrictedPCIDevice),
+        default={},
+    )
