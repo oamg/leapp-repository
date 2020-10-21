@@ -1,8 +1,8 @@
+import contextlib
 import os
 import shutil
 
 from leapp.libraries.actor import quaggatofrr
-from leapp.libraries.stdlib import api
 
 ACTIVE_DAEMONS = ['bgpd', 'ospfd', 'zebra']
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -19,27 +19,29 @@ CONFIG_DATA = {
 }
 
 
+@contextlib.contextmanager
 def _create_mock_files():
-    os.mkdir(FROM_DIR)
-    os.mkdir(TO_DIR)
+    try:
+        os.mkdir(FROM_DIR)
+        os.mkdir(TO_DIR)
 
-    for num in range(1, 10):
-        full_path = "{}test_file_{}".format(FROM_DIR, num)
-        with open(full_path, 'w') as fp:
-            fp.write("test_file_{}".format(num))
+        for num in range(1, 10):
+            full_path = "{}test_file_{}".format(FROM_DIR, num)
+            with open(full_path, 'w') as fp:
+                fp.write("test_file_{}".format(num))
+        yield
+    finally:
+        shutil.rmtree(FROM_DIR)
+        shutil.rmtree(TO_DIR)
 
 
 def test_copy_config_files():
-    _create_mock_files()
-    quaggatofrr._copy_config_files(FROM_DIR, TO_DIR)
-    conf_files = os.listdir(TO_DIR)
-    for file_name in conf_files:
-        full_path = os.path.join(TO_DIR, file_name)
-        assert os.path.isfile(full_path)
-
-    # cleanup
-    shutil.rmtree(FROM_DIR)
-    shutil.rmtree(TO_DIR)
+    with _create_mock_files():
+        quaggatofrr._copy_config_files(FROM_DIR, TO_DIR)
+        conf_files = os.listdir(TO_DIR)
+        for file_name in conf_files:
+            full_path = os.path.join(TO_DIR, file_name)
+            assert os.path.isfile(full_path)
 
 
 def test_get_config_data():
