@@ -31,6 +31,12 @@ class QuaggaReport(Actor):
         if 'babeld' in quagga_facts.active_daemons or 'babeld' in quagga_facts.enabled_daemons:
             create_report([
                 reporting.Title('Babeld is not available in FRR'),
+                reporting.ExternalLink(
+                    url='https://access.redhat.com/'
+                        'documentation/en-us/red_hat_enterprise_linux/8/html/'
+                        'configuring_and_managing_networking/setting-your-rou'
+                        'ting-protocols_configuring-and-managing-networking',
+                    title='Setting routing protocols in RHEL8'),
                 reporting.Summary(
                     'babeld daemon which was a part of quagga implementation in RHEL7 '
                     'is not available in RHEL8 in FRR due to licensing issues.'
