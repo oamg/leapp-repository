@@ -1,11 +1,9 @@
-import pytest
-
 from leapp.models import PCIDevices, PCIDevice
 from leapp.libraries.actor.pcidevicesscanner import parse_pci_devices, produce_pci_devices
 
 
-def test_parse_pci_devices(current_actor_libraries):
-    devices = '''Slot:	00:00.0
+def test_parse_pci_devices():
+    devices_textual = '''Slot:	00:00.0
 Class:	Host bridge
 Vendor:	Intel Corporation
 Device:	440FX - 82441FX PMC [Natoma]
@@ -26,8 +24,34 @@ Slot:	00:01.1
 Class:	IDE interface
 Vendor:	Intel Corporation
 Device:	82371SB PIIX3 IDE [Natoma/Triton II]
-SVendor:	Red Hat, Inc.
-SDevice:	Qemu virtual machine
+ProgIf:	80
+Driver:	ata_piix
+Module:	ata_piix
+Module:	pata_acpi
+Module:	ata_generic
+
+'''
+    devices_numeric = '''Slot:	00:00.0
+Class:	Host bridge
+Vendor:	15b45
+Device:	0724
+SVendor:	15b46
+SDevice:	0725
+PhySlot:	3
+Rev:	02
+NUMANode:	0
+
+Slot:	00:01.0
+Class:	ISA bridge
+Vendor:	15b44
+Device:	0723
+SVendor:	15b50
+SDevice:	0750
+
+Slot:	00:01.1
+Class:	IDE interface
+Vendor:	15b43
+Device:	0722
 ProgIf:	80
 Driver:	ata_piix
 Module:	ata_piix
@@ -36,7 +60,7 @@ Module:	ata_generic
 
 '''
 
-    output = parse_pci_devices(devices)
+    output = parse_pci_devices(devices_textual, devices_numeric)
     assert isinstance(output, list)
     assert len(output) == 3
 
@@ -45,10 +69,9 @@ Module:	ata_generic
     assert dev.dev_cls == 'IDE interface'
     assert dev.vendor == 'Intel Corporation'
     assert dev.name == '82371SB PIIX3 IDE [Natoma/Triton II]'
-    assert dev.subsystem_vendor == 'Red Hat, Inc.'
-    assert dev.subsystem_name == 'Qemu virtual machine'
     assert dev.progif == '80'
     assert dev.driver == 'ata_piix'
+    assert dev.pci_id == '15b43:0722'
     assert len(dev.modules) == 3
     assert 'ata_piix' in dev.modules
     assert 'pata_acpi' in dev.modules
@@ -66,6 +89,7 @@ Module:	ata_generic
     assert dev.rev == ''
     assert dev.physical_slot == ''
     assert dev.numa_node == ''
+    assert dev.pci_id == '15b44:0723:15b50:0750'
 
     dev = output.pop()
     assert dev.slot == '00:00.0'
@@ -77,16 +101,17 @@ Module:	ata_generic
     assert dev.rev == '02'
     assert dev.physical_slot == '3'
     assert dev.numa_node == '0'
+    assert dev.pci_id == '15b45:0724:15b46:0725'
 
 
-def test_parse_empty_list(current_actor_libraries):
-    output = parse_pci_devices('')
+def test_parse_empty_list():
+    output = parse_pci_devices('', '')
     assert isinstance(output, list)
     assert not output
 
 
-def test_parse_unknown_keys(current_actor_libraries):
-    devices = '''Slot:	00:1c.0
+def test_parse_unknown_keys():
+    devices_textual = '''Slot:	00:1c.0
 Class:	PCI bridge
 Material:	Silicon
 Vendor:	Intel Corporation
@@ -98,8 +123,20 @@ Flavor:	Spicy beef
 Driver:	pcieport
 
 '''
+    devices_numeric = '''Slot:	00:1c.0
+Class:	PCI bridge
+Material:	Silicon
+Vendor:	15b74
+Origin:	People's Republic of China
+Device:	0724
+Flavor:	Burnt toast
+Rev:	f1
+Flavor:	Spicy beef
+Driver:	pcieport
 
-    output = parse_pci_devices(devices)
+'''
+
+    output = parse_pci_devices(devices_textual, devices_numeric)
     assert isinstance(output, list)
     assert len(output) == 1
 
@@ -110,10 +147,11 @@ Driver:	pcieport
     assert dev.name == 'Sunrise Point-LP PCI Express Root Port #1'
     assert dev.rev == 'f1'
     assert dev.driver == 'pcieport'
+    assert dev.pci_id == '15b74:0724'
     assert dev.modules == []
 
 
-def test_produce_pci_devices(current_actor_libraries):
+def test_produce_pci_devices():
     output = []
 
     def fake_producer(*args):
@@ -127,6 +165,7 @@ def test_produce_pci_devices(current_actor_libraries):
             name='440FX - 82441FX PMC [Natoma]',
             subsystem_vendor='Red Hat, Inc.',
             subsystem_name='Qemu virtual machine',
+            pci_id='15b560:0739',
             rev='02'),
         PCIDevice(
             slot='00:01.0',
@@ -134,6 +173,7 @@ def test_produce_pci_devices(current_actor_libraries):
             vendor='Intel Corporation',
             name='82371SB PIIX3 ISA [Natoma/Triton II]',
             subsystem_vendor='Red Hat, Inc.',
+            pci_id='15b560:0739',
             subsystem_name='Qemu virtual machine'),
         PCIDevice(
             slot='00:01.1',
@@ -142,6 +182,7 @@ def test_produce_pci_devices(current_actor_libraries):
             name='82371SB PIIX3 IDE [Natoma/Triton II]',
             subsystem_vendor='Red Hat, Inc.',
             subsystem_name='Qemu virtual machine',
+            pci_id='15b560:0739',
             progif='80'),
     ]
 
@@ -150,7 +191,7 @@ def test_produce_pci_devices(current_actor_libraries):
     assert len(output[0].devices) == 3
 
 
-def test_produce_no_devices(current_actor_libraries):
+def test_produce_no_devices():
     output = []
 
     def fake_producer(*args):
