@@ -18,7 +18,7 @@ class RemoveSystemdResumeService(Actor):
     name = 'remove_systemd_resume_service'
     consumes = ()
     produces = (Report,)
-    tags = (FirstBootPhaseTag.After, IPUWorkflowTag)
+    tags = (FirstBootPhaseTag, IPUWorkflowTag)
 
     def process(self):
         service_name = 'leapp_resume.service'
