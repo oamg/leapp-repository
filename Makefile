@@ -1,4 +1,5 @@
 __PKGNAME=$${_PKGNAME:-leapp-repository}
+VENVNAME ?= tut
 PKGNAME=leapp-repository
 DEPS_PKGNAME=leapp-el7toel8-deps
 VERSION=`grep -m1 "^Version:" packaging/$(PKGNAME).spec | grep -om1 "[0-9].[0-9.]**"`
@@ -190,7 +191,7 @@ print_release:
 # Before doing anything, it is good idea to register repos to ensure everything
 # is in order inside ~/.config/leapp/repos.json
 register:
-	. tut/bin/activate; \
+	. $(VENVNAME)/bin/activate; \
 	snactor repo find --path repos
 
 install-deps:
@@ -200,8 +201,8 @@ install-deps:
 	case $(_PYTHON_VENV) in python3*) yum install -y epel-release; esac
 	@# in centos:7 python dependencies required gcc
 	case $(_PYTHON_VENV) in python3*) yum install gcc -y; esac
-	virtualenv --system-site-packages -p /usr/bin/$(_PYTHON_VENV) tut; \
-	. tut/bin/activate; \
+	virtualenv --system-site-packages -p /usr/bin/$(_PYTHON_VENV) $(VENVNAME); \
+	. $(VENVNAME)/bin/activate; \
 	pip install --upgrade setuptools; \
 	pip install --upgrade -r requirements.txt
 	python utils/install_actor_deps.py --actor=$(ACTOR)
@@ -216,13 +217,13 @@ install-deps-fedora:
 		fi; \
 	fi
 	@# Prepare the virtual environment
-	virtualenv --system-site-packages --python /usr/bin/python tut
-	. tut/bin/activate ; \
+	virtualenv --system-site-packages --python /usr/bin/python $(VENVNAME)
+	. $(VENVNAME)/bin/activate ; \
 	pip install --upgrade setuptools; \
 	pip install --upgrade -r requirements.txt; \
 
 lint:
-	. tut/bin/activate; \
+	. $(VENVNAME)/bin/activate; \
 	echo "--- Linting ... ---" && \
 	SEARCH_PATH=$(REPOS_PATH) && \
 	echo "Using search path '$${SEARCH_PATH}'" && \
@@ -235,7 +236,7 @@ lint:
 	echo "--- Linting done. ---"
 
 test_no_lint:
-	. tut/bin/activate; \
+	. $(VENVNAME)/bin/activate; \
 	snactor repo find --path repos/; \
 	cd repos/system_upgrade/el7toel8/; \
 	snactor workflow sanity-check ipu && \
@@ -245,7 +246,7 @@ test_no_lint:
 test: lint test_no_lint
 
 dashboard_data:
-	. tut/bin/activate; \
+	. $(VENVNAME)/bin/activate; \
 	snactor repo find --path repos/; \
 	pushd repos/system_upgrade/el7toel8/; \
 	python ../../../utils/dashboard-json-dump.py > ../../../discover.json; \
