@@ -51,8 +51,8 @@ def process():
     if conf_status in ('enforcing', 'permissive'):
         api.produce(SelinuxRelabelDecision(set_relabel=True))
         reporting.create_report([
-            reporting.Title('SElinux relabeling has been scheduled'),
-            reporting.Summary('SElinux relabeling has been scheduled as the status was permissive/enforcing.'),
+            reporting.Title('SElinux relabeling will be scheduled'),
+            reporting.Summary('SElinux relabeling will be scheduled as the status is permissive/enforcing.'),
             reporting.Severity(reporting.Severity.INFO),
             reporting.Tags([reporting.Tags.SELINUX, reporting.Tags.SECURITY])
         ])
