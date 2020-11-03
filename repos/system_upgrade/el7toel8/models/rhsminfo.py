@@ -18,3 +18,5 @@ class RHSMInfo(Model):
     """ Repositories that are enabled on the current system through the subscription-manager. """
     existing_product_certificates = fields.List(fields.String(), default=[])
     """ Product certificates that are currently installed on the system. """
+    sca_detected = fields.Boolean(default=False)
+    """ Info about whether SCA manifest was used or not. """
