@@ -30,3 +30,11 @@ def test_sku_report_has_no_skus(monkeypatch):
     assert checkrhsmsku.create_report.report_fields['title'] == 'The system is not registered or subscribed.'
     assert checkrhsmsku.create_report.report_fields['severity'] == 'high'
     assert 'inhibitor' in checkrhsmsku.create_report.report_fields['flags']
+
+
+def test_sku_report_has_sca(monkeypatch):
+    monkeypatch.setattr(rhsm, 'skip_rhsm', lambda: False)
+    monkeypatch.setattr(api, 'consume', lambda x: (RHSMInfo(attached_skus=[], sca_detected=True),))
+    monkeypatch.setattr(checkrhsmsku, 'create_report', create_report_mocked())
+    checkrhsmsku.process()
+    assert not checkrhsmsku.create_report.called

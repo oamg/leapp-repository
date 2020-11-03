@@ -5,10 +5,13 @@ from leapp.models import RHSMInfo
 from leapp.reporting import create_report
 
 
+SCA_TEXT = "Content Access Mode is set to Simple Content Access"
+
+
 def process():
     if not rhsm.skip_rhsm():
         for info in api.consume(RHSMInfo):
-            if not info.attached_skus:
+            if not info.attached_skus and not info.sca_detected:
                 create_report([
                     reporting.Title('The system is not registered or subscribed.'),
                     reporting.Summary(

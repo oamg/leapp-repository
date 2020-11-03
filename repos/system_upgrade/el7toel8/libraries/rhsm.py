@@ -18,6 +18,8 @@ _ATTEMPTS = 5
 _RETRY_SLEEP = 5
 _DEFAULT_RHSM_REPOFILE = '/etc/yum.repos.d/redhat.repo'
 
+SCA_TEXT = "Content Access Mode is set to Simple Content Access"
+
 
 def _rhsm_retry(max_attempts, sleep=None):
     """
@@ -116,6 +118,33 @@ def get_attached_skus(context):
     with _handle_rhsm_exceptions():
         result = context.call(['subscription-manager', 'list', '--consumed'], split=False)
         return _RE_SKU_CONSUMED.findall(result['stdout'])
+
+
+@with_rhsm
+def get_rhsm_status(context):
+    """
+    Retrieve "subscription-manager status" output.
+
+    :param context: An instance of a mounting.IsolatedActions class
+    :type context: mounting.IsolatedActions class
+    :return: "subscription manager status" output
+    :rtype: String
+    """
+    with _handle_rhsm_exceptions():
+        result = context.call(['subscription-manager', 'status'])
+        return result['stdout']
+
+
+def is_manifest_sca(context):
+    """
+    Check if SCA manifest is used in Satellite.
+
+    :param context: An instance of a mounting.IsolatedActions class
+    :type context: mounting.IsolatedActions class
+    :return: True if SCA manifest is used else False
+    :rtype: Boolean
+    """
+    return SCA_TEXT in get_rhsm_status(context)
 
 
 def get_available_repo_ids(context):
@@ -354,4 +383,5 @@ def scan_rhsm_info(context):
     info.enabled_repos = get_enabled_repo_ids(context)
     info.release = get_release(context)
     info.existing_product_certificates.extend(get_existing_product_certificates(context))
+    info.sca_detected = is_manifest_sca(context)
     return info
