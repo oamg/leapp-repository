@@ -103,3 +103,15 @@ def test_is_supported_version(monkeypatch, result, is_alt, src_ver, saphana):
     monkeypatch.setattr(version, 'SUPPORTED_VERSIONS', {'rhel': ['7.8'], 'rhel-alt': ['7.6'], 'rhel-saphana': ['7.7']})
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(src_ver=src_ver))
     assert version.is_supported_version() == result
+
+
+@pytest.mark.parametrize('result,kernel,release_id', [
+    (False, '3.10.0-790.el7.x86_64', 'rhel'),
+    (False, '3.10.0-790.el7.x86_64', 'fedora'),
+    (False, '3.10.0-790.35.2.rt666.1133.el7.x86_64', 'fedora'),
+    (True, '3.10.0-790.35.2.rt666.1133.el7.x86_64', 'rhel'),
+])
+def test_is_rhel_realtime(monkeypatch, result, kernel, release_id):
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(src_ver='7.9', kernel=kernel,
+                                                                 release_id=release_id))
+    assert version.is_rhel_realtime() == result
