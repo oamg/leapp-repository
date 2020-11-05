@@ -17,6 +17,154 @@ NSPAWN_OPTS="--capability=all --bind=/sys --bind=/dev --bind=/dev/pts --bind=/ru
 [ -d /dev/mapper ] && NSPAWN_OPTS="$NSPAWN_OPTS --bind=/dev/mapper"
 export NSPAWN_OPTS="$NSPAWN_OPTS --bind=/run/udev --keep-unit --register=no --timezone=off --resolv-conf=off"
 
+#
+# Temp for collecting and preparing tarbal
+#
+LEAPP_DEBUG_TMP="/tmp/leapp-debug-root"
+
+#
+# Number of times to emit all chunks
+#
+# To avoid spammy parts of console log, second and later emissions
+# take longer delay in-between.  For example, with N being 3,
+# first emission is done immediately, second after 10s, and the
+# third one after 20s.
+#
+IBDMP_ITER=3
+
+#
+# Size of one payload chunk
+#
+# IOW, amount of characters in a single chunk of the base64-encoded
+# payload.   (By base64 standard, these characters are inherently ASCII,
+# so ie. they correspond to bytes.)
+#
+IBDMP_CHUNKSIZE=40
+
+collect_and_dump_debug_data() {
+    #
+    # Collect various debug files and dump tarball using ibdmp
+    #
+    local tmp=$LEAPP_DEBUG_TMP
+    local data=$tmp/data
+    mkdir -p "$data" || { echo >&2 "fatal: cannot create leapp dump data dir: $data"; exit 4; }
+    journalctl -amo verbose >"$data/journalctl.log"
+    mkdir -p "$data/var/lib/leapp"
+    mkdir -p "$data/var/log"
+    cp -vr "$NEWROOT/var/lib/leapp/leapp.db" \
+          "$data/var/lib/leapp"
+    cp -vr "$NEWROOT/var/log/leapp" \
+          "$data/var/log"
+    tar -cJf "$tmp/data.tar.xz" "$data"
+    ibdmp "$tmp/data.tar.xz"
+    rm -r "$tmp"
+}
+
+want_inband_dump() {
+    #
+    # True if dump collection is needed given leapp exit status $1 and kernel option
+    #
+    local leapp_es=$1
+    local mode
+    local kopt
+    kopt=$(getarg 'rd.upgrade.inband')
+    case $kopt in
+        always|never|onerror)   mode="$kopt" ;;
+        "")                     mode="never" ;;
+        *)  warn "ignoring unknown value of rd.upgrade.inband (dump will be disabled): '$kopt'"
+            return 2 ;;
+    esac
+    case $mode:$leapp_es in
+        always:*)   return 0 ;;
+        never:*)    return 1 ;;
+        onerror:0)  return 1 ;;
+        onerror:*)  return 0 ;;
+    esac
+}
+
+ibdmp() {
+    #
+    # Dump tarball $1 in base64 to stdout
+    #
+    # Tarball is encoded in a way that:
+    #
+    #   * final data can be printed to plain text terminal,
+    #   * tarball can be restored by scanning the saved
+    #     terminal output,
+    #   * corruptions caused by extra terminal noise
+    #     (extra lines, extra characters within lines,
+    #     line splits..) can be corrected.
+    #
+    # That is,
+    #
+    #   1. encode tarball using base64
+    #
+    #   2. pre-pend line `chunks=CHUNKS,md5=MD5` where
+    #      MD5 is the MD5 digest of original tarball and
+    #      CHUNKS is number of upcoming Base64 chunks
+    #
+    #   3. decorate each chunk with prefix `N:` where
+    #      N is number of given chunk.
+    #
+    #   4. Finally print all lines (pre-pended "header"
+    #      line and all chunks) several times, where
+    #      every iteration should be prefixed by
+    #      `_ibdmp:I/TTL|` and suffixed by `|`.
+    #      where `I` is iteration number and `TTL` is
+    #      total iteration numbers.
+    #
+    # Decoder should look for strings like this:
+    #
+    #     _ibdmp:I/J|CN:PAYLOAD|
+    #
+    # where I, J and CN are integers and PAYLOAD is a slice of a
+    # base64 string.
+    #
+    # Here, I represents number of iteration, J total of iterations
+    # ($IBDMP_ITER), and CN is number of given chunk within this
+    # iteration.  CN goes from 1 up to number of chunks (CHUNKS)
+    # predicted by header.
+    #
+    # Each set corresponds to one dump of the tarball and error
+    # correction is achieved by merging sets using these rules:
+    #
+    #    1. each set has to contain header (`chunks=CHUNKS,
+    #       md5=MD5`) prevalent header wins.
+    #
+    #    2. each set has to contain number of chunks
+    #       as per header
+    #
+    #    3. chunks are numbered so they can be compared across
+    #       sets; prevalent chunk wins.
+    #
+    # Finally the merged set of chunks is decoded as base64.
+    # Resulting data has to match md5 sum or we're hosed.
+    #
+    local tarball=$1
+    local tmp=$LEAPP_DEBUG_TMP/ibdmp
+    local md5
+    local i
+    mkdir -p "$tmp"
+    base64 -w "$IBDMP_CHUNKSIZE" "$tarball" > "$tmp/b64"
+    md5=$(md5sum "$tarball" | sed 's/ .*//')
+    chunks=$(wc -l <"$tmp/b64")
+    (
+        set +x
+        echo "chunks=$chunks,md5=$md5"
+        cnum=1
+        while read -r chunk; do
+            echo "$cnum:$chunk"
+            ((cnum++))
+        done <"$tmp/b64"
+    ) >"$tmp/report"
+    i=0
+    while test "$i" -lt "$IBDMP_ITER"; do
+        sleep "$((i * 10))"
+        ((i++))
+        sed "s%^%_ibdmp:$i/$IBDMP_ITER|%; s%$%|%; " <"$tmp/report"
+    done
+}
+
 
 do_upgrade() {
     local args="" rv=0
@@ -61,6 +209,11 @@ do_upgrade() {
         # need to handle more stuff around storage at all.
         /usr/bin/systemd-nspawn $NSPAWN_OPTS -D $NEWROOT /usr/bin/bash -c "mount -a; /usr/bin/python3 $LEAPP3_BIN upgrade --resume $args"
         rv=$?
+    fi
+
+    # Dump debug data in case something went wrong
+    if want_inband_dump "$rv"; then
+        collect_and_dump_debug_data
     fi
 
     # NOTE: THIS SHOULD BE AGAIN PART OF LEAPP IDEALLY

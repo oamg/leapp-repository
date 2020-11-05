@@ -4,10 +4,12 @@ LEAPPBIN=/usr/bin/leapp
 LEAPP_VERSION=0.8.10
 
 check() {
-    # [ -x $LEAPPBIN ] || return 1
-    # return 255
-    #[ -x "$LEAPPBIN" ]
-    # NOTE: we don't need $LEAPPBIN FOR NOW as part of of initrd
+    require_binaries base64 || return 1
+    require_binaries tar || return 1
+    require_binaries xz || return 1
+    require_binaries md5sum || return 1
+    require_binaries wc || return 1
+    # 0 enables by default, 255 only on request
     return 0
 }
 
@@ -73,6 +75,12 @@ install() {
 
     # install this one to ensure we are able to sync write
     inst_binary sync
+    # install in-band debugging utilities
+    inst_binary base64
+    inst_binary tar
+    inst_binary xz
+    inst_binary md5sum
+    inst_binary wc
 
     # script to actually run the upgrader binary
     inst_hook upgrade 49 "$moddir/mount_usr.sh"
