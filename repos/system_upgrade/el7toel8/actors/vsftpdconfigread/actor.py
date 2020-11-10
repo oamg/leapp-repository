@@ -5,9 +5,9 @@ from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 
 class VsftpdConfigRead(Actor):
-    '''
+    """
     Reads vsftpd configuration files (/etc/vsftpd/*.conf) and extracts necessary information.
-    '''
+    """
 
     name = 'vsftpd_config_read'
     consumes = (InstalledRedHatSignedRPM,)

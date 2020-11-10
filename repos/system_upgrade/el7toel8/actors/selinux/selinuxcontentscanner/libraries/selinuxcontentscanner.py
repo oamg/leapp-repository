@@ -31,14 +31,14 @@ WORKING_DIRECTORY = '/tmp/selinux/'
 
 
 def check_module(name):
-    '''
+    """
     Check if given module contains one of removed types and comment out corresponding lines.
 
     The function expects a text file "$name" containing cil policy
     to be present in the current directory.
 
     Returns a list of invalid lines.
-    '''
+    """
     try:
         removed = run(['grep', '-w', '-E', "|".join(REMOVED_TYPES_), name], split=True)
         # Add ";" at the beginning of invalid lines (comment them out)
@@ -49,11 +49,11 @@ def check_module(name):
 
 
 def list_selinux_modules():
-    '''
+    """
     Produce list of SELinux policy modules
 
     Returns list of tuples (name,priority)
-    '''
+    """
     try:
         semodule = run(['semodule', '-lfull'], split=True)
     except CalledProcessError:
@@ -75,7 +75,7 @@ def list_selinux_modules():
 
 
 def get_selinux_modules():
-    '''
+    """
     Read all custom SELinux policy modules from the system
 
     Returns 3-tuple (modules, retain_rpms, install_rpms)
@@ -84,7 +84,7 @@ def get_selinux_modules():
     during the upgrade and "install_rpms" is a list of RPMs
     that should be installed during the upgrade
 
-    '''
+    """
 
     modules = list_selinux_modules()
     semodule_list = []
@@ -172,7 +172,7 @@ def get_selinux_modules():
 
 
 def get_selinux_customizations():
-    '''
+    """
     Extract local SELinux customizations introduced by semanage command
 
     Returns tuple (semanage_valid, semanage_removed)
@@ -180,7 +180,7 @@ def get_selinux_customizations():
     which should be safe to re-apply on RHEL 8 system
     and "semanage_removed" is a list of commands that
     will no longer be valid after system upgrade
-    '''
+    """
 
     semanage_removed = []
     semanage_valid = []

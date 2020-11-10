@@ -16,7 +16,7 @@ from leapp.models import SysctlVariablesFacts, SysctlVariable, ActiveKernelModul
 
 
 def aslist(f):
-    ''' Decorator used to convert generator to list '''
+    """ Decorator used to convert generator to list """
     @functools.wraps(f)
     def inner(*args, **kwargs):
         return list(f(*args, **kwargs))
@@ -24,7 +24,7 @@ def aslist(f):
 
 
 def anyendswith(value, ends):
-    ''' Check if `value` ends with one of the possible `ends` '''
+    """ Check if `value` ends with one of the possible `ends` """
     for end in ends:
         if value.endswith(end):
             return True
@@ -32,7 +32,7 @@ def anyendswith(value, ends):
 
 
 def anyhasprefix(value, prefixes):
-    ''' Check if `value` starts with on of the possible `prefixes` '''
+    """ Check if `value` starts with on of the possible `prefixes` """
     for p in prefixes:
         if value.startswith(p):
             return True
@@ -51,7 +51,7 @@ def _get_system_users():
 
 
 def get_system_users_status():
-    ''' Get a list of users from `/etc/passwd` '''
+    """ Get a list of users from `/etc/passwd` """
     return UsersFacts(users=_get_system_users())
 
 
@@ -66,7 +66,7 @@ def _get_system_groups():
 
 
 def get_system_groups_status():
-    ''' Get a list of groups from `/etc/groups` '''
+    """ Get a list of groups from `/etc/groups` """
     return GroupsFacts(groups=_get_system_groups())
 
 
@@ -127,7 +127,7 @@ def _get_active_kernel_modules(logger):
 
 
 def get_active_kernel_modules_status(logger):
-    ''' Get a list of active kernel modules '''
+    """ Get a list of active kernel modules """
     return ActiveKernelModulesFacts(kernel_modules=_get_active_kernel_modules(logger))
 
 
@@ -157,7 +157,7 @@ def _get_sysctls():
 
 
 def get_sysctls_status():
-    r''' Get a list of stable `sysctls` variables
+    r""" Get a list of stable `sysctls` variables
 
         Note that some variables are inherently unstable and we need to blacklist
         them:
@@ -166,17 +166,17 @@ def get_sysctls_status():
                 | grep -E '^\+[a-z]'\
                 | cut -d' ' -f1\
                 | cut -d+ -f2
-    '''
+    """
     return SysctlVariablesFacts(sysctl_variables=_get_sysctls())
 
 
 def get_repositories_status():
-    ''' Get a basic information about YUM repositories installed in the system '''
+    """ Get a basic information about YUM repositories installed in the system """
     return RepositoriesFacts(repositories=repofileutils.get_parsed_repofiles())
 
 
 def get_selinux_status():
-    ''' Get SELinux status information '''
+    """ Get SELinux status information """
     # will be None if something went wrong or contain SELinuxFacts otherwise
     res = None
     try:
@@ -209,7 +209,7 @@ def get_selinux_status():
 
 
 def get_firewalls_status():
-    ''' Get firewalld status information '''
+    """ Get firewalld status information """
     logger = logging.getLogger('get_firewalld_status')
 
     def _get_firewall_status(service_name):

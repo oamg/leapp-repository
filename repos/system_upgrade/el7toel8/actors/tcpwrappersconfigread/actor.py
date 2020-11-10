@@ -5,9 +5,9 @@ from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 
 class TcpWrappersConfigRead(Actor):
-    '''
+    """
     Parse tcp_wrappers configuration files /etc/hosts.{allow,deny}.
-    '''
+    """
 
     name = 'tcp_wrappers_config_read'
     consumes = ()

@@ -33,9 +33,9 @@ class RhelUpgradeCommand(dnf.cli.Command):
         parser.add_argument('filename')
 
     def _process_packages(self, pkg_set, op):
-        '''
+        """
         Adds list of packages for given operation to the transaction
-        '''
+        """
         pkgs_notfound = []
 
         for pkg_spec in pkg_set:

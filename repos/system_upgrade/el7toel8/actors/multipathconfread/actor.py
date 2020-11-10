@@ -5,10 +5,10 @@ from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 
 class MultipathConfRead(Actor):
-    '''
+    """
     Reads multipath configuration files (multipath.conf, and any files in
     the multipath config directory) and extracts the necessary information
-    '''
+    """
 
     name = 'multipath_conf_read'
     consumes = (InstalledRedHatSignedRPM,)

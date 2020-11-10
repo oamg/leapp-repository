@@ -7,7 +7,7 @@ from leapp.tags import IPUWorkflowTag, FactsPhaseTag
 
 
 class SSSDFacts(Actor):
-    '''
+    """
     Check SSSD configuration for changes in RHEL8 and report them in model.
 
     These changes are:
@@ -15,7 +15,7 @@ class SSSDFacts(Actor):
     - ldap_groups_use_matching_rule_in_chain was removed and will be ignored
     - ldap_initgroups_use_matching_rule_in_chain was removed and will be ignored
     - ldap_sudo_include_regexp changed default from true to false
-    '''
+    """
 
     name = 'sssd_facts'
     consumes = ()
