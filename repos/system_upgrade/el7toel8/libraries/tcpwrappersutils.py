@@ -65,7 +65,7 @@ def _daemon_list_matches_daemon(daemon_list, daemon, recursion_depth):
 
 
 def config_applies_to_daemon(facts, daemon):
-    '''
+    """
     Returns True if the specified tcp_wrappers configuration applies to the specified daemon.
     Otherwise returns False.
 
@@ -75,7 +75,7 @@ def config_applies_to_daemon(facts, daemon):
 
     :param facts: A TcpWrappersFacts representation of the tcp_wrappers configuration
     :param daemon: The daemon name
-    '''
+    """
     for daemon_list in facts.daemon_lists:
         value = [item.lower() for item in daemon_list.value]
         if _daemon_list_matches_daemon(value, daemon, 0):

@@ -5,14 +5,14 @@ from leapp.libraries.actor import selinuxcontentscanner
 
 
 class SELinuxContentScanner(Actor):
-    '''
+    """
     Scan the system for any SELinux customizations
 
     Find SELinux policy customizations (custom policy modules and changes
     introduced by semanage) and save them in SELinuxModules and SELinuxCustom
     models. Customizations that are incompatible with SELinux policy on RHEL-8
     are removed.
-    '''
+    """
 
     name = 'selinuxcontentscanner'
     consumes = (SELinuxFacts,)

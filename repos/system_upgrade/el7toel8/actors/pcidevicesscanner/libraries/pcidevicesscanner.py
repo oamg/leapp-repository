@@ -3,7 +3,7 @@ from leapp.models import PCIDevices, PCIDevice
 
 
 def parse_pci_device(block):
-    ''' Parse one block from lspci output describing one PCI device '''
+    """ Parse one block from lspci output describing one PCI device """
     device = {
         'Slot': '',
         'Class': '',
@@ -50,17 +50,17 @@ def parse_pci_device(block):
 
 
 def parse_pci_devices(output):
-    ''' Parse lspci output and return a list of PCI devices '''
+    """ Parse lspci output and return a list of PCI devices """
     return [parse_pci_device(block) for block in output.split('\n\n')[:-1]]
 
 
 def produce_pci_devices(producer, devices):
-    ''' Produce a Leapp message with all PCI devices '''
+    """ Produce a Leapp message with all PCI devices """
     producer(PCIDevices(devices=devices))
 
 
 def scan_pci_devices(producer):
-    ''' Scan system PCI Devices '''
+    """ Scan system PCI Devices """
     output = run(['lspci', '-vmmk'], checked=False)['stdout']
     devices = parse_pci_devices(output)
     produce_pci_devices(producer, devices)

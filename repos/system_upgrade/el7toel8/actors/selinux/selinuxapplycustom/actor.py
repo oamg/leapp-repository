@@ -11,13 +11,13 @@ WORKING_DIRECTORY = '/tmp/selinux/'
 
 
 class SELinuxApplyCustom(Actor):
-    '''
+    """
     Re-apply SELinux customizations from RHEL-7 installation
 
     Re-apply SELinux policy customizations (custom policy modules and changes
     introduced by semanage). Any changes (due to incompatiblity with RHEL-8
     SELinux policy) are reported to user.
-    '''
+    """
     name = 'selinuxapplycustom'
     consumes = (SELinuxCustom, SELinuxModules)
     produces = ()
