@@ -54,7 +54,7 @@ def ipa_warn_pkg_installed(ipainfo):
         reporting.Summary(summary),
         reporting.Remediation(
             hint="Remove unused ipa-server package",
-            commands=[["yum", "remove", "ipa-server"]],
+            commands=[["yum", "remove", "-y", "ipa-server"]],
         ),
         reporting.ExternalLink(
             url=MIGRATION_GUIDE, title="Migrating IdM from RHEL 7 to 8",
