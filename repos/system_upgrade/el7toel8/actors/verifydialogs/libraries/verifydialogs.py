@@ -19,5 +19,6 @@ def check_dialogs(inhibit_if_no_userchoice=True):
                        reporting.Severity(reporting.Severity.HIGH),
                        reporting.Summary(summary.format('\n'.join(sections))),
                        reporting.Flags([reporting.Flags.INHIBITOR] if inhibit_if_no_userchoice else []),
-                       reporting.Remediation(hint=dialogs_remediation, commands=cmd_remediation)]
+                       reporting.Remediation(hint=dialogs_remediation, commands=cmd_remediation),
+                       reporting.Key(dialog.key)]
         reporting.create_report(report_data + dialog_resources)
