@@ -29,7 +29,7 @@ def test_sku_report_has_no_skus(monkeypatch):
     assert checkrhsmsku.create_report.called == 1
     assert checkrhsmsku.create_report.report_fields['title'] == 'The system is not registered or subscribed.'
     assert checkrhsmsku.create_report.report_fields['severity'] == 'high'
-    assert 'inhibitor' in checkrhsmsku.create_report.report_fields['flags']
+    assert 'inhibitor' in checkrhsmsku.create_report.report_fields['groups']
 
 
 def test_sku_report_has_sca(monkeypatch):

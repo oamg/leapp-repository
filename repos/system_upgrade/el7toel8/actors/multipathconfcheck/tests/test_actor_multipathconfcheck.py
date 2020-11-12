@@ -8,7 +8,7 @@ def _assert_default_checker_report(report, pathname):
     assert report['title'] == \
         'Unsupported device-mapper-multipath configuration'
     assert report['severity'] == 'high'
-    assert 'inhibitor' in report['flags']
+    assert 'inhibitor' in report['groups']
     assert pathname in report['summary']
 
 

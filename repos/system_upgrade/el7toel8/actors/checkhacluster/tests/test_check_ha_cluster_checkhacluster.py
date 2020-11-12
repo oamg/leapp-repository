@@ -5,7 +5,7 @@ from leapp.libraries.actor.checkhacluster import COROSYNC_CONF_LOCATION, CIB_LOC
 def assert_inhibits(reports, node_type):
     assert len(reports) == 1
     report_fields = reports[0].report
-    assert "inhibitor" in report_fields['flags']
+    assert "inhibitor" in report_fields['groups']
     assert "cluster {0}".format(node_type) in report_fields["summary"]
 
 

@@ -23,4 +23,4 @@ def test_invalid_architecture(monkeypatch):
     assert 'Unsupported architecture' in reporting.create_report.report_fields['title']
     assert 'Upgrade process is only supported' in reporting.create_report.report_fields['summary']
     assert reporting.create_report.report_fields['severity'] == 'high'
-    assert 'inhibitor' in reporting.create_report.report_fields['flags']
+    assert 'inhibitor' in reporting.create_report.report_fields['groups']
