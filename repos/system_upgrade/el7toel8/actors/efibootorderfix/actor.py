@@ -32,7 +32,6 @@ class EfiCheckBoot(Actor):
                 ),
                 reporting.Remediation(commands=[['yum', '-y', 'install', 'efibootmgr']]),
                 reporting.RelatedResource('package', 'efibootmgr'),
-                reporting.Flags([reporting.Flags.INHIBITOR]),
                 reporting.Severity(reporting.Severity.HIGH),
-                reporting.Tags([reporting.Tags.BOOT])
+                reporting.Groups([reporting.Groups.BOOT, reporting.Groups.INHIBITOR])
             ])

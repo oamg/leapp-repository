@@ -47,6 +47,5 @@ class PersistentNetNamesDisable(Actor):
                     'Please read the article at https://access.redhat.com/solutions/4067471 for more information.'
                 ),
                 reporting.Severity(reporting.Severity.HIGH),
-                reporting.Tags([reporting.Tags.NETWORK]),
-                reporting.Flags([reporting.Flags.INHIBITOR])
+                reporting.Groups([reporting.Groups.NETWORK, reporting.Groups.INHIBITOR]),
             ])

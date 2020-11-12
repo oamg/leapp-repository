@@ -40,6 +40,6 @@ class CheckRootSymlinks(Actor):
                     'Please change these links to relative ones.'
                 ),
                 reporting.Severity(reporting.Severity.HIGH),
-                reporting.Flags([reporting.Flags.INHIBITOR]),
+                reporting.Groups([reporting.Groups.INHIBITOR]),
                 reporting.Remediation(commands=remediation)
             ])

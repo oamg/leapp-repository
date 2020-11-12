@@ -28,7 +28,7 @@ class CheckBrltty(Actor):
                     'The -U [--update-interval=] brltty option has been removed.'
                 ),
                 reporting.Severity(reporting.Severity.LOW),
-                reporting.Tags([reporting.Tags.ACCESSIBILITY]),
+                reporting.Groups([reporting.Groups.ACCESSIBILITY]),
                 reporting.Remediation(
                     hint='Please update your scripts to be compatible with the changes.'
                 )
@@ -48,7 +48,7 @@ class CheckBrltty(Actor):
                     reporting.Title('brltty configuration will be migrated'),
                     reporting.Summary(report_summary),
                     reporting.Severity(reporting.Severity.LOW),
-                    reporting.Tags([reporting.Tags.ACCESSIBILITY]),
+                    reporting.Groups([reporting.Groups.ACCESSIBILITY]),
                 ] + related)
 
                 self.produce(BrlttyMigrationDecision(migrate_file=migrate_file, migrate_bt=migrate_bt,

@@ -70,8 +70,7 @@ def process():
                 .format(CUSTOM_REPO_PATH, summary_ctrf)
             )),
             reporting.Severity(reporting.Severity.HIGH),
-            reporting.Tags([reporting.Tags.SANITY]),
-            reporting.Flags([reporting.Flags.INHIBITOR]),
+            reporting.Groups([reporting.Groups.SANITY, reporting.Groups.INHIBITOR]),
             reporting.ExternalLink(url=_IPU_DOC_URL, title='UPGRADING TO RHEL 8'),
             reporting.RelatedResource('file', CUSTOM_REPO_PATH),
         ])

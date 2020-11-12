@@ -33,12 +33,12 @@ class CheckSelinux(Actor):
                     reporting.Title('SElinux disabled in configuration file but currently enabled'),
                     reporting.Summary('This message is to inform user about non-standard SElinux configuration.'),
                     reporting.Severity(reporting.Severity.LOW),
-                    reporting.Tags([reporting.Tags.SELINUX, reporting.Tags.SECURITY])
+                    reporting.Groups([reporting.Groups.SELINUX, reporting.Groups.SECURITY])
                 ])
             create_report([
                 reporting.Title('SElinux disabled'),
                 reporting.Summary('SElinux disabled, continuing...'),
-                reporting.Tags([reporting.Tags.SELINUX, reporting.Tags.SECURITY])
+                reporting.Groups([reporting.Groups.SELINUX, reporting.Groups.SECURITY])
             ])
             return
 
@@ -49,7 +49,7 @@ class CheckSelinux(Actor):
                 reporting.Title('SElinux relabeling has been scheduled'),
                 reporting.Summary('SElinux relabeling has been scheduled as the status was permissive/enforcing.'),
                 reporting.Severity(reporting.Severity.INFO),
-                reporting.Tags([reporting.Tags.SELINUX, reporting.Tags.SECURITY])
+                reporting.Groups([reporting.Groups.SELINUX, reporting.Groups.SECURITY])
             ])
 
         if conf_status == 'enforcing':
@@ -60,5 +60,5 @@ class CheckSelinux(Actor):
                 reporting.Summary('SElinux will be set to permissive mode. Current mode: enforcing. This action is '
                                   'required by the upgrade process'),
                 reporting.Severity(reporting.Severity.LOW),
-                reporting.Tags([reporting.Tags.SELINUX, reporting.Tags.SECURITY])
+                reporting.Groups([reporting.Groups.SELINUX, reporting.Groups.SECURITY])
             ])

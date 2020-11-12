@@ -29,9 +29,9 @@ class CheckDosfstools(Actor):
                     'selected with the -r option.\n'
                 ),
                 reporting.Severity(reporting.Severity.LOW),
-                reporting.Tags([
-                        reporting.Tags.FILESYSTEM,
-                        reporting.Tags.TOOLS
+                reporting.Groups([
+                        reporting.Groups.FILESYSTEM,
+                        reporting.Groups.TOOLS
                 ]),
                 reporting.Remediation(hint='Please update your scripts to be compatible with the changes.'),
                 reporting.RelatedResource('package', 'dosfstools')

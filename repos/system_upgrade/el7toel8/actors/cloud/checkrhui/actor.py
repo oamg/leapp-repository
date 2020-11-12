@@ -44,7 +44,7 @@ class CheckRHUI(Actor):
                             'which implies RHSM usage (valid subscription is needed).'
                         ),
                         reporting.Severity(reporting.Severity.INFO),
-                        reporting.Tags([reporting.Tags.PUBLIC_CLOUD]),
+                        reporting.Groups([reporting.Groups.PUBLIC_CLOUD]),
                     ])
                     return
                 # AWS RHUI package is provided and signed by RH but the Azure one not
@@ -57,8 +57,9 @@ class CheckRHUI(Actor):
                         ),
                         reporting.Severity(reporting.Severity.HIGH),
                         reporting.RelatedResource('package', info['leapp_pkg']),
-                        reporting.Flags([reporting.Flags.INHIBITOR]),
-                        reporting.Tags([reporting.Tags.PUBLIC_CLOUD, reporting.Tags.RHUI]),
+                        reporting.Groups([reporting.Groups.PUBLIC_CLOUD,
+                                          reporting.Groups.RHUI,
+                                          reporting.Groups.INHIBITOR]),
                         reporting.Remediation(commands=[['yum', 'install', '-y', info['leapp_pkg']]])
                     ])
                     return

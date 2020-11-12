@@ -8,11 +8,11 @@ from leapp.reporting import create_report
 from leapp import reporting
 
 
-COMMON_REPORT_TAGS = [
-    reporting.Tags.AUTHENTICATION,
-    reporting.Tags.SECURITY,
-    reporting.Tags.NETWORK,
-    reporting.Tags.SERVICES
+COMMON_REPORT_GROUPS = [
+    reporting.Groups.AUTHENTICATION,
+    reporting.Groups.SECURITY,
+    reporting.Groups.NETWORK,
+    reporting.Groups.SERVICES
 ]
 
 
@@ -53,14 +53,13 @@ class OpenSshPermitRootLoginCheck(Actor):
                     'which will default in RHEL8 to "prohibit-password".'
                 ),
                 reporting.Severity(reporting.Severity.HIGH),
-                reporting.Tags(COMMON_REPORT_TAGS),
+                reporting.Groups(COMMON_REPORT_GROUPS + [reporting.Groups.INHIBITOR]),
                 reporting.Remediation(
                     hint='If you depend on remote root logins using '
                          'passwords, consider setting up a different '
                          'user for remote administration or adding '
                          '"PermitRootLogin yes" to sshd_config.'
                 ),
-                reporting.Flags([reporting.Flags.INHIBITOR])
             ] + resources)
 
         # Check if there is at least one PermitRootLogin other than "no"
@@ -79,12 +78,11 @@ class OpenSshPermitRootLoginCheck(Actor):
                     'so your server migth get inaccessible.'
                 ),
                 reporting.Severity(reporting.Severity.HIGH),
-                reporting.Tags(COMMON_REPORT_TAGS),
+                reporting.Groups(COMMON_REPORT_GROUPS + [reporting.Groups.INHIBITOR]),
                 reporting.Remediation(
                     hint='Consider using different user for administrative '
                          'logins or make sure your configration file '
                          'contains the line "PermitRootLogin yes" '
                          'in global context if desired.'
                 ),
-                reporting.Flags([reporting.Flags.INHIBITOR])
             ] + resources)

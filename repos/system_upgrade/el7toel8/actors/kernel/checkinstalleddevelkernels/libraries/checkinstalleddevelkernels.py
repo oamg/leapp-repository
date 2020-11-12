@@ -35,8 +35,7 @@ def process():
             reporting.Title(title),
             reporting.Summary(summary),
             reporting.Severity(reporting.Severity.HIGH),
-            reporting.Tags([reporting.Tags.KERNEL]),
-            reporting.Flags([reporting.Flags.INHIBITOR]),
+            reporting.Groups([reporting.Groups.KERNEL, reporting.Groups.INHIBITOR]),
             reporting.Remediation(hint=hint, commands=commands),
             reporting.RelatedResource('package', 'kernel-devel')
         ])

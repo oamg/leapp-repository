@@ -39,13 +39,11 @@ class CheckFirewalld(Actor):
                 reporting.Title('Firewalld is using an unsupported ebtables table.'),
                 reporting.Summary('ebtables in RHEL-8 does not support these tables:{}{}'.format(*format_tuple)),
                 reporting.Severity(reporting.Severity.HIGH),
-                reporting.Tags([
-                        reporting.Tags.FIREWALL,
-                        reporting.Tags.SECURITY,
-                        reporting.Tags.NETWORK
-                ]),
-                reporting.Flags([
-                        reporting.Flags.INHIBITOR
+                reporting.Groups([
+                        reporting.Groups.FIREWALL,
+                        reporting.Groups.SECURITY,
+                        reporting.Groups.NETWORK,
+                        reporting.Groups.INHIBITOR
                 ]),
                 reporting.Remediation(
                     hint='Remove firewalld direct rules that use these ebtables tables:{}{}'.format(*format_tuple)
@@ -62,13 +60,11 @@ class CheckFirewalld(Actor):
                     'These ipset types are not supported by firewalld\'s nftables backend:{}{}'.format(*format_tuple)
                 ),
                 reporting.Severity(reporting.Severity.HIGH),
-                reporting.Tags([
-                        reporting.Tags.FIREWALL,
-                        reporting.Tags.SECURITY,
-                        reporting.Tags.NETWORK
-                ]),
-                reporting.Flags([
-                        reporting.Flags.INHIBITOR
+                reporting.Groups([
+                        reporting.Groups.FIREWALL,
+                        reporting.Groups.SECURITY,
+                        reporting.Groups.NETWORK,
+                        reporting.Groups.INHIBITOR
                 ]),
                 reporting.Remediation(
                     hint='Remove ipsets of these types from firewalld:{}{}'.format(*format_tuple)

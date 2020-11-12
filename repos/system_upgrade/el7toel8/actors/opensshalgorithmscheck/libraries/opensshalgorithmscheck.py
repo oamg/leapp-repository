@@ -46,17 +46,17 @@ def process(openssh_messages):
                 ''.format(','.join(found_ciphers))
             ),
             reporting.Severity(reporting.Severity.HIGH),
-            reporting.Tags([
-                    reporting.Tags.AUTHENTICATION,
-                    reporting.Tags.SECURITY,
-                    reporting.Tags.NETWORK,
-                    reporting.Tags.SERVICES
+            reporting.Groups([
+                    reporting.Groups.AUTHENTICATION,
+                    reporting.Groups.SECURITY,
+                    reporting.Groups.NETWORK,
+                    reporting.Groups.SERVICES,
+                    reporting.Groups.INHIBITOR
             ]),
             reporting.Remediation(
                 hint='Remove the following ciphers from sshd_config: '
                      '{}'.format(','.join(found_ciphers))
             ),
-            reporting.Flags([reporting.Flags.INHIBITOR])
         ] + resources)
 
     if found_macs:
@@ -69,14 +69,14 @@ def process(openssh_messages):
                 ''.format(','.join(found_macs))
             ),
             reporting.Severity(reporting.Severity.HIGH),
-            reporting.Tags([
-                    reporting.Tags.AUTHENTICATION,
-                    reporting.Tags.SECURITY,
-                    reporting.Tags.NETWORK,
-                    reporting.Tags.SERVICES
+            reporting.Groups([
+                    reporting.Groups.AUTHENTICATION,
+                    reporting.Groups.SECURITY,
+                    reporting.Groups.NETWORK,
+                    reporting.Groups.SERVICES,
+                    reporting.Groups.INHIBITOR
             ]),
             reporting.Remediation(
                 hint='Remove the following MACs from sshd_config: {}'.format(','.join(found_macs))
             ),
-            reporting.Flags([reporting.Flags.INHIBITOR])
         ] + resources)

@@ -16,8 +16,7 @@ def inhibit(node_type):
             " It seems to be a cluster {0}.".format(node_type)
         ),
         reporting.Severity(reporting.Severity.HIGH),
-        reporting.Tags([reporting.Tags.HIGH_AVAILABILITY]),
-        reporting.Flags([reporting.Flags.INHIBITOR]),
+        reporting.Groups([reporting.Groups.HIGH_AVAILABILITY, reporting.Groups.INHIBITOR]),
         reporting.ExternalLink(
             url="https://access.redhat.com/articles/2059253",
             title=(

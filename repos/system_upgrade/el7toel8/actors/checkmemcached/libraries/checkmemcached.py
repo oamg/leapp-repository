@@ -4,7 +4,7 @@ from leapp import reporting
 from leapp.libraries.stdlib import api, run
 
 
-COMMON_REPORT_TAGS = [reporting.Tags.SERVICES]
+COMMON_REPORT_GROUPS = [reporting.Groups.SERVICES]
 
 
 sysconfig_path = '/etc/sysconfig/memcached'
@@ -48,7 +48,7 @@ def check_memcached(memcached_installed):
             reporting.Title('memcached service is using default configuration'),
             reporting.Summary('memcached in RHEL8 listens on loopback only and has UDP port disabled by default'),
             reporting.Severity(reporting.Severity.MEDIUM),
-            reporting.Tags(COMMON_REPORT_TAGS),
+            reporting.Groups(COMMON_REPORT_GROUPS),
         ] + related)
 
     elif not disabled_udp_port:
@@ -58,7 +58,7 @@ def check_memcached(memcached_installed):
                 'memcached in RHEL7 has UDP port enabled by default, but it is disabled by default in RHEL8'
             ),
             reporting.Severity(reporting.Severity.MEDIUM),
-            reporting.Tags(COMMON_REPORT_TAGS),
+            reporting.Groups(COMMON_REPORT_GROUPS),
         ] + related)
 
     else:
@@ -66,5 +66,5 @@ def check_memcached(memcached_installed):
             reporting.Title('memcached has already disabled UDP port'),
             reporting.Summary('memcached in RHEL8 has UDP port disabled by default'),
             reporting.Severity(reporting.Severity.LOW),
-            reporting.Tags(COMMON_REPORT_TAGS),
+            reporting.Groups(COMMON_REPORT_GROUPS),
         ] + related)

@@ -85,10 +85,10 @@ class RemoveOldPAMModulesCheck(Actor):
                 'of {0}.'.format(module)
             ),
             reporting.Severity(reporting.Severity.MEDIUM),
-            reporting.Tags([
-                    reporting.Tags.AUTHENTICATION,
-                    reporting.Tags.SECURITY,
-                    reporting.Tags.TOOLS
+            reporting.Groups([
+                    reporting.Groups.AUTHENTICATION,
+                    reporting.Groups.SECURITY,
+                    reporting.Groups.TOOLS
             ]),
             reporting.Remediation(hint='Configure SSSD to replace {0}'.format(module)),
             reporting.RelatedResource('package', 'sssd')
@@ -107,12 +107,12 @@ class RemoveOldPAMModulesCheck(Actor):
                 'before the upgrade process can continue.'.format(module)
             ),
             reporting.Severity(reporting.Severity.HIGH),
-            reporting.Tags([
-                    reporting.Tags.AUTHENTICATION,
-                    reporting.Tags.SECURITY,
-                    reporting.Tags.TOOLS
+            reporting.Groups([
+                    reporting.Groups.AUTHENTICATION,
+                    reporting.Groups.SECURITY,
+                    reporting.Groups.TOOLS,
+                    reporting.Groups.INHIBITOR
             ]),
-            reporting.Flags([reporting.Flags.INHIBITOR]),
             reporting.Remediation(
                 hint='Disable {0} module and switch to SSSD to recover its functionality.'.format(module)),
             reporting.RelatedResource('package', 'sssd')

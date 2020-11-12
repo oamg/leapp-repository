@@ -29,8 +29,8 @@ class SetPermissiveSelinux(Actor):
                         reporting.Title('Could not set SElinux into permissive mode'),
                         reporting.Summary('{}'.format(err_msg)),
                         reporting.Severity(reporting.Severity.HIGH),
-                        reporting.Tags([reporting.Tags.SELINUX, reporting.Tags.SECURITY]),
-                        reporting.Flags([reporting.Flags.FAILURE]),
+                        reporting.Groups([reporting.Groups.SELINUX, reporting.Groups.SECURITY,
+                                          reporting.Groups.FAILURE]),
                         reporting.RelatedResource('file', '/etc/selinux/config')
                     ])
                     self.log.critical('Could not set SElinux into permissive mode: %s.' % err_msg)

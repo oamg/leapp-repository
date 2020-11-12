@@ -33,7 +33,6 @@ def inhibit_upgrade(avail_bytes):
              additional_mib_needed)
         ),
         reporting.Severity(reporting.Severity.HIGH),
-        reporting.Tags([reporting.Tags.FILESYSTEM]),
-        reporting.Flags([reporting.Flags.INHIBITOR]),
+        reporting.Groups([reporting.Groups.FILESYSTEM, reporting.Groups.INHIBITOR]),
         reporting.RelatedResource('directory', '/boot')
     ])

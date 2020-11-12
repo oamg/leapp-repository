@@ -144,8 +144,7 @@ def get_events(pes_events_filepath):
             reporting.Title(title),
             reporting.Summary(summary),
             reporting.Severity(reporting.Severity.HIGH),
-            reporting.Tags([reporting.Tags.SANITY]),
-            reporting.Flags([reporting.Flags.INHIBITOR]),
+            reporting.Groups([reporting.Groups.SANITY, reporting.Groups.INHIBITOR]),
             reporting.RelatedResource('file', pes_events_filepath)
         ])
         raise StopActorExecution()
@@ -544,7 +543,7 @@ def report_skipped_packages(title, message, package_repo_pairs, remediation=None
         reporting.Title(title),
         reporting.Summary(summary),
         reporting.Severity(reporting.Severity.HIGH),
-        reporting.Tags([reporting.Tags.REPOSITORY]),
+        reporting.Groups([reporting.Groups.REPOSITORY]),
     ]
     if remediation:
         report_content += [reporting.Remediation(hint=remediation)]

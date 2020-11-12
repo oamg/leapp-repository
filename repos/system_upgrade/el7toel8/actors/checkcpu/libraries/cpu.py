@@ -30,8 +30,7 @@ def process():
             reporting.Title("The processor is not supported by the target system."),
             reporting.Summary(summary),
             reporting.Severity(reporting.Severity.HIGH),
-            reporting.Tags([reporting.Tags.SANITY]),
-            reporting.Flags([reporting.Flags.INHIBITOR]),
+            reporting.Groups([reporting.Groups.SANITY, reporting.Groups.INHIBITOR]),
             reporting.ExternalLink(
                 title="Considerations in adopting RHEL 8",
                 url=("https://access.redhat.com/ecosystem/hardware/#/search?p=1&"
