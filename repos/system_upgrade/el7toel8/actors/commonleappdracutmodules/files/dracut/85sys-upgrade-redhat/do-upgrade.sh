@@ -14,7 +14,7 @@ export LEAPP3_BIN=$LEAPPHOME/leapp3
 export NEWROOT=${NEWROOT:-"/sysroot"}
 
 NSPAWN_OPTS="--capability=all --bind=/sys --bind=/dev --bind=/dev/pts --bind=/run/systemd --bind=/proc"
-[ -d /dev/mapper ] NSPAWN_OPTS="$NSPAWN_OPTS --bind=/dev/mapper"
+[ -d /dev/mapper ] && NSPAWN_OPTS="$NSPAWN_OPTS --bind=/dev/mapper"
 export NSPAWN_OPTS="$NSPAWN_OPTS --bind=/run/udev --keep-unit --register=no --timezone=off --resolv-conf=off"
 
 
