@@ -257,14 +257,14 @@ def test_get_events(monkeypatch):
     with pytest.raises(StopActorExecution):
         get_events(os.path.join(CUR_DIR, 'files/sample02.json'))
     assert reporting.create_report.called == 1
-    assert 'inhibitor' in reporting.create_report.report_fields['flags']
+    assert 'inhibitor' in reporting.create_report.report_fields['groups']
 
     reporting.create_report.called = 0
     reporting.create_report.model_instances = []
     with pytest.raises(StopActorExecution):
         get_events(os.path.join(CUR_DIR, 'files/sample03.json'))
     assert reporting.create_report.called == 1
-    assert 'inhibitor' in reporting.create_report.report_fields['flags']
+    assert 'inhibitor' in reporting.create_report.report_fields['groups']
 
 
 def test_pes_data_not_found(monkeypatch):
@@ -276,7 +276,7 @@ def test_pes_data_not_found(monkeypatch):
     with pytest.raises(StopActorExecution):
         get_events('/etc/leapp/pes-data.json')
     assert reporting.create_report.called == 1
-    assert 'inhibitor' in reporting.create_report.report_fields['flags']
+    assert 'inhibitor' in reporting.create_report.report_fields['groups']
 
 
 def test_add_output_pkgs_to_transaction_conf():

@@ -17,7 +17,7 @@ def test_skip_check(monkeypatch):
     assert reporting.create_report.called == 1
     assert 'Skipped OS release check' in reporting.create_report.report_fields['title']
     assert reporting.create_report.report_fields['severity'] == 'high'
-    assert 'flags' not in reporting.create_report.report_fields
+    assert 'inhibitor' not in reporting.create_report.report_fields['groups']
 
 
 def test_no_skip_check(monkeypatch):
@@ -35,8 +35,8 @@ def test_not_supported_release(monkeypatch):
     checkosrelease.check_os_version()
     assert reporting.create_report.called == 1
     assert 'The installed OS version is not supported' in reporting.create_report.report_fields['title']
-    assert 'flags' in reporting.create_report.report_fields
-    assert 'inhibitor' in reporting.create_report.report_fields['flags']
+    assert 'groups' in reporting.create_report.report_fields
+    assert 'inhibitor' in reporting.create_report.report_fields['groups']
 
 
 def test_supported_release(monkeypatch):

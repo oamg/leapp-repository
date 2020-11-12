@@ -12,7 +12,7 @@ def test_actor_with_luks(current_actor_context):
     current_actor_context.run()
     assert current_actor_context.consume(Report)
     report_fields = current_actor_context.consume(Report)[0].report
-    assert 'inhibitor' in report_fields['flags']
+    assert 'inhibitor' in report_fields['groups']
 
 
 def test_actor_without_luks(current_actor_context):

@@ -48,24 +48,24 @@ def test_gnome_desktop_KDE_apps(current_actor_context):
 
 def test_KDE_desktop_no_apps(current_actor_context):
     """
-    "Inhibitor" flag in report expected.
+    "Inhibitor" group in report expected.
     """
     current_actor_context.feed(KDE_desktop_env)
     current_actor_context.feed(no_KDE_apps)
     current_actor_context.run()
     message = current_actor_context.consume(Report)[0]
-    assert "inhibitor" in message.report["flags"]
+    assert "inhibitor" in message.report["groups"]
 
 
 def test_KDE_desktop_KDE_apps(current_actor_context):
     """
-    "Inhibitor" flag in report expected.
+    "Inhibitor" group in report expected.
     """
     current_actor_context.feed(KDE_desktop_env)
     current_actor_context.feed(some_KDE_apps)
     current_actor_context.run()
     message = current_actor_context.consume(Report)[0]
-    assert "inhibitor" in message.report["flags"]
+    assert "inhibitor" in message.report["groups"]
 
 
 def test_both_desktops_no_apps(current_actor_context):

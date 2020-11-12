@@ -19,7 +19,7 @@ def test_inhibit_ipa_configured(current_actor_context):
 
     assert len(reports) == 1
     fields = reports[0].report
-    assert "inhibitor" in fields["flags"]
+    assert "inhibitor" in fields["groups"]
     assert "ipa-server" in fields["title"]
 
 
@@ -30,7 +30,7 @@ def test_warn_server_pkg(current_actor_context):
 
     assert len(reports) == 1
     fields = reports[0].report
-    assert "flags" not in fields
+    assert "inhibitor" not in fields["groups"]
     assert "ipa-server" in fields["title"]
 
 

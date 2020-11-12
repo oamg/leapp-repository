@@ -13,7 +13,7 @@ def test_removed_vars(monkeypatch):
     checkremovedenvvars.process()
     assert api.current_actor.produce.called == 1
     assert 'LEAPP_GRUB_DEVICE' in api.current_actor.produce.model_instances[0].report['summary']
-    assert 'inhibitor' in api.current_actor.produce.model_instances[0].report['flags']
+    assert 'inhibitor' in api.current_actor.produce.model_instances[0].report['groups']
 
 
 def test_no_removed_vars(monkeypatch):

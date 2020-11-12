@@ -48,6 +48,6 @@ def test_inhibit_upgrade(monkeypatch):
     inhibit_upgrade(bytes_available)
 
     assert reporting.create_report.called == 1
-    assert 'inhibitor' in reporting.create_report.report_fields['flags']
+    assert 'inhibitor' in reporting.create_report.report_fields['groups']
     mib_needed = (MIN_AVAIL_BYTES_FOR_BOOT - bytes_available) / 2**20
     assert "needs additional {0} MiB".format(mib_needed) in reporting.create_report.report_fields['summary']

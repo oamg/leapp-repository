@@ -15,7 +15,7 @@ def test_actor_with_btrfs_module(current_actor_context):
     current_actor_context.feed(create_modulesfacts(kernel_modules=with_btrfs))
     current_actor_context.run()
     report_fields = current_actor_context.consume(Report)[0].report
-    assert 'inhibitor' in report_fields['flags']
+    assert 'inhibitor' in report_fields['groups']
 
 
 def test_actor_without_btrfs_module(current_actor_context):

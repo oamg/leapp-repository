@@ -76,9 +76,9 @@ def test_checktargetrepos_no_rhsm(monkeypatch, enable_repos, custom_target_repos
 
     if not custom_target_repos:
         assert reporting.create_report.called == 1
-        assert 'inhibitor' in reporting.create_report.report_fields.get('flags', [])
+        assert 'inhibitor' in reporting.create_report.report_fields.get('groups', [])
     elif not enable_repos and custom_target_repos and not custom_target_repofile:
         assert reporting.create_report.called == 1
-        assert 'inhibitor' not in reporting.create_report.report_fields.get('flags', [])
+        assert 'inhibitor' not in reporting.create_report.report_fields.get('groups', [])
     else:
         assert reporting.create_report.called == 0

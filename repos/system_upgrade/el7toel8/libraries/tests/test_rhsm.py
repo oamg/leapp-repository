@@ -104,7 +104,7 @@ def test_inhibit_on_duplicate_repos(monkeypatch):
     assert ('The following repoids are defined multiple times:{0}{1}'
             .format(LIST_SEPARATOR, LIST_SEPARATOR.join(dups))) in api.current_logger.warnmsg
     assert reporting.create_report.called == 1
-    assert 'inhibitor' in reporting.create_report.report_fields['flags']
+    assert 'inhibitor' in reporting.create_report.report_fields['groups']
     assert reporting.create_report.report_fields['title'] == 'A YUM/DNF repository defined multiple times'
     summary = ('The following repositories are defined multiple times:{0}{1}'
                .format(LIST_SEPARATOR, LIST_SEPARATOR.join(dups)))
