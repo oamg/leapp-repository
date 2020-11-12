@@ -49,11 +49,11 @@ class CheckNfs(Actor):
                 reporting.Title("Use of NFS detected. Upgrade can't proceed"),
                 reporting.Summary(details),
                 reporting.Severity(reporting.Severity.HIGH),
-                reporting.Tags([
-                        reporting.Tags.FILESYSTEM,
-                        reporting.Tags.NETWORK
+                reporting.Groups([
+                        reporting.Groups.FILESYSTEM,
+                        reporting.Groups.NETWORK,
+                        reporting.Groups.INHIBITOR
                 ]),
                 reporting.Remediation(hint='Disable NFS temporarily for the upgrade if possible.'),
-                reporting.Flags([reporting.Flags.INHIBITOR]),
                 reporting.RelatedResource('file', '/etc/fstab')
             ])

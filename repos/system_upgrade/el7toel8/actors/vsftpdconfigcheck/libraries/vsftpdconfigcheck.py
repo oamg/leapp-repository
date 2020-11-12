@@ -21,8 +21,7 @@ def check_config_supported(tcpwrap_facts, vsftpd_facts):
                     )
             ),
             reporting.Severity(reporting.Severity.HIGH),
-            reporting.Tags([reporting.Tags.SERVICES, reporting.Tags.NETWORK]),
-            reporting.Flags([reporting.Flags.INHIBITOR]),
+            reporting.Groups([reporting.Groups.SERVICES, reporting.Groups.NETWORK, reporting.Groups.INHIBITOR]),
             reporting.ExternalLink(
                 title='Replacing TCP Wrappers in RHEL 8',
                 url='https://access.redhat.com/solutions/3906701'

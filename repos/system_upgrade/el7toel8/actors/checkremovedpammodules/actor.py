@@ -60,5 +60,5 @@ class CheckRemovedPamModules(Actor):
                          'under /etc/pam.d/.'.format(', '.join(replacements))
                 ),
                 reporting.Severity(reporting.Severity.HIGH),
-                reporting.Flags([reporting.Flags.INHIBITOR]),
+                reporting.Groups([reporting.Groups.INHIBITOR]),
             ] + [reporting.RelatedResource('pam', r) for r in replacements | found_modules])

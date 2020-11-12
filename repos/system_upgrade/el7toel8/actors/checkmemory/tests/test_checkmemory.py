@@ -27,4 +27,4 @@ def test_report(monkeypatch):
     checkmemory.process()
     assert reporting.create_report.called
     assert title_msg == reporting.create_report.report_fields['title']
-    assert reporting.Flags.INHIBITOR in reporting.create_report.report_fields['flags']
+    assert reporting.Groups.INHIBITOR in reporting.create_report.report_fields['groups']

@@ -19,7 +19,7 @@ def update_grub_core(grub_dev):
         reporting.create_report([
             reporting.Title('GRUB core update failed'),
             reporting.Summary(str(err)),
-            reporting.Tags([reporting.Tags.BOOT]),
+            reporting.Groups([reporting.Groups.BOOT]),
             reporting.Severity(reporting.Severity.HIGH),
             reporting.Remediation(
                 hint='Please run "grub2-install <GRUB_DEVICE>" manually after upgrade'
@@ -30,6 +30,6 @@ def update_grub_core(grub_dev):
     reporting.create_report([
         reporting.Title('GRUB core successfully updated'),
         reporting.Summary('GRUB core on {} was successfully updated'.format(grub_dev)),
-        reporting.Tags([reporting.Tags.BOOT]),
+        reporting.Groups([reporting.Groups.BOOT]),
         reporting.Severity(reporting.Severity.INFO)
     ])

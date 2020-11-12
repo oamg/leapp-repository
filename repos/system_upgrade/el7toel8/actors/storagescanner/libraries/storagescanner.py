@@ -117,8 +117,7 @@ def _get_fstab_info(fstab_path):
                         reporting.Title('Problems with parsing data in /etc/fstab'),
                         reporting.Summary(summary),
                         reporting.Severity(reporting.Severity.HIGH),
-                        reporting.Tags([reporting.Tags.FILESYSTEM]),
-                        reporting.Flags([reporting.Flags.INHIBITOR]),
+                        reporting.Groups([reporting.Groups.FILESYSTEM, reporting.Groups.INHIBITOR]),
                         reporting.Remediation(hint=remediation),
                         reporting.RelatedResource('file', '/etc/fstab')
                     ])

@@ -45,7 +45,6 @@ class CheckKernelDrivers(Actor):
                 reporting.Title(title),
                 reporting.Summary(summary),
                 reporting.Severity(reporting.Severity.HIGH),
-                reporting.Tags([reporting.Tags.KERNEL, reporting.Tags.DRIVERS]),
-                reporting.Flags([reporting.Flags.INHIBITOR]),
+                reporting.Groups([reporting.Groups.KERNEL, reporting.Groups.DRIVERS, reporting.Groups.INHIBITOR]),
                 reporting.Remediation(hint=remediation)
             ] + [reporting.RelatedResource('kernel-driver', kd) for kd in conflicting])

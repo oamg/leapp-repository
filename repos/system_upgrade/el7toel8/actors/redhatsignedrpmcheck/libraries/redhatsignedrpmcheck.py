@@ -4,7 +4,7 @@ from leapp.libraries.stdlib.config import is_verbose
 from leapp.models import InstalledUnsignedRPM
 
 
-COMMON_REPORT_TAGS = [reporting.Tags.SANITY]
+COMMON_REPORT_GROUPS = [reporting.Groups.SANITY]
 
 
 def generate_report(packages):
@@ -21,7 +21,7 @@ def generate_report(packages):
         reporting.Title(title),
         reporting.Summary(summary),
         reporting.Severity(reporting.Severity.HIGH),
-        reporting.Tags(COMMON_REPORT_TAGS)
+        reporting.Groups(COMMON_REPORT_GROUPS)
     ])
 
     if is_verbose():

@@ -33,9 +33,9 @@ def check_chrony(chrony_installed):
                 'leap smearing NTP servers, and uses a single pool directive instead of four server directives'
             ),
             reporting.Severity(reporting.Severity.MEDIUM),
-            reporting.Tags([
-                    reporting.Tags.SERVICES,
-                    reporting.Tags.TIME_MANAGEMENT
+            reporting.Groups([
+                    reporting.Groups.SERVICES,
+                    reporting.Groups.TIME_MANAGEMENT
             ])
         ] + related)
 
@@ -44,8 +44,8 @@ def check_chrony(chrony_installed):
             reporting.Title('chrony using non-default configuration'),
             reporting.Summary('chrony behavior will not change in RHEL8'),
             reporting.Severity(reporting.Severity.LOW),
-            reporting.Tags([
-                    reporting.Tags.SERVICES,
-                    reporting.Tags.TIME_MANAGEMENT
+            reporting.Groups([
+                    reporting.Groups.SERVICES,
+                    reporting.Groups.TIME_MANAGEMENT
             ])
         ] + related)

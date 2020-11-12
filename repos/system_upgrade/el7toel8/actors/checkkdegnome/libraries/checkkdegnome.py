@@ -26,11 +26,9 @@ def check_kde_gnome():
                     " would be removed during the upgrade. There would be no desktop environment installed after the"
                     " upgrade."),
                 reporting.Severity(reporting.Severity.HIGH),
-                reporting.Tags([
-                    reporting.Tags.DESKTOP
-                ]),
-                reporting.Flags([
-                    reporting.Flags.INHIBITOR
+                reporting.Groups([
+                    reporting.Groups.DESKTOP,
+                    reporting.Groups.INHIBITOR,
                 ]),
                 reporting.Remediation(
                     hint=("Remove KDE (at least the `kde-workspace` package) or install the GNOME desktop environment"
@@ -47,8 +45,8 @@ def check_kde_gnome():
             reporting.Summary("The KDE desktop environment is unavailable on RHEL 8. KDE will be uninstalled "
                               "in favor of GNOME during the upgrade."),
             reporting.Severity(reporting.Severity.MEDIUM),
-            reporting.Tags([
-                reporting.Tags.DESKTOP
+            reporting.Groups([
+                reporting.Groups.DESKTOP
             ])])
         api.current_logger().info("----------------------------------")
 
@@ -66,8 +64,8 @@ def check_kde_gnome():
                               "All the KDE/Qt apps will be removed during the upgrade, including but not limited "
                               "to:\n- {0}".format("\n- ".join(KDEAppsFacts.installed_apps))),
             reporting.Severity(reporting.Severity.MEDIUM),
-            reporting.Tags([
-                reporting.Tags.DESKTOP
+            reporting.Groups([
+                reporting.Groups.DESKTOP
             ])])
     else:
         api.current_logger().info("No KDE app in use detected.")

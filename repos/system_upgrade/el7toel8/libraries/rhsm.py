@@ -187,8 +187,7 @@ def _inhibit_on_duplicate_repos(repofiles):
             .format(list_separator_fmt, list_separator_fmt.join(duplicates))
         ),
         reporting.Severity(reporting.Severity.MEDIUM),
-        reporting.Tags([reporting.Tags.REPOSITORY]),
-        reporting.Flags([reporting.Flags.INHIBITOR]),
+        reporting.Groups([reporting.Groups.REPOSITORY, reporting.Groups.INHIBITOR]),
         reporting.Remediation(hint='Remove the duplicate repository definitions.')
     ])
 

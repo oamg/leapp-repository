@@ -30,5 +30,5 @@ class MigrateSendmail(Actor):
                 'Uncompressed IPv6 addresses in {}'.format(list_separator_fmt.join(decision.migrate_files))
             ),
             reporting.Severity(reporting.Severity.LOW),
-            reporting.Tags([reporting.Tags.SERVICES, reporting.Tags.EMAIL])
+            reporting.Groups([reporting.Groups.SERVICES, reporting.Groups.EMAIL])
         ])

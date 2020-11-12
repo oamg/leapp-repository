@@ -27,9 +27,9 @@ class CheckIrssi(Actor):
                     'Removed --disable-ipv6 option.\n'
                 ),
                 reporting.Severity(reporting.Severity.LOW),
-                reporting.Tags([
-                        reporting.Tags.COMMUNICATION,
-                        reporting.Tags.TOOLS
+                reporting.Groups([
+                        reporting.Groups.COMMUNICATION,
+                        reporting.Groups.TOOLS
                 ]),
                 reporting.Remediation(hint='Please update your scripts to be compatible with the changes.'),
                 reporting.RelatedResource('package', 'irssi')

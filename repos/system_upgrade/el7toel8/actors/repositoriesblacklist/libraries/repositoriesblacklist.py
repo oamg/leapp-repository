@@ -63,8 +63,7 @@ def process():
                 )
             ),
             reporting.Severity(reporting.Severity.INFO),
-            reporting.Tags([reporting.Tags.REPOSITORY]),
-            reporting.Flags([reporting.Flags.FAILURE]),
+            reporting.Groups([reporting.Groups.REPOSITORY, reporting.Groups.FAILURE]),
             reporting.ExternalLink(
                 url=(
                     "https://access.redhat.com/documentation/en-us/"

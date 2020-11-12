@@ -50,7 +50,7 @@ class CreateSystemdResumeService(Actor):
                 'after reboot.'.format(service_name)
             ),
             reporting.Severity(reporting.Severity.INFO),
-            reporting.Tags([reporting.Tags.UPGRADE_PROCESS]),
+            reporting.Groups([reporting.Groups.UPGRADE_PROCESS]),
             reporting.RelatedResource('file', service_path),
             reporting.RelatedResource('file', symlink_path),
             reporting.RelatedResource('service', service_name)

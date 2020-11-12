@@ -30,6 +30,5 @@ class CheckFips(Actor):
                     reporting.Title(title),
                     reporting.Summary(summary),
                     reporting.Severity(reporting.Severity.HIGH),
-                    reporting.Tags([reporting.Tags.SECURITY]),
-                    reporting.Flags([reporting.Flags.INHIBITOR])
+                    reporting.Groups([reporting.Groups.SECURITY, reporting.Groups.INHIBITOR]),
                 ])

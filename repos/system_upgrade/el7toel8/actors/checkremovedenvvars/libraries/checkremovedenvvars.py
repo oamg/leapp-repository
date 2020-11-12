@@ -20,6 +20,5 @@ def process():
             reporting.Summary('The following Leapp related environment variable was removed: ' + vars_str),
             reporting.Severity(reporting.Severity.HIGH),
             reporting.Remediation(hint='Please do not use the reported variables'),
-            reporting.Flags(['inhibitor']),
-            reporting.Tags([reporting.Tags.UPGRADE_PROCESS]),
+            reporting.Groups([reporting.Groups.UPGRADE_PROCESS, reporting.Groups.INHIBITOR]),
         ])

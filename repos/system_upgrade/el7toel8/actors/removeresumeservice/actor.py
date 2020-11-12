@@ -36,5 +36,5 @@ class RemoveSystemdResumeService(Actor):
             reporting.Summary(
                 '"{}" was taking care of resuming upgrade process '
                 'after the first reboot.'.format(service_name)),
-            reporting.Tags([reporting.Tags.UPGRADE_PROCESS]),
+            reporting.Groups([reporting.Groups.UPGRADE_PROCESS]),
         ])

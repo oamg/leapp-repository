@@ -32,7 +32,7 @@ class UnsupportedUpgradeCheck(Actor):
                     'risk.\n'
                 ),
                 reporting.Severity(reporting.Severity.HIGH),
-                reporting.Tags([reporting.Tags.UPGRADE_PROCESS, reporting.Tags.SANITY]),
+                reporting.Groups([reporting.Groups.UPGRADE_PROCESS, reporting.Groups.SANITY]),
             ])
 
         else:
@@ -49,8 +49,9 @@ class UnsupportedUpgradeCheck(Actor):
                         'Found development variables:\n- {}\n'.format('\n- '.join([v.name for v in devel_vars]))
                     ),
                     reporting.Severity(reporting.Severity.HIGH),
-                    reporting.Flags([reporting.Flags.INHIBITOR]),
-                    reporting.Tags([reporting.Tags.UPGRADE_PROCESS, reporting.Tags.SANITY]),
+                    reporting.Groups([reporting.Groups.UPGRADE_PROCESS,
+                                      reporting.Groups.SANITY,
+                                      reporting.Groups.INHIBITOR]),
                     reporting.Remediation(hint=('Invoke leapp without any LEAPP_DEVEL_* environment variables '
                                                 'or set LEAPP_UNSUPPORTED=1.'))
                 ])
@@ -67,8 +68,9 @@ class UnsupportedUpgradeCheck(Actor):
                         'you continue at your own risk.\n'
                     ),
                     reporting.Severity(reporting.Severity.HIGH),
-                    reporting.Flags([reporting.Flags.INHIBITOR]),
-                    reporting.Tags([reporting.Tags.UPGRADE_PROCESS, reporting.Tags.SANITY]),
+                    reporting.Groups([reporting.Groups.UPGRADE_PROCESS,
+                                      reporting.Groups.SANITY,
+                                      reporting.Groups.INHIBITOR]),
                     reporting.Remediation(hint=('Invoke leapp without any --whitelist-experimental options '
                                                 'or set LEAPP_UNSUPPORTED=1.'))
                 ])

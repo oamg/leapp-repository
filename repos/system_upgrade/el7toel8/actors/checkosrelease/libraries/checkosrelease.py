@@ -4,7 +4,7 @@ from leapp import reporting
 from leapp.libraries.common.config import version
 
 
-COMMON_REPORT_TAGS = [reporting.Tags.SANITY]
+COMMON_REPORT_GROUPS = [reporting.Groups.SANITY]
 
 related = [reporting.RelatedResource('file', '/etc/os-release')]
 
@@ -16,7 +16,7 @@ def skip_check():
             reporting.Title('Skipped OS release check'),
             reporting.Summary('Source RHEL release check skipped via LEAPP_DEVEL_SKIP_CHECK_OS_RELEASE env var.'),
             reporting.Severity(reporting.Severity.HIGH),
-            reporting.Tags(COMMON_REPORT_TAGS)
+            reporting.Groups(COMMON_REPORT_GROUPS)
         ] + related)
 
         return True
@@ -37,6 +37,5 @@ def check_os_version():
                 ' {}'.format('\n'.join(supported_releases))
             ),
             reporting.Severity(reporting.Severity.HIGH),
-            reporting.Tags(COMMON_REPORT_TAGS),
-            reporting.Flags([reporting.Flags.INHIBITOR])
+            reporting.Groups(COMMON_REPORT_GROUPS + [reporting.Groups.INHIBITOR]),
         ] + related)

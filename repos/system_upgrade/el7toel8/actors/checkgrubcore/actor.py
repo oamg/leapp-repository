@@ -39,7 +39,7 @@ class CheckGrubCore(Actor):
                     ),
                     reporting.Summary(GRUB_SUMMARY),
                     reporting.Severity(reporting.Severity.HIGH),
-                    reporting.Tags([reporting.Tags.BOOT]),
+                    reporting.Groups([reporting.Groups.BOOT]),
                 ])
             else:
                 create_report([
@@ -49,7 +49,7 @@ class CheckGrubCore(Actor):
                         'update GRUB core as it is not done automatically on legacy (BIOS) systems. '
                     ),
                     reporting.Severity(reporting.Severity.HIGH),
-                    reporting.Tags([reporting.Tags.BOOT]),
+                    reporting.Groups([reporting.Groups.BOOT]),
                     reporting.Remediation(
                         hint='Please run "grub2-install <GRUB_DEVICE> command manually after upgrade'),
                 ])

@@ -33,7 +33,7 @@ class DetectGrubConfigError(Actor):
                     'Error is automatically fixed by add_upgrade_boot_entry actor.'
                 ),
                 reporting.Severity(reporting.Severity.LOW),
-                reporting.Tags([reporting.Tags.BOOT]),
+                reporting.Groups([reporting.Groups.BOOT]),
                 reporting.RelatedResource('file', config)
             ])
 

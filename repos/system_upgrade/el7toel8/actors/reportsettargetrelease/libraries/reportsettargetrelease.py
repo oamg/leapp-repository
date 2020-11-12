@@ -17,7 +17,7 @@ def _report_set_release():
         reporting.Remediation(
             hint='If you wish to receive updates for the latest released version of RHEL 8, run `subscription-manager'
                  ' release --unset` after the upgrade.'),
-        reporting.Tags([reporting.Tags.UPGRADE_PROCESS]),
+        reporting.Groups([reporting.Groups.UPGRADE_PROCESS]),
         reporting.RelatedResource('package', 'subscription-manager')
     ])
 
@@ -41,7 +41,7 @@ def _report_unhandled_release():
         ),
         reporting.Severity(reporting.Severity.LOW),
         reporting.Remediation(hint=hint),
-        reporting.Tags([reporting.Tags.UPGRADE_PROCESS]),
+        reporting.Groups([reporting.Groups.UPGRADE_PROCESS]),
         reporting.RelatedResource('package', 'subscription-manager')
     ])
 

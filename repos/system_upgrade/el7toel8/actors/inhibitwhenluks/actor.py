@@ -25,7 +25,8 @@ class InhibitWhenLuks(Actor):
                         reporting.Title('LUKS encrypted partition detected'),
                         reporting.Summary('Upgrading system with encrypted partitions is not supported'),
                         reporting.Severity(reporting.Severity.HIGH),
-                        reporting.Tags([reporting.Tags.BOOT, reporting.Tags.ENCRYPTION]),
-                        reporting.Flags([reporting.Flags.INHIBITOR]),
+                        reporting.Groups([reporting.Groups.BOOT,
+                                          reporting.Groups.ENCRYPTION,
+                                          reporting.Groups.INHIBITOR]),
                     ])
                     break

@@ -7,7 +7,7 @@ from leapp import reporting
 from leapp.libraries.stdlib import CalledProcessError, run
 
 
-COMMON_REPORT_TAGS = [reporting.Tags.SERVICES, reporting.Tags.TIME_MANAGEMENT]
+COMMON_REPORT_GROUPS = [reporting.Groups.SERVICES, reporting.Groups.TIME_MANAGEMENT]
 
 
 def extract_tgz64(s):
@@ -91,7 +91,7 @@ def migrate_ntp(migrate_services, config_tgz64):
             reporting.Title('{} configuration migrated to chrony'.format(' and '.join(migrate_configs))),
             reporting.Summary('ntp2chrony executed successfully'),
             reporting.Severity(reporting.Severity.INFO),
-            reporting.Tags(COMMON_REPORT_TAGS)
+            reporting.Groups(COMMON_REPORT_GROUPS)
         ] + config_resources + package_resources)
 
     else:
@@ -99,5 +99,5 @@ def migrate_ntp(migrate_services, config_tgz64):
             reporting.Title('{} configuration partially migrated to chrony'.format(' and '.join(migrate_configs))),
             reporting.Summary('Some lines in /etc/ntp.conf were ignored in migration (check /etc/chrony.conf)'),
             reporting.Severity(reporting.Severity.MEDIUM),
-            reporting.Tags(COMMON_REPORT_TAGS)
+            reporting.Groups(COMMON_REPORT_GROUPS)
         ] + config_resources + package_resources)

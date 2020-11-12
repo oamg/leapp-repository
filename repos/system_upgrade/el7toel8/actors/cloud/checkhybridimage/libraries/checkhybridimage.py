@@ -48,5 +48,5 @@ def check_hybrid_image():
                 'the relative symlink again.'
             ),
             reporting.Severity(reporting.Severity.HIGH),
-            reporting.Tags([reporting.Tags.PUBLIC_CLOUD]),
+            reporting.Groups([reporting.Groups.PUBLIC_CLOUD]),
         ])

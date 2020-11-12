@@ -47,8 +47,7 @@ def _check_default_path_checker(options):
             format(pathname)
         ),
         reporting.Severity(reporting.Severity.HIGH),
-        reporting.Tags([reporting.Tags.SERVICES]),
-        reporting.Flags([reporting.Flags.INHIBITOR]),
+        reporting.Groups([reporting.Groups.SERVICES, reporting.Groups.INHIBITOR]),
         reporting.RelatedResource('package', 'device-mapper-multipath'),
         reporting.RelatedResource('file', pathname),
         reporting.Remediation(
@@ -92,7 +91,7 @@ def _check_default_detection(options):
             format(paths)
         ),
         reporting.Severity(reporting.Severity.MEDIUM),
-        reporting.Tags([reporting.Tags.SERVICES]),
+        reporting.Groups([reporting.Groups.SERVICES]),
         reporting.RelatedResource('package', 'device-mapper-multipath')
     ])
 
@@ -114,7 +113,7 @@ def _check_reassign_maps(options):
             'in {}.'.format(pathname)
         ),
         reporting.Severity(reporting.Severity.MEDIUM),
-        reporting.Tags([reporting.Tags.SERVICES]),
+        reporting.Groups([reporting.Groups.SERVICES]),
         reporting.RelatedResource('package', 'device-mapper-multipath')
     ])
 

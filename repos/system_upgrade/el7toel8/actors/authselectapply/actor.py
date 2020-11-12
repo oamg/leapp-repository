@@ -42,14 +42,12 @@ class AuthselectApply(Actor):
                 reporting.Title('Authselect call failed'),
                 reporting.Summary(str(err)),
                 reporting.Severity(reporting.Severity.MEDIUM),
-                reporting.Tags([
-                    reporting.Tags.AUTHENTICATION,
-                    reporting.Tags.SECURITY,
-                    reporting.Tags.TOOLS
+                reporting.Groups([
+                    reporting.Groups.AUTHENTICATION,
+                    reporting.Groups.SECURITY,
+                    reporting.Groups.TOOLS,
+                    reporting.Groups.FAILURE
                 ]),
-                reporting.Flags([
-                    reporting.Flags.FAILURE
-                ])
             ] + resources)  # pylint: disable-msg=too-many-arguments
             return
 
@@ -64,9 +62,9 @@ class AuthselectApply(Actor):
                 'System was converted to authselect with the '
                 'following call: "{}"'.format(' '.join(command))
             ),
-            reporting.Tags([
-                    reporting.Tags.AUTHENTICATION,
-                    reporting.Tags.SECURITY,
-                    reporting.Tags.TOOLS
+            reporting.Groups([
+                    reporting.Groups.AUTHENTICATION,
+                    reporting.Groups.SECURITY,
+                    reporting.Groups.TOOLS
                 ])
         ] + resources)  # pylint: disable-msg=too-many-arguments

@@ -73,8 +73,7 @@ class TcpWrappersCheck(Actor):
                     title='Replacing TCP Wrappers in RHEL 8',
                     url='https://access.redhat.com/solutions/3906701'
                 ),
-                reporting.Tags([reporting.Tags.SECURITY, reporting.Tags.NETWORK]),
-                reporting.Flags([reporting.Flags.INHIBITOR]),
+                reporting.Groups([reporting.Groups.SECURITY, reporting.Groups.NETWORK, reporting.Groups.INHIBITOR]),
                 reporting.RelatedResource('file', '/etc/hosts.allow'),
                 reporting.RelatedResource('file', '/etc/hosts.deny'),
                 reporting.RelatedResource('package', 'tcp_wrappers')
