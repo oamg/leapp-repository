@@ -9,6 +9,7 @@ from leapp.libraries.actor import userspacegen
 from leapp.libraries.common import overlaygen, repofileutils, rhsm
 from leapp.libraries.common.config import architecture
 from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked, produce_mocked
+from leapp.utils.deprecation import suppress_deprecation
 
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 _CERTS_PATH = os.path.join(CUR_DIR, '../../../files', userspacegen.PROD_CERTS_FOLDER)
@@ -64,12 +65,26 @@ def test_get_product_certificate_path(monkeypatch, adjust_cwd, result, dst_ver, 
     assert userspacegen._get_product_certificate_path() in result
 
 
-_PACKAGES_MSGS = [
-    models.RequiredTargetUserspacePackages(),
-    models.RequiredTargetUserspacePackages(packages=['pkgA']),
-    models.RequiredTargetUserspacePackages(packages=['pkgB', 'pkgsC']),
-    models.RequiredTargetUserspacePackages(packages=['pkgD']),
-]
+@suppress_deprecation(models.RequiredTargetUserspacePackages)
+def _gen_packages_msgs():
+    _cfiles = [
+        models.CopyFile(src='/path/src', dst='/path/dst'),
+        models.CopyFile(src='/path/foo', dst='/path/bar'),
+    ]
+    return [
+        models.RequiredTargetUserspacePackages(),
+        models.RequiredTargetUserspacePackages(packages=['pkgA']),
+        models.RequiredTargetUserspacePackages(packages=['pkgB', 'pkgsC']),
+        models.RequiredTargetUserspacePackages(packages=['pkgD']),
+        models.TargetUserSpacePreupgradeTasks(),
+        models.TargetUserSpacePreupgradeTasks(install_rpms=['pkgA']),
+        models.TargetUserSpacePreupgradeTasks(install_rpms=['pkgB', 'pkgsC']),
+        models.TargetUserSpacePreupgradeTasks(install_rpms=['pkgD', 'pkgE'], copy_files=[_cfiles[0]]),
+        models.TargetUserSpacePreupgradeTasks(copy_files=_cfiles),
+    ]
+
+
+_PACKAGES_MSGS = _gen_packages_msgs()
 _RHSMINFO_MSG = models.RHSMInfo(attached_skus=['testing-sku'])
 _RHUIINFO_MSG = models.RHUIInfo(provider='aws')
 _XFS_MSG = models.XFSPresence()
@@ -102,19 +117,29 @@ testInData = namedtuple(
 )
 
 
+# NOTE: tests cover know new, deprecated, and both ways how to require packages
+# that should be installed to create the target userspace. Cases which could be
+# removed completely after the drop of the deprecated functionality, are marked
+# with the `# dep` str.
 @pytest.mark.parametrize('raised,no_rhsm,testdata', [
     # valid cases with RHSM
     (None, '0', testInData(_PACKAGES_MSGS, _RHSMINFO_MSG, None, _XFS_MSG, _STORAGEINFO_MSG, None)),
+    (None, '0', testInData(_PACKAGES_MSGS[:4], _RHSMINFO_MSG, None, _XFS_MSG, _STORAGEINFO_MSG, None)),   # dep
+    (None, '0', testInData(_PACKAGES_MSGS[4:8], _RHSMINFO_MSG, None, _XFS_MSG, _STORAGEINFO_MSG, None)),  # dep
     (None, '0', testInData(_PACKAGES_MSGS[0], _RHSMINFO_MSG, None, _XFS_MSG, _STORAGEINFO_MSG, None)),
+    (None, '0', testInData(_PACKAGES_MSGS[4], _RHSMINFO_MSG, None, _XFS_MSG, _STORAGEINFO_MSG, None)),    # dep
     (None, '0', testInData([], _RHSMINFO_MSG, None, _XFS_MSG, _STORAGEINFO_MSG, None)),
     (None, '0', testInData(_PACKAGES_MSGS, _RHSMINFO_MSG, None, None, _STORAGEINFO_MSG, None)),
     (None, '0', testInData(_PACKAGES_MSGS, _RHSMINFO_MSG, None, _XFS_MSG, _STORAGEINFO_MSG, _CTRF_MSGS)),
     (None, '0', testInData(_PACKAGES_MSGS[0], _RHSMINFO_MSG, None, _XFS_MSG, _STORAGEINFO_MSG, _CTRF_MSGS)),
+    (None, '0', testInData(_PACKAGES_MSGS[4], _RHSMINFO_MSG, None, _XFS_MSG, _STORAGEINFO_MSG, _CTRF_MSGS)),  # dep
     (None, '0', testInData([], _RHSMINFO_MSG, None, _XFS_MSG, _STORAGEINFO_MSG, _CTRF_MSGS)),
     (None, '0', testInData(_PACKAGES_MSGS, _RHSMINFO_MSG, None, None, _STORAGEINFO_MSG, _CTRF_MSGS)),
 
     # valid cases without RHSM (== skip_rhsm)
     (None, '1', testInData(_PACKAGES_MSGS, None, _RHUIINFO_MSG, _XFS_MSG, _STORAGEINFO_MSG, None)),
+    (None, '1', testInData(_PACKAGES_MSGS[:4], None, _RHUIINFO_MSG, _XFS_MSG, _STORAGEINFO_MSG, None)),   # dep
+    (None, '1', testInData(_PACKAGES_MSGS[4:8], None, _RHUIINFO_MSG, _XFS_MSG, _STORAGEINFO_MSG, None)),  # dep
     (None, '1', testInData(_PACKAGES_MSGS, None, _RHUIINFO_MSG, None, _STORAGEINFO_MSG, None)),
     (None, '1', testInData([], None, _RHUIINFO_MSG, _XFS_MSG, _STORAGEINFO_MSG, None)),
     (None, '1', testInData([], None, _RHUIINFO_MSG, None, _STORAGEINFO_MSG, None)),
@@ -127,12 +152,16 @@ testInData = namedtuple(
     ((_SAEE, 'RHSM is not'), '1', testInData(_PACKAGES_MSGS, _RHSMINFO_MSG, None, _XFS_MSG, _STORAGEINFO_MSG, None)),
     ((_SAEE, 'RHSM is not'), '1', testInData(_PACKAGES_MSGS[0], _RHSMINFO_MSG, None, _XFS_MSG, _STORAGEINFO_MSG,
                                              None)),
+    ((_SAEE, 'RHSM is not'), '1', testInData(_PACKAGES_MSGS[4], _RHSMINFO_MSG, None, _XFS_MSG, _STORAGEINFO_MSG,
+                                             None)),  # dep
     ((_SAEE, 'RHSM is not'), '1', testInData([], _RHSMINFO_MSG, None, _XFS_MSG, _STORAGEINFO_MSG, None)),
     ((_SAEE, 'RHSM is not'), '1', testInData(_PACKAGES_MSGS, _RHSMINFO_MSG, None, None, _STORAGEINFO_MSG, None)),
     ((_SAEE, 'RHSM is not'), '1', testInData(_PACKAGES_MSGS, _RHSMINFO_MSG, None, _XFS_MSG, _STORAGEINFO_MSG,
                                              _CTRF_MSGS)),
     ((_SAEE, 'RHSM is not'), '1', testInData(_PACKAGES_MSGS[0], _RHSMINFO_MSG, None, _XFS_MSG,
                                              _STORAGEINFO_MSG, _CTRF_MSGS)),
+    ((_SAEE, 'RHSM is not'), '1', testInData(_PACKAGES_MSGS[4], _RHSMINFO_MSG, None, _XFS_MSG,
+                                             _STORAGEINFO_MSG, _CTRF_MSGS)),  # dep
     ((_SAEE, 'RHSM is not'), '1', testInData([], _RHSMINFO_MSG, None, _XFS_MSG, _STORAGEINFO_MSG, _CTRF_MSGS)),
     ((_SAEE, 'RHSM is not'), '1', testInData(_PACKAGES_MSGS, _RHSMINFO_MSG, None, None, _STORAGEINFO_MSG, _CTRF_MSGS)),
 
@@ -158,11 +187,28 @@ def test_consume_data(monkeypatch, raised, no_rhsm, testdata):
     xfs = testdata.xfs
     custom_repofiles = testdata.custom_repofiles
     _exp_pkgs = {'dnf'}
+    _exp_files = []
+
+    def _get_pkgs(msg):
+        if isinstance(msg, models.TargetUserSpacePreupgradeTasks):
+            return msg.install_rpms
+        return msg.packages
+
+    def _get_files(msg):
+        if isinstance(msg, models.TargetUserSpacePreupgradeTasks):
+            return msg.copy_files
+        return []
+
+    def _cfiles2set(cfiles):
+        return {(i.src, i.dst) for i in cfiles}
+
     if isinstance(testdata.pkg_msgs, list):
         for msg in testdata.pkg_msgs:
-            _exp_pkgs.update(msg.packages)
+            _exp_pkgs.update(_get_pkgs(msg))
+            _exp_files += _get_files(msg)
     else:
-        _exp_pkgs.update(testdata.pkg_msgs.packages)
+        _exp_pkgs.update(_get_pkgs(testdata.pkg_msgs))
+        _exp_files += _get_files(testdata.pkg_msgs)
     mocked_consume = MockedConsume(testdata.pkg_msgs,
                                    testdata.rhsm_info,
                                    testdata.rhui_info,
@@ -179,6 +225,7 @@ def test_consume_data(monkeypatch, raised, no_rhsm, testdata):
     if not raised:
         result = userspacegen._InputData()
         assert result.packages == _exp_pkgs
+        assert _cfiles2set(result.files) == _cfiles2set(_exp_files)
         assert result.rhsm_info == testdata.rhsm_info
         assert result.rhui_info == testdata.rhui_info
         assert result.xfs_info == xfs
@@ -276,10 +323,25 @@ def mocked_consume_data():
     xfs_info = models.XFSPresence()
     storage_info = models.StorageInfo()
     custom_repofiles = []
-    fields = ['packages', 'rhsm_info', 'rhui_info', 'xfs_info', 'storage_info', 'custom_repofiles']
+    files = set()
+    fields = [
+        'packages',
+        'rhsm_info',
+        'rhui_info',
+        'xfs_info',
+        'storage_info',
+        'custom_repofiles',
+        'files'
+    ]
 
     return namedtuple('TestInData', fields)(
-                packages, rhsm_info, rhui_info, xfs_info, storage_info, custom_repofiles
+                packages,
+                rhsm_info,
+                rhui_info,
+                xfs_info,
+                storage_info,
+                custom_repofiles,
+                files,
     )
 
 
