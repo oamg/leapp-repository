@@ -29,7 +29,6 @@ class TargetUserSpaceInfo(Model):
 
     scratch = fields.String()
     """
-    TODO:
     Path to the directory with stored xfs-ftype workaround files
 
     It's not possible to create overlayfs over XFS without the ftype attribute.

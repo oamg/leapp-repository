@@ -1,7 +1,7 @@
 import pytest
 
 from leapp.exceptions import StopActorExecutionError
-from leapp.libraries.actor import initrdinclude
+from leapp.libraries.actor import targetinitramfsgenerator
 from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked
 from leapp.libraries.stdlib import api, CalledProcessError
 from leapp.models import (
@@ -64,9 +64,9 @@ def test_no_includes(monkeypatch):
     run_mocked = RunMocked()
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[]))
     monkeypatch.setattr(api, 'current_logger', logger_mocked())
-    monkeypatch.setattr(initrdinclude, 'run', run_mocked)
+    monkeypatch.setattr(targetinitramfsgenerator, 'run', run_mocked)
 
-    initrdinclude.process()
+    targetinitramfsgenerator.process()
     assert NO_INCLUDE_MSG in api.current_logger.dbgmsg
     assert not run_mocked.called
 
@@ -91,12 +91,12 @@ TEST_CASES = [
 def test_no_kernel_version(monkeypatch, msgs):
     run_mocked = RunMocked()
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=msgs))
-    monkeypatch.setattr(initrdinclude, 'run', run_mocked)
+    monkeypatch.setattr(targetinitramfsgenerator, 'run', run_mocked)
     # FIXME
-    monkeypatch.setattr(initrdinclude, 'copy_dracut_modules', lambda dummy: None)
+    monkeypatch.setattr(targetinitramfsgenerator, 'copy_dracut_modules', lambda dummy: None)
 
     with pytest.raises(StopActorExecutionError) as e:
-        initrdinclude.process()
+        targetinitramfsgenerator.process()
     assert 'Cannot get version of the installed RHEL-8 kernel' in str(e)
     assert not run_mocked.called
 
@@ -107,12 +107,12 @@ def test_dracut_fail(monkeypatch, msgs):
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=msgs))
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(
         msgs=msgs+[InstalledTargetKernelVersion(version=KERNEL_VERSION)]))
-    monkeypatch.setattr(initrdinclude, 'run', run_mocked)
+    monkeypatch.setattr(targetinitramfsgenerator, 'run', run_mocked)
     # FIXME
-    monkeypatch.setattr(initrdinclude, 'copy_dracut_modules', lambda dummy: None)
+    monkeypatch.setattr(targetinitramfsgenerator, 'copy_dracut_modules', lambda dummy: None)
 
     with pytest.raises(StopActorExecutionError) as e:
-        initrdinclude.process()
+        targetinitramfsgenerator.process()
     assert 'Cannot regenerate dracut image' in str(e)
     assert run_mocked.called
 
@@ -155,11 +155,11 @@ def test_flawless(monkeypatch, msgs, files, modules):
     _msgs = msgs + [InstalledTargetKernelVersion(version=KERNEL_VERSION)]
     run_mocked = RunMocked()
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=_msgs))
-    monkeypatch.setattr(initrdinclude, 'run', run_mocked)
+    monkeypatch.setattr(targetinitramfsgenerator, 'run', run_mocked)
     # FIXME
-    monkeypatch.setattr(initrdinclude, 'copy_dracut_modules', lambda dummy: None)
+    monkeypatch.setattr(targetinitramfsgenerator, 'copy_dracut_modules', lambda dummy: None)
 
-    initrdinclude.process()
+    targetinitramfsgenerator.process()
     assert run_mocked.called
 
     # check files

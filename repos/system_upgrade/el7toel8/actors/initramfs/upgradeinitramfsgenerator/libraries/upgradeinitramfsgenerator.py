@@ -85,7 +85,7 @@ def _copy_files(context, files):
             context.copy_to(file_task.src, file_task.dst)
 
 
-# TODO: think about possibility to split this part to different actor
+# TODO(pstodulk): think about possibility to split this part to different actor
 # # reasoning: the environment could be prepared automatically and actor
 # # developers will be able to do additional modifications before the initrd
 # # will be really generated. E.g. multipath: config files will be copied
@@ -139,15 +139,11 @@ def generate_initram_disk(context):
     """
     Function to actually execute the init ramdisk creation.
 
-    Includes handling of specified dracut modules from the host when needed
+    Includes handling of specified dracut modules from the host when needed.
+    The check for the 'conflicting' dracut modules is in a separate actor.
     """
-    # TODO: (maybe for Cabal)
-    # It could be nice to be sure we have every module specified just
-    # once and in case a same module name is specified multiple times:
-    # a) log debug/info msg when module is specified multiple times, but
-    # # it is identitical (same paths, ...)
-    # b) raise error, when module is specified multiple times and paths are
-    # #  different (add possibility to skip the check when an envar is used)
+    # TODO(pstodulk): Add possibility to add particular drivers
+    # Issue #645
     modules = _get_dracut_modules()  # deprecated
     files = set()
     for task in api.consume(UpgradeInitramfsTasks):

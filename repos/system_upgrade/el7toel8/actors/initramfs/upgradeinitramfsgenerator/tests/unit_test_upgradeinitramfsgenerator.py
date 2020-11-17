@@ -3,7 +3,7 @@ import os
 import pytest
 
 from leapp.exceptions import StopActorExecutionError
-from leapp.libraries.actor import initramgen
+from leapp.libraries.actor import upgradeinitramfsgenerator
 from leapp.libraries.common.config import architecture
 from leapp.libraries.common.testutils import CurrentActorMocked, produce_mocked
 from leapp.models import (
@@ -101,15 +101,15 @@ def test_copy_boot_files(monkeypatch, arch):
         initram_path=os.path.join('/boot', initram)
     )
 
-    monkeypatch.setattr(initramgen.api, 'current_actor', CurrentActorMocked(arch=arch))
-    monkeypatch.setattr(initramgen.api, 'produce', produce_mocked())
+    monkeypatch.setattr(upgradeinitramfsgenerator.api, 'current_actor', CurrentActorMocked(arch=arch))
+    monkeypatch.setattr(upgradeinitramfsgenerator.api, 'produce', produce_mocked())
     context = MockedContext()
-    initramgen.copy_boot_files(context)
+    upgradeinitramfsgenerator.copy_boot_files(context)
     assert len(context.called_copy_from) == 2
     assert (os.path.join('/artifacts', kernel), bootc.kernel_path) in context.called_copy_from
     assert (os.path.join('/artifacts', initram), bootc.initram_path) in context.called_copy_from
-    assert initramgen.api.produce.called == 1
-    assert initramgen.api.produce.model_instances[0] == bootc
+    assert upgradeinitramfsgenerator.api.produce.called == 1
+    assert upgradeinitramfsgenerator.api.produce.model_instances[0] == bootc
 
 
 class MockedCopyArgs(object):
@@ -125,9 +125,9 @@ def _sort_files(copy_files):
 
 
 def test_prepare_userspace_for_initram_no_script(monkeypatch):
-    monkeypatch.setattr(initramgen.api, 'get_actor_file_path', lambda dummy: None)
+    monkeypatch.setattr(upgradeinitramfsgenerator.api, 'get_actor_file_path', lambda dummy: None)
     with pytest.raises(StopActorExecutionError) as err:
-        initramgen.prepare_userspace_for_initram(MockedContext())
+        upgradeinitramfsgenerator.prepare_userspace_for_initram(MockedContext())
     assert err.value.message == 'Mandatory script to generate initram not available.'
 
 
@@ -165,27 +165,27 @@ def test_prepare_userspace_for_initram_no_script(monkeypatch):
     ([gen_RUIP(PKGS[0:7]), gen_TUSU(PKGS[5:], FILES)], PKGS, FILES),
 ])
 def test_prepare_userspace_for_initram(monkeypatch, adjust_cwd, input_msgs, pkgs, files):
-    monkeypatch.setattr(initramgen.api, 'current_actor', CurrentActorMocked(msgs=input_msgs))
-    monkeypatch.setattr(initramgen, '_install_initram_deps', MockedCopyArgs())
-    monkeypatch.setattr(initramgen, '_copy_files', MockedCopyArgs())
+    monkeypatch.setattr(upgradeinitramfsgenerator.api, 'current_actor', CurrentActorMocked(msgs=input_msgs))
+    monkeypatch.setattr(upgradeinitramfsgenerator, '_install_initram_deps', MockedCopyArgs())
+    monkeypatch.setattr(upgradeinitramfsgenerator, '_copy_files', MockedCopyArgs())
 
     context = MockedContext()
-    initramgen.prepare_userspace_for_initram(context)
+    upgradeinitramfsgenerator.prepare_userspace_for_initram(context)
 
-    # check the initramgen script is copied into the container
+    # check the upgradeinitramfsgenerator script is copied into the container
     initram_copy = (
-        initramgen.api.get_actor_file_path(initramgen.INITRAM_GEN_SCRIPT_NAME),
-        os.path.join('/', initramgen.INITRAM_GEN_SCRIPT_NAME)
+        upgradeinitramfsgenerator.api.get_actor_file_path(upgradeinitramfsgenerator.INITRAM_GEN_SCRIPT_NAME),
+        os.path.join('/', upgradeinitramfsgenerator.INITRAM_GEN_SCRIPT_NAME)
     )
     assert initram_copy in context.called_copy_to
 
     # check the set of packages required to be installed matches expectations
     _pkgs = set(pkgs) if isinstance(pkgs, list) else set([pkgs])
-    assert initramgen._install_initram_deps.args[0] == _pkgs
+    assert upgradeinitramfsgenerator._install_initram_deps.args[0] == _pkgs
 
     # check the set of files to be copied into the container matches exp
     _files = _sort_files(files) if isinstance(files, list) else [files]
-    assert _sort_files(initramgen._copy_files.args[1]) == _files
+    assert _sort_files(upgradeinitramfsgenerator._copy_files.args[1]) == _files
 
 
 @pytest.mark.parametrize('input_msgs,modules', [
@@ -201,26 +201,26 @@ def test_prepare_userspace_for_initram(monkeypatch, adjust_cwd, input_msgs, pkgs
     (gen_UDM_list(MODULES[1]) + [gen_UIT(MODULES[2], [])], MODULES[1:3]),
     (gen_UDM_list(MODULES[2:]) + [gen_UIT(MODULES[0:2], [])], MODULES),
 
-    # TODO: test include files missing
+    # TODO(pstodulk): test include files missing (relates #376)
 ])
 def test_generate_initram_disk(monkeypatch, input_msgs, modules):
     context = MockedContext()
     curr_actor = CurrentActorMocked(msgs=input_msgs, arch=architecture.ARCH_X86_64)
-    monkeypatch.setattr(initramgen.api, 'current_actor', curr_actor)
-    monkeypatch.setattr(initramgen, 'copy_dracut_modules', MockedCopyArgs())
-    monkeypatch.setattr(initramgen, 'copy_boot_files', lambda dummy: None)
-    initramgen.generate_initram_disk(context)
+    monkeypatch.setattr(upgradeinitramfsgenerator.api, 'current_actor', curr_actor)
+    monkeypatch.setattr(upgradeinitramfsgenerator, 'copy_dracut_modules', MockedCopyArgs())
+    monkeypatch.setattr(upgradeinitramfsgenerator, 'copy_boot_files', lambda dummy: None)
+    upgradeinitramfsgenerator.generate_initram_disk(context)
 
     # test now just that all modules have been passed for copying - so we know
     # all modules have been consumed
     detected_modules = set()
     _modules = set(modules) if isinstance(modules, list) else set([modules])
-    for dracut_module in initramgen.copy_dracut_modules.args[1]:
+    for dracut_module in upgradeinitramfsgenerator.copy_dracut_modules.args[1]:
         module = (dracut_module.name, dracut_module.module_path)
         assert module in _modules
         detected_modules.add(module)
     assert detected_modules == _modules
 
-    # TODO: this test is not created properly, as context.call check is skipped
-    # completely. Testing will more convenient with fixed #376
+    # TODO(pstodulk): this test is not created properly, as context.call check
+    # is skipped completely. Testing will more convenient with fixed #376
     # similar fo the files...
