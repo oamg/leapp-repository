@@ -9,7 +9,7 @@ class DracutModule(Model):
 
     The specified dracut module has to be compatible with the target system.
 
-    See the description of UpgradeInitramfsTasks
+    See the description of UpgradeInitramfsTasks and TargetInitramfsTasks
     for more information about the role of initramfs in the in-place upgrade
     process.
     """
@@ -72,6 +72,30 @@ class UpgradeInitramfsTasks(Model):
 
     See the DracutModule model for more information.
     """
+
+
+class TargetInitramfsTasks(UpgradeInitramfsTasks):
+    """
+    Analogy to UpgradeInitramfsTasks, but referring to the target initram disk.
+
+    Target initramfs is the one, that will be used to boot to your upgraded
+    system. If you want to ensure that you are able to boot into the target
+    (upgraded) system, it is possible you need to add same stuff as you added
+    into the upgrade initramfs.
+
+    If some specific rpms are required to be able to build the upgrade
+    initramfs, install these via the RpmTransactionTasks model.
+    """
+
+
+@deprecated(since='2021-04-01', message='Replaced by TargetInitramfsTasks.')
+class InitrdIncludes(Model):
+    """
+    List of files (cannonical filesystem paths) to include in RHEL-8 initramfs
+    """
+    topic = SystemInfoTopic
+
+    files = fields.List(fields.String())
 
 
 @deprecated(since='2021-04-01', message='Replaced by UpgradeInitramfsTasks.')
