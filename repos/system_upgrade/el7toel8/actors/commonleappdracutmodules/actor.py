@@ -2,8 +2,10 @@ from leapp.actors import Actor
 from leapp.libraries.actor import modscan
 from leapp.models import RequiredUpgradeInitramPackages, UpgradeDracutModule
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
+from leapp.utils.deprecation import suppress_deprecation
 
 
+@suppress_deprecation(RequiredUpgradeInitramPackages, UpgradeDracutModule)
 class CommonLeappDracutModules(Actor):
     """
     Influences the generation of the initram disk
