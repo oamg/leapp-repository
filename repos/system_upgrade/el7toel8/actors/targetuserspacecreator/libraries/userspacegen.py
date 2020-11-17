@@ -17,17 +17,20 @@ from leapp.libraries.common.config import get_product_type, get_env
 from leapp.libraries.stdlib import CalledProcessError, api, config, run
 from leapp.models import (
     CustomTargetRepositoryFile,
-    RequiredTargetUserspacePackages,
     RHUIInfo,
     RHSMInfo,
+    RequiredTargetUserspacePackages,  # deprecated
     StorageInfo,
     TargetRepositories,
+    TargetUserSpacePreupgradeTasks,
     TargetUserSpaceInfo,
-    TMPTargetRepositoriesFacts,
+    TMPTargetRepositoriesFacts,  # deprecated
     UsedTargetRepositories,
     UsedTargetRepository,
     XFSPresence,
 )
+from leapp.utils.deprecation import suppress_deprecation
+
 # TODO: "refactor" (modify) the library significantly
 # The current shape is really bad and ineffective (duplicit parsing
 # of repofiles). The library is doing 3 (5) things:
@@ -73,6 +76,7 @@ class _InputData(object):
     def __init__(self):
         self._consume_data()
 
+    @suppress_deprecation(RequiredTargetUserspacePackages)
     def _consume_data(self):
         """
         Wrapper function to consume majority input data.
@@ -81,6 +85,21 @@ class _InputData(object):
         own function.
         """
         self.packages = {'dnf'}
+        self.files = []
+        _cftuples = set()
+
+        def _update_files(copy_files):
+            # add just uniq CopyFile objects to omit duplicate copying of files
+            for cfile in copy_files:
+                cftuple = (cfile.src, cfile.dst)
+                if cftuple not in _cftuples:
+                    _cftuples.add(cftuple)
+                    self.files.append(cfile)
+
+        for task in api.consume(TargetUserSpacePreupgradeTasks):
+            self.packages.update(task.install_rpms)
+            _update_files(task.copy_files)
+
         for message in api.consume(RequiredTargetUserspacePackages):
             self.packages.update(message.packages)
 
@@ -451,16 +470,38 @@ def _gather_target_repositories(context, indata, prod_cert_path):
     return gather_target_repositories(context, indata)
 
 
-def _create_target_userspace(context, packages, target_repoids):
+def _copy_files(context, files):
+    """
+    Copy the files/dirs from the host to the `context` userspace
+
+    :param context: An instance of a mounting.IsolatedActions class
+    :type context: mounting.IsolatedActions class
+    :param files: list of files that should be copied from the host to the context
+    :type files: list of CopyFile
+    """
+    for file_task in files:
+        if not file_task.dst:
+            file_task.dst = file_task.src
+        if os.path.isdir(file_task.src):
+            context.remove_tree(file_task.dst)
+            context.copytree_to(file_task.src, file_task.dst)
+        else:
+            context.copy_to(file_task.src, file_task.dst)
+
+
+def _create_target_userspace(context, packages, files, target_repoids):
     """Create the target userspace."""
     prepare_target_userspace(context, constants.TARGET_USERSPACE, target_repoids, list(packages))
     _prep_repository_access(context, constants.TARGET_USERSPACE)
+    _copy_files(context, files)
     dnfplugin.install(constants.TARGET_USERSPACE)
+
     # and do not forget to set the rhsm into the container mode again
     with mounting.NspawnActions(constants.TARGET_USERSPACE) as target_context:
         rhsm.set_container_mode(target_context)
 
 
+@suppress_deprecation(TMPTargetRepositoriesFacts)
 def perform():
     # NOTE: this one action is out of unit-tests completely; we do not use
     # in unit tests the LEAPP_DEVEL_SKIP_RHSM envar anymore
@@ -475,11 +516,11 @@ def perform():
             xfs_info=indata.xfs_info) as overlay:
         with overlay.nspawn() as context:
             target_repoids = _gather_target_repositories(context, indata, prod_cert_path)
-            _create_target_userspace(context, indata.packages, target_repoids)
+            _create_target_userspace(context, indata.packages, indata.files, target_repoids)
             # TODO: this is tmp solution as proper one needs significant refactoring
             target_repo_facts = repofileutils.get_parsed_repofiles(context)
             api.produce(TMPTargetRepositoriesFacts(repositories=target_repo_facts))
-            # ## fixme ends here
+            # ## TODO ends here
             api.produce(UsedTargetRepositories(
                 repos=[UsedTargetRepository(repoid=repo) for repo in target_repoids]))
             api.produce(TargetUserSpaceInfo(

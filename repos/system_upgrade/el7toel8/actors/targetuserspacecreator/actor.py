@@ -3,23 +3,23 @@ from leapp.libraries.actor import userspacegen
 from leapp.libraries.common.config import get_env, version
 from leapp.models import (
     CustomTargetRepositoryFile,
-    Report,
-    RepositoriesMap,
-    RequiredTargetUserspacePackages,
     RHSMInfo,
     RHUIInfo,
+    Report,
+    RepositoriesMap,
+    RequiredTargetUserspacePackages,  # deprecated
     StorageInfo,
     TargetRepositories,
+    TargetUserSpacePreupgradeTasks,
     TargetUserSpaceInfo,
-    TMPTargetRepositoriesFacts,
+    TMPTargetRepositoriesFacts,  # deprecated all the time
     UsedTargetRepositories,
     XFSPresence,
 )
 from leapp.tags import IPUWorkflowTag, TargetTransactionFactsPhaseTag
-from leapp.utils.deprecation import suppress_deprecation
 
 
-@suppress_deprecation(TMPTargetRepositoriesFacts)
+# @suppress_deprecation(RequiredTargetUserspacePackages, TMPTargetRepositoriesFacts)
 class TargetUserspaceCreator(Actor):
     """
     Initializes a directory to be populated as a minimal environment to run binaries from the target system.
@@ -32,8 +32,17 @@ class TargetUserspaceCreator(Actor):
     """
 
     name = 'target_userspace_creator'
-    consumes = (CustomTargetRepositoryFile, RepositoriesMap, RequiredTargetUserspacePackages,
-                StorageInfo, RHSMInfo, TargetRepositories, XFSPresence, RHUIInfo)
+    consumes = (
+        CustomTargetRepositoryFile,
+        RHSMInfo,
+        RHUIInfo,
+        RepositoriesMap,
+        RequiredTargetUserspacePackages,
+        StorageInfo,
+        TargetRepositories,
+        TargetUserSpacePreupgradeTasks,
+        XFSPresence,
+    )
     produces = (TargetUserSpaceInfo, UsedTargetRepositories, Report, TMPTargetRepositoriesFacts,)
     tags = (IPUWorkflowTag, TargetTransactionFactsPhaseTag)
 
