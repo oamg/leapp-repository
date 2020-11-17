@@ -97,7 +97,35 @@ class TargetUserSpacePreupgradeTasks(Model):
     """
 
 
+class TargetUserSpaceUpgradeTasks(TargetUserSpacePreupgradeTasks):
+    """
+    Analogy to the TargetUserSpacePreupgradeTasks model, but focused
+    on initramfs requirements.
+
+    Generate this message to ensure all RPMs and configuration files, needed
+    to be able to generate the upgrade initramfs (see UpgradeInitramfsTasks),
+    are available inside the container.
+
+    For performance reasons (do not download & install bunch of rpms before
+    it's sure the upgrade is not inhibited) these tasks are executed just
+    in time it's 'sure' the upgrade is going to happen.
+    """
+
+
 @deprecated(since='2021-04-01', message='Replaced by TargetUserSpacePreupgradeTasks.')
 class RequiredTargetUserspacePackages(Model):
     topic = TargetUserspaceTopic
     packages = fields.List(fields.String(), default=[])
+
+
+@deprecated(since='2021-04-01', message='Replaced by TargetUserSpaceInitrdEnvTasks')
+class RequiredUpgradeInitramPackages(Model):
+    """
+    Requests packages to be installed that the leapp upgrade dracut image generation will succeed
+    """
+    topic = BootPrepTopic
+
+    packages = fields.List(fields.String(), default=[])
+    """
+    List of packages names to install on the target userspace so their content can be included in the initram disk
+    """

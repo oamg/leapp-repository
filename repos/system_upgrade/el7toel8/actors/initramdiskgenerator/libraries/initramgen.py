@@ -5,10 +5,19 @@ from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import dnfplugin, mounting
 from leapp.libraries.common.config import architecture
 from leapp.libraries.stdlib import api
-from leapp.models import (BootContent, RequiredUpgradeInitramPackages, TargetUserSpaceInfo, UpgradeDracutModule,
-                          UsedTargetRepositories)
+from leapp.models import (
+    BootContent,
+    RequiredUpgradeInitramPackages,  # deprecated
+    TargetUserSpaceInfo,
+    TargetUserSpaceUpgradeTasks,
+    UpgradeDracutModule,  # deprecated
+    UpgradeInitramfsTasks,
+    UsedTargetRepositories,
+)
+from leapp.utils.deprecation import suppress_deprecation
 
 INITRAM_GEN_SCRIPT_NAME = 'generate-initram.sh'
+DRACUT_DIR = '/dracut'
 
 
 def _reinstall_leapp_repository_hint():
@@ -26,36 +35,38 @@ def copy_dracut_modules(context, modules):
     Copies our dracut modules into the target userspace.
     """
     try:
-        shutil.rmtree(context.full_path('/dracut'))
+        shutil.rmtree(context.full_path(DRACUT_DIR))
     except EnvironmentError:
         pass
     for module in modules:
+        if not module.module_path:
+            continue
         try:
-            context.copytree_to(module.module_path, os.path.join('/dracut', os.path.basename(module.module_path)))
+            context.copytree_to(module.module_path, os.path.join(DRACUT_DIR, os.path.basename(module.module_path)))
         except shutil.Error as e:
             api.current_logger().error('Failed to copy dracut module "{name}" from "{source}" to "{target}"'.format(
-                name=module.name, source=module.module_path, target=context.full_path('/dracut')), exc_info=True)
+                name=module.name, source=module.module_path, target=context.full_path(DRACUT_DIR)), exc_info=True)
             raise StopActorExecutionError(
                 message='Failed to install dracut modules required in the initram. Error: {}'.format(str(e))
             )
 
 
+@suppress_deprecation(UpgradeDracutModule)
 def _get_dracut_modules():
     return list(api.consume(UpgradeDracutModule))
 
 
-def install_initram_deps(context):
+def _install_initram_deps(packages):
     used_repos = api.consume(UsedTargetRepositories)
     target_userspace_info = next(api.consume(TargetUserSpaceInfo), None)
 
-    packages = set()
-    for message in api.consume(RequiredUpgradeInitramPackages):
-        packages.update(message.packages)
     dnfplugin.install_initramdisk_requirements(
-        packages=packages, target_userspace_info=target_userspace_info, used_repos=used_repos)
+        packages=packages,
+        target_userspace_info=target_userspace_info,
+        used_repos=used_repos)
 
 
-def _install_files(context):
+def _install_dasd_files(context):
     """
     Copy the required files into the `context` userspace and return the list
     of those files.
@@ -65,6 +76,7 @@ def _install_files(context):
     in the initrd explicitly, so return the list of those files for other
     purposes.
     """
+    # TODO: move this function to separate actor
     # TODO: currently we need this just for /etc/dasd.conf, but it's expected
     # we will need this for more files in future. The concept used here will
     # need to be changed, as we should consume specific messages instead.
@@ -77,7 +89,8 @@ def _install_files(context):
     return []
 
 
-def install_multipath_files(context):
+def _install_multipath_files(context):
+    # TODO: move this to separate actor
     # Include multipath related files (according to module-setup of multipath)
     if os.path.exists('/etc/xdrdevices.conf'):
         context.copy_to('/etc/xdrdevices.conf', '/etc/xdrdevices.conf')
@@ -88,22 +101,97 @@ def install_multipath_files(context):
             context.copytree_to('/etc/multipath', '/etc/multipath')
 
 
-def generate_initram_disk(context):
+# duplicate of _copy_files fro userspacegen.py
+def _copy_files(context, files):
     """
-    Function to actually execute the initram creation.
+    Copy the files/dirs from the host to the `context` userspace
+
+    :param context: An instance of a mounting.IsolatedActions class
+    :type context: mounting.IsolatedActions class
+    :param files: list of files that should be copied from the host to the context
+    :type files: list of CopyFile
     """
+    for file_task in files:
+        if not file_task.dst:
+            file_task.dst = file_task.src
+        if os.path.isdir(file_task.src):
+            context.remove_tree(file_task.dst)
+            context.copytree_to(file_task.src, file_task.dst)
+        else:
+            context.copy_to(file_task.src, file_task.dst)
+
+
+# TODO: think about possibility to split this part to different actor
+# # reasoning: the environment could be prepared automatically and actor
+# # developers will be able to do additional modifications before the initrd
+# # will be really generated. E.g. multipath: config files will be copied
+# # and another actor can securely updated configuration before the initrd
+# # will be generated. same could be from user's POV - they are not allowed to
+# # modify our actors, but they could need to do additional actions inside the
+# # env as well.
+@suppress_deprecation(RequiredUpgradeInitramPackages)
+def prepare_userspace_for_initram(context):
+    """
+    Prepare the target userspace container to be able to generate init ramdisk
+
+    This includes installation of rpms that are not installed yet. Copying
+    files from the host to container, ... So when we start the process of
+    the upgrade init ramdisk creation, the environment will be prepared with
+    all required data and utilities.
+
+    Note: preparation of dracut modules are handled outside of this function
+    """
+    packages = set()
+    files = []
+    _cftuples = set()
+
+    def _update_files(copy_files):
+        # add just uniq CopyFile objects to omit duplicate copying of files
+        for cfile in copy_files:
+            cftuple = (cfile.src, cfile.dst)
+            if cftuple not in _cftuples:
+                _cftuples.add(cftuple)
+                files.append(cfile)
+
     generator_script = api.get_actor_file_path(INITRAM_GEN_SCRIPT_NAME)
     if not generator_script:
         raise StopActorExecutionError(
             message='Mandatory script to generate initram not available.',
             details=_reinstall_leapp_repository_hint()
         )
-    modules = _get_dracut_modules()
-    copy_dracut_modules(context, modules)
     context.copy_to(generator_script, os.path.join('/', INITRAM_GEN_SCRIPT_NAME))
-    install_initram_deps(context)
-    install_multipath_files(context)
-    install_files = _install_files(context)
+    for msg in api.consume(TargetUserSpaceUpgradeTasks):
+        packages.update(msg.install_rpms)
+        _update_files(msg.copy_files)
+    for message in api.consume(RequiredUpgradeInitramPackages):
+        packages.update(message.packages)
+    # install all required rpms first, so files installed/copied later
+    # will not be overwritten during the dnf transaction
+    _install_initram_deps(packages)
+    _install_dasd_files(context)
+    _install_multipath_files(context)
+    _copy_files(context, files)
+
+
+def generate_initram_disk(context):
+    """
+    Function to actually execute the init ramdisk creation.
+
+    Includes handling of specified dracut modules from the host when needed
+    """
+    # TODO: (maybe for Cabal)
+    # It could be nice to be sure we have every module specified just
+    # once and in case a same module name is specified multiple times:
+    # a) log debug/info msg when module is specified multiple times, but
+    # # it is identitical (same paths, ...)
+    # b) raise error, when module is specified multiple times and paths are
+    # #  different (add possibility to skip the check when an envar is used)
+    modules = _get_dracut_modules()  # deprecated
+    files = set()
+    for task in api.consume(UpgradeInitramfsTasks):
+        modules.extend(task.include_dracut_modules)
+        files.update(task.include_files)
+    copy_dracut_modules(context, modules)
     # FIXME: issue #376
     context.call([
         '/bin/sh', '-c',
@@ -111,7 +199,7 @@ def generate_initram_disk(context):
         'LEAPP_DRACUT_INSTALL_FILES="{files}" {cmd}'.format(
             modules=','.join([mod.name for mod in modules]),
             arch=api.current_actor().configuration.architecture,
-            files=' '.join(install_files),
+            files=' '.join(files),
             cmd=os.path.join('/', INITRAM_GEN_SCRIPT_NAME))
     ])
     copy_boot_files(context)
@@ -140,4 +228,5 @@ def process():
     userspace_info = next(api.consume(TargetUserSpaceInfo), None)
 
     with mounting.NspawnActions(base_dir=userspace_info.path) as context:
+        prepare_userspace_for_initram(context)
         generate_initram_disk(context)
