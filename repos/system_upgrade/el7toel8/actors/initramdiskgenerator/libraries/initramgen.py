@@ -89,18 +89,6 @@ def _install_dasd_files(context):
     return []
 
 
-def _install_multipath_files(context):
-    # TODO: move this to separate actor
-    # Include multipath related files (according to module-setup of multipath)
-    if os.path.exists('/etc/xdrdevices.conf'):
-        context.copy_to('/etc/xdrdevices.conf', '/etc/xdrdevices.conf')
-    if os.path.exists('/etc/multipath.conf'):
-        context.copy_to('/etc/multipath.conf', '/etc/multipath.conf')
-        if os.path.isdir('/etc/multipath'):
-            shutil.rmtree(context.full_path('/etc/multipath'))
-            context.copytree_to('/etc/multipath', '/etc/multipath')
-
-
 # duplicate of _copy_files fro userspacegen.py
 def _copy_files(context, files):
     """
@@ -169,7 +157,6 @@ def prepare_userspace_for_initram(context):
     # will not be overwritten during the dnf transaction
     _install_initram_deps(packages)
     _install_dasd_files(context)
-    _install_multipath_files(context)
     _copy_files(context, files)
 
 
