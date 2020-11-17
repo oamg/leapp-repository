@@ -13,6 +13,7 @@ from leapp.models import (
     PersistentNetNamesFactsInitramfs,
     RenamedInterface,
     RenamedInterfaces,
+    TargetInitramfsTasks,
 )
 
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -59,8 +60,10 @@ def test_identical(current_actor_context):
 
     renamed_interfaces = current_actor_context.consume(RenamedInterfaces)[0]
     initrd_files = current_actor_context.consume(InitrdIncludes)[0]
+    t_initrafms_tasks = current_actor_context.consume(TargetInitramfsTasks)[0]
+    assert initrd_files.files == t_initrafms_tasks.include_files
     assert not renamed_interfaces.renamed
-    assert not initrd_files.files
+    assert not t_initrafms_tasks.include_files
 
 
 def test_renamed_single_noneth(monkeypatch, current_actor_context):
@@ -74,9 +77,11 @@ def test_renamed_single_noneth(monkeypatch, current_actor_context):
 
     renamed_interfaces = current_actor_context.consume(RenamedInterfaces)[0]
     initrd_files = current_actor_context.consume(InitrdIncludes)[0]
+    t_initrafms_tasks = current_actor_context.consume(TargetInitramfsTasks)[0]
+    assert initrd_files.files == t_initrafms_tasks.include_files
     assert not renamed_interfaces.renamed
-    assert len(initrd_files.files) == 1
-    assert '/etc/systemd/network/10-leapp-n0.link' in initrd_files.files
+    assert len(t_initrafms_tasks.include_files) == 1
+    assert '/etc/systemd/network/10-leapp-n0.link' in t_initrafms_tasks.include_files
 
 
 def test_renamed_swap_noneth(monkeypatch, current_actor_context):
@@ -91,10 +96,12 @@ def test_renamed_swap_noneth(monkeypatch, current_actor_context):
 
     renamed_interfaces = current_actor_context.consume(RenamedInterfaces)[0]
     initrd_files = current_actor_context.consume(InitrdIncludes)[0]
+    t_initrafms_tasks = current_actor_context.consume(TargetInitramfsTasks)[0]
+    assert initrd_files.files == t_initrafms_tasks.include_files
     assert not renamed_interfaces.renamed
-    assert len(initrd_files.files) == 2
-    assert '/etc/systemd/network/10-leapp-n0.link' in initrd_files.files
-    assert '/etc/systemd/network/10-leapp-n3.link' in initrd_files.files
+    assert len(t_initrafms_tasks.include_files) == 2
+    assert '/etc/systemd/network/10-leapp-n0.link' in t_initrafms_tasks.include_files
+    assert '/etc/systemd/network/10-leapp-n3.link' in t_initrafms_tasks.include_files
 
 
 def test_renamed_single_eth(monkeypatch, current_actor_context):
@@ -110,10 +117,12 @@ def test_renamed_single_eth(monkeypatch, current_actor_context):
 
     renamed_interfaces = current_actor_context.consume(RenamedInterfaces)[0]
     initrd_files = current_actor_context.consume(InitrdIncludes)[0]
+    t_initrafms_tasks = current_actor_context.consume(TargetInitramfsTasks)[0]
+    assert initrd_files.files == t_initrafms_tasks.include_files
     assert len(renamed_interfaces.renamed) == 1
     assert renamed_interfaces.renamed[0].rhel7_name == 'eth0'
     assert renamed_interfaces.renamed[0].rhel8_name == 'eth4'
-    assert not initrd_files.files
+    assert not t_initrafms_tasks.include_files
 
 
 def test_renamed_swap_eth(monkeypatch, current_actor_context):
@@ -130,13 +139,15 @@ def test_renamed_swap_eth(monkeypatch, current_actor_context):
 
     renamed_interfaces = current_actor_context.consume(RenamedInterfaces)[0]
     initrd_files = current_actor_context.consume(InitrdIncludes)[0]
+    t_initrafms_tasks = current_actor_context.consume(TargetInitramfsTasks)[0]
+    assert initrd_files.files == t_initrafms_tasks.include_files
     assert len(renamed_interfaces.renamed) == 2
     for interface in renamed_interfaces.renamed:
         if interface.rhel7_name == 'eth0':
             assert interface.rhel8_name == 'eth3'
         elif interface.rhel7_name == 'eth3':
             assert interface.rhel8_name == 'eth0'
-    assert not initrd_files.files
+    assert not t_initrafms_tasks.include_files
 
 
 def test_bz_1899455_crash_iface(monkeypatch, current_actor_context, adjust_cwd):
@@ -163,6 +174,6 @@ def test_bz_1899455_crash_iface(monkeypatch, current_actor_context, adjust_cwd):
     monkeypatch.setattr(persistentnetnamesconfig.api, 'produce', produce_mocked())
     persistentnetnamesconfig.process()
 
-    for prod_models in [RenamedInterfaces, InitrdIncludes]:
+    for prod_models in [RenamedInterfaces, InitrdIncludes, TargetInitramfsTasks]:
         any(isinstance(i, prod_models) for i in persistentnetnamesconfig.api.produce.model_instances)
     assert any(['Some network devices' in x for x in persistentnetnamesconfig.api.current_logger.warnmsg])

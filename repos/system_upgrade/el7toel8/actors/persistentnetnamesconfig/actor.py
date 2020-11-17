@@ -5,10 +5,13 @@ from leapp.models import (
     PersistentNetNamesFacts,
     PersistentNetNamesFactsInitramfs,
     RenamedInterfaces,
+    TargetInitramfsTasks,
 )
 from leapp.tags import ApplicationsPhaseTag, IPUWorkflowTag
+from leapp.utils.deprecation import suppress_deprecation
 
 
+@suppress_deprecation(InitrdIncludes)
 class PersistentNetNamesConfig(Actor):
     """
     Generate udev persistent network naming configuration
@@ -20,8 +23,9 @@ class PersistentNetNamesConfig(Actor):
 
     name = 'persistentnetnamesconfig'
     consumes = (PersistentNetNamesFacts, PersistentNetNamesFactsInitramfs)
-    produces = (RenamedInterfaces, InitrdIncludes)
+    produces = (RenamedInterfaces, InitrdIncludes, TargetInitramfsTasks)
     tags = (ApplicationsPhaseTag, IPUWorkflowTag)
+    initrd_files = []
 
     def process(self):
         persistentnetnamesconfig.process()
