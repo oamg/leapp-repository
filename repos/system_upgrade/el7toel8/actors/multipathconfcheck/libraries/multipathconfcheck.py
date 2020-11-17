@@ -1,5 +1,5 @@
-from leapp.reporting import create_report
 from leapp import reporting
+from leapp.reporting import create_report
 
 
 def _merge_configs(configs):
