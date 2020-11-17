@@ -3,7 +3,15 @@ import re
 
 from leapp.libraries.common.config import architecture
 from leapp.libraries.stdlib import api
-from leapp.models import RequiredUpgradeInitramPackages, UpgradeDracutModule
+from leapp.models import (
+    DracutModule,
+    RequiredUpgradeInitramPackages,  # deprecated
+    TargetUserSpaceUpgradeTasks,
+    UpgradeDracutModule,  # deprecated
+    UpgradeInitramfsTasks,
+)
+from leapp.utils.deprecation import suppress_deprecation
+
 
 _REQUIRED_PACKAGES = [
     'binutils',
@@ -34,6 +42,9 @@ _REQUIRED_PACKAGES = [
 ]
 
 
+# The decorator is not effective for generators, it has to be used one level
+# above
+# @suppress_deprecation(UpgradeDracutModule)
 def _create_dracut_modules():
     dracut_base_path = api.get_actor_folder_path('dracut')
     if dracut_base_path:
@@ -43,15 +54,25 @@ def _create_dracut_modules():
                 name=re.sub(r'^\d+', '', module),
                 module_path=os.path.join(dracut_base_path, module)
             )
+            # NOTE: when the UpgradeDracutModule is dropped, this could be
+            # handled just by one msg instead of two
+            dm = DracutModule(
+                name=re.sub(r'^\d+', '', module),
+                module_path=os.path.join(dracut_base_path, module))
+            yield UpgradeInitramfsTasks(include_dracut_modules=[dm])
 
 
+@suppress_deprecation(RequiredUpgradeInitramPackages)
 def _create_initram_packages():
     required_pkgs = _REQUIRED_PACKAGES
     if architecture.matches_architecture(architecture.ARCH_X86_64):
         required_pkgs.append('biosdevname')
-    return RequiredUpgradeInitramPackages(packages=required_pkgs)
+    return (
+        RequiredUpgradeInitramPackages(packages=required_pkgs),
+        TargetUserSpaceUpgradeTasks(install_rpms=required_pkgs)
+    )
 
 
 def process():
     api.produce(*tuple(_create_dracut_modules()))
-    api.produce(_create_initram_packages())
+    api.produce(*_create_initram_packages())
