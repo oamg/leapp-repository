@@ -3,7 +3,6 @@ import shutil
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import dnfplugin, mounting
-from leapp.libraries.common.config import architecture
 from leapp.libraries.stdlib import api
 from leapp.models import (
     BootContent,
@@ -64,29 +63,6 @@ def _install_initram_deps(packages):
         packages=packages,
         target_userspace_info=target_userspace_info,
         used_repos=used_repos)
-
-
-def _install_dasd_files(context):
-    """
-    Copy the required files into the `context` userspace and return the list
-    of those files.
-
-    Those files will be copied from the source to the userspace used for
-    generating of the upgrade initrd. These files may need to be installed
-    in the initrd explicitly, so return the list of those files for other
-    purposes.
-    """
-    # TODO: move this function to separate actor
-    # TODO: currently we need this just for /etc/dasd.conf, but it's expected
-    # we will need this for more files in future. The concept used here will
-    # need to be changed, as we should consume specific messages instead.
-    # But for now this should be enough. Keeping that for future.
-    if architecture.matches_architecture(architecture.ARCH_S390X):
-        # we don't need to check existence of the file - it is required on this
-        # this architecture
-        context.copy_to('/etc/dasd.conf', '/etc/dasd.conf')
-        return ['/etc/dasd.conf']
-    return []
 
 
 # duplicate of _copy_files fro userspacegen.py
@@ -156,7 +132,6 @@ def prepare_userspace_for_initram(context):
     # install all required rpms first, so files installed/copied later
     # will not be overwritten during the dnf transaction
     _install_initram_deps(packages)
-    _install_dasd_files(context)
     _copy_files(context, files)
 
 
