@@ -42,7 +42,7 @@ class ScheduleSeLinuxRelabeling(Actor):
                         reporting.Title('Could not schedule SElinux for relabelling'),
                         reporting.Summary('/.autorelabel file could not be created: {}.'.format(e)),
                         reporting.Severity(reporting.Severity.HIGH),
-                        reporting.Groups(COMMON_REPORT_GROUPS + [reporting.Groups.FAILURE]),
+                        reporting.Groups(COMMON_REPORT_GROUPS + [reporting.Groups.FAILURE, reporting.Groups.POST]),
                         reporting.Remediation(
                             hint='Please set autorelabelling manually after the upgrade.'
                         ),

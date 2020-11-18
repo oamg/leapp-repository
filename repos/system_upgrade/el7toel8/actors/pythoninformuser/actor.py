@@ -22,7 +22,7 @@ class PythonInformUser(Actor):
             reporting.Title(title),
             reporting.Summary(summary),
             reporting.Severity(reporting.Severity.HIGH),
-            reporting.Groups([reporting.Groups.PYTHON]),
+            reporting.Groups([reporting.Groups.PYTHON, reporting.Groups.POST]),
             reporting.Audience('developer'),
             reporting.ExternalLink(url, title),
             reporting.Remediation(hint='Please run "alternatives --set python /usr/bin/python3" after upgrade'),
