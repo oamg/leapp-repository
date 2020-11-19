@@ -41,9 +41,11 @@ def _get_files():
 
 
 def _get_modules():
-    # NOTE: See the comments in intramdiskgenerator about the handling
-    # of non-uniq tasks for dracut modules. Currently ignore
-    # duplicates/conflicting tasks and process all.
+    # NOTE(pstodulk): Duplicated tasks are not filtered out, nor checked in the actor.
+    # Currently possible conflicting tasks are detected by the checkinitramfstasks
+    # actor that inhibits the upgrade if any conflicts are detected. User is
+    # supposed to create any such tasks before the reporting phase, so we
+    # are able to check it.
     #
     modules = []
     for task in api.consume(TargetInitramfsTasks):
