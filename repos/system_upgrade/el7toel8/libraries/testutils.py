@@ -71,7 +71,7 @@ class CurrentActorMocked(object):  # pylint:disable=R0904
         self.configuration = namedtuple(
             'configuration', ['architecture', 'kernel', 'leapp_env_vars', 'os_release', 'version']
         )(arch, kernel, envarsList, release, version)
-        self._msgs = msgs
+        self._msgs = msgs or []
 
     def __call__(self):
         return self
