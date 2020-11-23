@@ -1,7 +1,7 @@
 import platform
 
 from leapp.actors import Actor
-from leapp.models import (CustomTargetRepository, RepositoriesBlacklisted, RepositoriesFacts, RepositoriesMap,
+from leapp.models import (CustomTargetRepository, RepositoriesExcluded, RepositoriesFacts, RepositoriesMap,
                           RepositoriesSetupTasks, RHELTargetRepository, SkippedRepositories, TargetRepositories,
                           UsedRepositories)
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
@@ -21,7 +21,7 @@ class SetupTargetRepos(Actor):
                 RepositoriesSetupTasks,
                 RepositoriesMap,
                 RepositoriesFacts,
-                RepositoriesBlacklisted,
+                RepositoriesExcluded,
                 UsedRepositories)
     produces = (TargetRepositories, SkippedRepositories)
     tags = (IPUWorkflowTag, FactsPhaseTag)
@@ -71,11 +71,11 @@ class SetupTargetRepos(Actor):
             for repo in task.to_enable:
                 rhel_repos.append(RHELTargetRepository(repoid=repo))
 
-        repos_blacklisted = set()
-        for blacklist in self.consume(RepositoriesBlacklisted):
-            repos_blacklisted.update(blacklist.repoids)
-        rhel_repos = [repo for repo in rhel_repos if repo.repoid not in repos_blacklisted]
-        custom_repos = [repo for repo in custom_repos if repo.repoid not in repos_blacklisted]
+        repos_excluded = set()
+        for excluded_list in self.consume(RepositoriesExcluded):
+            repos_excluded.update(excluded_list.repoids)
+        rhel_repos = [repo for repo in rhel_repos if repo.repoid not in repos_excluded]
+        custom_repos = [repo for repo in custom_repos if repo.repoid not in repos_excluded]
 
         self.produce(TargetRepositories(
             rhel_repos=rhel_repos,

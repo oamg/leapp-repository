@@ -159,7 +159,7 @@ def _get_sysctls():
 def get_sysctls_status():
     r""" Get a list of stable `sysctls` variables
 
-        Note that some variables are inherently unstable and we need to blacklist
+        Note that some variables are inherently unstable and we need to exclude
         them:
 
         diff -u <(sysctl -a 2>/dev/null | sort) <(sysctl -a 2>/dev/null | sort)\
