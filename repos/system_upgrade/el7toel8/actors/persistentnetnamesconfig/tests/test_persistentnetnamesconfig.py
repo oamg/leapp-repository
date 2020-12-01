@@ -1,7 +1,30 @@
+import json
+import os
+
+import pytest
+
 from leapp.libraries.actor import persistentnetnamesconfig
-from leapp.models import PersistentNetNamesFacts, PersistentNetNamesFactsInitramfs
-from leapp.models import RenamedInterface, RenamedInterfaces, InitrdIncludes
-from leapp.models import Interface, PCIAddress
+from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked, produce_mocked
+from leapp.models import (
+    InitrdIncludes,
+    Interface,
+    PCIAddress,
+    PersistentNetNamesFacts,
+    PersistentNetNamesFactsInitramfs,
+    RenamedInterface,
+    RenamedInterfaces,
+)
+
+TEST_DIR = os.path.dirname(os.path.abspath(__file__))
+CUR_DIR = ""
+
+
+@pytest.fixture
+def adjust_cwd():
+    previous_cwd = os.getcwd()
+    os.chdir(TEST_DIR)
+    yield
+    os.chdir(previous_cwd)
 
 
 def generate_link_file_mocked(interface):
@@ -114,3 +137,32 @@ def test_renamed_swap_eth(monkeypatch, current_actor_context):
         elif interface.rhel7_name == 'eth3':
             assert interface.rhel8_name == 'eth0'
     assert not initrd_files.files
+
+
+def test_bz_1899455_crash_iface(monkeypatch, current_actor_context, adjust_cwd):
+    """
+    Cover situation when network device is discovered on the src sys but not
+    inside the upgrade environment.
+
+    This typically happens when the network device needs specific drivers which
+    are not present inside the upgrade initramfs. Usually it points to a missing
+    actors that should influence the upgrade initramfs in a way the drivers are
+    installed. In this situation, only correct thing we can do in this actor
+    is print warning / report that we couldn't located particular devices so
+    we cannot handle interface names related to this devices.
+    """
+    with open(os.path.join(CUR_DIR, 'files/crashed_ifaces.json')) as fp:
+        json_msgs = json.load(fp)
+    msgs = [
+        PersistentNetNamesFacts.create(json_msgs["PersistentNetNamesFacts"]),
+        PersistentNetNamesFactsInitramfs.create(json_msgs["PersistentNetNamesFactsInitramfs"]),
+    ]
+    monkeypatch.setattr(persistentnetnamesconfig, 'generate_link_file', generate_link_file_mocked)
+    monkeypatch.setattr(persistentnetnamesconfig.api, 'current_actor', CurrentActorMocked(msgs=msgs))
+    monkeypatch.setattr(persistentnetnamesconfig.api, 'current_logger', logger_mocked())
+    monkeypatch.setattr(persistentnetnamesconfig.api, 'produce', produce_mocked())
+    persistentnetnamesconfig.process()
+
+    for prod_models in [RenamedInterfaces, InitrdIncludes]:
+        any(isinstance(i, prod_models) for i in persistentnetnamesconfig.api.produce.model_instances)
+    assert any(['Some network devices' in x for x in persistentnetnamesconfig.api.current_logger.warnmsg])

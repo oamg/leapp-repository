@@ -43,12 +43,23 @@ def process():
     rhel8_ifaces_map = {iface.mac: iface for iface in rhel8_ifaces}
 
     initrd_files = []
+    missing_ifaces = []
     renamed_interfaces = []
 
     if rhel7_ifaces != rhel8_ifaces:
         for iface in rhel7_ifaces:
             rhel7_name = rhel7_ifaces_map[iface.mac].name
-            rhel8_name = rhel8_ifaces_map[iface.mac].name
+            try:
+                rhel8_name = rhel8_ifaces_map[iface.mac].name
+            except KeyError:
+                missing_ifaces.append(iface)
+                api.current_logger().warning(
+                    'The device with MAC "{}" is not detected in the upgrade'
+                    ' environment. Required driver: "{}".'
+                    ' Original interface name: "{}".'
+                    .format(iface.mac, iface.driver, iface.name)
+                )
+                continue
 
             if rhel7_name != rhel8_name:
                 api.current_logger().warning('Detected interface rename {} -> {}.'.format(rhel7_name, rhel8_name))
@@ -60,6 +71,22 @@ def process():
                     continue
 
                 initrd_files.append(generate_link_file(iface))
+
+    if missing_ifaces:
+        msg = (
+            'Some network devices have not been detected inside the'
+            ' upgrade environment and so related network interfaces'
+            ' could be renamed on the upgraded system.'
+        )
+        # Note(pstodulk):
+        # This usually happens when required (RHEL 8 compatible)
+        # drivers are not included in the upgrade initramfs.
+        # We can add more information later. Currently we cannot provide
+        # better instructions for users before (at least):
+        # a) networking work in the upgrade initramfs (PR #583)
+        # b) it's possible to influence the upgrade initramfs (PR #517)
+        # TODO(pstodulk): gen report msg
+        api.current_logger().warning(msg)
 
     api.produce(RenamedInterfaces(renamed=renamed_interfaces))
     api.produce(InitrdIncludes(files=initrd_files))
