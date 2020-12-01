@@ -51,11 +51,11 @@ class MockedMountingBase(object):
     (os.path.join(_CERTS_PATH, '8.1', '419.pem'), '8.1', architecture.ARCH_ARM64, 'ga'),
     (os.path.join(_CERTS_PATH, '8.1', '279.pem'), '8.1', architecture.ARCH_PPC64LE, 'ga'),
     (os.path.join(_CERTS_PATH, '8.2', '479.pem'), '8.2', architecture.ARCH_X86_64, 'ga'),
-    (os.path.join(_CERTS_PATH, '8.3', '230.pem'), '8.3', architecture.ARCH_X86_64, 'htb'),
-    (os.path.join(_CERTS_PATH, '8.3', '486.pem'), '8.3', architecture.ARCH_X86_64, 'beta'),
+    (os.path.join(_CERTS_PATH, '8.4', '230.pem'), '8.4', architecture.ARCH_X86_64, 'htb'),
+    (os.path.join(_CERTS_PATH, '8.4', '486.pem'), '8.4', architecture.ARCH_X86_64, 'beta'),
     (os.path.join(_CERTS_PATH, '8.2', '72.pem'), '8.2', architecture.ARCH_S390X, 'ga'),
-    (os.path.join(_CERTS_PATH, '8.3', '232.pem'), '8.3', architecture.ARCH_S390X, 'htb'),
-    (os.path.join(_CERTS_PATH, '8.3', '433.pem'), '8.3', architecture.ARCH_S390X, 'beta'),
+    (os.path.join(_CERTS_PATH, '8.4', '232.pem'), '8.4', architecture.ARCH_S390X, 'htb'),
+    (os.path.join(_CERTS_PATH, '8.4', '433.pem'), '8.4', architecture.ARCH_S390X, 'beta'),
 ])
 def test_get_product_certificate_path(monkeypatch, adjust_cwd, result, dst_ver, arch, prod_type):
     envars = {'LEAPP_DEVEL_TARGET_PRODUCT_TYPE': prod_type}
