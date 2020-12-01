@@ -1,0 +1,348 @@
+{
+    "PersistentNetNamesFacts": {
+        "interfaces": [
+            {
+                "devpath": "/devices/pci0000:00/0000:00:02.2/0000:05:00.0/net/p7p1",
+                "driver": "i40e",
+                "mac": "f8:f2:1e:15:a6:40",
+                "name": "p7p1",
+                "pci_info": {
+                    "bus": "05",
+                    "device": "00",
+                    "domain": "0000",
+                    "function": "0"
+                },
+                "vendor": "0x8086"
+            },
+            {
+                "devpath": "/devices/pci0000:00/0000:00:02.2/0000:05:00.1/net/p7p2",
+                "driver": "i40e",
+                "mac": "f8:f2:1e:15:a6:42",
+                "name": "p7p2",
+                "pci_info": {
+                    "bus": "05",
+                    "device": "00",
+                    "domain": "0000",
+                    "function": "1"
+                },
+                "vendor": "0x8086"
+            },
+            {
+                "devpath": "/devices/pci0000:00/0000:00:02.2/0000:05:00.2/net/p7p3",
+                "driver": "i40e",
+                "mac": "f8:f2:1e:15:a6:44",
+                "name": "p7p3",
+                "pci_info": {
+                    "bus": "05",
+                    "device": "00",
+                    "domain": "0000",
+                    "function": "2"
+                },
+                "vendor": "0x8086"
+            },
+            {
+                "devpath": "/devices/pci0000:00/0000:00:02.2/0000:05:00.3/net/p7p4",
+                "driver": "i40e",
+                "mac": "f8:f2:1e:15:a6:46",
+                "name": "p7p4",
+                "pci_info": {
+                    "bus": "05",
+                    "device": "00",
+                    "domain": "0000",
+                    "function": "3"
+                },
+                "vendor": "0x8086"
+            },
+            {
+                "devpath": "/devices/pci0000:00/0000:00:03.0/0000:02:00.0/net/em3",
+                "driver": "tg3",
+                "mac": "80:18:44:f3:ed:16",
+                "name": "em3",
+                "pci_info": {
+                    "bus": "02",
+                    "device": "00",
+                    "domain": "0000",
+                    "function": "0"
+                },
+                "vendor": "0x14e4"
+            },
+            {
+                "devpath": "/devices/pci0000:00/0000:00:03.0/0000:02:00.1/net/em4",
+                "driver": "tg3",
+                "mac": "80:18:44:f3:ed:17",
+                "name": "em4",
+                "pci_info": {
+                    "bus": "02",
+                    "device": "00",
+                    "domain": "0000",
+                    "function": "1"
+                },
+                "vendor": "0x14e4"
+            },
+            {
+                "devpath": "/devices/pci0000:00/0000:00:03.1/0000:01:00.0/net/em1",
+                "driver": "tg3",
+                "mac": "80:18:44:f3:ed:14",
+                "name": "em1",
+                "pci_info": {
+                    "bus": "01",
+                    "device": "00",
+                    "domain": "0000",
+                    "function": "0"
+                },
+                "vendor": "0x14e4"
+            },
+            {
+                "devpath": "/devices/pci0000:00/0000:00:03.1/0000:01:00.1/net/em2",
+                "driver": "tg3",
+                "mac": "80:18:44:f3:ed:15",
+                "name": "em2",
+                "pci_info": {
+                    "bus": "01",
+                    "device": "00",
+                    "domain": "0000",
+                    "function": "1"
+                },
+                "vendor": "0x14e4"
+            },
+            {
+                "devpath": "/devices/pci0000:00/0000:00:03.2/0000:06:00.0/net/p5p1",
+                "driver": "i40e",
+                "mac": "f8:f2:1e:15:a8:80",
+                "name": "p5p1",
+                "pci_info": {
+                    "bus": "06",
+                    "device": "00",
+                    "domain": "0000",
+                    "function": "0"
+                },
+                "vendor": "0x8086"
+            },
+            {
+                "devpath": "/devices/pci0000:00/0000:00:03.2/0000:06:00.1/net/p5p2",
+                "driver": "i40e",
+                "mac": "f8:f2:1e:15:a8:82",
+                "name": "p5p2",
+                "pci_info": {
+                    "bus": "06",
+                    "device": "00",
+                    "domain": "0000",
+                    "function": "1"
+                },
+                "vendor": "0x8086"
+            },
+            {
+                "devpath": "/devices/pci0000:00/0000:00:03.2/0000:06:00.2/net/p5p3",
+                "driver": "i40e",
+                "mac": "f8:f2:1e:15:a8:84",
+                "name": "p5p3",
+                "pci_info": {
+                    "bus": "06",
+                    "device": "00",
+                    "domain": "0000",
+                    "function": "2"
+                },
+                "vendor": "0x8086"
+            },
+            {
+                "devpath": "/devices/pci0000:00/0000:00:03.2/0000:06:00.3/net/p5p4",
+                "driver": "i40e",
+                "mac": "f8:f2:1e:15:a8:86",
+                "name": "p5p4",
+                "pci_info": {
+                    "bus": "06",
+                    "device": "00",
+                    "domain": "0000",
+                    "function": "3"
+                },
+                "vendor": "0x8086"
+            },
+            {
+                "devpath": "/devices/pci0000:80/0000:80:01.0/0000:81:00.0/net/ib0",
+                "driver": "mlx5_core[ib_ipoib]",
+                "mac": "00:00:10:86:fe:80:00:00:00:00:00:00:98:03:9b:03:00:9d:6f:08",
+                "name": "ib0",
+                "pci_info": {
+                    "bus": "81",
+                    "device": "00",
+                    "domain": "0000",
+                    "function": "0"
+                },
+                "vendor": "0x15b3"
+            },
+            {
+                "devpath": "/devices/pci0000:80/0000:80:01.0/0000:81:00.1/net/ib1",
+                "driver": "mlx5_core[ib_ipoib]",
+                "mac": "00:00:18:86:fe:80:00:00:00:00:00:00:98:03:9b:03:00:9d:6f:09",
+                "name": "ib1",
+                "pci_info": {
+                    "bus": "81",
+                    "device": "00",
+                    "domain": "0000",
+                    "function": "1"
+                },
+                "vendor": "0x15b3"
+            }
+        ]
+    },
+    "PersistentNetNamesFactsInitramfs": {
+        "interfaces": [
+            {
+                "devpath": "/devices/pci0000:00/0000:00:02.2/0000:05:00.0/net/enp5s0f0",
+                "driver": "i40e",
+                "mac": "f8:f2:1e:15:a6:40",
+                "name": "enp5s0f0",
+                "pci_info": {
+                    "bus": "05",
+                    "device": "00",
+                    "domain": "0000",
+                    "function": "0"
+                },
+                "vendor": "0x8086"
+            },
+            {
+                "devpath": "/devices/pci0000:00/0000:00:02.2/0000:05:00.1/net/enp5s0f1",
+                "driver": "i40e",
+                "mac": "f8:f2:1e:15:a6:42",
+                "name": "enp5s0f1",
+                "pci_info": {
+                    "bus": "05",
+                    "device": "00",
+                    "domain": "0000",
+                    "function": "1"
+                },
+                "vendor": "0x8086"
+            },
+            {
+                "devpath": "/devices/pci0000:00/0000:00:02.2/0000:05:00.2/net/enp5s0f2",
+                "driver": "i40e",
+                "mac": "f8:f2:1e:15:a6:44",
+                "name": "enp5s0f2",
+                "pci_info": {
+                    "bus": "05",
+                    "device": "00",
+                    "domain": "0000",
+                    "function": "2"
+                },
+                "vendor": "0x8086"
+            },
+            {
+                "devpath": "/devices/pci0000:00/0000:00:02.2/0000:05:00.3/net/enp5s0f3",
+                "driver": "i40e",
+                "mac": "f8:f2:1e:15:a6:46",
+                "name": "enp5s0f3",
+                "pci_info": {
+                    "bus": "05",
+                    "device": "00",
+                    "domain": "0000",
+                    "function": "3"
+                },
+                "vendor": "0x8086"
+            },
+            {
+                "devpath": "/devices/pci0000:00/0000:00:03.0/0000:02:00.0/net/eno3",
+                "driver": "tg3",
+                "mac": "80:18:44:f3:ed:16",
+                "name": "eno3",
+                "pci_info": {
+                    "bus": "02",
+                    "device": "00",
+                    "domain": "0000",
+                    "function": "0"
+                },
+                "vendor": "0x14e4"
+            },
+            {
+                "devpath": "/devices/pci0000:00/0000:00:03.0/0000:02:00.1/net/eno4",
+                "driver": "tg3",
+                "mac": "80:18:44:f3:ed:17",
+                "name": "eno4",
+                "pci_info": {
+                    "bus": "02",
+                    "device": "00",
+                    "domain": "0000",
+                    "function": "1"
+                },
+                "vendor": "0x14e4"
+            },
+            {
+                "devpath": "/devices/pci0000:00/0000:00:03.1/0000:01:00.0/net/eno1",
+                "driver": "tg3",
+                "mac": "80:18:44:f3:ed:14",
+                "name": "eno1",
+                "pci_info": {
+                    "bus": "01",
+                    "device": "00",
+                    "domain": "0000",
+                    "function": "0"
+                },
+                "vendor": "0x14e4"
+            },
+            {
+                "devpath": "/devices/pci0000:00/0000:00:03.1/0000:01:00.1/net/eno2",
+                "driver": "tg3",
+                "mac": "80:18:44:f3:ed:15",
+                "name": "eno2",
+                "pci_info": {
+                    "bus": "01",
+                    "device": "00",
+                    "domain": "0000",
+                    "function": "1"
+                },
+                "vendor": "0x14e4"
+            },
+            {
+                "devpath": "/devices/pci0000:00/0000:00:03.2/0000:06:00.0/net/enp6s0f0",
+                "driver": "i40e",
+                "mac": "f8:f2:1e:15:a8:80",
+                "name": "enp6s0f0",
+                "pci_info": {
+                    "bus": "06",
+                    "device": "00",
+                    "domain": "0000",
+                    "function": "0"
+                },
+                "vendor": "0x8086"
+            },
+            {
+                "devpath": "/devices/pci0000:00/0000:00:03.2/0000:06:00.1/net/enp6s0f1",
+                "driver": "i40e",
+                "mac": "f8:f2:1e:15:a8:82",
+                "name": "enp6s0f1",
+                "pci_info": {
+                    "bus": "06",
+                    "device": "00",
+                    "domain": "0000",
+                    "function": "1"
+                },
+                "vendor": "0x8086"
+            },
+            {
+                "devpath": "/devices/pci0000:00/0000:00:03.2/0000:06:00.2/net/enp6s0f2",
+                "driver": "i40e",
+                "mac": "f8:f2:1e:15:a8:84",
+                "name": "enp6s0f2",
+                "pci_info": {
+                    "bus": "06",
+                    "device": "00",
+                    "domain": "0000",
+                    "function": "2"
+                },
+                "vendor": "0x8086"
+            },
+            {
+                "devpath": "/devices/pci0000:00/0000:00:03.2/0000:06:00.3/net/enp6s0f3",
+                "driver": "i40e",
+                "mac": "f8:f2:1e:15:a8:86",
+                "name": "enp6s0f3",
+                "pci_info": {
+                    "bus": "06",
+                    "device": "00",
+                    "domain": "0000",
+                    "function": "3"
+                },
+                "vendor": "0x8086"
+            }
+        ]
+    }
+}
