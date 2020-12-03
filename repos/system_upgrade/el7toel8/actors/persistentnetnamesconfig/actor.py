@@ -1,9 +1,11 @@
-import re
-
 from leapp.actors import Actor
-from leapp.libraries.actor.persistentnetnamesconfig import generate_link_file
-from leapp.models import PersistentNetNamesFacts, PersistentNetNamesFactsInitramfs
-from leapp.models import RenamedInterface, RenamedInterfaces, InitrdIncludes
+from leapp.libraries.actor import persistentnetnamesconfig
+from leapp.models import (
+    InitrdIncludes,
+    PersistentNetNamesFacts,
+    PersistentNetNamesFactsInitramfs,
+    RenamedInterfaces,
+)
 from leapp.tags import ApplicationsPhaseTag, IPUWorkflowTag
 
 
@@ -20,32 +22,6 @@ class PersistentNetNamesConfig(Actor):
     consumes = (PersistentNetNamesFacts, PersistentNetNamesFactsInitramfs)
     produces = (RenamedInterfaces, InitrdIncludes)
     tags = (ApplicationsPhaseTag, IPUWorkflowTag)
-    initrd_files = []
 
     def process(self):
-        rhel7_ifaces = next(self.consume(PersistentNetNamesFacts)).interfaces
-        rhel8_ifaces = next(self.consume(PersistentNetNamesFactsInitramfs)).interfaces
-
-        rhel7_ifaces_map = {iface.mac: iface for iface in rhel7_ifaces}
-        rhel8_ifaces_map = {iface.mac: iface for iface in rhel8_ifaces}
-
-        renamed_interfaces = []
-
-        if rhel7_ifaces != rhel8_ifaces:
-            for iface in rhel7_ifaces:
-                rhel7_name = rhel7_ifaces_map[iface.mac].name
-                rhel8_name = rhel8_ifaces_map[iface.mac].name
-
-                if rhel7_name != rhel8_name:
-                    self.log.warning('Detected interface rename {} -> {}.'.format(rhel7_name, rhel8_name))
-
-                    if re.search('eth[0-9]+', iface.name) is not None:
-                        self.log.warning('Interface named using eth prefix, refusing to generate link file')
-                        renamed_interfaces.append(RenamedInterface(**{'rhel7_name': rhel7_name,
-                                                                      'rhel8_name': rhel8_name}))
-                        continue
-
-                    self.initrd_files.append(generate_link_file(iface))
-
-        self.produce(RenamedInterfaces(renamed=renamed_interfaces))
-        self.produce(InitrdIncludes(files=self.initrd_files))
+        persistentnetnamesconfig.process()
