@@ -1,1 +1,3 @@
 ### List of packages (each on new line) to be removed from the upgrade transaction
+# Removing initial-setup package to avoid it asking for EULA acceptance during upgrade - OAMG-1531
+initial-setup
