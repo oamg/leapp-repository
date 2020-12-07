@@ -34,6 +34,6 @@ class AddUpgradeBootEntry(Actor):
 
         # related to issue with hybrid BIOS and UEFI images
         # https://bugzilla.redhat.com/show_bug.cgi?id=1667028
-        if ff.firmware == 'bios' and os.path.ismount('/boot/efi'):
+        if ff.firmware == 'bios' and os.path.ismount('/boot/efi') and os.path.isfile('/boot/efi/EFI/redhat/grub.cfg'):
             configs = ['/boot/grub2/grub.cfg', '/boot/efi/EFI/redhat/grub.cfg']
         add_boot_entry(configs)
