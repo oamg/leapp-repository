@@ -19,7 +19,7 @@ def get_installed_rpms():
         return []
 
 
-def create_lookup(model, field, key, context=stdlib.api):
+def create_lookup(model, field, keys, context=stdlib.api):
     """
     Create a lookup set from one of the model fields.
 
@@ -30,16 +30,16 @@ def create_lookup(model, field, key, context=stdlib.api):
     """
     data = getattr(next((m for m in context.consume(model)), model()), field)
     try:
-        return {getattr(obj, key) for obj in data} if data else {}
+        return {tuple(getattr(obj, key) for key in keys) for obj in data} if data else set()
     except TypeError:
         # data is not iterable, not lookup can be built
         stdlib.api.current_logger().error(
-                "{model}.{field}.{key} is not iterable, can't build lookup".format(
-                    model=model, field=field, key=key))
-        return {}
+                "{model}.{field}.{keys} is not iterable, can't build lookup".format(
+                    model=model, field=field, keys=keys))
+        return set()
 
 
-def has_package(model, package_name, context=stdlib.api):
+def has_package(model, package_name, arch=None, context=stdlib.api):
     """
     Expects a model InstalledRedHatSignedRPM or InstalledUnsignedRPM.
     Can be useful in cases like a quick item presence check, ex. check in actor that
@@ -47,7 +47,10 @@ def has_package(model, package_name, context=stdlib.api):
 
     :param model: model class
     :param package_name: package to be checked
+    :param arch: filter by architecture. None means all arches.
     """
     if not (isinstance(model, type) and issubclass(model, InstalledRPM)):
         return False
-    return package_name in create_lookup(model, field='items', key='name', context=context)
+    keys = ('name',) if not arch else ('name', 'arch')
+    rpm_lookup = create_lookup(model, field='items', keys=keys, context=context)
+    return (package_name, arch) in rpm_lookup if arch else (package_name,) in rpm_lookup

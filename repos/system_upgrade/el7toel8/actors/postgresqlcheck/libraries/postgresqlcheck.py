@@ -78,8 +78,8 @@ def report_installed_packages(_context=api):
     Additionally, create another report if the postgresql-contrib rpm
     is installed.
     """
-    has_server = has_package(InstalledRedHatSignedRPM, 'postgresql-server', _context)
-    has_contrib = has_package(InstalledRedHatSignedRPM, 'postgresql-contrib', _context)
+    has_server = has_package(InstalledRedHatSignedRPM, 'postgresql-server', context=_context)
+    has_contrib = has_package(InstalledRedHatSignedRPM, 'postgresql-contrib', context=_context)
 
     if has_server:
         # postgresql-server
