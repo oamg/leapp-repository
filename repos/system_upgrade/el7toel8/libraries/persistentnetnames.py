@@ -1,3 +1,4 @@
+import os
 import pyudev
 
 from leapp.models import PCIAddress, Interface
@@ -11,7 +12,14 @@ def physical_interfaces():
     Returns a list of pyudev.Device objects for all physical network interfaces
     """
     enumerator = pyudev.Enumerator(udev_context).match_subsystem('net')
-    return [d for d in enumerator if not d.device_path.startswith('/devices/virtual/')]
+    dev_list = []
+    for d in enumerator:
+        if d.device_path.startswith('/devices/virtual/'):
+            continue
+        if os.path.exists(os.path.join(d.sys_path, 'device/physfn')):
+            continue
+        dev_list.append(d)
+    return dev_list
 
 
 def pci_info(path):
