@@ -216,7 +216,7 @@ install-deps:
 	# In case the top commit Depends-On some yet unmerged framework patch - override master leapp with the proper version
 	if [[ ! -z "$(REQ_LEAPP_PR)" ]] ; then \
 		echo "Leapp-repository depends on the yet unmerged pr of the framework #$(REQ_LEAPP_PR), installing it.." && \
-		$(VENVNAME)/bin/pip install -U "git+https://github.com/oamg/leapp.git@refs/pull/$(REQ_LEAPP_PR)/head"; \
+		$(VENVNAME)/bin/pip install -I "git+https://github.com/oamg/leapp.git@refs/pull/$(REQ_LEAPP_PR)/head"; \
 	fi
 	python utils/install_actor_deps.py --actor=$(ACTOR)
 
@@ -230,7 +230,7 @@ install-deps-fedora:
 		fi; \
 	fi
 	@# Prepare the virtual environment
-	virtualenv --system-site-packages --python /usr/bin/python $(VENVNAME)
+	virtualenv --system-site-packages --python /usr/bin/$(_PYTHON_VENV) $(VENVNAME)
 	. $(VENVNAME)/bin/activate ; \
 	pip install -U pip; \
 	pip install --upgrade setuptools; \
@@ -238,7 +238,7 @@ install-deps-fedora:
 	# In case the top commit Depends-On some yet unmerged framework patch - override master leapp with the proper version
 	if [[ ! -z "$(REQ_LEAPP_PR)" ]] ; then \
 		echo "Leapp-repository depends on the yet unmerged pr of the framework #$(REQ_LEAPP_PR), installing it.." && \
-		$(VENVNAME)/bin/pip install -U "git+https://github.com/oamg/leapp.git@refs/pull/$(REQ_LEAPP_PR)/head"; \
+		$(VENVNAME)/bin/pip install -I "git+https://github.com/oamg/leapp.git@refs/pull/$(REQ_LEAPP_PR)/head"; \
 	fi
 
 lint:
