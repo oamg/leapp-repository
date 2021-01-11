@@ -1,4 +1,5 @@
 import os
+
 import pyudev
 
 from leapp.models import PCIAddress, Interface
