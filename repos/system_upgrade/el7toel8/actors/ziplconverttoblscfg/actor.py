@@ -38,7 +38,9 @@ class ZiplConvertToBLSCFG(Actor):
         # replace the original boot directory inside the container by the host one
         # - as we cannot use zipl* pointing anywhere else than default directory
         # - no, --bls-directory is not solution
-        with mounting.BindMount(source='/boot', target=os.path.join(userspace.path, 'boot')):
+        with mounting.BindMount(source='/boot',
+                                target=os.path.join(userspace.path, 'boot'),
+                                config=mounting.MountConfig.AttachOnly):
             userspace_zipl_conf = os.path.join(userspace.path, 'etc', 'zipl.conf')
             if os.path.exists(userspace_zipl_conf):
                 os.remove(userspace_zipl_conf)
