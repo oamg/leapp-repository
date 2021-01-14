@@ -63,7 +63,7 @@ def _prepare_required_mounts(scratch_dir, mounts_dir, mount_points, xfs_info):
 
     mount_names = [mount_point.fs_file for mount_point in mount_points]
 
-    for mountpoint in xfs_info.mountpoints_without_ftype:
+    for mountpoint in set(xfs_info.mountpoints_without_ftype + ['/']):
         if mountpoint in mount_names:
             image = _create_mount_disk_image(disk_images_directory, mountpoint)
             result[mountpoint] = mounting.LoopMount(source=image, target=_mount_dir(mounts_dir, mountpoint))
