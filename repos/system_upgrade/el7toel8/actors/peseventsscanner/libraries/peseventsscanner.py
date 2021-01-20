@@ -13,10 +13,16 @@ from leapp.models import (InstalledRedHatSignedRPM, PESRpmTransactionTasks, Repo
                           RepositoriesSetupTasks, RpmTransactionTasks, RepositoriesBlacklisted)
 
 
+Package = namedtuple('Package', ['name',         # str
+                                 'repository',   # str
+                                 'modulestream'  # (str, str) or None - a module stream
+                                 ])
+
+
 Event = namedtuple('Event', ['id',            # int
                              'action',        # An instance of Action
-                             'in_pkgs',       # A dictionary with packages in format {<pkg_name>: <repository>}
-                             'out_pkgs',      # A dictionary with packages in format {<pkg_name>: <repository>}
+                             'in_pkgs',       # A set of Package named tuples
+                             'out_pkgs',      # A set of Package named tuples
                              'from_release',  # A tuple representing a release in format (major, minor)
                              'to_release',    # A tuple representing a release in format (major, minor)
                              'architectures'  # A list of strings representing architectures
@@ -256,13 +262,24 @@ def parse_action(action_id):
     return Action(action_id)
 
 
+def parse_modulestream(modulestream):
+    return (modulestream['name'], modulestream['stream']) if modulestream else None
+
+
+def parse_package(package):
+    return Package(package['name'],
+                   package['repository'].lower(),
+                   # in an older version of PES data, there can be no field for module stream
+                   parse_modulestream(package['modulestream']) if 'modulestream' in package else None)
+
+
 def parse_packageset(packageset):
     """
     Get "input" or "output" packages and their repositories from each PES event.
 
-    :return: A dictionary with packages in format {<pkg_name>: <repository>}
+    :return: set of Package tuples
     """
-    return {p['name']: p['repository'].lower() for p in packageset.get('package', [])}
+    return {parse_package(p) for p in packageset.get('package', [])}
 
 
 def parse_release(release):
