@@ -18,12 +18,14 @@ class IPUWorkflowConfig(Actor):
     tags = (IPUWorkflowTag,)
 
     def process(self):
-        target_version = ipuworkflowconfig.get_target_version()
+        flavour = ipuworkflowconfig.get_upgrade_flavour()
+        target_version = ipuworkflowconfig.get_target_version(flavour)
         os_release = ipuworkflowconfig.get_os_release('/etc/os-release')
         self.produce(IPUConfig(
             leapp_env_vars=ipuworkflowconfig.get_env_vars(),
             os_release=os_release,
             architecture=platform.machine(),
             version=Version(source=os_release.version_id, target=target_version),
-            kernel=ipuworkflowconfig.get_booted_kernel()
+            kernel=ipuworkflowconfig.get_booted_kernel(),
+            flavour=flavour
         ))
