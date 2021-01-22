@@ -54,3 +54,6 @@ class IPUConfig(Model):
 
     kernel = fields.String()
     """Originally booted kernel when on the source system."""
+
+    flavour = fields.StringEnum(('default', 'saphana'), default='default')
+    """Flavour of the upgrade - Used to influence changes in supported source/target release"""
