@@ -87,14 +87,19 @@ def test_is_rhel_alt(monkeypatch, result, kernel, release_id):
     assert version.is_rhel_alt() == result
 
 
-@pytest.mark.parametrize('result,is_alt,src_ver', [
-    (True, True, '7.6'),
-    (True, False, '7.8'),
-    (False, True, '7.8'),
-    (False, False, '7.6'),
+@pytest.mark.parametrize('result,is_alt,src_ver,saphana', [
+    (True, True, '7.6', False),
+    (True, False, '7.8', False),
+    (False, True, '7.8', False),
+    (False, False, '7.6', False),
+    (True, True, '7.6', True),
+    (True, False, '7.7', True),
+    (False, True, '7.7', True),
+    (False, False, '7.6', True),
 ])
-def test_is_supported_version(monkeypatch, result, is_alt, src_ver):
+def test_is_supported_version(monkeypatch, result, is_alt, src_ver, saphana):
     monkeypatch.setattr(version, 'is_rhel_alt', lambda: is_alt)
-    monkeypatch.setattr(version, 'SUPPORTED_VERSIONS', {'rhel': ['7.8'], 'rhel-alt': ['7.6']})
+    monkeypatch.setattr(version, 'is_sap_hana_flavour', lambda: saphana)
+    monkeypatch.setattr(version, 'SUPPORTED_VERSIONS', {'rhel': ['7.8'], 'rhel-alt': ['7.6'], 'rhel-saphana': ['7.7']})
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(src_ver=src_ver))
     assert version.is_supported_version() == result

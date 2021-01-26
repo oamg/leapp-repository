@@ -12,7 +12,7 @@ OP_MAP = {
 }
 
 # Note: 'rhel-alt' is detected when on 'rhel' with kernel 4.x
-SUPPORTED_VERSIONS = {'rhel': ['7.9'], 'rhel-alt': ['7.6']}
+SUPPORTED_VERSIONS = {'rhel': ['7.9'], 'rhel-alt': ['7.6'], 'rhel-saphana': ['7.7']}
 
 
 def _version_to_tuple(version):
@@ -141,6 +141,26 @@ def current_version():
     return release.release_id, release.version_id
 
 
+def is_default_flavour():
+    """
+    Check if the current system uses the default upgrade path.
+
+    :return: `True` if this upgrade process is using the default upgrade path and `False` otherwise.
+    :rtype: bool
+    """
+    return api.current_actor().configuration.flavour == 'default'
+
+
+def is_sap_hana_flavour():
+    """
+    Check if the current system needs to use the SAP HANA upgrade path.
+
+    :return: `True` if this upgrade process is using the SAP HANA upgrade path and `False` otherwise.
+    :rtype: bool
+    """
+    return api.current_actor().configuration.flavour == 'saphana'
+
+
 def is_rhel_alt():
     """
     Check if the current system is RHEL-ALT or not.
@@ -163,6 +183,8 @@ def is_supported_version():
     release_id, version_id = current_version()
     if is_rhel_alt():
         release_id = 'rhel-alt'
+    elif is_sap_hana_flavour():
+        release_id = 'rhel-saphana'
 
     if not matches_release(SUPPORTED_VERSIONS, release_id):
         return False
