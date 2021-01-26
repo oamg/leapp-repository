@@ -42,9 +42,16 @@ class PersistentNetNamesDisable(Actor):
             create_report([
                 reporting.Title('Unsupported network configuration'),
                 reporting.Summary(
-                    'Detected multiple network interfaces using unstable kernel names (e.g. eth0, eth1). '
+                    'Detected multiple physical network interfaces where one or more use kernel naming (e.g. eth0). '
                     'Upgrade process can not continue because stability of names can not be guaranteed. '
                     'Please read the article at https://access.redhat.com/solutions/4067471 for more information.'
+                ),
+                reporting.ExternalLink(
+                    title='How to perform an in-place upgrade to RHEL 8 when using kernel NIC names on RHEL 7',
+                    url='https://access.redhat.com/solutions/4067471'
+                ),
+                reporting.Remediation(
+                    hint='Rename all ethX network interfaces following the attached KB solution article.'
                 ),
                 reporting.Severity(reporting.Severity.HIGH),
                 reporting.Tags([reporting.Tags.NETWORK]),
