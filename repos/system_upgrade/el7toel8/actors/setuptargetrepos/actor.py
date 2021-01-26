@@ -7,6 +7,18 @@ from leapp.models import (CustomTargetRepository, RepositoriesBlacklisted, Repos
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 
+EXTRAS_REPOS = set([
+    'rhel-7-for-arm-64-extras-rhui-rpms',
+    'rhel-7-for-arm-64-extras-rpms',
+    'rhel-7-for-power-9-extras-rpms',
+    'rhel-7-for-power-le-extras-rpms',
+    'rhel-7-for-system-z-a-extras-rpms',
+    'rhel-7-for-system-z-extras-rpms',
+    'rhel-7-server-extras-rpms',
+    'rhel-7-server-rhui-extras-rpms',
+])
+
+
 class SetupTargetRepos(Actor):
     """
     Produces list of repositories that should be available to be used by Upgrade process.
@@ -45,6 +57,12 @@ class SetupTargetRepos(Actor):
                 # Check if repository map architecture matches system architecture
                 if platform.machine() != repo_map.arch:
                     continue
+                if repo_map.from_repoid in EXTRAS_REPOS:
+                    # skip mapping for the Extras repositories to deal with
+                    # E4S -> std channel mapping
+                    # TODO(pstodulk): this is just workaround that will be
+                    # resolved in future.
+                    continue
 
                 mapped_repos.add(repo_map.from_repoid)
                 if repo_map.from_repoid in enabled_repos:
@@ -59,7 +77,8 @@ class SetupTargetRepos(Actor):
                 for repo in repo_file.data:
                     enabled_repos.add(repo.repoid)
 
-        skipped_repos = skipped_repos.intersection(set(used.keys()))
+        # TODO(pstodulk): the part of the workaround mentioned above..
+        skipped_repos = skipped_repos.intersection(set(used.keys())) - EXTRAS_REPOS
 
         if skipped_repos:
             pkgs = set()
