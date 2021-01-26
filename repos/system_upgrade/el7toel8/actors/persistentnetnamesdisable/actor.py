@@ -38,7 +38,7 @@ class PersistentNetNamesDisable(Actor):
 
         if self.single_eth0(interfaces):
             self.disable_persistent_naming()
-        elif len(interfaces) > 1 and self.ethX_count(interfaces) > 0:
+        elif len(interfaces) > 1 and self.ethX_count(interfaces) > 1:
             create_report([
                 reporting.Title('Unsupported network configuration'),
                 reporting.Summary(

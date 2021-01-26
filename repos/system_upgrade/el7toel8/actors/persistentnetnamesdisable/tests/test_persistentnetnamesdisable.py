@@ -49,5 +49,4 @@ def test_actor_ethX_and_not_ethX(current_actor_context):
                            devpath="/devices/hidraw/hidraw0")]
     current_actor_context.feed(PersistentNetNamesFacts(interfaces=interface))
     current_actor_context.run()
-    assert current_actor_context.consume(Report)
-    assert 'inhibitor' in current_actor_context.consume(Report)[0].report['flags']
+    assert not current_actor_context.consume(Report)
