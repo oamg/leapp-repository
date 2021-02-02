@@ -30,7 +30,7 @@ Requires:       leapp-repository-dependencies = 5
 
 # IMPORTANT: this is capability provided by the leapp framework rpm.
 # Check that 'version' this instead of the real framework rpm version.
-Requires:       leapp-framework >= 1.3, leapp-framework < 2
+Requires:       leapp-framework >= 1.4, leapp-framework < 2
 Requires:       python2-leapp
 
 # That's temporary to ensure the obsoleted subpackage is not installed
