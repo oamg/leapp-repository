@@ -1,7 +1,7 @@
 import os
 
 from leapp.actors import Actor
-from leapp.libraries.common.fstab import drop_xfs_options
+from leapp.libraries.common.fstab import FSTAB_LOGFILE, drop_xfs_options
 from leapp.models import FstabSignal
 from leapp.tags import IPUWorkflowTag, FinalizationPhaseTag
 
@@ -25,5 +25,5 @@ class RemoveInvalidFstabOptions(Actor):
         with open('/etc/fstab', 'w') as fstab:
             fstab.writelines(drop_xfs_options(lines))
         # clean up
-        if os.path.exists('/var/log/etc/fstab.new'):
-            os.remove('/var/log/etc/fstab.new')
+        if os.path.exists(FSTAB_LOGFILE):
+            os.remove(FSTAB_LOGFILE)

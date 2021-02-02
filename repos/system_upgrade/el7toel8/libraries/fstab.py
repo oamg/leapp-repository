@@ -1,6 +1,7 @@
 from leapp.exceptions import LeappRuntimeError
 
 
+FSTAB_LOGFILE = '/var/log/leapp/fstab.new'
 REMOVED_XFS_OPTIONS = (
     # removed from kernel in 4.0
     'nodelaylog',
