@@ -65,4 +65,4 @@ def test_removed_xfs_option(fstab, current_actor_context):
     current_actor_context.run()
     report = current_actor_context.consume(Report)
     assert report and len(report) == 1
-    assert 'inhibitor' in report[0].report['flags']
+    assert 'inhibitor' in report[0].report['groups']
