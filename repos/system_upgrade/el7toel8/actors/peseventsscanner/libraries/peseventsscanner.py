@@ -9,8 +9,9 @@ from leapp.libraries.common.config import architecture, version
 from leapp.libraries.common import fetch
 from leapp.libraries.stdlib import api
 from leapp.libraries.stdlib.config import is_verbose
-from leapp.models import (InstalledRedHatSignedRPM, PESRpmTransactionTasks, RepositoriesMap,
-                          RepositoriesSetupTasks, RpmTransactionTasks, RepositoriesBlacklisted)
+from leapp.models import (InstalledRedHatSignedRPM, InstalledRPMModuleMapping,
+                          RepositoriesBlacklisted, RepositoriesMap, RpmTransactionTasks,
+                          PESRpmTransactionTasks, RepositoriesSetupTasks)
 
 
 Package = namedtuple('Package', ['name',         # str
@@ -69,9 +70,9 @@ def pes_events_scanner(pes_json_directory, pes_json_filename):
     arch_events = filter_events_by_architecture(filtered_events, arch)
 
     add_output_pkgs_to_transaction_conf(transaction_configuration, arch_events)
-    drop_conflicting_release_events(arch_events)
+    drop_conflicting_release_events(arch_events)  # TODO rewrite for Package (perhap ok)
     tasks = process_events(filtered_releases, arch_events, installed_pkgs)
-    filter_out_transaction_conf_pkgs(tasks, transaction_configuration)
+    # filter_out_transaction_conf_pkgs(tasks, transaction_configuration) # TODO rewrite for Package
     produce_messages(tasks)
 
 
@@ -79,9 +80,10 @@ def get_installed_pkgs():
     """
     Get installed Red Hat-signed packages.
 
-    :return: Set of names of the installed Red Hat-signed packages
+    :return: A set of Package holding installed Red Hat-signed packages
     """
     installed_pkgs = set()
+    modular_rpms = {}
 
     installed_rh_signed_rpm_msgs = api.consume(InstalledRedHatSignedRPM)
     installed_rh_signed_rpm_msg = next(installed_rh_signed_rpm_msgs, None)
@@ -91,7 +93,13 @@ def get_installed_pkgs():
         raise StopActorExecutionError('Cannot parse PES data properly due to missing list of installed packages',
                                       details={'Problem': 'Did not receive a message with installed Red Hat-signed '
                                                           'packages (InstalledRedHatSignedRPM)'})
-    installed_pkgs.update([pkg.name for pkg in installed_rh_signed_rpm_msg.items])
+    for rpm in api.consume(InstalledRPMModuleMapping):
+        modular_rpms[rpm.name] = (rpm.module, rpm.stream)
+
+    # we don't really care about repositories of installed packages, only module streams
+    # regardless, the model covers them, so we'll keep the information
+    for pkg in installed_rh_signed_rpm_msg.items:
+        installed_pkgs.add(Package(pkg.name, pkg.repository, modular_rpms.get(pkg.name, "")))
     return installed_pkgs
 
 
@@ -311,12 +319,14 @@ def add_packages_to_tasks(tasks, packages, task_type):
 
 def _packages_to_str(packages):
     """
-    Represent a dictionary holding a set of packages with a string hash.
+    Represent a set of packages with a string hash.
 
-    Example: in: {'mesa-libwayland-egl-devel': 'rhel7-optional', 'wayland-devel': 'rhel7-base'}
-             out: 'mesa-libwayland-egl-devel:rhel7-optional,wayland-devel:rhel7-base'
+    Example: in: {Package('mesa-libwayland-egl-devel', 'rhel7-optional', ('wayland', '4.2')),
+                  Package('wayland-devel', 'rhel7-base', None)}
+             out: 'mesa-libwayland-egl-devel:rhel7-optional:wayland:4.2,wayland-devel:rhel7-base:None'
     """
-    return ','.join('{}:{}'.format(p[0], p[1]) for p in sorted(packages.items()))
+    pkg2str = lambda p: '{}:{}:{}'.format(p[0], p[1], ':'.join(p[2]) if p[2] else 'None')
+    return ','.join(pkg2str(p) for p in packages)
 
 
 def drop_conflicting_release_events(events):
