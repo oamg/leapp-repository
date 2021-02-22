@@ -14,7 +14,7 @@ from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 class PesEventsScanner(Actor):
     """
-    Provides data about packages events from Package Evolution Service.
+    Provides data about package events from Package Evolution Service.
 
     After collecting data from a provided JSON file containing Package Evolution Service events, a
     message with relevant data will be produced to help DNF Upgrade transaction calculation.

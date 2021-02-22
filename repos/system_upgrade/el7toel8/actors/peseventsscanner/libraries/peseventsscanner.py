@@ -125,7 +125,7 @@ def get_transaction_configuration():
 
 
 def filter_releases_by_target(releases, target):
-    match_list = ['<= {}.{}'.format(*target)]
+    match_list = ['>= {}.0'.format(target[0]), '<= {}.{}'.format(*target)]
     return [r for r in releases if version.matches_version(match_list, '{}.{}'.format(*r))]
 
 
