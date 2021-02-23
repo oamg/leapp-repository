@@ -62,10 +62,11 @@ def pes_events_scanner(pes_json_directory, pes_json_filename):
     arch = api.current_actor().configuration.architecture
     events = get_events(pes_json_directory, pes_json_filename)
     releases = get_releases(events)
+    source = version._version_to_tuple(api.current_actor().configuration.version.source)
     # FIXME redundant with TARGET above
     target = version._version_to_tuple(api.current_actor().configuration.version.target)
 
-    filtered_releases = filter_releases_by_target(releases, target)
+    filtered_releases = filter_releases(releases, source, target)
     filtered_events = filter_events_by_releases(events, filtered_releases)
     arch_events = filter_events_by_architecture(filtered_events, arch)
 
@@ -144,8 +145,8 @@ def get_transaction_configuration():
     return transaction_configuration
 
 
-def filter_releases_by_target(releases, target):
-    match_list = ['>= {}.0'.format(target[0]), '<= {}.{}'.format(*target)]
+def filter_releases(releases, source, target):
+    match_list = ['> {}.{}'.format(*source), '<= {}.{}'.format(*target)]
     return [r for r in releases if version.matches_version(match_list, '{}.{}'.format(*r))]
 
 

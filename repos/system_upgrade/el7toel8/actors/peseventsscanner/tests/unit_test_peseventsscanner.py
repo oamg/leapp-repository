@@ -15,7 +15,7 @@ from leapp.libraries.actor.peseventsscanner import (
     filter_out_pkgs_in_blacklisted_repos,
     filter_events_by_architecture,
     filter_events_by_releases,
-    filter_releases_by_target,
+    filter_releases,
     get_events,
     map_repositories, parse_action,
     parse_entry, parse_packageset,
@@ -395,9 +395,9 @@ def test_filter_events_by_releases():
     assert {Package('pkg5', 'repo', None)} not in [event.in_pkgs for event in filtered]
 
 
-def test_filter_releases_by_target():
+def test_filter_releases():
     releases = [(7, 6), (7, 7), (7, 8), (7, 9), (8, 0), (8, 1), (8, 2), (8, 3), (9, 0), (9, 1)]
-    filtered_releases = filter_releases_by_target(releases, (8, 1))
+    filtered_releases = filter_releases(releases, (7, 6), (8, 1))
     assert filtered_releases == [(7, 6), (7, 7), (7, 8), (7, 9), (8, 0), (8, 1)]
 
 
