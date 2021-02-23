@@ -80,7 +80,7 @@ def get_installed_pkgs():
     """
     Get installed Red Hat-signed packages.
 
-    :return: A set of Package holding installed Red Hat-signed packages
+    :return: A set of tuples holding installed Red Hat-signed package names and their module streams
     """
     installed_pkgs = set()
     modular_rpms = {}
@@ -99,7 +99,7 @@ def get_installed_pkgs():
     # we don't really care about repositories of installed packages, only module streams
     # regardless, the model covers them, so we'll keep the information
     for pkg in installed_rh_signed_rpm_msg.items:
-        installed_pkgs.add(Package(pkg.name, pkg.repository, modular_rpms.get(pkg.name, "")))
+        installed_pkgs.add((pkg.name, modular_rpms.get(pkg.name, "")))
     return installed_pkgs
 
 
@@ -303,7 +303,7 @@ def parse_architectures(architectures):
 
 def is_event_relevant(event, installed_pkgs, tasks):
     """Determine if event is applicable given the installed packages and tasks planned so far."""
-    for package in event.in_pkgs.keys():
+    for package in [(p.name, p.modulestream) for p in event.in_pkgs]:
         if package in tasks[Task.REMOVE] and event.action != Action.PRESENT:
             return False
         if package not in installed_pkgs and package not in tasks[Task.INSTALL]:
@@ -313,7 +313,11 @@ def is_event_relevant(event, installed_pkgs, tasks):
 
 def add_packages_to_tasks(tasks, packages, task_type):
     if packages:
-        api.current_logger().debug('{v:7} {p}'.format(v=task_type.name.upper(), p=', '.join(packages)))
+        api.current_logger().debug('{v:7} {p}'.format(
+            v=task_type.name.upper(), p=', '.join(
+                ['{n}{ms}'.format(n=p.name, ms=(
+                    '@{m}:{s}'.format(m=p.modulestream[0], s=p.modulestream[1]) if p.modulestream else ''
+                )) for p in packages])))
         tasks[task_type].update(packages)
 
 
@@ -355,10 +359,12 @@ def process_events(releases, events, installed_pkgs):
 
     :param releases: List of tuples representing ordered releases in format (major, minor)
     :param events: List of Event tuples, not including those events with their "input" packages not installed
-    :param installed_pkgs: Set of names of the installed Red Hat-signed packages
+    :param installed_pkgs: Set of tuples holding names and module streams of installed Red Hat-signed packages
     :return: A dict with three dicts holding pkgs to keep, to install and to remove
     """
-    # subdicts in format {<pkg_name>: <repository>}
+    # items in subdicts are Package tuples, just represented differently to allow efficient indexing
+    # keys of subdicts are (<name>, <modulestream>), where <modulestream> can be (<module>, <stream>) or None
+    # values of subdicts are <repository>
     tasks = {t: {} for t in Task}  # noqa: E1133; pylint: disable=not-an-iterable
 
     for release in releases:
@@ -650,7 +656,7 @@ def produce_messages(tasks):
     # Type casting to list to be Py2&Py3 compatible as on Py3 keys() returns dict_keys(), not a list
     to_install_pkgs = sorted(tasks[Task.INSTALL].keys())
     to_remove_pkgs = sorted(tasks[Task.REMOVE].keys())
-    to_enable_repos = sorted(set(tasks[Task.INSTALL].values() + tasks[Task.KEEP].values()))
+    to_enable_repos = sorted(set(tasks[Task.INSTALL].values() | set(tasks[Task.KEEP].values())))
 
     if to_install_pkgs or to_remove_pkgs:
         api.produce(PESRpmTransactionTasks(to_install=to_install_pkgs,
