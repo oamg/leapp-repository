@@ -37,7 +37,7 @@ def mocked_consume_no_args(*models):
 def mocked_consume_no_version(*models):
     if InstalledTargetKernelVersion in models:
         return iter(())
-    assert False and 'this should not be called'
+    assert False and 'this should not be called'  # pylint: disable=condition-evals-to-constant
     return iter(())
 
 
