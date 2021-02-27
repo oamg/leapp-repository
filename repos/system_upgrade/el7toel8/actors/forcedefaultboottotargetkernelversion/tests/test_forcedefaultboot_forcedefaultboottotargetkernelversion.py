@@ -99,7 +99,7 @@ class MockedRun(object):
     def __call__(self, cmd, *args, **kwargs):
         if cmd and cmd[0] == 'grubby':
             target = getattr(self, 'grubby_{}'.format(cmd[1].strip('--').replace('-', '_')), None)
-            assert target and 'Unsupport grubby command called'
+            assert target and 'Unsupport grubby command called'  # pylint: disable=simplifiable-condition
             return target(cmd)  # pylint: disable=not-callable
         if cmd and cmd[0] == '/usr/sbin/zipl':
             self.called_zipl = True
