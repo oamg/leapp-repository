@@ -41,6 +41,7 @@ disable=
  bad-option-value,  # python 2 doesn't have import-outside-toplevel, but in some case we need to import outside toplevel
  super-with-arguments,  # required in python 2
  raise-missing-from,  # no 'raise from' in python 2
+ use-a-generator, # cannot be modified because of Python2 support
 
 [FORMAT]
 # Maximum number of characters on a single line.
