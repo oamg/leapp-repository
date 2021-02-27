@@ -29,6 +29,7 @@ def _run_cmd(cmd, logmsg="", split=True):
     except CalledProcessError as e:
         if logmsg:
             api.current_logger().warning("%s: %s", logmsg, str(e.stderr))
+    return None
 
 
 def find_module_semodule(semodule_lfull, name, priority):
