@@ -26,11 +26,7 @@ UNSUPPORTED_PCI_IDS_GLOBAL_FILE = os.path.join(
     "/etc/leapp/files", "unsupported_pci_ids.json"
 )
 
-# TODO Once the microservice for providing the data about removed hardware
-#   will be provisioned to the Red Hat costumers, then this variable default
-#   value should be overwritten
-PCIS_HOST_DEFAULT = ""
-API_VERSION = "v1"
+PCIS_HOST_DEFAULT = "cloud.stage.redhat.com"
 
 
 def get_restricted_pcis(http):
@@ -46,22 +42,22 @@ def get_restricted_pcis(http):
     # TODO this constant should be above the scope of this func.
     #   However due to the way how actor tested with CurrentActorMocked
     #   we can't do this.
-    API_URL = "http://{host_port}/api/{api_version}/".format(
-        host_port=get_env(
+    API_URL = "http://{host}/api/pes/".format(
+        host=get_env(
             "LEAPP_DEVEL_PCIS_HOST",
             default=PCIS_HOST_DEFAULT,
         ),
-        api_version=API_VERSION,
     )
+
     unsupported_driver_names = http.request(
         "GET",
-        API_URL + "unsupported_driver_names/",
+        API_URL + "unsupported_driver_names.json",
         timeout=REQUEST_TIMEOUT,
         headers={},
     )
     unsupported_pci_ids = http.request(
         "GET",
-        API_URL + "unsupported_pci_ids/",
+        API_URL + "unsupported_pci_ids.json",
         timeout=REQUEST_TIMEOUT,
         headers={},
     )
