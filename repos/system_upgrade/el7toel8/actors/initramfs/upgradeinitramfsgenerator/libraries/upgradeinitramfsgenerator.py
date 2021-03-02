@@ -31,17 +31,29 @@ def _reinstall_leapp_repository_hint():
 
 def copy_dracut_modules(context, modules):
     """
-    Copies our dracut modules into the target userspace.
+    Copy dracut modules into the target userspace.
+
+    If duplicated requirements to copy a dracut module are detected,
+    log the debug msg and skip any try to copy a dracut module into the
+    target userspace that already exists inside DRACTUR_DIR.
     """
     try:
-        shutil.rmtree(context.full_path(DRACUT_DIR))
+        context.remove_tree(DRACUT_DIR)
     except EnvironmentError:
         pass
     for module in modules:
         if not module.module_path:
             continue
+        dst_path = os.path.join(DRACUT_DIR, os.path.basename(module.module_path))
+        if os.path.exists(context.full_path(dst_path)):
+            # we are safe to skip it as we now the module is from the same path
+            # regarding the actor checking all initramfs tasks
+            api.current_logger().debug(
+                'The {name} dracut module has been already installed. Skipping.'
+                .format(name=module.name))
+            continue
         try:
-            context.copytree_to(module.module_path, os.path.join(DRACUT_DIR, os.path.basename(module.module_path)))
+            context.copytree_to(module.module_path, dst_path)
         except shutil.Error as e:
             api.current_logger().error('Failed to copy dracut module "{name}" from "{source}" to "{target}"'.format(
                 name=module.name, source=module.module_path, target=context.full_path(DRACUT_DIR)), exc_info=True)
