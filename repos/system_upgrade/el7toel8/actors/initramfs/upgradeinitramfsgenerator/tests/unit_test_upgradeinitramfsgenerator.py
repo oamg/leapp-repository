@@ -1,11 +1,12 @@
 import os
+import shutil
 
 import pytest
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import upgradeinitramfsgenerator
 from leapp.libraries.common.config import architecture
-from leapp.libraries.common.testutils import CurrentActorMocked, produce_mocked
+from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked, produce_mocked
 from leapp.models import (
     BootContent,
     CopyFile,
@@ -78,6 +79,18 @@ class MockedContext(object):
         self.called_copytree_from = []
         self.called_copy_to = []
         self.called_call = []
+        self.content = set()
+        self.base_dir = "/base/dir"
+        """
+        Content (paths) that should exists regarding the used methods.
+
+        It's not 100% same. Just dst paths are copied here. Ignoring differences
+        between copy to /path/to/filename and /path/to/dirname which in real
+        world could be different. For our purposes it's ok as it is now.
+
+        Point is, that in case of use context.remove_tree(), we are able to
+        detect whether something what is expected to be present is not missing.
+        """
 
     def copy_from(self, src, dst):
         self.called_copy_from.append((src, dst))
@@ -87,9 +100,33 @@ class MockedContext(object):
 
     def copy_to(self, src, dst):
         self.called_copy_to.append((src, dst))
+        self.content.add(dst)
+
+    def copytree_to(self, src, dst):
+        self.called_copy_to.append((src, dst))
+        self.content.add(dst)
+
+    def remove_tree(self, path):
+        # make list for iteration as change of the set is expected during the
+        # iteration, which could lead to runtime error
+        for item in list(self.content):
+            # ensure the / is the last character to simulate dirname
+            dir_fmt_path = path if path[-1] == '/' else path + '/'
+            if item == path or item.startswith(dir_fmt_path):
+                # remove the file or everything inside dir (including dir)
+                self.content.remove(item)
 
     def call(self, *args, **kwargs):
         self.called_call.append((args, kwargs))
+
+    def full_path(self, path):
+        return os.path.join(self.base_dir, os.path.abspath(path).lstrip('/'))
+
+
+class MockedLogger(logger_mocked):
+
+    def error(self, *args, **dummy):
+        self.errmsg.extend(args)
 
 
 @pytest.mark.parametrize('arch', architecture.ARCH_SUPPORTED)
@@ -224,3 +261,64 @@ def test_generate_initram_disk(monkeypatch, input_msgs, modules):
     # TODO(pstodulk): this test is not created properly, as context.call check
     # is skipped completely. Testing will more convenient with fixed #376
     # similar fo the files...
+
+
+def test_copy_dracut_modules_rmtree_ignore(monkeypatch):
+    context = MockedContext()
+
+    def raise_env_error(dummy):
+        raise EnvironmentError('an error')
+
+    def mock_context_path_exists(path):
+        full_path_content = {context.full_path(i) for i in context.content}
+        return full_path_content.intersection(set([path, path + '/'])) != set()
+
+    monkeypatch.setattr(os.path, 'exists', mock_context_path_exists)
+    dmodules = [DracutModule(name='foo', module_path='/path/foo')]
+    upgradeinitramfsgenerator.copy_dracut_modules(context, dmodules)
+    assert context.content
+
+    # env error should be ignored in this case
+    context.content = set()
+    context.remove_tree = raise_env_error
+    upgradeinitramfsgenerator.copy_dracut_modules(context, dmodules)
+    assert context.content
+
+
+def test_copy_dracut_modules_fail(monkeypatch):
+    context = MockedContext()
+
+    def copytree_to_error(src, dst):
+        raise shutil.Error('myerror: {}, {}'.format(src, dst))
+
+    def mock_context_path_exists(path):
+        full_path_content = {context.full_path(i) for i in context.content}
+        return full_path_content.intersection(set([path, path + '/'])) != set()
+
+    context.copytree_to = copytree_to_error
+    monkeypatch.setattr(os.path, 'exists', mock_context_path_exists)
+    monkeypatch.setattr(upgradeinitramfsgenerator.api, 'current_logger', MockedLogger())
+    dmodules = [DracutModule(name='foo', module_path='/path/foo')]
+    with pytest.raises(StopActorExecutionError) as err:
+        upgradeinitramfsgenerator.copy_dracut_modules(context, dmodules)
+    assert err.value.message.startswith('Failed to install dracut modules')
+    expected_err_log = 'Failed to copy dracut module "foo" from "/path/foo" to "/base/dir/dracut"'
+    assert expected_err_log in upgradeinitramfsgenerator.api.current_logger.errmsg
+
+
+def test_copy_dracut_modules_duplicate_skip(monkeypatch):
+    context = MockedContext()
+
+    def mock_context_path_exists(path):
+        full_path_content = {context.full_path(i) for i in context.content}
+        return full_path_content.intersection(set([path, path + '/'])) != set()
+
+    monkeypatch.setattr(os.path, 'exists', mock_context_path_exists)
+    monkeypatch.setattr(upgradeinitramfsgenerator.api, 'current_logger', MockedLogger())
+    dm = DracutModule(name='foo', module_path='/path/foo')
+    dmodules = [dm, dm]
+    debugmsg = 'The foo dracut module has been already installed. Skipping.'
+    upgradeinitramfsgenerator.copy_dracut_modules(context, dmodules)
+    assert context.content
+    assert len(context.called_copy_to) == 1
+    assert debugmsg in upgradeinitramfsgenerator.api.current_logger.dbgmsg
