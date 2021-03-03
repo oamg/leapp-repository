@@ -1,7 +1,7 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import initramgen
 from leapp.models import (BootContent, RequiredUpgradeInitramPackages, TargetUserSpaceInfo, UpgradeDracutModule,
-                          UsedTargetRepositories, FstabSignal)
+                          UsedTargetRepositories, ModifiedFstabContents)
 from leapp.tags import InterimPreparationPhaseTag, IPUWorkflowTag
 
 
@@ -17,7 +17,7 @@ class InitramDiskGenerator(Actor):
 
     name = 'initram_disk_generator'
     consumes = (RequiredUpgradeInitramPackages, TargetUserSpaceInfo, UpgradeDracutModule,
-                UsedTargetRepositories, FstabSignal)
+                UsedTargetRepositories, ModifiedFstabContents)
     produces = (BootContent,)
     tags = (IPUWorkflowTag, InterimPreparationPhaseTag)
 

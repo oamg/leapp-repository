@@ -4,10 +4,9 @@ import shutil
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import dnfplugin, mounting
 from leapp.libraries.common.config import architecture
-from leapp.libraries.common.fstab import drop_xfs_options
 from leapp.libraries.stdlib import api
 from leapp.models import (BootContent, RequiredUpgradeInitramPackages, TargetUserSpaceInfo, UpgradeDracutModule,
-                          UsedTargetRepositories, FstabSignal)
+                          UsedTargetRepositories, ModifiedFstabContents)
 
 INITRAM_GEN_SCRIPT_NAME = 'generate-initram.sh'
 
@@ -78,10 +77,10 @@ def _install_files(context):
         context.copy_to('/etc/dasd.conf', '/etc/dasd.conf')
         files.append('/etc/dasd.conf')
 
-    if next(api.consume(FstabSignal), None):
-        with open('/etc/fstab') as fstab7:
-            with context.open('/etc/fstab', 'w') as fstab8:
-                fstab8.writelines(drop_xfs_options(fstab7.readlines()))
+    fstab_contents = next(api.consume(ModifiedFstabContents), None)
+    if fstab_contents:
+        with context.open('/etc/fstab', 'w') as fstab:
+            fstab.writelines(fstab_contents.lines)
         files.append('/etc/fstab')
 
     return files
