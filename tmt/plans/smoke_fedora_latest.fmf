@@ -1,0 +1,8 @@
+summary: Essential command line features
+discover:
+    how: fmf
+    filter: 'tier: 0'
+provision:
+    how: container
+execute:
+    how: tmt
