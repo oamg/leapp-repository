@@ -5,7 +5,7 @@ from leapp.actors import Actor
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common.fstab import FSTAB_LOGFILE, drop_xfs_options
 from leapp.libraries.stdlib import api
-from leapp.models import Report, FstabSignal
+from leapp.models import FstabContents, ModifiedFstabContents, Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 from leapp import reporting
 
@@ -25,21 +25,22 @@ class CheckFstab(Actor):
     Scan /etc/fstab for XFS mount options that have been removed in RHEL 8.
 
     In case one or more of the options are present in /etc/fstab, generate new contents of the file
-    for the target system and provide it to the user via {} for inspection.
+    for the target system, provide them to the user via {} for inspection and finally, produce the
+    contents as a message.
     """.format(FSTAB_LOGFILE)
 
     name = 'check_fstab'
-    consumes = ()
-    produces = (Report, FstabSignal)
+    consumes = (FstabContents)
+    produces = (Report, ModifiedFstabContents)
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 
     def process(self):
-        fstab_old = []
-        try:
-            with open('/etc/fstab') as f:
-                fstab_old = f.readlines()
-        except (IOError, OSError):
-            raise StopActorExecutionError(message='Could not open /etc/fstab for reading')
+        fstab = next(self.consume(FstabContents), None)
+        if not fstab:
+            raise StopActorExecutionError('Cannot check /etc/fstab contents',
+                                          details={'Problem': 'Did not receive a message with /etc/fstab'
+                                                              'contents (KernelCmdline)'})
+        fstab_old = fstab.lines
 
         fstab_new = drop_xfs_options(fstab_old)
         if fstab_new == fstab_old:
@@ -78,4 +79,4 @@ class CheckFstab(Actor):
             reporting.RelatedResource('file', FSTAB_LOGFILE)
         ])
 
-        self.produce(FstabSignal())
+        self.produce(ModifiedFstabContents(lines=fstab_new))
