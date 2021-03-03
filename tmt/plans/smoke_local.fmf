@@ -1,4 +1,4 @@
-summary: Execute the basic tests (linters, unit tests)
+summary: Execute the basic tests (linters, unit tests) locally
 discover:
     how: fmf
     filter: 'tier: 0'
