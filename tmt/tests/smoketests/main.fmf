@@ -1,5 +1,8 @@
 summary: Run tests
-tier: 0
-#test: ./test.sh
-test: make test
 framework: shell
+path: .
+test: |
+  echo $PWD
+  make test
+tier: 0
+duration: 10m

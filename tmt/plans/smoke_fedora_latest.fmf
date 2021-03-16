@@ -4,5 +4,17 @@ discover:
     filter: 'tier: 0'
 provision:
     how: container
+    image: fedora:latest
+environment:
+  PYTHON_VENV: python3.9
+prepare:
+   - name: install packages
+     how: install
+     package: make
+   - name: prepare pyenv
+     how: shell
+     script: |
+       cd ../discover/default/tests/
+       make install-deps-fedora
 execute:
     how: tmt
