@@ -4,7 +4,7 @@ from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.stdlib import run, CalledProcessError
 from leapp.models import EnvVar, OSRelease
 
-CURRENT_TARGET_VERSION = '8.2'
+CURRENT_TARGET_VERSION = '8.4'
 CURRENT_SAP_HANA_TARGET_VERSION = '8.2'
 
 ENV_IGNORE = ('LEAPP_CURRENT_PHASE', 'LEAPP_CURRENT_ACTOR', 'LEAPP_VERBOSE',
