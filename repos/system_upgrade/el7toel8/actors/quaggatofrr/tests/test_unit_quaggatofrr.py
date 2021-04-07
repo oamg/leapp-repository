@@ -2,7 +2,10 @@ import contextlib
 import os
 import shutil
 
+import pytest
+
 from leapp.libraries.actor import quaggatofrr
+from leapp.libraries.common.testutils import CurrentActorMocked
 
 ACTIVE_DAEMONS = ['bgpd', 'ospfd', 'zebra']
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -33,6 +36,66 @@ def _create_mock_files():
     finally:
         shutil.rmtree(FROM_DIR)
         shutil.rmtree(TO_DIR)
+
+
+class MockedFilePointer():
+    def __init__(self, orig_open, fname, mode='r'):
+        self._orig_open = orig_open
+        self.fname = fname
+        self.mode = mode
+        # we want always read only..
+        self._fp = self._orig_open(fname, 'r')
+        self._read = None
+        self.written = None
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args, **kwargs):
+        self.close()
+
+    def close(self):
+        if self._fp:
+            self._fp.close()
+            self._fp = None
+
+    def read(self):
+        self._read = self._fp.read()
+        return self._read
+
+    def write(self, data):
+        if not self.written:
+            self.written = data
+        else:
+            self.written += data
+
+
+class MockedOpen():
+    """
+    This is mock for the open function. When called it creates
+    the MockedFilePointer object.
+    """
+
+    def __init__(self):
+        # currently we want to actually open the real files, we need
+        # to mock other stuff related to file pointers / file objects
+        self._orig_open = open
+        self._open_called = []
+
+    def __call__(self, fname, mode='r'):
+        opened = MockedFilePointer(self._orig_open, fname, mode)
+        self._open_called.append(opened)
+        return opened
+
+    def get_mocked_pointers(self, fname, mode=None):
+        """
+        Get list of MockedFilePointer objects with the specified fname.
+
+        if the mode is set (expected 'r', 'rw', 'w' ..) discovered files are
+        additionaly filtered to match the same mode (same string).
+        """
+        fnames = [i for i in self._open_called if i.fname == fname]
+        return fnames if not mode else [i for i in fnames if i.mode == mode]
 
 
 def test_copy_config_files():
@@ -77,3 +140,29 @@ def test_edit_new_config():
     assert 'ripd_options=("-A 127.0.0.1")' in data
     assert 'ripngd_options=("-A ::1")' in data
     assert 'isisd_options=("--daemon -A ::1")' in data
+
+
+@pytest.mark.parametrize('dst_ver', ['8.4', '8.5'])
+def test_fix_commands(monkeypatch, dst_ver):
+    monkeypatch.setattr(quaggatofrr, "BGPD_CONF_FILE", os.path.join(CUR_DIR, 'files/bgpd.conf'))
+    monkeypatch.setattr(quaggatofrr.api, 'current_actor', CurrentActorMocked(dst_ver=dst_ver))
+    monkeypatch.setattr(quaggatofrr, "open", MockedOpen(), False)
+    quaggatofrr._fix_commands()
+
+    fp_list = quaggatofrr.open.get_mocked_pointers(quaggatofrr.BGPD_CONF_FILE, "w")
+    assert len(fp_list) == 1
+    assert 'bgp extcommunity-list' in fp_list[0].written
+
+
+def test_fix_commands_not_applied(monkeypatch):
+    is_file_called = False
+
+    def mocked_is_file(dummy):
+        is_file_called = True
+        return is_file_called
+
+    monkeypatch.setattr(quaggatofrr.api, 'current_actor', CurrentActorMocked(dst_ver='8.3'))
+    monkeypatch.setattr(os.path, 'isfile', mocked_is_file)
+    monkeypatch.setattr(quaggatofrr, "open", MockedOpen(), False)
+    quaggatofrr._fix_commands()
+    assert not is_file_called
