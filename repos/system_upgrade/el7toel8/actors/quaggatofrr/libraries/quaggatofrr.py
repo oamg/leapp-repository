@@ -2,6 +2,7 @@ import os
 import re
 import shutil
 
+from leapp.libraries.common.config import version
 from leapp.libraries.stdlib import CalledProcessError, api, run
 
 DAEMON_FILE = '/etc/frr/daemons'
@@ -9,6 +10,7 @@ DAEMON_FILE = '/etc/frr/daemons'
 CONFIG_FILE = '/etc/sysconfig/quagga.rpmsave'
 QUAGGA_CONF_FILES = '/etc/quagga/'
 FRR_CONF_FILES = '/etc/frr/'
+BGPD_CONF_FILE = '/etc/frr/bgpd.conf'
 
 regex = re.compile(r'\w+(?<!WATCH)(?<!BABELD)_OPTS=".*"')
 
@@ -81,7 +83,19 @@ def _copy_config_files(src_path, dest_path):
             api.current_logger().debug('Copying %s to %s%s', full_path, dest_path, file_name)
 
 
+# some commands in *.conf files have changed in the latest rebase
+def _fix_commands():
+    if version.matches_target_version(">= 8.4"):
+        if os.path.isfile(BGPD_CONF_FILE):
+            with open(BGPD_CONF_FILE, 'r') as f:
+                data = f.read()
+                data = re.sub("ip extcommunity-list", "bgp extcommunity-list", data, flags=re.MULTILINE)
+            with open(BGPD_CONF_FILE, 'w') as f:
+                f.write(data)
+
+
 def process_facts(quagga_facts):
     _change_config(quagga_facts)
     _copy_config_files(QUAGGA_CONF_FILES, FRR_CONF_FILES)
+    _fix_commands()
     _enable_frr(quagga_facts)
