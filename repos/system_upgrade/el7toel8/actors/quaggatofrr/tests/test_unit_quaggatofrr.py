@@ -38,7 +38,7 @@ def _create_mock_files():
         shutil.rmtree(TO_DIR)
 
 
-class MockedFilePointer():
+class MockedFilePointer(object):
     def __init__(self, orig_open, fname, mode='r'):
         self._orig_open = orig_open
         self.fname = fname
@@ -70,7 +70,7 @@ class MockedFilePointer():
             self.written += data
 
 
-class MockedOpen():
+class MockedOpen(object):
     """
     This is mock for the open function. When called it creates
     the MockedFilePointer object.
