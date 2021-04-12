@@ -23,20 +23,20 @@ Event = namedtuple('Event', ['id',            # int
 
 
 class Action(IntEnum):
-    present = 0
-    removed = 1
-    deprecated = 2
-    replaced = 3
-    split = 4
-    merged = 5
-    moved = 6
-    renamed = 7
+    PRESENT = 0
+    REMOVED = 1
+    DEPRECATED = 2
+    REPLACED = 3
+    SPLIT = 4
+    MERGED = 5
+    MOVED = 6
+    RENAMED = 7
 
 
 class Task(IntEnum):
-    keep = 0
-    install = 1
-    remove = 2
+    KEEP = 0
+    INSTALL = 1
+    REMOVE = 2
 
     def past(self):
         return ['kept', 'installed', 'removed'][self]
@@ -275,9 +275,9 @@ def parse_architectures(architectures):
 def is_event_relevant(event, installed_pkgs, tasks):
     """Determine if event is applicable given the installed packages and tasks planned so far."""
     for package in event.in_pkgs.keys():
-        if package in tasks[Task.remove] and event.action != Action.present:
+        if package in tasks[Task.REMOVE] and event.action != Action.PRESENT:
             return False
-        if package not in installed_pkgs and package not in tasks[Task.install]:
+        if package not in installed_pkgs and package not in tasks[Task.INSTALL]:
             return False
     return True
 
@@ -338,64 +338,64 @@ def process_events(releases, events, installed_pkgs):
 
         for event in release_events:
             if is_event_relevant(event, installed_pkgs, tasks):
-                if event.action in [Action.deprecated, Action.present]:
+                if event.action in [Action.DEPRECATED, Action.PRESENT]:
                     # Keep these packages to make sure the repo they're in on RHEL 8 gets enabled
-                    add_packages_to_tasks(current, event.in_pkgs, Task.keep)
+                    add_packages_to_tasks(current, event.in_pkgs, Task.KEEP)
 
-                if event.action == Action.moved:
+                if event.action == Action.MOVED:
                     # Keep these packages to make sure the repo they're in on RHEL 8 gets enabled
                     # We don't care about the "in_pkgs" as it contains always just one pkg - the same as the "out" pkg
-                    add_packages_to_tasks(current, event.out_pkgs, Task.keep)
+                    add_packages_to_tasks(current, event.out_pkgs, Task.KEEP)
 
-                if event.action in [Action.split, Action.merged, Action.renamed, Action.replaced]:
+                if event.action in [Action.SPLIT, Action.MERGED, Action.RENAMED, Action.REPLACED]:
                     non_installed_out_pkgs = filter_out_installed_pkgs(event.out_pkgs, installed_pkgs)
-                    add_packages_to_tasks(current, non_installed_out_pkgs, Task.install)
+                    add_packages_to_tasks(current, non_installed_out_pkgs, Task.INSTALL)
                     # Keep already installed "out" pkgs to ensure the repo they're in on RHEL 8 gets enabled
                     installed_out_pkgs = get_installed_event_pkgs(event.out_pkgs, installed_pkgs)
-                    add_packages_to_tasks(current, installed_out_pkgs, Task.keep)
+                    add_packages_to_tasks(current, installed_out_pkgs, Task.KEEP)
 
-                    if event.action in [Action.split, Action.merged]:
+                    if event.action in [Action.SPLIT, Action.MERGED]:
                         # Remove those RHEL 7 pkgs that are no longer on RHEL 8
                         in_pkgs_without_out_pkgs = filter_out_out_pkgs(event.in_pkgs, event.out_pkgs)
-                        add_packages_to_tasks(current, in_pkgs_without_out_pkgs, Task.remove)
+                        add_packages_to_tasks(current, in_pkgs_without_out_pkgs, Task.REMOVE)
 
-                if event.action in [Action.renamed, Action.replaced, Action.removed]:
-                    add_packages_to_tasks(current, event.in_pkgs, Task.remove)
+                if event.action in [Action.RENAMED, Action.REPLACED, Action.REMOVED]:
+                    add_packages_to_tasks(current, event.in_pkgs, Task.REMOVE)
 
         do_not_remove = set()
-        for package in current[Task.remove]:
-            if package in tasks[Task.keep]:
+        for package in current[Task.REMOVE]:
+            if package in tasks[Task.KEEP]:
                 api.current_logger().warning(
                     '{p} :: {r} to be kept / currently removed - removing package'.format(
-                        p=package, r=current[Task.remove][package]))
-                del tasks[Task.keep][package]
-            elif package in tasks[Task.install]:
+                        p=package, r=current[Task.REMOVE][package]))
+                del tasks[Task.KEEP][package]
+            elif package in tasks[Task.INSTALL]:
                 api.current_logger().warning(
                     '{p} :: {r} to be installed / currently removed - ignoring tasks'.format(
-                        p=package, r=current[Task.remove][package]))
-                del tasks[Task.install][package]
+                        p=package, r=current[Task.REMOVE][package]))
+                del tasks[Task.INSTALL][package]
                 do_not_remove.add(package)
         for package in do_not_remove:
-            del current[Task.remove][package]
+            del current[Task.REMOVE][package]
 
         do_not_install = set()
-        for package in current[Task.install]:
-            if package in tasks[Task.remove]:
+        for package in current[Task.INSTALL]:
+            if package in tasks[Task.REMOVE]:
                 api.current_logger().warning(
                     '{p} :: {r} to be removed / currently installed - keeping package'.format(
-                        p=package, r=current[Task.install][package]))
-                current[Task.keep][package] = current[Task.install][package]
-                del tasks[Task.remove][package]
+                        p=package, r=current[Task.INSTALL][package]))
+                current[Task.KEEP][package] = current[Task.INSTALL][package]
+                del tasks[Task.REMOVE][package]
                 do_not_install.add(package)
         for package in do_not_install:
-            del current[Task.install][package]
+            del current[Task.INSTALL][package]
 
-        for package in current[Task.keep]:
-            if package in tasks[Task.remove]:
+        for package in current[Task.KEEP]:
+            if package in tasks[Task.REMOVE]:
                 api.current_logger().warning(
                     '{p} :: {r} to be removed / currently kept - keeping package'.format(
-                        p=package, r=current[Task.keep][package]))
-                del tasks[Task.remove][package]
+                        p=package, r=current[Task.KEEP][package]))
+                del tasks[Task.REMOVE][package]
 
         for key in Task:  # noqa: E1133; pylint: disable=not-an-iterable
             for package in current[key]:
@@ -405,9 +405,9 @@ def process_events(releases, events, installed_pkgs):
                             p=package, r=current[key][package], v=key.past()))
             tasks[key].update(current[key])
 
-    map_repositories(tasks[Task.install])
-    map_repositories(tasks[Task.keep])
-    filter_out_pkgs_in_blacklisted_repos(tasks[Task.install])
+    map_repositories(tasks[Task.INSTALL])
+    map_repositories(tasks[Task.KEEP])
+    filter_out_pkgs_in_blacklisted_repos(tasks[Task.INSTALL])
     resolve_conflicting_requests(tasks)
 
     return tasks
@@ -482,13 +482,13 @@ def resolve_conflicting_requests(tasks):
     Example of two real-world PES events resulting in a conflict:
       PES event 1: sip-devel  SPLIT INTO   python3-sip-devel, sip
       PES event 2: sip        SPLIT INTO   python3-pyqt5-sip, python3-sip
-        -> without this function, sip would reside in both [Task.keep] and [Task.remove], causing a dnf conflict
+        -> without this function, sip would reside in both [Task.KEEP] and [Task.REMOVE], causing a dnf conflict
     """
     pkgs_in_conflict = set()
-    for pkg in list(tasks[Task.install].keys()) + list(tasks[Task.keep].keys()):
-        if pkg in tasks[Task.remove]:
+    for pkg in list(tasks[Task.INSTALL].keys()) + list(tasks[Task.KEEP].keys()):
+        if pkg in tasks[Task.REMOVE]:
             pkgs_in_conflict.add(pkg)
-            del tasks[Task.remove][pkg]
+            del tasks[Task.REMOVE][pkg]
 
     if pkgs_in_conflict:
         api.current_logger().debug('The following packages were marked to be kept/installed and removed at the same'
@@ -567,7 +567,7 @@ def add_output_pkgs_to_transaction_conf(transaction_configuration, events):
     message = 'The following RHEL 8 packages will not be installed:\n'
 
     for event in events:
-        if event.action in (Action.split, Action.merged, Action.replaced, Action.renamed):
+        if event.action in (Action.SPLIT, Action.MERGED, Action.REPLACED, Action.RENAMED):
             if all([pkg in transaction_configuration.to_remove for pkg in event.in_pkgs]):
                 transaction_configuration.to_remove.extend(event.out_pkgs)
                 message += (
@@ -589,27 +589,27 @@ def filter_out_transaction_conf_pkgs(tasks, transaction_configuration):
     Filter out those PES events conflicting with the higher priority transaction configuration files.
 
     :param tasks: A dict with three dicts holding pkgs to keep, to install and to remove
-    :param transaction_configuration: RpmTransactionTasks model instance with pkgs to install, keep and remove based
+    :param transaction_configuration: RpmTransactionTasks model instance with pkgs to install, keep and REMOVE based
                                       on the user configuration files
     """
-    do_not_keep = [p for p in tasks[Task.keep] if p in transaction_configuration.to_remove]
-    do_not_install = [p for p in tasks[Task.install] if p in transaction_configuration.to_remove]
-    do_not_remove = [p for p in tasks[Task.remove] if p in transaction_configuration.to_install
+    do_not_keep = [p for p in tasks[Task.KEEP] if p in transaction_configuration.to_remove]
+    do_not_install = [p for p in tasks[Task.INSTALL] if p in transaction_configuration.to_remove]
+    do_not_remove = [p for p in tasks[Task.REMOVE] if p in transaction_configuration.to_install
                      or p in transaction_configuration.to_keep]
 
     for pkg in do_not_keep:
         # Removing a package from the to_keep dict may cause that some repositories won't get enabled
-        tasks[Task.keep].pop(pkg)
+        tasks[Task.KEEP].pop(pkg)
 
     if do_not_install:
         for pkg in do_not_install:
-            tasks[Task.install].pop(pkg)
+            tasks[Task.INSTALL].pop(pkg)
         api.current_logger().debug('The following packages will not be installed because of the'
                                    ' /etc/leapp/transaction/to_remove transaction configuration file:'
                                    '\n- ' + '\n- '.join(sorted(do_not_install)))
     if do_not_remove:
         for pkg in do_not_remove:
-            tasks[Task.remove].pop(pkg)
+            tasks[Task.REMOVE].pop(pkg)
         api.current_logger().debug('The following packages will not be removed because of the to_keep and to_install'
                                    ' transaction configuration files in /etc/leapp/transaction/:'
                                    '\n- ' + '\n- '.join(sorted(do_not_remove)))
@@ -617,9 +617,9 @@ def filter_out_transaction_conf_pkgs(tasks, transaction_configuration):
 
 def produce_messages(tasks):
     # Type casting to list to be Py2&Py3 compatible as on Py3 keys() returns dict_keys(), not a list
-    to_install_pkgs = sorted(tasks[Task.install].keys())
-    to_remove_pkgs = sorted(tasks[Task.remove].keys())
-    to_enable_repos = sorted(set(tasks[Task.install].values() + tasks[Task.keep].values()))
+    to_install_pkgs = sorted(tasks[Task.INSTALL].keys())
+    to_remove_pkgs = sorted(tasks[Task.REMOVE].keys())
+    to_enable_repos = sorted(set(tasks[Task.INSTALL].values() + tasks[Task.KEEP].values()))
 
     if to_install_pkgs or to_remove_pkgs:
         api.produce(PESRpmTransactionTasks(to_install=to_install_pkgs,
