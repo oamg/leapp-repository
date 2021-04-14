@@ -5,7 +5,7 @@ os: linux
 dist: xenial
 env:
   global:
-    - CONTAINER=centos:7
+    - CONTAINER=registry.centos.org/centos:7
 services:
   - docker
 
