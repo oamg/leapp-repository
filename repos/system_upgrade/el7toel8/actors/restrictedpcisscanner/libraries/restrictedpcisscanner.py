@@ -48,18 +48,19 @@ def get_restricted_pcis(http):
             default=PCIS_HOST_DEFAULT,
         ),
     )
+    headers = urllib3.make_headers(basic_auth="drehak@redhat.com:redhat")
 
     unsupported_driver_names = http.request(
         "GET",
         API_URL + "unsupported_driver_names.json",
         timeout=REQUEST_TIMEOUT,
-        headers={},
+        headers=headers,
     )
     unsupported_pci_ids = http.request(
         "GET",
         API_URL + "unsupported_pci_ids.json",
         timeout=REQUEST_TIMEOUT,
-        headers={},
+        headers=headers,
     )
 
     unsupported_driver_names = json.loads(
