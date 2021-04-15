@@ -8,6 +8,7 @@ RUN yum update -y && \
 # NOTE(ivasilev) Unless we upgrade pip an obsolete v 9 will be on the system
 # and we need at least 10.0.1 to install a not-yet-merged framework pr in case
 # it's necessary
+RUN curl -Lvvvv https://pypi.python.org/simple/pip/
 RUN easy_install pip==20.3.4
 
 WORKDIR /payload
