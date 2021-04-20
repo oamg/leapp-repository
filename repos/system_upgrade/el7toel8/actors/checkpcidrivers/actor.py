@@ -2,7 +2,7 @@ from leapp.actors import Actor
 from leapp.libraries.actor.checkpcidrivers import checkpcidrivers_main
 from leapp.models import PCIDevices, RestrictedPCIDevices
 from leapp.reporting import Report
-from leapp.tags import ChecksPhaseTag, IPUWorkflowTag, ExperimentalTag
+from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
 class CheckPCIDrivers(Actor):
@@ -26,7 +26,7 @@ class CheckPCIDrivers(Actor):
         RestrictedPCIDevices,
     )
     produces = (Report,)
-    tags = (ChecksPhaseTag, IPUWorkflowTag, ExperimentalTag)
+    tags = (ChecksPhaseTag, IPUWorkflowTag)
 
     def process(self):
         checkpcidrivers_main()

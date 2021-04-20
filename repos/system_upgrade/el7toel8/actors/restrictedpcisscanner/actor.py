@@ -1,7 +1,7 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import restrictedpcisscanner
 from leapp.models import RestrictedPCIDevices
-from leapp.tags import ExperimentalTag, FactsPhaseTag, IPUWorkflowTag
+from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 
 class RestrictedPCIsScanner(Actor):
@@ -16,7 +16,7 @@ class RestrictedPCIsScanner(Actor):
     name = "restricted_pcis_scanner"
     consumes = ()
     produces = (RestrictedPCIDevices,)
-    tags = (IPUWorkflowTag, FactsPhaseTag, ExperimentalTag)
+    tags = (IPUWorkflowTag, FactsPhaseTag)
 
     def process(self):
         restrictedpcisscanner.produce_restricted_pcis()
