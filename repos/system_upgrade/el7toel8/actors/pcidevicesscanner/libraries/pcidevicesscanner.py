@@ -25,7 +25,7 @@ def parse_pci_device(textual_block, numeric_block):
         'Module': [],
         'NUMANode': ''
     }
-    for line in textual_block.split('\n'):
+    for line in textual_block.splitlines():
         key, value = line.split(':\t')
 
         if key in device:

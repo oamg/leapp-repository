@@ -69,7 +69,7 @@ class PCIDevices(Model):
 
 class RestrictedPCIDevice(Model):
     """
-    Model to represent knwon restrictions of the given PCI devices.
+    Model to represent known restrictions of the given PCI devices.
 
 
     pci_id - unsupported pci_ids. It has the following
