@@ -51,6 +51,7 @@ def render_report(
 
     # Prepare summary
     summary_partial = "The following drivers are restricted on RHEL 8 system:"
+    resources = []
     # Process unavailable devices
     if unavailable_driver_names or unavailable_pci_ids:
         summary_partial += "\n\t Unavailable in RHEL8:"
@@ -59,6 +60,7 @@ def render_report(
             summary_partial += "\t\t\t- " + "\n\t\t\t- ".join(
                 unavailable_driver_names
             )
+            resources += [reporting.RelatedResource('kernel-driver', i) for i in unavailable_driver_names]
         if unavailable_pci_ids:
             summary_partial += "\n\t\t- pci ids:\n"
             summary_partial += "\t\t\t- " + "\n\t\t\t- ".join(
@@ -73,6 +75,7 @@ def render_report(
             summary_partial += "\t\t\t- " + "\n\t\t\t- ".join(
                 unsupported_driver_names
             )
+            resources += [reporting.RelatedResource('kernel-driver', i) for i in unsupported_driver_names]
         if unsupported_pci_ids:
             summary_partial += "\n\t\t- pci ids:\n"
             summary_partial += "\t\t\t- " + "\n\t\t\t- ".join(
@@ -85,6 +88,9 @@ def render_report(
         reporting.Severity(reporting.Severity.HIGH),
         reporting.Tags([reporting.Tags.KERNEL, reporting.Tags.DRIVERS]),
     ]
+
+    if resources:
+        reports += resources
     if inhibit_upgrade:
         reports += [reporting.Flags([reporting.Flags.INHIBITOR])]
     return reports
