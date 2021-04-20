@@ -6,6 +6,7 @@ from enum import IntEnum
 from leapp.exceptions import StopActorExecution, StopActorExecutionError
 from leapp import reporting
 from leapp.libraries.common.config import architecture, version
+from leapp.libraries.common import fetch
 from leapp.libraries.stdlib import api
 from leapp.libraries.stdlib.config import is_verbose
 from leapp.models import (InstalledRedHatSignedRPM, PESRpmTransactionTasks, RepositoriesMap,
@@ -42,12 +43,12 @@ class Task(IntEnum):
         return ['kept', 'installed', 'removed'][self]
 
 
-def pes_events_scanner(pes_json_filepath):
+def pes_events_scanner(pes_json_directory, pes_json_filename):
     """Entrypoint to the library"""
     installed_pkgs = get_installed_pkgs()
     transaction_configuration = get_transaction_configuration()
     arch = api.current_actor().configuration.architecture
-    events = get_events(pes_json_filepath)
+    events = get_events(pes_json_directory, pes_json_filename)
     releases = get_releases(events)
     target = version._version_to_tuple(api.current_actor().configuration.version.target)
 
@@ -128,16 +129,17 @@ def filter_releases_by_target(releases, target):
     return [r for r in releases if version.matches_version(match_list, '{}.{}'.format(*r))]
 
 
-def get_events(pes_events_filepath):
+def get_events(pes_json_directory, pes_json_filename):
     """
     Get all the events from the source JSON file exported from PES.
 
     :return: List of Event tuples, where each event contains event type and input/output pkgs
     """
     try:
-        return parse_pes_events_file(pes_events_filepath)
+        return parse_pes_events(
+            fetch.read_or_fetch(pes_json_filename, directory=pes_json_directory, allow_empty=True))
     except (ValueError, KeyError):
-        title = 'Missing/Invalid PES data file ({})'.format(pes_events_filepath)
+        title = 'Missing/Invalid PES data file ({}/{})'.format(pes_json_directory, pes_json_filename)
         summary = 'Read documentation at: https://access.redhat.com/articles/3664871 for more information ' \
             'about how to retrieve the files'
         reporting.create_report([
@@ -146,7 +148,7 @@ def get_events(pes_events_filepath):
             reporting.Severity(reporting.Severity.HIGH),
             reporting.Tags([reporting.Tags.SANITY]),
             reporting.Flags([reporting.Flags.INHIBITOR]),
-            reporting.RelatedResource('file', pes_events_filepath)
+            reporting.RelatedResource('file', os.path.join(pes_json_directory, pes_json_filename))
         ])
         raise StopActorExecution()
 
@@ -168,21 +170,17 @@ def filter_events_by_releases(events, releases):
     return [e for e in events if e.to_release in releases]
 
 
-def parse_pes_events_file(path):
+def parse_pes_events(json_data):
     """
-    Parse JSON file returning PES events
+    Parse JSON data returning PES events
 
     :return: List of Event tuples, where each event contains event type and input/output pkgs
     """
-    if path is None or not os.path.isfile(path):
-        raise ValueError('File {} not found'.format(path))
-    with open(path) as f:
-        data = json.load(f)
+    data = json.loads(json_data)
+    if not isinstance(data, dict) or not data.get('packageinfo'):
+        raise ValueError('Found PES data with invalid structure')
 
-        if not isinstance(data, dict) or not data.get('packageinfo'):
-            raise ValueError('Found PES data with invalid structure')
-
-        return [parse_entry(entry) for entry in data['packageinfo']]
+    return [parse_entry(entry) for entry in data['packageinfo']]
 
 
 def parse_entry(entry):
