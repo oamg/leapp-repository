@@ -1,7 +1,9 @@
 import pytest
+import requests
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import repositoriesmapping
+from leapp.libraries.common import fetch
 from leapp.libraries.common.config import architecture
 from leapp.libraries.common.testutils import produce_mocked, CurrentActorMocked
 from leapp.libraries.stdlib import api
@@ -109,20 +111,39 @@ def test_scan_valid_file_with_comments(monkeypatch, arch, src_type, dst_type):
     assert api.produce.model_instances == [gen_RepositoriesMap(expected_records)]
 
 
-@pytest.mark.parametrize('isFile,err_summary', [
-    (False, 'The repository mapping file not found'),
-    (True, 'The repository mapping file is invalid'),
-])
-def test_scan_missing_or_empty_file(monkeypatch, isFile, err_summary):
+class ResponseMocked(object):
+    def __init__(self, status_code, text):
+        self.status_code = status_code
+        self.text = text
+
+    def __getattr__(self, key):
+        if key == 'status_code':
+            return self.status_code
+        if key == 'text':
+            return self.text
+        raise AttributeError(key)
+
+
+class get_mocked(object):
+    def __init__(self, status_code, text):
+        self.status_code = status_code
+        self.text = text
+
+    def __call__(self, *args, **kwargs):
+        return ResponseMocked(self.status_code, self.text)
+
+
+@pytest.mark.parametrize('isFile', (False, True))
+def test_scan_missing_or_empty_file(monkeypatch, isFile):
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(architecture.ARCH_X86_64))
     monkeypatch.setattr(api, 'produce', produce_mocked())
-    monkeypatch.setattr('os.path.isfile', lambda dummy: isFile)
-    if isFile:
-        monkeypatch.setattr('os.path.getsize', lambda dummy: 0)
+    monkeypatch.setattr('os.path.isfile', lambda dummy: False)
+    monkeypatch.setattr(requests, 'get', get_mocked(200 if isFile else 404, ''))
+
     with pytest.raises(StopActorExecutionError) as err:
         repositoriesmapping.scan_repositories()
     assert not api.produce.called
-    assert err_summary in str(err)
+    assert 'invalid or could not be retrieved' in str(err)
 
 
 @pytest.mark.parametrize('line', [
