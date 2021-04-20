@@ -1,0 +1,72 @@
+import os
+
+import requests
+
+from leapp.exceptions import StopActorExecutionError
+from leapp.libraries.common.config import get_env
+from leapp.libraries.stdlib import api
+
+SERVICE_HOST_DEFAULT = "https://cert.cloud.redhat.com"
+REQUEST_TIMEOUT = 5
+
+
+def _raise_error(local_path, details):
+    """
+    If the file acquisition fails in any way, throw an informative error to stop the actor.
+    """
+    summary = "Data file {lp} is invalid or could not be retrieved.".format(lp=local_path)
+    hint = ("Read documentation at: https://access.redhat.com/articles/3664871"
+            " for more information about how to retrieve the file.")
+
+    raise StopActorExecutionError(summary, details={'details': details, 'hint': hint})
+
+
+def read_or_fetch(filename, directory="/etc/leapp/files", service=None, allow_empty=False):
+    """
+    Return contents of a file or fetch them from an online service if the file does not exist.
+    """
+    logger = api.current_logger()
+    local_path = os.path.join(directory, filename)
+
+    # try to get the data locally
+    if not os.path.exists(local_path):
+        logger.warning("File {lp} does not exist, falling back to online service".format(lp=local_path))
+    else:
+        try:
+            with open(local_path) as f:
+                data = f.read()
+                if not allow_empty and not data:
+                    _raise_error(local_path, "File {lp} exists but is empty".format(lp=local_path))
+                logger.warning("File {lp} successfully read ({l} bytes)".format(lp=local_path, l=len(data)))
+                return data
+        except EnvironmentError:
+            _raise_error(local_path, "File {lp} exists but couldn't be read".format(lp=local_path))
+        except Exception as e:
+            raise e
+
+    # if the data is not present locally, fetch it from the online service
+    service = service or get_env("LEAPP_SERVICE_HOST", default=SERVICE_HOST_DEFAULT)
+    service_path = "{s}/api/pes/{f}".format(s=service, f=filename)
+    proxy = get_env("LEAPP_PROXY_HOST")
+    proxies = {"https": proxy} if proxy else None
+    cert = ("/etc/pki/consumer/cert.pem", "/etc/pki/consumer/key.pem")
+    response = None
+    try:
+        response = requests.get(service_path, cert=cert, proxies=proxies, timeout=REQUEST_TIMEOUT)
+    except requests.RequestException as e:
+        logger.error(e)
+        _raise_error(local_path, "Could not fetch {f} from {sp} (unreachable address).".format(
+            f=filename, sp=service_path))
+    # almost certainly missing certs
+    except (OSError, IOError) as e:
+        logger.error(e)
+        _raise_error(local_path, ("Could not fetch {f} from {sp} (missing certificates). Is the machine"
+                                  " registered?".format(f=filename, sp=service_path)))
+    if response.status_code != 200:
+        _raise_error(local_path, "Could not fetch {f} from {sp} (error code: {e}).".format(
+            f=filename, sp=service_path, e=response.status_code))
+    if not allow_empty and not response.text:
+        _raise_error(local_path, "File {lp} successfully retrieved but it's empty".format(lp=local_path))
+    logger.warning("File {sp} successfully retrieved and read ({l} bytes)".format(
+        sp=service_path, l=len(response.text)))
+    return response.text
