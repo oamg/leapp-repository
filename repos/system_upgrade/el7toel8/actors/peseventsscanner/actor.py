@@ -26,4 +26,4 @@ class PesEventsScanner(Actor):
     tags = (IPUWorkflowTag, FactsPhaseTag)
 
     def process(self):
-        pes_events_scanner('/etc/leapp/files/pes-events.json')
+        pes_events_scanner('/etc/leapp/files', 'pes-events.json')

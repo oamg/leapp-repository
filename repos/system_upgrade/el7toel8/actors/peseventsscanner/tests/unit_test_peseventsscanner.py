@@ -2,7 +2,7 @@ import os.path
 
 import pytest
 
-from leapp.exceptions import StopActorExecution
+from leapp.exceptions import StopActorExecution, StopActorExecutionError
 from leapp.libraries.actor import peseventsscanner
 from leapp.libraries.actor.peseventsscanner import (
     SKIPPED_PKGS_MSG,
@@ -18,11 +18,12 @@ from leapp.libraries.actor.peseventsscanner import (
     get_events,
     map_repositories, parse_action,
     parse_entry, parse_packageset,
-    parse_pes_events_file,
+    parse_pes_events,
     process_events,
     report_skipped_packages)
 from leapp import reporting
-from leapp.libraries.common.testutils import produce_mocked, create_report_mocked
+from leapp.libraries.common import fetch
+from leapp.libraries.common.testutils import produce_mocked, create_report_mocked, CurrentActorMocked
 from leapp.libraries.stdlib import api
 from leapp.models import RpmTransactionTasks
 
@@ -91,8 +92,9 @@ def test_parse_entry(current_actor_context):
     assert event.out_pkgs == {}
 
 
-def test_parse_pes_events_file(current_actor_context):
-    events = parse_pes_events_file(os.path.join(CUR_DIR, 'files/sample01.json'))
+def test_parse_pes_events(current_actor_context):
+    with open(os.path.join(CUR_DIR, 'files/sample01.json')) as f:
+        events = parse_pes_events(f.read())
     assert len(events) == 2
     assert events[0].action == Action.SPLIT
     assert events[0].in_pkgs == {'original': 'repo'}
@@ -254,30 +256,30 @@ def test_process_events(monkeypatch):
 
 def test_get_events(monkeypatch):
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked())
 
     with pytest.raises(StopActorExecution):
-        get_events(os.path.join(CUR_DIR, 'files/sample02.json'))
+        get_events(os.path.join(CUR_DIR, 'files'), 'sample02.json')
     assert reporting.create_report.called == 1
     assert 'inhibitor' in reporting.create_report.report_fields['flags']
 
     reporting.create_report.called = 0
     reporting.create_report.model_instances = []
     with pytest.raises(StopActorExecution):
-        get_events(os.path.join(CUR_DIR, 'files/sample03.json'))
+        get_events(os.path.join(CUR_DIR, 'files'), 'sample03.json')
     assert reporting.create_report.called == 1
     assert 'inhibitor' in reporting.create_report.report_fields['flags']
 
 
 def test_pes_data_not_found(monkeypatch):
-    def file_not_exists(_filepath):
-        return False
+    def read_or_fetch_mocked(filename, directory="/etc/leapp/files", service=None, allow_empty=False):
+        fetch._raise_error('pes-data.json', 'epic fail!')
 
-    monkeypatch.setattr(os.path, 'isfile', file_not_exists)
+    monkeypatch.setattr(fetch, 'read_or_fetch', read_or_fetch_mocked)
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
-    with pytest.raises(StopActorExecution):
-        get_events('/etc/leapp/pes-data.json')
-    assert reporting.create_report.called == 1
-    assert 'inhibitor' in reporting.create_report.report_fields['flags']
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked())
+    with pytest.raises(StopActorExecutionError):
+        get_events('/etc/leapp', 'pes-data.json')
 
 
 def test_add_output_pkgs_to_transaction_conf():
