@@ -1,12 +1,11 @@
-import os
-
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import config
+from leapp.libraries.common.fetch import read_or_fetch
 from leapp.libraries.stdlib import api
 from leapp.models import RepositoriesMap, RepositoryMap
 from leapp.models.fields import ModelViolationError
 
-REPOMAP_FILE = '/etc/leapp/files/repomap.csv'
+REPOMAP_FILE = 'repomap.csv'
 """Path to the repository mapping file."""
 
 
@@ -18,15 +17,9 @@ def _inhibit_upgrade(msg):
                           ' https://access.redhat.com/articles/3664871')})
 
 
-def _read_repofile(path):
-    if not os.path.isfile(path):
-        _inhibit_upgrade('The repository mapping file not found ({}).'.format(path))
-
-    if os.path.getsize(path) == 0:
-        _inhibit_upgrade('The repository mapping file is invalid ({}).'.format(path))
-
-    with open(path) as fp:
-        return [line.strip() for line in fp.readlines()]
+def _read_repofile(repofile):
+    contents = read_or_fetch(repofile)
+    return [line.strip() for line in contents.splitlines()]
 
 
 def scan_repositories(read_repofile_func=_read_repofile):
