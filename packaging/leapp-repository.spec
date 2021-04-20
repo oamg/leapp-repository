@@ -66,6 +66,8 @@ Requires:   libselinux-python
 Requires:   python-pyudev
 # required by SELinux actors
 Requires:   policycoreutils-python
+# Required to fetch leapp data
+Requires:   python-requests
 %else ## RHEL 8 dependencies ##
 # Requires:   systemd-container
 %endif
