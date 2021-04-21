@@ -187,6 +187,7 @@ do_upgrade() {
     #       specify where the root is, e.g. --root=/sysroot
     # TODO: update: systemd-nspawn
     /usr/bin/systemd-nspawn $NSPAWN_OPTS -D $NEWROOT /usr/bin/bash -c "mount -a; $LEAPPBIN upgrade --resume $args"
+    false
     rv=$?
 
     # NOTE: flush the cached content to disk to ensure everything is written
