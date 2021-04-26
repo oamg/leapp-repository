@@ -7,7 +7,8 @@ from leapp.libraries.common.config import get_env
 from leapp.libraries.stdlib import api
 
 SERVICE_HOST_DEFAULT = "https://cert.cloud.redhat.com"
-REQUEST_TIMEOUT = 5
+REQUEST_TIMEOUT = (5, 30)
+MAX_ATTEMPTS = 3
 
 
 def _raise_error(local_path, details):
@@ -19,6 +20,32 @@ def _raise_error(local_path, details):
             " for more information about how to retrieve the file.")
 
     raise StopActorExecutionError(summary, details={'details': details, 'hint': hint})
+
+
+def _request_data(service_path, cert, proxies, timeout=REQUEST_TIMEOUT):
+    logger = api.current_logger()
+    attempt = 0
+    while True:
+        attempt += 1
+        try:
+            return requests.get(service_path, cert=cert, proxies=proxies, timeout=REQUEST_TIMEOUT)
+        except requests.Timeout as e:
+            etype_msg = 'Connection timeout'
+            if isinstance(e, requests.ReadTimeout):
+                etype_msg = 'Read timeout'
+                # reading is slow, increase the time limit for the reading
+                timeout[1] += 10
+            if attempt > MAX_ATTEMPTS:
+                logger.warning(
+                    'Attempt {} of {} to get {} failed: {}.'
+                    .format(MAX_ATTEMPTS, MAX_ATTEMPTS, service_path, etype_msg)
+                )
+                raise
+
+            logger.info(
+                'Attempt {} of {} to get {} failed: {}. Retrying...'
+                .format(attempt, MAX_ATTEMPTS, service_path, etype_msg)
+            )
 
 
 def read_or_fetch(filename, directory="/etc/leapp/files", service=None, allow_empty=False):
@@ -52,7 +79,7 @@ def read_or_fetch(filename, directory="/etc/leapp/files", service=None, allow_em
     cert = ("/etc/pki/consumer/cert.pem", "/etc/pki/consumer/key.pem")
     response = None
     try:
-        response = requests.get(service_path, cert=cert, proxies=proxies, timeout=REQUEST_TIMEOUT)
+        response = _request_data(service_path, cert=cert, proxies=proxies)
     except requests.RequestException as e:
         logger.error(e)
         _raise_error(local_path, "Could not fetch {f} from {sp} (unreachable address).".format(
