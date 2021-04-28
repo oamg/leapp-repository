@@ -1,5 +1,6 @@
 import json
 import os
+import re
 from collections import namedtuple, defaultdict
 from enum import IntEnum
 
@@ -30,9 +31,9 @@ Event = namedtuple('Event', ['id',            # int
                              ])
 
 
-# a hacky way to get major target release outside actor methods
+# a bit hacky way to get major target release outside actor methods - get the first int in /etc/redhat-release
 with open('/etc/redhat-release') as f:
-    TARGET = int(f.readline().split(' ')[-2][0]) + 1
+    TARGET = int(re.search(r'\d+', f.readline()).group(0)) + 1
 
 
 class Action(IntEnum):
