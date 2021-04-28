@@ -322,6 +322,16 @@ def add_packages_to_tasks(tasks, packages, task_type):
         tasks[task_type].update(packages)
 
 
+def _package_to_str(package):
+    """
+    Represent a package tuple with a string hash.
+
+    Example: in: Package('mesa-libwayland-egl-devel', 'rhel7-optional', ('wayland', '4.2'))
+             out: 'mesa-libwayland-egl-devel:rhel7-optional:wayland:4.2'
+    """
+    return '{}:{}:{}'.format(package[0], package[1], ':'.join(package[2]) if package[2] else 'None')
+
+
 def _packages_to_str(packages):
     """
     Represent a set of packages with a string hash.
@@ -330,8 +340,7 @@ def _packages_to_str(packages):
                   Package('wayland-devel', 'rhel7-base', None)}
              out: 'mesa-libwayland-egl-devel:rhel7-optional:wayland:4.2,wayland-devel:rhel7-base:None'
     """
-    pkg2str = lambda p: '{}:{}:{}'.format(p[0], p[1], ':'.join(p[2]) if p[2] else 'None')
-    return ','.join(pkg2str(p) for p in packages)
+    return ','.join(_package_to_str(p) for p in packages)
 
 
 def drop_conflicting_release_events(events):
