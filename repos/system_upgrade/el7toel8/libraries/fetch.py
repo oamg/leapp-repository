@@ -29,12 +29,12 @@ def _request_data(service_path, cert, proxies, timeout=REQUEST_TIMEOUT):
         attempt += 1
         try:
             return requests.get(service_path, cert=cert, proxies=proxies, timeout=REQUEST_TIMEOUT)
-        except requests.Timeout as e:
+        except requests.exceptions.Timeout as e:
             etype_msg = 'Connection timeout'
-            if isinstance(e, requests.ReadTimeout):
+            if isinstance(e, requests.exceptions.ReadTimeout):
                 etype_msg = 'Read timeout'
                 # reading is slow, increase the time limit for the reading
-                timeout[1] += 10
+                timeout = (timeout[0], timeout[1] + 10)
             if attempt > MAX_ATTEMPTS:
                 logger.warning(
                     'Attempt {} of {} to get {} failed: {}.'
@@ -80,7 +80,7 @@ def read_or_fetch(filename, directory="/etc/leapp/files", service=None, allow_em
     response = None
     try:
         response = _request_data(service_path, cert=cert, proxies=proxies)
-    except requests.RequestException as e:
+    except requests.exceptions.RequestException as e:
         logger.error(e)
         _raise_error(local_path, "Could not fetch {f} from {sp} (unreachable address).".format(
             f=filename, sp=service_path))
