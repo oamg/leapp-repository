@@ -4,7 +4,7 @@ from leapp.models import UsedTargetRepositories
 
 
 def set_rhsm_release():
-    """Set the RHSM release to the target RHEL 8 minor version."""
+    """Set the RHSM release to the target RHEL minor version."""
     if rhsm.skip_rhsm():
         api.current_logger().debug('Skipping setting the RHSM release due to --no-rhsm or environment variables.')
         return
@@ -17,13 +17,13 @@ def set_rhsm_release():
         rhsm.set_release(mounting.NotIsolatedActions(base_dir='/'), target_version)
     except CalledProcessError as err:
         api.current_logger().warning('Unable to set the {0} release through subscription-manager. When using dnf,'
-                                     ' content of the latest RHEL 8 minor version will be downloaded.\n{1}'
-                                     .format(target_version, str(err)))
+                                     ' content of the latest RHEL {1} minor version will be downloaded.\n{2}'
+                                     .format(target_version, target_version.split('.')[0], str(err)))
 
 
 def enable_rhsm_repos():
     """
-    Try enabling all the RHEL 8 repositories that have been used for the upgrade transaction.
+    Try enabling all the target RHEL repositories that have been used for the upgrade transaction.
 
     In case of custom repositories, the subscription-manager reports an error that it doesn't know them, but it enables
     the known repositories.

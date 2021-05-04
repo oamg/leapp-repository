@@ -28,6 +28,18 @@ def _raise_call_error(*args):
     )
 
 
+def _get_os_release(version='7.9', codename='Maipo'):
+    release = OSRelease(
+        release_id='rhel',
+        name='Red Hat Enterprise Linux Server',
+        pretty_name='Red Hat Enterprise Linux',
+        version='{} ({})'.format(version, codename),
+        version_id='{}'.format(version),
+        variant='Server',
+        variant_id='server')
+    return release
+
+
 def test_leapp_env_vars(monkeypatch):
     _clean_leapp_envs(monkeypatch)
     monkeypatch.setenv('LEAPP_WHATEVER', '0')
@@ -42,24 +54,24 @@ def test_leapp_env_vars(monkeypatch):
 
 
 def test_get_target_version(monkeypatch):
+    valid_release = _get_os_release(version='8.6', codename='Ootpa').version_id
+
     monkeypatch.delenv('LEAPP_DEVEL_TARGET_RELEASE', raising=False)
-    assert ipuworkflowconfig.get_target_version() == ipuworkflowconfig.CURRENT_TARGET_VERSION
+    monkeypatch.setattr(ipuworkflowconfig, 'get_os_release', lambda x: _get_os_release('8.6', 'Ootpa'))
+    assert ipuworkflowconfig.get_target_version() == ipuworkflowconfig.upgrade_paths_map[(valid_release, 'default')]
     monkeypatch.setenv('LEAPP_DEVEL_TARGET_RELEASE', '')
-    assert ipuworkflowconfig.get_target_version() == ipuworkflowconfig.CURRENT_TARGET_VERSION
+    monkeypatch.setattr(ipuworkflowconfig, 'get_os_release', lambda x: _get_os_release('8.6', 'Ootpa'))
+    assert ipuworkflowconfig.get_target_version() == ipuworkflowconfig.upgrade_paths_map[(valid_release, 'default')]
     monkeypatch.setenv('LEAPP_DEVEL_TARGET_RELEASE', '1.2.3')
     assert ipuworkflowconfig.get_target_version() == '1.2.3'
     monkeypatch.delenv('LEAPP_DEVEL_TARGET_RELEASE', raising=True)
+    # unsupported path
+    monkeypatch.setattr(ipuworkflowconfig, 'get_os_release', lambda x: _get_os_release('8.5', 'Ootpa'))
+    assert ipuworkflowconfig.get_target_version() == ipuworkflowconfig.upgrade_paths_map[(valid_release, 'default')]
 
 
 def test_get_os_release_info(monkeypatch):
-    expected = OSRelease(
-        release_id='rhel',
-        name='Red Hat Enterprise Linux Server',
-        pretty_name='Red Hat Enterprise Linux',
-        version='7.6 (Maipo)',
-        version_id='7.6',
-        variant='Server',
-        variant_id='server')
+    expected = _get_os_release('7.6')
     assert expected == ipuworkflowconfig.get_os_release(os.path.join(CUR_DIR, 'files/os-release'))
 
     with pytest.raises(StopActorExecutionError):

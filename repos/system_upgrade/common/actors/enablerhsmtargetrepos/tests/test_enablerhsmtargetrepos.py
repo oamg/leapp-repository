@@ -3,7 +3,7 @@ import sys
 import pytest
 
 from leapp.exceptions import StopActorExecutionError
-from leapp.libraries.actor import enablerhsmreposonrhel8
+from leapp.libraries.actor import enablerhsmtargetrepos
 from leapp.libraries.common import config, mounting, rhsm
 from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked
 from leapp.libraries.stdlib import CalledProcessError, api
@@ -51,7 +51,7 @@ def test_setrelease(monkeypatch):
     monkeypatch.setattr(mounting, 'NotIsolatedActions', klass)
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(dst_ver='8.0'))
     monkeypatch.setattr(config, 'get_product_type', lambda dummy: 'ga')
-    enablerhsmreposonrhel8.set_rhsm_release()
+    enablerhsmtargetrepos.set_rhsm_release()
     assert commands_called and len(commands_called) == 1
     assert commands_called[0][0][-1] == '8.0'
 
@@ -68,7 +68,7 @@ def test_setrelease_submgr_throwing_error(monkeypatch):
     else:
         monkeypatch.setattr(rhsm, 'set_release', rhsm.set_release.__wrapped__.__wrapped__)
     with pytest.raises(StopActorExecutionError):
-        enablerhsmreposonrhel8.set_rhsm_release()
+        enablerhsmtargetrepos.set_rhsm_release()
 
 
 @pytest.mark.parametrize('product', ['beta', 'htb'])
@@ -79,7 +79,7 @@ def test_setrelease_skip_rhsm(monkeypatch, product):
     monkeypatch.setattr(config, 'get_product_type', lambda dummy: product)
     # To make this work we need to re-apply the decorator, so it respects the environment variable
     monkeypatch.setattr(rhsm, 'set_release', rhsm.with_rhsm(rhsm.set_release))
-    enablerhsmreposonrhel8.set_rhsm_release()
+    enablerhsmtargetrepos.set_rhsm_release()
     assert not commands_called
 
 
@@ -91,37 +91,37 @@ def construct_UTRepo_consume(repoids):
 def test_get_unique_repoids(monkeypatch):
     repoids = (['some-repo', 'some-repo', 'another-repo'])
     monkeypatch.setattr(api, 'consume', construct_UTRepo_consume(repoids))
-    assert enablerhsmreposonrhel8.get_repos_to_enable() == {'some-repo', 'another-repo'}
+    assert enablerhsmtargetrepos.get_repos_to_enable() == {'some-repo', 'another-repo'}
 
 
 def test_get_submgr_cmd():
-    assert enablerhsmreposonrhel8.get_submgr_cmd({'some-repo'}) == ['subscription-manager', 'repos', '--enable',
-                                                                    'some-repo']
+    assert enablerhsmtargetrepos.get_submgr_cmd({'some-repo'}) == ['subscription-manager', 'repos', '--enable',
+                                                                   'some-repo']
 
 
 def test_running_submgr_ok(monkeypatch):
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(dst_ver='8.0', envars={'LEAPP_NO_RHSM': '0'}), )
-    monkeypatch.setattr(enablerhsmreposonrhel8, 'get_repos_to_enable', lambda: {'some-repo'})
-    monkeypatch.setattr(enablerhsmreposonrhel8, 'run', run_mocked())
-    enablerhsmreposonrhel8.enable_rhsm_repos()
-    assert enablerhsmreposonrhel8.run.called
-    assert 'subscription-manager' in enablerhsmreposonrhel8.run.args[0][0]
+    monkeypatch.setattr(enablerhsmtargetrepos, 'get_repos_to_enable', lambda: {'some-repo'})
+    monkeypatch.setattr(enablerhsmtargetrepos, 'run', run_mocked())
+    enablerhsmtargetrepos.enable_rhsm_repos()
+    assert enablerhsmtargetrepos.run.called
+    assert 'subscription-manager' in enablerhsmtargetrepos.run.args[0][0]
 
 
 def test_running_submgr_fail(monkeypatch):
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(dst_ver='8.0', envars={'LEAPP_NO_RHSM': '0'}), )
-    monkeypatch.setattr(enablerhsmreposonrhel8, 'get_repos_to_enable', lambda: {'some-repo'})
-    monkeypatch.setattr(enablerhsmreposonrhel8, 'run', run_mocked(raise_err=True))
+    monkeypatch.setattr(enablerhsmtargetrepos, 'get_repos_to_enable', lambda: {'some-repo'})
+    monkeypatch.setattr(enablerhsmtargetrepos, 'run', run_mocked(raise_err=True))
     monkeypatch.setattr(api, 'current_logger', logger_mocked())
-    enablerhsmreposonrhel8.enable_rhsm_repos()
-    assert enablerhsmreposonrhel8.run.called
+    enablerhsmtargetrepos.enable_rhsm_repos()
+    assert enablerhsmtargetrepos.run.called
     assert api.current_logger.warnmsg
 
 
 def test_enable_repos_skip_rhsm(monkeypatch):
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(envars={'LEAPP_NO_RHSM': '1'}))
-    monkeypatch.setattr(enablerhsmreposonrhel8, 'run', run_mocked())
+    monkeypatch.setattr(enablerhsmtargetrepos, 'run', run_mocked())
     monkeypatch.setattr(api, 'current_logger', logger_mocked())
-    enablerhsmreposonrhel8.enable_rhsm_repos()
-    assert not enablerhsmreposonrhel8.run.called
+    enablerhsmtargetrepos.enable_rhsm_repos()
+    assert not enablerhsmtargetrepos.run.called
     assert api.current_logger.dbgmsg

@@ -112,8 +112,8 @@ def test_enable_biosdevname(monkeypatch):
 
     biosdevname.enable_biosdevname()
     assert (
-            "Biosdevname naming scheme in use, explicitely enabling biosdevname on RHEL-8"
-            in api.current_logger.infomsg
+        "Biosdevname naming scheme in use, explicitely enabling biosdevname on the target RHEL system"
+        in api.current_logger.infomsg
     )
     assert result[0].key == "biosdevname"
     assert result[0].value == "1"
