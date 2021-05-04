@@ -616,16 +616,16 @@ def add_output_pkgs_to_transaction_conf(transaction_configuration, events):
 
     for event in events:
         if event.action in (Action.SPLIT, Action.MERGED, Action.REPLACED, Action.RENAMED):
-            if all([pkg in transaction_configuration.to_remove for pkg in event.in_pkgs]):
-                transaction_configuration.to_remove.extend(event.out_pkgs)
+            if all([pkg.name in transaction_configuration.to_remove for pkg in event.in_pkgs]):
+                transaction_configuration.to_remove.extend(pkg.name for pkg in event.out_pkgs)
                 message += (
                     '- {outs}\n - Reason: {ins} being {action} {to_or_by} {outs} {is_or_are} mentioned in the'
                     ' transaction configuration file /etc/leapp/transaction/to_remove\n'.format(
-                        outs=', '.join(event.out_pkgs.keys()),
-                        ins=', '.join(event.in_pkgs.keys()),
-                        action=event.action.name,
+                        outs=', '.join(p.name for p in event.out_pkgs),
+                        ins=', '.join(p.name for p in event.in_pkgs),
+                        action=event.action.name.lower(),
                         to_or_by='by' if event.action == 'Replaced' else 'to',
-                        is_or_are='is' if len(event.in_pkgs.keys()) == 1 else 'are'
+                        is_or_are='is' if len(event.in_pkgs) == 1 else 'are'
                     )
                 )
 

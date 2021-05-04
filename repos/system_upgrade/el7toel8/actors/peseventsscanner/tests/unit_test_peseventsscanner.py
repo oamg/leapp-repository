@@ -398,10 +398,10 @@ def test_filter_events_by_releases():
 def test_filter_releases():
     releases = [(7, 6), (7, 7), (7, 8), (7, 9), (8, 0), (8, 1), (8, 2), (8, 3), (9, 0), (9, 1)]
     filtered_releases = filter_releases(releases, (7, 6), (8, 1))
-    assert filtered_releases == [(7, 6), (7, 7), (7, 8), (7, 9), (8, 0), (8, 1)]
+    assert filtered_releases == [(7, 7), (7, 8), (7, 9), (8, 0), (8, 1)]
 
 
-def test_drop_conflicting_release_events(events):
+def test_drop_conflicting_release_events():
     conflict1a = Event(1, Action.PRESENT, {Package('pkg1', 'repo', None)}, set(), (7, 6), (8, 0), [])
     conflict1b = Event(2, Action.REPLACED, {Package('pkg1', 'repo', None)}, set(), (7, 6), (8, 2), [])
     conflict1c = Event(3, Action.REMOVED, {Package('pkg1', 'repo', None)}, set(), (7, 6), (8, 1), [])
@@ -420,10 +420,10 @@ def test_drop_conflicting_release_events(events):
                        (7, 6), (8, 1), [])
     # these two can't be chained, don't remove anything
     okay1a = Event(8, Action.REPLACED,
-                   {Package('pkg4a', 'repo', None), Package('pkg4b', 'repo', None)},
+                   {Package('pkg4a', 'repo', None)}, {Package('pkg4b', 'repo', None)},
                    (7, 6), (8, 0), [])
     okay1b = Event(9, Action.REPLACED,
-                   {Package('pkg4b', 'repo', None), Package('pkg4c', 'repo', None)},
+                   {Package('pkg4b', 'repo', None)}, {Package('pkg4c', 'repo', None)},
                    (8, 0), (8, 1), [])
 
     events = [conflict1a, conflict1b, conflict1c, conflict2a, conflict2b, conflict3a, conflict3b, okay1a, okay1b]
