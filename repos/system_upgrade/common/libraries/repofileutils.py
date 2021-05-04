@@ -45,7 +45,7 @@ def parse_repofile(repofile):
 def get_repodirs():
     """
     Return all directories yum scans for repository files, if they exist.
-    By default, the possible paths on RHEL 7 should be:
+    By default, the possible paths on RHEL should be:
     ['/etc/yum.repos.d', '/etc/yum/repos.d', '/etc/distro.repos.d']
 
     ATTENTION: Requires the dnf module to be present.
