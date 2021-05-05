@@ -216,13 +216,15 @@ def test_resolve_conflicting_requests(monkeypatch):
               {Package('sip', 'repo', None)},
               {Package('python3-pyqt5-sip', 'repo', None), Package('python3-sip', 'repo', None)},
               (7, 6), (8, 0), [])]
-    installed_pkgs = {'sip', 'sip-devel'}
+    installed_pkgs = {('sip', None), ('sip-devel', None)}
 
     tasks = process_events([(8, 0)], events, installed_pkgs)
 
-    assert tasks[Task.INSTALL] == {'python3-sip-devel': 'repo', 'python3-pyqt5-sip': 'repo', 'python3-sip': 'repo'}
-    assert tasks[Task.REMOVE] == {'sip-devel': 'repo'}
-    assert tasks[Task.KEEP] == {'sip': 'repo'}
+    assert tasks[Task.INSTALL] == {('python3-sip-devel', None): 'repo',
+                                   ('python3-pyqt5-sip', None): 'repo',
+                                   ('python3-sip', None): 'repo'}
+    assert tasks[Task.REMOVE] == {('sip-devel', None): 'repo'}
+    assert tasks[Task.KEEP] == {('sip', None): 'repo'}
 
 
 def test_map_repositories(monkeypatch, caplog):
@@ -282,12 +284,12 @@ def test_process_events(monkeypatch):
         Event(7, Action.PRESENT,
               {Package('neverthere', 'rhel8-repo', None)}, set(),
               (8, 0), (8, 1), [])]
-    installed_pkgs = {'original', 'removed', 'present', 'reintroduced'}
+    installed_pkgs = {('original', None), ('removed', None), ('present', None), ('reintroduced', None)}
     tasks = process_events([(8, 0), (8, 1)], events, installed_pkgs)
 
-    assert tasks[Task.INSTALL] == {'split02': 'rhel8-mapped', 'split01': 'rhel8-mapped'}
-    assert tasks[Task.REMOVE] == {'removed': 'rhel7-repo', 'original': 'rhel7-repo'}
-    assert tasks[Task.KEEP] == {'present': 'rhel8-mapped', 'reintroduced': 'rhel8-mapped'}
+    assert tasks[Task.INSTALL] == {('split02', None): 'rhel8-mapped', ('split01', None): 'rhel8-mapped'}
+    assert tasks[Task.REMOVE] == {('removed', None): 'rhel7-repo', ('original', None): 'rhel7-repo'}
+    assert tasks[Task.KEEP] == {('present', None): 'rhel8-mapped', ('reintroduced', None): 'rhel8-mapped'}
 
 
 def test_get_events(monkeypatch):

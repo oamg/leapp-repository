@@ -21,6 +21,14 @@ Package = namedtuple('Package', ['name',         # str
                                  ])
 
 
+class Package(Package):  # noqa: E0102; pylint: disable=function-redefined
+    def __repr__(self):
+        ms = ""
+        if self.modulestream:
+            ms = '@{0}:{1}'.format(*self.modulestream)
+        return '{n}:{r}{ms}'.format(n=self.name, r=self.repository, ms=ms)
+
+
 Event = namedtuple('Event', ['id',            # int
                              'action',        # An instance of Action
                              'in_pkgs',       # A set of Package named tuples
@@ -72,9 +80,9 @@ def pes_events_scanner(pes_json_directory, pes_json_filename):
     arch_events = filter_events_by_architecture(filtered_events, arch)
 
     add_output_pkgs_to_transaction_conf(transaction_configuration, arch_events)
-    drop_conflicting_release_events(arch_events)  # TODO rewrite for Package (perhap ok)
+    drop_conflicting_release_events(arch_events)
     tasks = process_events(filtered_releases, arch_events, installed_pkgs)
-    # filter_out_transaction_conf_pkgs(tasks, transaction_configuration) # TODO rewrite for Package
+    filter_out_transaction_conf_pkgs(tasks, transaction_configuration)  # TODO rewrite for Package
     produce_messages(tasks)
 
 
@@ -272,15 +280,16 @@ def parse_action(action_id):
     return Action(action_id)
 
 
-def parse_modulestream(modulestream):
-    return (modulestream['name'], modulestream['stream']) if modulestream else None
+def parse_modulestream(package):
+    modulestream = package.get('modulestream')
+    # in an older version of PES data, the field for module stream can be absent
+    if not modulestream:
+        return None
+    return (modulestream['name'], modulestream['stream'])
 
 
 def parse_package(package):
-    return Package(package['name'],
-                   package['repository'].lower(),
-                   # in an older version of PES data, there can be no field for module stream
-                   parse_modulestream(package['modulestream']) if 'modulestream' in package else None)
+    return Package(package['name'], package['repository'].lower(), parse_modulestream(package))
 
 
 def parse_packageset(packageset):
@@ -316,11 +325,9 @@ def is_event_relevant(event, installed_pkgs, tasks):
 def add_packages_to_tasks(tasks, packages, task_type):
     if packages:
         api.current_logger().debug('{v:7} {p}'.format(
-            v=task_type.name.upper(), p=', '.join(
-                ['{n}{ms}'.format(n=p.name, ms=(
-                    '@{m}:{s}'.format(m=p.modulestream[0], s=p.modulestream[1]) if p.modulestream else ''
-                )) for p in packages])))
-        tasks[task_type].update(packages)
+            v=task_type.name, p=', '.join([p.__repr__() for p in packages])))
+        for p in packages:
+            tasks[task_type][(p.name, p.modulestream)] = p.repository
 
 
 def _package_to_str(package):
@@ -330,7 +337,9 @@ def _package_to_str(package):
     Example: in: Package('mesa-libwayland-egl-devel', 'rhel7-optional', ('wayland', '4.2'))
              out: 'mesa-libwayland-egl-devel:rhel7-optional:wayland:4.2'
     """
-    return '{}:{}:{}'.format(package[0], package[1], ':'.join(package[2]) if package[2] else 'None')
+    return '{n}:{ms}:{r}'.format(n=package.name,
+                                 r=package.repository,
+                                 ms=':'.join(package.modulestream) if package.modulestream else 'None')
 
 
 def _packages_to_str(packages):
@@ -341,7 +350,7 @@ def _packages_to_str(packages):
                   Package('wayland-devel', 'rhel7-base', None)}
              out: 'mesa-libwayland-egl-devel:rhel7-optional:wayland:4.2,wayland-devel:rhel7-base:None'
     """
-    return ','.join(_package_to_str(p) for p in packages)
+    return ','.join(_package_to_str(p) for p in sorted(packages))
 
 
 def drop_conflicting_release_events(events):
@@ -415,12 +424,12 @@ def process_events(releases, events, installed_pkgs):
             if package in tasks[Task.KEEP]:
                 api.current_logger().warning(
                     '{p} :: {r} to be kept / currently removed - removing package'.format(
-                        p=package, r=current[Task.REMOVE][package]))
+                        p=package[0], r=current[Task.REMOVE][package]))
                 del tasks[Task.KEEP][package]
             elif package in tasks[Task.INSTALL]:
                 api.current_logger().warning(
                     '{p} :: {r} to be installed / currently removed - ignoring tasks'.format(
-                        p=package, r=current[Task.REMOVE][package]))
+                        p=package[0], r=current[Task.REMOVE][package]))
                 del tasks[Task.INSTALL][package]
                 do_not_remove.add(package)
         for package in do_not_remove:
@@ -431,7 +440,7 @@ def process_events(releases, events, installed_pkgs):
             if package in tasks[Task.REMOVE]:
                 api.current_logger().warning(
                     '{p} :: {r} to be removed / currently installed - keeping package'.format(
-                        p=package, r=current[Task.INSTALL][package]))
+                        p=package[0], r=current[Task.INSTALL][package]))
                 current[Task.KEEP][package] = current[Task.INSTALL][package]
                 del tasks[Task.REMOVE][package]
                 do_not_install.add(package)
@@ -442,7 +451,7 @@ def process_events(releases, events, installed_pkgs):
             if package in tasks[Task.REMOVE]:
                 api.current_logger().warning(
                     '{p} :: {r} to be removed / currently kept - keeping package'.format(
-                        p=package, r=current[Task.KEEP][package]))
+                        p=package[0], r=current[Task.KEEP][package]))
                 del tasks[Task.REMOVE][package]
 
         for key in Task:  # noqa: E1133; pylint: disable=not-an-iterable
@@ -450,7 +459,7 @@ def process_events(releases, events, installed_pkgs):
                 if package in tasks[key]:
                     api.current_logger().warning(
                         '{p} :: {r} to be {v} TWICE - internal bug (not serious, continuing)'.format(
-                            p=package, r=current[key][package], v=key.past()))
+                            p=package[0], r=current[key][package], v=key.past()))
             tasks[key].update(current[key])
 
     map_repositories(tasks[Task.INSTALL])
@@ -463,7 +472,7 @@ def process_events(releases, events, installed_pkgs):
 
 def filter_out_installed_pkgs(event_out_pkgs, installed_pkgs):
     """Do not install those packages that are already installed."""
-    return {k: v for k, v in event_out_pkgs.items() if k not in installed_pkgs}
+    return {p for p in event_out_pkgs if (p.name, p.modulestream) not in installed_pkgs}
 
 
 def get_installed_event_pkgs(event_pkgs, installed_pkgs):
@@ -473,7 +482,7 @@ def get_installed_event_pkgs(event_pkgs, installed_pkgs):
     Even though we don't want to install the already installed pkgs, to be able to upgrade them to their RHEL 8/9
     version we need to know in which repos they are and enable such repos.
     """
-    return {k: v for k, v in event_pkgs.items() if k in installed_pkgs}
+    return {p for p in event_pkgs if (p.name, p.modulestream) in installed_pkgs}
 
 
 def filter_out_out_pkgs(event_in_pkgs, event_out_pkgs):
@@ -484,7 +493,8 @@ def filter_out_out_pkgs(event_in_pkgs, event_out_pkgs):
     to gdbm and gdbm-libs, we would incorrectly mandate removing gdbm without this filter. But for example in case of
     a split of Cython to python2-Cython and python3-Cython, we will correctly mandate removing Cython.
     """
-    return {k: v for k, v in event_in_pkgs.items() if k not in event_out_pkgs}
+    out_pkgs_keys = {(p.name, p.modulestream) for p in event_out_pkgs}
+    return {p for p in event_in_pkgs if (p.name, p.modulestream) not in out_pkgs_keys}
 
 
 SKIPPED_PKGS_MSG = (
@@ -540,7 +550,8 @@ def resolve_conflicting_requests(tasks):
 
     if pkgs_in_conflict:
         api.current_logger().debug('The following packages were marked to be kept/installed and removed at the same'
-                                   ' time. Leapp will upgrade them.\n{}'.format('\n'.join(sorted(pkgs_in_conflict))))
+                                   ' time. Leapp will upgrade them.\n{}'.format(
+                                       '\n'.join(sorted(pkg[0] for pkg in pkgs_in_conflict))))
 
 
 def get_repositories_blacklisted():
@@ -667,7 +678,7 @@ def produce_messages(tasks):
     # Type casting to list to be Py2&Py3 compatible as on Py3 keys() returns dict_keys(), not a list
     to_install_pkgs = sorted(tasks[Task.INSTALL].keys())
     to_remove_pkgs = sorted(tasks[Task.REMOVE].keys())
-    to_enable_repos = sorted(set(tasks[Task.INSTALL].values() | set(tasks[Task.KEEP].values())))
+    to_enable_repos = sorted(set(tasks[Task.INSTALL].values()) | set(tasks[Task.KEEP].values()))
 
     if to_install_pkgs or to_remove_pkgs:
         api.produce(PESRpmTransactionTasks(to_install=to_install_pkgs,
