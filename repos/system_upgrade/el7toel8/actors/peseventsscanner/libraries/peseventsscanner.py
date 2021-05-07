@@ -109,7 +109,7 @@ def get_installed_pkgs():
     # we don't really care about repositories of installed packages, only module streams
     # regardless, the model covers them, so we'll keep the information
     for pkg in installed_rh_signed_rpm_msg.items:
-        installed_pkgs.add((pkg.name, modular_rpms.get(pkg.name, "")))
+        installed_pkgs.add((pkg.name, modular_rpms.get(pkg.name, None)))
     return installed_pkgs
 
 
@@ -651,10 +651,10 @@ def filter_out_transaction_conf_pkgs(tasks, transaction_configuration):
     :param transaction_configuration: RpmTransactionTasks model instance with pkgs to install, keep and REMOVE based
                                       on the user configuration files
     """
-    do_not_keep = [p for p in tasks[Task.KEEP] if p in transaction_configuration.to_remove]
-    do_not_install = [p for p in tasks[Task.INSTALL] if p in transaction_configuration.to_remove]
-    do_not_remove = [p for p in tasks[Task.REMOVE] if p in transaction_configuration.to_install
-                     or p in transaction_configuration.to_keep]
+    do_not_keep = [p for p in tasks[Task.KEEP] if p[0] in transaction_configuration.to_remove]
+    do_not_install = [p for p in tasks[Task.INSTALL] if p[0] in transaction_configuration.to_remove]
+    do_not_remove = [p for p in tasks[Task.REMOVE] if p[0] in transaction_configuration.to_install
+                     or p[0] in transaction_configuration.to_keep]
 
     for pkg in do_not_keep:
         # Removing a package from the to_keep dict may cause that some repositories won't get enabled
@@ -665,13 +665,13 @@ def filter_out_transaction_conf_pkgs(tasks, transaction_configuration):
             tasks[Task.INSTALL].pop(pkg)
         api.current_logger().debug('The following packages will not be installed because of the'
                                    ' /etc/leapp/transaction/to_remove transaction configuration file:'
-                                   '\n- ' + '\n- '.join(sorted(do_not_install)))
+                                   '\n- ' + '\n- '.join(p[0] for p in sorted(do_not_install)))
     if do_not_remove:
         for pkg in do_not_remove:
             tasks[Task.REMOVE].pop(pkg)
         api.current_logger().debug('The following packages will not be removed because of the to_keep and to_install'
                                    ' transaction configuration files in /etc/leapp/transaction/:'
-                                   '\n- ' + '\n- '.join(sorted(do_not_remove)))
+                                   '\n- ' + '\n- '.join(p[0] for p in sorted(do_not_remove)))
 
 
 def produce_messages(tasks):
@@ -681,8 +681,10 @@ def produce_messages(tasks):
     to_enable_repos = sorted(set(tasks[Task.INSTALL].values()) | set(tasks[Task.KEEP].values()))
 
     if to_install_pkgs or to_remove_pkgs:
-        api.produce(PESRpmTransactionTasks(to_install=to_install_pkgs,
-                                           to_remove=to_remove_pkgs))
+        to_install_pkg_names = [p[0] for p in to_install_pkgs]
+        to_remove_pkg_names = [p[0] for p in to_remove_pkgs]
+        api.produce(PESRpmTransactionTasks(to_install=to_install_pkg_names,
+                                           to_remove=to_remove_pkg_names))
 
     if to_enable_repos:
         api.produce(RepositoriesSetupTasks(to_enable=to_enable_repos))
