@@ -7,17 +7,14 @@ from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 class CheckPCIDrivers(Actor):
     """
-    Check if host PCI devices drivers has restrictions on target system.
+    Check if detected PCI devices are supported on a target system.
 
-    If driver is restricted this means it is either unsupported or unavailable
-    in some set of newer RHEL versions.
+    Inhibit the ugprade if any detected drivers are unavailable on the target
+    system.
 
-    If the driver is unavailable on a target system - then the upgrade will
-        be inhibited
-    If the driver is available, but not supported - then the upgrade will
-        continue, but the relevant report will be generated
-    If the driver is available and supported - then the upgrade will continue
-        normally
+    In case that all drivers are present on the target system but some of them
+    becomes unsupported on the target system, create just report without the
+    inhibitor.
     """
 
     name = "check_pci_drivers"

@@ -1,9 +1,3 @@
-"""
-TODOs:
-1. consider the idea to compare data sources timestamp in order to decide
-   if the source is actual or not
-"""
-
 from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.stdlib import api
