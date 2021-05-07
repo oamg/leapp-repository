@@ -400,7 +400,7 @@ def test_filter_events_by_releases():
 def test_filter_releases():
     releases = [(7, 6), (7, 7), (7, 8), (7, 9), (8, 0), (8, 1), (8, 2), (8, 3), (9, 0), (9, 1)]
     filtered_releases = filter_releases(releases, (7, 6), (8, 1))
-    assert filtered_releases == [(7, 7), (7, 8), (7, 9), (8, 0), (8, 1)]
+    assert filtered_releases == [(7, 6), (7, 7), (7, 8), (7, 9), (8, 0), (8, 1)]
 
 
 def test_drop_conflicting_release_events():
