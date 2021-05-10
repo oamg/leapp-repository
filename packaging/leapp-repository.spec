@@ -30,7 +30,7 @@ Requires:       leapp-repository-dependencies = 5
 
 # IMPORTANT: this is capability provided by the leapp framework rpm.
 # Check that 'version' this instead of the real framework rpm version.
-Requires:       leapp-framework >= 1.4, leapp-framework < 2
+Requires:       leapp-framework >= 2.0, leapp-framework < 3
 Requires:       python2-leapp
 
 # That's temporary to ensure the obsoleted subpackage is not installed
@@ -100,6 +100,10 @@ install -m 0755 -d %{buildroot}%{_sysconfdir}/leapp/transaction/
 install -m 0755 -d %{buildroot}%{_sysconfdir}/leapp/files/
 install -m 0644 etc/leapp/transaction/* %{buildroot}%{_sysconfdir}/leapp/transaction
 
+# install CLI commands for the leapp utility on the expected path
+install -m 0755 -d %{buildroot}%{python2_sitelib}/leapp/cli/
+cp -r commands %{buildroot}%{python2_sitelib}/leapp/cli/
+
 # Remove irrelevant repositories - We don't want to ship them
 rm -rf %{buildroot}%{repositorydir}/containerization
 rm -rf %{buildroot}%{repositorydir}/test
@@ -132,9 +136,11 @@ done;
 %dir %{leapp_datadir}
 %dir %{repositorydir}
 %dir %{custom_repositorydir}
+%dir %{python2_sitelib}/leapp/cli/commands
 %{_sysconfdir}/leapp/repos.d/*
 %{_sysconfdir}/leapp/transaction/*
 %{repositorydir}/*
+%{python2_sitelib}/leapp/cli/commands/*
 
 
 %files deps
