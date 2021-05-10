@@ -1,3 +1,4 @@
+import base64
 import os
 
 from leapp.libraries.stdlib import run, api, CalledProcessError
@@ -17,7 +18,11 @@ def has_grub(blk_dev):
         )
         raise StopActorExecution()
     os.close(blk)
-    return 'GRUB' in mbr
+    answer = 'GRUB' in mbr
+    api.current_logger().debug("has_grub? {}".format(answer))
+    if not answer:
+        api.current_logger().debug("Device {} content: '{}'".format(blk_dev, base64.b64encode(mbr)))
+    return answer
 
 
 def blk_dev_from_partition(partition):
