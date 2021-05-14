@@ -10,9 +10,8 @@ from leapp.libraries.common.config import architecture, version
 from leapp.libraries.common import fetch
 from leapp.libraries.stdlib import api
 from leapp.libraries.stdlib.config import is_verbose
-from leapp.models import (InstalledRedHatSignedRPM, InstalledRPMModuleMapping,
-                          RepositoriesBlacklisted, RepositoriesMap, RpmTransactionTasks,
-                          PESRpmTransactionTasks, RepositoriesSetupTasks)
+from leapp.models import (InstalledRedHatSignedRPM, RepositoriesBlacklisted, RepositoriesMap,
+                          RpmTransactionTasks, PESRpmTransactionTasks, RepositoriesSetupTasks)
 
 
 Package = namedtuple('Package', ['name',         # str
@@ -93,7 +92,6 @@ def get_installed_pkgs():
     :return: A set of tuples holding installed Red Hat-signed package names and their module streams
     """
     installed_pkgs = set()
-    modular_rpms = {}
 
     installed_rh_signed_rpm_msgs = api.consume(InstalledRedHatSignedRPM)
     installed_rh_signed_rpm_msg = next(installed_rh_signed_rpm_msgs, None)
@@ -103,13 +101,11 @@ def get_installed_pkgs():
         raise StopActorExecutionError('Cannot parse PES data properly due to missing list of installed packages',
                                       details={'Problem': 'Did not receive a message with installed Red Hat-signed '
                                                           'packages (InstalledRedHatSignedRPM)'})
-    for rpm in api.consume(InstalledRPMModuleMapping):
-        modular_rpms[rpm.name] = (rpm.module, rpm.stream)
-
-    # we don't really care about repositories of installed packages, only module streams
-    # regardless, the model covers them, so we'll keep the information
     for pkg in installed_rh_signed_rpm_msg.items:
-        installed_pkgs.add((pkg.name, modular_rpms.get(pkg.name, None)))
+        modulestream = None
+        if pkg.module and pkg.stream:
+            modulestream = (pkg.module, pkg.stream)
+        installed_pkgs.add((pkg.name, modulestream))
     return installed_pkgs
 
 

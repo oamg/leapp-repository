@@ -12,6 +12,8 @@ class RPM(Model):
     arch = fields.String()
     pgpsig = fields.String()
     repository = fields.Nullable(fields.String())
+    module = fields.Nullable(fields.String())
+    stream = fields.Nullable(fields.String())
 
 
 class InstalledRPM(Model):
@@ -25,11 +27,3 @@ class InstalledRedHatSignedRPM(InstalledRPM):
 
 class InstalledUnsignedRPM(InstalledRPM):
     pass
-
-
-class InstalledRPMModuleMapping(Model):
-    """Information about which modular stream an installed RPM comes from."""
-    topic = SystemInfoTopic
-    name = fields.String()
-    module = fields.String()
-    stream = fields.String()
