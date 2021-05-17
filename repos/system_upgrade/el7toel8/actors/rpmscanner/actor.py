@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.libraries.actor.rpmscanner import get_package_repository_data
+from leapp.libraries.actor.rpmscanner import get_package_repository_data, map_installed_rpms_to_modules
 from leapp.libraries.common.rpms import get_installed_rpms
 from leapp.models import InstalledRPM, RPM
 from leapp.tags import IPUWorkflowTag, FactsPhaseTag

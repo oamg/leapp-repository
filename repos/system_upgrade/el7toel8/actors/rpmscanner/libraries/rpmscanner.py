@@ -1,8 +1,6 @@
 import warnings
-import yaml
 
 from leapp.exceptions import StopActorExecutionError
-from leapp.libraries.stdlib import run
 
 no_yum = False
 no_yum_warning_msg = "package `yum` is unavailable"
@@ -29,7 +27,7 @@ def get_package_repository_data():
         https://bugzilla.redhat.com/show_bug.cgi?id=1789840
     """
     if no_yum:
-        raise StopActorExecutionError(message=no_yum_warning_msg)
+        return {}
     yum_base = yum.YumBase()
     pkg_repos = {}
 
@@ -51,7 +49,7 @@ def get_package_repository_data():
 
 def get_modules():
     """
-    Return info about all module streams as a list of dicts with their serialized YAML definitions.
+    Return info about all module streams as a list of libdnf.module.ModulePackage objects.
     """
     if no_dnf:
         return []
@@ -64,8 +62,7 @@ def get_modules():
     # this method is absent on RHEL 7, in which case there are no modules anyway
     if 'get_modules' not in dir(module_base):
         return []
-    modules = module_base.get_modules('*')[0]
-    return [yaml.load(module.getYaml()) for module in modules]
+    return module_base.get_modules('*')[0]
 
 
 def map_installed_rpms_to_modules():
@@ -76,16 +73,12 @@ def map_installed_rpms_to_modules():
     # empty on RHEL 7 because of no modules
     if not modules:
         return {}
-    # assuming there's "module" in release of each modular RPM
-    rpms = run(['rpm', '-qa', 'release=*module*'], split=True)['stdout']
     # create a reverse mapping from the RPMS to module streams
     # key: tuple of 4 strings representing a NVRA (name, version, release, arch) of an RPM
     # value: tuple of 2 strings representing a module and its stream
     rpm_streams = {}
     for module in modules:
-        if 'artifacts' not in module['data']:
-            continue
-        for rpm in module['data']['artifacts']['rpms']:
+        for rpm in module.getArtifacts():
             # we transform the NEVRA string into a tuple
             rpm_ne, rpm_vra = rpm.split(':', 1)
             rpm_n = rpm_ne.rsplit('-', 1)[0]
@@ -93,5 +86,5 @@ def map_installed_rpms_to_modules():
             rpm_r, rpm_a = rpm_ra.rsplit('.', 1)
             rpm_key = (rpm_n, rpm_v, rpm_r, rpm_a)
             # stream could be int or float, convert it to str just in case
-            rpm_streams[rpm_key] = (module['data']['name'], str(module['data']['stream']))
+            rpm_streams[rpm_key] = (module.getName(), str(module.getStream()))
     return rpm_streams
