@@ -1,3 +1,6 @@
+# there are bashisms used in this Makefile
+SHELL=/bin/bash
+
 __PKGNAME=$${_PKGNAME:-leapp-repository}
 VENVNAME ?= tut
 PKGNAME=leapp-repository
