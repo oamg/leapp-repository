@@ -435,3 +435,41 @@ def test_drop_conflicting_release_events():
         assert event in events
     for event in [conflict1a, conflict1c, conflict2a, conflict3a]:
         assert event not in events
+
+
+def test_process_modular_events(monkeypatch):
+    monkeypatch.setattr(peseventsscanner, 'map_repositories', lambda x: x)
+    monkeypatch.setattr(peseventsscanner, 'filter_out_pkgs_in_blacklisted_repos', lambda x: x)
+
+    events = [
+        # match the right modular package without touching the ones with absent or different module/stream
+        # in practice, installed packages can't have the same name, just testing that it matches the right one
+        Event(1, Action.REMOVED, {Package('removed', 'repo', ('module', '42'))}, set(), (8, 4), (9, 0), []),
+        Event(2, Action.SPLIT,
+              {Package('split_in', 'repo', ('splitin', 'foo'))},
+              {Package('split_out1', 'repo', None), Package('split_out2', 'repo', ('splitout', 'foo'))},
+              (8, 4), (9, 0), []),
+        Event(3, Action.SPLIT,
+              {Package('split_in', 'repo', ('splitin', 'bar'))},
+              {Package('split_out3', 'repo', None), Package('split_out2', 'repo', ('splitout', 'bar'))},
+              (8, 4), (9, 0), []),
+    ]
+    installed_pkgs = {('removed', ('module', '42')),
+                      ('removed', ('model', '42')),
+                      ('removed', ('module', '420')),
+                      ('removed', None),
+                      ('split_in', ('splitin', 'foo'))}
+
+    tasks = process_events([(9, 0)], events, installed_pkgs)
+
+    assert ('removed', ('module', '42')) in tasks[Task.REMOVE]  # name, module and stream match
+    assert ('removed', ('model', '42')) not in tasks[Task.REMOVE]  # different module
+    assert ('removed', ('module', '420')) not in tasks[Task.REMOVE]  # different stream
+    assert ('removed', None) not in tasks[Task.REMOVE]  # no module stream
+
+    assert ('split_in', ('splitin', 'foo')) in tasks[Task.REMOVE]
+    assert ('split_out1', None) in tasks[Task.INSTALL]
+    assert ('split_out2', ('splitout', 'foo')) in tasks[Task.INSTALL]
+    assert ('split_in', ('splitin', 'bar')) not in tasks[Task.REMOVE]
+    assert ('split_out3', None) not in tasks[Task.INSTALL]
+    assert ('split_out2', ('splitout', 'bar')) not in tasks[Task.INSTALL]
