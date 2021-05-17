@@ -81,7 +81,7 @@ def test_katello_pkg_goes_to_signed(current_actor_context):
         RPM(name='katello-ca-consumer-vm-098.example.com',
             version='1.0',
             release='1',
-            epoch='(none)',
+            epoch='0',
             packager='None',
             arch='noarch',
             pgpsig=''),
