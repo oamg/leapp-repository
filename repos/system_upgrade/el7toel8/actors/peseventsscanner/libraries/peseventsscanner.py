@@ -1,6 +1,5 @@
 import json
 import os
-import re
 from collections import namedtuple, defaultdict
 from enum import IntEnum
 
@@ -38,11 +37,6 @@ Event = namedtuple('Event', ['id',            # int
                              ])
 
 
-# a bit hacky way to get major target release outside actor methods - get the first int in /etc/redhat-release
-with open('/etc/redhat-release') as f:
-    TARGET = int(re.search(r'\d+', f.readline()).group(0)) + 1
-
-
 class Action(IntEnum):
     PRESENT = 0
     REMOVED = 1
@@ -71,7 +65,6 @@ def pes_events_scanner(pes_json_directory, pes_json_filename):
     events = get_events(pes_json_directory, pes_json_filename)
     releases = get_releases(events)
     source = version._version_to_tuple(api.current_actor().configuration.version.source)
-    # FIXME redundant with TARGET above
     target = version._version_to_tuple(api.current_actor().configuration.version.target)
 
     filtered_releases = filter_releases(releases, source, target)
@@ -392,23 +385,23 @@ def process_events(releases, events, installed_pkgs):
         for event in release_events:
             if is_event_relevant(event, installed_pkgs, tasks):
                 if event.action in [Action.DEPRECATED, Action.PRESENT]:
-                    # Keep these packages to make sure the repo they're in on RHEL 8/9 gets enabled
+                    # Keep these packages to make sure the repo they're in on the target system 8/9 gets enabled
                     add_packages_to_tasks(current, event.in_pkgs, Task.KEEP)
 
                 if event.action == Action.MOVED:
-                    # Keep these packages to make sure the repo they're in on RHEL 8/9 gets enabled
+                    # Keep these packages to make sure the repo they're in on the target system gets enabled
                     # We don't care about the "in_pkgs" as it contains always just one pkg - the same as the "out" pkg
                     add_packages_to_tasks(current, event.out_pkgs, Task.KEEP)
 
                 if event.action in [Action.SPLIT, Action.MERGED, Action.RENAMED, Action.REPLACED]:
                     non_installed_out_pkgs = filter_out_installed_pkgs(event.out_pkgs, installed_pkgs)
                     add_packages_to_tasks(current, non_installed_out_pkgs, Task.INSTALL)
-                    # Keep already installed "out" pkgs to ensure the repo they're in on RHEL 8/9 gets enabled
+                    # Keep already installed "out" pkgs to ensure the repo they're in on the target system gets enabled
                     installed_out_pkgs = get_installed_event_pkgs(event.out_pkgs, installed_pkgs)
                     add_packages_to_tasks(current, installed_out_pkgs, Task.KEEP)
 
                     if event.action in [Action.SPLIT, Action.MERGED]:
-                        # Remove those RHEL 7/8 pkgs that are no longer on RHEL 8/9
+                        # Remove those source pkgs that are no longer on the target system
                         in_pkgs_without_out_pkgs = filter_out_out_pkgs(event.in_pkgs, event.out_pkgs)
                         add_packages_to_tasks(current, in_pkgs_without_out_pkgs, Task.REMOVE)
 
@@ -475,8 +468,8 @@ def get_installed_event_pkgs(event_pkgs, installed_pkgs):
     """
     Get those event's "in" or "out" packages which are already installed.
 
-    Even though we don't want to install the already installed pkgs, to be able to upgrade them to their RHEL 8/9
-    version we need to know in which repos they are and enable such repos.
+    Even though we don't want to install the already installed pkgs, to be able to upgrade them to their
+    target system version we need to know in which repos they are and enable such repos.
     """
     return {p for p in event_pkgs if (p.name, p.modulestream) in installed_pkgs}
 
@@ -495,11 +488,11 @@ def filter_out_out_pkgs(event_in_pkgs, event_out_pkgs):
 
 SKIPPED_PKGS_MSG = (
     'packages will be skipped because they are available only in '
-    'RHEL {T} repositories that are intentionally excluded from the '
+    'target system repositories that are intentionally excluded from the '
     'list of repositories used during the upgrade. '
-    'See the report message titled "Excluded RHEL {T} repositories" '
+    'See the report message titled "Excluded target system repositories" '
     'for details.\nThe list of these packages:'
-).format(T=TARGET)
+)
 
 
 def filter_out_pkgs_in_blacklisted_repos(to_install):
@@ -619,7 +612,7 @@ def add_output_pkgs_to_transaction_conf(transaction_configuration, events):
                                       on the user configuration files
     :param events: List of Event tuples, where each event contains event type and input/output pkgs
     """
-    message = 'The following RHEL {T} packages will not be installed:\n'.format(T=TARGET)
+    message = 'The following target system packages will not be installed:\n'
 
     for event in events:
         if event.action in (Action.SPLIT, Action.MERGED, Action.REPLACED, Action.RENAMED):

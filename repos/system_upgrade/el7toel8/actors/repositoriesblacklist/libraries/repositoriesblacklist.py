@@ -21,7 +21,7 @@ def _get_list_of_optional_repos():
     Return a dict of optional repositories based on RepositoriesMap: { 'from_repoid' : 'to_repoid'}
 
     It consumes RepositoriesMap messages and create map (dict) of optional repositories
-    on RHEL 7 system to CRB repositories on RHEL 8. See the RepositoriesMap model..
+    on the source system to CRB repositories on the target system. See the RepositoriesMap model..
     """
     opt_repo = {}
     repo_map = next(api.consume(RepositoriesMap), None)
@@ -54,7 +54,7 @@ def process():
         api.produce(RepositoriesBlacklisted(repoids=reposid_blacklist))
 
         report = [
-            reporting.Title("Excluded RHEL 8 repositories"),
+            reporting.Title("Excluded target system repositories"),
             reporting.Summary(
                 "The following repositories are not supported by "
                 "Red Hat and are excluded from the list of repositories "
