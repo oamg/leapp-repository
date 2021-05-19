@@ -62,7 +62,8 @@ class CheckRHUI(Actor):
                         reporting.Remediation(commands=[['yum', 'install', '-y', info['leapp_pkg']]])
                     ])
                     return
-                if provider == 'aws':
+                # there are several "variants" related to the *AWS* provider (aws, aws-sap)
+                if provider.startswith('aws'):
                     # We have to disable Amazon-id plugin in the initramdisk phase as the network
                     # is down at the time
                     self.produce(DNFPluginTask(name='amazon-id', disable_in=['upgrade']))
