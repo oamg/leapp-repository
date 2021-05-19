@@ -2,12 +2,18 @@ import os
 
 from leapp.libraries.stdlib import api
 
-
 AWS_MAP = {
     'el7_pkg': 'rh-amazon-rhui-client',
     'el8_pkg': 'rh-amazon-rhui-client',
     'leapp_pkg': 'leapp-rhui-aws',
     'leapp_pkg_repo': 'leapp-aws.repo'
+}
+
+AWS_MAP_SAP = {
+    'el7_pkg': 'rh-amazon-rhui-client-sap-bundle',
+    'el8_pkg': 'rh-amazon-rhui-client-sap-bundle-e4s',
+    'leapp_pkg': 'leapp-rhui-aws-sap-e4s',
+    'leapp_pkg_repo': 'leapp-aws-sap-e4s.repo'
 }
 
 AZURE_MAP = {
@@ -18,24 +24,29 @@ AZURE_MAP = {
     'leapp_pkg_repo': 'leapp-azure.repo'
 }
 
+
 # for the moment the only difference in RHUI package naming is on ARM
 AWS_MAP_AARCH64 = dict(AWS_MAP, el7_pkg='rh-amazon-rhui-client-arm')
 
 RHUI_CLOUD_MAP = {
     'x86_64': {
         'aws': AWS_MAP,
+        'aws-sap-e4s': AWS_MAP_SAP,
         'azure': AZURE_MAP,
     },
     'aarch64': {
         'aws': AWS_MAP_AARCH64,
+        'aws-sap-e4s': AWS_MAP_SAP,
         'azure': AZURE_MAP,
     },
     'ppc64le': {
         'aws': AWS_MAP,
+        'aws-sap-e4s': AWS_MAP_SAP,
         'azure': AZURE_MAP,
     },
     's390x': {
         'aws': AWS_MAP,
+        'aws-sap-e4s': AWS_MAP_SAP,
         'azure': AZURE_MAP,
     },
 }
@@ -70,6 +81,15 @@ def gen_rhui_files_map():
             ('cdn.redhat.com-chain.crt', RHUI_PKI_DIR),
             (AWS_DNF_PLUGIN_NAME, DNF_PLUGIN_PATH),
             (RHUI_CLOUD_MAP[arch]['aws']['leapp_pkg_repo'], YUM_REPOS_PATH)
+        ],
+        'aws-sap-e4s': [
+            ('rhui-client-config-server-8-sap-bundle.crt', RHUI_PKI_PRODUCT_DIR),
+            ('rhui-client-config-server-8-sap-bundle.key', RHUI_PKI_DIR),
+            ('content-rhel8-sap.crt', RHUI_PKI_PRODUCT_DIR),
+            ('content-rhel8-sap.key', RHUI_PKI_DIR),
+            ('cdn.redhat.com-chain.crt', RHUI_PKI_DIR),
+            (AWS_DNF_PLUGIN_NAME, DNF_PLUGIN_PATH),
+            (RHUI_CLOUD_MAP[arch]['aws-sap-e4s']['leapp_pkg_repo'], YUM_REPOS_PATH)
         ],
         'azure': [
             ('content.crt', RHUI_PKI_PRODUCT_DIR),
