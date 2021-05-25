@@ -60,16 +60,20 @@ class Task(IntEnum):
 def pes_events_scanner(pes_json_directory, pes_json_filename):
     """Entrypoint to the library"""
     installed_pkgs = get_installed_pkgs()
+    print('{} installed pkgs'.format(len(installed_pkgs)))
     transaction_configuration = get_transaction_configuration()
     arch = api.current_actor().configuration.architecture
     events = get_events(pes_json_directory, pes_json_filename)
+    print('{} events'.format(len(events)))
     releases = get_releases(events)
     source = version._version_to_tuple(api.current_actor().configuration.version.source)
     target = version._version_to_tuple(api.current_actor().configuration.version.target)
 
     filtered_releases = filter_releases(releases, source, target)
     filtered_events = filter_events_by_releases(events, filtered_releases)
+    print('{} filtered events'.format(len(filtered_events)))
     arch_events = filter_events_by_architecture(filtered_events, arch)
+    print('{} arch events'.format(len(arch_events)))
 
     add_output_pkgs_to_transaction_conf(transaction_configuration, arch_events)
     drop_conflicting_release_events(arch_events)
@@ -383,6 +387,7 @@ def process_events(releases, events, installed_pkgs):
             n=len(release_events), r=release))
 
         for event in release_events:
+            print(event.id)
             if is_event_relevant(event, installed_pkgs, tasks):
                 if event.action in [Action.DEPRECATED, Action.PRESENT]:
                     # Keep these packages to make sure the repo they're in on the target system 8/9 gets enabled
@@ -583,7 +588,8 @@ def report_skipped_packages(title, message, package_repo_pairs, remediation=None
     summary = '{} {}\n{}'.format(
         len(package_repo_pairs), message, '\n'.join(
             [
-                '- {pkg} (repoid: {repo})'.format(pkg=pkg, repo=repo)
+                '- {pkg}{ms} (repoid: {repo})'.format(pkg=pkg[0], repo=repo,
+                                                      ms=(' [{}:{}]'.format(*pkg[1]) if pkg[1] else ''))
                 for pkg, repo in package_repo_pairs
             ]
         )
@@ -596,7 +602,7 @@ def report_skipped_packages(title, message, package_repo_pairs, remediation=None
     ]
     if remediation:
         report_content += [reporting.Remediation(hint=remediation)]
-    report_content += [reporting.RelatedResource('package', p) for p, _ in package_repo_pairs]
+    report_content += [reporting.RelatedResource('package', p[0]) for p, _ in package_repo_pairs]
     reporting.create_report(report_content)
     if is_verbose():
         api.current_logger().info(summary)
@@ -672,8 +678,20 @@ def produce_messages(tasks):
     if to_install_pkgs or to_remove_pkgs:
         to_install_pkg_names = [p[0] for p in to_install_pkgs]
         to_remove_pkg_names = [p[0] for p in to_remove_pkgs]
+
+        # TODO(drehak) Very rudimentary. Include comparing with existing modular packages.
+        to_install_modular_pkgs = [p for p in to_install_pkgs if p[1]]
+        to_remove_modular_pkgs = [p for p in to_remove_pkgs if p[1]]
+
+        streams_to_enable = {'{}:{}'.format(*p[1]) for p in to_install_modular_pkgs}
+        streams_to_disable = {'{}:{}'.format(*p[1]) for p in to_remove_modular_pkgs}
+        print(streams_to_enable)
+        print(streams_to_disable)
+
         api.produce(PESRpmTransactionTasks(to_install=to_install_pkg_names,
-                                           to_remove=to_remove_pkg_names))
+                                           to_remove=to_remove_pkg_names,
+                                           streams_to_enable=list(streams_to_enable),
+                                           streams_to_disable=list(streams_to_disable)))
 
     if to_enable_repos:
         api.produce(RepositoriesSetupTasks(to_enable=to_enable_repos))

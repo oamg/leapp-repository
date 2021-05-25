@@ -10,6 +10,8 @@ class RpmTransactionTasks(Model):
     to_keep = fields.List(fields.String(), default=[])
     to_remove = fields.List(fields.String(), default=[])
     to_upgrade = fields.List(fields.String(), default=[])
+    streams_to_enable = fields.List(fields.String(), default=[])
+    streams_to_disable = fields.List(fields.String(), default=[])
 
 
 class FilteredRpmTransactionTasks(RpmTransactionTasks):
