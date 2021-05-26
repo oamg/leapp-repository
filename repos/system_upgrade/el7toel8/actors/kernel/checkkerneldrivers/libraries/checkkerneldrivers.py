@@ -2,7 +2,7 @@ import os
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.stdlib import api
-from leapp.models import PCIDevices
+from leapp.models import ActiveKernelModulesFacts
 
 
 def get_removed_drivers(path):
@@ -22,7 +22,7 @@ def get_removed_drivers(path):
 
 
 def get_present_drivers():
-    return {device.driver for fact in api.consume(PCIDevices) for device in fact.devices if device.driver}
+    return {driver.filename for fact in api.consume(ActiveKernelModulesFacts) for driver in fact.kernel_modules}
 
 
 def check_drivers(removed, present):

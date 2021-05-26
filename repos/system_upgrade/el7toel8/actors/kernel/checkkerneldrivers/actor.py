@@ -4,7 +4,7 @@ from leapp.libraries.actor.checkkerneldrivers import (
     get_present_drivers,
     get_removed_drivers,
 )
-from leapp.models import PCIDevices
+from leapp.models import ActiveKernelModulesFacts
 from leapp.reporting import Report, create_report
 from leapp import reporting
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
@@ -23,7 +23,7 @@ class CheckKernelDrivers(Actor):
         files/removed_drivers.txt file.
     """
     name = 'check_kernel_drivers'
-    consumes = (PCIDevices,)
+    consumes = (ActiveKernelModulesFacts,)
     produces = (Report,)
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 

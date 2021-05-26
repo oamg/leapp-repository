@@ -29,7 +29,6 @@ sata_vsc
 bfa
 cxgb3
 cxgb3i
-e1000
 floppy
 hptiop
 initio
