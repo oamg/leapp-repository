@@ -135,6 +135,7 @@ clean:
 	@echo "--- Clean repo ---"
 	@rm -rf packaging/{sources,SRPMS,tmp,BUILD,BUILDROOT,RPMS}/
 	@rm -rf build/ dist/ *.egg-info .pytest_cache/
+	@rm -f *src.rpm packaging/*tar.gz
 	@find . -name 'leapp.db' | grep "\.leapp/leapp.db" | xargs rm -f
 	@find . -name '__pycache__' -exec rm -fr {} +
 	@find . -name '*.pyc' -exec rm -f {} +
