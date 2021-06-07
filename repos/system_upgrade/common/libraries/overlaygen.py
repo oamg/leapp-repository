@@ -63,7 +63,16 @@ def _prepare_required_mounts(scratch_dir, mounts_dir, mount_points, xfs_info):
 
     mount_names = [mount_point.fs_file for mount_point in mount_points]
 
-    for mountpoint in xfs_info.mountpoints_without_ftype:
+    # TODO(pstodulk): this (adding rootfs into the set always) is hotfix for
+    # bz #1911802 (not ideal one..). The problem occurs one rootfs is ext4 fs,
+    # but /var/lib/leapp/... is under XFS without ftype; In such a case we can
+    # see still the very same problems as before. But letting you know that
+    # probably this is not the final solution, as we could possibly see the
+    # same problems on another partitions too (needs to be tested...). However,
+    # it could fit for now until we provide the complete solution around XFS
+    # workarounds (including management of required spaces for virtual FSs per
+    # mountpoints - without that, we cannot fix this properly)
+    for mountpoint in set(xfs_info.mountpoints_without_ftype + ['/']):
         if mountpoint in mount_names:
             image = _create_mount_disk_image(disk_images_directory, mountpoint)
             result[mountpoint] = mounting.LoopMount(source=image, target=_mount_dir(mounts_dir, mountpoint))
