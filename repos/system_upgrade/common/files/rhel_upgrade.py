@@ -6,6 +6,7 @@ import sys
 
 import dnf
 import dnf.cli
+import dnf.module.module_base
 
 CMDS = ['check', 'download', 'dry-run', 'upgrade']
 """
@@ -47,20 +48,23 @@ class RhelUpgradeCommand(dnf.cli.Command):
                             metavar="[%s]" % "|".join(CMDS))
         parser.add_argument('filename')
 
-    def _process_packages(self, pkg_set, op):
+    def _process_entities(self, entities, op, entity_name):
         """
         Adds list of packages for given operation to the transaction
         """
-        pkgs_notfound = []
+        entities_notfound = []
 
-        for pkg_spec in pkg_set:
+        for spec in entities:
             try:
-                op(pkg_spec)
+                op(spec)
             except dnf.exceptions.MarkingError:
-                pkgs_notfound.append(pkg_spec)
-        if pkgs_notfound:
-            err_str = ('Packages marked by Leapp for {} not found '
-                       'in repositories metadata: '.format(op.__name__) + ' '.join(pkgs_notfound))
+                if isinstance(spec, (list, tuple)):
+                    entities_notfound.extend(spec)
+                else:
+                    entities_notfound.append(spec)
+        if entities_notfound:
+            err_str = ('{} marked by Leapp to {} not found '
+                       'in repositories metadata: '.format(entity_name, op.__name__) + ' '.join(entities_notfound))
             print('Warning: ' + err_str, file=sys.stderr)
 
     def _save_aws_region(self, region):
@@ -158,16 +162,30 @@ class RhelUpgradeCommand(dnf.cli.Command):
         for pkg in local_rpm_objects:
             self.base.package_install(pkg)
 
+        module_base = dnf.module.module_base.ModuleBase(self.base)
+
+        # Module tasks
+        modules_to_enable = self.plugin_data['pkgs_info'].get('modules_to_enable', ())
+        # modules_to_reset = self.plugin_data['pkgs_info'].get('modules_to_reset', ())
+
+        # Package tasks
         to_install = self.plugin_data['pkgs_info']['to_install']
         to_remove = self.plugin_data['pkgs_info']['to_remove']
         to_upgrade = self.plugin_data['pkgs_info']['to_upgrade']
 
+        # Modules to reset
+        # self._process_entities(entities=[[ms.split(':')[0] for ms in modules_to_reset]],
+        #                        op=module_base.reset, entity_name='Module stream')
+
+        # Modules to enable
+        self._process_entities(entities=[modules_to_enable], op=module_base.enable, entity_name='Module stream')
+
         # Packages to be removed
-        self._process_packages(to_remove, self.base.remove)
+        self._process_entities(entities=to_remove, op=self.base.remove, entity_name='Package')
         # Packages to be installed
-        self._process_packages(to_install, self.base.install)
+        self._process_entities(entities=to_install, op=self.base.install, entity_name='Package')
         # Packages to be upgraded
-        self._process_packages(to_upgrade, self.base.upgrade)
+        self._process_entities(entities=to_upgrade, op=self.base.upgrade, entity_name='Package')
 
         self.base.distro_sync()
 

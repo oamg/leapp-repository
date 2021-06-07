@@ -6,7 +6,7 @@ import six
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import mounting
-from leapp.libraries.stdlib import STDOUT, CalledProcessError, api, config, run
+from leapp.libraries.stdlib import api, CalledProcessError, config, run, STDOUT
 
 
 def parse_config(cfg=None, strict=True):

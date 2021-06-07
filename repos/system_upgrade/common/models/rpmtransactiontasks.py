@@ -1,4 +1,4 @@
-from leapp.models import Model, fields
+from leapp.models import fields, Model, Module
 from leapp.topics import TransactionTopic
 
 
@@ -10,6 +10,8 @@ class RpmTransactionTasks(Model):
     to_keep = fields.List(fields.String(), default=[])
     to_remove = fields.List(fields.String(), default=[])
     to_upgrade = fields.List(fields.String(), default=[])
+    modules_to_enable = fields.List(fields.Model(Module), default=[])
+    modules_to_reset = fields.List(fields.Model(Module), default=[])
 
 
 class FilteredRpmTransactionTasks(RpmTransactionTasks):

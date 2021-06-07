@@ -1,6 +1,6 @@
 from leapp.libraries.common import persistentnetnames
-from leapp.libraries.stdlib import api
 from leapp.libraries.common.testutils import produce_mocked
+from leapp.libraries.stdlib import api
 
 
 class AttributesTest(object):

@@ -1,5 +1,6 @@
 import functools
 import os.path
+from collections import namedtuple
 
 import pytest
 
@@ -14,9 +15,10 @@ from leapp.libraries.actor.peseventsscanner import (
     filter_events_by_architecture,
     filter_events_by_releases,
     filter_out_pkgs_in_blacklisted_repos,
-    filter_releases_by_target,
+    filter_releases,
     get_events,
     map_repositories,
+    Package,
     parse_action,
     parse_entry,
     parse_packageset,
@@ -64,10 +66,27 @@ def test_parse_action(current_actor_context):
 def test_parse_packageset(current_actor_context):
     pkgset = {'package': [{'name': 'pkg1', 'repository': 'Repo'}]}
 
-    assert parse_packageset(pkgset) == {'pkg1': 'Repo'}
+    parsed = parse_packageset(pkgset)
+    assert len(parsed) == 1
+    assert Package('pkg1', 'Repo', (None,)) in parsed
 
-    assert parse_packageset({}) == {}
-    assert parse_packageset({'setid': 0}) == {}
+    assert parse_packageset({}) == set()
+    assert parse_packageset({'set_id': 0}) == set()
+
+
+def test_parse_packageset_modular(current_actor_context):
+    pkgset = {'package': [{'name': 'pkg1', 'repository': 'Repo', 'modulestreams': [None]},
+                          {'name': 'pkg2', 'repository': 'Repo', 'modulestreams': [{
+                              'name': 'hey', 'stream': 'lol'
+                          }]}]}
+
+    parsed = parse_packageset(pkgset)
+    assert len(parsed) == 2
+    assert Package('pkg1', 'Repo', (None,)) in parsed
+    assert Package('pkg2', 'Repo', (('hey', 'lol'),)) in parsed
+
+    assert parse_packageset({}) == set()
+    assert parse_packageset({'set_id': 0}) == set()
 
 
 def test_parse_entry(current_actor_context):
@@ -84,20 +103,24 @@ def test_parse_entry(current_actor_context):
                 {'name': 'split01', 'repository': 'repo'},
                 {'name': 'split02', 'repository': 'repo'}]}}
 
-    event = parse_entry(entry)
+    events = parse_entry(entry)
+    assert len(events) == 1
+    event = events.pop()
     assert event.action == Action.SPLIT
-    assert event.in_pkgs == {'original': 'repo'}
-    assert event.out_pkgs == {'split01': 'repo', 'split02': 'repo'}
+    assert event.in_pkgs == {Package('original', 'repo', None)}
+    assert event.out_pkgs == {Package('split01', 'repo', None), Package('split02', 'repo', None)}
 
     entry = {
         'action': 1,
         'in_packageset': {
             'package': [{'name': 'removed', 'repository': 'repo'}]}}
 
-    event = parse_entry(entry)
+    events = parse_entry(entry)
+    assert len(events) == 1
+    event = events.pop()
     assert event.action == Action.REMOVED
-    assert event.in_pkgs == {'removed': 'repo'}
-    assert event.out_pkgs == {}
+    assert event.in_pkgs == {Package('removed', 'repo', None)}
+    assert event.out_pkgs == set()
 
 
 def test_parse_pes_events(current_actor_context):
@@ -108,14 +131,42 @@ def test_parse_pes_events(current_actor_context):
         events = parse_pes_events(f.read())
     assert len(events) == 2
     assert events[0].action == Action.SPLIT
-    assert events[0].in_pkgs == {'original': 'repo'}
-    assert events[0].out_pkgs == {'split01': 'repo', 'split02': 'repo'}
+    assert events[0].in_pkgs == {Package('original', 'repo', None)}
+    assert events[0].out_pkgs == {Package('split01', 'repo', None), Package('split02', 'repo', None)}
     assert events[1].action == Action.REMOVED
-    assert events[1].in_pkgs == {'removed': 'repo'}
-    assert events[1].out_pkgs == {}
+    assert events[1].in_pkgs == {Package('removed', 'repo', None)}
+    assert events[1].out_pkgs == set()
 
 
-@pytest.mark.parametrize('is_verbose_mode_on', [False, True])
+def test_parse_pes_events_with_modulestreams(current_actor_context):
+    """
+    Tests whether all events are correctly parsed from the provided string with the JSON data.
+    """
+    with open(os.path.join(CUR_DIR, 'files/sample04.json')) as f:
+        events = parse_pes_events(f.read())
+    assert len(events) == 3
+    Expected = namedtuple('Expected', 'action,in_pkgs,out_pkgs')
+    expected = [
+        Expected(action=Action.SPLIT, in_pkgs={Package('original', 'repo', ('module', 'stream_in'))}, out_pkgs={
+                 Package('split01', 'repo', None), Package('split02', 'repo', None)}),
+        Expected(action=Action.SPLIT, in_pkgs={Package('original', 'repo', None)},
+                 out_pkgs={Package('split01', 'repo', ('module', 'stream_out')),
+                           Package('split02', 'repo', ('module', 'stream_out'))}),
+        Expected(action=Action.REMOVED, in_pkgs={Package('removed', 'repo', None)}, out_pkgs=set()),
+    ]
+
+    for event in events:
+        for idx, expectation in enumerate(list(expected)):
+            if expectation.action == event.action and expectation.in_pkgs == event.in_pkgs:
+                assert event.out_pkgs == expectation.out_pkgs
+                expected.pop(idx)
+                break
+        if not expected:
+            break
+    assert not expected
+
+
+@ pytest.mark.parametrize('is_verbose_mode_on', [False, True])
 def test_report_skipped_packages_no_verbose_mode(monkeypatch, caplog, is_verbose_mode_on):
     """
     Tests whether the report_skipped_packages function creates message of the expected form
@@ -124,14 +175,32 @@ def test_report_skipped_packages_no_verbose_mode(monkeypatch, caplog, is_verbose
     monkeypatch.setattr(api, 'produce', produce_mocked())
     monkeypatch.setattr(api, 'show_message', show_message_mocked())
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
+    monkeypatch.setenv('LEAPP_VERBOSE', '1')
+    report_skipped_packages(
+        title='Packages will not be installed',
+        message='packages will not be installed:',
+        package_repo_pairs=[(('skipped01', None), 'bad_repo01'), (('skipped02', ('module', 'stream')), 'bad_repo02')]
+    )
+
+    message = (
+        '2 packages will not be installed:\n'
+        '- skipped01 (repoid: bad_repo01)\n'
+        '- skipped02 [module:stream] (repoid: bad_repo02)'
+    )
+    assert message in caplog.messages
+    assert reporting.create_report.called == 1
+    assert reporting.create_report.report_fields['title'] == 'Packages will not be installed'
+    assert reporting.create_report.report_fields['summary'] == message
 
     leapp_verbose = '1' if is_verbose_mode_on else '0'
 
     monkeypatch.setenv('LEAPP_VERBOSE', leapp_verbose)
+    # Reset reporting.create_report for next test part
+    monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
     report_skipped_packages(
         title='Packages will not be installed',
         message='packages will not be installed:',
-        package_repo_pairs=[('skipped01', 'bad_repo01'), ('skipped02', 'bad_repo02')]
+        package_repo_pairs=[(('skipped01', None), 'bad_repo01'), (('skipped02', ('module', 'stream')), 'bad_repo02')]
     )
 
     # FIXME(pstodulk): this is obviously wrong. repoid is currently pesid.. so test
@@ -140,7 +209,7 @@ def test_report_skipped_packages_no_verbose_mode(monkeypatch, caplog, is_verbose
     message = (
         '2 packages will not be installed:\n'
         '- skipped01 (repoid: bad_repo01)\n'
-        '- skipped02 (repoid: bad_repo02)'
+        '- skipped02 [module:stream] (repoid: bad_repo02)'
     )
 
     # Verbose level should only control whether show_message is called, report entry should be created
@@ -170,16 +239,17 @@ def test_filter_out_pkgs_in_blacklisted_repos(monkeypatch, caplog):
     monkeypatch.setenv('LEAPP_VERBOSE', '1')
 
     to_install = {
-        'pkg01': 'repo01',
-        'pkg02': 'repo02',
-        'skipped01': 'blacklisted',
-        'skipped02': 'blacklisted',
+        ('pkg01', None): 'repo01',
+        ('pkg02', ('module', 'stream')): 'repo02',
+        ('skipped01', None): 'blacklisted',
+        ('skipped02', ('module', 'stream')): 'blacklisted',
     }
     msg = '2 {}\n{}'.format(
         SKIPPED_PKGS_MSG,
         '\n'.join(
             [
-                '- {pkg} (repoid: {repo})'.format(pkg=pkg, repo=repo)
+                '- {pkg}{ms} (repoid: {repo})'.format(pkg=pkg[0], repo=repo,
+                                                      ms=(' [{}:{}]'.format(*pkg[1]) if pkg[1] else ''))
                 for pkg, repo in filter(    # pylint: disable=deprecated-lambda
                     lambda item: item[1] == 'blacklisted', to_install.items()
                 )
@@ -196,7 +266,7 @@ def test_filter_out_pkgs_in_blacklisted_repos(monkeypatch, caplog):
         'Packages available in excluded repositories will not be installed'
     )
 
-    assert to_install == {'pkg01': 'repo01', 'pkg02': 'repo02'}
+    assert to_install == {('pkg01', None): 'repo01', ('pkg02', ('module', 'stream')): 'repo02'}
 
 
 def test_resolve_conflicting_requests(monkeypatch):
@@ -207,21 +277,27 @@ def test_resolve_conflicting_requests(monkeypatch):
     monkeypatch.setattr(peseventsscanner, 'filter_out_pkgs_in_blacklisted_repos', lambda x: x)
 
     events = [
-        Event(1, Action.SPLIT, {'sip-devel': 'repo'}, {'python3-sip-devel': 'repo', 'sip': 'repo'},
+        Event(1, Action.SPLIT,
+              {Package('sip-devel', 'repo', None)},
+              {Package('python3-sip-devel', 'repo', None), Package('sip', 'repo', None)},
               (7, 6), (8, 0), []),
-        Event(2, Action.SPLIT, {'sip': 'repo'}, {'python3-pyqt5-sip': 'repo', 'python3-sip': 'repo'},
+        Event(2, Action.SPLIT,
+              {Package('sip', 'repo', None)},
+              {Package('python3-pyqt5-sip', 'repo', None), Package('python3-sip', 'repo', None)},
               (7, 6), (8, 0), [])]
-    installed_pkgs = {'sip', 'sip-devel'}
+    installed_pkgs = {('sip', None), ('sip-devel', None)}
 
     tasks = process_events([(8, 0)], events, installed_pkgs)
 
-    assert tasks[Task.INSTALL] == {'python3-sip-devel': 'repo', 'python3-pyqt5-sip': 'repo', 'python3-sip': 'repo'}
-    assert tasks[Task.REMOVE] == {'sip-devel': 'repo'}
-    assert tasks[Task.KEEP] == {'sip': 'repo'}
+    assert tasks[Task.INSTALL] == {('python3-sip-devel', None): 'repo',
+                                   ('python3-pyqt5-sip', None): 'repo',
+                                   ('python3-sip', None): 'repo'}
+    assert tasks[Task.REMOVE] == {('sip-devel', None): 'repo'}
+    assert tasks[Task.KEEP] == {('sip', None): 'repo'}
 
 
-@pytest.mark.parametrize(('source_repoid', 'expected_target_repoid'),
-                         [('rhel7-base-repoid', 'rhel8-crb-repoid'),
+@ pytest.mark.parametrize(('source_repoid', 'expected_target_repoid'),
+                          [('rhel7-base-repoid', 'rhel8-crb-repoid'),
                           ('rhel7-base-repoid-eus', 'rhel8-crb-repoid-eus')])
 def test_request_pesid_repo_not_mapped_by_default(monkeypatch, source_repoid, expected_target_repoid):
     """
@@ -262,13 +338,13 @@ def test_request_pesid_repo_not_mapped_by_default(monkeypatch, source_repoid, ex
                         'current_actor',
                         CurrentActorMocked(msgs=[repositories_mapping], src_ver='7.9', dst_ver='8.4'))
 
-    event = Event(1, Action.MOVED, {'test-pkg': 'rhel7-base'}, {'test-pkg': 'rhel8-CRB'},
+    event = Event(1, Action.MOVED, {Package('test-pkg', 'rhel7-base', None)}, {Package('test-pkg', 'rhel8-CRB', None)},
                   (7, 9), (8, 0), [])
-    installed_pkgs = {'test-pkg'}
+    installed_pkgs = {('test-pkg', None)}
 
     tasks = process_events([(8, 0)], [event], installed_pkgs)
 
-    assert tasks[Task.KEEP] == {'test-pkg': expected_target_repoid}
+    assert tasks[Task.KEEP] == {('test-pkg', None): expected_target_repoid}
 
 
 def test_get_repositories_mapping(monkeypatch):
@@ -328,16 +404,16 @@ def test_pesid_to_target_repoids_translation(monkeypatch, caplog):
     monkeypatch.setenv('LEAPP_VERBOSE', '1')
 
     to_install = {
-        'pkg01': 'repo',
-        'pkg02': 'repo',
-        'skipped01': 'not_mapped',
-        'skipped02': 'not_mapped'}
+        ('pkg01', None): 'repo',
+        ('pkg02', ('module', 'stream')): 'repo',
+        ('skipped01', None): 'not_mapped',
+        ('skipped02', ('module', 'stream')): 'not_mapped'}
     map_repositories(to_install)
 
     msg = (
         '2 packages may not be installed or upgraded due to repositories unknown to leapp:\n'
         '- skipped01 (repoid: not_mapped)\n'
-        '- skipped02 (repoid: not_mapped)'
+        '- skipped02 [module:stream] (repoid: not_mapped)'
     )
     assert msg in caplog.messages
     assert reporting.create_report.called == 1
@@ -346,7 +422,7 @@ def test_pesid_to_target_repoids_translation(monkeypatch, caplog):
     )
     assert reporting.create_report.report_fields['summary'] == msg
 
-    assert to_install == {'pkg01': 'mapped', 'pkg02': 'mapped'}
+    assert to_install == {('pkg01', None): 'mapped', ('pkg02', ('module', 'stream')): 'mapped'}
 
 
 def test_process_events(monkeypatch):
@@ -359,22 +435,36 @@ def test_process_events(monkeypatch):
     monkeypatch.setattr(peseventsscanner, 'get_repositories_blacklisted', get_repos_blacklisted_mocked(set()))
 
     events = [
-        Event(1, Action.SPLIT, {'original': 'rhel7-repo'}, {'split01': 'rhel8-repo', 'split02': 'rhel8-repo'},
+        Event(1, Action.SPLIT,
+              {Package('original', 'rhel7-repo', None)},
+              {Package('split01', 'rhel8-repo', None), Package('split02', 'rhel8-repo', None)},
               (7, 6), (8, 0), []),
-        Event(2, Action.REMOVED, {'removed': 'rhel7-repo'}, {}, (7, 6), (8, 0), []),
-        Event(3, Action.PRESENT, {'present': 'rhel8-repo'}, {}, (7, 6), (8, 0), []),
+        Event(2, Action.REMOVED,
+              {Package('removed', 'rhel7-repo', None)}, set(),
+              (7, 6), (8, 0), []),
+        Event(3, Action.PRESENT,
+              {Package('present', 'rhel8-repo', None)}, set(),
+              (7, 6), (8, 0), []),
         # this package is present at the start, gets removed and then reintroduced
-        Event(4, Action.REMOVED, {'reintroduced': 'rhel7-repo'}, {}, (7, 6), (8, 0), []),
-        Event(5, Action.PRESENT, {'reintroduced': 'rhel8-repo'}, {}, (8, 0), (8, 1), []),
+        Event(4, Action.REMOVED,
+              {Package('reintroduced', 'rhel7-repo', None)}, set(),
+              (7, 6), (8, 0), []),
+        Event(5, Action.PRESENT,
+              {Package('reintroduced', 'rhel8-repo', None)}, set(),
+              (8, 0), (8, 1), []),
         # however, this package was never there
-        Event(6, Action.REMOVED, {'neverthere': 'rhel7-repo'}, {}, (7, 6), (8, 0), []),
-        Event(7, Action.PRESENT, {'neverthere': 'rhel8-repo'}, {}, (8, 0), (8, 1), [])]
-    installed_pkgs = {'original', 'removed', 'present', 'reintroduced'}
+        Event(6, Action.REMOVED,
+              {Package('neverthere', 'rhel7-repo', None)}, set(),
+              (7, 6), (8, 0), []),
+        Event(7, Action.PRESENT,
+              {Package('neverthere', 'rhel8-repo', None)}, set(),
+              (8, 0), (8, 1), [])]
+    installed_pkgs = {('original', None), ('removed', None), ('present', None), ('reintroduced', None)}
     tasks = process_events([(8, 0), (8, 1)], events, installed_pkgs)
 
-    assert tasks[Task.INSTALL] == {'split02': 'rhel8-mapped', 'split01': 'rhel8-mapped'}
-    assert tasks[Task.REMOVE] == {'removed': 'rhel7-repo', 'original': 'rhel7-repo'}
-    assert tasks[Task.KEEP] == {'present': 'rhel8-mapped', 'reintroduced': 'rhel8-mapped'}
+    assert tasks[Task.INSTALL] == {('split02', None): 'rhel8-mapped', ('split01', None): 'rhel8-mapped'}
+    assert tasks[Task.REMOVE] == {('removed', None): 'rhel7-repo', ('original', None): 'rhel7-repo'}
+    assert tasks[Task.KEEP] == {('present', None): 'rhel8-mapped', ('reintroduced', None): 'rhel8-mapped'}
 
 
 def test_get_events(monkeypatch):
@@ -415,10 +505,22 @@ def test_add_output_pkgs_to_transaction_conf():
     on the supplied events.
     """
     events = [
-        Event(1, Action.SPLIT, {'split_in': 'repo'}, {'split_out1': 'repo', 'split_out2': 'repo'}, (7, 6), (8, 0), []),
-        Event(2, Action.MERGED, {'merge_in1': 'repo', 'merge_in2': 'repo'}, {'merge_out': 'repo'}, (7, 6), (8, 0), []),
-        Event(3, Action.RENAMED, {'renamed_in': 'repo'}, {'renamed_out': 'repo'}, (7, 6), (8, 0), []),
-        Event(4, Action.REPLACED, {'replaced_in': 'repo'}, {'replaced_out': 'repo'}, (7, 6), (8, 0), []),
+        Event(1, Action.SPLIT,
+              {Package('split_in', 'repo', None)},
+              {Package('split_out1', 'repo', None), Package('split_out2', 'repo', None)},
+              (7, 6), (8, 0), []),
+        Event(2, Action.MERGED,
+              {Package('merge_in1', 'repo', None), Package('merge_in2', 'repo', None)},
+              {Package('merge_out', 'repo', None)},
+              (7, 6), (8, 0), []),
+        Event(3, Action.RENAMED,
+              {Package('renamed_in', 'repo', None)},
+              {Package('renamed_out', 'repo', None)},
+              (7, 6), (8, 0), []),
+        Event(4, Action.REPLACED,
+              {Package('replaced_in', 'repo', None)},
+              {Package('replaced_out', 'repo', None)},
+              (7, 6), (8, 0), []),
     ]
 
     conf_empty = RpmTransactionTasks()
@@ -451,17 +553,17 @@ def test_filter_events_by_architecture():
     Verifies that the packages are correctly filtered based on the architecture.
     """
     events = [
-        Event(1, Action.PRESENT, {'pkg1': 'repo'}, {}, (7, 6), (8, 0), ['arch1']),
-        Event(2, Action.PRESENT, {'pkg2': 'repo'}, {}, (7, 6), (8, 0), ['arch2', 'arch1', 'arch3']),
-        Event(3, Action.PRESENT, {'pkg3': 'repo'}, {}, (7, 6), (8, 0), ['arch2', 'arch3', 'arch4']),
-        Event(4, Action.PRESENT, {'pkg4': 'repo'}, {}, (7, 6), (8, 0), [])
+        Event(1, Action.PRESENT, {Package('pkg1', 'repo', None)}, set(), (7, 6), (8, 0), ['arch1']),
+        Event(2, Action.PRESENT, {Package('pkg2', 'repo', None)}, set(), (7, 6), (8, 0), ['arch2', 'arch1', 'arch3']),
+        Event(3, Action.PRESENT, {Package('pkg3', 'repo', None)}, set(), (7, 6), (8, 0), ['arch2', 'arch3', 'arch4']),
+        Event(4, Action.PRESENT, {Package('pkg4', 'repo', None)}, set(), (7, 6), (8, 0), [])
     ]
 
     filtered = filter_events_by_architecture(events, 'arch1')
-    assert {'pkg1': 'repo'} in [event.in_pkgs for event in filtered]
-    assert {'pkg2': 'repo'} in [event.in_pkgs for event in filtered]
-    assert {'pkg3': 'repo'} not in [event.in_pkgs for event in filtered]
-    assert {'pkg4': 'repo'} in [event.in_pkgs for event in filtered]
+    assert {Package('pkg1', 'repo', None)} in [event.in_pkgs for event in filtered]
+    assert {Package('pkg2', 'repo', None)} in [event.in_pkgs for event in filtered]
+    assert {Package('pkg3', 'repo', None)} not in [event.in_pkgs for event in filtered]
+    assert {Package('pkg4', 'repo', None)} in [event.in_pkgs for event in filtered]
 
 
 def test_filter_events_by_releases():
@@ -469,27 +571,27 @@ def test_filter_events_by_releases():
     Tests whether the events are correctly filtered based on the relevant supplied releases.
     """
     events = [
-        Event(1, Action.PRESENT, {'pkg1': 'repo'}, {}, (7, 6), (7, 7), []),
-        Event(2, Action.PRESENT, {'pkg2': 'repo'}, {}, (7, 7), (7, 8), []),
-        Event(3, Action.PRESENT, {'pkg3': 'repo'}, {}, (7, 8), (8, 0), []),
-        Event(4, Action.PRESENT, {'pkg4': 'repo'}, {}, (8, 0), (8, 1), []),
-        Event(5, Action.PRESENT, {'pkg5': 'repo'}, {}, (8, 1), (8, 2), [])
+        Event(1, Action.PRESENT, {Package('pkg1', 'repo', None)}, set(), (7, 6), (7, 7), []),
+        Event(2, Action.PRESENT, {Package('pkg2', 'repo', None)}, set(), (7, 7), (7, 8), []),
+        Event(3, Action.PRESENT, {Package('pkg3', 'repo', None)}, set(), (7, 8), (8, 0), []),
+        Event(4, Action.PRESENT, {Package('pkg4', 'repo', None)}, set(), (8, 0), (8, 1), []),
+        Event(5, Action.PRESENT, {Package('pkg5', 'repo', None)}, set(), (8, 1), (8, 2), [])
     ]
 
     filtered = filter_events_by_releases(events, [(7, 6), (7, 7), (8, 0), (8, 3)])
-    assert {'pkg1': 'repo'} in [event.in_pkgs for event in filtered]
-    assert {'pkg2': 'repo'} not in [event.in_pkgs for event in filtered]
-    assert {'pkg3': 'repo'} in [event.in_pkgs for event in filtered]
-    assert {'pkg4': 'repo'} not in [event.in_pkgs for event in filtered]
-    assert {'pkg5': 'repo'} not in [event.in_pkgs for event in filtered]
+    assert {Package('pkg1', 'repo', None)} in [event.in_pkgs for event in filtered]
+    assert {Package('pkg2', 'repo', None)} not in [event.in_pkgs for event in filtered]
+    assert {Package('pkg3', 'repo', None)} in [event.in_pkgs for event in filtered]
+    assert {Package('pkg4', 'repo', None)} not in [event.in_pkgs for event in filtered]
+    assert {Package('pkg5', 'repo', None)} not in [event.in_pkgs for event in filtered]
 
 
-def test_filter_releases_by_target():
+def test_filter_releases():
     """
-    Tests that all releases greater than the target gets correctly filtered out when using filter_releases_by_target.
+    Tests that all releases greater than the target gets correctly filtered out when using filter_releases.
     """
     releases = [(7, 6), (7, 7), (7, 8), (7, 9), (8, 0), (8, 1), (8, 2), (8, 3), (9, 0), (9, 1)]
-    filtered_releases = filter_releases_by_target(releases, (8, 1))
+    filtered_releases = filter_releases(releases, (7, 6), (8, 1))
     assert filtered_releases == [(7, 6), (7, 7), (7, 8), (7, 9), (8, 0), (8, 1)]
 
 
@@ -498,17 +600,30 @@ def test_drop_conflicting_release_events():
     Tests whether correct events are dropped from conflicting release events.
     From conflicting events only the one with highest target release should be kept.
     """
-    conflict1a = Event(1, Action.PRESENT, {'pkg1': 'repo'}, {}, (7, 6), (8, 0), [])
-    conflict1b = Event(2, Action.REPLACED, {'pkg1': 'repo'}, {}, (7, 6), (8, 2), [])
-    conflict1c = Event(3, Action.REMOVED, {'pkg1': 'repo'}, {}, (7, 6), (8, 1), [])
-    conflict2a = Event(4, Action.REMOVED, {'pkg2a': 'repo'}, {}, (7, 6), (8, 0), [])
-    conflict2b = Event(5, Action.REPLACED, {'pkg2a': 'repo'}, {'pkg2b': 'repo'}, (7, 6), (8, 1), [])
+
+    conflict1a = Event(1, Action.PRESENT, {Package('pkg1', 'repo', None)}, set(), (7, 6), (8, 0), [])
+    conflict1b = Event(2, Action.REPLACED, {Package('pkg1', 'repo', None)}, set(), (7, 6), (8, 2), [])
+    conflict1c = Event(3, Action.REMOVED, {Package('pkg1', 'repo', None)}, set(), (7, 6), (8, 1), [])
+    conflict2a = Event(4, Action.REMOVED, {Package('pkg2a', 'repo', None)}, set(), (7, 6), (8, 0), [])
+    conflict2b = Event(5, Action.REPLACED,
+                       {Package('pkg2a', 'repo', None)}, {Package('pkg2b', 'repo', None)},
+                       (7, 6), (8, 1), [])
     # two input packages
-    conflict3a = Event(6, Action.MERGED, {'pkg3a': 'repo', 'pkg3b': 'repo'}, {'pkg3c': 'repo'}, (7, 6), (8, 0), [])
-    conflict3b = Event(7, Action.MERGED, {'pkg3a': 'repo', 'pkg3b': 'repo'}, {'pkg3d': 'repo'}, (7, 6), (8, 1), [])
+    conflict3a = Event(6, Action.MERGED,
+                       {Package('pkg3a', 'repo', None), Package('pkg3b', 'repo', None)},
+                       {Package('pkg3c', 'repo', None)},
+                       (7, 6), (8, 0), [])
+    conflict3b = Event(7, Action.MERGED,
+                       {Package('pkg3a', 'repo', None), Package('pkg3b', 'repo', None)},
+                       {Package('pkg3d', 'repo', None)},
+                       (7, 6), (8, 1), [])
     # these two can't be chained, don't remove anything
-    okay1a = Event(8, Action.REPLACED, {'pkg4a': 'repo'}, {'pkg4b': 'repo'}, (7, 6), (8, 0), [])
-    okay1b = Event(9, Action.REPLACED, {'pkg4b': 'repo'}, {'pkg4c': 'repo'}, (8, 0), (8, 1), [])
+    okay1a = Event(8, Action.REPLACED,
+                   {Package('pkg4a', 'repo', None)}, {Package('pkg4b', 'repo', None)},
+                   (7, 6), (8, 0), [])
+    okay1b = Event(9, Action.REPLACED,
+                   {Package('pkg4b', 'repo', None)}, {Package('pkg4c', 'repo', None)},
+                   (8, 0), (8, 1), [])
 
     events = [conflict1a, conflict1b, conflict1c, conflict2a, conflict2b, conflict3a, conflict3b, okay1a, okay1b]
     drop_conflicting_release_events(events)
@@ -519,10 +634,52 @@ def test_drop_conflicting_release_events():
         assert event not in events
 
 
-@pytest.mark.parametrize(('installed_pkgs', 'expected_relevance'),
-                         [({'pkg1', 'pkg2'}, True),
-                          ({'pkg2'}, True),
-                          ({'pkg0'}, True),
+def test_process_modular_events(monkeypatch):
+    monkeypatch.setattr(peseventsscanner, 'map_repositories', lambda x: x)
+    monkeypatch.setattr(peseventsscanner, 'filter_out_pkgs_in_blacklisted_repos', lambda x: x)
+
+    events = [
+        # match the right modular package without touching the ones with absent or different module/stream
+        # in practice, installed packages can't have the same name, just testing that it matches the right one
+        Event(1, Action.REMOVED, {Package('removed', 'repo', ('module', '42'))}, set(), (8, 4), (9, 0), []),
+        Event(2, Action.SPLIT,
+              {Package('split_in', 'repo', ('splitin', 'foo'))},
+              {Package('split_out1', 'repo', None), Package('split_out2', 'repo', ('splitout', 'foo'))},
+              (8, 4), (9, 0), []),
+        Event(3, Action.SPLIT,
+              {Package('split_in', 'repo', ('splitin', 'bar'))},
+              {Package('split_out3', 'repo', None), Package('split_out2', 'repo', ('splitout', 'bar'))},
+              (8, 4), (9, 0), []),
+    ]
+    installed_pkgs = {('removed', ('module', '42')),
+                      ('removed', ('model', '42')),
+                      ('removed', ('module', '420')),
+                      ('removed', None),
+                      ('split_in', ('splitin', 'foo'))}
+
+    tasks = process_events([(9, 0)], events, installed_pkgs)
+
+    assert ('removed', ('module', '42')) in tasks[Task.REMOVE]  # name, module and stream match
+    assert ('removed', ('model', '42')) not in tasks[Task.REMOVE]  # different module
+    assert ('removed', ('module', '420')) not in tasks[Task.REMOVE]  # different stream
+    assert ('removed', None) not in tasks[Task.REMOVE]  # no module stream
+
+    assert ('split_in', ('splitin', 'foo')) in tasks[Task.REMOVE]
+    assert ('split_out1', None) in tasks[Task.INSTALL]
+    assert ('split_out2', ('splitout', 'foo')) in tasks[Task.INSTALL]
+    assert ('split_in', ('splitin', 'bar')) not in tasks[Task.REMOVE]
+    assert ('split_out3', None) not in tasks[Task.INSTALL]
+    assert ('split_out2', ('splitout', 'bar')) not in tasks[Task.INSTALL]
+
+
+@ pytest.mark.parametrize(('installed_pkgs', 'expected_relevance'),
+                          [({('pkg1', None), ('pkg2', None)}, True),
+                          ({('pkg2', None)}, True),
+                          ({('pkg0', None)}, True),
+                          ({('pkg1', 'wuzza:11')}, True),
+                          ({('pkg2', 'wuzza:11')}, True),
+                          ({('pkg1', 'wuzza:11'), ('pkg2', 'wuzza:11')}, True),
+                          ({('pkg0', 'wuzza:11')}, False),
                           (set(), False)])
 def test_merge_events_relevance_assessment(monkeypatch, installed_pkgs, expected_relevance):
     """
@@ -532,18 +689,40 @@ def test_merge_events_relevance_assessment(monkeypatch, installed_pkgs, expected
     monkeypatch.setattr(peseventsscanner, 'filter_out_pkgs_in_blacklisted_repos', lambda x: x)
 
     events = [
-        Event(1, Action.REPLACED, {'pkg0': 'repo-in'}, {'pkg1': 'repo-in'}, (7, 8), (7, 9), []),
-        Event(2, Action.MERGED, {'pkg1': 'repo-in', 'pkg2': 'repo-in'}, {'pkg3': 'repo-out'}, (7, 9), (8, 0), [])
+        Event(
+            1, Action.REPLACED,
+            {Package('pkg0', 'repo-in', None)},
+            {Package('pkg4', 'repo-out', None)},
+            (7, 8), (7, 9), []
+        ),
+        Event(
+            2, Action.MERGED,
+            {Package('pkg1', 'repo-in', None), Package('pkg2', 'repo-in', None)},
+            {Package('pkg3', 'repo-out', None)},
+            (7, 9), (8, 0), [],
+        ),
+        Event(
+            3, Action.MERGED,
+            {Package('pkg1', 'repo-in', 'wuzza:11'), Package('pkg2', 'repo-in', 'wuzza:11')},
+            {Package('pkg3', 'repo-out', None)},
+            (7, 9), (8, 0), [],
+        )
     ]
 
     tasks = process_events([(7, 9), (8, 0)], events, installed_pkgs)
 
     if expected_relevance:
-        assert tasks[Task.INSTALL] == {'pkg3': 'repo-out'}
-        if 'pkg0' in installed_pkgs:
-            assert tasks[Task.REMOVE] == {'pkg0': 'repo-in', 'pkg2': 'repo-in'}
-        else:
-            assert tasks[Task.REMOVE] == {'pkg1': 'repo-in', 'pkg2': 'repo-in'}
+        assert not set(tasks[Task.INSTALL].keys()) - {('pkg3', None), ('pkg4', None)}
+        removed_packages = set()
+        if any(p[1] for p in installed_pkgs):
+            removed_packages = installed_pkgs
+        if ('pkg0', None) in installed_pkgs:
+            removed_packages.add(('pkg0', None))
+        if ('pkg1', None) in installed_pkgs or ('pkg2', None) in installed_pkgs:
+            removed_packages.add(('pkg1', None))
+            removed_packages.add(('pkg2', None))
+
+        assert not set(tasks[Task.REMOVE].keys()) - removed_packages
     else:
         assert not tasks[Task.INSTALL]
         assert not tasks[Task.REMOVE]
