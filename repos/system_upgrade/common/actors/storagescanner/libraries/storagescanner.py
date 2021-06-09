@@ -38,6 +38,9 @@ def _get_cmd_output(cmd, delim, expected_len):
         api.current_logger().debug("Command '%s' return non-zero exit status: %s" % (" ".join(cmd), e.returncode))
         return
 
+    if bytes is not str:
+        output = output.decode('utf-8')
+
     for entry in output.split('\n'):
         entry = entry.strip()
         if not entry:
