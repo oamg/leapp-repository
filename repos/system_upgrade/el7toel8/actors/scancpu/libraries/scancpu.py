@@ -1,4 +1,5 @@
 import re
+import codecs
 
 from leapp.libraries.stdlib import api
 from leapp.models import CPUInfo
@@ -9,7 +10,7 @@ RE_MACHINE_TYPE = re.compile(r'^processor.*\smachine\s*=\s*([0-9]+)')
 def _get_cpuinfo():
     """Return lines from /proc/cpuinfo."""
     # Expecting the file exists on earch system, skipping any check
-    with open('/proc/cpuinfo', 'rb') as fp:
+    with codecs.open('/proc/cpuinfo', 'rb', encoding='utf-8') as fp:
         return fp.readlines()
 
 
