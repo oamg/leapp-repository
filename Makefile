@@ -150,7 +150,7 @@ source: prepare
 	@PKG_RELEASE=$(RELEASE) _COPR_CONFIG=$(_COPR_CONFIG) \
 		COPR_REPO=$(_COPR_REPO_TMP) COPR_PACKAGE=$(DEPS_PKGNAME) \
 		$(_USE_PYTHON_INTERPRETER) ./utils/get_latest_copr_build > packaging/tmp/deps_build_id
-	@copr --config $(_COPR_CONFIG) download-build -d packaging/tmp `cat packaging/tmp/deps_build_id`
+	@copr-cli --config $(_COPR_CONFIG) download-build -d packaging/tmp `cat packaging/tmp/deps_build_id`
 	# Move rpms from any subfolder of packaging/tmp/, like packaging/tmp/rhel-8.dev-x86_64/, to packaging/tmp/
 	@mv `find packaging/tmp/ | grep "rpm$$" | grep -v "src"` packaging/tmp
 	@tar -czf packaging/sources/deps-pkgs.tar.gz -C packaging/tmp/ `ls packaging/tmp | grep -o "[^/]*rpm$$"`
@@ -182,17 +182,17 @@ _srpm_subpkg:
 
 _copr_build_deps_subpkg: _srpm_subpkg
 	@echo "--- Build RPM ${DEPS_PKGNAME}-${DEPS_VERSION}-${RELEASE} in TMP CORP ---"
-	@echo copr --config $(_COPR_CONFIG) build $(_COPR_CHROOT) $(_COPR_REPO_TMP) \
+	@echo copr-cli --config $(_COPR_CONFIG) build $(_COPR_CHROOT) $(_COPR_REPO_TMP) \
 		packaging/SRPMS/${DEPS_PKGNAME}-${DEPS_VERSION}-${RELEASE}*.src.rpm
-	@copr --config $(_COPR_CONFIG) build $(_COPR_CHROOT) $(_COPR_REPO_TMP) \
+	@copr-cli --config $(_COPR_CONFIG) build $(_COPR_CHROOT) $(_COPR_REPO_TMP) \
 		packaging/SRPMS/${DEPS_PKGNAME}-${DEPS_VERSION}-${RELEASE}*.src.rpm
 
 
 copr_build: srpm
 	@echo "--- Build RPM ${PKGNAME}-${VERSION}-${RELEASE}.el6.rpm in COPR ---"
-	@echo copr --config $(_COPR_CONFIG) build $(_COPR_CHROOT) $(_COPR_REPO) \
+	@echo copr-cli --config $(_COPR_CONFIG) build $(_COPR_CHROOT) $(_COPR_REPO) \
 		packaging/SRPMS/${PKGNAME}-${VERSION}-${RELEASE}*.src.rpm
-	@copr --config $(_COPR_CONFIG) build $(_COPR_CHROOT) $(_COPR_REPO) \
+	@copr-cli --config $(_COPR_CONFIG) build $(_COPR_CHROOT) $(_COPR_REPO) \
 		packaging/SRPMS/${PKGNAME}-${VERSION}-${RELEASE}*.src.rpm
 
 print_release:
