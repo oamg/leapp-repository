@@ -85,32 +85,6 @@ def test_scan_xfs_mount(monkeypatch):
     assert mountpoints == {"/boot"}
 
 
-def test_scan_xfs_systemdmount(monkeypatch):
-    systemdmount_data_no_xfs = {
-        "node": "/dev/sda1",
-        "path": "pci-0000:00:17.0-ata-2",
-        "model": "TOSHIBA_THNSNJ512GDNU_A",
-        "wwn": "0x500080d9108e8753",
-        "fs_type": "ext4",
-        "label": "n/a",
-        "uuid": "5675d309-eff7-4eb1-9c27-58bc5880ec72"}
-
-    mountpoints = xfsinfoscanner.scan_xfs_systemdmount([SystemdMountEntry(**systemdmount_data_no_xfs)])
-    assert not mountpoints
-
-    systemdmount_data_xfs = {
-        "node": "/dev/sda1",
-        "path": "/var",
-        "model": "n/a",
-        "wwn": "n/a",
-        "fs_type": "xfs",
-        "label": "n/a",
-        "uuid": "n/a"}
-
-    mountpoints = xfsinfoscanner.scan_xfs_systemdmount([SystemdMountEntry(**systemdmount_data_xfs)])
-    assert mountpoints == {"/var"}
-
-
 def test_is_xfs_without_ftype(monkeypatch):
     monkeypatch.setattr(xfsinfoscanner, "run", run_mocked())
 
