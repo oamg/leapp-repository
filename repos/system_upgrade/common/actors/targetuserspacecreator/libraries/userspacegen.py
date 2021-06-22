@@ -103,7 +103,7 @@ class _InputData(object):
         for message in api.consume(RequiredTargetUserspacePackages):
             self.packages.update(message.packages)
 
-        # Get the RHSM information (available repos, attached SKUs, etc.) of the source (RHEL 7) system
+        # Get the RHSM information (available repos, attached SKUs, etc.) of the source system
         self.rhsm_info = next(api.consume(RHSMInfo), None)
         self.rhui_info = next(api.consume(RHUIInfo), None)
         if not self.rhsm_info and not rhsm.skip_rhsm():
@@ -125,19 +125,22 @@ def prepare_target_userspace(context, userspace_dir, enabled_repos, packages):
     """
     Implement the creation of the target userspace.
     """
+    target_major_version = api.current_actor().configuration.version.target.split('.')[0]
     run(['rm', '-rf', userspace_dir])
     _create_target_userspace_directories(userspace_dir)
-    with mounting.BindMount(source=userspace_dir, target=os.path.join(context.base_dir, 'el8target')):
+    with mounting.BindMount(
+        source=userspace_dir, target=os.path.join(context.base_dir, 'el{}target'.format(target_major_version))
+    ):
         repos_opt = [['--enablerepo', repo] for repo in enabled_repos]
         repos_opt = list(itertools.chain(*repos_opt))
         cmd = ['dnf',
                'install',
                '-y',
                '--nogpgcheck',
-               '--setopt=module_platform_id=platform:el8',
+               '--setopt=module_platform_id=platform:el{}'.format(target_major_version),
                '--setopt=keepcache=1',
                '--releasever', api.current_actor().configuration.version.target,
-               '--installroot', '/el8target',
+               '--installroot', '/el{}target'.format(target_major_version),
                '--disablerepo', '*'
                ] + repos_opt + packages
         if config.is_verbose():
@@ -148,7 +151,7 @@ def prepare_target_userspace(context, userspace_dir, enabled_repos, packages):
             context.call(cmd, callback_raw=utils.logging_handler)
         except CalledProcessError as exc:
             raise StopActorExecutionError(
-                message='Unable to install RHEL 8 userspace packages.',
+                message='Unable to install RHEL {} userspace packages.'.format(target_major_version),
                 details={'details': str(exc), 'stderr': exc.stderr}
             )
 
@@ -295,26 +298,27 @@ def _get_all_available_repoids(context):
 
 
 def _get_rhsm_available_repoids(context):
+    target_major_version = api.current_actor().configuration.version.target.split('.')[0]
     # FIXME: check that required repo IDs (baseos, appstream)
     # + or check that all required RHEL repo IDs are available.
     if rhsm.skip_rhsm():
         return set()
-    # Get the RHSM repos available in the RHEL 8 container
+    # Get the RHSM repos available in the target RHEL container
     # TODO: very similar thing should happens for all other repofiles in container
     #
     repoids = rhsm.get_available_repo_ids(context)
     if not repoids or len(repoids) < 2:
         raise StopActorExecutionError(
-            message='Cannot find required basic RHEL 8 repositories.',
+            message='Cannot find required basic RHEL {} repositories.'.format(target_major_version),
             details={
                 'hint': ('It is required to have RHEL repositories on the system'
                          ' provided by the subscription-manager unless the --no-rhsm'
                          ' options is specified. Possibly you'
                          ' are missing a valid SKU for the target system or network'
                          ' connection failed. Check whether your system is attached'
-                         ' to a valid SKU providing RHEL 8 repositories.'
+                         ' to a valid SKU providing RHEL {} repositories.'
                          ' In case the Satellite is used, read the upgrade documentation'
-                         ' to setup the satellite and the system properly.')
+                         ' to setup the satellite and the system properly.'.format(target_major_version))
             }
         )
     return set(repoids)
@@ -489,15 +493,20 @@ def _copy_files(context, files):
             context.copy_to(file_task.src, file_task.dst)
 
 
+def _get_target_userspace():
+    target_major_version = api.current_actor().configuration.version.target.split('.')[0]
+    return constants.TARGET_USERSPACE.format(target_major_version)
+
+
 def _create_target_userspace(context, packages, files, target_repoids):
     """Create the target userspace."""
-    prepare_target_userspace(context, constants.TARGET_USERSPACE, target_repoids, list(packages))
-    _prep_repository_access(context, constants.TARGET_USERSPACE)
+    prepare_target_userspace(context, _get_target_userspace(), target_repoids, list(packages))
+    _prep_repository_access(context, _get_target_userspace())
     _copy_files(context, files)
-    dnfplugin.install(constants.TARGET_USERSPACE)
+    dnfplugin.install(_get_target_userspace())
 
     # and do not forget to set the rhsm into the container mode again
-    with mounting.NspawnActions(constants.TARGET_USERSPACE) as target_context:
+    with mounting.NspawnActions(_get_target_userspace()) as target_context:
         rhsm.set_container_mode(target_context)
 
 
@@ -524,6 +533,6 @@ def perform():
             api.produce(UsedTargetRepositories(
                 repos=[UsedTargetRepository(repoid=repo) for repo in target_repoids]))
             api.produce(TargetUserSpaceInfo(
-                path=constants.TARGET_USERSPACE,
+                path=_get_target_userspace(),
                 scratch=constants.SCRATCH_DIR,
                 mounts=constants.MOUNTS_DIR))

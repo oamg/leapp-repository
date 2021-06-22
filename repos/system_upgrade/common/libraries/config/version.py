@@ -11,8 +11,63 @@ OP_MAP = {
     '<=': operator.le
 }
 
-# Note: 'rhel-alt' is detected when on 'rhel' with kernel 4.x
-SUPPORTED_VERSIONS = {'rhel': ['7.9'], 'rhel-alt': ['7.6'], 'rhel-saphana': ['7.7']}
+_SUPPORTED_VERSIONS = {
+    # Note: 'rhel-alt' is detected when on 'rhel' with kernel 4.x
+    '7': {'rhel': ['7.9'], 'rhel-alt': ['7.6'], 'rhel-saphana': ['7.7']},
+    '8': {'rhel': ['8.5', '8.6']},
+}
+
+
+def get_source_major_version():
+    return api.current_actor().configuration.version.source.split('.')[0]
+
+
+def get_target_major_version():
+    return api.current_actor().configuration.version.target.split('.')[0]
+
+
+class _SupportedVersionsDict(dict):
+    """
+    Class for _SUPPORTED_VERSIONS lazy evaluation until ipuworkflowconfig actor data
+    is ready.
+    """
+
+    def __init__(self):  # pylint: disable=W0231
+        self.data = {}
+
+    def _feed_supported_versions(self):
+        major = get_source_major_version()
+        if major not in _SUPPORTED_VERSIONS.keys():  # pylint: disable=W1655
+            raise KeyError('{} is not a supported source version of RHEL'.format(major))
+        self.data = _SUPPORTED_VERSIONS[major]
+
+    def __getitem__(self, key):
+        self._feed_supported_versions()
+        return self.data[key]
+
+    def __iter__(self):
+        self._feed_supported_versions()
+        for d in self.data:
+            yield d
+
+    def __repr__(self):
+        self._feed_supported_versions()
+        return repr(self.data)
+
+    def __contains__(self, x):
+        self._feed_supported_versions()
+        return x in self.data
+
+    def __len__(self):
+        self._feed_supported_versions()
+        return len(self.data)
+
+    def __str__(self):
+        self._feed_supported_versions()
+        return str(self.data)
+
+
+SUPPORTED_VERSIONS = _SupportedVersionsDict()
 
 
 def _version_to_tuple(version):

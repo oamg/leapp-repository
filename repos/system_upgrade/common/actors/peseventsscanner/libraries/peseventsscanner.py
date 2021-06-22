@@ -337,23 +337,26 @@ def process_events(releases, events, installed_pkgs):
         for event in release_events:
             if is_event_relevant(event, installed_pkgs, tasks):
                 if event.action in [Action.DEPRECATED, Action.PRESENT]:
-                    # Keep these packages to make sure the repo they're in on RHEL 8 gets enabled
+                    # Keep these packages to make sure the repo they're in on the target RHEL system
+                    # gets enabled
                     add_packages_to_tasks(current, event.in_pkgs, Task.KEEP)
 
                 if event.action == Action.MOVED:
-                    # Keep these packages to make sure the repo they're in on RHEL 8 gets enabled
+                    # Keep these packages to make sure the repo they're in on the target RHEL system
+                    # gets enabled
                     # We don't care about the "in_pkgs" as it contains always just one pkg - the same as the "out" pkg
                     add_packages_to_tasks(current, event.out_pkgs, Task.KEEP)
 
                 if event.action in [Action.SPLIT, Action.MERGED, Action.RENAMED, Action.REPLACED]:
                     non_installed_out_pkgs = filter_out_installed_pkgs(event.out_pkgs, installed_pkgs)
                     add_packages_to_tasks(current, non_installed_out_pkgs, Task.INSTALL)
-                    # Keep already installed "out" pkgs to ensure the repo they're in on RHEL 8 gets enabled
+                    # Keep already installed "out" pkgs to ensure the repo they're in on the target RHEL system
+                    # gets enabled
                     installed_out_pkgs = get_installed_event_pkgs(event.out_pkgs, installed_pkgs)
                     add_packages_to_tasks(current, installed_out_pkgs, Task.KEEP)
 
                     if event.action in [Action.SPLIT, Action.MERGED]:
-                        # Remove those RHEL 7 pkgs that are no longer on RHEL 8
+                        # Remove the previous RHEL version  pkgs that are no longer on the target RHEL system
                         in_pkgs_without_out_pkgs = filter_out_out_pkgs(event.in_pkgs, event.out_pkgs)
                         add_packages_to_tasks(current, in_pkgs_without_out_pkgs, Task.REMOVE)
 
@@ -420,8 +423,8 @@ def get_installed_event_pkgs(event_pkgs, installed_pkgs):
     """
     Get those event's "in" or "out" packages which are already installed.
 
-    Even though we don't want to install the already installed pkgs, to be able to upgrade them to their RHEL 8 version
-    we need to know in which repos they are and enable such repos.
+    Even though we don't want to install the already installed pkgs, to be able to upgrade them to
+    their target RHEL major version. We need to know in which repos they are and enable such repos.
     """
     return {k: v for k, v in event_pkgs.items() if k in installed_pkgs}
 
@@ -438,11 +441,10 @@ def filter_out_out_pkgs(event_in_pkgs, event_out_pkgs):
 
 
 SKIPPED_PKGS_MSG = (
-    'packages will be skipped because they are available only in '
-    'RHEL 8 repositories that are intentionally excluded from the '
-    'list of repositories used during the upgrade. '
-    'See the report message titled "Excluded RHEL 8 repositories" '
-    'for details.\nThe list of these packages:'
+    'packages will be skipped because they are available only in the target RHEL major version '
+    'repositories that are intentionally excluded from the list of repositories used during the upgrade. '
+    'See the report message titled "Excluded target RHEL major version repositories" for '
+    'details.\nThe list of these packages:'
 )
 
 
@@ -522,7 +524,7 @@ def map_repositories(packages):
             package_repo_pairs=pkg_with_repo_without_mapping,
             remediation=(
                 "Please file a bug in http://bugzilla.redhat.com/ for leapp-repository component of "
-                "the Red Hat Enterprise Linux 7 product."
+                "the Red Hat Enterprise Linux product."
             ),
         )
 
@@ -562,7 +564,7 @@ def add_output_pkgs_to_transaction_conf(transaction_configuration, events):
                                       on the user configuration files
     :param events: List of Event tuples, where each event contains event type and input/output pkgs
     """
-    message = 'The following RHEL 8 packages will not be installed:\n'
+    message = 'The following target RHEL major version packages will not be installed:\n'
 
     for event in events:
         if event.action in (Action.SPLIT, Action.MERGED, Action.REPLACED, Action.RENAMED):

@@ -66,7 +66,7 @@ def _get_package_repository_data_dnf():
 def get_package_repository_data():
     """ Return dictionary mapping package name with repository from which it was installed.
     Note:
-        There's no yum module for py3. The dnf module can be used only on RHEL 8,
+        There's no yum module for py3. The dnf module can be used only on RHEL 8+,
         on RHEL 7 there's a bug in dnf preventing us to do so:
         https://bugzilla.redhat.com/show_bug.cgi?id=1789840
     """

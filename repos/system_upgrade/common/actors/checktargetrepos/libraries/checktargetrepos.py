@@ -4,8 +4,6 @@ from leapp import reporting
 from leapp.libraries.common import config, rhsm
 
 
-_IPU_DOC_URL = ('https://access.redhat.com/documentation/en-us/'
-                'red_hat_enterprise_linux/8/html-single/upgrading_to_rhel_8/index')
 # TODO: we need to provide this path in a shared library
 CUSTOM_REPO_PATH = '/etc/leapp/files/leapp_upgrade_repositories.repo'
 
@@ -28,7 +26,20 @@ def _the_enablerepo_option_used():
     return config.get_env('LEAPP_ENABLE_REPOS', None) is not None
 
 
+def _get_target_major_version():
+    return api.current_actor().configuration.version.target.split('.')[0]
+
+
 def process():
+    target_major_version = _get_target_major_version()
+
+    if target_major_version == '8':
+        ipu_doc_url = (
+            'https://access.redhat.com/documentation/en-us/'
+            'red_hat_enterprise_linux/8/html-single/upgrading_to_rhel_8/index'
+        )
+    elif target_major_version == '9':
+        ipu_doc_url = ('TBA')
 
     rhui_info = next(api.consume(RHUIInfo), None)
 
@@ -72,7 +83,7 @@ def process():
             reporting.Severity(reporting.Severity.HIGH),
             reporting.Tags([reporting.Tags.SANITY]),
             reporting.Flags([reporting.Flags.INHIBITOR]),
-            reporting.ExternalLink(url=_IPU_DOC_URL, title='UPGRADING TO RHEL 8'),
+            reporting.ExternalLink(url=ipu_doc_url, title='UPGRADING TO RHEL {}'.format(target_major_version)),
             reporting.RelatedResource('file', CUSTOM_REPO_PATH),
         ])
     elif not (is_ctrf or is_re):
@@ -95,6 +106,6 @@ def process():
                 ' message.'
             )),
             reporting.Severity(reporting.Severity.INFO),
-            reporting.ExternalLink(url=_IPU_DOC_URL, title='UPGRADING TO RHEL 8'),
+            reporting.ExternalLink(url=ipu_doc_url, title='UPGRADING TO RHEL {}'.format(target_major_version)),
             reporting.RelatedResource('file', CUSTOM_REPO_PATH),
         ])

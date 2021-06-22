@@ -10,8 +10,8 @@ class ReportSetTargetRelease(Actor):
 
     When using Red Hat subscription-manager (RHSM), the release is set by default
     to the target version release. In case of skip of the RHSM (--no-rhsm), the
-    release stay as it is on the RHEL 7 and user has to handle it manually after
-    the upgrade.
+    release stay as it was on the source RHEL major version and user has to handle
+    it manually aftervthe upgrade.
     """
 
     name = 'report_set_target_release'

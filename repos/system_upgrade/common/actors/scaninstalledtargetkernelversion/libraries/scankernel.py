@@ -9,10 +9,12 @@ def _get_kernel_version(kernel_name):
     except CalledProcessError:
         return ''
 
+    target_major_version = api.current_actor().configuration.version.target.split('.')[0]
+
     for kernel in kernels:
         # name-version-release - we want the last two fields only
         version = '-'.join(kernel.split('-')[-2:])
-        if 'el8' in version:
+        if 'el{}'.format(target_major_version) in version:
             return version
     return ''
 
@@ -31,7 +33,9 @@ def process():
             return
         else:
             api.current_logger().warning(
-                'The kernel-rt rpm from RHEL 8 has not been detected. Switching to non-preemptive kernel.')
+                'The kernel-rt rpm from the target RHEL has not been detected. '
+                'Switching to non-preemptive kernel.'
+            )
             # TODO: create report with instructions to install kernel-rt manually
             # - attach link to article if any
             # - this possibly happens just in case the repository with kernel-rt
@@ -48,4 +52,4 @@ def process():
         # behaviour in this case, but at least the let me log the error msg
         #
         api.current_logger().error('Cannot detect any kernel RPM')
-        # StopActorExecutionError('Cannot detect any RHEL 8 kernel RPM.')
+        # StopActorExecutionError('Cannot detect any target RHEL kernel RPM.')

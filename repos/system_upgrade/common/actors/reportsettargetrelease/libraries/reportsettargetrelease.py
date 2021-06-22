@@ -15,8 +15,9 @@ def _report_set_release():
         ),
         reporting.Severity(reporting.Severity.LOW),
         reporting.Remediation(
-            hint='If you wish to receive updates for the latest released version of RHEL 8, run `subscription-manager'
-                 ' release --unset` after the upgrade.'),
+            hint='If you wish to receive updates for the latest released version of the target system, '
+                 'run `subscription-manager release --unset` after the upgrade.'
+        ),
         reporting.Tags([reporting.Tags.UPGRADE_PROCESS]),
         reporting.RelatedResource('package', 'subscription-manager')
     ])
@@ -36,7 +37,7 @@ def _report_unhandled_release():
             'The upgrade is executed with the --no-rhsm option (or with'
             ' the LEAPP_NO_RHSM environment variable). In this case, the subscription-manager'
             ' will not be configured during the upgrade. If the system is subscribed and release'
-            ' is set already, you could encounter issues to get RHEL 8 content using DNF/YUM'
+            ' is set already, you could encounter issues to get RHEL content using DNF/YUM'
             ' after the upgrade.'
         ),
         reporting.Severity(reporting.Severity.LOW),
