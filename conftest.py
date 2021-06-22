@@ -1,28 +1,48 @@
 import logging
 import os
 
+from leapp.repository.manager import RepositoryManager
 from leapp.repository.scan import find_and_scan_repositories
-from leapp.utils.repository import find_repository_basedir
+from leapp.utils.repository import find_repository_basedir, get_repository_id
 
 logger = logging.getLogger(__name__)
 logging.getLogger("asyncio").setLevel(logging.INFO)
 logging.getLogger("parso").setLevel(logging.INFO)
 
 
+def _load_and_add_repo(manager, repo_path):
+    repo = find_and_scan_repositories(
+        repo_path,
+        include_locals=True
+    )
+    unloaded = set()
+    loaded = {r.repo_id for r in manager.repos}
+    if hasattr(repo, 'repos'):
+        for repo in repo.repos:
+            if not manager.repo_by_id(repo.repo_id):
+                manager.add_repo(repo)
+                unloaded.add(repo.repo_id)
+    else:
+        manager.add_repo(repo)
+    if not loaded:
+        manager.load(skip_actors_discovery=True)
+    else:
+        for repo_id in unloaded:
+            manager.repo_by_id(repo_id).load(skip_actors_discovery=True)
+
+
 def pytest_collectstart(collector):
     if collector.nodeid:
-        current_repo_basedir = find_repository_basedir(collector.nodeid)
-        # loading the current repo
-        if (
-            not hasattr(collector.session, "leapp_repository")
-            or current_repo_basedir != collector.session.repo_base_dir
-        ):
-            repo = find_and_scan_repositories(
-                find_repository_basedir(collector.nodeid), include_locals=True
-            )
-            repo.load(skip_actors_discovery=True)
-            collector.session.leapp_repository = repo
+        current_repo_basedir = find_repository_basedir(str(collector.fspath))
+        if not hasattr(collector.session, "leapp_repository"):
+            collector.session.leapp_repository = RepositoryManager()
             collector.session.repo_base_dir = current_repo_basedir
+            _load_and_add_repo(collector.session.leapp_repository, current_repo_basedir)
+        else:
+            if not collector.session.leapp_repository.repo_by_id(
+                get_repository_id(current_repo_basedir)
+            ):
+                _load_and_add_repo(collector.session.leapp_repository, current_repo_basedir)
 
         # we're forcing the actor context switch only when traversing new
         # actor

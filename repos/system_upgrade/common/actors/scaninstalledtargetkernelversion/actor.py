@@ -9,7 +9,7 @@ class ScanInstalledTargetKernelVersion(Actor):
     Scan for the version of the newly installed kernel
 
     This actor will query rpm for all kernel packages and reports the first
-    matching el8 kernel RPM. In case the RHEL Real Time has been detected on
+    matching target system kernel RPM. In case the RHEL Real Time has been detected on
     the original system, the kernel-rt rpm is searched. If the rpm is missing,
     fallback for standard kernel RPM.
     """

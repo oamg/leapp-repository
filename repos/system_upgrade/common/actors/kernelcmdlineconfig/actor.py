@@ -9,7 +9,7 @@ from leapp.libraries.actor import kernelcmdlineconfig
 
 class KernelCmdlineConfig(Actor):
     """
-    Append extra arguments to RHEL-8 kernel command line
+    Append extra arguments to the target RHEL kernel command line
     """
 
     name = 'kernelcmdlineconfig'

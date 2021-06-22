@@ -31,12 +31,16 @@ def check_os_version():
             for ver in version.SUPPORTED_VERSIONS[rel]:
                 supported_releases.append(rel.upper() + ' ' + ver)
         reporting.create_report([
-            reporting.Title('The installed OS version is not supported for the in-place upgrade to RHEL 8'),
+            reporting.Title(
+                'The installed OS version is not supported for the in-place upgrade to the target RHEL version'
+            ),
             reporting.Summary(
                 'The supported OS releases for the upgrade process:\n'
                 ' {}'.format('\n'.join(supported_releases))
             ),
             reporting.Severity(reporting.Severity.HIGH),
             reporting.Tags(COMMON_REPORT_TAGS),
-            reporting.Flags([reporting.Flags.INHIBITOR])
+            reporting.Flags([reporting.Flags.INHIBITOR]),
+            # we want to set a static Key here because of different Title per path
+            reporting.Key('1c7a98849a747ec9890f04bf4321de7280970715')
         ] + related)

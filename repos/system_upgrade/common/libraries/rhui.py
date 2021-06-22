@@ -43,6 +43,7 @@ RHUI_CLOUD_MAP = {
 # when on AWS, we need also Python2 version of "Amazon-id" dnf plugin which is served by
 # "leapp-rhui-aws" rpm package (please note this package is not in any RH official repository
 # but only in "rhui-client-config-*" repo)
+# IMPORTANT: Deprecated DNF_PLUGIN_PATH
 DNF_PLUGIN_PATH = '/usr/lib/python2.7/site-packages/dnf-plugins/'
 YUM_REPOS_PATH = '/etc/yum.repos.d'
 

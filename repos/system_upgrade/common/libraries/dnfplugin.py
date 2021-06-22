@@ -6,10 +6,44 @@ import shutil
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import guards, mounting, overlaygen, rhsm, utils
+from leapp.libraries.common.config.version import get_target_major_version
 from leapp.libraries.stdlib import CalledProcessError, api, config
 
+
 DNF_PLUGIN_NAME = 'rhel_upgrade.py'
-DNF_PLUGIN_PATH = os.path.join('/lib/python3.6/site-packages/dnf-plugins', DNF_PLUGIN_NAME)
+
+
+class _DnfPluginPathStr(str):
+    _PATHS = {
+        "8": os.path.join('/lib/python3.6/site-packages/dnf-plugins', DNF_PLUGIN_NAME),
+        "9": os.path.join('/lib/python3.9/site-packages/dnf-plugins', DNF_PLUGIN_NAME),
+    }
+
+    def __init__(self):  # noqa: W0231; pylint: disable=super-init-not-called
+        self.data = ""
+
+    def _feed(self):
+        major = get_target_major_version()
+        if major not in _DnfPluginPathStr._PATHS.keys():  # pylint: disable=W1655
+            raise KeyError('{} is not a supported target version of RHEL'.format(major))
+        self.data = _DnfPluginPathStr._PATHS[major]
+
+    def __str__(self):
+        self._feed()
+        return str(self.data)
+
+    def __repr__(self):
+        self._feed()
+        return repr(self.data)
+
+    def lstrip(self, chars=None):
+        self._feed()
+        return self.data.lstrip(chars)
+
+
+# Deprecated
+DNF_PLUGIN_PATH = _DnfPluginPathStr()
+
 DNF_PLUGIN_DATA_NAME = 'dnf-plugin-data.txt'
 DNF_PLUGIN_DATA_PATH = os.path.join('/var/lib/leapp', DNF_PLUGIN_DATA_NAME)
 DNF_PLUGIN_DATA_LOG_PATH = os.path.join('/var/log/leapp', DNF_PLUGIN_DATA_NAME)
@@ -50,7 +84,7 @@ def build_plugin_data(target_repoids, debug, test, tasks, on_aws):
             'disable_repos': True,
             'enable_repos': target_repoids,
             'gpgcheck': False,
-            'platform_id': 'platform:el8',
+            'platform_id': 'platform:el{}'.format(get_target_major_version()),
             'releasever': api.current_actor().configuration.version.target,
             'installroot': '/installroot',
             'test_flag': test
@@ -175,7 +209,7 @@ def install_initramdisk_requirements(packages, target_userspace_info, used_repos
             'install',
             '-y',
             '--nogpgcheck',
-            '--setopt=module_platform_id=platform:el8',
+            '--setopt=module_platform_id=platform:el{}'.format(get_target_major_version()),
             '--setopt=keepcache=1',
             '--releasever', api.current_actor().configuration.version.target,
             '--disablerepo', '*'

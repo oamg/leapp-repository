@@ -12,7 +12,7 @@ from leapp.utils.deprecation import suppress_deprecation
 @suppress_deprecation(InitrdIncludes)
 class TargetInitramfsGenerator(Actor):
     """
-    Regenerate RHEL-8 initrd and include files produced by other actors
+    Regenerate the target RHEL major version initrd and include files produced by other actors
     """
 
     name = 'target_initramfs_generator'
