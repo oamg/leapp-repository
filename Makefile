@@ -3,6 +3,7 @@ SHELL=/bin/bash
 
 __PKGNAME=$${_PKGNAME:-leapp-repository}
 VENVNAME ?= tut
+DIST_VERSION ?= 7
 PKGNAME=leapp-repository
 DEPS_PKGNAME=leapp-el7toel8-deps
 VERSION=`grep -m1 "^Version:" packaging/$(PKGNAME).spec | grep -om1 "[0-9].[0-9.]**"`
@@ -41,6 +42,10 @@ _COPR_CONFIG=$${COPR_CONFIG:-~/.config/copr_rh_oamg.conf}
 # multiple chroots (for each -r one chroot is allowed).
 ifdef COPR_CHROOT
 	_COPR_CHROOT=-r=$${COPR_CHROOT}
+else
+	# TODO: this is temporary default. We will remove it once
+	# we start building for rhel-8 / epel-8 chroots too
+	_COPR_CHROOT=-r=rhel-7-x86_64
 endif
 
 # just to reduce number of unwanted builds mark as the upstream one when
@@ -129,7 +134,7 @@ help:
 
 clean:
 	@echo "--- Clean repo ---"
-	@rm -rf packaging/{sources,SRPMS,tmp}/
+	@rm -rf packaging/{sources,SRPMS,tmp,BUILD,BUILDROOT,RPMS}/
 	@rm -rf build/ dist/ *.egg-info .pytest_cache/
 	@find . -name 'leapp.db' | grep "\.leapp/leapp.db" | xargs rm -f
 	@find . -name '__pycache__' -exec rm -fr {} +
@@ -138,7 +143,7 @@ clean:
 
 prepare: clean
 	@echo "--- Prepare build directories ---"
-	@mkdir -p packaging/{sources,SRPMS}/
+	@mkdir -p packaging/{sources,SRPMS,BUILD,BUILDROOT,RPMS}/
 
 source: prepare
 	@echo "--- Create source tarball ---"
@@ -146,15 +151,8 @@ source: prepare
 	@git archive --prefix "$(PKGNAME)-$(VERSION)/" -o "packaging/sources/$(PKGNAME)-$(VERSION).tar.gz" HEAD
 	@echo "--- PREPARE DEPS PKGS ---"
 	mkdir -p packaging/tmp/
-	@__TIMESTAMP=$(TIMESTAMP) $(MAKE) _copr_build_deps_subpkg
-	@PKG_RELEASE=$(RELEASE) _COPR_CONFIG=$(_COPR_CONFIG) \
-		COPR_REPO=$(_COPR_REPO_TMP) COPR_PACKAGE=$(DEPS_PKGNAME) \
-		$(_USE_PYTHON_INTERPRETER) ./utils/get_latest_copr_build > packaging/tmp/deps_build_id
-	@copr-cli --config $(_COPR_CONFIG) download-build -d packaging/tmp `cat packaging/tmp/deps_build_id`
-	# Move rpms from any subfolder of packaging/tmp/, like packaging/tmp/rhel-8.dev-x86_64/, to packaging/tmp/
-	@mv `find packaging/tmp/ | grep "rpm$$" | grep -v "src"` packaging/tmp
-	@tar -czf packaging/sources/deps-pkgs.tar.gz -C packaging/tmp/ `ls packaging/tmp | grep -o "[^/]*rpm$$"`
-	@rm -rf packaging/tmp
+	@__TIMESTAMP=$(TIMESTAMP) $(MAKE) _build_subpkg
+	@tar -czf packaging/sources/deps-pkgs.tar.gz -C packaging/RPMS/noarch `ls packaging/RPMS/noarch | grep -o "[^/]*rpm$$"`
 
 srpm: source
 	@echo "--- Build SRPM: $(PKGNAME)-$(VERSION)-$(RELEASE).. ---"
@@ -163,33 +161,29 @@ srpm: source
 	@rpmbuild -bs packaging/$(PKGNAME).spec \
 		--define "_sourcedir `pwd`/packaging/sources"  \
 		--define "_srcrpmdir `pwd`/packaging/SRPMS" \
-		--define "rhel 7" \
-		--define 'dist .el7' \
-		--define 'el7 1' || FAILED=1
+		--define "rhel $(DIST_VERSION)" \
+		--define 'dist .el$(DIST_VERSION)' \
+		--define 'el$(DIST_VERSION) 1' || FAILED=1
 	@mv packaging/$(PKGNAME).spec.bak packaging/$(PKGNAME).spec
 
-_srpm_subpkg:
+_build_subpkg:
 	@echo "--- Build RPM: $(DEPS_PKGNAME)-$(DEPS_VERSION)-$(RELEASE).. ---"
 	@cp packaging/$(DEPS_PKGNAME).spec packaging/$(DEPS_PKGNAME).spec.bak
 	@sed -i "s/1%{?dist}/$(RELEASE)%{?dist}/g" packaging/$(DEPS_PKGNAME).spec
-	@rpmbuild -bs packaging/$(DEPS_PKGNAME).spec \
+	@rpmbuild -ba packaging/$(DEPS_PKGNAME).spec \
 		--define "_sourcedir `pwd`/packaging/sources"  \
 		--define "_srcrpmdir `pwd`/packaging/SRPMS" \
-		--define "rhel 8" \
-		--define 'dist .el8' \
-		--define 'el7 8' || FAILED=1
+		--define "_builddir `pwd`/packaging/BUILD" \
+		--define "_buildrootdir `pwd`/packaging/BUILDROOT" \
+		--define "_rpmdir `pwd`/packaging/RPMS" \
+		--define "rhel $$(($(DIST_VERSION) + 1))" \
+		--define "dist .el$$(($(DIST_VERSION) + 1))" \
+		--define "el$$(($(DIST_VERSION) + 1)) 1" || FAILED=1
 	@mv packaging/$(DEPS_PKGNAME).spec.bak packaging/$(DEPS_PKGNAME).spec
-
-_copr_build_deps_subpkg: _srpm_subpkg
-	@echo "--- Build RPM ${DEPS_PKGNAME}-${DEPS_VERSION}-${RELEASE} in TMP CORP ---"
-	@echo copr-cli --config $(_COPR_CONFIG) build $(_COPR_CHROOT) $(_COPR_REPO_TMP) \
-		packaging/SRPMS/${DEPS_PKGNAME}-${DEPS_VERSION}-${RELEASE}*.src.rpm
-	@copr-cli --config $(_COPR_CONFIG) build $(_COPR_CHROOT) $(_COPR_REPO_TMP) \
-		packaging/SRPMS/${DEPS_PKGNAME}-${DEPS_VERSION}-${RELEASE}*.src.rpm
 
 
 copr_build: srpm
-	@echo "--- Build RPM ${PKGNAME}-${VERSION}-${RELEASE}.el6.rpm in COPR ---"
+	@echo "--- Build RPM ${PKGNAME}-${VERSION}-${RELEASE}.el$(DIST_VERSION).rpm in COPR ---"
 	@echo copr-cli --config $(_COPR_CONFIG) build $(_COPR_CHROOT) $(_COPR_REPO) \
 		packaging/SRPMS/${PKGNAME}-${VERSION}-${RELEASE}*.src.rpm
 	@copr-cli --config $(_COPR_CONFIG) build $(_COPR_CHROOT) $(_COPR_REPO) \
