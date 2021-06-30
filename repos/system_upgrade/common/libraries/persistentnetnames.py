@@ -21,7 +21,7 @@ def pci_info(path):
     pci = {}
   
     if path.startswith('virtio-pci-'):
-        path=path[7:]
+        path = path[7:]
 
     # TODO(msekleta): check that path argument actually has ID_PATH format
     if path.startswith('pci-'):
