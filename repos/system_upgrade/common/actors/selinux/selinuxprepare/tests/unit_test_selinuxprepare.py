@@ -31,8 +31,8 @@ def test_remove_custom_modules(monkeypatch):
 
     def consume_SELinuxModules_mocked(*models):
 
-        semodule_list = [SELinuxModule(name=k, priority=mock_modules[k], content='', removed=[])
-                         for k in mock_modules]
+        semodule_list = [SELinuxModule(name=name, priority=priority, content='', removed=[])
+                         for name, priority in mock_modules.items()]
         yield SELinuxModules(modules=semodule_list)
 
     monkeypatch.setattr(api, 'consume', consume_SELinuxModules_mocked)

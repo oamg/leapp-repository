@@ -20,8 +20,9 @@ def has_grub(blk_dev):
         raise StopActorExecution()
     os.close(blk)
     test = 'GRUB'
-    if bytes is not str:
+    if not isinstance(mbr, str):
         test = test.encode('utf-8')
+
     return test in mbr
 
 
