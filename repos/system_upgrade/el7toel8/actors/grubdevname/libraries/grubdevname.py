@@ -19,7 +19,10 @@ def has_grub(blk_dev):
         )
         raise StopActorExecution()
     os.close(blk)
-    return 'GRUB' in mbr
+    test = 'GRUB'
+    if bytes is not str:
+        test = test.encode('utf-8')
+    return test in mbr
 
 
 def blk_dev_from_partition(partition):
