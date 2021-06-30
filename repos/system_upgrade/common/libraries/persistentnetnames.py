@@ -19,7 +19,7 @@ def pci_info(path):
     Returns PCI topology info from string which is expected to be a value of ID_PATH udev device property
     """
     pci = {}
-  
+
     if path.startswith('virtio-pci-'):
         path = path[7:]
 
