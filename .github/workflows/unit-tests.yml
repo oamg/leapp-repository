@@ -1,0 +1,19 @@
+name: Unit Tests
+on:
+  pull_request:
+  push: { branches: master }
+
+jobs:
+  test:
+    name: Run unit tests in containers
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        container: ['centos:7']
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Run tests @ ${{matrix.container}}
+        run: script -e -c /bin/bash -c 'TERM=xterm docker build -t leapp-tests -f utils/docker-tests/Dockerfile utils/docker-tests && docker run --rm -ti -v ${PWD}:/payload --env=PYTHON_VENV leapp-tests'
