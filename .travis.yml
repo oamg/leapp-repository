@@ -15,12 +15,6 @@ install:
 
 jobs:
   include:
-    - script:
-        - docker run --env CI=$CI --rm -ti -v ${PWD}:/payload --env=PYTHON_VENV leapp-tests
-      env: PYTHON_VENV=python2.7
-    - script:
-        - docker run --env CI=$CI --rm -ti -v ${PWD}:/payload --env=PYTHON_VENV leapp-tests
-      env: PYTHON_VENV=python3.6
     - stage: deploy
       script:
         - docker run --env CI=$CI --rm -ti -v ${PWD}:/payload --entrypoint "/bin/bash" leapp-tests -c "make install-deps && make dashboard_data"
