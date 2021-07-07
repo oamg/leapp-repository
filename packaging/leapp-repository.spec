@@ -1,6 +1,19 @@
 %global leapp_datadir %{_datadir}/leapp-repository
 %global repositorydir %{leapp_datadir}/repositories
 %global custom_repositorydir %{leapp_datadir}/custom-repositories
+
+%define leapp_repo_deps  5
+
+%if 0%{?rhel} == 7
+    %define leapp_python_sitelib %{python2_sitelib}
+%else
+    %define leapp_python_sitelib %{python3_sitelib}
+%endif
+
+
+# TODO: not sure whether it's required nowadays. Let's check it and drop
+# the whole block if not.
+%if 0%{?rhel} == 7
 # Defining py_byte_compile macro because it is not defined in old rpm (el7)
 # Only defined to python2 since python3 is not used in RHEL7
 %{!?py_byte_compile: %global py_byte_compile py2_byte_compile() {\
@@ -10,6 +23,7 @@
     find $bytecode_compilation_path -type f -a -name "*.py" -print0 | xargs -0 $python_binary -O -c 'import py_compile, sys; [py_compile.compile(f, dfile=f.partition("$RPM_BUILD_ROOT")[2]) for f in sys.argv[1:]]' || :\
 }\
 py2_byte_compile "%1" "%2"}
+%endif
 
 
 Name:           leapp-repository
@@ -22,25 +36,35 @@ URL:            https://oamg.github.io/leapp/
 Source0:        https://github.com/oamg/%{name}/archive/v%{version}.tar.gz#/%{name}-%{version}.tar.gz
 Source1:        deps-pkgs.tar.gz
 BuildArch:      noarch
+
+%if 0%{?rhel} && 0%{?rhel} == 7
+######### RHEL 7 ############
 BuildRequires:  python-devel
-
-# IMPORTANT: everytime the requirements are changed, increment number by one
-# - same for Provides in deps subpackage
-Requires:       leapp-repository-dependencies = 5
-
-# IMPORTANT: this is capability provided by the leapp framework rpm.
-# Check that 'version' this instead of the real framework rpm version.
-Requires:       leapp-framework >= 2.0, leapp-framework < 3
 Requires:       python2-leapp
 
-# That's temporary to ensure the obsoleted subpackage is not installed
-# and will be removed when the current version of leapp-repository is installed
+# We should not drop this on RHEL 7 because of the compatibility reasons
 Obsoletes:      leapp-repository-data <= 0.6.1
 Provides:       leapp-repository-data <= 0.6.1
 
-# Former leapp subpackage that was packacking a leapp sos plugin - the plugin
-# is part of the sos package since RHEL 7.8
+# Former leapp subpackage that is part of the sos package since HEL 7.8
 Obsoletes:      leapp-repository-sos-plugin <= 0.9.0
+
+%else
+######### RHEL 8 ############
+BuildRequires:  python3-devel
+Requires:       python3-leapp
+%global __requires_exclude ^python\\(abi\\) = 3\\..+|/usr/libexec/platform-python
+
+%endif
+
+# IMPORTANT: everytime the requirements are changed, increment number by one
+# - same for Provides in deps subpackage
+Requires:       leapp-repository-dependencies = %{leapp_repo_deps}
+
+# IMPORTANT: this is capability provided by the leapp framework rpm.
+# Check that 'version' instead of the real framework rpm version.
+Requires:       leapp-framework >= 2.0, leapp-framework < 3
+
 
 %description
 Repositories for leapp
@@ -54,7 +78,7 @@ Summary:    Meta-package with system dependencies of %{name} package
 
 # IMPORTANT: everytime the requirements are changed, increment number by one
 # - same for Requires in main package
-Provides:  leapp-repository-dependencies = 5
+Provides:  leapp-repository-dependencies = %{leapp_repo_deps}
 ##################################################
 # Real requirements for the leapp-repository HERE
 ##################################################
@@ -68,8 +92,18 @@ Requires:   python-pyudev
 Requires:   policycoreutils-python
 # Required to fetch leapp data
 Requires:   python-requests
-%else ## RHEL 8 dependencies ##
-# Requires:   systemd-container
+
+%else
+############# RHEL 8 dependencies (when the source system is RHEL 8) ##########
+# systemd-nspawn utility
+Requires:   systemd-container
+Requires:   python3-pyudev
+# Required to fetch leapp data
+Requires:   python3-requests
+# Required because the code is kept Py2 & Py3 compatible
+Requires:   python3-six
+# required by SELinux actors
+Requires:   policycoreutils-python-utils
 %endif
 ##################################################
 # end requirement
@@ -86,9 +120,11 @@ Requires:   python-requests
 
 
 %build
-# ??? what is supposed to be this? we do not have any build target in the makefile
-make build
-cp -a leapp*deps*rpm repos/system_upgrade/el7toel8/files/bundled-rpms/
+%if 0%{?rhel} == 7
+cp -a leapp*deps-el8*rpm repos/system_upgrade/el7toel8/files/bundled-rpms/
+%else
+cp -a leapp*deps-el9*rpm repos/system_upgrade/el8toel9/files/bundled-rpms/
+%endif
 
 
 %install
@@ -101,12 +137,16 @@ install -m 0755 -d %{buildroot}%{_sysconfdir}/leapp/files/
 install -m 0644 etc/leapp/transaction/* %{buildroot}%{_sysconfdir}/leapp/transaction
 
 # install CLI commands for the leapp utility on the expected path
-install -m 0755 -d %{buildroot}%{python2_sitelib}/leapp/cli/
-cp -r commands %{buildroot}%{python2_sitelib}/leapp/cli/
+install -m 0755 -d %{buildroot}%{leapp_python_sitelib}/leapp/cli/
+cp -r commands %{buildroot}%{leapp_python_sitelib}/leapp/cli/
 
-# Remove irrelevant repositories - We don't want to ship them
-rm -rf %{buildroot}%{repositorydir}/containerization
-rm -rf %{buildroot}%{repositorydir}/test
+# Remove irrelevant repositories - We don't want to ship them for the particular
+# RHEL version
+%if 0%{?rhel} == 7
+rm -rf %{buildroot}%{repositorydir}/system_upgrade/el8toel9
+%else
+rm -rf %{buildroot}%{repositorydir}/system_upgrade/el7toel8
+%endif
 
 # remove component/unit tests, Makefiles, ... stuff that related to testing only
 rm -rf %{buildroot}%{repositorydir}/common/actors/testactor
@@ -124,8 +164,11 @@ done;
 # __python2 could be problematic on systems with Python3 only, but we have
 # no choice as __python became error on F33+:
 #   https://fedoraproject.org/wiki/Changes/PythonMacroError
-# Maybe we will need to build SRPM over mock only on Fedora in future
+%if 0%{?rhel} == 7
 %py_byte_compile %{__python2} %{buildroot}%{repositorydir}/*
+%else
+%py_byte_compile %{__python3} %{buildroot}%{repositorydir}/*
+%endif
 
 
 %files
@@ -136,11 +179,11 @@ done;
 %dir %{leapp_datadir}
 %dir %{repositorydir}
 %dir %{custom_repositorydir}
-%dir %{python2_sitelib}/leapp/cli/commands
+%dir %{leapp_python_sitelib}/leapp/cli/commands
 %{_sysconfdir}/leapp/repos.d/*
 %{_sysconfdir}/leapp/transaction/*
 %{repositorydir}/*
-%{python2_sitelib}/leapp/cli/commands/*
+%{leapp_python_sitelib}/leapp/cli/commands/*
 
 
 %files deps
