@@ -42,10 +42,6 @@ _COPR_CONFIG=$${COPR_CONFIG:-~/.config/copr_rh_oamg.conf}
 # multiple chroots (for each -r one chroot is allowed).
 ifdef COPR_CHROOT
 	_COPR_CHROOT=-r=$${COPR_CHROOT}
-else
-	# TODO: this is temporary default. We will remove it once
-	# we start building for rhel-8 / epel-8 chroots too
-	_COPR_CHROOT=-r=rhel-7-x86_64
 endif
 
 # just to reduce number of unwanted builds mark as the upstream one when
@@ -152,6 +148,7 @@ source: prepare
 	@echo "--- PREPARE DEPS PKGS ---"
 	mkdir -p packaging/tmp/
 	@__TIMESTAMP=$(TIMESTAMP) $(MAKE) _build_subpkg
+	@__TIMESTAMP=$(TIMESTAMP) $(MAKE) DIST_VERSION=$$(($(DIST_VERSION) + 1)) _build_subpkg
 	@tar -czf packaging/sources/deps-pkgs.tar.gz -C packaging/RPMS/noarch `ls packaging/RPMS/noarch | grep -o "[^/]*rpm$$"`
 
 srpm: source
