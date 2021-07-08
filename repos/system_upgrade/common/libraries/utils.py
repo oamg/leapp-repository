@@ -76,6 +76,8 @@ def logging_handler(fd_info, buf):
     """
     (_unused, fd_type) = fd_info
 
+    if isinstance(buf, bytes) and str is not bytes:
+        buf = buf.decode('utf-8')
     if fd_type == STDOUT:
         sys.stdout.write(buf)
     else:
