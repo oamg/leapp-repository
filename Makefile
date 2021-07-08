@@ -37,11 +37,13 @@ _COPR_REPO=$${COPR_REPO:-leapp}
 _COPR_REPO_TMP=$${COPR_REPO_TMP:-leapp-tmp}
 _COPR_CONFIG=$${COPR_CONFIG:-~/.config/copr_rh_oamg.conf}
 
-# In some cases we want to build rpms just for specific chroot. Currently just
-# one chroot is processed by makefile, but the copr utility is able to process
-# multiple chroots (for each -r one chroot is allowed).
+# In case just specific CHROOTs should be used for the COPR build, you can
+# set the multiple CHROOTs separated by comma in the COPR_CHROOT envar, e.g.
+# "epel-7-x86_64,epel-8-x86_64". But for the copr-cli utility, each of them
+# has to be specified separately for the -r option; So we transform it
+# automatically to "-r epel-7-x86_64 -r epel-8-x86_64" (without quotes).
 ifdef COPR_CHROOT
-	_COPR_CHROOT=-r=$${COPR_CHROOT}
+	_COPR_CHROOT=`echo $${COPR_CHROOT} | grep -o "[^,]*" | sed "s/^/-r /g"`
 endif
 
 # just to reduce number of unwanted builds mark as the upstream one when
@@ -117,7 +119,8 @@ help:
 	@echo "  COPR_CONFIG           path to the COPR config with API token"
 	@echo "                          (default: ~/.config/copr_rh_oamg.conf)"
 	@echo "  COPR_CHROOT           specify the CHROOT which should be used for"
-	@echo "                        the build, e.g. epel-7-x86_64"
+	@echo "                        the build, e.g. 'epel-7-x86_64'. You can"
+	@echo "                        specify multiple CHROOTs separated by comma."
 	@echo ""
 	@echo "Possible use:"
 	@echo "  make <target>"
