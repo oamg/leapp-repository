@@ -12,4 +12,4 @@ if __name__ == '__main__':
     repos = find_and_scan_repositories(BASE_REPO, include_locals=True)
     repos.load()
 
-    print(','.join(repos.libraries))
+    print(' '.join(repos.libraries))
