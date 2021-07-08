@@ -218,13 +218,19 @@ def is_sap_hana_flavour():
 
 def is_rhel_alt():
     """
-    Check if the current system is RHEL-ALT or not.
+    Check if the current system is RHEL-ALT or not (only for RHEL 7)
+
+    The function is valid only for the RHEL 7 systems. On RHEL 8+ systems
+    returns always False.
 
     :return: `True` if the current system is RHEL-ALT and `False` otherwise.
     :rtype: bool
     """
+
+    if get_source_major_version() != '7':
+        return False
     conf = api.current_actor().configuration
-    # rhel-alt is rhel with kernel 4.x - there is not better detection...
+    # rhel-alt is rhel 7 with kernel 4.x - there is not better detection...
     return conf.os_release.release_id == 'rhel' and conf.kernel[0] == '4'
 
 
