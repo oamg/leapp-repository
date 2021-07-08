@@ -6,7 +6,7 @@ import shutil
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import guards, mounting, overlaygen, rhsm, utils
-from leapp.libraries.common.config.version import get_target_major_version
+from leapp.libraries.common.config.version import get_target_major_version, get_source_major_version
 from leapp.libraries.stdlib import CalledProcessError, api, config
 
 
@@ -196,6 +196,14 @@ def _prepare_transaction(used_repos, target_userspace_info, binds=()):
         yield context, list(target_repoids), target_userspace_info
 
 
+def _apply_yum_workaround(context):
+    """
+    Apply the yum workaround in the given context environment if on RHEL 7.
+    """
+    if get_source_major_version() == '7':
+        utils.apply_yum_workaround(context)
+
+
 def install_initramdisk_requirements(packages, target_userspace_info, used_repos):
     """
     Performs the installation of packages into the initram disk
@@ -271,7 +279,7 @@ def perform_transaction_check(target_userspace_info, used_repos, tasks, xfs_info
         with overlaygen.create_source_overlay(mounts_dir=userspace_info.mounts, scratch_dir=userspace_info.scratch,
                                               xfs_info=xfs_info, storage_info=storage_info,
                                               mount_target=os.path.join(context.base_dir, 'installroot')) as overlay:
-            utils.apply_yum_workaround(overlay.nspawn())
+            _apply_yum_workaround(overlay.nspawn())
             _transaction(
                 context=context, stage='check', target_repoids=target_repoids, plugin_info=plugin_info, tasks=tasks
             )
@@ -287,7 +295,7 @@ def perform_rpm_download(target_userspace_info, used_repos, tasks, xfs_info, sto
         with overlaygen.create_source_overlay(mounts_dir=userspace_info.mounts, scratch_dir=userspace_info.scratch,
                                               xfs_info=xfs_info, storage_info=storage_info,
                                               mount_target=os.path.join(context.base_dir, 'installroot')) as overlay:
-            utils.apply_yum_workaround(overlay.nspawn())
+            _apply_yum_workaround(overlay.nspawn())
             _transaction(
                 context=context, stage='download', target_repoids=target_repoids, plugin_info=plugin_info, tasks=tasks,
                 test=True, on_aws=on_aws
