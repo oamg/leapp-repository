@@ -65,6 +65,15 @@ def install(target_basedir):
         )
 
 
+def _rebuild_rpm_db(context, root=None):
+    """
+    Convert rpmdb from BerkeleyDB to Sqlite
+    """
+    base_cmd = ['rpmdb', '--rebuilddb']
+    cmd = base_cmd if not root else base_cmd + ['-r', root]
+    context.call(cmd)
+
+
 def build_plugin_data(target_repoids, debug, test, tasks, on_aws):
     """
     Generates a dictionary with the DNF plugin data.
@@ -210,6 +219,8 @@ def install_initramdisk_requirements(packages, target_userspace_info, used_repos
     """
     with _prepare_transaction(used_repos=used_repos,
                               target_userspace_info=target_userspace_info) as (context, target_repoids, _unused):
+        if get_target_major_version() == '9':
+            _rebuild_rpm_db(context)
         repos_opt = [['--enablerepo', repo] for repo in target_repoids]
         repos_opt = list(itertools.chain(*repos_opt))
         cmd = [
@@ -263,6 +274,9 @@ def perform_transaction_install(target_userspace_info, storage_info, used_repos,
         # the below nsenter command is important as we need to enter sysvipc namespace on the host so we can
         # communicate with udev
         cmd_prefix = ['nsenter', '--ipc=/installroot/proc/1/ns/ipc']
+
+        if get_target_major_version() == '9':
+            _rebuild_rpm_db(context, root='/installroot')
         _transaction(
             context=context, stage='upgrade', target_repoids=target_repoids, plugin_info=plugin_info, tasks=tasks,
             cmd_prefix=cmd_prefix
