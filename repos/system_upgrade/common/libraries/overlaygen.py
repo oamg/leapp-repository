@@ -77,7 +77,7 @@ def _build_overlay_mount(root_mount, mounts):
     if not mounts:
         yield root_mount
     else:
-        current = mounts.keys()[0]
+        current = list(mounts.keys())[0]
         current_mount = mounts.pop(current)
         name = _mount_name(current)
         with current_mount:
