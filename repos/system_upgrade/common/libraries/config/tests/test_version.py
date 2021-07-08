@@ -75,14 +75,18 @@ def test_matches_target_version(monkeypatch, result, version_list):
     assert version.matches_target_version(*version_list) == result
 
 
-@pytest.mark.parametrize('result,kernel,release_id', [
-    (True, '4.14.0-100.8.2.el7a.x86_64', 'rhel'),
-    (False, '3.10.0-100.8.2.el7a.x86_64', 'rhel'),
-    (False, '4.14.0-100.8.2.el7a.x86_64', 'fedora'),
-    (False, '5.14.0-100.8.2.el7a.x86_64', 'rhel'),
+@pytest.mark.parametrize('result,kernel,release_id,src_ver', [
+    (True, '4.14.0-100.8.2.el7a.x86_64', 'rhel', '7.6'),
+    (True, '4.14.0-100.8.2.el7a.x86_64', 'rhel', '7.9'),
+    (False, '3.10.0-100.8.2.el7a.x86_64', 'rhel', '7.6'),
+    (False, '4.14.0-100.8.2.el7a.x86_64', 'fedora', '7.6'),
+    (False, '4.14.0-100.8.2.el7a.x86_64', 'fedora', '33'),
+    (False, '5.14.0-100.8.2.el7a.x86_64', 'rhel', '7.6'),
+    (False, '4.14.0-100.8.2.el8.x86_64', 'rhel', '8.1'),
+    (False, '4.14.0-100.8.2.el9.x86_64', 'rhel', '9.1'),
 ])
-def test_is_rhel_alt(monkeypatch, result, kernel, release_id):
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(src_ver='7.6', kernel=kernel,
+def test_is_rhel_alt(monkeypatch, result, kernel, release_id, src_ver):
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(src_ver=src_ver, kernel=kernel,
                                                                  release_id=release_id))
     assert version.is_rhel_alt() == result
 
