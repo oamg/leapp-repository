@@ -1,9 +1,29 @@
 #!/bin/sh
 
+get_rhel_major_release() {
+    local os_version=$(cat /etc/initrd-release | grep -o '^VERSION="[0-9][0-9]*\.' | grep -o '[0-9]*')
+    [ -z "$os_version" ] && {
+        # This should not happen as /etc/initrd-release is supposed to have API
+        # stability, but check is better than broken system.
+        warn "Cannot determine the major RHEL version."
+        warn "The upgrade environment cannot be setup reliably."
+        echo "Content of the /etc/initrd-release:"
+        cat /etc/initrd-release
+        exit 1
+    }
+
+    echo "$os_version"
+}
+
+export RHEL_OS_MAJOR_RELEASE=$(get_rhel_major_release)
 
 [ -d "$2" ] || {
   # ignore me - blind branch for us :P or die by terrible death
   exit 1
 }
-ln -sf /etc/systemd/system/upgrade.target "$2/default.target"
 
+if [ "$RHEL_OS_MAJOR_RELEASE" == "8" ]; then
+    ln -sf /etc/systemd/system/upgrade.target "$2/default.target"
+else
+    ln -sf /etc/systemd/system/upgrade.target "$2/initrd.target"
+fi

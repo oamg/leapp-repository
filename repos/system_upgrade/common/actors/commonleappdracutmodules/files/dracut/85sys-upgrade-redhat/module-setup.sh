@@ -9,6 +9,7 @@ check() {
     require_binaries xz || return 1
     require_binaries md5sum || return 1
     require_binaries wc || return 1
+    require_binaries grep || return 1
     # 0 enables by default, 255 only on request
     return 0
 }
@@ -81,6 +82,9 @@ install() {
     inst_binary xz
     inst_binary md5sum
     inst_binary wc
+
+    # to be able to check what RHEL X we boot in (target system)
+    inst_binary grep
 
     # script to actually run the upgrader binary
     inst_hook upgrade 49 "$moddir/mount_usr.sh"

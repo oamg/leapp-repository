@@ -1,7 +1,7 @@
 import os
 import re
 
-from leapp.libraries.common.config import architecture
+from leapp.libraries.common.config import architecture, version
 from leapp.libraries.stdlib import api
 from leapp.models import (
     DracutModule,
@@ -64,9 +64,12 @@ def _create_dracut_modules():
 
 @suppress_deprecation(RequiredUpgradeInitramPackages)
 def _create_initram_packages():
-    required_pkgs = _REQUIRED_PACKAGES
+    # copy the list as we do not want to affect the constant because of tests
+    required_pkgs = _REQUIRED_PACKAGES[:]
     if architecture.matches_architecture(architecture.ARCH_X86_64):
         required_pkgs.append('biosdevname')
+    if version.get_target_major_version() == '9':
+        required_pkgs += ['policycoreutils', 'rng-tools']
     return (
         RequiredUpgradeInitramPackages(packages=required_pkgs),
         TargetUserSpaceUpgradeTasks(install_rpms=required_pkgs)
