@@ -174,10 +174,15 @@ def _transaction(context, stage, target_repoids, tasks, plugin_info, test=False,
                     cmd += ['--disableplugin', info.name]
         if cmd_prefix:
             cmd = cmd_prefix + cmd
+        env = {}
+        if get_target_major_version() == '9':
+            # allow handling new RHEL 9 syscalls by systemd-nspawn
+            env = {'SYSTEMD_SECCOMP': '0'}
         try:
             context.call(
                 cmd=cmd,
-                callback_raw=utils.logging_handler
+                callback_raw=utils.logging_handler,
+                env=env
             )
         except OSError as e:
             api.current_logger().error('Could not call dnf command: Message: %s', str(e), exc_info=True)

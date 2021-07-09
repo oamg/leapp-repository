@@ -2,6 +2,7 @@ import os
 import shutil
 
 from leapp.exceptions import StopActorExecutionError
+from leapp.libraries.common.config.version import get_target_major_version
 from leapp.libraries.common import dnfplugin, mounting
 from leapp.libraries.stdlib import api
 from leapp.models import (
@@ -154,6 +155,9 @@ def generate_initram_disk(context):
     Includes handling of specified dracut modules from the host when needed.
     The check for the 'conflicting' dracut modules is in a separate actor.
     """
+    env = {}
+    if get_target_major_version() == '9':
+        env = {'SYSTEMD_SECCOMP': '0'}
     # TODO(pstodulk): Add possibility to add particular drivers
     # Issue #645
     modules = _get_dracut_modules()  # deprecated
@@ -171,7 +175,7 @@ def generate_initram_disk(context):
             arch=api.current_actor().configuration.architecture,
             files=' '.join(files),
             cmd=os.path.join('/', INITRAM_GEN_SCRIPT_NAME))
-    ])
+    ], env=env)
     copy_boot_files(context)
 
 
