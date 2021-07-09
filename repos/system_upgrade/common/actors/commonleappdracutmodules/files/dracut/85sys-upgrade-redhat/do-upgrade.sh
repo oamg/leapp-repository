@@ -7,15 +7,41 @@ if [ -f /dracut-state.sh ]; then
 fi
 type getarg >/dev/null 2>&1 || . /lib/dracut-lib.sh
 
+get_rhel_major_release() {
+    local os_version=$(cat /etc/initrd-release | grep -o '^VERSION="[0-9][0-9]*\.' | grep -o '[0-9]*')
+    [ -z "$os_version" ] && {
+        # This should not happen as /etc/initrd-release is supposed to have API
+        # stability, but check is better than broken system.
+        warn "Cannot determine the major RHEL version."
+        warn "The upgrade environment cannot be setup reliably."
+        echo "Content of the /etc/initrd-release:"
+        cat /etc/initrd-release
+        exit 1
+    }
+
+    echo "$os_version"
+}
+
+export RHEL_OS_MAJOR_RELEASE=$(get_rhel_major_release)
 export LEAPPBIN=/usr/bin/leapp
 export LEAPPHOME=/root/tmp_leapp_py3
 export LEAPP3_BIN=$LEAPPHOME/leapp3
 
 export NEWROOT=${NEWROOT:-"/sysroot"}
 
-NSPAWN_OPTS="--capability=all --bind=/sys --bind=/dev --bind=/dev/pts --bind=/run/systemd --bind=/proc"
+NSPAWN_OPTS="--capability=all --bind=/dev --bind=/dev/pts --bind=/proc --bind=/run/udev"
 [ -d /dev/mapper ] && NSPAWN_OPTS="$NSPAWN_OPTS --bind=/dev/mapper"
-export NSPAWN_OPTS="$NSPAWN_OPTS --bind=/run/udev --keep-unit --register=no --timezone=off --resolv-conf=off"
+if [ "$RHEL_OS_MAJOR_RELEASE" == "8" ]; then
+    # IPU 7 -> 8
+    NSPAWN_OPTS="$NSPAWN_OPTS --bind=/sys --bind=/run/systemd"
+else
+    # IPU 8 -> 9
+    # TODO(pstodulk, mreznik): Why --console=pipe? Is it ok? Discovered a weird
+    # issue on IPU 8 -> 9 without that in our VMs
+    NSPAWN_OPTS="$NSPAWN_OPTS --bind=/sys:/hostsys --console=pipe"
+fi
+export NSPAWN_OPTS="$NSPAWN_OPTS --keep-unit --register=no --timezone=off --resolv-conf=off"
+
 
 #
 # Temp for collecting and preparing tarbal

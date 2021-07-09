@@ -2,6 +2,8 @@ import os.path
 import re
 from collections import namedtuple
 
+import pytest
+
 from leapp.libraries.actor import modscan
 from leapp.libraries.common.config import architecture
 from leapp.libraries.common.testutils import CurrentActorMocked
@@ -62,23 +64,26 @@ def test_created_modules(monkeypatch):
     assert produced_required_modules_new == produced_required_modules_old == required_modules
 
 
-def test_required_packages(monkeypatch):
+@pytest.mark.parametrize('src_ver,dst_ver,arch', (
+    ('7.9', '8.4', architecture.ARCH_X86_64),
+    ('7.9', '8.4', architecture.ARCH_S390X),
+    ('8.4', '9.0', architecture.ARCH_X86_64),
+    ('8.4', '9.0', architecture.ARCH_S390X),
+))
+def test_required_packages(monkeypatch, src_ver, dst_ver, arch):
     # the default set of required rpms should not contain biosdevname
-    assert 'biosdevname' not in modscan._REQUIRED_PACKAGES
+    for pkg in ['biosdevname', 'policycoreutils', 'rng-tools']:
+        assert pkg not in modscan._REQUIRED_PACKAGES
 
-    # for non-intel archs, the set of required rpms should be same as the default
-    # one
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked())
-    monkeypatch.setattr(architecture, 'matches_architecture', lambda x: False)
-    old_initram, new_initram = modscan._create_initram_packages()
-    assert (set(modscan._REQUIRED_PACKAGES)
-            == set(old_initram.packages)
-            == set(new_initram.install_rpms))
+    required_packages = modscan._REQUIRED_PACKAGES[:]
+    if dst_ver[0] == '9':
+        required_packages += ['policycoreutils', 'rng-tools']
+    if arch == architecture.ARCH_X86_64:
+        required_packages += ['biosdevname']
 
-    # for intel arch
-    monkeypatch.setattr(architecture, 'matches_architecture', lambda x: True)
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(src_ver=src_ver, dst_ver=dst_ver, arch=arch))
     old_initram, new_initram = modscan._create_initram_packages()
-    assert (set(modscan._REQUIRED_PACKAGES + ['biosdevname'])
+    assert (set(required_packages)
             == set(old_initram.packages)
             == set(new_initram.install_rpms))
 
