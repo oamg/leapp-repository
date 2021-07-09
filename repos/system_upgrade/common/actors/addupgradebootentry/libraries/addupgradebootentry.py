@@ -11,8 +11,8 @@ def add_boot_entry(configs=None):
     debug = 'debug' if os.getenv('LEAPP_DEBUG', '0') == '1' else ''
 
     kernel_dst_path, initram_dst_path = get_boot_file_paths()
+    _remove_old_upgrade_boot_entry(kernel_dst_path, configs=configs)
     try:
-        _remove_old_upgrade_boot_entry(kernel_dst_path, configs=configs)
         cmd = [
             '/usr/sbin/grubby',
             '--add-kernel', '{0}'.format(kernel_dst_path),
@@ -51,11 +51,19 @@ def _remove_old_upgrade_boot_entry(kernel_dst_path, configs=None):
         '/usr/sbin/grubby',
         '--remove-kernel', '{0}'.format(kernel_dst_path)
     ]
-    if configs:
-        for config in configs:
-            run(cmd + ['-c', config])
-    else:
-        run(cmd)
+    try:
+        if configs:
+            for config in configs:
+                run(cmd + ['-c', config])
+        else:
+            run(cmd)
+    except CalledProcessError:
+        # TODO(pstodulk): instead of this, check whether the entry exists or not
+        # so no warning of problem is reported (info log could be present if the
+        # entry is missing.
+        api.current_logger().warning(
+            'Could not remove {} entry. May be ignored if the entry did not exist.'.format(kernel_dst_path)
+        )
 
 
 def get_boot_file_paths():
