@@ -18,10 +18,10 @@ def check():
         name, arch = package.split('.')
         if has_package(InstalledRPM, name, arch) and has_package(InstalledRPM, name, 'x86_64'):
             actual_problems.append(package)
-        # generate RelatedResources for the report
-        related_resources.append(RelatedResource('package', package))
-        if details['bugzilla']:
-            related_resources.append(RelatedResource('bugzilla', details['bugzilla']))
+            # generate RelatedResources for the report
+            related_resources.append(RelatedResource('package', package))
+            if details['bugzilla']:
+                related_resources.append(RelatedResource('bugzilla', details['bugzilla']))
 
     if actual_problems:
         remediation = ["yum", "remove", "-y"] + actual_problems
