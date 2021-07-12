@@ -6,6 +6,7 @@ from collections import namedtuple
 
 from leapp.libraries.stdlib import run, CalledProcessError, api
 from leapp.libraries.common.config import get_all_envs
+from leapp.libraries.common.config.version import get_source_major_version
 
 
 ALWAYS_BIND = ['/etc/hosts:/etc/hosts']
@@ -78,12 +79,13 @@ class IsolationType(object):
             """ Transform the command to be executed with systemd-nspawn """
             binds = ['--bind={}'.format(bind) for bind in self.binds]
             setenvs = ['--setenv={}={}'.format(env.name, env.value) for env in self.env_vars]
-            return [
-                'systemd-nspawn',
-                '--register=no',
-                '--quiet',
-                '-D', self.target
-            ] + binds + setenvs + cmd
+            final_cmd = ['systemd-nspawn', '--register=no', '--quiet']
+            if get_source_major_version() != '7':
+                # TODO: check whether we could use the --keep unit on el7 too.
+                # in such a case, just add line into the previous solution..
+                # TODO: the same about --capability=all
+                final_cmd += ['--keep-unit', '--capability=all']
+            return final_cmd + ['-D', self.target] + binds + setenvs + cmd
 
     class CHROOT(_Implementation):
         """ chroot implementation """
