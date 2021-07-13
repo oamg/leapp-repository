@@ -1,5 +1,5 @@
 import os
-import xml.etree.ElementTree as ElementTree
+from xml.etree import ElementTree
 
 from leapp.actors import Actor
 from leapp.libraries.actor import firewalldfactsactor

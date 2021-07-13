@@ -26,6 +26,9 @@ disable=
  bad-continuation,
  missing-docstring,
  wrong-import-order,
+ use-maxsplit-arg,
+ consider-using-dict-items,
+ consider-using-enumerate,
 # "R" Refactor recommendations
  duplicate-code,
  no-self-use,
@@ -33,6 +36,7 @@ disable=
  too-many-branches,
  too-many-locals,
  too-many-statements,
+ consider-using-from-import,
 # new for python3 version of pylint
  useless-object-inheritance,
  consider-using-set-comprehension,  # pylint3 force to use comprehension in place we don't want (py2 doesnt have these options, for inline skip)

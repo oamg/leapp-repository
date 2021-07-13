@@ -33,7 +33,7 @@ def test_wrong_symlink_inhibitor(current_actor_context, modified, expected_repor
         'var': ''
     }
     subdirs.update(modified)
-    items = [RootSubdirectory(name=subdir, target=subdirs[subdir]) for subdir in subdirs]
+    items = [RootSubdirectory(name=name, target=target) for name, target in subdirs.items()]
     current_actor_context.feed(RootDirectory(items=items))
     current_actor_context.run()
     if expected_report:
