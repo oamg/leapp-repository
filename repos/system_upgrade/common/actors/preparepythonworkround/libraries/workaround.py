@@ -1,8 +1,19 @@
 import os
+import sys
 
 from leapp.libraries.common.utils import makedirs
 
 LEAPP_HOME = '/root/tmp_leapp_py3'
+
+
+def _get_python_dirname():
+    # NOTE: I thought about the static value: python2.7 for el7, python3.6 for
+    # el8; but in the end I've ratcher switched to this generic solution.
+    return 'python{}.{}'.format(sys.version_info.major, sys.version_info.minor)
+
+
+def _get_orig_leapp_path():
+    return os.path.join('/usr/lib', _get_python_dirname(), 'site-packages/leapp')
 
 
 def apply_python3_workaround():
@@ -10,7 +21,7 @@ def apply_python3_workaround():
     makedirs(LEAPP_HOME)
     leapp_lib_symlink_path = os.path.join(LEAPP_HOME, 'leapp')
     if not os.path.exists(leapp_lib_symlink_path):
-        os.symlink('/usr/lib/python2.7/site-packages/leapp', leapp_lib_symlink_path)
+        os.symlink(_get_orig_leapp_path(), leapp_lib_symlink_path)
     with open(py3_leapp, 'w') as f:
         f_content = [
             '#!/usr/bin/python3',

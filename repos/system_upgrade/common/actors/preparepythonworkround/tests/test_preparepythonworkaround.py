@@ -1,9 +1,13 @@
 from os import symlink, path, access, X_OK
+from collections import namedtuple
 
 import pytest
 
 from leapp.libraries.actor import workaround
 from leapp.libraries.common.utils import makedirs
+
+
+SysVersionInfo = namedtuple('version_info', ['major', 'minor', 'micro', 'releaselevel', 'serial'])
 
 
 def fake_symlink(basedir):
@@ -29,3 +33,19 @@ def test_apply_python3_workaround(monkeypatch, tmpdir):
     assert access(str(leapp_home.join('leapp3')), X_OK)
 
     assert str(leapp_home) in leapp_home.join('leapp3').read_text('utf-8')
+
+
+@pytest.mark.parametrize('pydir', ('python2.7', 'python3.6', 'python3.9'))
+def test_orig_leapp_path(monkeypatch, pydir):
+    monkeypatch.setattr(workaround, '_get_python_dirname', lambda: pydir)
+    assert workaround._get_orig_leapp_path() == '/usr/lib/{}/site-packages/leapp'.format(pydir)
+
+
+@pytest.mark.parametrize('sys_version_info,result', (
+    (SysVersionInfo(2, 7, 5, 'final', 0), 'python2.7'),
+    (SysVersionInfo(3, 6, 0, 'X', 0), 'python3.6'),
+    (SysVersionInfo(3, 9, 0, 'X', 0), 'python3.9'),
+))
+def test_get_python_dirname(monkeypatch, sys_version_info, result):
+    monkeypatch.setattr(workaround.sys, 'version_info', sys_version_info)
+    assert workaround._get_python_dirname() == result
