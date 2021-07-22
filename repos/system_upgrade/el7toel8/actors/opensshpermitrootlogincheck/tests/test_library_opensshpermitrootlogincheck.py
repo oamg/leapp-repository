@@ -13,6 +13,7 @@ def test_globally_enabled():
                 value='yes',
                 in_match=None)
         ],
+        deprecated_directives=[]
     )
 
     assert not semantics_changes(config)
@@ -29,6 +30,7 @@ def test_globally_disabled():
                 value='no',
                 in_match=None)
         ],
+        deprecated_directives=[]
     )
 
     assert not semantics_changes(config)
@@ -45,6 +47,7 @@ def test_globally_disabled_password():
                 value='prohibit-password',
                 in_match=None)
         ],
+        deprecated_directives=[]
     )
 
     assert not semantics_changes(config)
@@ -63,6 +66,7 @@ def test_in_match_disabled():
                 value='no',
                 in_match=['address', '10.10.*'])
         ],
+        deprecated_directives=[]
     )
 
     assert semantics_changes(config)
@@ -81,6 +85,7 @@ def test_in_match_disabled_password():
                 value='prohibit-password',
                 in_match=['address', '10.10.*'])
         ],
+        deprecated_directives=[]
     )
 
     assert semantics_changes(config)
@@ -100,6 +105,7 @@ def test_in_match_enabled():
                 value='yes',
                 in_match=['address', '192.168.*'])
         ],
+        deprecated_directives=[]
     )
 
     assert not semantics_changes(config)
@@ -118,6 +124,7 @@ def test_in_match_all_disabled():
                 value='no',
                 in_match=['all'])
         ],
+        deprecated_directives=[]
     )
 
     assert not semantics_changes(config)
@@ -136,6 +143,7 @@ def test_in_match_all_disabled_password():
                 value='prohibit-password',
                 in_match=['all'])
         ],
+        deprecated_directives=[]
     )
 
     assert not semantics_changes(config)
@@ -154,6 +162,7 @@ def test_in_match_all_enabled():
                 value='yes',
                 in_match=['all'])
         ],
+        deprecated_directives=[]
     )
 
     assert not semantics_changes(config)
@@ -175,6 +184,7 @@ def test_in_match_enabled_globally_disabled():
                 value='yes',
                 in_match=['address', '192.*'])
         ],
+        deprecated_directives=[]
     )
 
     assert not semantics_changes(config)
@@ -196,6 +206,7 @@ def test_in_match_disabled_globally_enabled():
                 value='no',
                 in_match=['address', '192.*'])
         ],
+        deprecated_directives=[]
     )
 
     assert not semantics_changes(config)

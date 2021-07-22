@@ -25,6 +25,7 @@ osprl = OpenSshPermitRootLogin(value='no')
 def test_ciphers(current_actor_context, ciphers, expected_report):
     current_actor_context.feed(OpenSshConfig(
         permit_root_login=[osprl],
+        deprecated_directives=[],
         ciphers=ciphers
     ))
     current_actor_context.run()

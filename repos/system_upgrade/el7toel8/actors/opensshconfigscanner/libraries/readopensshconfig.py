@@ -5,6 +5,7 @@ from leapp.libraries.stdlib import run, api
 
 
 CONFIG = '/etc/ssh/sshd_config'
+DEPRECATED_DIRECTIVES = ['showpatchlevel']
 
 
 def line_empty(line):
@@ -17,6 +18,7 @@ def parse_config(config):
     # RHEL7 defaults
     ret = OpenSshConfig(
         permit_root_login=[],
+        deprecated_directives=[]
     )
 
     in_match = None
@@ -60,6 +62,11 @@ def parse_config(config):
             if not ret.macs:
                 ret.macs = value
 
+        elif el[0].lower() in DEPRECATED_DIRECTIVES:
+            # Filter out duplicit occurences of the same deprecated directive
+            if el[0].lower() not in ret.deprecated_directives:
+                # Use the directive in the form as found in config for user convenience
+                ret.deprecated_directives.append(el[0])
     return ret
 
 
