@@ -18,7 +18,8 @@ osprl = OpenSshPermitRootLogin(value='no')
 def test_protocol(current_actor_context, protocol):
     current_actor_context.feed(OpenSshConfig(
         permit_root_login=[osprl],
-        protocol=protocol
+        protocol=protocol,
+        deprecated_directives=[]
     ))
     current_actor_context.run()
     if protocol:

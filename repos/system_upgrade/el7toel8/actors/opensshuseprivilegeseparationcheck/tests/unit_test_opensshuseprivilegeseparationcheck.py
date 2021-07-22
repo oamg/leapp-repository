@@ -26,11 +26,13 @@ def test_separation(current_actor_context, values, expected_report):
         if value:
             current_actor_context.feed(OpenSshConfig(
                 permit_root_login=[osprl],
-                use_privilege_separation=value
+                use_privilege_separation=value,
+                deprecated_directives=[]
             ))
         else:
             current_actor_context.feed(OpenSshConfig(
-                permit_root_login=[osprl]
+                permit_root_login=[osprl],
+                deprecated_directives=[]
             ))
     current_actor_context.run()
     if expected_report:

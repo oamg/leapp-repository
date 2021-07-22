@@ -36,3 +36,5 @@ class OpenSshConfig(Model):
     """ Value of the MACs directive, if present. """
     modified = fields.Boolean(default=False)
     """ True if the configuration file was modified. """
+    deprecated_directives = fields.List(fields.String())
+    """ Configuration directives that were deprecated in the new version of openssh. """

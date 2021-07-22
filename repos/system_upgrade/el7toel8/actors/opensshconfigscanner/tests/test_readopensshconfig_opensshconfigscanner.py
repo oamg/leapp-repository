@@ -174,6 +174,7 @@ def test_produce_config():
         permit_root_login=[OpenSshPermitRootLogin(value="no")],
         use_privilege_separation="yes",
         protocol="1",
+        deprecated_directives=[],
     )
 
     produce_config(fake_producer, config)
