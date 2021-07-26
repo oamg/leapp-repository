@@ -27,6 +27,8 @@ from leapp.utils.output import beautify_actor_exception, report_errors, report_i
 @command_opt('target', choices=command_utils.get_supported_target_versions(),
              help='Specify RHEL version to upgrade to for {} detected upgrade flavour'.format(
                  command_utils.get_upgrade_flavour()))
+@command_opt('report-schema', help='Specify report schema version for leapp-report.json', choices=['1.0.0', '1.1.0'],
+             default=get_config().get('report', 'schema'))
 @breadcrumbs.produces_breadcrumbs
 def preupgrade(args, breadcrumbs):
     context = str(uuid.uuid4())
@@ -35,6 +37,7 @@ def preupgrade(args, breadcrumbs):
     configuration = util.prepare_configuration(args)
     answerfile_path = cfg.get('report', 'answerfile')
     userchoices_path = cfg.get('report', 'userchoices')
+    report_schema = util.process_report_schema(args, cfg)
 
     if os.getuid():
         raise CommandError('This command has to be run under the root user.')
@@ -64,7 +67,7 @@ def preupgrade(args, breadcrumbs):
 
     logger.info("Answerfile will be created at %s", answerfile_path)
     workflow.save_answers(answerfile_path, userchoices_path)
-    util.generate_report_files(context)
+    util.generate_report_files(context, report_schema)
     report_errors(workflow.errors)
     report_inhibitors(context)
     report_files = util.get_cfg_files('report', cfg)

@@ -32,6 +32,8 @@ from leapp.utils.output import beautify_actor_exception, report_errors, report_i
 @command_opt('target', choices=command_utils.get_supported_target_versions(),
              help='Specify RHEL version to upgrade to for {} detected upgrade flavour'.format(
                  command_utils.get_upgrade_flavour()))
+@command_opt('report-schema', help='Specify report schema version for leapp-report.json', choices=['1.0.0', '1.1.0'],
+             default=get_config().get('report', 'schema'))
 @breadcrumbs.produces_breadcrumbs
 def upgrade(args, breadcrumbs):
     skip_phases_until = None
@@ -45,6 +47,8 @@ def upgrade(args, breadcrumbs):
     # therefore we have to assume that they aren't even in `args` as they are added only by rerun.
     only_with_tags = args.only_with_tags if 'only_with_tags' in args else None
     resume_context = args.resume_context if 'resume_context' in args else None
+
+    report_schema = util.process_report_schema(args, cfg)
 
     if os.getuid():
         raise CommandError('This command has to be run under the root user.')
@@ -94,7 +98,7 @@ def upgrade(args, breadcrumbs):
     workflow.save_answers(answerfile_path, userchoices_path)
     report_errors(workflow.errors)
     report_inhibitors(context)
-    util.generate_report_files(context)
+    util.generate_report_files(context, report_schema)
     report_files = util.get_cfg_files('report', cfg)
     log_files = util.get_cfg_files('logs', cfg)
     report_info(report_files, log_files, answerfile_path, fail=workflow.failure)

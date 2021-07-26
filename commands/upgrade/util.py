@@ -115,7 +115,7 @@ def check_env_and_conf(env_var, conf_var, configuration):
     return os.getenv(env_var, '0') == '1' or configuration.get(conf_var, '0') == '1'
 
 
-def generate_report_files(context):
+def generate_report_files(context, report_schema):
     """
     Generates all report files for specific leapp run (txt and json format)
     """
@@ -124,8 +124,8 @@ def generate_report_files(context):
                                             'leapp-report.{}'.format(f)) for f in ['txt', 'json']]
     # fetch all report messages as a list of dicts
     messages = fetch_upgrade_report_messages(context)
-    generate_report_file(messages, context, report_json)
-    generate_report_file(messages, context, report_txt)
+    generate_report_file(messages, context, report_json, report_schema)
+    generate_report_file(messages, context, report_txt, report_schema)
 
 
 def get_cfg_files(section, cfg, must_exist=True):
@@ -202,3 +202,11 @@ def process_whitelist_experimental(repositories, workflow, configuration, logger
             if logger:
                 logger.error(msg)
             raise CommandError(msg)
+
+
+def process_report_schema(args, configuration):
+    default_report_schema = configuration.get('report', 'schema')
+    if args.report_schema and args.report_schema > default_report_schema:
+        raise CommandError('--report-schema version can not be greater that the '
+                           'actual {} one.'.format(default_report_schema))
+    return args.report_schema or default_report_schema
