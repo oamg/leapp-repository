@@ -30,14 +30,24 @@ class PythonThreeTmpWorkaround(Actor):
 
         cmd = [
             'alternatives', '--install', '/usr/bin/python3', 'python3', '/usr/bin/python3.9', '1000000',
-            '--slave', '/usr/share/man/man1/python3.1.gz', 'python3-man', '/usr/share/man/man1/python3.9.1.gz',
-            '--slave', '/usr/bin/pip3', 'pip3', '/usr/bin/pip3.9',
-            '--slave', '/usr/bin/pip-3', 'pip-3', '/usr/bin/pip-3.9',
-            '--slave', '/usr/bin/easy_install-3', 'easy_install-3', '/usr/bin/easy_install-3.9',
-            '--slave', '/usr/bin/pydoc3', 'pydoc3', '/usr/bin/pydoc3.9',
-            '--slave', '/usr/bin/pydoc-3', 'pydoc-3', '/usr/bin/pydoc3.9',
-            '--slave', '/usr/bin/pyvenv-3', 'pyvenv-3', '/usr/bin/pyvenv-3.9',
         ]
+
+        sub_cmds = [
+            ['--slave', '/usr/share/man/man1/python3.1.gz', 'python3-man', '/usr/share/man/man1/python3.9.1.gz'],
+            ['--slave', '/usr/bin/pip3', 'pip3', '/usr/bin/pip3.9'],
+            ['--slave', '/usr/bin/pip-3', 'pip-3', '/usr/bin/pip-3.9'],
+            ['--slave', '/usr/bin/easy_install-3', 'easy_install-3', '/usr/bin/easy_install-3.9'],
+            ['--slave', '/usr/bin/pydoc3', 'pydoc3', '/usr/bin/pydoc3.9'],
+            ['--slave', '/usr/bin/pydoc-3', 'pydoc-3', '/usr/bin/pydoc3.9'],
+            ['--slave', '/usr/bin/pyvenv-3', 'pyvenv-3', '/usr/bin/pyvenv-3.9'],
+        ]
+
+        for sub_cmd in sub_cmds:
+            if os.path.exists(sub_cmd[1]):
+                # some rhel 9 packages are already updated and handle
+                # alternatives correctly using the --keep-foreign option
+                continue
+            cmd += sub_cmd
 
         try:
             run(cmd)
