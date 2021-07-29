@@ -500,9 +500,12 @@ def _get_target_userspace():
 
 def _create_target_userspace(context, packages, files, target_repoids):
     """Create the target userspace."""
-    prepare_target_userspace(context, _get_target_userspace(), target_repoids, list(packages))
-    _prep_repository_access(context, _get_target_userspace())
-    _copy_files(context, files)
+    target_path = _get_target_userspace()
+    prepare_target_userspace(context, target_path, target_repoids, list(packages))
+    _prep_repository_access(context, target_path)
+
+    with mounting.NspawnActions(base_dir=target_path) as target_context:
+        _copy_files(target_context, files)
     dnfplugin.install(_get_target_userspace())
 
     # and do not forget to set the rhsm into the container mode again
