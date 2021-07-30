@@ -1,19 +1,21 @@
+from leapp import reporting
 from leapp.actors import Actor
-from leapp.libraries.common.rpms import has_package
+from leapp.libraries.common import rhsm, rhui, rpms
 from leapp.models import (
     DNFPluginTask,
     InstalledRPM,
     KernelCmdlineArg,
     RHUIInfo,
-    RequiredTargetUserspacePackages,
+    RequiredTargetUserspacePackages,  # deprecated
     RpmTransactionTasks,
+    TargetUserSpacePreupgradeTasks,
 )
 from leapp.reporting import Report, create_report
-from leapp import reporting
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
-from leapp.libraries.common import rhsm, rhui
+from leapp.utils.deprecation import suppress_deprecation
 
 
+@suppress_deprecation(RequiredTargetUserspacePackages)
 class CheckRHUI(Actor):
     """
     Check if system is using RHUI infrastructure (on public cloud) and send messages to
@@ -23,18 +25,20 @@ class CheckRHUI(Actor):
     name = 'checkrhui'
     consumes = (InstalledRPM)
     produces = (
+        DNFPluginTask,
         KernelCmdlineArg,
         RHUIInfo,
-        RequiredTargetUserspacePackages,
-        Report, DNFPluginTask,
+        Report,
+        RequiredTargetUserspacePackages,  # deprecated
         RpmTransactionTasks,
+        TargetUserSpacePreupgradeTasks,
     )
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 
     def process(self):
         arch = self.configuration.architecture
         for provider, info in rhui.RHUI_CLOUD_MAP[arch].items():
-            if has_package(InstalledRPM, info['el7_pkg']):
+            if rpms.has_package(InstalledRPM, info['el7_pkg']):
                 if not rhsm.skip_rhsm():
                     create_report([
                         reporting.Title('Upgrade initiated with RHSM on public cloud with RHUI infrastructure'),
@@ -48,7 +52,7 @@ class CheckRHUI(Actor):
                     ])
                     return
                 # AWS RHUI package is provided and signed by RH but the Azure one not
-                if not has_package(InstalledRPM, info['leapp_pkg']):
+                if not rpms.has_package(InstalledRPM, info['leapp_pkg']):
                     create_report([
                         reporting.Title('Package "{}" is missing'.format(info['leapp_pkg'])),
                         reporting.Summary(
@@ -68,8 +72,13 @@ class CheckRHUI(Actor):
                     self.produce(DNFPluginTask(name='amazon-id', disable_in=['upgrade']))
                 # if RHEL7 and RHEL8 packages differ, we cannot rely on simply updating them
                 if info['el7_pkg'] != info['el8_pkg']:
-                    self.produce(RpmTransactionTasks(to_install=[info['el8_pkg']]))
-                    self.produce(RpmTransactionTasks(to_remove=[info['el7_pkg']]))
-                self.produce(RHUIInfo(provider=provider))
-                self.produce(RequiredTargetUserspacePackages(packages=[info['el8_pkg']]))
+                    self.produce(RpmTransactionTasks(
+                        to_install=[info['el8_pkg']],
+                        to_remove=[info['el7_pkg']]),
+                    )
+                self.produce(
+                    RHUIInfo(provider=provider),
+                    RequiredTargetUserspacePackages(packages=[info['el8_pkg']]),  # deprecated
+                    TargetUserSpacePreupgradeTasks(install_rpms=[info['el8_pkg']]),
+                )
                 return

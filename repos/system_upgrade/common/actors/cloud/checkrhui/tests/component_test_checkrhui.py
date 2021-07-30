@@ -2,17 +2,18 @@ from collections import namedtuple
 
 import pytest
 
-from leapp.snactor.fixture import current_actor_context
+from leapp.libraries.common import rhsm
+from leapp.libraries.common.config import mock_configs
 from leapp.models import (
-    InstalledRedHatSignedRPM,
     InstalledRPM,
-    RPM,
+    InstalledRedHatSignedRPM,
     RHUIInfo,
-    RequiredTargetUserspacePackages,
+    RPM,
+    RequiredTargetUserspacePackages,  # deprecated
+    TargetUserSpacePreupgradeTasks,
 )
 from leapp.reporting import Report
-from leapp.libraries.common.config import mock_configs
-from leapp.libraries.common import rhsm
+from leapp.snactor.fixture import current_actor_context
 
 
 RH_PACKAGER = 'Red Hat, Inc. <http://bugzilla.redhat.com/bugzilla>'
@@ -57,5 +58,5 @@ def test_check_rhui_actor(
     current_actor_context.run(config_model=mock_configs.CONFIG)
     assert bool(current_actor_context.consume(Report)) is msgs_received.report
     assert bool(current_actor_context.consume(RHUIInfo)) is msgs_received.rhui_info
-    assert bool(current_actor_context.consume(
-        RequiredTargetUserspacePackages)) is msgs_received.req_target_userspace
+    for msg in [RequiredTargetUserspacePackages, TargetUserSpacePreupgradeTasks]:
+        assert bool(current_actor_context.consume(msg)) is msgs_received.req_target_userspace
