@@ -114,21 +114,14 @@ Leapp repositories for the in-place upgrade to the next major version
 of the Red Hat Enterprise Linux system.
 
 
-%package -n leapp-upgrade
-Summary: The meta package installing all requirements for the in-place upgrade
-
-Requires: leapp
-Requires: %{lpr_name}
-
-%description -n leapp-upgrade
-%{summary}
-
-
 # This metapackage should contain all RPM dependencies exluding deps on *leapp*
 # RPMs. This metapackage will be automatically replaced during the upgrade
 # to satisfy dependencies with RPMs from target system.
-%package deps
+%package -n %{lpr_name}-deps
 Summary:    Meta-package with system dependencies of %{lpr_name} package
+
+# The package has been renamed, so let's obsoletes the old one
+Obsoletes:      leapp-repository-deps < 0.14.0-%{release}
 
 # IMPORTANT: everytime the requirements are changed, increment number by one
 # - same for Requires in main package
@@ -164,7 +157,7 @@ Requires:   policycoreutils-python-utils
 ##################################################
 
 
-%description deps
+%description -n %{lpr_name}-deps
 %{summary}
 
 
@@ -240,10 +233,7 @@ done;
 %{leapp_python_sitelib}/leapp/cli/commands/*
 
 
-%files -n leapp-upgrade
-# no files heres
-
-%files deps
+%files -n %{lpr_name}-deps
 # no files here
 
 
