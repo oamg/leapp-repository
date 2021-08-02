@@ -2,6 +2,13 @@
 %global  lrdname  leapp-repository-deps-el%{rhel}
 %global  ldname   leapp-deps-el%{rhel}
 
+%if 0%{?rhel} == 8
+    %define lpr_name_src leapp-upgrade-el7toel8-deps
+%else
+    %define lpr_name_src leapp-upgrade-el8toel9-deps
+%endif
+
+
 %define leapp_repo_deps  5
 %define leapp_framework_deps   3
 
@@ -30,7 +37,10 @@ URL:        https://oamg.github.io/leapp/
 %package -n %{lrdname}
 Summary:    Meta-package with system dependencies for leapp repository
 Provides:   leapp-repository-dependencies = %{leapp_repo_deps}
+
+# NOTE: we can drop this one Obsoletes later, but keeping it for now...
 Obsoletes:  leapp-repository-deps
+Obsoletes:  %{lpr_name_src}
 
 Requires:   dnf >= 4
 Requires:   pciutils
