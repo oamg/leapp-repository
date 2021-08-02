@@ -9,7 +9,7 @@
 %endif
 
 
-%define leapp_repo_deps  5
+%define leapp_repo_deps  6
 %define leapp_framework_deps   3
 
 # NOTE: the Version contains the %{rhel} macro just for the convenience to
@@ -49,6 +49,11 @@ Requires:   python3-pyudev
 # required by SELinux actors
 Requires:   policycoreutils-python-utils
 
+# we need the dnf configuration manager to check and modify configuration
+# The package is first installed inside the target userspace container
+# Than we ensure the rpm will be present after the upgrade transaction.
+Requires:   dnf-command(config-manager)
+
 %description -n %{lrdname}
 %{summary}
 
@@ -74,6 +79,7 @@ Requires:   python2-requests
 Requires:   python3-six
 Requires:   python3-setuptools
 Requires:   python3-requests
+
 
 %description -n %{ldname}
 %{summary}

@@ -2,7 +2,7 @@
 %global repositorydir %{leapp_datadir}/repositories
 %global custom_repositorydir %{leapp_datadir}/custom-repositories
 
-%define leapp_repo_deps  5
+%define leapp_repo_deps  6
 
 %if 0%{?rhel} == 7
     %define leapp_python_sitelib %{python2_sitelib}
