@@ -184,7 +184,7 @@ def test_consume_data(monkeypatch, raised, no_rhsm, testdata):
     # do not write never into testdata inside the test !!
     xfs = testdata.xfs
     custom_repofiles = testdata.custom_repofiles
-    _exp_pkgs = {'dnf'}
+    _exp_pkgs = {'dnf', 'dnf-command(config-manager)'}
     _exp_files = []
 
     def _get_pkgs(msg):
@@ -315,7 +315,7 @@ def test_gather_target_repositories_required_not_available(monkeypatch):
 
 
 def mocked_consume_data():
-    packages = {'dnf', 'pkgA', 'pkgB'}
+    packages = {'dnf', 'dnf-command(config-manager)', 'pkgA', 'pkgB'}
     rhsm_info = _RHSMINFO_MSG
     rhui_info = _RHUIINFO_MSG
     xfs_info = models.XFSPresence()
