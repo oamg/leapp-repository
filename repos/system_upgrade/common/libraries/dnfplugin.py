@@ -5,7 +5,7 @@ import os
 import shutil
 
 from leapp.exceptions import StopActorExecutionError
-from leapp.libraries.common import guards, mounting, overlaygen, rhsm, utils
+from leapp.libraries.common import dnfconfig, guards, mounting, overlaygen, rhsm, utils
 from leapp.libraries.common.config.version import get_target_major_version, get_source_major_version
 from leapp.libraries.stdlib import CalledProcessError, api, config
 
@@ -292,12 +292,22 @@ def perform_transaction_install(target_userspace_info, storage_info, used_repos,
         # communicate with udev
         cmd_prefix = ['nsenter', '--ipc=/installroot/proc/1/ns/ipc']
 
+        # we have to ensure the leapp packages will stay untouched
+        # Note: this is the most probably duplicate action - it should be already
+        # set like that, however seatbelt is a good thing.
+        dnfconfig.exclude_leapp_rpms(context)
+
         if get_target_major_version() == '9':
             _rebuild_rpm_db(context, root='/installroot')
         _transaction(
             context=context, stage='upgrade', target_repoids=target_repoids, plugin_info=plugin_info, tasks=tasks,
             cmd_prefix=cmd_prefix
         )
+
+        # we have to ensure the leapp packages will stay untouched even after the
+        # upgrade is fully finished (it cannot be done before the upgarde
+        # on the host as the config-manager plugin is available since rhel-8)
+        dnfconfig.exclude_leapp_rpms(mounting.NotIsolatedActions(base_dir='/'))
 
 
 def perform_transaction_check(target_userspace_info, used_repos, tasks, xfs_info, storage_info, plugin_info):
@@ -311,6 +321,7 @@ def perform_transaction_check(target_userspace_info, used_repos, tasks, xfs_info
                                               xfs_info=xfs_info, storage_info=storage_info,
                                               mount_target=os.path.join(context.base_dir, 'installroot')) as overlay:
             _apply_yum_workaround(overlay.nspawn())
+            dnfconfig.exclude_leapp_rpms(context)
             _transaction(
                 context=context, stage='check', target_repoids=target_repoids, plugin_info=plugin_info, tasks=tasks
             )
@@ -327,6 +338,7 @@ def perform_rpm_download(target_userspace_info, used_repos, tasks, xfs_info, sto
                                               xfs_info=xfs_info, storage_info=storage_info,
                                               mount_target=os.path.join(context.base_dir, 'installroot')) as overlay:
             _apply_yum_workaround(overlay.nspawn())
+            dnfconfig.exclude_leapp_rpms(context)
             _transaction(
                 context=context, stage='download', target_repoids=target_repoids, plugin_info=plugin_info, tasks=tasks,
                 test=True, on_aws=on_aws
