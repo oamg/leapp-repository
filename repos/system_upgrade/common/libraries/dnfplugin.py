@@ -242,7 +242,11 @@ def install_initramdisk_requirements(packages, target_userspace_info, used_repos
             cmd.append('-v')
         if rhsm.skip_rhsm():
             cmd += ['--disableplugin', 'subscription-manager']
-        context.call(cmd)
+        env = {}
+        if get_target_major_version() == '9':
+            # allow handling new RHEL 9 syscalls by systemd-nspawn
+            env = {'SYSTEMD_SECCOMP': '0'}
+        context.call(cmd, env=env)
 
 
 def perform_transaction_install(target_userspace_info, storage_info, used_repos, tasks, plugin_info):
