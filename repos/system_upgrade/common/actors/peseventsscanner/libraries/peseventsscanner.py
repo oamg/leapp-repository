@@ -423,8 +423,8 @@ def get_installed_event_pkgs(event_pkgs, installed_pkgs):
     """
     Get those event's "in" or "out" packages which are already installed.
 
-    Even though we don't want to install the already installed pkgs, to be able to upgrade them to
-    their target RHEL major version. We need to know in which repos they are and enable such repos.
+    Even though we don't want to install the already installed pkgs, in order to be able to upgrade
+    them to their target RHEL major version we need to know in which repos they are and enable such repos.
     """
     return {k: v for k, v in event_pkgs.items() if k in installed_pkgs}
 

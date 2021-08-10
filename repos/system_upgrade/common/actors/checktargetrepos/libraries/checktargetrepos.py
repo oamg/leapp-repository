@@ -2,6 +2,7 @@ from leapp.models import CustomTargetRepositoryFile, TargetRepositories, RHUIInf
 from leapp.libraries.stdlib import api
 from leapp import reporting
 from leapp.libraries.common import config, rhsm
+from leapp.libraries.common.config.version import get_target_major_version
 
 
 # TODO: we need to provide this path in a shared library
@@ -26,12 +27,8 @@ def _the_enablerepo_option_used():
     return config.get_env('LEAPP_ENABLE_REPOS', None) is not None
 
 
-def _get_target_major_version():
-    return api.current_actor().configuration.version.target.split('.')[0]
-
-
 def process():
-    target_major_version = _get_target_major_version()
+    target_major_version = get_target_major_version()
 
     if target_major_version == '8':
         ipu_doc_url = (

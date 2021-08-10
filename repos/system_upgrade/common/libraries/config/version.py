@@ -18,12 +18,45 @@ _SUPPORTED_VERSIONS = {
 }
 
 
+def get_major_version(version):
+    """
+    Return the major version from the given version string.
+
+    Versioning schema: MAJOR.MINOR.PATCH
+    It doesn't matter how many dots are present. Everything until the first dot is returned. E.g.:
+       8.1.0 => 8
+       7.9   => 7
+       7     => 7
+
+    :param str version: The version string according to the versioning schema described.
+    :rtype: str
+    :returns: The major version from the given version string.
+    """
+    return version.split('.')[0]
+
+
 def get_source_major_version():
-    return api.current_actor().configuration.version.source.split('.')[0]
+    """
+    Return the major version of the source (original) system.
+
+    For more details about about the versioning schema see :func:`get_major_version`.
+
+    :rtype: str
+    :returns: The major version of the source system.
+    """
+    return get_major_version(api.current_actor().configuration.version.source)
 
 
 def get_target_major_version():
-    return api.current_actor().configuration.version.target.split('.')[0]
+    """
+    Return the major version of the target system.
+
+    For more details about about the versioning schema see :func:`get_major_version`.
+
+    :rtype: str
+    :returns: The major version of the target system.
+    """
+    return get_major_version(api.current_actor().configuration.version.target)
 
 
 class _SupportedVersionsDict(dict):

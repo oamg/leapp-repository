@@ -13,11 +13,11 @@ class RepositoryMap(Model):
     topic = TransactionTopic
 
     from_repoid = fields.String()
-    """source RHEL repoid as present in the Red Hat CDN"""
+    """Source RHEL repoid as present in the Red Hat CDN"""
     to_repoid = fields.String()
-    """target RHEL repoid as present in the Red Hat CDN"""
+    """Target RHEL repoid as present in the Red Hat CDN"""
     to_pes_repo = fields.String()
-    """target RHEL repo name as used in the Package Evolution Service database"""
+    """Target RHEL repo name as used in the Package Evolution Service database"""
     from_minor_version = fields.String()
     """To which source RHEL minor versions the mapping relates to"""
     to_minor_version = fields.String()

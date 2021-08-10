@@ -120,7 +120,7 @@ class RequiredTargetUserspacePackages(Model):
 @deprecated(since='2021-04-01', message='Replaced by TargetUserSpaceInitrdEnvTasks')
 class RequiredUpgradeInitramPackages(Model):
     """
-    Requests packages to be installed that the leapp upgrade dracut image generation will succeed
+    Requests packages to be installed so that the leapp upgrade dracut image generation will succeed
     """
     topic = BootPrepTopic
 

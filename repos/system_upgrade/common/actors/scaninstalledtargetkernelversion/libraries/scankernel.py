@@ -1,4 +1,4 @@
-from leapp.libraries.common.config.version import is_rhel_realtime
+from leapp.libraries.common.config.version import get_target_major_version, is_rhel_realtime
 from leapp.libraries.stdlib import api, CalledProcessError, run
 from leapp.models import InstalledTargetKernelVersion
 
@@ -9,12 +9,10 @@ def _get_kernel_version(kernel_name):
     except CalledProcessError:
         return ''
 
-    target_major_version = api.current_actor().configuration.version.target.split('.')[0]
-
     for kernel in kernels:
         # name-version-release - we want the last two fields only
         version = '-'.join(kernel.split('-')[-2:])
-        if 'el{}'.format(target_major_version) in version:
+        if 'el{}'.format(get_target_major_version()) in version:
             return version
     return ''
 
