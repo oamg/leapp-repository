@@ -1,4 +1,5 @@
 from leapp.libraries.common import config, mounting, rhsm
+from leapp.libraries.common.config.version import get_target_major_version
 from leapp.libraries.stdlib import CalledProcessError, api, run
 from leapp.models import UsedTargetRepositories
 
@@ -18,7 +19,7 @@ def set_rhsm_release():
     except CalledProcessError as err:
         api.current_logger().warning('Unable to set the {0} release through subscription-manager. When using dnf,'
                                      ' content of the latest RHEL {1} minor version will be downloaded.\n{2}'
-                                     .format(target_version, target_version.split('.')[0], str(err)))
+                                     .format(target_version, get_target_major_version(), str(err)))
 
 
 def enable_rhsm_repos():

@@ -14,6 +14,7 @@ from leapp.libraries.common import (
     utils,
 )
 from leapp.libraries.common.config import get_product_type, get_env
+from leapp.libraries.common.config.version import get_target_major_version
 from leapp.libraries.stdlib import CalledProcessError, api, config, run
 from leapp.models import (
     CustomTargetRepositoryFile,
@@ -125,7 +126,7 @@ def prepare_target_userspace(context, userspace_dir, enabled_repos, packages):
     """
     Implement the creation of the target userspace.
     """
-    target_major_version = api.current_actor().configuration.version.target.split('.')[0]
+    target_major_version = get_target_major_version()
     run(['rm', '-rf', userspace_dir])
     _create_target_userspace_directories(userspace_dir)
     with mounting.BindMount(
@@ -298,7 +299,7 @@ def _get_all_available_repoids(context):
 
 
 def _get_rhsm_available_repoids(context):
-    target_major_version = api.current_actor().configuration.version.target.split('.')[0]
+    target_major_version = get_target_major_version()
     # FIXME: check that required repo IDs (baseos, appstream)
     # + or check that all required RHEL repo IDs are available.
     if rhsm.skip_rhsm():
@@ -494,8 +495,7 @@ def _copy_files(context, files):
 
 
 def _get_target_userspace():
-    target_major_version = api.current_actor().configuration.version.target.split('.')[0]
-    return constants.TARGET_USERSPACE.format(target_major_version)
+    return constants.TARGET_USERSPACE.format(get_target_major_version())
 
 
 def _create_target_userspace(context, packages, files, target_repoids):
