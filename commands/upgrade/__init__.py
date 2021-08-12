@@ -78,6 +78,10 @@ def upgrade(args):
     with beautify_actor_exception():
         logger.info("Using answerfile at %s", answerfile_path)
         workflow.load_answers(answerfile_path, userchoices_path)
+
+        # Set the locale, so that the actors parsing command outputs that might be localized will not fail
+        os.environ['LC_ALL'] = 'en_US.UTF-8'
+        os.environ['LANG'] = 'en_US.UTF-8'
         workflow.run(context=context, skip_phases_until=skip_phases_until, skip_dialogs=True,
                      only_with_tags=only_with_tags)
 

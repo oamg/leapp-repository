@@ -50,6 +50,10 @@ def preupgrade(args):
         workflow.load_answers(answerfile_path, userchoices_path)
         until_phase = 'ReportsPhase'
         logger.info('Executing workflow until phase: %s', until_phase)
+
+        # Set the locale, so that the actors parsing command outputs that might be localized will not fail
+        os.environ['LC_ALL'] = 'en_US.UTF-8'
+        os.environ['LANG'] = 'en_US.UTF-8'
         workflow.run(context=context, until_phase=until_phase, skip_dialogs=True)
 
     logger.info("Answerfile will be created at %s", answerfile_path)
