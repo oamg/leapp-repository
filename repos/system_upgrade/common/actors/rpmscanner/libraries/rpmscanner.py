@@ -47,6 +47,8 @@ def _get_package_repository_data_dnf():
     pkg_repos = {}
 
     try:
+        # NOTE: currently we do not initialize/load DNF plugins here as we are
+        # working just with the local stuff (load_system_repo=True)
         dnf_base.fill_sack(load_system_repo=True, load_available_repos=False)
         for pkg in dnf_base.sack.query():
             pkg_repos[pkg.name] = pkg._from_repo.lstrip('@')
@@ -85,7 +87,11 @@ def get_modules():
         return []
 
     base = dnf.Base()
+    base.init_plugins()
     base.read_all_repos()
+    # e.g. the amazon-id plugin requires loaded repositories
+    # for the proper configuration.
+    base.configure_plugins()
     base.fill_sack()
 
     module_base = dnf.module.module_base.ModuleBase(base)
