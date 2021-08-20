@@ -11,7 +11,7 @@ jobs:
     name: Run tmt tests on Testing Farm service
     if: |
       github.event.issue.pull_request
-      && github.event.comment.body == '/rerun'
+      && startsWith(github.event.comment.body, '/rerun')
       && contains(fromJson('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)
     runs-on: ubuntu-20.04
     steps:
@@ -67,23 +67,71 @@ jobs:
               body: 'Copr build succeeded: ${{ steps.copr_build.outputs.copr_url }}'
             })
 
-      - name: Schedule a tmt test
-        # This step schedules a tmt test. The test id is stored in `req_id` variable for a later use.
+      - name: Get dependent leapp pr number from rerun comment
+        uses: actions-ecosystem/action-regex-match@v2
+        id: leapp_pr_regex_match
+        with:
+          text: ${{ github.event.comment.body }}
+          regex: '^/rerun\s+([0-9]+)\s*$'
 
-        # TODO: The actual command that triggers a new test on TF service is commented out as it would fail, because
-        #       there are no tmt plans ready in the repository.
+      - name: If leapp_pr was specified in the comment - trigger copr build
+        # TODO: XXX FIXME This should schedule copr build for leapp but for now it will be just setting an env var
+        id: leapp_pr
+        if: ${{ steps.leapp_pr_regex_match.outputs.match != '' }}
+        run: |
+          echo "::set-output name=leapp_pr::${{ steps.leapp_pr_regex_match.outputs.group1 }}"
 
-        # Information about the repo/ref/sha from which the action was triggered is sent in the
-        # `environments.variables` field.
+      - name: Checkout
+        id: checkout_leapp
+        if: ${{ steps.leapp_pr_regex_match.outputs.match != '' }}
+        uses: actions/checkout@v2
+        with:
+          repository: "oamg/leapp"
+          ref: "refs/pull/${{ steps.leapp_pr.outputs.leapp_pr }}/head"
 
-        # All the discovered test plans from the repository specified in `tests.fmf.url` are run.
-        # It should be possible to specify which test plan to run as specified in `test.fmf.name`, however this is not
-        # working at this moment, see https://gitlab.com/testing-farm/general/-/issues/18
-        #
-        # At this moment repo/sha that triggered the action is used, i.e. all tests plans specified in THIS repository
-        # are run.
+      - name: Get ref and sha
+        id: ref_sha_leapp
+        if: ${{ steps.leapp_pr_regex_match.outputs.match != '' }}
+        run: |
+          echo "::set-output name=sha::$(git rev-parse --short HEAD)"
+          echo "::set-output name=ref::refs/pull/${{ steps.leapp_pr.outputs.leapp_pr }}/head"
 
-        id: sched_test
+      - name: Trigger copr build
+        id: copr_build_leapp
+        if: ${{ steps.leapp_pr_regex_match.outputs.match != '' }}
+        run: |
+          cat << EOF > copr_fedora.conf
+          [copr-cli]
+          login = ${{ secrets.FEDORA_COPR_LOGIN }}
+          username = @oamg
+          token = ${{ secrets.FEDORA_COPR_TOKEN }}
+          copr_url = https://copr.fedorainfracloud.org
+          # expiration date: 2030-07-04
+          EOF
+
+          pip install copr-cli
+          PR=${{ steps.leapp_pr.outputs.leapp_pr }} COPR_CONFIG=copr_fedora.conf make copr_build | tee copr.log
+
+          COPR_URL=$(grep -Po 'https://copr.fedorainfracloud.org/coprs/build/\d+' copr.log)
+          echo "::set-output name=copr_url::${COPR_URL}"
+          echo "::set-output name=copr_id::${COPR_URL##*/}"
+
+      - name: Add comment with copr build url
+        # TODO: Create comment when copr build fails.
+        id: link_copr_leapp
+        if: ${{ steps.leapp_pr_regex_match.outputs.match != '' }}
+        uses: actions/github-script@v4
+        with:
+          script: |
+            github.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: 'Copr build succeeded: ${{ steps.copr_build_leapp.outputs.copr_url }}'
+            })
+
+      - name: Generate a tmt test request
+        id: gen_tmt_request
         run: |
           cat << EOF > request.json
           {
@@ -96,13 +144,7 @@ jobs:
             "environments": [{
               "arch": "x86_64",
               "os": {"compose": "RHEL-7.9-updates-20210629.0"},
-              "artifacts": [{"type": "fedora-copr-build", "id": "${{ steps.copr_build.outputs.copr_id }}:epel-7-x86_64"}],
-              "variables": {
-                "REPO": "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY",
-                "REF": "${{ steps.ref_sha.outputs.ref }}",
-                "SHA": "${{ steps.ref_sha.outputs.sha }}",
-                "PR_NUMBER": "${{ steps.pr_nr.outputs.pr_nr }}"
-              }
+              "artifacts": [{"type": "fedora-copr-build", "id": "${{ steps.copr_build.outputs.copr_id }}:epel-7-x86_64"}]
             }]
           }
           EOF
@@ -112,6 +154,24 @@ jobs:
               jq < request.json
           fi
 
+      - name: Add information about dependent leapp artifact to the tft request
+        id: amend_tmt_request
+        if: ${{ steps.leapp_pr_regex_match.outputs.match != '' }}
+        run: |
+          jq '.environments[0].artifacts += [{"type": "fedora-copr-build", "id": "${{ steps.copr_build_leapp.outputs.copr_id }}:epel-7-x86_64"}]' < request.json > request_updated.json
+          mv request_updated.json request.json
+
+      - name: Send request to testing farm service
+        # This step schedules a tmt test. The test id is stored in `req_id` variable for a later use.
+
+        # All the discovered test plans matching the regex `tests.fmf.name` from the repository specified in
+        # `tests.fmf.url` are run.
+        #
+        # At this moment repo/sha that triggered the action is used, i.e. all tests plans specified in THIS repository
+        # are run.
+
+        id: sched_test
+        run: |
           curl ${{ secrets.TF_ENDPOINT }}/requests \
             --data @request.json \
             --header "Content-Type: application/json" \
