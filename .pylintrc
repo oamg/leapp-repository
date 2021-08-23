@@ -22,6 +22,7 @@ disable=
  unsubscriptable-object,
  unused-argument,
  unused-import,
+ unspecified-encoding,
 # "C" Coding convention violations
  bad-continuation,
  missing-docstring,
@@ -37,6 +38,8 @@ disable=
  too-many-locals,
  too-many-statements,
  consider-using-from-import,
+ use-list-literal,
+ use-dict-literal,
 # new for python3 version of pylint
  useless-object-inheritance,
  consider-using-set-comprehension,  # pylint3 force to use comprehension in place we don't want (py2 doesnt have these options, for inline skip)
