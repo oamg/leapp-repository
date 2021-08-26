@@ -25,21 +25,21 @@ class CheckNfs(Actor):
         for storage in self.consume(StorageInfo):
             # Check fstab
             for fstab in storage.fstab:
-                if fstab.fs_vfstype == "nfs":
+                if fstab.fs_vfstype.startswith("nfs"):
                     nfs_found = True
                     details += "- One or more NFS entries in /etc/fstab\n"
                     break
 
             # Check mount
             for mount in storage.mount:
-                if mount.tp == "nfs":
+                if mount.tp.startswith("nfs"):
                     nfs_found = True
                     details += "- Currently mounted NFS shares\n"
                     break
 
             # Check systemd-mount
             for systemdmount in storage.systemdmount:
-                if systemdmount.fs_type == "nfs":
+                if systemdmount.fs_type.startswith("nfs"):
                     nfs_found = True
                     details += "- One or more configured NFS mounts in systemd-mount\n"
                     break

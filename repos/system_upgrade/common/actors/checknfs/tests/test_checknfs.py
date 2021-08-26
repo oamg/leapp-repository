@@ -1,11 +1,14 @@
+import pytest
+
 from leapp.snactor.fixture import current_actor_context
 from leapp.models import StorageInfo, SystemdMountEntry, FstabEntry, MountEntry
 from leapp.reporting import Report
 
 
-def test_actor_with_systemdmount_entry(current_actor_context):
+@pytest.mark.parametrize('nfs_fstype', ('nfs', 'nfs4'))
+def test_actor_with_systemdmount_entry(current_actor_context, nfs_fstype):
     with_systemdmount_entry = [SystemdMountEntry(node="nfs", path="n/a", model="n/a",
-                                                 wwn="n/a", fs_type="nfs", label="n/a",
+                                                 wwn="n/a", fs_type=nfs_fstype, label="n/a",
                                                  uuid="n/a")]
     current_actor_context.feed(StorageInfo(systemdmount=with_systemdmount_entry))
     current_actor_context.run()
@@ -25,9 +28,10 @@ def test_actor_without_systemdmount_entry(current_actor_context):
     assert not current_actor_context.consume(Report)
 
 
-def test_actor_with_fstab_entry(current_actor_context):
+@pytest.mark.parametrize('nfs_fstype', ('nfs', 'nfs4'))
+def test_actor_with_fstab_entry(current_actor_context, nfs_fstype):
     with_fstab_entry = [FstabEntry(fs_spec="lithium:/mnt/data", fs_file="/mnt/data",
-                                   fs_vfstype="nfs",
+                                   fs_vfstype=nfs_fstype,
                                    fs_mntops="noauto,noatime,rsize=32768,wsize=32768",
                                    fs_freq="0", fs_passno="0")]
     current_actor_context.feed(StorageInfo(fstab=with_fstab_entry))
@@ -46,8 +50,9 @@ def test_actor_without_fstab_entry(current_actor_context):
     assert not current_actor_context.consume(Report)
 
 
-def test_actor_with_mount_share(current_actor_context):
-    with_mount_share = [MountEntry(name="nfs", mount="/mnt/data", tp="nfs",
+@pytest.mark.parametrize('nfs_fstype', ('nfs', 'nfs4'))
+def test_actor_with_mount_share(current_actor_context, nfs_fstype):
+    with_mount_share = [MountEntry(name="nfs", mount="/mnt/data", tp=nfs_fstype,
                                    options="rw,nosuid,nodev,relatime,user_id=1000,group_id=1000")]
     current_actor_context.feed(StorageInfo(mount=with_mount_share))
     current_actor_context.run()
