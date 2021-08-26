@@ -1,4 +1,7 @@
 import os
+import functools
+
+import pyudev
 
 from leapp import reporting
 from leapp.libraries.actor import storagescanner
@@ -6,6 +9,7 @@ from leapp.libraries.common.testutils import create_report_mocked, logger_mocked
 from leapp.libraries.stdlib import api
 from leapp.models import (FstabEntry, LsblkEntry, LvdisplayEntry, MountEntry, PartitionEntry, PvsEntry,
                           SystemdMountEntry, VgsEntry, )
+
 
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -366,31 +370,65 @@ def test_get_lvdisplay_info(monkeypatch):
 
 
 def test_get_systemd_mount_info(monkeypatch):
-    def get_cmd_output_mocked(cmd, delim, expected_len):
-        return [
-            ['/dev/dm-1',
-             'n/a',
-             'n/a',
-             'n/a',
-             'ext4',
-             'n/a',
-             'bec30ca5-5403-4c23-ae6e-cb2a911bc076'],
-            ['/dev/dm-3',
-             'n/a',
-             'n/a',
-             'n/a',
-             'ext4',
-             'n/a',
-             'd6eaf17d-e2a9-4e8d-bb54-a89c18923ea2'],
-            ['/dev/sda1',
-             'pci-0000:00:17.0-ata-2',
-             'LITEON_LCH-256V2S',
-             '0x5002303100d82b06',
-             'ext4',
-             'n/a',
-             'c3890bf3-9273-4877-ad1f-68144e1eb858']]
 
-    monkeypatch.setattr(storagescanner, '_get_cmd_output', get_cmd_output_mocked)
+    class UdevDeviceMocked(object):
+        def __init__(self, device_node, path, model, wwn, fs_type, label, uuid):
+            self.device_node = device_node
+            # Simulate udev device attributes that should be queried
+            self.device_attributes = {
+                'ID_PATH': path,
+                'ID_MODEL': model,
+                'ID_WWN': wwn,
+                'ID_FS_TYPE': fs_type,
+                'ID_FS_LABEL': label,
+                'ID_FS_UUID': uuid,
+            }
+
+        def get(self, attribute, default=None):
+            if attribute not in self.device_attributes:
+                raise KeyError('Actor tried to query an udev device attribute that is not a part of the mocks.')
+
+            if self.device_attributes[attribute] is None:
+                return default
+
+            return self.device_attributes[attribute]
+
+    class UdevContextMocked(object):
+        def __init__(self, mocked_devices):
+            self.mocked_devices = mocked_devices
+
+        def list_devices(self, **dummy_kwargs):
+            return self.mocked_devices
+
+    mocked_block_devices = [
+        UdevDeviceMocked(
+            device_node='/dev/dm-1',
+            path=None,
+            model=None,
+            wwn=None,
+            fs_type='ext4',
+            label=None,
+            uuid='bec30ca5-5403-4c23-ae6e-cb2a911bc076'),
+        UdevDeviceMocked(
+            device_node='/dev/dm-3',
+            path=None,
+            model=None,
+            wwn=None,
+            fs_type='ext4',
+            label=None,
+            uuid='d6eaf17d-e2a9-4e8d-bb54-a89c18923ea2'),
+        UdevDeviceMocked(
+            device_node='/dev/sda1',
+            path='pci-0000:00:17.0-ata-2',
+            model='LITEON_LCH-256V2S',
+            wwn='0x5002303100d82b06',
+            fs_type='ext4',
+            label=None,
+            uuid='c3890bf3-9273-4877-ad1f-68144e1eb858')]
+
+    # Partially apply mocked_block_devices to the UdevContextMocked, so that it
+    # is OK to initialize it with no arguments (same as original Context)
+    monkeypatch.setattr(pyudev, 'Context', functools.partial(UdevContextMocked, mocked_block_devices))
     expected = [
         SystemdMountEntry(
             node='/dev/dm-1',
