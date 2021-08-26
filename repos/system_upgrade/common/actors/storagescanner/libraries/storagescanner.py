@@ -2,6 +2,7 @@ import os
 import subprocess
 import functools
 
+import pyudev
 
 from leapp.models import StorageInfo, PartitionEntry, FstabEntry, MountEntry, LsblkEntry, \
     PvsEntry, VgsEntry, LvdisplayEntry, SystemdMountEntry
@@ -219,22 +220,26 @@ def _get_lvdisplay_info():
 
 @aslist
 def _get_systemd_mount_info():
-    """ Collect storage info from systemd-mount command """
-    for entry in _get_cmd_output(['systemd-mount', '--list'], ' ', 7):
-        # We need to filter the entry because there is a ton of whitespace.
-        node, path, model, wwn, fs_type, label, uuid = [x for x in entry if x != '']
-        if node == "NODE":
-            # First row of the "systemd-mount --list" output is a header.
-            # Just skip it.
-            continue
+    """
+    Collect the same storage info as provided by the systemd-mount command.
+
+    The actual implementation no longer relies on calling the systemd-mount, but rather collects the same information
+    from udev directly using pyudev. The systemd-mount output parsing has proved not to be unreliable due to
+    its tabular format.
+    """
+    ctx = pyudev.Context()
+    # Filter the devices in the same way `systemd-mount --list` does
+    for device in ctx.list_devices(subsystem='block', ID_FS_USAGE='filesystem'):
+        # Use 'n/a' to provide the same value for unknown output fields same way the systemd-mount does
         yield SystemdMountEntry(
-            node=node,
-            path=path,
-            model=model,
-            wwn=wwn,
-            fs_type=fs_type,
-            label=label,
-            uuid=uuid)
+            node=device.device_node,
+            path=device.get('ID_PATH', default='n/a'),
+            model=device.get('ID_MODEL', default='n/a'),
+            wwn=device.get('ID_WWN', default='n/a'),
+            fs_type=device.get('ID_FS_TYPE', default='n/a'),
+            label=device.get('ID_FS_LABEL', default='n/a'),
+            uuid=device.get('ID_FS_UUID', default='n/a')
+        )
 
 
 def get_storage_info():
