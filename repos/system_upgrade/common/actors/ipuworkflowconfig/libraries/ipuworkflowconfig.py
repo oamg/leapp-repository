@@ -25,7 +25,7 @@ upgrade_paths_map = {
     # expected upgrade paths for RHEL 7
     ('7.6', LEAPP_UPGRADE_FLAVOUR_DEFAULT): '8.4',
     ('7.9', LEAPP_UPGRADE_FLAVOUR_DEFAULT): '8.4',
-    ('7.7', LEAPP_UPGRADE_FLAVOUR_SAP_HANA): '8.2',
+    ('7.9', LEAPP_UPGRADE_FLAVOUR_SAP_HANA): '8.4',
 
     # expected upgrade paths for RHEL 8
     ('8.6', LEAPP_UPGRADE_FLAVOUR_DEFAULT): '9.0',
