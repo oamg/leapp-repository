@@ -1,0 +1,19 @@
+from leapp.models import Model, fields
+from leapp.topics import SystemInfoTopic
+
+
+class PkgManagerInfo(Model):
+    """
+    Package manager (yum/dnf) related info
+
+    We expect to have only one single message of this kind produced
+    """
+    topic = SystemInfoTopic
+
+    etc_releasever = fields.Nullable(fields.String())
+    """
+    Contain the first line of /etc/{yum,dnf}/vars/releasever file or None if the file does not exist.
+
+    In case the value is empty string, it means the file exists but it is empty. In such a case the
+    original configuration is obviously broken.
+    """
