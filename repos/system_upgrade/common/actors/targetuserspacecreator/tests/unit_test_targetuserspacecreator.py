@@ -3,7 +3,7 @@ from collections import namedtuple
 
 import pytest
 
-from leapp import models
+from leapp import models, reporting
 from leapp.exceptions import StopActorExecution, StopActorExecutionError
 from leapp.libraries.actor import userspacegen
 from leapp.libraries.common import overlaygen, repofileutils, rhsm
@@ -213,6 +213,7 @@ def test_consume_data(monkeypatch, raised, no_rhsm, testdata):
                                    xfs,
                                    testdata.storage,
                                    custom_repofiles)
+
     monkeypatch.setattr(userspacegen.api, 'consume', mocked_consume)
     monkeypatch.setattr(userspacegen.api, 'current_logger', logger_mocked())
     monkeypatch.setattr(userspacegen.api, 'current_actor', CurrentActorMocked(envars={'LEAPP_NO_RHSM': no_rhsm}))
@@ -260,12 +261,18 @@ def test_gather_target_repositories(monkeypatch):
 
 def test_gather_target_repositories_none_available(monkeypatch):
 
+    mocked_produce = produce_mocked()
     monkeypatch.setattr(userspacegen.api, 'current_actor', CurrentActorMocked())
+    monkeypatch.setattr(userspacegen.api.current_actor(), 'produce', mocked_produce)
     monkeypatch.setattr(rhsm, 'get_available_repo_ids', lambda x: [])
     monkeypatch.setattr(rhsm, 'skip_rhsm', lambda: False)
-    with pytest.raises(StopActorExecutionError) as err:
+    with pytest.raises(StopActorExecution):
         userspacegen.gather_target_repositories(None, None)
-    assert "Cannot find required basic RHEL 8 repositories" in str(err)
+        assert mocked_produce.called
+        reports = [m.report for m in mocked_produce.model_instances if isinstance(m, reporting.Report)]
+        inhibitors = [m for m in reports if 'INHIBITOR' in m.get('flags', ())]
+        assert len(inhibitors) == 1
+        assert inhibitors[0].get('title', '') == 'Cannot find required basic RHEL target repositories.'
 
 
 def test_gather_target_repositories_rhui(monkeypatch):
@@ -299,7 +306,9 @@ def test_gather_target_repositories_required_not_available(monkeypatch):
     # If the repos that Leapp identifies as required for the upgrade (based on the repo mapping and PES data) are not
     # available, an exception shall be raised
 
+    mocked_produce = produce_mocked()
     monkeypatch.setattr(userspacegen.api, 'current_actor', CurrentActorMocked())
+    monkeypatch.setattr(userspacegen.api.current_actor(), 'produce', mocked_produce)
     # The available RHSM repos
     monkeypatch.setattr(rhsm, 'get_available_repo_ids', lambda x: ['repoidA', 'repoidB', 'repoidC'])
     monkeypatch.setattr(rhsm, 'skip_rhsm', lambda: False)
@@ -309,9 +318,13 @@ def test_gather_target_repositories_required_not_available(monkeypatch):
                     models.RHELTargetRepository(repoid='repoidY')],
         custom_repos=[models.CustomTargetRepository(repoid='repoidCustom')])]))
 
-    with pytest.raises(StopActorExecutionError) as err:
+    with pytest.raises(StopActorExecution):
         userspacegen.gather_target_repositories(None)
-    assert "Cannot find required basic RHEL 8 repositories" in str(err)
+        assert mocked_produce.called
+        reports = [m.report for m in mocked_produce.model_instances if isinstance(m, reporting.Report)]
+        inhibitors = [m for m in reports if 'INHIBITOR' in m.get('flags', ())]
+        assert len(inhibitors) == 1
+        assert inhibitors[0].get('title', '') == 'Cannot find required basic RHEL target repositories.'
 
 
 def mocked_consume_data():

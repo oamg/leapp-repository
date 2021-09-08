@@ -315,21 +315,29 @@ def _get_product_certificate_path():
 
     cert_path = os.path.join(certs_dir, target_version, cert)
     if not os.path.isfile(cert_path):
-        details = {'missing certificate': cert, 'path': cert_path}
+        additional_summary = ''
         if target_product_type != 'ga':
-            details['hint'] = (
-                'You chose to upgrade to beta system but probably'
-                ' chose version for which beta certificates are not'
-                ' attached (e.g. because the GA has been released already).'
-                ' Set the target os version for which the {} certificate'
-                ' is provided using the LEAPP_DEVEL_TARGET_RELEASE envar.'
-                .format(cert)
+            additional_summary = (
+                ' This can happen when upgrading a beta system and the chosen target version does not have'
+                ' beta certificates attached (for example, because the GA has been released already).'
+
             )
-            details['search cmd'] = 'find {} | grep {}'.format(certs_dir, cert)
-        raise StopActorExecutionError(
-            message='Cannot find the product certificate file for the chosen target system.',
-            details=details
-        )
+
+        reporting.create_report([
+            reporting.Title('Cannot find the product certificate file for the chosen target system.'),
+            reporting.Summary(
+                'Expected certificate: {cert} with path {path} but it could not be found.{additional}'.format(
+                    cert=cert, path=cert_path, additional=additional_summary)
+            ),
+            reporting.Tags([reporting.Tags.REPOSITORY]),
+            reporting.Flags([reporting.Flags.INHIBITOR]),
+            reporting.Remediation(hint=(
+                'Set the corresponding target os version in the LEAPP_DEVEL_TARGET_RELEASE environment variable for'
+                'which the {cert} certificate is provided'.format(cert=cert)
+            )),
+        ])
+        raise StopActorExecution()
+
     return cert_path
 
 
@@ -414,19 +422,31 @@ def _get_rhsm_available_repoids(context):
     #
     repoids = rhsm.get_available_repo_ids(context)
     if not repoids or len(repoids) < 2:
-        raise StopActorExecutionError(
-            message='Cannot find required basic RHEL {} repositories.'.format(target_major_version),
-            details={
-                'hint': ('It is required to have RHEL repositories on the system'
-                         ' provided by the subscription-manager unless the --no-rhsm'
-                         ' options is specified. Possibly you'
-                         ' are missing a valid SKU for the target system or network'
-                         ' connection failed. Check whether your system is attached'
-                         ' to a valid SKU providing RHEL {} repositories.'
-                         ' In case the Satellite is used, read the upgrade documentation'
-                         ' to setup the satellite and the system properly.'.format(target_major_version))
-            }
-        )
+        reporting.create_report([
+            reporting.Title('Cannot find required basic RHEL target repositories.'),
+            reporting.Summary(
+                'This can happen when a repository ID was entered incorrectly either while using the --enablerepo'
+                ' option of leapp or in a third party actor that produces a CustomTargetRepositoryMessage.'
+            ),
+            reporting.Tags([reporting.Tags.REPOSITORY]),
+            reporting.Flags([reporting.Flags.INHIBITOR]),
+            reporting.Remediation(hint=(
+                'It is required to have RHEL repositories on the system'
+                ' provided by the subscription-manager unless the --no-rhsm'
+                ' option is specified. You might be missing a valid SKU for'
+                ' the target system or have a failed network connection.'
+                ' Check whether your system is attached to a valid SKU that is'
+                ' providing RHEL {} repositories.'
+                ' If you are using Red Hat Satellite, read the upgrade documentation'
+                ' to set up Satellite and the system properly.'
+
+            ).format(target_major_version)),
+            reporting.ExternalLink(
+                # TODO: How to handle different documentation links for each version?
+                url='https://red.ht/preparing-for-upgrade-to-rhel8',
+                title='Preparing for the upgrade')
+            ])
+        raise StopActorExecution()
     return set(repoids)
 
 
@@ -507,36 +527,57 @@ def gather_target_repositories(context, indata):
                 missing_custom_repoids.append(custom_repo.repoid)
     api.current_logger().debug("Gathered target repositories: {}".format(', '.join(target_repoids)))
     if not target_repoids:
-        raise StopActorExecutionError(
-            message='There are no enabled target repositories for the upgrade process to proceed.',
-            details={'hint': (
-                'Ensure your system is correctly registered with the subscription manager and that'
-                ' your current subscription is entitled to install the requested target version {version}.'
-                ' In case the --no-rhsm option (or the LEAPP_NO_RHSM=1 environment variable is set)'
-                ' ensure the custom repository file is provided regarding the documentation with'
-                ' properly defined repositories or in case repositories are already defined'
-                ' in any repofiles under /etc/yum.repos.d/ directory, use the --enablerepo option'
-                ' for leapp. Also make sure "/etc/leapp/files/repomap.csv" file is up-to-date.'
-                ).format(version=api.current_actor().configuration.version.target)
-            }
-        )
+        reporting.create_report([
+            reporting.Title('There are no enabled target repositories'),
+            reporting.Summary(
+                'This can happen when a system is not correctly registered with the subscription manager'
+                ' or, when the leapp --no-rhsm option has been used, no custom repositories have been'
+                ' passed on the command line.'
+            ),
+            reporting.Tags([reporting.Tags.REPOSITORY]),
+            reporting.Flags([reporting.Flags.INHIBITOR]),
+            reporting.Remediation(hint=(
+                'Ensure the system is correctly registered with the subscription manager and that'
+                ' the current subscription is entitled to install the requested target version {version}.'
+                ' If you used the --no-rhsm option (or the LEAPP_NO_RHSM=1 environment variable is set),'
+                ' ensure the custom repository file is provided with'
+                ' properly defined repositories and that the --enablerepo option for leapp is set if the'
+                ' repositories are defined in any repofiles under the /etc/yum.repos.d/ directory.'
+                ' For more information on custom repository files, see the documentation.'
+                ' Finally, verify that the "/etc/leapp/files/repomap.json" file is up-to-date.'
+            ).format(version=api.current_actor().configuration.version.target)),
+            reporting.ExternalLink(
+                # TODO: How to handle different documentation links for each version?
+                url='https://red.ht/preparing-for-upgrade-to-rhel8',
+                title='Preparing for the upgrade'),
+            reporting.RelatedResource("file", "/etc/leapp/files/repomap.json"),
+            reporting.RelatedResource("file", "/etc/yum.repos.d/")
+        ])
+        raise StopActorExecution()
     if missing_custom_repoids:
-        raise StopActorExecutionError(
-            message='Some required custom target repositories are not available.',
-            details={'hint': (
-                ' The most probably you are using custom or third party actor'
-                ' that produces CustomTargetRepository message or you did a typo'
-                ' in one of repoids specified on command line for the leapp --enablerepo'
-                ' option.'
-                ' Inside the upgrade container, we are not able to find such'
-                ' repository inside any repository file. Consider use of the'
-                ' custom repository file regarding the official upgrade'
-                ' documentation or check whether you did not do a typo in any'
-                ' repoids you specified for the --enablerepo option of leapp.'
-                )
-            }
-        )
-
+        reporting.create_report([
+            reporting.Title('Some required custom target repositories have not been found'),
+            reporting.Summary(
+                'This can happen when a repository ID was entered incorrectly either'
+                ' while using the --enablerepo option of leapp, or in a third party actor that produces a'
+                ' CustomTargetRepositoryMessage.\n'
+                'The following repositories IDs could not be found in the target configuration:\n'
+                '- {}\n'.format('\n- '.join(missing_custom_repoids))
+            ),
+            reporting.Tags([reporting.Tags.REPOSITORY]),
+            reporting.Flags([reporting.Flags.INHIBITOR]),
+            reporting.ExternalLink(
+                # TODO: How to handle different documentation links for each version?
+                url='https://access.redhat.com/articles/4977891',
+                title='Customizing your Red Hat Enterprise Linux in-place upgrade'),
+            reporting.Remediation(hint=(
+                'Consider using the custom repository file, which is documented in the official'
+                ' upgrade documentation. Check whether a repository ID has been'
+                ' entered incorrectly with the --enablerepo option of leapp.'
+                ' Check the leapp logs to see the list of all available repositories.'
+            ))
+        ])
+        raise StopActorExecution()
     return set(target_repoids)
 
 
