@@ -418,17 +418,20 @@ def gather_target_repositories(context, indata):
     if missing_custom_repoids:
         raise StopActorExecutionError(
             message='Some required custom target repositories are not available.',
-            details={'hint': (
-                ' The most probably you are using custom or third party actor'
-                ' that produces CustomTargetRepository message or you did a typo'
-                ' in one of repoids specified on command line for the leapp --enablerepo'
-                ' option.'
-                ' Inside the upgrade container, we are not able to find such'
-                ' repository inside any repository file. Consider use of the'
-                ' custom repository file regarding the official upgrade'
-                ' documentation or check whether you did not do a typo in any'
-                ' repoids you specified for the --enablerepo option of leapp.'
-                )
+            details={
+                'hint': (
+                    ' The most probably you are using custom or third party actor'
+                    ' that produces CustomTargetRepository message or you did a typo'
+                    ' in one of repoids specified on command line for the leapp --enablerepo'
+                    ' option.'
+                    ' Inside the upgrade container, we are not able to find such'
+                    ' repository inside any repository file. Consider use of the'
+                    ' custom repository file regarding the official upgrade'
+                    ' documentation or check whether you did not do a typo in any'
+                    ' repoids you specified for the --enablerepo option of leapp.'
+                    ' Check the leapp logs to see the list of all available repositories.'
+                ),
+                'missing_custom_repositories': '"{}"'.format('", "'.join(missing_custom_repoids)),
             }
         )
 
