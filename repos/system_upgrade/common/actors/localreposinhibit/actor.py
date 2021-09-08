@@ -37,6 +37,8 @@ class LocalReposInhibit(Actor):
         )
 
     def process(self):
+        if not all(next(self.consume(model), None) for model in self.consumes):
+            return
         if self.file_baseurl_in_use():
             warn_msg = (
                 "Local repository found (baseurl starts with file:///). "
