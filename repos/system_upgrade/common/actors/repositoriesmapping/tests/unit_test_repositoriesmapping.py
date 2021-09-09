@@ -112,25 +112,25 @@ def test_scan_valid_file_with_comments(monkeypatch, arch, src_type, dst_type):
 
 
 class ResponseMocked(object):
-    def __init__(self, status_code, text):
+    def __init__(self, status_code, content):
         self.status_code = status_code
-        self.text = text
+        self.content = content
 
     def __getattr__(self, key):
         if key == 'status_code':
             return self.status_code
-        if key == 'text':
-            return self.text
+        if key == 'content':
+            return self.content
         raise AttributeError(key)
 
 
 class get_mocked(object):
-    def __init__(self, status_code, text):
+    def __init__(self, status_code, content_text):
         self.status_code = status_code
-        self.text = text
+        self.content = content_text.encode('utf-8')
 
     def __call__(self, *args, **kwargs):
-        return ResponseMocked(self.status_code, self.text)
+        return ResponseMocked(self.status_code, self.content)
 
 
 @pytest.mark.parametrize('isFile', (False, True))
