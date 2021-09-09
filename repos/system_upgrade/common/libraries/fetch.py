@@ -1,4 +1,5 @@
 import os
+import io  # Python2/Python3 compatible IO (open etc.)
 
 import requests
 
@@ -48,9 +49,17 @@ def _request_data(service_path, cert, proxies, timeout=REQUEST_TIMEOUT):
             )
 
 
-def read_or_fetch(filename, directory="/etc/leapp/files", service=None, allow_empty=False):
+def read_or_fetch(filename, directory="/etc/leapp/files", service=None, allow_empty=False, encoding='utf-8'):
     """
-    Return contents of a file or fetch them from an online service if the file does not exist.
+    Return the contents of a text file or fetch them from an online service if the file does not exist.
+
+    :param str filename: The name of the file to read or fetch.
+    :param str directory: Directory that should contain the file.
+    :param str service: URL to the service providing the data if the file is missing.
+    :param bool allow_empty: Raise an error if the resulting data are empty.
+    :param str encoding: Encoding to use when decoding the raw binary data.
+    :returns: Text contents of the file. Text is decoded using the provided encoding.
+    :rtype: str
     """
     logger = api.current_logger()
     local_path = os.path.join(directory, filename)
@@ -60,7 +69,7 @@ def read_or_fetch(filename, directory="/etc/leapp/files", service=None, allow_em
         logger.warning("File {lp} does not exist, falling back to online service".format(lp=local_path))
     else:
         try:
-            with open(local_path) as f:
+            with io.open(local_path, encoding=encoding) as f:
                 data = f.read()
                 if not allow_empty and not data:
                     _raise_error(local_path, "File {lp} exists but is empty".format(lp=local_path))
@@ -92,8 +101,10 @@ def read_or_fetch(filename, directory="/etc/leapp/files", service=None, allow_em
     if response.status_code != 200:
         _raise_error(local_path, "Could not fetch {f} from {sp} (error code: {e}).".format(
             f=filename, sp=service_path, e=response.status_code))
-    if not allow_empty and not response.text:
+
+    if not allow_empty and not response.content:
         _raise_error(local_path, "File {lp} successfully retrieved but it's empty".format(lp=local_path))
     logger.warning("File {sp} successfully retrieved and read ({l} bytes)".format(
-        sp=service_path, l=len(response.text)))
-    return response.text
+        sp=service_path, l=len(response.content)))
+
+    return response.content.decode(encoding)
