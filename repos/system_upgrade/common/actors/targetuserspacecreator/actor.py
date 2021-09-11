@@ -6,7 +6,7 @@ from leapp.models import (
     RHSMInfo,
     RHUIInfo,
     Report,
-    RepositoriesMap,
+    RepositoriesMapping,
     RequiredTargetUserspacePackages,  # deprecated
     StorageInfo,
     TargetRepositories,
@@ -36,7 +36,7 @@ class TargetUserspaceCreator(Actor):
         CustomTargetRepositoryFile,
         RHSMInfo,
         RHUIInfo,
-        RepositoriesMap,
+        RepositoriesMapping,
         RequiredTargetUserspacePackages,
         StorageInfo,
         TargetRepositories,
@@ -48,5 +48,5 @@ class TargetUserspaceCreator(Actor):
 
     def process(self):
         skip_check = get_env('LEAPP_DEVEL_SKIP_CHECK_OS_RELEASE', False)
-        if (skip_check or version.is_supported_version()) and next(self.consume(RepositoriesMap), None):
+        if (skip_check or version.is_supported_version()) and next(self.consume(RepositoriesMapping), None):
             userspacegen.perform()
