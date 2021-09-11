@@ -1,12 +1,20 @@
 from leapp import reporting
-from leapp.libraries.common.config import get_product_type
+from leapp.exceptions import StopActorExecutionError
+from leapp.libraries.common.config.version import get_source_major_version, get_target_major_version
 from leapp.libraries.stdlib import api
 from leapp.models import (
     CustomTargetRepository,
     RepositoriesBlacklisted,
     RepositoriesFacts,
-    RepositoriesMap,
+    RepositoriesMapping
 )
+
+# {OS_MAJOR_VERSION: PESID}
+UNSUPPORTED_PESIDS = {
+    "7": "rhel7-optional",
+    "8": "rhel8-CRB",
+    "9": "rhel9-CRB"
+}
 
 
 def _report_using_unsupported_repos(repos):
@@ -42,25 +50,19 @@ def _report_excluded_repos(repos):
         reporting.Flags([reporting.Flags.FAILURE]),
         reporting.Remediation(
             hint=(
-                "If you still require to use the excluded repositories "
-                "during the upgrade, execute leapp with the following options: {}."
-            ).format(" ".join(["--enablerepo {}".format(repo) for repo in repos])),
+                "If some of excluded repositories are still required to be used"
+                " during the upgrade, execute leapp with the --enablerepo option"
+                " with the repoid of the repository required to be enabled"
+                " as an argument (the option can be used multiple times)."
+            )
         ),
     ]
     reporting.create_report(report)
 
 
-def _is_optional_repo(repo):
-    sys_type = get_product_type('source')
-    suffix = 'optional-rpms'
-    if sys_type != 'ga':
-        suffix = 'optional-{}-rpms'.format(sys_type)
-    return repo.from_repoid.endswith(suffix)
-
-
 def _get_manually_enabled_repos():
     """
-    Get set of repo that are manually enabled.
+    Get a set of repositories (repoids) that are manually enabled.
 
     manually enabled means (
         specified by --enablerepo option of the leapp command or
@@ -74,40 +76,58 @@ def _get_manually_enabled_repos():
         return set()
 
 
-def _get_optional_repo_mapping():
+def _get_pesid_repos(repo_mapping, pesid, major_version):
     """
-    Get a mapping of RHEL 7 Optional repos to corresponding RHEL 8 repos.
+    Returns a list of pesid repos with the specified pesid and major version.
 
-    It consumes RepositoriesMap messages and creates a mapping of 'Optional' repositories
-    from RHEL 7 to CRB repositories on RHEL 8.
-    It returns the mapping as a dict {'from_repoid' : 'to_repoid'}.
+    :param str pesid: The PES ID representing the family of repositories.
+    :param str major_version: The major version of the RHEL OS.
+    :returns: A set of repoids with the specified pesid and major version.
+    :rtype: List[PESIDRepositoryEntry]
     """
-    opt_repo_mapping = {}
-    repo_map = next(api.consume(RepositoriesMap), None)
-    if repo_map:
-        for repo in repo_map.repositories:
-            if _is_optional_repo(repo):
-                opt_repo_mapping[repo.from_repoid] = repo.to_repoid
-    return opt_repo_mapping
+    pesid_repos = []
+    for pesid_repo in repo_mapping.repositories:
+        if pesid_repo.pesid == pesid and pesid_repo.major_version == major_version:
+            pesid_repos.append(pesid_repo)
+    return pesid_repos
 
 
-def _get_repos_to_exclude():
+def _get_repoids_to_exclude(repo_mapping):
     """
-    Get a set of repoids to not use during the upgrade.
+    Returns a set of repoids that should be blacklisted on the target system.
 
-    These are such RHEL 8 repositories that are mapped from disabled
-    RHEL 7 Optional repositories.
-    :rtype: set [repoids]
+    :param RepositoriesMapping repo_mapping: Repository mapping data.
+    :returns: A set of repoids to blacklist on the target system.
+    :rtype: Set[str]
     """
-    opt_repo_mapping = _get_optional_repo_mapping()
-    repos_to_exclude = []
-    repos_on_system = next(api.consume(RepositoriesFacts), None)
-    if repos_on_system:
-        for repo_file in repos_on_system.repositories:
-            for repo in repo_file.data:
-                if repo.repoid in opt_repo_mapping and not repo.enabled:
-                    repos_to_exclude.append(opt_repo_mapping[repo.repoid])
-    return set(repos_to_exclude)
+    pesid_repos_to_exclude = _get_pesid_repos(repo_mapping,
+                                              UNSUPPORTED_PESIDS[get_target_major_version()],
+                                              get_target_major_version())
+    return {pesid_repo.repoid for pesid_repo in pesid_repos_to_exclude}
+
+
+def _are_optional_repos_disabled(repo_mapping, repos_on_system):
+    """
+    Checks whether all optional repositories are disabled.
+
+    :param RepositoriesMapping repo_mapping: Repository mapping data.
+    :param RepositoriesFacts repos_on_system: Installed repositories on the source system.
+    :returns: True if there are any optional repositories enabled on the source system.
+    """
+
+    # Get a set of all repo_ids that are optional
+    optional_pesid_repos = _get_pesid_repos(repo_mapping,
+                                            UNSUPPORTED_PESIDS[get_source_major_version()],
+                                            get_source_major_version())
+
+    optional_repoids = [optional_pesid_repo.repoid for optional_pesid_repo in optional_pesid_repos]
+
+    # Gather all optional repositories on the source system that are not enabled
+    for repofile in repos_on_system.repositories:
+        for repository in repofile.data:
+            if repository.repoid in optional_repoids and repository.enabled:
+                return False
+    return True
 
 
 def process():
@@ -122,13 +142,34 @@ def process():
 
     E.g. CRB repository is provided by Red Hat but it is without the support.
     """
-    repos_to_exclude = _get_repos_to_exclude()
-    manually_enabled_repos = _get_manually_enabled_repos() & repos_to_exclude
 
-    overriden_repos_to_exclude = repos_to_exclude - manually_enabled_repos
+    repo_mapping = next(api.consume(RepositoriesMapping), None)
+    repos_facts = next(api.consume(RepositoriesFacts), None)
+
+    # Handle required messages not received
+    missing_messages = []
+    if not repo_mapping:
+        missing_messages.append('RepositoriesMapping')
+    if not repos_facts:
+        missing_messages.append('RepositoriesFacts')
+    if missing_messages:
+        raise StopActorExecutionError('Actor didn\'t receive required messages: {0}'.format(
+            ', '.join(missing_messages)
+        ))
+
+    if not _are_optional_repos_disabled(repo_mapping, repos_facts):
+        # nothing to do - an optional repository is enabled
+        return
+
+    # Optional repos are either not present or they are present, but disabled -> blacklist them on target system
+    repos_to_exclude = _get_repoids_to_exclude(repo_mapping)
+
+    # Do not exclude repos manually enabled from the CLI
+    manually_enabled_repos = _get_manually_enabled_repos() & repos_to_exclude
+    filtered_repos_to_exclude = repos_to_exclude - manually_enabled_repos
 
     if manually_enabled_repos:
         _report_using_unsupported_repos(manually_enabled_repos)
-    if overriden_repos_to_exclude:
-        _report_excluded_repos(overriden_repos_to_exclude)
-        api.produce(RepositoriesBlacklisted(repoids=list(overriden_repos_to_exclude)))
+    if filtered_repos_to_exclude:
+        _report_excluded_repos(filtered_repos_to_exclude)
+        api.produce(RepositoriesBlacklisted(repoids=list(filtered_repos_to_exclude)))
