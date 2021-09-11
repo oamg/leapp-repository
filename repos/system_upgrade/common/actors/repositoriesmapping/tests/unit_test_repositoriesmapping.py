@@ -1,163 +1,293 @@
+import json
+import os
+
 import pytest
 import requests
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import repositoriesmapping
 from leapp.libraries.common import fetch
-from leapp.libraries.common.config import architecture
+from leapp.libraries.common.config import architecture, version
 from leapp.libraries.common.testutils import produce_mocked, CurrentActorMocked
 from leapp.libraries.stdlib import api
-from leapp.models import EnvVar, RepositoriesMap, RepositoryMap
-
-PRODUCT_TYPE = ['ga', 'beta', 'htb']
+from leapp.models import PESIDRepositoryEntry
 
 
-class ReadRepoFileMock(object):
-    def __init__(self, repomap_data):
-        self.repomap_file = self._gen_data_file(repomap_data)
-
-    def __call__(self, dummy_filename):
-        return self.repomap_file
-
-    def _gen_data_file(self, repomap_data):
-        """
-        Generate the expected repomap file (list of strings - string per line).
-
-        :param repomap_data: Data required to be able to generate repomap data
-        :type repomap_data: list of tuples - tuple per repomap record
-          [(from_repoid, to_repoid, to_pes_repo,
-            from_minor_version, to_minorversion,
-            arch, repo_type, src_prod_type, dst_prod_type)]
-        """
-        header = ('RHEL 7 repoid in CDN,RHEL 8 repoid in CDN,RHEL 8 repo name in PES,'
-                  'RHEL 7 minor versions,RHEL 8 minor versions,architecture,'
-                  'type(rpm/srpm/debuginfo),src repo type (ga/beta/htb),dst repo type (ga/beta/htb)')
-        return [header] + [','.join(i) for i in repomap_data]
+CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
-def gen_input_permutation():
-    """Generate permutation of input parameters."""
-    return [(arch, src, dst) for arch in architecture.ARCH_ACCEPTED for src in PRODUCT_TYPE for dst in PRODUCT_TYPE]
+@pytest.fixture
+def adjust_cwd():
+    previous_cwd = os.getcwd()
+    os.chdir(os.path.join(CUR_DIR, "./"))
+    yield
+    os.chdir(previous_cwd)
 
 
-def gen_repomap_record(arch, src_type, dst_type, index=0):
-    """Generate repomap record based on given data."""
-    return ('src-repoid-{}-{}-{}'.format(arch, src_type, index),
-            'dst-repoid-{}-{}-{}'.format(arch, dst_type, index),
-            'pes-name', 'all', 'all', arch, 'rpm', src_type, dst_type)
-
-
-def gen_test_data(arch, src_type, dst_type):
+def test_scan_existing_valid_data(monkeypatch, adjust_cwd):
     """
-    Generate testing data and return records related to the given params.
-
-    By the related record (or expected_records) it's meant record we expect
-    will be returned for specific arch and product types.
-
-    :return: ([all_records], [expected_records])
+    Tests whether an existing valid repomap file is loaded correctly.
     """
-    generic_repomap_data = []
-    expected_repomap_data = []
-    for _arch, _src_type, _dst_type in gen_input_permutation():
-        for i in range(2):
-            record = gen_repomap_record(_arch, _src_type, _dst_type, i)
-            generic_repomap_data.append(record)
-            if _arch == arch and _src_type == src_type and _dst_type == dst_type:
-                expected_repomap_data.append(record)
-    return generic_repomap_data, expected_repomap_data
 
-
-def gen_RepositoriesMap(repomap_records):
-    """Generate Repositories map from the given repomap records."""
-    repositories = []
-    for record in repomap_records:
-        repositories.append(RepositoryMap(
-                    from_repoid=record[0],
-                    to_repoid=record[1],
-                    to_pes_repo=record[2],
-                    from_minor_version=record[3],
-                    to_minor_version=record[4],
-                    arch=record[5],
-                    repo_type=record[6]
-        ))
-    return RepositoriesMap(repositories=repositories)
-
-
-@pytest.mark.parametrize('arch,src_type,dst_type', gen_input_permutation())
-def test_scan_valid_file_without_comments(monkeypatch, arch, src_type, dst_type):
-    envars = {'LEAPP_DEVEL_SOURCE_PRODUCT_TYPE': src_type, 'LEAPP_DEVEL_TARGET_PRODUCT_TYPE': dst_type}
-    input_data, expected_records = gen_test_data(arch, src_type, dst_type)
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(arch, envars))
+    with open('files/repomap_example.json') as repomap_file:
+        data = json.load(repomap_file)
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(src_ver='7.9', dst_ver='8.4'))
     monkeypatch.setattr(api, 'produce', produce_mocked())
-    repositoriesmapping.scan_repositories(read_repofile_func=ReadRepoFileMock(input_data))
-    assert api.produce.called == 1
-    assert api.produce.model_instances == [gen_RepositoriesMap(expected_records)]
+
+    repositoriesmapping.scan_repositories(lambda dummy: data)
+
+    assert api.produce.called, 'Actor did not produce any message when deserializing valid repomap data.'
+
+    fail_description = 'Actor produced multiple messages, but only one was expected.'
+    assert len(api.produce.model_instances) == 1, fail_description
+
+    repo_mapping = api.produce.model_instances[0]
+
+    # Verify that the loaded JSON data is matching the repomap file content
+    # 1. Verify src_pesid -> target_pesids mappings are loaded and filtered correctly
+    fail_description = 'Actor produced more mappings than there are source system relevant mappings in the test file.'
+    assert len(repo_mapping.mapping) == 1, fail_description
+    fail_description = 'Actor failed to load IPU-relevant mapping data correctly.'
+    assert repo_mapping.mapping[0].source == 'pesid1', fail_description
+    assert set(repo_mapping.mapping[0].target) == {'pesid2', 'pesid3'}, fail_description
+
+    # 2. Verify that only repositories valid for the current IPU are produced
+    pesid_repos = repo_mapping.repositories
+    fail_description = 'Actor produced incorrect number of IPU-relevant pesid repos.'
+    assert len(pesid_repos) == 3, fail_description
+
+    expected_pesid_repos = [
+        PESIDRepositoryEntry(
+            pesid='pesid1',
+            major_version='7',
+            repoid='some-rhel-7-repoid',
+            arch='x86_64',
+            repo_type='rpm',
+            channel='eus',
+            rhui=''
+        ),
+        PESIDRepositoryEntry(
+            pesid='pesid2',
+            major_version='8',
+            repoid='some-rhel-8-repoid1',
+            arch='x86_64',
+            repo_type='rpm',
+            channel='eus',
+            rhui=''
+        ),
+        PESIDRepositoryEntry(
+            pesid='pesid3',
+            major_version='8',
+            repoid='some-rhel-8-repoid2',
+            arch='x86_64',
+            repo_type='rpm',
+            channel='eus',
+            rhui=''
+        ),
+    ]
+
+    fail_description = 'Expected pesid repo is not present in the deserialization output.'
+    for expected_pesid_repo in expected_pesid_repos:
+        assert expected_pesid_repo in pesid_repos, fail_description
 
 
-# one combination is probably enough, as it's tested properly above
-@pytest.mark.parametrize('arch,src_type,dst_type', [(architecture.ARCH_X86_64, PRODUCT_TYPE[0], PRODUCT_TYPE[0])])
-def test_scan_valid_file_with_comments(monkeypatch, arch, src_type, dst_type):
-    envars = {'LEAPP_DEVEL_SOURCE_PRODUCT_TYPE': src_type, 'LEAPP_DEVEL_TARGET_PRODUCT_TYPE': dst_type}
-    input_data, expected_records = gen_test_data(arch, src_type, dst_type)
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(arch, envars))
+def test_scan_repositories_with_missing_data(monkeypatch):
+    """
+    Tests whether the scanning process fails gracefully when no data are read.
+    """
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(src_ver='7.9', dst_ver='8.4'))
     monkeypatch.setattr(api, 'produce', produce_mocked())
-    # add one comment and one empty line into the repomap file
-    repofile = ReadRepoFileMock(input_data)
-    repofile.repomap_file.insert(2, '')
-    repofile.repomap_file.insert(3, '# comment')
-    # run
-    repositoriesmapping.scan_repositories(read_repofile_func=repofile)
-    assert api.produce.called == 1
-    assert api.produce.model_instances == [gen_RepositoriesMap(expected_records)]
+    monkeypatch.setattr(repositoriesmapping, 'read_or_fetch', lambda dummy: '')
 
-
-class ResponseMocked(object):
-    def __init__(self, status_code, content):
-        self.status_code = status_code
-        self.content = content
-
-    def __getattr__(self, key):
-        if key == 'status_code':
-            return self.status_code
-        if key == 'content':
-            return self.content
-        raise AttributeError(key)
-
-
-class get_mocked(object):
-    def __init__(self, status_code, content_text):
-        self.status_code = status_code
-        self.content = content_text.encode('utf-8')
-
-    def __call__(self, *args, **kwargs):
-        return ResponseMocked(self.status_code, self.content)
-
-
-@pytest.mark.parametrize('isFile', (False, True))
-def test_scan_missing_or_empty_file(monkeypatch, isFile):
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(architecture.ARCH_X86_64))
-    monkeypatch.setattr(api, 'produce', produce_mocked())
-    monkeypatch.setattr('os.path.isfile', lambda dummy: False)
-    monkeypatch.setattr(requests, 'get', get_mocked(200 if isFile else 404, ''))
-
-    with pytest.raises(StopActorExecutionError) as err:
+    with pytest.raises(StopActorExecutionError) as missing_data_error:
         repositoriesmapping.scan_repositories()
-    assert not api.produce.called
-    assert 'invalid or could not be retrieved' in str(err)
+    assert 'does not contain a valid JSON object' in str(missing_data_error)
 
 
-@pytest.mark.parametrize('line', [
-    'whatever invalid line',
-    'something, jaj',
-    'a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v',
-    'valid,',
-    '7-server-rpms,8-server-rpms,name-8-repo-rpms,all,all,x86_64,rpm',
-    '7-server-rpms,8-server-rpms,name-8-repo-rpms,all,all,x86_64,rpm,ga,ga,invalid',
-])
-def test_scan_invalid_file_csv(monkeypatch, line):
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(architecture.ARCH_X86_64))
+def test_scan_repositories_with_empty_data(monkeypatch):
+    """
+    Tests whether the scanning process fails gracefully when empty json data received.
+    """
+
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(src_ver='7.9', dst_ver='8.4'))
     monkeypatch.setattr(api, 'produce', produce_mocked())
-    with pytest.raises(StopActorExecutionError) as err:
-        repositoriesmapping.scan_repositories(read_repofile_func=ReadRepoFileMock([line]))
-    assert not api.produce.called
-    assert 'The repository mapping file is invalid' in str(err)
+
+    with pytest.raises(StopActorExecutionError) as empty_data_error:
+        repositoriesmapping.scan_repositories(lambda dummy: {})
+    assert 'the JSON is missing a required field' in str(empty_data_error)
+
+
+@pytest.mark.parametrize('version_format', ('0.0.0', '1.0.1', '1.1.0', '2.0.0'))
+def test_scan_repositories_with_bad_json_data_version(monkeypatch, version_format):
+    """
+    Tests whether the json data is checked for the version field and error is raised if the version
+    does not match the latest one.
+    """
+
+    json_data = {
+        'datetime': '202107141655Z',
+        'version_format': version_format,
+        'mapping': [],
+        'repositories': []
+    }
+
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(src_ver='7.9', dst_ver='8.4'))
+    monkeypatch.setattr(api, 'produce', produce_mocked())
+
+    with pytest.raises(StopActorExecutionError) as bad_version_error:
+        repositoriesmapping.scan_repositories(lambda dummy: json_data)
+
+    assert 'mapping file is invalid' in str(bad_version_error)
+
+
+def test_scan_repositories_with_mapping_to_pesid_without_repos(monkeypatch):
+    """
+    Tests that the loading of repositories mapping recognizes when there is a mapping with target pesid that does
+    not have any repositories and inhibits the upgrade.
+    """
+    json_data = {
+        'datetime': '202107141655Z',
+        'version_format': repositoriesmapping.RepoMapData.VERSION_FORMAT,
+        'mapping': [
+            {
+                'source_major_version': '7',
+                'target_major_version': '8',
+                'entries':  [
+                    {
+                        'source': 'source_pesid',
+                        'target': ['nonexisting_pesid']
+                    }
+                ]
+            }
+        ],
+        'repositories': [
+            {
+                'pesid': 'source_pesid',
+                'entries': [
+                    {
+                        'major_version': '7',
+                        'repoid': 'some-rhel-7-repo',
+                        'arch': 'x86_64',
+                        'repo_type': 'rpm',
+                        'channel': 'eus'
+                    }
+                ]
+            }
+        ]
+    }
+
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(src_ver='7.9', dst_ver='8.4'))
+    monkeypatch.setattr(api, 'produce', produce_mocked())
+
+    with pytest.raises(StopActorExecutionError) as error_info:
+        repositoriesmapping.scan_repositories(lambda dummy: json_data)
+
+    assert 'pesid is not related to any repository' in error_info.value.message
+
+
+def test_scan_repositories_with_repo_entry_missing_required_fields(monkeypatch):
+    """
+    Tests whether deserialization of pesid repo entries missing some of the required fields
+    is handled internally and StopActorExecutionError is propagated to the user.
+    """
+
+    json_data = {
+        'datetime': '202107141655Z',
+        'version_format': repositoriesmapping.RepoMapData.VERSION_FORMAT,
+        'mapping': [
+            {
+                'source_major_version': '7',
+                'target_major_version': '8',
+                'entries':  [
+                    {
+                        'source': 'source_pesid',
+                        'target': ['target_pesid']
+                    }
+                ]
+            }
+        ],
+        'repositories': [
+            {
+                'pesid': 'source_pesid',
+                'entries': [
+                    {
+                        'major_version': '7',
+                        'repoid': 'some-rhel-9-repo1',
+                        'arch': 'x86_64',
+                    }
+                ]
+            },
+            {
+                'pesid': 'target_pesid',
+                'entries': [
+                    {
+                        'major_version': '7',
+                        'repoid': 'some-rhel-9-repo1',
+                        'arch': 'x86_64',
+                    }
+                ]
+            }
+        ]
+    }
+
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(src_ver='7.9', dst_ver='8.4'))
+    monkeypatch.setattr(api, 'produce', produce_mocked())
+
+    with pytest.raises(StopActorExecutionError) as error_info:
+        repositoriesmapping.scan_repositories(lambda dummy: json_data)
+
+    assert 'the JSON is missing a required field' in error_info.value.message
+
+
+def test_scan_repositories_with_repo_entry_mapping_target_not_a_list(monkeypatch):
+    """
+    Tests whether deserialization of a mapping entry that has its target field set to a string
+    is handled internally and StopActorExecutionError is propagated to the user.
+    """
+
+    json_data = {
+        'datetime': '202107141655Z',
+        'version_format': repositoriesmapping.RepoMapData.VERSION_FORMAT,
+        'mapping': [
+            {
+                'source_major_version': '7',
+                'target_major_version': '8',
+                'entries':  [
+                    {
+                        'source': 'source_pesid',
+                        'target': 'target_pesid'
+                    }
+                ]
+            }
+        ],
+        'repositories': [
+            {
+                'pesid': 'source_pesid',
+                'entries': [
+                    {
+                        'major_version': '7',
+                        'repoid': 'some-rhel-9-repo1',
+                        'arch': 'x86_64',
+                    }
+                ]
+            },
+            {
+                'pesid': 'target_pesid',
+                'entries': [
+                    {
+                        'major_version': '7',
+                        'repoid': 'some-rhel-9-repo1',
+                        'arch': 'x86_64',
+                    }
+                ]
+            }
+        ]
+    }
+
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(src_ver='7.9', dst_ver='8.4'))
+    monkeypatch.setattr(api, 'produce', produce_mocked())
+
+    with pytest.raises(StopActorExecutionError) as error_info:
+        repositoriesmapping.scan_repositories(lambda dummy: json_data)
+
+    assert 'repository mapping file is invalid' in error_info.value.message
