@@ -3,14 +3,23 @@ import os
 from collections import namedtuple, defaultdict
 from enum import IntEnum
 
-from leapp.exceptions import StopActorExecution, StopActorExecutionError
 from leapp import reporting
-from leapp.libraries.common.config import architecture, version
+from leapp.libraries.actor import peseventsscanner_repomap
 from leapp.libraries.common import fetch
+from leapp.libraries.common.config import architecture, version
+from leapp.libraries.common.config.version import get_target_major_version
 from leapp.libraries.stdlib import api
 from leapp.libraries.stdlib.config import is_verbose
-from leapp.models import (InstalledRedHatSignedRPM, PESRpmTransactionTasks, RepositoriesMap,
-                          RepositoriesSetupTasks, RpmTransactionTasks, RepositoriesBlacklisted)
+from leapp.exceptions import StopActorExecution, StopActorExecutionError
+from leapp.models import (
+    InstalledRedHatSignedRPM,
+    PESRpmTransactionTasks,
+    RepositoriesBlacklisted,
+    RepositoriesFacts,
+    RepositoriesMapping,
+    RepositoriesSetupTasks,
+    RpmTransactionTasks,
+)
 
 
 Event = namedtuple('Event', ['id',            # int
@@ -83,27 +92,95 @@ def get_installed_pkgs():
     return installed_pkgs
 
 
-def _get_repositories_mapping():
+def _get_enabled_repoids():
+    """
+    Collects repoids of all enabled repositories on the source system.
+
+    :param repositories_facts: Iterable of RepositoriesFacts containing repositories related info about source system.
+    :return: Set of all enabled repository IDs present on the source system.
+    :rtype: Set[str]
+    """
+    enabled_repoids = set()
+    for repos in api.consume(RepositoriesFacts):
+        for repo_file in repos.repositories:
+            for repo in repo_file.data:
+                if repo.enabled:
+                    enabled_repoids.add(repo.repoid)
+    return enabled_repoids
+
+
+def _get_repositories_mapping(target_pesids):
     """
     Get all repositories mapped from repomap file and map repositories id with respective names.
 
+    :param target_pesids: The set of expected needed target PES IDs
     :return: Dictionary with all repositories mapped.
     """
-    repositories_mapping = {}
 
-    repositories_map_msgs = api.consume(RepositoriesMap)
+    repositories_map_msgs = api.consume(RepositoriesMapping)
     repositories_map_msg = next(repositories_map_msgs, None)
     if list(repositories_map_msgs):
-        api.current_logger().warning('Unexpectedly received more than one RepositoriesMap message.')
+        api.current_logger().warning('Unexpectedly received more than one RepositoriesMapping message.')
     if not repositories_map_msg:
         raise StopActorExecutionError(
-            'Cannot parse RepositoriesMap data properly',
+            'Cannot parse RepositoriesMapping data properly',
             details={'Problem': 'Did not receive a message with mapped repositories'}
         )
 
-    for repository in repositories_map_msg.repositories:
-        if repository.arch == api.current_actor().configuration.architecture:
-            repositories_mapping[repository.to_pes_repo] = repository.to_repoid
+    repomap = peseventsscanner_repomap.RepoMapDataHandler(repositories_map_msg)
+    # NOTE: We have to calculate expected target repositories
+    # like in the setuptargetrepos actor. It's planned to handle this in different
+    # way in future...
+    enabled_repoids = _get_enabled_repoids()
+    default_channels = peseventsscanner_repomap.get_default_repository_channels(repomap, enabled_repoids)
+    repomap.set_default_channels(default_channels)
+
+    exp_pesid_repos = repomap.get_expected_target_pesid_repos(enabled_repoids)
+    # FIXME: this is hack now. In case some packages will need a repository
+    # with pesid that is not mapped by default regarding the enabled repos,
+    # let's use this one representative repository (baseos/appstream) to get
+    # data for a guess of the best repository from the requires target pesid..
+    # FIXME: this could now fail in case all repos are disabled...
+    representative_repo = exp_pesid_repos.get(
+        peseventsscanner_repomap.DEFAULT_PESID[get_target_major_version()], None
+    )
+    if not representative_repo:
+        api.current_logger().warning('Cannot determine the base target repository')
+
+    for pesid in target_pesids:
+        if pesid in exp_pesid_repos:
+            continue
+        # some packages are moved to repos outside of default repomapping
+        # try to find the best possible repo for them..
+        # FIXME: HACK NOW
+        # good way is to modify class to search repo with specific criteria..
+        if not representative_repo:
+            api.current_logger().warning(
+                'Cannot find suitable repository for PES ID: {}'
+                .format(pesid)
+            )
+            continue
+        pesid_repo = repomap._find_repository_target_equivalent(representative_repo, pesid)
+
+        if not pesid_repo:
+            api.current_logger().warning(
+                'Cannot find suitable repository for PES ID: {}'
+                .format(pesid)
+            )
+            continue
+        exp_pesid_repos[pesid] = pesid_repo
+
+    # map just pesids with found repoids
+    # {to_pesid: repoid}
+    repositories_mapping = {}
+    for pesid, repository in exp_pesid_repos.items():
+        if pesid not in target_pesids:
+            # We can skip this repo as it was not identified as needed during the processing of PES events
+            continue
+        if not repository:
+            # TODO
+            continue
+        repositories_mapping[pesid] = repository.repoid
 
     return repositories_mapping
 
@@ -256,7 +333,7 @@ def parse_packageset(packageset):
 
     :return: A dictionary with packages in format {<pkg_name>: <repository>}
     """
-    return {p['name']: p['repository'].lower() for p in packageset.get('package', [])}
+    return {p['name']: p['repository'] for p in packageset.get('package', [])}
 
 
 def parse_release(release):
@@ -505,7 +582,7 @@ def get_repositories_blacklisted():
 
 def map_repositories(packages):
     """Map repositories from PES data to RHSM repository id"""
-    repositories_mapping = _get_repositories_mapping()
+    repositories_mapping = _get_repositories_mapping(set(packages.values()))
     pkg_with_repo_without_mapping = set()
     for pkg, repo in packages.items():
         if repo not in repositories_mapping:
