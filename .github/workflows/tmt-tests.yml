@@ -81,7 +81,7 @@ jobs:
         run: |
           echo "::set-output name=leapp_pr::${{ steps.leapp_pr_regex_match.outputs.group1 }}"
 
-      - name: Checkout
+      - name: Checkout leapp
         id: checkout_leapp
         if: ${{ steps.leapp_pr_regex_match.outputs.match != '' }}
         uses: actions/checkout@v2
@@ -89,14 +89,14 @@ jobs:
           repository: "oamg/leapp"
           ref: "refs/pull/${{ steps.leapp_pr.outputs.leapp_pr }}/head"
 
-      - name: Get ref and sha
+      - name: Get ref and sha for leapp
         id: ref_sha_leapp
         if: ${{ steps.leapp_pr_regex_match.outputs.match != '' }}
         run: |
           echo "::set-output name=sha::$(git rev-parse --short HEAD)"
           echo "::set-output name=ref::refs/pull/${{ steps.leapp_pr.outputs.leapp_pr }}/head"
 
-      - name: Trigger copr build
+      - name: Trigger copr build for leapp
         id: copr_build_leapp
         if: ${{ steps.leapp_pr_regex_match.outputs.match != '' }}
         run: |
@@ -116,7 +116,7 @@ jobs:
           echo "::set-output name=copr_url::${COPR_URL}"
           echo "::set-output name=copr_id::${COPR_URL##*/}"
 
-      - name: Add comment with copr build url
+      - name: Add comment with copr build url for leapp
         # TODO: Create comment when copr build fails.
         id: link_copr_leapp
         if: ${{ steps.leapp_pr_regex_match.outputs.match != '' }}
