@@ -54,7 +54,7 @@ class TcpWrappersCheck(Actor):
             )
 
         # Convert installed packages message to list
-        packages = create_lookup(InstalledRedHatSignedRPM, field='items', key='name')
+        packages = create_lookup(InstalledRedHatSignedRPM, field='items', keys=('name',))
 
         found_packages = config_affects_daemons(tcp_wrappers_facts, packages, DAEMONS)
 

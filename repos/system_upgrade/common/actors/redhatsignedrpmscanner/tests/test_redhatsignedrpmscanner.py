@@ -15,9 +15,15 @@ from leapp.models import (
 RH_PACKAGER = 'Red Hat, Inc. <http://bugzilla.redhat.com/bugzilla>'
 
 
+class MockObject(Model):
+    topic = RPM.topic
+    value = fields.Integer(default=42)
+    plan = fields.Nullable(fields.String())
+
+
 class MockModel(Model):
     topic = RPM.topic
-    list_field = fields.List(fields.Integer(), default=[42])
+    list_field = fields.List(fields.Model(MockObject), default=[])
     list_field_nullable = fields.Nullable(fields.List(fields.String()))
     int_field = fields.Integer(default=42)
 
@@ -113,31 +119,40 @@ def test_gpg_pubkey_pkg(current_actor_context):
 def test_create_lookup():
     # NOTE(ivasilev) Ideally should be tested separately from the actor, but since library
     # testing functionality is not yet implemented in leapp-repository the tests will reside here.
-    model = MockModel()
+    model = MockModel(list_field=[MockObject(value=42, plan="A"),
+                                  MockObject(value=-42, plan="B"),
+                                  MockObject(value=9999)])
     # plain non-empty list
-    model.list_field.extend([-42])
+    keys = ('value', )
     with mock.patch('leapp.libraries.stdlib.api.consume', return_value=(model,)):
-        # monkeypatch.setattr('leapp.libraries.stdlib.api.consume', consume_message_mocked)
-        lookup = rpms.create_lookup(MockModel, 'list_field', 'real')
-        assert {42, -42} == lookup
+        lookup = rpms.create_lookup(MockModel, 'list_field', keys=keys)
+        assert {(42, ), (-42, ), (9999, )} == lookup
+    # plain list, multiple keys
+    with mock.patch('leapp.libraries.stdlib.api.consume', return_value=(model,)):
+        lookup = rpms.create_lookup(MockModel, 'list_field', keys=('value', 'plan'))
+        assert {(42, 'A'), (-42, 'B'), (9999, None)} == lookup
     # empty list
     model.list_field = []
     with mock.patch('leapp.libraries.stdlib.api.consume', return_value=(model,)):
-        lookup = rpms.create_lookup(MockModel, 'list_field', 'real')
-        assert {} == lookup
+        lookup = rpms.create_lookup(MockModel, 'list_field', keys=keys)
+        assert set() == lookup
     # nullable list without default
     assert model.list_field_nullable is None
     with mock.patch('leapp.libraries.stdlib.api.consume', return_value=(model,)):
-        lookup = rpms.create_lookup(MockModel, 'list_field_nullable', 'real')
-        assert {} == lookup
+        lookup = rpms.create_lookup(MockModel, 'list_field_nullable', keys=keys)
+        assert set() == lookup
     # improper usage: lookup from non iterable field
     with mock.patch('leapp.libraries.stdlib.api.consume', return_value=(model,)):
-        lookup = rpms.create_lookup(MockModel, 'int_field', 'real')
-        assert {} == lookup
+        lookup = rpms.create_lookup(MockModel, 'int_field', keys=keys)
+        assert set() == lookup
     # improper usage: lookup from iterable but bad attribute
     with mock.patch('leapp.libraries.stdlib.api.consume', return_value=(model,)):
-        lookup = rpms.create_lookup(MockModel, 'list_field', 'nosuchattr')
-        assert {} == lookup
+        lookup = rpms.create_lookup(MockModel, 'list_field', keys=('nosuchattr',))
+        assert set() == lookup
+    # improper usage: lookup from iterable, multiple keys bad 1 bad
+    with mock.patch('leapp.libraries.stdlib.api.consume', return_value=(model,)):
+        lookup = rpms.create_lookup(MockModel, 'list_field', keys=('value', 'nosuchattr'))
+        assert set() == lookup
 
 
 def test_has_package(current_actor_context):
