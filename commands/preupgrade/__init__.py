@@ -2,7 +2,7 @@ import os
 import uuid
 import sys
 
-from leapp.cli.commands.upgrade import util
+from leapp.cli.commands.upgrade import util, breadcrumbs
 from leapp.config import get_config
 from leapp.exceptions import CommandError, LeappError
 from leapp.logger import configure_logger
@@ -23,7 +23,8 @@ from leapp.utils.output import (beautify_actor_exception, report_errors, report_
              help='Set preferred channel for the IPU target.',
              choices=['ga', 'tuv', 'e4s', 'eus', 'aus'],
              value_type=str.lower)  # This allows the choices to be case insensitive
-def preupgrade(args):
+@breadcrumbs.produces_breadcrumbs
+def preupgrade(args, breadcrumbs):
     context = str(uuid.uuid4())
     cfg = get_config()
     util.handle_output_level(args)
