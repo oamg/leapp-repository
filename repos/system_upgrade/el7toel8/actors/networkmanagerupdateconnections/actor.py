@@ -21,7 +21,7 @@ class NetworkManagerUpdateConnections(Actor):
 
     def process(self):
         for nm_config in self.consume(NetworkManagerConfig):
-            if nm_config.dhcp != '' and nm_config.dhcp != 'dhclient':
+            if nm_config.dhcp not in ('', 'dhclient'):
                 self.log.info('DHCP client is "{}", nothing to do'.format(nm_config.dhcp))
                 return
 

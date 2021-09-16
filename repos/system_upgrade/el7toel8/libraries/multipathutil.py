@@ -95,8 +95,8 @@ class LineData(object):
         self.value = value
 
     def is_enabled(self):
-        if self.value == 'yes' or self.value == '1':
+        if self.value in ('yes', '1'):
             return True
-        if self.value == 'no' or self.value == '0':
+        if self.value in ('no', '0'):
             return False
         return None
