@@ -2,6 +2,7 @@ import errno
 import os
 import re
 
+from leapp.libraries.common.config import get_env
 from leapp.libraries.stdlib import api
 from leapp.models import (
     InitrdIncludes,
@@ -39,6 +40,13 @@ def generate_link_file(interface):
 
 @suppress_deprecation(InitrdIncludes)
 def process():
+
+    if get_env('LEAPP_NO_NETWORK_RENAMING', '0') == '1':
+        api.current_logger().info(
+            'Skipping handling of possibly renamed network interfaces: leapp executed with LEAPP_NO_NETWORK_RENAMING=1'
+        )
+        return
+
     rhel7_ifaces = next(api.consume(PersistentNetNamesFacts)).interfaces
     rhel8_ifaces = next(api.consume(PersistentNetNamesFactsInitramfs)).interfaces
 
@@ -64,7 +72,7 @@ def process():
                 )
                 continue
 
-            if rhel7_name != rhel8_name:
+            if rhel7_name != rhel8_name and get_env('LEAPP_NO_NETWORK_RENAMING', '0') != '1':
                 api.current_logger().warning('Detected interface rename {} -> {}.'.format(rhel7_name, rhel8_name))
 
                 if re.search('eth[0-9]+', iface.name) is not None:

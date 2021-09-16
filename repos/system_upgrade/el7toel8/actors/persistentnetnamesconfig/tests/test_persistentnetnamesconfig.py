@@ -4,6 +4,7 @@ import os
 import pytest
 
 from leapp.libraries.actor import persistentnetnamesconfig
+from leapp.libraries.common.config import mock_configs
 from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked, produce_mocked
 from leapp.models import (
     InitrdIncludes,
@@ -56,7 +57,7 @@ def test_identical(current_actor_context):
     interfaces = generate_interfaces(4)
     current_actor_context.feed(PersistentNetNamesFacts(interfaces=interfaces))
     current_actor_context.feed(PersistentNetNamesFactsInitramfs(interfaces=interfaces))
-    current_actor_context.run()
+    current_actor_context.run(config_model=mock_configs.CONFIG)
 
     renamed_interfaces = current_actor_context.consume(RenamedInterfaces)[0]
     initrd_files = current_actor_context.consume(InitrdIncludes)[0]
@@ -73,7 +74,7 @@ def test_renamed_single_noneth(monkeypatch, current_actor_context):
     current_actor_context.feed(PersistentNetNamesFacts(interfaces=interfaces))
     interfaces[0].name = 'n4'
     current_actor_context.feed(PersistentNetNamesFactsInitramfs(interfaces=interfaces))
-    current_actor_context.run()
+    current_actor_context.run(config_model=mock_configs.CONFIG)
 
     renamed_interfaces = current_actor_context.consume(RenamedInterfaces)[0]
     initrd_files = current_actor_context.consume(InitrdIncludes)[0]
@@ -92,7 +93,7 @@ def test_renamed_swap_noneth(monkeypatch, current_actor_context):
     interfaces[0].name = 'n3'
     interfaces[3].name = 'n0'
     current_actor_context.feed(PersistentNetNamesFactsInitramfs(interfaces=interfaces))
-    current_actor_context.run()
+    current_actor_context.run(config_model=mock_configs.CONFIG)
 
     renamed_interfaces = current_actor_context.consume(RenamedInterfaces)[0]
     initrd_files = current_actor_context.consume(InitrdIncludes)[0]
@@ -113,7 +114,7 @@ def test_renamed_single_eth(monkeypatch, current_actor_context):
     current_actor_context.feed(PersistentNetNamesFacts(interfaces=interfaces))
     interfaces[0].name = 'eth4'
     current_actor_context.feed(PersistentNetNamesFactsInitramfs(interfaces=interfaces))
-    current_actor_context.run()
+    current_actor_context.run(config_model=mock_configs.CONFIG)
 
     renamed_interfaces = current_actor_context.consume(RenamedInterfaces)[0]
     initrd_files = current_actor_context.consume(InitrdIncludes)[0]
@@ -135,7 +136,7 @@ def test_renamed_swap_eth(monkeypatch, current_actor_context):
     interfaces[0].name = 'eth3'
     interfaces[3].name = 'eth0'
     current_actor_context.feed(PersistentNetNamesFactsInitramfs(interfaces=interfaces))
-    current_actor_context.run()
+    current_actor_context.run(config_model=mock_configs.CONFIG)
 
     renamed_interfaces = current_actor_context.consume(RenamedInterfaces)[0]
     initrd_files = current_actor_context.consume(InitrdIncludes)[0]
@@ -150,7 +151,7 @@ def test_renamed_swap_eth(monkeypatch, current_actor_context):
     assert not t_initrafms_tasks.include_files
 
 
-def test_bz_1899455_crash_iface(monkeypatch, current_actor_context, adjust_cwd):
+def test_bz_1899455_crash_iface(monkeypatch, adjust_cwd):
     """
     Cover situation when network device is discovered on the src sys but not
     inside the upgrade environment.
@@ -177,3 +178,28 @@ def test_bz_1899455_crash_iface(monkeypatch, current_actor_context, adjust_cwd):
     for prod_models in [RenamedInterfaces, InitrdIncludes, TargetInitramfsTasks]:
         any(isinstance(i, prod_models) for i in persistentnetnamesconfig.api.produce.model_instances)
     assert any(['Some network devices' in x for x in persistentnetnamesconfig.api.current_logger.warnmsg])
+
+
+def test_no_network_renaming(monkeypatch):
+    """
+    This should cover OAMG-4243.
+    """
+    # this mock should be needed, as this function should be called, but just
+    # for a check..
+    monkeypatch.setattr(persistentnetnamesconfig, 'generate_link_file', generate_link_file_mocked)
+
+    interfaces = generate_interfaces(4)
+    for i in range(4):
+        interfaces[i].name = 'myinterface{}'.format(i)
+    msgs = [PersistentNetNamesFacts(interfaces=interfaces)]
+    interfaces[0].name = 'changedinterfacename0'
+    msgs.append(PersistentNetNamesFactsInitramfs(interfaces=interfaces))
+    mocked_actor = CurrentActorMocked(msgs=msgs, envars={'LEAPP_NO_NETWORK_RENAMING': '1'})
+    monkeypatch.setattr(persistentnetnamesconfig.api, 'current_actor', mocked_actor)
+    monkeypatch.setattr(persistentnetnamesconfig.api, 'current_logger', logger_mocked())
+    monkeypatch.setattr(persistentnetnamesconfig.api, 'produce', produce_mocked())
+    persistentnetnamesconfig.process()
+
+    ilog = 'Skipping handling of possibly renamed network interfaces: leapp executed with LEAPP_NO_NETWORK_RENAMING=1'
+    assert ilog in persistentnetnamesconfig.api.current_logger.infomsg
+    assert not persistentnetnamesconfig.api.produce.called
