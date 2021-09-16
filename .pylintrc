@@ -51,6 +51,7 @@ disable=
  use-a-generator,  # cannot be modified because of Python2 support
  consider-using-with,  # on bunch spaces we cannot change that...
  duplicate-string-formatting-argument,  # TMP: will be fixed in close future
+ consider-using-f-string  # sorry, not gonna happen, still have to support py2
 
 [FORMAT]
 # Maximum number of characters on a single line.

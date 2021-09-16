@@ -194,8 +194,7 @@ def _update_config(config):
         if data.type != data.TYPE_OPTION:
             continue
         if section == 'defaults':
-            if (data.option == 'path_checker' or data.option == 'checker') and \
-                    data.value != 'tur':
+            if (data.option in ('path_checker', 'checker')) and data.value != 'tur':
                 lines[i] = _comment_out_line(line)
                 continue
             if data.option in _bool_options and \

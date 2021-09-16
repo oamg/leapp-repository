@@ -124,7 +124,7 @@ def _parse_config(path):
         if data.type != data.TYPE_OPTION:
             continue
         if section == 'defaults':
-            if data.option == 'path_checker' or data.option == 'checker':
+            if data.option in ('path_checker', 'checker'):
                 conf.default_path_checker = data.value
             elif data.option == 'config_dir':
                 conf.config_dir = data.value
