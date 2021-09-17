@@ -246,10 +246,15 @@ lint:
 	echo "--- Running pylint ---" && \
 	bash -c "[[ ! -z $${SEARCH_PATH} ]] && find $${SEARCH_PATH} -name '*.py' | sort -u | xargs pylint" && \
 	echo "--- Running flake8 ---" && \
-	bash -c "[[ ! -z $${SEARCH_PATH} ]] && flake8 $${SEARCH_PATH}" && \
-	echo "--- Checking py3 compatibility ---" && \
-	bash -c "[[ ! -z $${SEARCH_PATH} ]] && find $${SEARCH_PATH} -name '*.py' | sort -u | xargs pylint --py3k" && \
-	echo "--- Linting done. ---"
+	bash -c "[[ ! -z $${SEARCH_PATH} ]] && flake8 $${SEARCH_PATH}"
+
+	if [[ "$(_PYTHON_VENV)" == "python2.7" ]] ; then \
+		. $(VENVNAME)/bin/activate; \
+		echo "--- Checking py3 compatibility ---" && \
+		SEARCH_PATH=$(REPOS_PATH) && \
+		bash -c "[[ ! -z $${SEARCH_PATH} ]] && find $${SEARCH_PATH} -name '*.py' | sort -u | xargs pylint --py3k" && \
+		echo "--- Linting done. ---"; \
+	fi
 
 test_no_lint:
 	. $(VENVNAME)/bin/activate; \
