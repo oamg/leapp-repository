@@ -266,6 +266,23 @@ test_no_lint:
 
 test: lint test_no_lint
 
+fast_lint:
+	@. $(VENVNAME)/bin/activate; \
+	FILES_TO_LINT="$$(git diff --name-only $(MASTER_BRANCH)| grep '\.py$$')"; \
+	if [[ -n "$$FILES_TO_LINT" ]]; then \
+		pylint -j 0 $$FILES_TO_LINT && \
+		flake8 $$FILES_TO_LINT; \
+		LINT_EXIT_CODE="$$?"; \
+		if [[ "$$LINT_EXIT_CODE" != "0" ]]; then \
+			exit $$LINT_EXIT_CODE; \
+		fi; \
+		if [[ "$(_PYTHON_VENV)" == "python2.7" ]] ; then \
+			pylint --py3k $$FILES_TO_LINT; \
+		fi; \
+	else \
+		echo "No files to lint."; \
+	fi
+
 dashboard_data:
 	. $(VENVNAME)/bin/activate; \
 	snactor repo find --path repos/; \
