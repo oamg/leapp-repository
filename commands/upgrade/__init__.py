@@ -53,7 +53,7 @@ def upgrade(args):
             os.environ['LEAPP_VERBOSE'] = '1'
         else:
             os.environ['LEAPP_VERBOSE'] = '0'
-
+        util.restore_leapp_env_vars(context)
         skip_phases_until = util.get_last_phase(context)
     else:
         e = Execution(context=context, kind='upgrade', configuration=configuration)
