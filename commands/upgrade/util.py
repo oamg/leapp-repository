@@ -8,9 +8,19 @@ from datetime import datetime
 from leapp.config import get_config
 from leapp.exceptions import CommandError
 from leapp.repository.scan import find_and_scan_repositories
-from leapp.utils.audit import get_connection, get_checkpoints
+from leapp.utils.audit import get_connection, get_checkpoints, get_messages
 from leapp.utils.output import report_unsupported
 from leapp.utils.report import fetch_upgrade_report_messages, generate_report_file
+
+
+def restore_leapp_env_vars(context):
+    """
+    Restores leapp environment variables from the `IPUConfig` message.
+    """
+    messages = get_messages(('IPUConfig',), context)
+    leapp_env_vars = json.loads((messages or [{}])[0].get('message', {}).get('data', '{}')).get('leapp_env_vars', {})
+    for entry in leapp_env_vars:
+        os.environ[entry['name']] = entry['value']
 
 
 def archive_logfiles():
