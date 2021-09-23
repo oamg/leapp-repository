@@ -57,6 +57,7 @@ from leapp.utils.deprecation import suppress_deprecation
 # Issue: #486
 
 PROD_CERTS_FOLDER = 'prod-certs'
+PERSISTENT_PACKAGE_CACHE_DIR = '/var/lib/leapp/persistent_package_cache'
 
 
 def _check_deprecated_rhsm_skip():
@@ -122,16 +123,38 @@ class _InputData(object):
             raise StopActorExecutionError('No storage info available cannot proceed.')
 
 
+def _restore_persistent_package_cache(userspace_dir):
+    if get_env('LEAPP_DEVEL_USE_PERSISTENT_PACKAGE_CACHE', None) == '1':
+        if os.path.exists(PERSISTENT_PACKAGE_CACHE_DIR):
+            with mounting.NspawnActions(base_dir=userspace_dir) as target_context:
+                target_context.copytree_to(PERSISTENT_PACKAGE_CACHE_DIR, '/var/cache/dnf')
+    # We always want to remove the persistent cache here to unclutter the system
+    run(['rm', '-rf', PERSISTENT_PACKAGE_CACHE_DIR])
+
+
+def _backup_to_persistent_package_cache(userspace_dir):
+    if get_env('LEAPP_DEVEL_USE_PERSISTENT_PACKAGE_CACHE', None) == '1':
+        # Clean up any dead bodies, just in case
+        run(['rm', '-rf', PERSISTENT_PACKAGE_CACHE_DIR])
+        if os.path.exists(os.path.join(userspace_dir, 'var', 'cache', 'dnf')):
+            with mounting.NspawnActions(base_dir=userspace_dir) as target_context:
+                target_context.copytree_from('/var/cache/dnf', PERSISTENT_PACKAGE_CACHE_DIR)
+
+
 def prepare_target_userspace(context, userspace_dir, enabled_repos, packages):
     """
     Implement the creation of the target userspace.
     """
+    _backup_to_persistent_package_cache(userspace_dir)
+
     target_major_version = get_target_major_version()
     run(['rm', '-rf', userspace_dir])
     _create_target_userspace_directories(userspace_dir)
     with mounting.BindMount(
         source=userspace_dir, target=os.path.join(context.base_dir, 'el{}target'.format(target_major_version))
     ):
+        _restore_persistent_package_cache(userspace_dir)
+
         repos_opt = [['--enablerepo', repo] for repo in enabled_repos]
         repos_opt = list(itertools.chain(*repos_opt))
         cmd = ['dnf',
