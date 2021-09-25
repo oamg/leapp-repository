@@ -19,6 +19,10 @@ class CheckBtrfs(Actor):
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 
     def process(self):
+
+        hint = 'In order to unload the module from the running system, check the accompanied command.'
+        command = ['modprobe', '-r', 'btrfs']
+
         for fact in self.consume(ActiveKernelModulesFacts):
             for active_module in fact.kernel_modules:
                 if active_module.filename == 'btrfs':
@@ -33,9 +37,14 @@ class CheckBtrfs(Actor):
                             title='Considerations in adopting RHEL 8 - btrfs has been removed.',
                             url='https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/considerations_in_adopting_rhel_8/file-systems-and-storage_considerations-in-adopting-rhel-8#btrfs-has-been-removed_file-systems-and-storage'  # noqa: E501; pylint: disable=line-too-long
                         ),
+                        reporting.ExternalLink(
+                            title='How do I prevent a kernel module from loading automatically?',
+                            url='https://access.redhat.com/solutions/41278'
+                        ),
                         reporting.Severity(reporting.Severity.HIGH),
                         reporting.Flags([reporting.Flags.INHIBITOR]),
                         reporting.Tags([reporting.Tags.FILESYSTEM]),
+                        reporting.Remediation(hint=hint, commands=[command]),
                         reporting.RelatedResource('kernel-driver', 'btrfs')
                     ])
                     break
