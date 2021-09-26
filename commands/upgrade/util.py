@@ -104,6 +104,7 @@ def get_last_phase(context):
     checkpoints = get_checkpoints(context=context)
     if checkpoints:
         return checkpoints[-1]['phase']
+    return None
 
 
 def check_env_and_conf(env_var, conf_var, configuration):
@@ -170,6 +171,12 @@ def prepare_configuration(args):
         os.environ['LEAPP_NO_RHSM'] = os.getenv('LEAPP_DEVEL_SKIP_RHSM', '0')
     if args.enablerepo:
         os.environ['LEAPP_ENABLE_REPOS'] = ','.join(args.enablerepo)
+
+    if args.channel:
+        # The devel env var has higher priority than the option
+        if 'LEAPP_DEVEL_TARGET_PRODUCT_TYPE' not in os.environ:
+            os.environ['LEAPP_DEVEL_TARGET_PRODUCT_TYPE'] = args.channel
+
     configuration = {
         'debug': os.getenv('LEAPP_DEBUG', '0'),
         'verbose': os.getenv('LEAPP_VERBOSE', '0'),

@@ -1,3 +1,4 @@
+from leapp.libraries.common.config import get_env
 from leapp.libraries.common.config.version import get_source_major_version, get_target_major_version
 from leapp.libraries.stdlib import api
 
@@ -45,7 +46,8 @@ class RepoMapDataHandler(object):
         # hardcoded always as ga? instead of list of channels..
         # it'd be possibly confusing naming now...
         self.default_channels = default_channels or ['ga']
-        self.prio_channel = prio_channel
+
+        self.prio_channel = prio_channel or get_env('LEAPP_DEVEL_TARGET_PRODUCT_TYPE', None)
 
     def set_default_channels(self, default_channels):
         """
