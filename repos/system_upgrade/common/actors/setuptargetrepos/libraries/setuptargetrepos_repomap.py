@@ -1,4 +1,4 @@
-from leapp.libraries.common.config import get_env
+from leapp.libraries.common.config import get_target_product_channel
 from leapp.libraries.common.config.version import get_source_major_version, get_target_major_version
 from leapp.libraries.stdlib import api
 
@@ -47,7 +47,9 @@ class RepoMapDataHandler(object):
         # it'd be possibly confusing naming now...
         self.default_channels = default_channels or ['ga']
 
-        self.prio_channel = prio_channel or get_env('LEAPP_DEVEL_TARGET_PRODUCT_TYPE', None)
+        # Make self.prio_channel None if the user did not specify any target channels, so that self.default_channels
+        # will be used instead
+        self.prio_channel = prio_channel or get_target_product_channel(default=None)
 
     def set_default_channels(self, default_channels):
         """
