@@ -43,3 +43,30 @@ def get_product_type(sys_type):
     if val in ('beta', 'htb', 'ga'):
         return val
     raise ValueError('Invalid value in the {} envar. Possible values: ga/beta/htb.'.format(envar))
+
+
+def get_target_product_channel(default='ga'):
+    """
+    Get target product channel specified when running the IPU or default if no channel was specified.
+
+    The target channel can be specified via:
+        - Using the environment variable LEAPP_DEVEL_TARGET_PRODUCT_TYPE (devel variable with higher priority than
+        other any way of specifying target channel).
+        - Using the environment variable LEAPP_TARGET_PRODUCT_CHANNEL
+        - Using the '--channel' option when runnning leapp preupgrade/upgrade
+
+    :param default: Value to be returned if no target product type has been specified when running leapp.
+    :type default: str
+    :returns: The user-specified target channel or default if no channel was specified.
+    :rtype: str
+    """
+
+    devel_target_product_type = gen_env('LEAPP_DEVEL_TARGET_PRODUCT_TYPE')
+    if devel_target_product_type:
+        return devel_target_product_type
+
+    target_product_channel = gen_env('LEAPP_TARGET_PRODUCT_CHANNEL')
+    if target_product_channel:
+        return target_product_channel
+
+    return default
