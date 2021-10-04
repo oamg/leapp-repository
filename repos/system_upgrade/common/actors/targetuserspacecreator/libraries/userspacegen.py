@@ -180,17 +180,100 @@ def prepare_target_userspace(context, userspace_dir, enabled_repos, packages):
             )
 
 
+def _get_all_rhui_pkgs():
+    """
+    Return the list of rhui packages
+
+    Currently, do not care about what rhui we have, release, etc.
+    Just take all packages. We need them just for the purpose of filtering
+    what files we have to remove (see _prep_repository_access) and it's ok
+    for us to use whatever rhui rpms (the relevant rpms catch the problem,
+    the others are just taking bytes in memory...). It's a hot-fix. We are going
+    to refactor the library later completely..
+    """
+    pkgs = []
+    for rhui_map in rhui.RHUI_CLOUD_MAP[api.current_actor().configuration.architecture].values():
+        for key in rhui_map.keys():
+            if not key.endswith('pkg'):
+                continue
+            pkgs.append(rhui_map[key])
+    return pkgs
+
+
+def _get_files_owned_by_rpms(context, dirpath, pkgs=None):
+    """
+    Return the list of file names inside dirpath owned by RPMs.
+
+    This is important e.g. in case of RHUI which installs specific repo files
+    in the yum.repos.d directory.
+
+    In case the pkgs param is None or empty, do not filter any specific rpms.
+    Otherwise return filenames that are owned by any pkg in the given list.
+    """
+    files_owned_by_rpms = []
+    for fname in os.listdir(context.full_path(dirpath)):
+        try:
+            result = context.call(['rpm', '-qf', os.path.join(dirpath, fname)])
+        except CalledProcessError:
+            api.current_logger().debug('SKIP the {} file: not owned by any rpm'.format(fname))
+            continue
+        if pkgs and not [pkg for pkg in pkgs if pkg in result['stdout']]:
+            api.current_logger().debug('SKIP the {} file: not owned by any searched rpm:'.format(fname))
+            continue
+        api.current_logger().debug('Found the file owned by an rpm: {}.'.format(fname))
+        files_owned_by_rpms.append(fname)
+    return files_owned_by_rpms
+
+
 def _prep_repository_access(context, target_userspace):
     """
     Prepare repository access by copying all relevant certificates and configuration files to the userspace
     """
+    target_etc = os.path.join(target_userspace, 'etc')
+    target_yum_repos_d = os.path.join(target_etc, 'yum.repos.d')
+    backup_yum_repos_d = os.path.join(target_etc, 'yum.repos.d.backup')
     if not rhsm.skip_rhsm():
-        run(['rm', '-rf', os.path.join(target_userspace, 'etc', 'pki')])
-        run(['rm', '-rf', os.path.join(target_userspace, 'etc', 'rhsm')])
-        context.copytree_from('/etc/pki', os.path.join(target_userspace, 'etc', 'pki'))
-        context.copytree_from('/etc/rhsm', os.path.join(target_userspace, 'etc', 'rhsm'))
-    run(['rm', '-rf', os.path.join(target_userspace, 'etc', 'yum.repos.d')])
-    context.copytree_from('/etc/yum.repos.d', os.path.join(target_userspace, 'etc', 'yum.repos.d'))
+        run(['rm', '-rf', os.path.join(target_etc, 'pki')])
+        run(['rm', '-rf', os.path.join(target_etc, 'rhsm')])
+        context.copytree_from('/etc/pki', os.path.join(target_etc, 'pki'))
+        context.copytree_from('/etc/rhsm', os.path.join(target_etc, 'rhsm'))
+    # NOTE: we cannot just remove the original target yum.repos.d dir
+    # as e.g. in case of RHUI a special RHUI repofiles are installed by a pkg
+    # when the target userspace container is created. Removing these files we loose
+    # RHUI target repositories. So ...->
+    # -> detect such a files...
+    with mounting.NspawnActions(base_dir=target_userspace) as target_context:
+        files_owned_by_rpms = _get_files_owned_by_rpms(target_context, '/etc/yum.repos.d')
+
+    # -> backup the orig dir & install the new one
+    run(['mv', target_yum_repos_d, backup_yum_repos_d])
+    context.copytree_from('/etc/yum.repos.d', target_yum_repos_d)
+
+    # -> find old rhui repo files (we have to remove these as they cause duplicates)
+    rhui_pkgs = _get_all_rhui_pkgs()
+    old_files_owned_by_rhui_rpms = _get_files_owned_by_rpms(context, '/etc/yum.repos.d', rhui_pkgs)
+    for fname in old_files_owned_by_rhui_rpms:
+        api.current_logger().debug('Remove the old repofile: {}'.format(fname))
+        run(['rm', '-f', os.path.join(target_yum_repos_d, fname)])
+    # .. continue: remove our leapp rhui repo file (do not care if we are on rhui or not)
+    for rhui_map in rhui.gen_rhui_files_map().values():
+        for item in rhui_map:
+            if item[1] != rhui.YUM_REPOS_PATH:
+                continue
+            target_leapp_repofile = os.path.join(target_yum_repos_d, item[0])
+            if not os.path.isfile(target_leapp_repofile):
+                continue
+            # we found it!!
+            run(['rm', '-f', target_leapp_repofile])
+            break
+
+    # -> copy expected files back
+    for fname in files_owned_by_rpms:
+        api.current_logger().debug('Copy the backed up repo file: {}'.format(fname))
+        run(['mv', os.path.join(backup_yum_repos_d, fname), os.path.join(target_yum_repos_d, fname)])
+
+    # -> remove the backed up dir
+    run(['rm', '-rf', backup_yum_repos_d])
 
 
 def _get_product_certificate_path():
