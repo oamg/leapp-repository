@@ -202,7 +202,10 @@ def _get_product_certificate_path():
     target_product_type = get_product_type('target')
     certs_dir = api.get_common_folder_path(PROD_CERTS_FOLDER)
 
-    # TODO: do we need EUS/... here or is it ga one enough to get eus repos?
+    # We do not need any special certificates to reach repos from non-ga channels, only beta requires special cert.
+    if target_product_type != 'beta':
+        target_product_type = 'ga'
+
     prod_certs = {
         'x86_64': {
             'ga': '479.pem',
