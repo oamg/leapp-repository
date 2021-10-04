@@ -173,9 +173,7 @@ def prepare_configuration(args):
         os.environ['LEAPP_ENABLE_REPOS'] = ','.join(args.enablerepo)
 
     if args.channel:
-        # The devel env var has higher priority than the option
-        if 'LEAPP_DEVEL_TARGET_PRODUCT_TYPE' not in os.environ:
-            os.environ['LEAPP_DEVEL_TARGET_PRODUCT_TYPE'] = args.channel
+        os.environ['LEAPP_TARGET_PRODUCT_CHANNEL'] = args.channel
 
     configuration = {
         'debug': os.getenv('LEAPP_DEBUG', '0'),
