@@ -207,22 +207,18 @@ def _get_product_certificate_path():
         'x86_64': {
             'ga': '479.pem',
             'beta': '486.pem',
-            'htb': '230.pem',
         },
         'aarch64': {
             'ga': '419.pem',
             'beta': '363.pem',
-            'htb': '489.pem',
         },
         'ppc64le': {
             'ga': '279.pem',
             'beta': '362.pem',
-            'htb': '233.pem',
         },
         's390x': {
             'ga': '72.pem',
             'beta': '433.pem',
-            'htb': '232.pem',
         }
     }
 
@@ -236,8 +232,8 @@ def _get_product_certificate_path():
         details = {'missing certificate': cert, 'path': cert_path}
         if target_product_type != 'ga':
             details['hint'] = (
-                'You chose to upgrade to beta or htb system but probably'
-                ' chose version for which beta/htb certificates are not'
+                'You chose to upgrade to beta system but probably'
+                ' chose version for which beta certificates are not'
                 ' attached (e.g. because the GA has been released already).'
                 ' Set the target os version for which the {} certificate'
                 ' is provided using the LEAPP_DEVEL_TARGET_RELEASE envar.'
