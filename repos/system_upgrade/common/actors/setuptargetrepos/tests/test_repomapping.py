@@ -575,12 +575,11 @@ def test_get_default_repository_channels_no_default_pesid_repo(monkeypatch):
     assert ['ga'] == get_default_repository_channels(handler, ['some-repoid'])
 
 
-@pytest.mark.parametrize('is_from_env_vars', (False, True))
-def test_find_repository_equivalent_with_priority_channel(monkeypatch, is_from_env_vars):
+def test_find_repository_equivalent_with_priority_channel(monkeypatch):
     """
     Tests whether the _find_repository_target_equivalent correctly respects the chosen preferred channel.
     """
-    envars = {'LEAPP_DEVEL_TARGET_PRODUCT_TYPE': 'eus'} if is_from_env_vars else {}
+    envars = {'LEAPP_DEVEL_TARGET_PRODUCT_TYPE': 'eus'}
 
     monkeypatch.setattr(api, 'current_actor',
                         CurrentActorMocked(arch='x86_64', src_ver='7.9', dst_ver='8.4', envars=envars))
@@ -593,8 +592,7 @@ def test_find_repository_equivalent_with_priority_channel(monkeypatch, is_from_e
         ]
     )
 
-    prio_channel = None if is_from_env_vars else 'eus'
-    handler = RepoMapDataHandler(repositories_mapping, prio_channel=prio_channel)
+    handler = RepoMapDataHandler(repositories_mapping)
     handler.set_default_channels(['ga'])
 
     assert handler.prio_channel == 'eus'
@@ -606,13 +604,12 @@ def test_find_repository_equivalent_with_priority_channel(monkeypatch, is_from_e
     assert expected_target_equivalent == actual_target_equivalent, fail_description
 
 
-@pytest.mark.parametrize('is_from_env_vars', (False, True))
-def test_get_expected_target_pesid_repos_with_priority_channel_set(monkeypatch, is_from_env_vars):
+def test_get_expected_target_pesid_repos_with_priority_channel_set(monkeypatch):
     """
     Tests whether the get_expected_target_peid_repos correctly respects the chosen preferred channel.
     """
 
-    envars = {'LEAPP_DEVEL_TARGET_PRODUCT_TYPE': 'eus'} if is_from_env_vars else {}
+    envars = {'LEAPP_DEVEL_TARGET_PRODUCT_TYPE': 'eus'}
 
     monkeypatch.setattr(api, 'current_actor',
                         CurrentActorMocked(arch='x86_64', src_ver='7.9', dst_ver='8.4', envars=envars))
@@ -628,8 +625,7 @@ def test_get_expected_target_pesid_repos_with_priority_channel_set(monkeypatch, 
         ]
     )
 
-    prio_channel = 'eus' if not is_from_env_vars else None
-    handler = RepoMapDataHandler(repositories_mapping, prio_channel=prio_channel)
+    handler = RepoMapDataHandler(repositories_mapping)
     # Set defaults to verify that the priority channel is not overwritten by defaults
     handler.set_default_channels(['tuv', 'ga'])
     target_repoids = handler.get_expected_target_pesid_repos(['pesid1-repoid-ga'])
