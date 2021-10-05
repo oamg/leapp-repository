@@ -23,7 +23,7 @@ class RepoMapDataHandler(object):
     Provide the basic functionality to work with the repository data easily.
     """
 
-    def __init__(self, repo_map, default_channels=None, prio_channel=None):
+    def __init__(self, repo_map, default_channels=None):
         """
         Initialize the object based on the given RepositoriesMapping msg.
 
@@ -49,7 +49,7 @@ class RepoMapDataHandler(object):
 
         # Make self.prio_channel None if the user did not specify any target channels, so that self.default_channels
         # will be used instead
-        self.prio_channel = prio_channel or get_target_product_channel(default=None)
+        self.prio_channel = get_target_product_channel(default=None)
 
     def set_default_channels(self, default_channels):
         """
