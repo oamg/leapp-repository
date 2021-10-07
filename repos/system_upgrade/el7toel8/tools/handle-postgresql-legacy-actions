@@ -1,0 +1,6 @@
+#!/usr/bin/bash -e
+
+# lets assume the new PostgreSQL package will just fix this
+if [ -L /usr/libexec/initscripts/legacy-actions/postgresql ]; then
+  rm -f /usr/libexec/initscripts/legacy-actions/postgresql
+fi

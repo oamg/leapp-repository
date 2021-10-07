@@ -1,6 +1,6 @@
-from collections import namedtuple
 import logging
 import os
+from collections import namedtuple
 
 from leapp.libraries.common.config import architecture
 from leapp.models import EnvVar
@@ -20,14 +20,22 @@ class produce_mocked(object):
 class create_report_mocked(object):
     def __init__(self):
         self.called = 0
-        self.report_fields = {}
+        self.reports = []
 
     def __call__(self, report_fields):
         self.called += 1
+        full_report = {}
         # iterate list of report primitives (classes)
         for report in report_fields:
             # last element of path is our field name
-            self.report_fields.update(report.to_dict())
+            full_report.update(report.to_dict())
+        self.reports.append(full_report)
+
+    @property
+    def report_fields(self):
+        if self.reports:
+            return self.reports[-1]
+        return {}
 
 
 class logger_mocked(object):
