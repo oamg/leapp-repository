@@ -7,7 +7,22 @@ import sys
 import dnf
 import dnf.cli
 
-CMDS = ['download', 'upgrade', 'check']
+CMDS = ['check', 'download', 'dry-run', 'upgrade']
+"""
+Basic subcommands for the plugin.
+
+    check    -> check we are able to calculate the DNF transaction using
+                only the YUM/DNF repositories metadata (no packages downloaded)
+    download -> calculate the transaction, download all packages and test
+                the transaction is duable using data contained in RPMs
+                (include search for file conflicts, disk space, ...)
+    dry-run  -> test the transaction again with the cached content (including
+                the downloaded RPMs; it is subset of the download cmd)(
+                  BZ: 1976932 - not enough space on disk,
+                  PR: https://github.com/oamg/leapp-repository/pull/734
+                )
+    upgrade  -> perform the DNF transactino using the cached data only
+"""
 
 
 class DoNotDownload(Exception):
@@ -90,7 +105,7 @@ class RhelUpgradeCommand(dnf.cli.Command):
         self.cli.demands.resolving = self.opts.tid[0] != 'check'
         self.cli.demands.available_repos = True
         self.cli.demands.sack_activation = True
-        self.cli.demands.cacheonly = self.opts.tid[0] == 'upgrade'
+        self.cli.demands.cacheonly = self.opts.tid[0] in ['dry-run', 'upgrade']
         self.cli.demands.allow_erasing = self.plugin_data['dnf_conf']['allow_erasing']
         self.base.conf.protected_packages = []
         self.base.conf.best = self.plugin_data['dnf_conf']['best']
@@ -101,7 +116,7 @@ class RhelUpgradeCommand(dnf.cli.Command):
         installroot = self.plugin_data['dnf_conf'].get('installroot')
         if installroot:
             self.base.conf.installroot = installroot
-        if self.plugin_data['dnf_conf']['test_flag'] and self.opts.tid[0] == 'download':
+        if self.plugin_data['dnf_conf']['test_flag'] and self.opts.tid[0] in ['download', 'dry-run']:
             self.base.conf.tsflags.append("test")
 
         enabled_repos = self.plugin_data['dnf_conf']['enable_repos']
@@ -128,7 +143,7 @@ class RhelUpgradeCommand(dnf.cli.Command):
                     # region should be same for all repos so we are fine to collect it from
                     # the last one
                     aws_region = self._read_aws_region(repo)
-                if self.opts.tid[0] == 'upgrade' and on_aws:
+                if self.opts.tid[0] in ['dry-run', 'upgrade'] and on_aws:
                     aws_region = self.plugin_data['rhui']['aws']['region']
                     if aws_region:
                         repo = self._fix_rhui_url(repo, aws_region)
