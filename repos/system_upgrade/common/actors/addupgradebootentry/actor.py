@@ -2,7 +2,7 @@ import os
 
 from leapp.actors import Actor
 from leapp.libraries.actor.addupgradebootentry import add_boot_entry, fix_grub_config_error
-from leapp.models import BootContent, GrubConfigError, FirmwareFacts
+from leapp.models import BootContent, GrubConfigError, FirmwareFacts, TransactionDryRun
 from leapp.exceptions import StopActorExecutionError
 from leapp.tags import InterimPreparationPhaseTag, IPUWorkflowTag
 
@@ -15,7 +15,7 @@ class AddUpgradeBootEntry(Actor):
     """
 
     name = 'add_upgrade_boot_entry'
-    consumes = (BootContent, GrubConfigError, FirmwareFacts)
+    consumes = (BootContent, GrubConfigError, FirmwareFacts, TransactionDryRun)
     produces = ()
     tags = (IPUWorkflowTag, InterimPreparationPhaseTag)
 
