@@ -1,33 +1,34 @@
-import base64
-import io
 import os
-import re
-import tarfile
-import tempfile
 
 from leapp.libraries.actor import checkvdo
 from leapp import reporting
 from leapp.libraries.common.testutils import create_report_mocked
 
 
-def test_nomigration(monkeypatch):
+def test_no_unmigrated_vdo(monkeypatch):
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
-#     monkeypatch.setattr(checkvdo, 'check_service', lambda _: False)
-#     monkeypatch.setattr(checkvdo, 'is_file', lambda _: False)
-#     monkeypatch.setattr(checkvdo, 'get_tgz64', lambda _: '')
+    monkeypatch.setattr(checkvdo, '_canonicalize_device_path', lambda x: x)
+    monkeypatch.setattr(checkvdo, '_get_blkid_vdo_results',
+                        lambda: os.linesep.join([]))
+    monkeypatch.setattr(checkvdo, '_get_dmsetup_vdo_results',
+                        lambda: os.linesep.join([]))
 
     checkvdo.check_vdo()
 
-    assert reporting.create_report.called == 0
+    assert reporting.create_report.called == 1
+    assert 'VDO instances that require migration: None' in reporting.create_report.report_fields['summary']
 
 
-def test_migration(monkeypatch):
+def test_unmigrated_vdo(monkeypatch):
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
-#     monkeypatch.setattr(checkvdo, 'check_service', lambda service: service[:-8] in services)
-#     monkeypatch.setattr(checkvdo, 'is_file', lambda _: True)
-#     monkeypatch.setattr(checkvdo, 'get_tgz64', lambda _: '')
+    monkeypatch.setattr(checkvdo, '_canonicalize_device_path', lambda x: x)
+    monkeypatch.setattr(checkvdo, '_get_blkid_vdo_results',
+                        lambda: os.linesep.join(["/dev/sda", "/dev/sdb"]))
+    monkeypatch.setattr(checkvdo, '_get_dmsetup_vdo_results',
+                        lambda: os.linesep.join([]))
 
-    migrate = set(["a", "b"])
-    decision = checkvdo.check_vdo()
+    checkvdo.check_vdo()
 
-    assert reporting.create_report.called == 0
+    assert reporting.create_report.called == 1
+    assert 'VDO instances that require migration: None' not in reporting.create_report.report_fields['summary']
+    assert 'inhibitor' in reporting.create_report.report_fields['flags']
