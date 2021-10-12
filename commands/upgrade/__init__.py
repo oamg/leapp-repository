@@ -67,6 +67,7 @@ def upgrade(args, breadcrumbs):
         util.restore_leapp_env_vars(context)
         skip_phases_until = util.get_last_phase(context)
     else:
+        util.disable_database_sync()
         configuration = util.prepare_configuration(args)
         e = Execution(context=context, kind='upgrade', configuration=configuration)
         e.store()
