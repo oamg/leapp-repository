@@ -1,3 +1,4 @@
+import functools
 import itertools
 import json
 import os
@@ -9,9 +10,28 @@ from leapp.cli.commands import command_utils
 from leapp.config import get_config
 from leapp.exceptions import CommandError
 from leapp.repository.scan import find_and_scan_repositories
+from leapp.utils import audit
 from leapp.utils.audit import get_checkpoints, get_connection, get_messages
 from leapp.utils.output import report_unsupported
 from leapp.utils.report import fetch_upgrade_report_messages, generate_report_file
+
+
+def disable_database_sync():
+    def disable_db_sync_decorator(f):
+        @functools.wraps(f)
+        def wrapper(*args, **kwargs):
+            try:
+                saved = os.environ.get('LEAPP_DEVEL_DATABASE_SYNC_OFF', None)
+                os.environ['LEAPP_DEVEL_DATABASE_SYNC_OFF'] = '1'
+                return f(*args, **kwargs)
+            finally:
+                os.environ.pop('LEAPP_DEVEL_DATABASE_SYNC_OFF')
+                if saved:
+                    os.environ['LEAPP_DEVEL_DATABASE_SYNC_OFF'] = saved
+        return wrapper
+
+    if not os.environ.get('LEAPP_DATABASE_FORCE_SYNC_ON', None):
+        audit.create_connection = disable_db_sync_decorator(audit.create_connection)
 
 
 def restore_leapp_env_vars(context):

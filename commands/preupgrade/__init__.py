@@ -31,6 +31,7 @@ from leapp.utils.output import beautify_actor_exception, report_errors, report_i
              default=get_config().get('report', 'schema'))
 @breadcrumbs.produces_breadcrumbs
 def preupgrade(args, breadcrumbs):
+    util.disable_database_sync()
     context = str(uuid.uuid4())
     cfg = get_config()
     util.handle_output_level(args)
