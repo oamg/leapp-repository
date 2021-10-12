@@ -24,6 +24,13 @@ AZURE_MAP = {
     'leapp_pkg_repo': 'leapp-azure.repo'
 }
 
+AZURE_MAP_SAP = {
+    'el7_pkg': 'rhui-azure-rhel7-base-sap-ha',
+    'el8_pkg': 'rhui-azure-rhel8-sap-ha',
+    'agent_pkg': 'WALinuxAgent',
+    'leapp_pkg': 'leapp-rhui-azure-sap',
+    'leapp_pkg_repo': 'leapp-azure-sap.repo'
+}
 
 # for the moment the only difference in RHUI package naming is on ARM
 AWS_MAP_AARCH64 = dict(AWS_MAP, el7_pkg='rh-amazon-rhui-client-arm')
@@ -33,21 +40,25 @@ RHUI_CLOUD_MAP = {
         'aws': AWS_MAP,
         'aws-sap-e4s': AWS_MAP_SAP,
         'azure': AZURE_MAP,
+        'azure-sap': AZURE_MAP_SAP,
     },
     'aarch64': {
         'aws': AWS_MAP_AARCH64,
         'aws-sap-e4s': AWS_MAP_SAP,
         'azure': AZURE_MAP,
+        'azure-sap': AZURE_MAP_SAP,
     },
     'ppc64le': {
         'aws': AWS_MAP,
         'aws-sap-e4s': AWS_MAP_SAP,
         'azure': AZURE_MAP,
+        'azure-sap': AZURE_MAP_SAP,
     },
     's390x': {
         'aws': AWS_MAP,
         'aws-sap-e4s': AWS_MAP_SAP,
         'azure': AZURE_MAP,
+        'azure-sap': AZURE_MAP_SAP,
     },
 }
 
@@ -95,7 +106,12 @@ def gen_rhui_files_map():
             ('content.crt', RHUI_PKI_PRODUCT_DIR),
             ('key.pem', RHUI_PKI_PRIVATE_DIR),
             (RHUI_CLOUD_MAP[arch]['azure']['leapp_pkg_repo'], YUM_REPOS_PATH)
-        ]
+        ],
+        'azure-sap': [
+            ('content-rhel8-sap-ha.crt', RHUI_PKI_PRODUCT_DIR),
+            ('key-rhel8-sap-ha.pem', RHUI_PKI_DIR),
+            (RHUI_CLOUD_MAP[arch]['azure-sap']['leapp_pkg_repo'], YUM_REPOS_PATH)
+        ],
     }
 
 
