@@ -6,7 +6,7 @@ from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 class CheckVdo(Actor):
     """
-    Check if vdo instances need to be migrated to lvm management.
+    Check if vdo devices need to be migrated to lvm management.
     """
 
     name = 'check_vdo'
