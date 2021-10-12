@@ -111,13 +111,13 @@ class TargetUserSpaceUpgradeTasks(TargetUserSpacePreupgradeTasks):
     """
 
 
-@deprecated(since='2021-04-01', message='Replaced by TargetUserSpacePreupgradeTasks.')
+@deprecated(since='2021-10-10', message='Replaced by TargetUserSpacePreupgradeTasks.')
 class RequiredTargetUserspacePackages(Model):
     topic = TargetUserspaceTopic
     packages = fields.List(fields.String(), default=[])
 
 
-@deprecated(since='2021-04-01', message='Replaced by TargetUserSpaceInitrdEnvTasks')
+@deprecated(since='2021-10-10', message='Replaced by TargetUserSpaceInitrdEnvTasks')
 class RequiredUpgradeInitramPackages(Model):
     """
     Requests packages to be installed so that the leapp upgrade dracut image generation will succeed

@@ -88,7 +88,7 @@ class TargetInitramfsTasks(UpgradeInitramfsTasks):
     """
 
 
-@deprecated(since='2021-04-01', message='Replaced by TargetInitramfsTasks.')
+@deprecated(since='2021-10-10', message='Replaced by TargetInitramfsTasks.')
 class InitrdIncludes(Model):
     """
     List of files (cannonical filesystem paths) to include in RHEL-8 initramfs
@@ -98,7 +98,7 @@ class InitrdIncludes(Model):
     files = fields.List(fields.String())
 
 
-@deprecated(since='2021-04-01', message='Replaced by UpgradeInitramfsTasks.')
+@deprecated(since='2021-10-10', message='Replaced by UpgradeInitramfsTasks.')
 class UpgradeDracutModule(Model):
     """
     Specify a dracut module that should be included into the (leapp) upgrade initramfs.
