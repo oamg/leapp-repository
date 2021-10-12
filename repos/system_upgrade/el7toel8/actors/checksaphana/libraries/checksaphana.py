@@ -5,11 +5,11 @@ from leapp import reporting
 
 
 # SAP HANA Compatibility
-# Requirement is SAP HANA 2.00 rev 55 which is the minimal supported revision for both RHEL 7.9 and RHEL 8.4
+# Requirement is SAP HANA 2.00 rev 54 which is the minimal supported revision for both RHEL 7.9 and RHEL 8.2
 
 SAP_HANA_MINIMAL_MAJOR_VERSION = 2
-SAP_HANA_RHEL8_REQUIRED_PATCH_LEVELS = ((5, 55, 0),)
-SAP_HANA_MINIMAL_VERSION_STRING = 'HANA 2.0 SPS05 rev 55 or later'
+SAP_HANA_RHEL8_REQUIRED_PATCH_LEVELS = ((5, 54, 0),)
+SAP_HANA_MINIMAL_VERSION_STRING = 'HANA 2.0 SPS05 rev 54 or later'
 
 
 def _manifest_get(manifest, key, default_value=None):
