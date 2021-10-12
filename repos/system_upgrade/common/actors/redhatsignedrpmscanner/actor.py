@@ -63,8 +63,10 @@ class RedHatSignedRpmScanner(Actor):
             arch = self.configuration.architecture
 
             el7_pkg = rhui.RHUI_CLOUD_MAP[arch]['azure']['el7_pkg']
+            el7_pkg_sap = rhui.RHUI_CLOUD_MAP[arch]['azure-sap']['el7_pkg']
             el8_pkg = rhui.RHUI_CLOUD_MAP[arch]['azure']['el8_pkg']
-            return pkg.name in [el7_pkg, el8_pkg]
+            el8_pkg_sap = rhui.RHUI_CLOUD_MAP[arch]['azure-sap']['el8_pkg']
+            return pkg.name in [el7_pkg, el7_pkg_sap, el8_pkg, el8_pkg_sap]
 
         for rpm_pkgs in self.consume(InstalledRPM):
             for pkg in rpm_pkgs.items:

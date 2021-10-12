@@ -35,6 +35,15 @@ class CheckRHUI(Actor):
         arch = self.configuration.architecture
         for provider, info in rhui.RHUI_CLOUD_MAP[arch].items():
             if has_package(InstalledRPM, info['el7_pkg']):
+                is_azure_sap = False
+                azure_sap_pkg = rhui.RHUI_CLOUD_MAP[arch]['azure-sap']['el7_pkg']
+                azure_nonsap_pkg = rhui.RHUI_CLOUD_MAP[arch]['azure']['el7_pkg']
+                # we need to do this workaround in order to overcome our RHUI handling limitation
+                # in case there are more client packages on the source system
+                if 'azure' in info['el7_pkg'] and has_package(InstalledRPM, azure_sap_pkg):
+                    is_azure_sap = True
+                    provider = 'azure-sap'
+                    info = rhui.RHUI_CLOUD_MAP[arch]['azure-sap']
                 if not rhsm.skip_rhsm():
                     create_report([
                         reporting.Title('Upgrade initiated with RHSM on public cloud with RHUI infrastructure'),
@@ -71,6 +80,9 @@ class CheckRHUI(Actor):
                 if info['el7_pkg'] != info['el8_pkg']:
                     self.produce(RpmTransactionTasks(to_install=[info['el8_pkg']]))
                     self.produce(RpmTransactionTasks(to_remove=[info['el7_pkg']]))
+                    if is_azure_sap:
+                        self.produce(RpmTransactionTasks(to_remove=[azure_nonsap_pkg]))
+
                 self.produce(RHUIInfo(provider=provider))
                 self.produce(RequiredTargetUserspacePackages(packages=[info['el8_pkg']]))
                 return
