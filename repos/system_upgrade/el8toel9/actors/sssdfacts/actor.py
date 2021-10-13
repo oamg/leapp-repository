@@ -2,11 +2,11 @@ from six.moves import configparser
 
 from leapp.actors import Actor
 from leapp.libraries.actor.sssdfacts import SSSDFactsLibrary
-from leapp.models import SSSDConfig
+from leapp.models import SSSDConfig8to9
 from leapp.tags import IPUWorkflowTag, FactsPhaseTag
 
 
-class SSSDFacts_8to9(Actor):
+class SSSDFacts8to9(Actor):
     """
     Check SSSD configuration for changes in RHEL9 and report them in model.
 
@@ -19,7 +19,7 @@ class SSSDFacts_8to9(Actor):
 
     name = 'sssd_facts'
     consumes = ()
-    produces = (SSSDConfig,)
+    produces = (SSSDConfig8to9,)
     tags = (IPUWorkflowTag, FactsPhaseTag)
 
     def process(self):

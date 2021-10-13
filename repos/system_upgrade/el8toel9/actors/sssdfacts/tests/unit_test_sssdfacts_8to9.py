@@ -2,7 +2,7 @@ import textwrap
 
 from six import StringIO
 
-from leapp.libraries.actor.sssdfacts import SSSDFactsLibrary_8to9
+from leapp.libraries.actor.sssdfacts import SSSDFactsLibrary
 from leapp.libraries.common import utils
 
 
@@ -13,7 +13,7 @@ def get_config(content):
 
 def test_empty_config():
     config = utils.parse_config()
-    facts = SSSDFactsLibrary_8to9(config).process()
+    facts = SSSDFactsLibrary(config).process()
 
     assert not facts.enable_files_domain_set
     assert not facts.explicit_files_domain
@@ -25,7 +25,7 @@ def test_enable_files_domain_set__notset():
     [sssd]
     """)
 
-    facts = SSSDFactsLibrary_8to9(config).process()
+    facts = SSSDFactsLibrary(config).process()
 
     assert not facts.enable_files_domain_set
     assert not facts.explicit_files_domain
@@ -38,7 +38,7 @@ def test_enable_files_domain_set__set_true():
     enable_files_domain = true
     """)
 
-    facts = SSSDFactsLibrary_8to9(config).process()
+    facts = SSSDFactsLibrary(config).process()
 
     assert facts.enable_files_domain_set
     assert not facts.explicit_files_domain
@@ -51,7 +51,7 @@ def test_enable_files_domain_set__set_false():
     enable_files_domain = false
     """)
 
-    facts = SSSDFactsLibrary_8to9(config).process()
+    facts = SSSDFactsLibrary(config).process()
 
     assert facts.enable_files_domain_set
     assert not facts.explicit_files_domain
@@ -63,7 +63,7 @@ def test_enable_files_domain_set__nodomain():
     [sssd]
     """)
 
-    facts = SSSDFactsLibrary_8to9(config).process()
+    facts = SSSDFactsLibrary(config).process()
 
     assert not facts.enable_files_domain_set
     assert not facts.explicit_files_domain
@@ -79,7 +79,7 @@ def test_explicit_files_domain__notset():
     id_provider = ldap
     """)
 
-    facts = SSSDFactsLibrary_8to9(config).process()
+    facts = SSSDFactsLibrary(config).process()
 
     assert not facts.enable_files_domain_set
     assert not facts.explicit_files_domain
@@ -95,7 +95,7 @@ def test_explicit_files_domain__set():
     id_provider = files
     """)
 
-    facts = SSSDFactsLibrary_8to9(config).process()
+    facts = SSSDFactsLibrary(config).process()
 
     assert not facts.enable_files_domain_set
     assert facts.explicit_files_domain
@@ -108,7 +108,7 @@ def test_pam_cert_auth__notset():
     pam_gssapi_services = sudo
     """)
 
-    facts = SSSDFactsLibrary_8to9(config).process()
+    facts = SSSDFactsLibrary(config).process()
 
     assert not facts.enable_files_domain_set
     assert not facts.explicit_files_domain
@@ -122,7 +122,7 @@ def test_pam_cert_auth__true():
     pam_cert_auth = true
     """)
 
-    facts = SSSDFactsLibrary_8to9(config).process()
+    facts = SSSDFactsLibrary(config).process()
 
     assert not facts.enable_files_domain_set
     assert not facts.explicit_files_domain
@@ -136,7 +136,7 @@ def test_pam_cert_auth__false():
     pam_cert_auth = false
     """)
 
-    facts = SSSDFactsLibrary_8to9(config).process()
+    facts = SSSDFactsLibrary(config).process()
 
     assert not facts.enable_files_domain_set
     assert not facts.explicit_files_domain
@@ -161,7 +161,7 @@ def test_complex_config():
     id_provider = files
     """)
 
-    facts = SSSDFactsLibrary_8to9(config).process()
+    facts = SSSDFactsLibrary(config).process()
 
     assert not facts.enable_files_domain_set
     assert facts.explicit_files_domain

@@ -2,7 +2,7 @@ from leapp.models import Model, fields
 from leapp.topics import SystemInfoTopic
 
 
-class SSSDConfig_8to9(Model):
+class SSSDConfig8to9(Model):
     """
     SSSD configuration that is related to the upgrade process.
     """

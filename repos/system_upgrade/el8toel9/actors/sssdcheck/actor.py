@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.models import SSSDConfig_8to9
+from leapp.models import SSSDConfig8to9
 from leapp import reporting
 from leapp.reporting import Report, create_report
 from leapp.tags import IPUWorkflowTag, ChecksPhaseTag
@@ -25,12 +25,12 @@ class SSSDCheck_8to9(Actor):
     """
 
     name = 'sssd_check'
-    consumes = (SSSDConfig_8to9,)
+    consumes = (SSSDConfig8to9,)
     produces = (Report,)
     tags = (IPUWorkflowTag, ChecksPhaseTag)
 
     def process(self):
-        model = next(self.consume(SSSDConfig_8to9), None)
+        model = next(self.consume(SSSDConfig8to9), None)
         if not model:
             return
 
