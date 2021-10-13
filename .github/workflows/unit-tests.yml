@@ -20,6 +20,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-
+      - name: Drop el8toel9 code for python2.7 tests
+        run: |
+          rm -rf ${PWD}/repos/system_upgrade/el8toel9
+        shell: bash
+        if: matrix.python == 'python2.7'
       - name: Run tests @ ${{matrix.python}}
         run: script -e -c /bin/bash -c 'TERM=xterm docker build -t leapp-tests -f utils/docker-tests/Dockerfile utils/docker-tests && PYTHON_VENV=${{matrix.python}}  docker run --rm -ti -v ${PWD}:/payload --env=PYTHON_VENV leapp-tests'
