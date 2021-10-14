@@ -22,8 +22,8 @@ def _canonicalize_device_path(path):
 #
 def _get_unmigrated_vdo_blkid_results():
     """ Collect devices that have not been migrated to lvm-based management. """
-    # VDO devices that have been migrated to lvm-based management are
-    # not identified by blkid.
+    # VDO devices that have been created by or migrated to lvm-based management
+    # are not identified by blkid.
     command = ['blkid', '--output', 'device', '--match-token', 'TYPE=vdo']
     result = _run_cmd(command, checked = False)
     exit_code = result['exit_code']
@@ -44,6 +44,8 @@ def _get_unmigrated_vdo_devices():
 #
 def _get_migration_failed_blkid_results():
     """ Collect all devices blkid identifies. """
+    # VDO devices that have been created by or migrated to lvm-based management
+    # are not identified by blkid.
     command = ['blkid', '--output', 'device']
     return _run_cmd(command)['stdout']
 
@@ -57,6 +59,9 @@ def _get_migration_failed_canonical_blkid_results():
 
 def _get_migration_failed_lsblk_results():
     """ Collect all devices known to the system. """
+    # lsblk does not identify lvm-managed vdos as vdos.
+    # Any such devices will be eliminated by the check for being a
+    # post-migration vdo as the check will identify them as pre-migration vdos.
     command = ['lsblk', '--noheadings', '--output', 'NAME,TYPE', '--path', '--list']
     return _run_cmd(command)['stdout']
 
@@ -73,68 +78,50 @@ def _get_migration_failed_lsblk_info():
     return info
 
 
-def _get_migration_failed_pvs_results():
-    """ Collect all devices configued as physical volumes. """
-    command = ['pvs', '--noheadings', '--options', 'pv_name,vg_name']
-    return _run_cmd(command)['stdout']
-
-
-def _get_migration_failed_pvs_info():
-    """ Collect canonical devices pvs identifies. """
-    results = _get_migration_failed_pvs_results()
-    info = {}
-    for line in results.splitlines():
-        # We can't just do tuple assignment as if the physical volume is
-        # not part of a volume group the line split will not contain the
-        # requisite items.
-        line_list = line.split()
-        device = line_list[0]
-        vg = None if len(line_list) < 2 else line_list[1]
-        device = _canonicalize_device_path(device)
-        info[device] = { "vg" : vg }
-    return info
-
-
 def _is_post_migration_vdo_device(device):
-    # TODO: Invoke the utility (when it exists) to check the device as being a
-    #       post-migration vdo
-    # XXX:  Do lvm-created vdos identify as post-migration vdos?  If so we'll
-    #       need another approach to identify and remove them.
-    return True
+    """ Identify if the specified device is a post-migration vdo device. """
+    # A post-migration vdo device is a vdo device which has completed its
+    # preparation for being managed by lvm but for which lvm has failed (for
+    # whatever reason; e.g., system crash) to take up that responsibility.
+    #
+    # N.B. lvm-managed vdos will make it to the point of being checked here.
+    #      This is due to the fact that they are not recognized by either
+    #      blkid or lsblk as vdo devices and are thus not eliminated using the
+    #      results of those.
+    #      They are, though, recognized by the conversion utility as
+    #      pre-migration vdo devices and are thus eliminated by this check.
+    conversion_utility = os.path.join(os.getenv('VDO_CONVERSION_UTILITY_DIR',
+                                                '/usr/libexec'),
+                                      'vdoprepareforlvm')
+    command = [conversion_utility, '--check', device]
+    result = _run_cmd(command, checked = False)
+    exit_code = result['exit_code']
+    # 255: Not a vdo device
+    #   0: A post-migration vdo device
+    #   1: A pre-migration vdo device
+    if (exit_code != 255) and (exit_code != 0) and (exit_code != 1):
+        raise exceptions.StopActorExecutionError(
+                'failed to check device {0}; exit code: {1}'.format(device, exit_code))
+    return exit_code == 0
 
 
-def _get_post_migration_vdo_devices():
+def _get_migration_failed_vdo_devices():
     """ Collect all vdo devices that have been migrated for lvm-based management. """
     lsblk_info = _get_migration_failed_lsblk_info()
 
     # Exclude ROM and VDO devices.
-    # Any vdo devices appearing here are unmigrated; we could leave them in
-    # and rely on the post-migration device check, but there's no reason to
-    # do so.
+    # Any vdo devices appearing here are unmigrated (lsblk does not identify
+    # lvm-managed vdos as vdos); we could leave them in and rely on the
+    # post-migration device check, but there's no reason to do so.
     devices = set([device for (device, info) in lsblk_info.items()
                           if info['type'] not in ['rom', 'vdo']])
 
-    # VDO devices that have been migrated to lvm-based management are not
-    # identified by blkid.
+    # VDO devices that have been created by or migrated to lvm-based management
+    # are not identified by blkid.
     # Remove any devices that blkid can identify.
     devices -= set(_get_migration_failed_canonical_blkid_results())
 
     return [x for x in devices if _is_post_migration_vdo_device(x)]
-
-
-def _get_migration_failed_vdo_devices():
-    post_migration_devices = _get_post_migration_vdo_devices()
-
-    # Exclude physical volumes that are part of a volume group.
-    pv_info = _get_migration_failed_pvs_info()
-    pvs = set([device for (device, info) in pv_info.items()
-                      if info['vg'] is not None])
-
-    post_migration_devices = list(set(post_migration_devices) - set(pvs))
-
-    # The remaining devices are those that got migrated at the vdo-level
-    # but did not make it (for whatever reason) into lvm-based management.
-    return post_migration_devices
 
 
 # Check for vdo devices that must be migrated to lvm management.
@@ -178,6 +165,16 @@ def _check_for_migration_failed_vdo_devices():
         ])
 
 
-def check_vdo():
-    _check_for_unmigrated_vdo_devices()
-    _check_for_migration_failed_vdo_devices()
+def check_vdo(installed_packages):
+    if 'vdo' not in installed_packages:
+        reporting.create_report([
+            reporting.Title('VDO devices migration to lvm-based management'),
+            reporting.Summary('"vdo" package required for upgrade validation check'),
+            reporting.Severity(reporting.Severity.HIGH),
+            reporting.Tags([reporting.Tags.SERVICES, reporting.Tags.DRIVERS]),
+            reporting.Remediation(hint = 'Install "vdo" RPM.'),
+            reporting.Flags([reporting.Flags.INHIBITOR])
+        ])
+    else:
+        _check_for_unmigrated_vdo_devices()
+        _check_for_migration_failed_vdo_devices()

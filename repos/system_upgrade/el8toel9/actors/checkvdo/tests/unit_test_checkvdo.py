@@ -21,7 +21,7 @@ def test_no_unmigrated_vdo(monkeypatch):
 
     _patch_checkvdo_noop_migration_failed_vdo(monkeypatch)
 
-    checkvdo.check_vdo()
+    checkvdo.check_vdo(set(['vdo']))
 
     assert reporting.create_report.called == 1
     assert 'VDO devices that require migration: None' in reporting.create_report.report_fields['summary']
@@ -36,7 +36,7 @@ def test_unmigrated_vdo(monkeypatch):
 
     _patch_checkvdo_noop_migration_failed_vdo(monkeypatch)
 
-    checkvdo.check_vdo()
+    checkvdo.check_vdo(set(['vdo']))
 
     assert reporting.create_report.called == 1
     assert 'VDO devices that require migration: None' not in reporting.create_report.report_fields['summary']
@@ -58,18 +58,14 @@ def test_no_migration_failed_vdo(monkeypatch):
                                                  '/dev/sr0 rom']))
     monkeypatch.setattr(checkvdo, '_get_migration_failed_blkid_results',
                         lambda: os.linesep.join(['/dev/sda', '/dev/sdb']))
-    monkeypatch.setattr(checkvdo, '_get_migration_failed_pvs_results',
-                        lambda: os.linesep.join(['/dev/sda vg',
-                                                 '/dev/sdb vg',
-                                                 '/dev/sdc vg']))
-    monkeypatch.setattr(checkvdo, '_is_post_migration_vdo_device', lambda _: True)
+    monkeypatch.setattr(checkvdo, '_is_post_migration_vdo_device', lambda _: False)
 
-    checkvdo.check_vdo()
+    checkvdo.check_vdo(set(['vdo']))
 
     assert reporting.create_report.called == 0
 
 
-def test_migration_failed_vdo_before_lvm_pv(monkeypatch):
+def test_migration_failed_vdo_before_lvm(monkeypatch):
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
     monkeypatch.setattr(checkvdo, '_canonicalize_device_path', lambda x: x)
 
@@ -82,12 +78,9 @@ def test_migration_failed_vdo_before_lvm_pv(monkeypatch):
                                                  '/dev/sr0 rom']))
     monkeypatch.setattr(checkvdo, '_get_migration_failed_blkid_results',
                         lambda: os.linesep.join(['/dev/sda', '/dev/sdb']))
-    monkeypatch.setattr(checkvdo, '_get_migration_failed_pvs_results',
-                        lambda: os.linesep.join(['/dev/sda vg',
-                                                 '/dev/sdb vg']))
     monkeypatch.setattr(checkvdo, '_is_post_migration_vdo_device', lambda _: True)
 
-    checkvdo.check_vdo()
+    checkvdo.check_vdo(set(['vdo']))
 
     assert reporting.create_report.called == 1
     assert 'VDO devices that did not complete migration:' in reporting.create_report.report_fields['summary']
@@ -96,29 +89,11 @@ def test_migration_failed_vdo_before_lvm_pv(monkeypatch):
     assert '/dev/sdc' in reporting.create_report.report_fields['summary']
 
 
-def test_migration_failed_vdo_before_lvm_vg(monkeypatch):
+def test_no_vdo_package_installed(monkeypatch):
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
-    monkeypatch.setattr(checkvdo, '_canonicalize_device_path', lambda x: x)
 
-    _patch_checkvdo_noop_unmigrated_vdo(monkeypatch)
-
-    monkeypatch.setattr(checkvdo, '_get_migration_failed_lsblk_results',
-                        lambda: os.linesep.join(['/dev/sda disk',
-                                                 '/dev/sdb disk',
-                                                 '/dev/sdc disk',
-                                                 '/dev/sr0 rom']))
-    monkeypatch.setattr(checkvdo, '_get_migration_failed_blkid_results',
-                        lambda: os.linesep.join(['/dev/sda', '/dev/sdb']))
-    monkeypatch.setattr(checkvdo, '_get_migration_failed_pvs_results',
-                        lambda: os.linesep.join(['/dev/sda vg',
-                                                 '/dev/sdb vg',
-                                                 '/dev/sdc']))
-    monkeypatch.setattr(checkvdo, '_is_post_migration_vdo_device', lambda _: True)
-
-    checkvdo.check_vdo()
+    checkvdo.check_vdo(set())
 
     assert reporting.create_report.called == 1
-    assert 'VDO devices that did not complete migration:' in reporting.create_report.report_fields['summary']
-    assert '/dev/sda' not in reporting.create_report.report_fields['summary']
-    assert '/dev/sdb' not in reporting.create_report.report_fields['summary']
-    assert '/dev/sdc' in reporting.create_report.report_fields['summary']
+    assert '"vdo" package required for upgrade validation check' in reporting.create_report.report_fields['summary']
+    assert 'inhibitor' in reporting.create_report.report_fields['flags']
