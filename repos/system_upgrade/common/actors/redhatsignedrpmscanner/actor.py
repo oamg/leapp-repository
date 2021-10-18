@@ -27,6 +27,9 @@ class RedHatSignedRpmScanner(Actor):
                    'fd372689897da07a',
                    '45689c882fa658e0']
 
+        CENTOS_SIGS = ['24c6a8a7f4a80eb5',
+                       '05b555b38483c65d']
+
         signed_pkgs = InstalledRedHatSignedRPM()
         unsigned_pkgs = InstalledUnsignedRPM()
 
@@ -42,6 +45,9 @@ class RedHatSignedRpmScanner(Actor):
         def has_rhsig(pkg):
             return any(key in pkg.pgpsig for key in RH_SIGS)
 
+        def has_centossig(pkg):
+            return any(key in pkg.pgpsig for key in CENTOS_SIGS)
+
         def is_gpg_pubkey(pkg):
             """Check if gpg-pubkey pkg exists or LEAPP_DEVEL_RPMS_ALL_SIGNED=1
 
@@ -50,7 +56,8 @@ class RedHatSignedRpmScanner(Actor):
             """
             return (    # pylint: disable-msg=consider-using-ternary
                     pkg.name == 'gpg-pubkey'
-                    and pkg.packager.startswith('Red Hat, Inc.')
+                    and (pkg.packager.startswith('Red Hat, Inc.')
+                    or pkg.packager.startswith('CentOS'))
                     or all_signed
             )
 
@@ -71,6 +78,7 @@ class RedHatSignedRpmScanner(Actor):
                 if any(
                     [
                         has_rhsig(pkg),
+                        has_centossig(pkg),
                         is_gpg_pubkey(pkg),
                         has_katello_prefix(pkg),
                         is_azure_pkg(pkg),
