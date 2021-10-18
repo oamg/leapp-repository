@@ -1,4 +1,5 @@
 import functools
+import os
 import sys
 
 import six
@@ -75,14 +76,13 @@ def logging_handler(fd_info, buf):
     Custom log handler to always show stdout to console and stderr only in DEBUG mode
     """
     (_unused, fd_type) = fd_info
-
-    if isinstance(buf, bytes) and str is not bytes:
-        buf = buf.decode('utf-8')
-    if fd_type == STDOUT:
-        sys.stdout.write(buf)
+    if fd_type != STDOUT and not config.is_debug():
+        return
+    target = sys.stdout if fd_type == STDOUT else sys.stderr
+    if sys.version_info > (3, 0):
+        os.writev(target.fileno(), [buf])
     else:
-        if config.is_debug():
-            sys.stderr.write(buf)
+        target.write(buf)
 
 
 def reinstall_leapp_repository_hint():
