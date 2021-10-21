@@ -4,15 +4,18 @@ import pytest
 
 from leapp.snactor.fixture import current_actor_context
 from leapp.models import SELinuxModule, SELinuxModules, SELinuxCustom, SELinuxFacts, SELinuxRequestRPMs
+from leapp.libraries.common.config import mock_configs
 from leapp.libraries.stdlib import api, run, CalledProcessError
 from leapp.reporting import Report
 
+# compat module ensures compatibility with newer systems and is not part of testing
 TEST_MODULES = [
     ["400", "mock1"],
     ["99", "mock1"],
     ["200", "mock1"],
     ["400", "mock2"],
-    ["999", "mock3"]
+    ["999", "mock3"],
+    ["100", "compat"]
 ]
 
 SEMANAGE_COMMANDS = [
@@ -78,10 +81,9 @@ def test_SELinuxContentScanner(current_actor_context, destructive_selinux_env):
                      'static_mode': 'enforcing'}
 
     current_actor_context.feed(SELinuxFacts(**expected_data))
-    current_actor_context.run()
+    current_actor_context.run(config_model=mock_configs.CONFIG)
 
     modules = current_actor_context.consume(SELinuxModules)[0]
-    api.current_logger().warning("Modules: %s", str(modules))
     assert modules
     # check that all modules installed during test setup where reported
     for priority, name in TEST_MODULES:
@@ -90,14 +92,13 @@ def test_SELinuxContentScanner(current_actor_context, destructive_selinux_env):
 
     rpms = current_actor_context.consume(SELinuxRequestRPMs)[0]
     assert rpms
-    # modules with priority 200 should only originate in "<module_name>-selinux" rpms
-    assert "mock1-selinux" in rpms.to_keep
+
     # mock1 contains container related type
     assert "container-selinux" in rpms.to_install
 
     custom = current_actor_context.consume(SELinuxCustom)[0]
     assert custom
-    # the second command contains removed type and should be discarded
+    # The second command contains removed type and should be discarded (in either upgrade path)
     assert find_semanage_rule(custom.removed, SEMANAGE_COMMANDS[1])
     # the rest of the commands should be reported (except for the last which will show up in modules)
     assert find_semanage_rule(custom.commands, SEMANAGE_COMMANDS[0])

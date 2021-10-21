@@ -1,4 +1,5 @@
 from leapp.libraries.actor import selinuxcontentscanner
+from leapp.libraries.common.config import version
 from leapp.libraries.stdlib import CalledProcessError
 
 
@@ -31,7 +32,7 @@ class run_mocked(object):
                       "boolean -m -1 cron_can_relabel",
                       "port -a -t http_port_t -p udp 81",
                       "fcontext -a -f a -t httpd_sys_content_t '/web(/.*)?'",
-                      "fcontext -a -f a -t ganesha_var_run_t '/ganesha(/.*)?'"]
+                      "fcontext -a -f a -t cgdcbxd_exec_t '/ganesha(/.*)?'"]
 
         return {'stdout': stdout}
 
@@ -62,6 +63,7 @@ def test_list_selinux_modules(monkeypatch):
 
 
 def test_get_selinux_customizations(monkeypatch):
+    monkeypatch.setattr(version, "get_source_major_version", lambda: '8')
     monkeypatch.setattr(selinuxcontentscanner, "run", run_mocked())
 
     (semanage_valid, semanage_removed) = selinuxcontentscanner.get_selinux_customizations()
@@ -69,4 +71,4 @@ def test_get_selinux_customizations(monkeypatch):
     assert len(semanage_valid) == 11
     assert semanage_valid[0] == "boolean -D"
     assert semanage_valid[10] == "fcontext -a -f a -t httpd_sys_content_t '/web(/.*)?'"
-    assert semanage_removed == ["fcontext -a -f a -t ganesha_var_run_t '/ganesha(/.*)?'"]
+    assert semanage_removed == ["fcontext -a -f a -t cgdcbxd_exec_t '/ganesha(/.*)?'"]

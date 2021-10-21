@@ -2,10 +2,10 @@ import os
 import shutil
 
 from leapp.actors import Actor
-from leapp.models import SELinuxModules, SELinuxCustom, SELinuxRequestRPMs
+from leapp.models import SELinuxModules, SELinuxCustom
 from leapp.tags import ApplicationsPhaseTag, IPUWorkflowTag
+from leapp.libraries.actor import selinuxapplycustom
 from leapp.libraries.stdlib import run, CalledProcessError
-
 
 WORKING_DIRECTORY = '/tmp/selinux/'
 
@@ -35,10 +35,20 @@ class SELinuxApplyCustom(Actor):
             self.log.warning("Failed to create working directory! Aborting.")
             return
 
+        # get list of policy modules after the upgrade
+        installed_modules = set([x for (x, _) in selinuxapplycustom.list_selinux_modules()])
+
         # import custom SElinux modules
         for semodules in self.consume(SELinuxModules):
             self.log.info("Processing custom SELinux policy modules. Count: %d.", len(semodules.modules))
             for module in semodules.modules:
+                # Skip modules that are already installed. This prevents DSP modules installed with wrong
+                # priority (usually 400) from being overwritten by an older version
+                if module.name in installed_modules:
+                    self.log.info("Skipping module %s on priority %d because it is already installed.",
+                                  module.name, module.priority)
+                    continue
+
                 cil_filename = os.path.join(WORKING_DIRECTORY, "{}.cil".format(module.name))
                 self.log.info("Installing module %s on priority %d.", module.name, module.priority)
                 if module.removed:
@@ -92,11 +102,6 @@ class SELinuxApplyCustom(Actor):
 
         # clean-up
         shutil.rmtree(WORKING_DIRECTORY, ignore_errors=True)
-
-        # TODO - Verify that all RPM packages reqested by selinux actors are installed
-        self.log.info("Verifying selinux-related RPMs requested before upgrade.")
-        for rpms in self.consume(SELinuxRequestRPMs):
-            self.log.info("To keep: %s \n To install: %s", ", ".join(rpms.to_keep), ", ".join(rpms.to_install))
 
         # TODO - summarize all changes after LEAPP team rewrites reporting
         # from leapp.reporting import Report

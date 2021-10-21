@@ -1,0 +1,4 @@
+(type cgdcbxd_unit_file_t)
+(type cgdcbxd_exec_t)
+(type cgdcbxd_var_run_t)
+(typeattributeset file_type (cgdcbxd_unit_file_t cgdcbxd_exec_t cgdcbxd_var_run_t))
