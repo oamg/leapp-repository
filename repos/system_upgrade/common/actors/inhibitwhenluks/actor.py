@@ -1,7 +1,7 @@
-from leapp.actors import Actor
-from leapp.models import StorageInfo
-from leapp.reporting import Report, create_report
 from leapp import reporting
+from leapp.actors import Actor
+from leapp.models import CephInfo, StorageInfo
+from leapp.reporting import create_report, Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
@@ -13,19 +13,37 @@ class InhibitWhenLuks(Actor):
     """
 
     name = 'check_luks_and_inhibit'
-    consumes = (StorageInfo,)
+    consumes = (StorageInfo, CephInfo)
     produces = (Report,)
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 
     def process(self):
-        for storage_info in self.consume(StorageInfo):
-            for blk in storage_info.lsblk:
-                if blk.tp == 'crypt':
-                    create_report([
-                        reporting.Title('LUKS encrypted partition detected'),
-                        reporting.Summary('Upgrading system with encrypted partitions is not supported'),
-                        reporting.Severity(reporting.Severity.HIGH),
-                        reporting.Tags([reporting.Tags.BOOT, reporting.Tags.ENCRYPTION]),
-                        reporting.Flags([reporting.Flags.INHIBITOR]),
-                    ])
-                    break
+        # If encrypted Ceph volumes present, check if there are more encrypted disk in lsblk than Ceph vol
+        ceph_vol = []
+        try:
+            ceph_info = next(self.consume(CephInfo))
+            if ceph_info:
+                ceph_vol = ceph_info.encrypted_volumes[:]
+                for storage_info in self.consume(StorageInfo):
+                    for blk in storage_info.lsblk:
+                        if blk.tp == 'crypt' and blk.name not in ceph_vol:
+                            create_report([
+                                reporting.Title('LUKS encrypted partition detected'),
+                                reporting.Summary('Upgrading system with encrypted partitions is not supported'),
+                                reporting.Severity(reporting.Severity.HIGH),
+                                reporting.Tags([reporting.Tags.BOOT, reporting.Tags.ENCRYPTION]),
+                                reporting.Flags([reporting.Flags.INHIBITOR]),
+                            ])
+                            break
+        except StopIteration:
+            for storage_info in self.consume(StorageInfo):
+                for blk in storage_info.lsblk:
+                    if blk.tp == 'crypt':
+                        create_report([
+                            reporting.Title('LUKS encrypted partition detected'),
+                            reporting.Summary('Upgrading system with encrypted partitions is not supported'),
+                            reporting.Severity(reporting.Severity.HIGH),
+                            reporting.Tags([reporting.Tags.BOOT, reporting.Tags.ENCRYPTION]),
+                            reporting.Flags([reporting.Flags.INHIBITOR]),
+                        ])
+                        break
