@@ -81,7 +81,7 @@ class AuthselectCheck(Actor):
     def get_confirmation(self, model, command):
         dialog = self.dialogs[0]
 
-        dialog.components[0].label += "\n{}\n".format(command)
+        dialog.components[0].label += " {}".format(command)
 
         return self.get_answers(dialog).get('confirm')
 
