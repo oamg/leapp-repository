@@ -1,2 +1,2 @@
 install-deps:
-	yum install -y policycoreutils policycoreutils-python || yum install -y policycoreutils python3-policycoreutils
+	yum install -y policycoreutils /usr/sbin/semanage

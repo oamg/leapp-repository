@@ -17,7 +17,7 @@ TEST_MODULES = [
 ]
 
 SEMANAGE_COMMANDS = [
-    ['fcontext', '-t', 'ganesha_var_run_t', "'/ganesha(/.*)?'"],
+    ['fcontext', '-t', 'cgdcbxd_var_run_t', "'/ganesha(/.*)?'"],
     ['fcontext', '-t', 'httpd_sys_content_t', "'/web(/.*)?'"],
     ['port', '-t', 'http_port_t', '-p', 'udp', '81']
 ]

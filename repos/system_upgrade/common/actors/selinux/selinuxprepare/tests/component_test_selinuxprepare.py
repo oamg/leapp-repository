@@ -13,12 +13,13 @@ TEST_MODULES = [
     ["99", "mock1"],
     ["300", "mock1"],
     ["400", "mock2"],
-    ["999", "mock3"]
+    ["999", "mock3"],
+    ["100", "compat"]
 ]
 
 SEMANAGE_COMMANDS = [
     ['fcontext', '-t', 'httpd_sys_content_t', '"/web(/.*)?"'],
-    ['fcontext', '-t', 'ganesha_var_run_t', '"/ganesha(/.*)?"'],
+    ['fcontext', '-t', 'cgdcbxd_var_run_t', '"/ganesha(/.*)?"'],
     ['port', '-t', 'http_port_t', '-p', 'udp', '81'],
     ['permissive', 'abrt_t']
 ]
@@ -57,11 +58,11 @@ def destructive_selinux_env():
 
     yield
 
-    for priority, module in TEST_MODULES + [["400", "permissive_abrt_t"]]:
-        _run_cmd(["semodule", "-X", priority, "-r", module])
-
     for command in SEMANAGE_COMMANDS:
         _run_cmd(["semanage", command[0], "-d"] + command[1:])
+
+    for priority, module in reversed(TEST_MODULES + [["400", "permissive_abrt_t"]]):
+        _run_cmd(["semodule", "-X", priority, "-r", module])
 
 
 @pytest.mark.skipif(os.getenv("DESTRUCTIVE_TESTING", False) in [False, "0"],

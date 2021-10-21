@@ -25,21 +25,18 @@ class SELinuxContentScanner(Actor):
             if not fact.enabled:
                 return
 
-        (semodule_list, rpms_to_keep, rpms_to_install,) = selinuxcontentscanner.get_selinux_modules()
+        (semodule_list, rpms_to_install,) = selinuxcontentscanner.get_selinux_modules()
 
         self.produce(SELinuxModules(modules=semodule_list))
         self.produce(
             RpmTransactionTasks(
-                to_install=rpms_to_install,
-                # possibly not necessary - dnf should not remove RPMs (that exist in both RHEL 7 and 8) durign update
-                to_keep=rpms_to_keep
+                to_install=rpms_to_install
             )
         )
         # this is produced so that we can later verify that the RPMs are present after upgrade
         self.produce(
             SELinuxRequestRPMs(
-                to_install=rpms_to_install,
-                to_keep=rpms_to_keep
+                to_install=rpms_to_install
             )
         )
 
