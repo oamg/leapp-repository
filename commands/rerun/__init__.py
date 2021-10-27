@@ -68,6 +68,7 @@ def rerun(args):
         verbose=args.verbose,
         reboot=False,
         no_rhsm=False,
+        channel=None,
         whitelist_experimental=[],
         enablerepo=[]))
 
