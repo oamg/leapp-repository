@@ -331,6 +331,7 @@ def _get_product_certificate_path():
             ),
             reporting.Tags([reporting.Tags.REPOSITORY]),
             reporting.Flags([reporting.Flags.INHIBITOR]),
+            reporting.Severity(reporting.Severity.HIGH),
             reporting.Remediation(hint=(
                 'Set the corresponding target os version in the LEAPP_DEVEL_TARGET_RELEASE environment variable for'
                 'which the {cert} certificate is provided'.format(cert=cert)
@@ -429,6 +430,7 @@ def _get_rhsm_available_repoids(context):
                 ' option of leapp or in a third party actor that produces a CustomTargetRepositoryMessage.'
             ),
             reporting.Tags([reporting.Tags.REPOSITORY]),
+            reporting.Severity(reporting.Severity.HIGH),
             reporting.Flags([reporting.Flags.INHIBITOR]),
             reporting.Remediation(hint=(
                 'It is required to have RHEL repositories on the system'
@@ -536,6 +538,7 @@ def gather_target_repositories(context, indata):
             ),
             reporting.Tags([reporting.Tags.REPOSITORY]),
             reporting.Flags([reporting.Flags.INHIBITOR]),
+            reporting.Severity(reporting.Severity.HIGH),
             reporting.Remediation(hint=(
                 'Ensure the system is correctly registered with the subscription manager and that'
                 ' the current subscription is entitled to install the requested target version {version}.'
@@ -566,6 +569,7 @@ def gather_target_repositories(context, indata):
             ),
             reporting.Tags([reporting.Tags.REPOSITORY]),
             reporting.Flags([reporting.Flags.INHIBITOR]),
+            reporting.Severity(reporting.Severity.HIGH),
             reporting.ExternalLink(
                 # TODO: How to handle different documentation links for each version?
                 url='https://access.redhat.com/articles/4977891',
