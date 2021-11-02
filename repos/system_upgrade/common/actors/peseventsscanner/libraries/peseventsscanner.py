@@ -13,6 +13,7 @@ from leapp.libraries.stdlib.config import is_verbose
 from leapp.exceptions import StopActorExecution, StopActorExecutionError
 from leapp.models import (
     InstalledRedHatSignedRPM,
+    PESIDRepositoryEntry,
     PESRpmTransactionTasks,
     RepositoriesBlacklisted,
     RepositoriesFacts,
@@ -145,7 +146,19 @@ def _get_repositories_mapping(target_pesids):
         peseventsscanner_repomap.DEFAULT_PESID[get_target_major_version()], None
     )
     if not representative_repo:
-        api.current_logger().warning('Cannot determine the base target repository')
+        api.current_logger().warning('Cannot determine the representative target base repository.')
+        api.current_logger().info(
+            'Fallback: Create an artificial representative PESIDRepositoryEntry for the repository mapping'
+        )
+        representative_repo = PESIDRepositoryEntry(
+            pesid=peseventsscanner_repomap.DEFAULT_PESID[get_target_major_version()],
+            arch=api.current_actor().configuration.architecture,
+            major_version=get_target_major_version(),
+            repoid='artificial-repoid',
+            repo_type='rpm',
+            channel='ga',
+            rhui='',
+        )
 
     for pesid in target_pesids:
         if pesid in exp_pesid_repos:
