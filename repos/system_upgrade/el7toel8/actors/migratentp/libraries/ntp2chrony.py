@@ -261,7 +261,12 @@ class NtpConfiguration(object):
         else:
             try:
                 if mask:
-                    networks.append(ipaddress.ip_network(u"{}/{}".format(address, mask)))
+                    # Count bits in the mask (ipaddress does not support
+                    # expanded IPv6 netmasks)
+                    mask_ip = ipaddress.ip_address(mask)
+                    mask_str = "{0:0{1}b}".format(int(mask_ip), mask_ip.max_prefixlen)
+                    networks.append(ipaddress.ip_network(
+                                    u"{}/{}".format(address, len(mask_str.rstrip('0')))))
                 else:
                     networks.append(ipaddress.ip_network(address))
             except ValueError:
