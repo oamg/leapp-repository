@@ -20,6 +20,15 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+        with:
+          # NOTE(ivasilev) fetch-depth 0 is critical here as leapp deps discovery depends on specific substring in
+          # commit message and default 1 option will get us just merge commit which has an unrelevant message.
+          fetch-depth: '0'
+      # NOTE(ivasilev) master -> origin/master is used for leapp deps discovery in Makefile via git log master..HEAD
+      - name: Set master to origin/master
+        if: github.ref != 'refs/heads/master'
+        run: |
+          git branch -f master origin/master
       - name: Drop el8toel9 code for python2.7 tests
         run: |
           rm -rf ${PWD}/repos/system_upgrade/el8toel9
