@@ -1,4 +1,4 @@
-from leapp.models import Model, fields
+from leapp.models import fields, Model
 from leapp.topics import SystemInfoTopic, TransactionTopic
 
 
@@ -13,9 +13,15 @@ class SELinuxModule(Model):
 
 
 class SELinuxModules(Model):
-    """List of custom selinux modules (priority != 100,200)"""
+    """
+    List of selinux modules that are not part of distribution policy
+
+    modules - list of custom policy modules (priority != 100,200)
+    templates - List of installed udica templates
+    """
     topic = SystemInfoTopic
     modules = fields.List(fields.Model(SELinuxModule))
+    templates = fields.List(fields.Model(SELinuxModule))
 
 
 class SELinuxCustom(Model):

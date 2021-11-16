@@ -1,5 +1,5 @@
 from leapp.libraries.actor import selinuxprepare
-from leapp.libraries.stdlib import CalledProcessError, api, run
+from leapp.libraries.stdlib import api, CalledProcessError, run
 from leapp.models import SELinuxModule, SELinuxModules
 
 
@@ -19,7 +19,9 @@ class run_mocked(object):
                 'libsemanage.semanage_direct_remove_key: Removing last dummy module '
                 + '(no other dummy module exists at another priority).'
             ]
-            self.removed_modules.add(self.args[-1])
+            for idx, value in enumerate(self.args):
+                if value == "-r":
+                    self.removed_modules.add(self.args[idx + 1])
         else:
             self.non_semodule_calls += 1
 
@@ -28,18 +30,22 @@ class run_mocked(object):
 
 def test_remove_custom_modules(monkeypatch):
     mock_modules = {'a': 99, 'b': 300, 'c': 400, 'abrt': 190}
+    mock_templates = {'base_container': 400, 'net_container': 300}
 
     def consume_SELinuxModules_mocked(*models):
 
         semodule_list = [SELinuxModule(name=name, priority=priority, content='', removed=[])
                          for name, priority in mock_modules.items()]
-        yield SELinuxModules(modules=semodule_list)
+        template_list = [SELinuxModule(name=name, priority=priority, content='', removed=[])
+                         for name, priority in mock_templates.items()]
+        yield SELinuxModules(modules=semodule_list, templates=template_list)
 
     monkeypatch.setattr(api, 'consume', consume_SELinuxModules_mocked)
     monkeypatch.setattr(selinuxprepare, 'run', run_mocked())
 
     selinuxprepare.remove_custom_modules()
-    assert selinuxprepare.run.called == len(mock_modules)
+    # 1 call for udica templates and 1 for other custom modules
+    assert selinuxprepare.run.called == 2
     assert selinuxprepare.run.non_semodule_calls == 0
     # verify that remove_custom_modules tried to remove all given modules
-    assert (set(mock_modules) - selinuxprepare.run.removed_modules) == set()
+    assert (set(mock_modules).union(set(mock_templates)) - selinuxprepare.run.removed_modules) == set()

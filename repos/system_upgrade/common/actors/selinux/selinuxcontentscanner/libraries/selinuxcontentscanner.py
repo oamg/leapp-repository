@@ -2,8 +2,8 @@ import os
 import re
 from shutil import rmtree
 
-from leapp.libraries.stdlib import api, run, CalledProcessError
 from leapp.libraries.common.config import version
+from leapp.libraries.stdlib import api, CalledProcessError, run
 from leapp.models import SELinuxModule
 
 # types and attributes that where removed between RHEL 7 and 8
@@ -17,13 +17,13 @@ REMOVED_TYPES_EL7 = ["base_typeattr_15", "direct_run_init", "gpgdomain", "httpd_
                      "ganesha_var_log_t", "ganesha_var_run_t", "ganesha_use_fusefs"]
 
 # types and attributes that where removed between RHEL 8 and 9
-REMOVED_TYPES_EL8 = ['cephfs_t', 'cgdcbxd_exec_t', 'cgdcbxd_t', 'cgdcbxd_unit_file_t', 'cgdcbxd_var_run_t',
-                     'cloud_what_var_cache_t', 'journal_remote_client_packet_t', 'journal_remote_port_t',
-                     'journal_remote_server_packet_t', 'kdbusfs_t', 'logging_syslogd_list_non_security_dirs',
-                     'nvme_device_t', 'pcp_pmmgr_exec_t', 'pcp_pmmgr_initrc_exec_t', 'pcp_pmmgr_t',
-                     'pcp_pmwebd_exec_t', 'pcp_pmwebd_initrc_exec_t', 'pcp_pmwebd_t', 'rpm_transition_domain',
-                     'systemd_journal_upload_exec_t', 'systemd_journal_upload_t',
-                     'systemd_journal_upload_var_lib_t', 'virt_qmf_exec_t', 'virt_qmf_t']
+REMOVED_TYPES_EL8 = ["cephfs_t", "cgdcbxd_exec_t", "cgdcbxd_t", "cgdcbxd_unit_file_t", "cgdcbxd_var_run_t",
+                     "cloud_what_var_cache_t", "journal_remote_client_packet_t", "journal_remote_port_t",
+                     "journal_remote_server_packet_t", "kdbusfs_t", "logging_syslogd_list_non_security_dirs",
+                     "nvme_device_t", "pcp_pmmgr_exec_t", "pcp_pmmgr_initrc_exec_t", "pcp_pmmgr_t",
+                     "pcp_pmwebd_exec_t", "pcp_pmwebd_initrc_exec_t", "pcp_pmwebd_t", "rpm_transition_domain",
+                     "systemd_journal_upload_exec_t", "systemd_journal_upload_t",
+                     "systemd_journal_upload_var_lib_t", "virt_qmf_exec_t", "virt_qmf_t"]
 
 # types, attributes and boolean contained in container-selinux
 CONTAINER_TYPES = ["container_connect_any", "container_runtime_t", "container_runtime_exec_t", "spc_t",
@@ -37,8 +37,11 @@ CONTAINER_TYPES = ["container_connect_any", "container_runtime_t", "container_ru
                    "docker_plugin_var_run_t", "docker_port_t", "docker_auth_t", "docker_var_run_t",
                    "docker_var_lib_t", "container_domain", "container_net_domain"]
 
-
 WORKING_DIRECTORY = "/tmp/selinux/"
+
+# list of policy modules used by udica
+UDICA_TEMPLATES = {"base_container", "config_container", "home_container", "log_container",
+                   "net_container", "tmp_container", "tty_container", "virt_container", "x_container"}
 
 
 def check_module(name):
@@ -71,7 +74,7 @@ def list_selinux_modules():
     try:
         semodule = run(['semodule', '-lfull'], split=True)
     except CalledProcessError as e:
-        api.current_logger().warning('Cannot get list of selinux modules: %s', str(e))
+        api.current_logger().warning('Cannot get list of selinux modules: {}'.format(e))
         return []
 
     modules = []
@@ -81,7 +84,7 @@ def list_selinux_modules():
         m = re.match(r'([0-9]+)\s+([\w-]+)\s+([\w-]+)\s*\Z', module)
         if not m:
             # invalid output of "semodule -lfull"
-            api.current_logger().warning('Invalid output of "semodule -lfull": %s', module)
+            api.current_logger().warning('Invalid output of "semodule -lfull": {}'.format(module))
             continue
         modules.append((m.group(2), m.group(1)))
 
@@ -100,7 +103,10 @@ def get_selinux_modules():
     """
 
     modules = list_selinux_modules()
+    # custom selinux policy modules
     semodule_list = []
+    # udica templates
+    template_list = []
     # list of rpms containing policy modules to be installed on RHEL 8
     install_rpms = []
 
@@ -119,6 +125,19 @@ def get_selinux_modules():
         return ([], [], [])
 
     for (name, priority) in modules:
+        # Udica templates should not be transfered, we only need a list of their
+        # names and priorities so that we can reinstall their latest verisions
+        if name in UDICA_TEMPLATES:
+            template_list.append(
+                SELinuxModule(
+                    name=name,
+                    priority=int(priority),
+                    content='',
+                    removed=[],
+                )
+            )
+            continue
+
         if priority in ["100", "200"]:
             # 100 - module from selinux-policy-* package
             # 200 - DSP module - installed by an RPM - handled by PES
@@ -132,10 +151,10 @@ def get_selinux_modules():
 
             # get content of the module
             try:
-                with open(module_file, "r") as cil_file:
+                with open(module_file) as cil_file:
                     module_content = cil_file.read()
             except OSError as e:
-                api.current_logger().warning("Error reading %s.cil : %s", name, str(e))
+                api.current_logger().warning("Error reading {}.cil : {}".format(name, e))
                 continue
 
             semodule_list.append(
@@ -147,7 +166,7 @@ def get_selinux_modules():
                 )
             )
         except CalledProcessError:
-            api.current_logger().warning("Module %s could not be extracted!", name)
+            api.current_logger().warning("Module {} could not be extracted!".format(name))
             continue
         # rename the cil module file so that it does not clash
         # with the same module on different priority
@@ -155,8 +174,15 @@ def get_selinux_modules():
             os.rename(module_file, "{}_{}".format(name, priority))
         except OSError:
             api.current_logger().warning(
-                "Failed to rename module file %s to include priority.", name
+                "Failed to rename module file {} to include priority.".format(name)
             )
+
+    # Udica templates where moved to container-selinux package.
+    # Make sure it is installed so that the templates can be reinstalled
+    if template_list:
+        install_rpms.append("container-selinux")
+
+    # Process customizations introduced by "semanage"
     # this is necessary for check if container-selinux needs to be installed
     try:
         run(["semanage", "export", "-f", "semanage"])
@@ -179,7 +205,7 @@ def get_selinux_modules():
         pass
     rmtree(WORKING_DIRECTORY, ignore_errors=True)
 
-    return (semodule_list, list(set(install_rpms)))
+    return (semodule_list, template_list, list(set(install_rpms)))
 
 
 def get_selinux_customizations():
@@ -210,7 +236,7 @@ def get_selinux_customizations():
 
     except CalledProcessError as e:
         api.current_logger().warning(
-            "Failed to export SELinux customizations: %s", str(e.stderr)
+            "Failed to export SELinux customizations: {}".format(e.stderr)
         )
 
     return (semanage_valid, semanage_removed)
