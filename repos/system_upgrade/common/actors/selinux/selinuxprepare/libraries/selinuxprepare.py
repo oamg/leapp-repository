@@ -1,4 +1,4 @@
-from leapp.libraries.stdlib import api, run, CalledProcessError
+from leapp.libraries.stdlib import api, CalledProcessError, run
 from leapp.models import SELinuxModules
 
 
@@ -6,8 +6,8 @@ def remove_semanage_customizations():
     # remove SELinux customizations done by semanage -- to be reintroduced after the upgrade
     api.current_logger().info('Removing SELinux customizations introduced by semanage.')
 
-    semanage_options = ["login", "user", "port", "interface", "module", "node",
-                        "fcontext", "boolean", "ibpkey", "ibendport"]
+    semanage_options = ['login', 'user', 'port', 'interface', 'module', 'node',
+                        'fcontext', 'boolean', 'ibpkey', 'ibendport']
     # permissive domains are handled by porting modules (permissive -a adds new cil module with priority 400)
     for option in semanage_options:
         try:
@@ -16,32 +16,47 @@ def remove_semanage_customizations():
             continue
 
 
+# remove custom SElinux modules - to be reinstalled after the upgrade
 def remove_custom_modules():
-    # remove custom SElinux modules - to be reinstalled after the upgrade
+    # go through all SELinuxModules messages -- in theory there should be only one
     for semodules in api.consume(SELinuxModules):
-        api.current_logger().info("Removing custom SELinux policy modules. Count: %d", len(semodules.modules))
+        api.current_logger().info('Removing custom SELinux policy modules. Count: {}'.format(len(semodules.modules)))
 
-        failed = remove_custom_modules_helper(semodules.modules)
-        # retry removing in reverse order
-        api.current_logger().info("Some modules couldn't be removed, retrying. Count: %d", len(failed))
-        if failed:
-            remove_custom_modules_helper(reversed(failed))
+        # Form a single "semodule" command to remove all given modules at once.
+        # This will help with any inter-dependencies.
+        # "semodule" continues removing modules even if it encounters errors - any issues are just printed to stdout
+        command = ['semodule']
 
-
-def remove_custom_modules_helper(selinux_modules):
-    # store modules that couldn't be removed so that we can retry
-    failed = []
-
-    for module in selinux_modules:
-        api.current_logger().info("Removing %s on priority %d.", module.name, module.priority)
+        for module in semodules.modules:
+            command.extend(['-X', str(module.priority), '-r', module.name])
         try:
-            run(['semodule',
-                 '-X', str(module.priority),
-                 '-r', module.name
-                 ]
-                )
+            run(command)
         except CalledProcessError as e:
-            failed.append(module)
-            api.current_logger().warning("Failed to remove module %s on priority %d: %s",
-                                         module.name, module.priority, str(e.stderr))
-    return failed
+            api.current_logger().warning(
+                'Error removing modules in a single transaction:'
+                '{}\nRetrying -- now each module will be removed separately.'.format(e.stderr)
+            )
+            # Retry, but remove each module separately
+            for module in semodules.modules:
+                try:
+                    run(['semodule', '-X', str(module.priority), '-r', module.name])
+                except CalledProcessError as e:
+                    api.current_logger().warning('Failed to remove module {} on priority {}: {}'.format(
+                                            module.name, module.priority, e.stderr))
+                    continue
+
+        remove_udica_templates(semodules.templates)
+
+
+def remove_udica_templates(templates):
+    api.current_logger().info('Removing "udica" policy templates. Count: {}'.format(len(templates)))
+    command = ['semodule']
+
+    for module in templates:
+        command.extend(['-X', str(module.priority), '-r', module.name])
+    try:
+        run(command)
+    except CalledProcessError as e:
+        api.current_logger().warning(
+            'Failed to remove some "udica" policy templates: {}'.format(e.stderr)
+        )

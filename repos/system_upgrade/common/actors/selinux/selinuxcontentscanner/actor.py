@@ -1,7 +1,7 @@
 from leapp.actors import Actor
-from leapp.models import SELinuxModules, SELinuxCustom, SELinuxFacts, SELinuxRequestRPMs, RpmTransactionTasks
-from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 from leapp.libraries.actor import selinuxcontentscanner
+from leapp.models import RpmTransactionTasks, SELinuxCustom, SELinuxFacts, SELinuxModules, SELinuxRequestRPMs
+from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 
 class SELinuxContentScanner(Actor):
@@ -25,9 +25,14 @@ class SELinuxContentScanner(Actor):
             if not fact.enabled:
                 return
 
-        (semodule_list, rpms_to_install,) = selinuxcontentscanner.get_selinux_modules()
+        (semodule_list, template_list, rpms_to_install,) = selinuxcontentscanner.get_selinux_modules()
 
-        self.produce(SELinuxModules(modules=semodule_list))
+        self.produce(
+            SELinuxModules(
+                modules=semodule_list,
+                templates=template_list
+            )
+        )
         self.produce(
             RpmTransactionTasks(
                 to_install=rpms_to_install
