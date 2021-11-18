@@ -13,9 +13,23 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python:
-          - python3.6
-          - python2.7
+        scenarios:
+          - name: Run unit tests for el8toel9 and common repositories on python 3.9
+            python: python3.9
+            repos: 'el8toel9,common'
+            container: centos8
+          - name: Run unit tests for el7toel8 and common repositories on python 3.6
+            python: python3.6
+            repos: 'el7toel8,common'
+            container: centos8
+          - name: Run unit tests for el8toel9 and common repositories on python 3.6
+            python: python3.6
+            repos: 'el8toel9,common'
+            container: centos8
+          - name: Run unit tests for el7toel8 and common repositories on python 2.7
+            python: python2.7
+            repos: 'el7toel8,common'
+            container: centos7
 
     steps:
       - name: Checkout code
@@ -29,10 +43,5 @@ jobs:
         if: github.ref != 'refs/heads/master'
         run: |
           git branch -f master origin/master
-      - name: Drop el8toel9 code for python2.7 tests
-        run: |
-          rm -rf ${PWD}/repos/system_upgrade/el8toel9
-        shell: bash
-        if: matrix.python == 'python2.7'
-      - name: Run tests @ ${{matrix.python}}
-        run: script -e -c /bin/bash -c 'TERM=xterm docker build -t leapp-tests -f utils/docker-tests/Dockerfile utils/docker-tests && PYTHON_VENV=${{matrix.python}}  docker run --rm -ti -v ${PWD}:/payload --env=PYTHON_VENV leapp-tests'
+      - name: ${{matrix.scenarios.name}}
+        run: script -e -c /bin/bash -c 'TERM=xterm docker build -t leapp-tests -f utils/docker-tests/Dockerfile.${{matrix.scenarios.container}} utils/docker-tests && PYTHON_VENV=${{matrix.scenarios.python}} REPOSITORIES=${{matrix.scenarios.repos}} docker run --rm -ti -v ${PWD}:/payload --env=PYTHON_VENV --env=REPOSITORIES leapp-tests'
