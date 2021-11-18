@@ -9,12 +9,19 @@ DEPS_PKGNAME=leapp-el7toel8-deps
 VERSION=`grep -m1 "^Version:" packaging/$(PKGNAME).spec | grep -om1 "[0-9].[0-9.]**"`
 DEPS_VERSION=`grep -m1 "^Version:" packaging/$(DEPS_PKGNAME).spec | grep -om1 "[0-9].[0-9.]**"`
 REPOS_PATH=repos
-ACTOR_PATH=
 LIBRARY_PATH=
 REPORT_ARG=
+space :=
+space += 
+comma := ,
+REPOSITORIES ?= $(shell ls repos/system_upgrade/ | xargs echo | tr ' ' ',')
+SYSUPG_TEST_PATHS=repos/system_upgrade/$(subst $(comma),$(space)repos/system_upgrade/,$(REPOSITORIES))
+TEST_PATHS:=repos/common
+TEST_PATHS += ${SYSUPG_TEST_PATHS}
+
 
 ifdef ACTOR
-	ACTOR_PATH=`python utils/actor_path.py $(ACTOR)`
+	TEST_PATHS=`python utils/actor_path.py $(ACTOR)`
 endif
 
 ifeq ($(TEST_LIBS),y)
@@ -216,7 +223,7 @@ install-deps:
 		echo "Leapp-repository depends on the yet unmerged pr of the framework #$(REQ_LEAPP_PR), installing it.." && \
 		$(VENVNAME)/bin/pip install -I "git+https://github.com/oamg/leapp.git@refs/pull/$(REQ_LEAPP_PR)/head"; \
 	fi
-	python utils/install_actor_deps.py --actor=$(ACTOR)
+	$(_PYTHON_VENV) utils/install_actor_deps.py --actor=$(ACTOR) --repos="$(TEST_PATHS)"
 
 install-deps-fedora:
 	@# Check the necessary rpms are installed for py3 (and py2 below)
@@ -242,18 +249,18 @@ install-deps-fedora:
 lint:
 	. $(VENVNAME)/bin/activate; \
 	echo "--- Linting ... ---" && \
-	SEARCH_PATH=$(REPOS_PATH) && \
+	SEARCH_PATH="$(TEST_PATHS)" && \
 	echo "Using search path '$${SEARCH_PATH}'" && \
 	echo "--- Running pylint ---" && \
-	bash -c "[[ ! -z $${SEARCH_PATH} ]] && find $${SEARCH_PATH} -name '*.py' | sort -u | xargs pylint" && \
+	bash -c "[[ ! -z '$${SEARCH_PATH}' ]] && find $${SEARCH_PATH} -name '*.py' | sort -u | xargs pylint -j0" && \
 	echo "--- Running flake8 ---" && \
-	bash -c "[[ ! -z $${SEARCH_PATH} ]] && flake8 $${SEARCH_PATH}"
+	bash -c "[[ ! -z '$${SEARCH_PATH}' ]] && flake8 $${SEARCH_PATH}"
 
 	if [[ "$(_PYTHON_VENV)" == "python2.7" ]] ; then \
 		. $(VENVNAME)/bin/activate; \
 		echo "--- Checking py3 compatibility ---" && \
 		SEARCH_PATH=$(REPOS_PATH) && \
-		bash -c "[[ ! -z $${SEARCH_PATH} ]] && find $${SEARCH_PATH} -name '*.py' | sort -u | xargs pylint --py3k" && \
+		bash -c "[[ ! -z '$${SEARCH_PATH}' ]] && find $${SEARCH_PATH} -name '*.py' | sort -u | xargs pylint --py3k" && \
 		echo "--- Linting done. ---"; \
 	fi
 
@@ -263,7 +270,7 @@ test_no_lint:
 	cd repos/system_upgrade/el7toel8/; \
 	snactor workflow sanity-check ipu && \
 	cd - && \
-	python -m pytest $(REPORT_ARG) $(ACTOR_PATH) $(LIBRARY_PATH)
+	$(_PYTHON_VENV) -m pytest $(REPORT_ARG) $(TEST_PATHS) $(LIBRARY_PATH)
 
 test: lint test_no_lint
 
@@ -288,7 +295,7 @@ dashboard_data:
 	. $(VENVNAME)/bin/activate; \
 	snactor repo find --path repos/; \
 	pushd repos/system_upgrade/el7toel8/; \
-	python ../../../utils/dashboard-json-dump.py > ../../../discover.json; \
+	$(_PYTHON_VENV) ../../../utils/dashboard-json-dump.py > ../../../discover.json; \
 	popd
 
 .PHONY: help build clean prepare source srpm copr_build print_release register install-deps install-deps-fedora lint test_no_lint test dashboard_data

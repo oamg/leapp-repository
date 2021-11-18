@@ -41,8 +41,11 @@ def install_actor_deps(actor, directory):
     error("Actor '{}' doesn't exist!\n".format(actor), 1)
 
 
-def install_all_deps(directory):
+def install_all_deps(directory, repos):
+    repos = repos.split() if repos else repos
     for root, dirs, files in os.walk(directory):
+        if repos and not any([repo in dirs for repo in repos]):
+            continue
         if 'Makefile' in files:
             install(os.path.join(root, 'Makefile'))
 
@@ -53,9 +56,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--actor", help="name of the actor for which to install dependencies")
+    parser.add_argument(
+        "--repos", help="repositories to look into")
     args = parser.parse_args()
 
     if args.actor:
         install_actor_deps(args.actor, ACTORS_DIR)
     else:
-        install_all_deps(ACTORS_DIR)
+        install_all_deps(ACTORS_DIR, args.repos)
