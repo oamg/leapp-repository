@@ -1,11 +1,28 @@
-from leapp.snactor.fixture import current_actor_context
 from leapp.models import RpmTransactionTasks
+from leapp.libraries.actor import transactionworkarounds as tw
 
 
-def test_execution(current_actor_context):
-    current_actor_context.run()
-    assert current_actor_context.consume(RpmTransactionTasks)
-    assert current_actor_context.consume(RpmTransactionTasks)[0].local_rpms
-    assert not current_actor_context.consume(RpmTransactionTasks)[0].to_install
-    assert not current_actor_context.consume(RpmTransactionTasks)[0].to_remove
-    assert not current_actor_context.consume(RpmTransactionTasks)[0].to_keep
+def test_transactionworkarounds_2rpms(monkeypatch):
+    result = []
+    monkeypatch.setattr(tw.os, 'listdir', lambda _: ('abc.rpm', 'def.rpm', 'random.file'),)
+    monkeypatch.setattr(tw.api, 'get_folder_path', lambda _: '/FAKE/FOLDER/PATH')
+    monkeypatch.setattr(tw.api, 'produce', lambda *models: result.extend(models))
+
+    tw.process()
+
+    assert result
+    assert isinstance(result[0], RpmTransactionTasks)
+    assert result[0].local_rpms
+    assert result[0].local_rpms == ['/FAKE/FOLDER/PATH/abc.rpm', '/FAKE/FOLDER/PATH/def.rpm']
+    assert not result[0].to_install
+    assert not result[0].to_remove
+    assert not result[0].to_keep
+
+
+def test_transactionworkarounds_0rpms(monkeypatch):
+    result = []
+    monkeypatch.setattr(tw.os, 'listdir', lambda _: ('abc.not', 'def.duh', 'random.file'),)
+    monkeypatch.setattr(tw.api, 'get_folder_path', lambda _: '/FAKE/FOLDER/PATH')
+    monkeypatch.setattr(tw.api, 'produce', lambda *models: result.extend(models))
+    tw.process()
+    assert not result
