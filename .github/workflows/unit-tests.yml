@@ -17,19 +17,19 @@ jobs:
           - name: Run unit tests for el8toel9 and common repositories on python 3.9
             python: python3.9
             repos: 'el8toel9,common'
-            container: centos8
+            container: ubi8
           - name: Run unit tests for el7toel8 and common repositories on python 3.6
             python: python3.6
             repos: 'el7toel8,common'
-            container: centos8
+            container: ubi8
           - name: Run unit tests for el8toel9 and common repositories on python 3.6
             python: python3.6
             repos: 'el8toel9,common'
-            container: centos8
+            container: ubi8
           - name: Run unit tests for el7toel8 and common repositories on python 2.7
             python: python2.7
             repos: 'el7toel8,common'
-            container: centos7
+            container: ubi7
 
     steps:
       - name: Checkout code
@@ -44,4 +44,4 @@ jobs:
         run: |
           git branch -f master origin/master
       - name: ${{matrix.scenarios.name}}
-        run: script -e -c /bin/bash -c 'TERM=xterm docker build -t leapp-tests -f utils/docker-tests/Dockerfile.${{matrix.scenarios.container}} utils/docker-tests && PYTHON_VENV=${{matrix.scenarios.python}} REPOSITORIES=${{matrix.scenarios.repos}} docker run --rm -ti -v ${PWD}:/payload --env=PYTHON_VENV --env=REPOSITORIES leapp-tests'
+        run: script -e -c /bin/bash -c 'TERM=xterm podman build --security-opt=seccomp=unconfined -t leapp-tests -f utils/container-tests/Containerfile.${{matrix.scenarios.container}} utils/container-tests && PYTHON_VENV=${{matrix.scenarios.python}} REPOSITORIES=${{matrix.scenarios.repos}} podman run --security-opt=seccomp=unconfined --rm -ti -v ${PWD}:/payload --env=PYTHON_VENV --env=REPOSITORIES leapp-tests'

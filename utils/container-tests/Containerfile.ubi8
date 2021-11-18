@@ -1,4 +1,4 @@
-FROM registry.centos.org/centos:8
+FROM registry.access.redhat.com/ubi8/ubi:latest
 
 VOLUME /payload
 

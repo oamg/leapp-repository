@@ -1,4 +1,4 @@
-FROM registry.centos.org/centos:7
+FROM registry.access.redhat.com/ubi7/ubi:7.9
 
 VOLUME /payload
 
@@ -12,11 +12,14 @@ RUN yum update -y && \
 # however I am afraid of additional possible troubles in future because of the
 # archaic pip3 version (v9.0.1). As we want to run tests for Py2 and Py3 in ci
 # always anyway, let's put py3 installation here as well..
+# Dropped Python3 as it is now added in its own container on RHEL8
 
-RUN yum -y install epel-release && \
-    yum -y install python2-pip python3-pip && \
-    python2 -m pip install --upgrade pip==20.3.4 && \
-    python3 -m pip install --upgrade pip==20.3.4
+# This is some trickery: We install python27-python-pip from the scl, use the scl to bootstrap the python
+# module of pip version 20.3.0 and then make it update to 20.3.4 resulting the 'pip' command to be available.
+# The --target approach doesn't add it, but at least we now have pip 20.3.4 installed ;-)
+RUN yum -y install python27-python-pip && \
+    scl enable python27 -- pip install -U --target /usr/lib/python2.7/site-packages/ pip==20.3.0 virtualenv && \
+    python -m pip install --ignore-installed pip==20.3.4 ipaddress
 
 WORKDIR /payload
 ENTRYPOINT make install-deps && make test
