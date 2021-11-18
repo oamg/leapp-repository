@@ -209,8 +209,6 @@ register:
 install-deps:
 	@# in centos:7 python 3.x is not installed by default
 	case $(_PYTHON_VENV) in python3*) yum install -y ${shell echo $(_PYTHON_VENV) | tr -d .}; esac
-	@# in centos:7 actor's python 3.x dependencies are in epel
-	case $(_PYTHON_VENV) in python3*) yum install -y epel-release; esac
 	@# in centos:7 python dependencies required gcc
 	case $(_PYTHON_VENV) in python3*) yum install gcc -y; esac
 	virtualenv --system-site-packages -p /usr/bin/$(_PYTHON_VENV) $(VENVNAME); \
