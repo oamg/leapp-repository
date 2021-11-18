@@ -1,2 +1,2 @@
 install-deps:
-	yum install -y python-ipaddress
+	-yum install -y python-ipaddress
