@@ -60,7 +60,7 @@ def rerun(args):
         db.execute('''DELETE FROM message WHERE context = ? and type = 'ErrorModel';''', (context,))
 
     util.archive_logfiles()
-    upgrade(Namespace(
+    upgrade(Namespace(  # pylint: disable=no-value-for-parameter
         resume=True,
         resume_context=context,
         only_with_tags=args.only_actors_with_tag or [],

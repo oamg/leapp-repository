@@ -34,6 +34,9 @@ def _load_and_add_repo(manager, repo_path):
 def pytest_collectstart(collector):
     if collector.nodeid:
         current_repo_basedir = find_repository_basedir(str(collector.fspath))
+        if not current_repo_basedir:
+            # This is not a repository
+            return
         if not hasattr(collector.session, "leapp_repository"):
             collector.session.leapp_repository = RepositoryManager()
             collector.session.repo_base_dir = current_repo_basedir

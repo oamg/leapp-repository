@@ -18,8 +18,8 @@ RUN yum update -y && \
 # module of pip version 20.3.0 and then make it update to 20.3.4 resulting the 'pip' command to be available.
 # The --target approach doesn't add it, but at least we now have pip 20.3.4 installed ;-)
 RUN yum -y install python27-python-pip && \
-    scl enable python27 -- pip install -U --target /usr/lib/python2.7/site-packages/ pip==20.3.0 virtualenv && \
-    python -m pip install --ignore-installed pip==20.3.4 ipaddress
+    scl enable python27 -- pip install -U --target /usr/lib/python2.7/site-packages/ pip==20.3.0 && \
+    python -m pip install --ignore-installed pip==20.3.4 ipaddress virtualenv
 
 WORKDIR /payload
 ENTRYPOINT make install-deps && make test

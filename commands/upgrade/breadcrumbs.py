@@ -9,12 +9,12 @@ from leapp.libraries.stdlib.call import _call
 from leapp.utils.audit import get_messages
 
 try:
-    from json.decoder import JSONDecodeError
+    from json.decoder import JSONDecodeError  # pylint: disable=ungrouped-imports
 except ImportError:
     JSONDecodeError = ValueError
 
 
-class _BreadCrumbs:
+class _BreadCrumbs(object):
     def __init__(self, activity):
         self._crumbs = {
             'activity': activity,
@@ -76,7 +76,7 @@ def produces_breadcrumbs(f):
     """
     Ensures that `/etc/migration-results` gets produced on every invocation of `leapp upgrade` & `leapp preupgrade`
 
-    Every execution of the upgrade will have their own entry in the /etc/migration-results file. 
+    Every execution of the upgrade will have their own entry in the /etc/migration-results file.
     For a user flow like: leapp preupgrade && leapp upgrade && reboot there should be 5 new entries in the file:
 
     1. leapp preupgrade

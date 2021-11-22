@@ -16,7 +16,7 @@ space +=
 comma := ,
 REPOSITORIES ?= $(shell ls repos/system_upgrade/ | xargs echo | tr ' ' ',')
 SYSUPG_TEST_PATHS=repos/system_upgrade/$(subst $(comma),$(space)repos/system_upgrade/,$(REPOSITORIES))
-TEST_PATHS:=repos/common
+TEST_PATHS:=commands repos/common
 TEST_PATHS += ${SYSUPG_TEST_PATHS}
 
 
@@ -215,14 +215,14 @@ install-deps:
 	. $(VENVNAME)/bin/activate; \
 	pip install -U pip; \
 	pip install --upgrade setuptools; \
-	pip install --upgrade -r requirements.txt \
+	pip install --upgrade -r requirements.txt; \
+	./utils/install_commands.sh $(_PYTHON_VENV); \
 	# In case the top commit Depends-On some yet unmerged framework patch - override master leapp with the proper version
 	if [[ ! -z "$(REQ_LEAPP_PR)" ]] ; then \
 		echo "Leapp-repository depends on the yet unmerged pr of the framework #$(REQ_LEAPP_PR), installing it.." && \
 		$(VENVNAME)/bin/pip install -I "git+https://github.com/oamg/leapp.git@refs/pull/$(REQ_LEAPP_PR)/head"; \
 	fi
 	$(_PYTHON_VENV) utils/install_actor_deps.py --actor=$(ACTOR) --repos="$(TEST_PATHS)"
-
 install-deps-fedora:
 	@# Check the necessary rpms are installed for py3 (and py2 below)
 	if ! rpm -q git findutils python3-virtualenv gcc; then \
@@ -238,6 +238,7 @@ install-deps-fedora:
 	pip install -U pip; \
 	pip install --upgrade setuptools; \
 	pip install --upgrade -r requirements.txt; \
+	./utils/install_commands.sh $(_PYTHON_VENV); \
 	# In case the top commit Depends-On some yet unmerged framework patch - override master leapp with the proper version
 	if [[ ! -z "$(REQ_LEAPP_PR)" ]] ; then \
 		echo "Leapp-repository depends on the yet unmerged pr of the framework #$(REQ_LEAPP_PR), installing it.." && \
