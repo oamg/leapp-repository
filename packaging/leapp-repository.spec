@@ -186,6 +186,7 @@ install -m 0644 etc/leapp/transaction/* %{buildroot}%{_sysconfdir}/leapp/transac
 # install CLI commands for the leapp utility on the expected path
 install -m 0755 -d %{buildroot}%{leapp_python_sitelib}/leapp/cli/
 cp -r commands %{buildroot}%{leapp_python_sitelib}/leapp/cli/
+rm -rf %{buildroot}%{leapp_python_sitelib}/leapp/cli/commands/tests
 
 # Remove irrelevant repositories - We don't want to ship them for the particular
 # RHEL version
