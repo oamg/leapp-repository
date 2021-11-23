@@ -1,10 +1,13 @@
+import pytest
+
+from leapp import reporting
+from leapp.libraries.actor import checkselinux
+from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked, produce_mocked
+from leapp.libraries.stdlib import api
+from leapp.models import Report, SELinuxFacts, SelinuxPermissiveDecision, SelinuxRelabelDecision
 from leapp.snactor.fixture import current_actor_context
-from leapp.models import (Report, SELinuxFacts, SelinuxPermissiveDecision,
-                          SelinuxRelabelDecision)
 
 
-# FIXME: fix the file properly regarding the fix of the issue:
-# # https://github.com/oamg/leapp-repository/issues/20
 def create_selinuxfacts(static_mode, enabled, policy='targeted', mls_enabled=True):
     runtime_mode = static_mode if static_mode != 'disabled' else None
 
@@ -17,30 +20,50 @@ def create_selinuxfacts(static_mode, enabled, policy='targeted', mls_enabled=Tru
     )
 
 
-def test_actor_schedule_relabelling(current_actor_context):
-    facts = [create_selinuxfacts(static_mode='permissive', enabled=True),
-             create_selinuxfacts(static_mode='enforcing', enabled=True)]
+@pytest.mark.parametrize('mode', ('permissive', 'enforcing'))
+def test_actor_schedule_relabelling(monkeypatch, mode):
 
-    for fact in facts:
-        current_actor_context.feed(fact)
-        current_actor_context.run()
-        assert current_actor_context.consume(Report)
-        assert current_actor_context.consume(SelinuxRelabelDecision)[0].set_relabel
+    fact = create_selinuxfacts(static_mode=mode, enabled=True)
+
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[fact]))
+    monkeypatch.setattr(api, 'produce', produce_mocked())
+    monkeypatch.setattr(reporting, "create_report", create_report_mocked())
+
+    checkselinux.process()
+
+    assert api.produce.model_instances[0].set_relabel
+    assert reporting.create_report.called
 
 
-def test_actor_set_permissive(current_actor_context):
+def test_actor_set_permissive(monkeypatch):
     relabel = create_selinuxfacts(static_mode='enforcing', enabled=True)
 
-    current_actor_context.feed(relabel)
-    current_actor_context.run()
-    assert current_actor_context.consume(Report)
-    assert current_actor_context.consume(SelinuxPermissiveDecision)[0].set_permissive
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[relabel]))
+    monkeypatch.setattr(api, 'produce', produce_mocked())
+    monkeypatch.setattr(reporting, "create_report", create_report_mocked())
+
+    checkselinux.process()
+
+    assert api.produce.model_instances[0].set_relabel
+    assert api.produce.model_instances[1].set_permissive
+    assert reporting.create_report.called
 
 
-def test_actor_selinux_disabled(current_actor_context):
+@pytest.mark.parametrize('el8_to_el9', (True, False))
+def test_actor_selinux_disabled(monkeypatch, el8_to_el9):
     disabled = create_selinuxfacts(enabled=False, static_mode='disabled')
 
-    current_actor_context.feed(disabled)
-    current_actor_context.run()
-    assert not current_actor_context.consume(SelinuxRelabelDecision)
-    assert not current_actor_context.consume(SelinuxPermissiveDecision)
+    target_ver = '8' if not el8_to_el9 else '9'
+
+    monkeypatch.setattr(checkselinux, 'get_target_major_version', lambda: target_ver)
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[disabled]))
+    monkeypatch.setattr(api, 'produce', produce_mocked())
+    monkeypatch.setattr(reporting, "create_report", create_report_mocked())
+
+    checkselinux.process()
+    if el8_to_el9:
+        assert api.produce.model_instances[0]
+        assert reporting.create_report.called == 2
+    else:
+        assert not api.produce.model_instances
+        assert reporting.create_report.called
