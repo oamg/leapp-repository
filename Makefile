@@ -9,15 +9,12 @@ DEPS_PKGNAME=leapp-el7toel8-deps
 VERSION=`grep -m1 "^Version:" packaging/$(PKGNAME).spec | grep -om1 "[0-9].[0-9.]**"`
 DEPS_VERSION=`grep -m1 "^Version:" packaging/$(DEPS_PKGNAME).spec | grep -om1 "[0-9].[0-9.]**"`
 REPOS_PATH=repos
+_SYSUPG_REPOS="$(REPOS_PATH)/system_upgrade"
 LIBRARY_PATH=
 REPORT_ARG=
-space :=
-space += 
-comma := ,
-REPOSITORIES ?= $(shell ls repos/system_upgrade/ | xargs echo | tr ' ' ',')
-SYSUPG_TEST_PATHS=repos/system_upgrade/$(subst $(comma),$(space)repos/system_upgrade/,$(REPOSITORIES))
-TEST_PATHS:=commands repos/common
-TEST_PATHS += ${SYSUPG_TEST_PATHS}
+REPOSITORIES ?= $(shell ls $(_SYSUPG_REPOS) | xargs echo | tr " " ",")
+SYSUPG_TEST_PATHS=$(shell echo $(REPOSITORIES) | sed -r "s|(,\\|^)| $(_SYSUPG_REPOS)/|g")
+TEST_PATHS:=commands repos/common $(SYSUPG_TEST_PATHS)
 
 
 ifdef ACTOR
