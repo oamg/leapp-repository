@@ -1,7 +1,7 @@
 from re import compile as regexp
 import os
 
-from leapp.libraries.stdlib import run
+from leapp.libraries.stdlib import api, run
 
 
 _current_boot_matcher = regexp(r'BootCurrent: (?P<boot_current>([0-9A-F]*))')
@@ -45,4 +45,16 @@ def maybe_emit_updated_boot_entry():
 
     if current_boot and not next_boot:
         # We set BootNext to CurrentBoot only if BootNext wasn't previously set
-        run(['/sbin/efibootmgr', '-n', current_boot])
+        result = run(['/sbin/efibootmgr', '-n', current_boot], checked=False)
+        if result['exit_code'] != 0:
+            api.current_logger().warning(
+                'Cannot set the next boot for EFI. This usually does not affect'
+                ' system negatively, but in case the default EFI boot has'
+                ' a special effects, the upgrade does not have to be finished'
+                ' as expected. It could be problem e.g. for machines in special'
+                ' testing infrastructure.'
+            )
+            api.current_logger().warning('Discovered current boot: {}'.format(current_boot))
+            api.current_logger().warning('Original post-upgrade EFI info: {}'.format(efi_info['stdout']))
+            new_efi_info = run(['/sbin/efibootmgr'], checked=False, split=True)
+            api.current_logger().warning('The EFI info after the error: {}'.format(new_efi_info['stdout']))
