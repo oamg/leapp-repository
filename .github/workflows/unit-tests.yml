@@ -12,6 +12,7 @@ jobs:
     name: Run unit tests in containers
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         scenarios:
           - name: Run unit tests for el8toel9 and common repositories on python 3.9
