@@ -232,7 +232,7 @@ def _update_config(config):
             qinp_info.has_no_path_retry = has_no_path_retry
             qinp_infos.append(qinp_info)
     _comment_out_ranges(lines, all_devs_ranges)
-    if qinp_infos != []:
+    if qinp_infos:
         _remove_qinp(lines, qinp_infos)
     if config.all_devs_options != []:
         if overrides_line:

@@ -72,7 +72,7 @@ def _check_default_detection(options):
         if options[keyword] and not options[keyword][0] and \
                 options[keyword][1] not in bad:
             bad.append(options[keyword][1])
-    if bad == []:
+    if not bad:
         return
     paths = _create_paths_str(bad)
     create_report([
