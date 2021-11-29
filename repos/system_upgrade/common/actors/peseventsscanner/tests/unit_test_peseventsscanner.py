@@ -8,26 +8,28 @@ from leapp.exceptions import StopActorExecution, StopActorExecutionError
 from leapp.libraries.actor import peseventsscanner
 from leapp.libraries.actor.peseventsscanner import (
     Action,
-    Event,
-    SKIPPED_PKGS_MSG,
-    Task,
     add_output_pkgs_to_transaction_conf,
     drop_conflicting_release_events,
+    Event,
     filter_events_by_architecture,
     filter_events_by_releases,
     filter_out_pkgs_in_blacklisted_repos,
     filter_releases_by_target,
     get_events,
-    map_repositories, parse_action,
-    parse_entry, parse_packageset,
+    map_repositories,
+    parse_action,
+    parse_entry,
+    parse_packageset,
     parse_pes_events,
     process_events,
     report_skipped_packages,
+    SKIPPED_PKGS_MSG,
+    Task
 )
 from leapp.libraries.common import fetch
-from leapp.libraries.common.testutils import produce_mocked, create_report_mocked, CurrentActorMocked
+from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked, produce_mocked
 from leapp.libraries.stdlib import api
-from leapp.models import PESIDRepositoryEntry, RpmTransactionTasks, RepositoriesMapping, RepoMapEntry
+from leapp.models import PESIDRepositoryEntry, RepoMapEntry, RepositoriesMapping, RpmTransactionTasks
 
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -515,3 +517,33 @@ def test_drop_conflicting_release_events():
         assert event in events
     for event in [conflict1a, conflict1c, conflict2a, conflict3a]:
         assert event not in events
+
+
+@pytest.mark.parametrize(('installed_pkgs', 'expected_relevance'),
+                         [({'pkg1', 'pkg2'}, True),
+                          ({'pkg2'}, True),
+                          ({'pkg0'}, True),
+                          (set(), False)])
+def test_merge_events_relevance_assessment(monkeypatch, installed_pkgs, expected_relevance):
+    """
+    Verifies that the relevance of the MERGED events is correctly assessed when processing events.
+    """
+    monkeypatch.setattr(peseventsscanner, 'map_repositories', lambda x: x)
+    monkeypatch.setattr(peseventsscanner, 'filter_out_pkgs_in_blacklisted_repos', lambda x: x)
+
+    events = [
+        Event(1, Action.REPLACED, {'pkg0': 'repo-in'}, {'pkg1': 'repo-in'}, (7, 8), (7, 9), []),
+        Event(2, Action.MERGED, {'pkg1': 'repo-in', 'pkg2': 'repo-in'}, {'pkg3': 'repo-out'}, (7, 9), (8, 0), [])
+    ]
+
+    tasks = process_events([(7, 9), (8, 0)], events, installed_pkgs)
+
+    if expected_relevance:
+        assert tasks[Task.INSTALL] == {'pkg3': 'repo-out'}
+        if 'pkg0' in installed_pkgs:
+            assert tasks[Task.REMOVE] == {'pkg0': 'repo-in', 'pkg2': 'repo-in'}
+        else:
+            assert tasks[Task.REMOVE] == {'pkg1': 'repo-in', 'pkg2': 'repo-in'}
+    else:
+        assert not tasks[Task.INSTALL]
+        assert not tasks[Task.REMOVE]

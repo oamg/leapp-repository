@@ -1,16 +1,16 @@
 import json
 import os
-from collections import namedtuple, defaultdict
+from collections import defaultdict, namedtuple
 from enum import IntEnum
 
 from leapp import reporting
+from leapp.exceptions import StopActorExecution, StopActorExecutionError
 from leapp.libraries.actor import peseventsscanner_repomap
 from leapp.libraries.common import fetch
 from leapp.libraries.common.config import architecture, version
 from leapp.libraries.common.config.version import get_target_major_version
 from leapp.libraries.stdlib import api
 from leapp.libraries.stdlib.config import is_verbose
-from leapp.exceptions import StopActorExecution, StopActorExecutionError
 from leapp.models import (
     InstalledRedHatSignedRPM,
     PESIDRepositoryEntry,
@@ -19,9 +19,8 @@ from leapp.models import (
     RepositoriesFacts,
     RepositoriesMapping,
     RepositoriesSetupTasks,
-    RpmTransactionTasks,
+    RpmTransactionTasks
 )
-
 
 Event = namedtuple('Event', ['id',            # int
                              'action',        # An instance of Action
@@ -362,6 +361,14 @@ def parse_architectures(architectures):
 
 def is_event_relevant(event, installed_pkgs, tasks):
     """Determine if event is applicable given the installed packages and tasks planned so far."""
+    if event.action == Action.MERGED:
+        # Merge events have different relevance criteria - it is sufficient for any
+        # of their input packages to be installed in order for them to be relevant.
+        in_pkgs_not_removed = set(event.in_pkgs.keys()) - set(tasks[Task.REMOVE].keys())
+        pkgs_installed = installed_pkgs | set(tasks[Task.INSTALL].keys())
+        in_pkgs_installed = in_pkgs_not_removed & pkgs_installed
+        return bool(in_pkgs_installed)
+
     for package in event.in_pkgs.keys():
         if package in tasks[Task.REMOVE] and event.action != Action.PRESENT:
             return False
