@@ -39,6 +39,7 @@ else
     # TODO(pstodulk, mreznik): Why --console=pipe? Is it ok? Discovered a weird
     # issue on IPU 8 -> 9 without that in our VMs
     NSPAWN_OPTS="$NSPAWN_OPTS --bind=/sys:/hostsys --console=pipe"
+    [ -e /sys/firmware/efi/efivars ] && NSPAWN_OPTS="$NSPAWN_OPTS --bind=/sys/firmware/efi/efivars"
 fi
 export NSPAWN_OPTS="$NSPAWN_OPTS --keep-unit --register=no --timezone=off --resolv-conf=off"
 
