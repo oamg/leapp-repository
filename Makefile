@@ -106,6 +106,7 @@ help:
 	@echo "  install-deps-fedora    create python virtualenv and install there"
 	@echo "                         leapp-repository with dependencies for Fedora OS"
 	@echo "  lint                   lint source code"
+	@echo "  lint_fix               attempt to fix isort violations inplace"
 	@echo "  test                   lint source code and run tests"
 	@echo "  test_no_lint           run tests without linting the source code"
 	@echo ""
@@ -259,6 +260,21 @@ lint:
 		bash -c "[[ ! -z '$${SEARCH_PATH}' ]] && find $${SEARCH_PATH} -name '*.py' | sort -u | xargs pylint --py3k" && \
 		echo "--- Linting done. ---"; \
 	fi
+
+	. $(VENVNAME)/bin/activate; \
+	git diff $(MASTER_BRANCH) --name-only | xargs isort -c --diff || \
+	{ \
+		echo; \
+		echo "------------------------------------------------------------------------------"; \
+		echo "Hint: Apply the required changes."; \
+		echo "      Execute the following command to apply them automatically: make lint_fix"; \
+		exit 1; \
+	} && echo "--- isort check done. ---";
+
+lint_fix:
+	. $(VENVNAME)/bin/activate; \
+	git diff $(MASTER_BRANCH) --name-only | xargs isort && \
+	echo "--- isort inplace fixing done. ---;"
 
 test_no_lint:
 	. $(VENVNAME)/bin/activate; \
