@@ -1,9 +1,9 @@
 import os
 
 from leapp.actors import Actor
-from leapp.libraries.actor.addupgradebootentry import add_boot_entry, fix_grub_config_error
-from leapp.models import BootContent, GrubConfigError, FirmwareFacts, TransactionDryRun
 from leapp.exceptions import StopActorExecutionError
+from leapp.libraries.actor.addupgradebootentry import add_boot_entry, fix_grub_config_error
+from leapp.models import BootContent, FirmwareFacts, GrubConfigError, TransactionDryRun
 from leapp.tags import InterimPreparationPhaseTag, IPUWorkflowTag
 
 

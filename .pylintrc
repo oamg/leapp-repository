@@ -26,7 +26,6 @@ disable=
 # "C" Coding convention violations
  bad-continuation,
  missing-docstring,
- wrong-import-order,
  use-maxsplit-arg,
  consider-using-dict-items,
  consider-using-enumerate,

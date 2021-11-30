@@ -6,9 +6,8 @@ import shutil
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import dnfconfig, guards, mounting, overlaygen, rhsm, utils
-from leapp.libraries.common.config.version import get_target_major_version, get_source_major_version
-from leapp.libraries.stdlib import CalledProcessError, api, config
-
+from leapp.libraries.common.config.version import get_source_major_version, get_target_major_version
+from leapp.libraries.stdlib import api, CalledProcessError, config
 
 DNF_PLUGIN_NAME = 'rhel_upgrade.py'
 

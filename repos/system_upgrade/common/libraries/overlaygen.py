@@ -5,8 +5,7 @@ from collections import namedtuple
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import mounting, utils
-from leapp.libraries.stdlib import CalledProcessError, api, run
-
+from leapp.libraries.stdlib import api, CalledProcessError, run
 
 OVERLAY_DO_NOT_MOUNT = ('tmpfs', 'devpts', 'sysfs', 'proc', 'cramfs', 'sysv', 'vfat')
 

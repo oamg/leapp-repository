@@ -6,7 +6,6 @@ from leapp.libraries.stdlib import api
 from leapp.models import RestrictedPCIDevices
 from leapp.models.fields import ModelViolationError
 
-
 try:
     # python3
     from json import JSONDecodeError  # pylint: disable=ungrouped-imports

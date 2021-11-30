@@ -2,17 +2,17 @@ import os
 import shutil
 
 from leapp.exceptions import StopActorExecutionError
-from leapp.libraries.common.config.version import get_target_major_version
 from leapp.libraries.common import dnfplugin, mounting
+from leapp.libraries.common.config.version import get_target_major_version
 from leapp.libraries.stdlib import api
+from leapp.models import RequiredUpgradeInitramPackages  # deprecated
+from leapp.models import UpgradeDracutModule  # deprecated
 from leapp.models import (
     BootContent,
-    RequiredUpgradeInitramPackages,  # deprecated
     TargetUserSpaceInfo,
     TargetUserSpaceUpgradeTasks,
-    UpgradeDracutModule,  # deprecated
     UpgradeInitramfsTasks,
-    UsedTargetRepositories,
+    UsedTargetRepositories
 )
 from leapp.utils.deprecation import suppress_deprecation
 

@@ -2,7 +2,7 @@ from leapp.actors import Actor
 from leapp.libraries.actor.checkmultiplepackageversions import check
 from leapp.models import InstalledRPM
 from leapp.reporting import Report
-from leapp.tags import IPUWorkflowTag, ChecksPhaseTag
+from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
 class CheckMultiplePackageVersions(Actor):

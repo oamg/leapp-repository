@@ -1,11 +1,10 @@
 import os
 
-from leapp.libraries.common.rpms import has_package
-from leapp.libraries.stdlib import api
-from leapp.models import InstalledRPM, HybridImage, FirmwareFacts
 from leapp import reporting
 from leapp.libraries.common import rhui
-
+from leapp.libraries.common.rpms import has_package
+from leapp.libraries.stdlib import api
+from leapp.models import FirmwareFacts, HybridImage, InstalledRPM
 
 BIOS_PATH = '/boot/grub2/grubenv'
 EFI_PATH = '/boot/efi/EFI/redhat/grubenv'

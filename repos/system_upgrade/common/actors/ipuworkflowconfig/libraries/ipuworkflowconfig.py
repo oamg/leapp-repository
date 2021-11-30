@@ -2,9 +2,8 @@ import os
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common.config.version import get_major_version
-from leapp.libraries.stdlib import run, CalledProcessError
+from leapp.libraries.stdlib import CalledProcessError, run
 from leapp.models import EnvVar, OSRelease
-
 
 ENV_IGNORE = ('LEAPP_CURRENT_PHASE', 'LEAPP_CURRENT_ACTOR', 'LEAPP_VERBOSE',
               'LEAPP_DEBUG')

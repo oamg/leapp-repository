@@ -4,9 +4,8 @@ import os
 import tarfile
 
 from leapp import reporting
-from leapp.libraries.stdlib import CalledProcessError, api, run
+from leapp.libraries.stdlib import api, CalledProcessError, run
 from leapp.models import NtpMigrationDecision
-
 
 files = [
     '/etc/ntp.conf', '/etc/ntp/keys',

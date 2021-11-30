@@ -1,8 +1,8 @@
+from leapp import reporting
 from leapp.actors import Actor
 from leapp.models import LeftoverPackages, RemovedPackages
-from leapp.reporting import Report, create_report
-from leapp import reporting
-from leapp.tags import RPMUpgradePhaseTag, IPUWorkflowTag
+from leapp.reporting import create_report, Report
+from leapp.tags import IPUWorkflowTag, RPMUpgradePhaseTag
 
 
 class ReportLeftoverPackages(Actor):

@@ -1,6 +1,6 @@
 from os import listdir, path
 
-from leapp.libraries.stdlib import CalledProcessError, api, run
+from leapp.libraries.stdlib import api, CalledProcessError, run
 from leapp.models import SapHanaInfo, SapHanaInstanceInfo, SapHanaManifestEntry
 
 HANA_BASE_PATH = '/hana/shared'

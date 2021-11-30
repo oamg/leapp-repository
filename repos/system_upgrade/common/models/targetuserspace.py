@@ -1,4 +1,4 @@
-from leapp.models import Model, fields
+from leapp.models import fields, Model
 from leapp.topics import BootPrepTopic, TargetUserspaceTopic, TransactionTopic
 from leapp.utils.deprecation import deprecated
 

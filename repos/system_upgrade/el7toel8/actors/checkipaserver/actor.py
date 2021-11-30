@@ -1,8 +1,5 @@
 from leapp.actors import Actor
-from leapp.libraries.actor.checkipaserver import (
-    ipa_inhibit_upgrade,
-    ipa_warn_pkg_installed,
-)
+from leapp.libraries.actor.checkipaserver import ipa_inhibit_upgrade, ipa_warn_pkg_installed
 from leapp.models import IpaInfo
 from leapp.reporting import Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag

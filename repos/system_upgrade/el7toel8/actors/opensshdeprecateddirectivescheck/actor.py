@@ -1,6 +1,6 @@
 from leapp.actors import Actor
 from leapp.libraries.actor.opensshdeprecateddirectivescheck import inhibit_if_deprecated_directives_used
-from leapp.models import Report, OpenSshConfig
+from leapp.models import OpenSshConfig, Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 

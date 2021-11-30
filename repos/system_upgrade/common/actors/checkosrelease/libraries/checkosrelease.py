@@ -3,7 +3,6 @@ import os
 from leapp import reporting
 from leapp.libraries.common.config import version
 
-
 COMMON_REPORT_TAGS = [reporting.Tags.SANITY]
 
 related = [reporting.RelatedResource('file', '/etc/os-release')]

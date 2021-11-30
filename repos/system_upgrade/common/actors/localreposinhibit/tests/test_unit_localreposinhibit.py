@@ -5,7 +5,7 @@ from leapp.models import (
     RepositoryFile,
     TMPTargetRepositoriesFacts,
     UsedTargetRepositories,
-    UsedTargetRepository,
+    UsedTargetRepository
 )
 from leapp.snactor.fixture import ActorContext
 

@@ -1,4 +1,4 @@
-from leapp.libraries.stdlib import CalledProcessError, api, run
+from leapp.libraries.stdlib import api, CalledProcessError, run
 from leapp.models import QuaggaToFrrFacts
 
 QUAGGA_DAEMONS = [

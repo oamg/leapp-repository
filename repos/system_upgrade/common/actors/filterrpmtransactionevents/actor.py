@@ -1,7 +1,10 @@
 from leapp.actors import Actor
-from leapp.models import (FilteredRpmTransactionTasks,
-                          InstalledRedHatSignedRPM, PESRpmTransactionTasks,
-                          RpmTransactionTasks)
+from leapp.models import (
+    FilteredRpmTransactionTasks,
+    InstalledRedHatSignedRPM,
+    PESRpmTransactionTasks,
+    RpmTransactionTasks
+)
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 

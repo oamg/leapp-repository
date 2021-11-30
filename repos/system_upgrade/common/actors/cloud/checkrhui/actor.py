@@ -1,17 +1,17 @@
+from leapp import reporting
 from leapp.actors import Actor
+from leapp.libraries.common import rhsm, rhui
 from leapp.libraries.common.rpms import has_package
 from leapp.models import (
     DNFPluginTask,
     InstalledRPM,
     KernelCmdlineArg,
-    RHUIInfo,
     RequiredTargetUserspacePackages,
-    RpmTransactionTasks,
+    RHUIInfo,
+    RpmTransactionTasks
 )
-from leapp.reporting import Report, create_report
-from leapp import reporting
+from leapp.reporting import create_report, Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
-from leapp.libraries.common import rhsm, rhui
 
 
 class CheckRHUI(Actor):

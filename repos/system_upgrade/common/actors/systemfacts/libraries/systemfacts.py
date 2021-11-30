@@ -8,11 +8,24 @@ import re
 
 import six
 
-from leapp.libraries.stdlib import CalledProcessError, api, run
 from leapp.libraries.common import repofileutils
-from leapp.models import SysctlVariablesFacts, SysctlVariable, ActiveKernelModulesFacts, ActiveKernelModule, \
-    KernelModuleParameter, UsersFacts, User, GroupsFacts, Group, RepositoriesFacts, \
-    SELinuxFacts, FirewallStatus, FirewallsFacts, FirmwareFacts
+from leapp.libraries.stdlib import api, CalledProcessError, run
+from leapp.models import (
+    ActiveKernelModule,
+    ActiveKernelModulesFacts,
+    FirewallsFacts,
+    FirewallStatus,
+    FirmwareFacts,
+    Group,
+    GroupsFacts,
+    KernelModuleParameter,
+    RepositoriesFacts,
+    SELinuxFacts,
+    SysctlVariable,
+    SysctlVariablesFacts,
+    User,
+    UsersFacts
+)
 
 
 def aslist(f):

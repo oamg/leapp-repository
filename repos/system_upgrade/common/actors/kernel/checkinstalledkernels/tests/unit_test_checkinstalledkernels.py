@@ -5,7 +5,7 @@ from leapp.libraries.actor import checkinstalledkernels
 from leapp.libraries.common.config import architecture
 from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked, logger_mocked
 from leapp.libraries.stdlib import api
-from leapp.models import RPM, InstalledRedHatSignedRPM
+from leapp.models import InstalledRedHatSignedRPM, RPM
 
 RH_PACKAGER = 'Red Hat, Inc. <http://bugzilla.redhat.com/bugzilla>'
 

@@ -3,15 +3,10 @@ import re
 
 from leapp.libraries.common.config import architecture, version
 from leapp.libraries.stdlib import api
-from leapp.models import (
-    DracutModule,
-    RequiredUpgradeInitramPackages,  # deprecated
-    TargetUserSpaceUpgradeTasks,
-    UpgradeDracutModule,  # deprecated
-    UpgradeInitramfsTasks,
-)
+from leapp.models import RequiredUpgradeInitramPackages  # deprecated
+from leapp.models import UpgradeDracutModule  # deprecated
+from leapp.models import DracutModule, TargetUserSpaceUpgradeTasks, UpgradeInitramfsTasks
 from leapp.utils.deprecation import suppress_deprecation
-
 
 _REQUIRED_PACKAGES = [
     'binutils',

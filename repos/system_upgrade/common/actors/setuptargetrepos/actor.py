@@ -8,7 +8,7 @@ from leapp.models import (
     RepositoriesSetupTasks,
     SkippedRepositories,
     TargetRepositories,
-    UsedRepositories,
+    UsedRepositories
 )
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 

@@ -8,12 +8,9 @@ from leapp.libraries.actor import modscan
 from leapp.libraries.common.config import architecture
 from leapp.libraries.common.testutils import CurrentActorMocked
 from leapp.libraries.stdlib import api
-from leapp.models import (
-    RequiredUpgradeInitramPackages,  # deprecated
-    TargetUserSpaceUpgradeTasks,
-    UpgradeDracutModule,  # deprecated
-    UpgradeInitramfsTasks,
-)
+from leapp.models import RequiredUpgradeInitramPackages  # deprecated
+from leapp.models import UpgradeDracutModule  # deprecated
+from leapp.models import TargetUserSpaceUpgradeTasks, UpgradeInitramfsTasks
 from leapp.utils.deprecation import suppress_deprecation
 
 

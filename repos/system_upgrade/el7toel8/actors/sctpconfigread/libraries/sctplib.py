@@ -5,7 +5,7 @@
 from os.path import isfile
 
 from leapp.libraries.actor import sctpdlm
-from leapp.libraries.stdlib import CalledProcessError, api, run
+from leapp.libraries.stdlib import api, CalledProcessError, run
 from leapp.models import ActiveKernelModulesFacts
 
 

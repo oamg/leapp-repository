@@ -4,7 +4,6 @@ from leapp.libraries.common import repofileutils
 from leapp.libraries.stdlib import api
 from leapp.models import CustomTargetRepository, CustomTargetRepositoryFile
 
-
 CUSTOM_REPO_PATH = "/etc/leapp/files/leapp_upgrade_repositories.repo"
 
 

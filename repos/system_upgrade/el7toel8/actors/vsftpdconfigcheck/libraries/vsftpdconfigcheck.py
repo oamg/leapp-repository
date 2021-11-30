@@ -1,6 +1,6 @@
-from leapp.reporting import create_report
 from leapp import reporting
 from leapp.libraries.common.tcpwrappersutils import config_applies_to_daemon
+from leapp.reporting import create_report
 
 
 def check_config_supported(tcpwrap_facts, vsftpd_facts):

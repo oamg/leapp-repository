@@ -1,8 +1,8 @@
 import pytest
 
-from leapp.snactor.fixture import current_actor_context
-from leapp.models import StorageInfo, SystemdMountEntry, FstabEntry, MountEntry
+from leapp.models import FstabEntry, MountEntry, StorageInfo, SystemdMountEntry
 from leapp.reporting import Report
+from leapp.snactor.fixture import current_actor_context
 
 
 @pytest.mark.parametrize('nfs_fstype', ('nfs', 'nfs4'))

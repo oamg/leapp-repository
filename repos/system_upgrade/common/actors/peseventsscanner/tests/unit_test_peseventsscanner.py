@@ -8,26 +8,28 @@ from leapp.exceptions import StopActorExecution, StopActorExecutionError
 from leapp.libraries.actor import peseventsscanner
 from leapp.libraries.actor.peseventsscanner import (
     Action,
-    Event,
-    SKIPPED_PKGS_MSG,
-    Task,
     add_output_pkgs_to_transaction_conf,
     drop_conflicting_release_events,
+    Event,
     filter_events_by_architecture,
     filter_events_by_releases,
     filter_out_pkgs_in_blacklisted_repos,
     filter_releases_by_target,
     get_events,
-    map_repositories, parse_action,
-    parse_entry, parse_packageset,
+    map_repositories,
+    parse_action,
+    parse_entry,
+    parse_packageset,
     parse_pes_events,
     process_events,
     report_skipped_packages,
+    SKIPPED_PKGS_MSG,
+    Task
 )
 from leapp.libraries.common import fetch
-from leapp.libraries.common.testutils import produce_mocked, create_report_mocked, CurrentActorMocked
+from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked, produce_mocked
 from leapp.libraries.stdlib import api
-from leapp.models import PESIDRepositoryEntry, RpmTransactionTasks, RepositoriesMapping, RepoMapEntry
+from leapp.models import PESIDRepositoryEntry, RepoMapEntry, RepositoriesMapping, RpmTransactionTasks
 
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 

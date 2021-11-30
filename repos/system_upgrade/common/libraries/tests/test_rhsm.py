@@ -1,18 +1,14 @@
-from collections import namedtuple
 import os
+from collections import namedtuple
 
 import pytest
 
 from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import repofileutils, rhsm
-from leapp.libraries.common.testutils import (
-    create_report_mocked,
-    CurrentActorMocked,
-    logger_mocked
-)
-from leapp.libraries.stdlib import CalledProcessError, api
-from leapp.models import RepositoryFile, RepositoryData
+from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked, logger_mocked
+from leapp.libraries.stdlib import api, CalledProcessError
+from leapp.models import RepositoryData, RepositoryFile
 
 Repository = namedtuple('Repository', ['repoid', 'file'])
 LIST_SEPARATOR = '\n    - '

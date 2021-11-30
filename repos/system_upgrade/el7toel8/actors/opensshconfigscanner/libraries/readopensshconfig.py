@@ -1,8 +1,7 @@
 import errno
 
+from leapp.libraries.stdlib import api, run
 from leapp.models import OpenSshConfig, OpenSshPermitRootLogin
-from leapp.libraries.stdlib import run, api
-
 
 CONFIG = '/etc/ssh/sshd_config'
 DEPRECATED_DIRECTIVES = ['showpatchlevel']

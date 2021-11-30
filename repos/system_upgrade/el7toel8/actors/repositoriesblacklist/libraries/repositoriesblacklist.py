@@ -2,12 +2,7 @@ from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common.config.version import get_source_major_version, get_target_major_version
 from leapp.libraries.stdlib import api
-from leapp.models import (
-    CustomTargetRepository,
-    RepositoriesBlacklisted,
-    RepositoriesFacts,
-    RepositoriesMapping
-)
+from leapp.models import CustomTargetRepository, RepositoriesBlacklisted, RepositoriesFacts, RepositoriesMapping
 
 # {OS_MAJOR_VERSION: PESID}
 UNSUPPORTED_PESIDS = {

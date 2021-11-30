@@ -5,7 +5,6 @@ from leapp.libraries.common.spamassassinutils import SYSCONFIG_SPAMASSASSIN, SYS
 from leapp.libraries.common.testutils import make_IOError, make_OSError
 from leapp.models import SpamassassinFacts
 
-
 # The tests for _drop_ssl_version and _drop_daemonize_option are overly
 # restrictive in what output they accept - namely regarding whitespace and
 # order of the options; don't be afraid to change the tests if they start

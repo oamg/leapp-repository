@@ -1,7 +1,6 @@
 import pytest
 
-from leapp.libraries.actor.config_parser import ParsingError, VsftpdConfigOptionParser, \
-    VsftpdConfigParser
+from leapp.libraries.actor.config_parser import ParsingError, VsftpdConfigOptionParser, VsftpdConfigParser
 
 
 def test_VsftpdConfigOptionParser_invalid_syntax():

@@ -1,6 +1,5 @@
 from leapp.models import InstalledDesktopsFacts, InstalledKdeAppsFacts, Report
 
-
 no_desktop_env = InstalledDesktopsFacts(gnome_installed=False,
                                         kde_installed=False)
 gnome_desktop_env = InstalledDesktopsFacts(gnome_installed=True,

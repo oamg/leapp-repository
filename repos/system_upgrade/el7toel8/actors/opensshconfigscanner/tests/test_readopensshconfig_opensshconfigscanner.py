@@ -1,6 +1,5 @@
+from leapp.libraries.actor.readopensshconfig import line_empty, parse_config, parse_config_modification, produce_config
 from leapp.models import OpenSshConfig, OpenSshPermitRootLogin
-from leapp.libraries.actor.readopensshconfig import parse_config, \
-    produce_config, line_empty, parse_config_modification
 
 
 def test_line_empty():

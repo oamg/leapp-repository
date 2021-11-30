@@ -1,12 +1,8 @@
-from leapp.actors import Actor
-from leapp.libraries.actor.checkkerneldrivers import (
-    check_drivers,
-    get_present_drivers,
-    get_removed_drivers,
-)
-from leapp.models import ActiveKernelModulesFacts
-from leapp.reporting import Report, create_report
 from leapp import reporting
+from leapp.actors import Actor
+from leapp.libraries.actor.checkkerneldrivers import check_drivers, get_present_drivers, get_removed_drivers
+from leapp.models import ActiveKernelModulesFacts
+from leapp.reporting import create_report, Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 

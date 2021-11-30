@@ -1,6 +1,5 @@
 from leapp import reporting
 
-
 LIST_SEPARATOR_FMT = '\n    - '
 
 

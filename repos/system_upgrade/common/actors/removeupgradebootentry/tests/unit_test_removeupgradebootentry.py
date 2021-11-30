@@ -2,8 +2,8 @@ import pytest
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import removeupgradebootentry
-from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked
 from leapp.libraries.common.config import architecture
+from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked
 from leapp.libraries.stdlib import api
 from leapp.models import BootContent, FirmwareFacts
 

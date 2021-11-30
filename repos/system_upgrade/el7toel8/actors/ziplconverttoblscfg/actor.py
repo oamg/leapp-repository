@@ -1,5 +1,5 @@
-import os
 import filecmp
+import os
 
 from leapp.actors import Actor
 from leapp.exceptions import StopActorExecutionError

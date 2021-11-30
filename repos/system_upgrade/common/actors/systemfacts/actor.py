@@ -1,8 +1,16 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import systemfacts
-from leapp.models import SysctlVariablesFacts, ActiveKernelModulesFacts, UsersFacts, GroupsFacts, RepositoriesFacts, \
-    SELinuxFacts, FirewallsFacts, FirmwareFacts
-from leapp.tags import IPUWorkflowTag, FactsPhaseTag
+from leapp.models import (
+    ActiveKernelModulesFacts,
+    FirewallsFacts,
+    FirmwareFacts,
+    GroupsFacts,
+    RepositoriesFacts,
+    SELinuxFacts,
+    SysctlVariablesFacts,
+    UsersFacts
+)
+from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 
 class SystemFactsActor(Actor):

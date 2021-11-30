@@ -8,7 +8,7 @@ from datetime import datetime
 from leapp.config import get_config
 from leapp.exceptions import CommandError
 from leapp.repository.scan import find_and_scan_repositories
-from leapp.utils.audit import get_connection, get_checkpoints, get_messages
+from leapp.utils.audit import get_checkpoints, get_connection, get_messages
 from leapp.utils.output import report_unsupported
 from leapp.utils.report import fetch_upgrade_report_messages, generate_report_file
 

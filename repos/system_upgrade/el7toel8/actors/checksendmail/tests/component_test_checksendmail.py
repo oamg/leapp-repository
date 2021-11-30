@@ -1,12 +1,5 @@
-from leapp.models import (
-    DaemonList,
-    InstalledRedHatSignedRPM,
-    RPM,
-    SendmailMigrationDecision,
-    TcpWrappersFacts,
-)
+from leapp.models import DaemonList, InstalledRedHatSignedRPM, RPM, SendmailMigrationDecision, TcpWrappersFacts
 from leapp.reporting import Report
-
 
 RH_PACKAGER = 'Red Hat, Inc. <http://bugzilla.redhat.com/bugzilla>'
 

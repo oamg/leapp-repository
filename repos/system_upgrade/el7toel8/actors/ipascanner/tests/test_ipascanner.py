@@ -1,9 +1,7 @@
 import os
 
+from leapp.models import InstalledRedHatSignedRPM, IpaInfo, RPM
 from leapp.snactor.fixture import current_actor_context
-from leapp.models import RPM, InstalledRedHatSignedRPM
-from leapp.models import IpaInfo
-
 
 DEFAULT_CONF = "/etc/ipa/default.conf"
 CLIENT_STATE = "/var/lib/ipa-client/sysrestore/sysrestore.state"

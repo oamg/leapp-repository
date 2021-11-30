@@ -11,7 +11,6 @@ from leapp.libraries.common.testutils import CurrentActorMocked, produce_mocked
 from leapp.libraries.stdlib import api
 from leapp.models import RestrictedPCIDevice, RestrictedPCIDevices
 
-
 try:
     # python3
     from unittest.mock import mock_open

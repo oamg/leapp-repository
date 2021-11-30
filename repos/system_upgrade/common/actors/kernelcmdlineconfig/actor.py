@@ -1,10 +1,10 @@
 import os
 
 from leapp.actors import Actor
-from leapp.models import InstalledTargetKernelVersion, KernelCmdlineArg, FirmwareFacts
-from leapp.tags import FinalizationPhaseTag, IPUWorkflowTag
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import kernelcmdlineconfig
+from leapp.models import FirmwareFacts, InstalledTargetKernelVersion, KernelCmdlineArg
+from leapp.tags import FinalizationPhaseTag, IPUWorkflowTag
 
 
 class KernelCmdlineConfig(Actor):

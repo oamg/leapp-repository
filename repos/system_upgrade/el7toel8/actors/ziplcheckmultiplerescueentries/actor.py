@@ -1,8 +1,8 @@
 from leapp.actors import Actor
 from leapp.libraries.actor.ziplcheckmultiplerescueentries import inhibit_if_multiple_zipl_rescue_entries_present
 from leapp.models import SourceBootLoaderConfiguration
-from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 from leapp.reporting import Report
+from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
 class ZiplCheckMultipleRescueEntries(Actor):

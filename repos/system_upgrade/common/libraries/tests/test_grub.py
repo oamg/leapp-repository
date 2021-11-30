@@ -4,8 +4,8 @@ import pytest
 
 from leapp.exceptions import StopActorExecution
 from leapp.libraries.common import grub
-from leapp.libraries.stdlib import CalledProcessError, api
 from leapp.libraries.common.testutils import logger_mocked
+from leapp.libraries.stdlib import api, CalledProcessError
 
 BOOT_PARTITION = '/dev/vda1'
 BOOT_DEVICE = '/dev/vda'

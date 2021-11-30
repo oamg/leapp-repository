@@ -1,6 +1,5 @@
+from leapp.models import Report, SELinuxFacts, SelinuxPermissiveDecision, SelinuxRelabelDecision
 from leapp.snactor.fixture import current_actor_context
-from leapp.models import (Report, SELinuxFacts, SelinuxPermissiveDecision,
-                          SelinuxRelabelDecision)
 
 
 # FIXME: fix the file properly regarding the fix of the issue:

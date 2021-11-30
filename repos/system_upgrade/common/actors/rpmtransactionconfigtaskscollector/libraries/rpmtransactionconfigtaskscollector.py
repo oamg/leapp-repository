@@ -1,7 +1,7 @@
 import os.path
 
-from leapp.models import RpmTransactionTasks, InstalledRedHatSignedRPM
 from leapp.libraries.stdlib import api
+from leapp.models import InstalledRedHatSignedRPM, RpmTransactionTasks
 
 
 def load_tasks_file(path, logger):

@@ -1,8 +1,4 @@
-from leapp.models import (
-    MultipathConfFacts,
-    MultipathConfig,
-    MultipathConfigOption
-)
+from leapp.models import MultipathConfFacts, MultipathConfig, MultipathConfigOption
 from leapp.reporting import Report
 from leapp.snactor.fixture import current_actor_context
 

@@ -2,10 +2,9 @@ import base64
 import io
 import tarfile
 
-from leapp.exceptions import StopActorExecutionError
 from leapp import reporting
+from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.stdlib import CalledProcessError, run
-
 
 COMMON_REPORT_TAGS = [reporting.Tags.SERVICES, reporting.Tags.TIME_MANAGEMENT]
 

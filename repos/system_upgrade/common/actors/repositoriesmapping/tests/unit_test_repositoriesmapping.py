@@ -8,10 +8,9 @@ from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import repositoriesmapping
 from leapp.libraries.common import fetch
 from leapp.libraries.common.config import architecture, version
-from leapp.libraries.common.testutils import produce_mocked, CurrentActorMocked
+from leapp.libraries.common.testutils import CurrentActorMocked, produce_mocked
 from leapp.libraries.stdlib import api
 from leapp.models import PESIDRepositoryEntry
-
 
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 

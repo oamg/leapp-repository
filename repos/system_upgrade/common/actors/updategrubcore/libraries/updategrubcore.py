@@ -1,6 +1,6 @@
-from leapp.libraries.stdlib import api, run, CalledProcessError, config
-from leapp.exceptions import StopActorExecution
 from leapp import reporting
+from leapp.exceptions import StopActorExecution
+from leapp.libraries.stdlib import api, CalledProcessError, config, run
 
 
 def update_grub_core(grub_dev):

@@ -1,7 +1,7 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import scancpu
 from leapp.models import CPUInfo
-from leapp.tags import IPUWorkflowTag, FactsPhaseTag
+from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 
 class ScanCPU(Actor):

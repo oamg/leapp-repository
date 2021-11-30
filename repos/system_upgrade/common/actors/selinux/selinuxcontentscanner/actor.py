@@ -1,7 +1,7 @@
 from leapp.actors import Actor
-from leapp.models import SELinuxModules, SELinuxCustom, SELinuxFacts, SELinuxRequestRPMs, RpmTransactionTasks
-from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 from leapp.libraries.actor import selinuxcontentscanner
+from leapp.models import RpmTransactionTasks, SELinuxCustom, SELinuxFacts, SELinuxModules, SELinuxRequestRPMs
+from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 
 class SELinuxContentScanner(Actor):

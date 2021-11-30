@@ -1,5 +1,5 @@
 from leapp.libraries.actor.tcpwrapperscheck import config_affects_daemons
-from leapp.models import TcpWrappersFacts, DaemonList
+from leapp.models import DaemonList, TcpWrappersFacts
 
 
 def test_empty_packages():

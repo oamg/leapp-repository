@@ -1,7 +1,7 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import checkinitramfstasks
-from leapp.models import Report, UpgradeInitramfsTasks, TargetInitramfsTasks
-from leapp.tags import TargetTransactionChecksPhaseTag, IPUWorkflowTag
+from leapp.models import Report, TargetInitramfsTasks, UpgradeInitramfsTasks
+from leapp.tags import IPUWorkflowTag, TargetTransactionChecksPhaseTag
 
 
 class CheckInitramfsTasks(Actor):

@@ -1,9 +1,8 @@
+from leapp import reporting
 from leapp.actors import Actor
 from leapp.models import SSSDConfig
-from leapp import reporting
-from leapp.reporting import Report, create_report
-from leapp.tags import IPUWorkflowTag, ChecksPhaseTag
-
+from leapp.reporting import create_report, Report
+from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 COMMON_REPORT_TAGS = [reporting.Tags.AUTHENTICATION, reporting.Tags.SECURITY]
 

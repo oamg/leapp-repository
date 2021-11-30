@@ -1,8 +1,8 @@
 from leapp.actors import Actor
+from leapp.libraries.actor.verifydialogs import check_dialogs
 from leapp.models import DialogModel
 from leapp.reporting import Report
-from leapp.libraries.actor.verifydialogs import check_dialogs
-from leapp.tags import ReportPhaseTag, IPUWorkflowTag
+from leapp.tags import IPUWorkflowTag, ReportPhaseTag
 
 
 class VerifyDialogs(Actor):

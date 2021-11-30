@@ -1,6 +1,6 @@
-from collections import namedtuple
 import logging
 import os
+from collections import namedtuple
 
 from leapp.libraries.common.config import architecture
 from leapp.models import EnvVar

@@ -4,14 +4,14 @@ from leapp.libraries.common.config.version import get_source_major_version
 from leapp.libraries.stdlib import api
 from leapp.models import (
     CustomTargetRepository,
-    RHELTargetRepository,
     RepositoriesBlacklisted,
     RepositoriesFacts,
     RepositoriesMapping,
     RepositoriesSetupTasks,
+    RHELTargetRepository,
     SkippedRepositories,
     TargetRepositories,
-    UsedRepositories,
+    UsedRepositories
 )
 
 

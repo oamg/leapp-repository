@@ -4,31 +4,23 @@ import os
 from leapp import reporting
 from leapp.exceptions import StopActorExecution, StopActorExecutionError
 from leapp.libraries.actor import constants
-from leapp.libraries.common import (
-    dnfplugin,
-    mounting,
-    overlaygen,
-    repofileutils,
-    rhsm,
-    rhui,
-    utils,
-)
-from leapp.libraries.common.config import get_product_type, get_env
+from leapp.libraries.common import dnfplugin, mounting, overlaygen, repofileutils, rhsm, rhui, utils
+from leapp.libraries.common.config import get_env, get_product_type
 from leapp.libraries.common.config.version import get_target_major_version
-from leapp.libraries.stdlib import CalledProcessError, api, config, run
+from leapp.libraries.stdlib import api, CalledProcessError, config, run
+from leapp.models import RequiredTargetUserspacePackages  # deprecated
+from leapp.models import TMPTargetRepositoriesFacts  # deprecated
 from leapp.models import (
     CustomTargetRepositoryFile,
-    RHUIInfo,
     RHSMInfo,
-    RequiredTargetUserspacePackages,  # deprecated
+    RHUIInfo,
     StorageInfo,
     TargetRepositories,
-    TargetUserSpacePreupgradeTasks,
     TargetUserSpaceInfo,
-    TMPTargetRepositoriesFacts,  # deprecated
+    TargetUserSpacePreupgradeTasks,
     UsedTargetRepositories,
     UsedTargetRepository,
-    XFSPresence,
+    XFSPresence
 )
 from leapp.utils.deprecation import suppress_deprecation
 

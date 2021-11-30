@@ -6,7 +6,6 @@ from leapp.libraries.common.testutils import produce_mocked
 from leapp.libraries.stdlib import api
 from leapp.models import CustomTargetRepository, CustomTargetRepositoryFile, RepositoryData, RepositoryFile
 
-
 _REPODATA = [
     RepositoryData(repoid="repo1", name="repo1name", baseurl="repo1url", enabled=True),
     RepositoryData(repoid="repo2", name="repo2name", baseurl="repo2url", enabled=False),

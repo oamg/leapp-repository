@@ -7,8 +7,8 @@ from leapp.libraries.actor.sanebackendsmigrate import (
     DLL,
     EPJITSU,
     FUJITSU,
-    XEROX_MFP,
-    update_config
+    update_config,
+    XEROX_MFP
 )
 
 

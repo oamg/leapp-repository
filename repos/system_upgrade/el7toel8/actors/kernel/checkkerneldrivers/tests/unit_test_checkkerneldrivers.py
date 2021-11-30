@@ -1,8 +1,7 @@
 import pytest
 
-from leapp.models import ActiveKernelModulesFacts, ActiveKernelModule
+from leapp.models import ActiveKernelModule, ActiveKernelModulesFacts
 from leapp.reporting import Report
-
 
 kmodules_ok = [
     ActiveKernelModule(filename="i915", parameters=[]),

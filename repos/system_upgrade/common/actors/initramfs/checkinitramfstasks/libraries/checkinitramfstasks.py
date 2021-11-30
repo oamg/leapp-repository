@@ -1,9 +1,9 @@
-from collections import defaultdict
 import os
+from collections import defaultdict
 
 from leapp import reporting
 from leapp.libraries.stdlib import api
-from leapp.models import UpgradeInitramfsTasks, TargetInitramfsTasks
+from leapp.models import TargetInitramfsTasks, UpgradeInitramfsTasks
 
 DRACUT_MOD_DIR = '/usr/lib/dracut/modules.d/'
 SUMMARY_DRACUT_FMT = (

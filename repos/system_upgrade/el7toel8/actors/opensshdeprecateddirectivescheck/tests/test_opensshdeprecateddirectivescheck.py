@@ -1,8 +1,8 @@
 import pytest
 
 from leapp import reporting
-from leapp.libraries.common.testutils import create_report_mocked, logger_mocked
 from leapp.libraries.actor.opensshdeprecateddirectivescheck import inhibit_if_deprecated_directives_used
+from leapp.libraries.common.testutils import create_report_mocked, logger_mocked
 from leapp.models import OpenSshConfig
 
 

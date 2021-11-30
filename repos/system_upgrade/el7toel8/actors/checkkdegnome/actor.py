@@ -5,10 +5,10 @@ Email: jaberan@redhat.com
 """
 
 from leapp.actors import Actor
-from leapp.reporting import Report
-from leapp.tags import IPUWorkflowTag, ChecksPhaseTag
 from leapp.libraries.actor.checkkdegnome import check_kde_gnome
 from leapp.models import InstalledDesktopsFacts, InstalledKdeAppsFacts
+from leapp.reporting import Report
+from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
 class CheckKdeGnome(Actor):

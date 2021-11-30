@@ -1,9 +1,9 @@
+from leapp import reporting
 from leapp.actors import Actor
 from leapp.libraries.actor.scanner import detect_config_error
 from leapp.libraries.common.config import architecture
 from leapp.models import GrubConfigError
-from leapp.reporting import Report, create_report
-from leapp import reporting
+from leapp.reporting import create_report, Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 

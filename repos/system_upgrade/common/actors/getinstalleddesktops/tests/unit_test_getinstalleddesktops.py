@@ -1,5 +1,5 @@
+from leapp.models import InstalledDesktopsFacts, InstalledRPM, RPM
 from leapp.snactor.fixture import current_actor_context
-from leapp.models import InstalledRPM, RPM, InstalledDesktopsFacts
 
 RH_PACKAGER = 'Red Hat, Inc. <http://bugzilla.redhat.com/bugzilla>'
 Gnome_RPM = RPM(name='gnome-session', version='0.1', release='1.sm01', epoch='1', packager=RH_PACKAGER, arch='noarch',

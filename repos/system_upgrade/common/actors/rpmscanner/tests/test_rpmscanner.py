@@ -2,11 +2,11 @@ import sys
 
 import pytest
 
-from leapp.models import InstalledRPM, RPM
-from leapp.snactor.fixture import current_actor_context
 from leapp.libraries.actor import rpmscanner
 from leapp.libraries.common import rpms, testutils
 from leapp.libraries.stdlib import api
+from leapp.models import InstalledRPM, RPM
+from leapp.snactor.fixture import current_actor_context
 
 no_yum = False
 try:

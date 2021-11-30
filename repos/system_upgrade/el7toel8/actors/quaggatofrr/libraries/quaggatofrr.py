@@ -3,7 +3,7 @@ import re
 import shutil
 
 from leapp.libraries.common.config import version
-from leapp.libraries.stdlib import CalledProcessError, api, run
+from leapp.libraries.stdlib import api, CalledProcessError, run
 
 DAEMON_FILE = '/etc/frr/daemons'
 # if this file sitll exists after the removal of quagga, it has been modified

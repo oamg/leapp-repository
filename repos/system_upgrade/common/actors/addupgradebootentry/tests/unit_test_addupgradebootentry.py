@@ -5,7 +5,7 @@ import pytest
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import addupgradebootentry
-from leapp.libraries.common.config.architecture import ARCH_X86_64, ARCH_S390X
+from leapp.libraries.common.config.architecture import ARCH_S390X, ARCH_X86_64
 from leapp.libraries.common.testutils import CurrentActorMocked
 from leapp.libraries.stdlib import api
 from leapp.models import BootContent

@@ -3,17 +3,10 @@ import logging
 import pytest
 
 from leapp.libraries.actor import setuptargetrepos_repomap
-from leapp.libraries.actor.setuptargetrepos_repomap import (
-    get_default_repository_channels,
-    RepoMapDataHandler
-)
+from leapp.libraries.actor.setuptargetrepos_repomap import get_default_repository_channels, RepoMapDataHandler
 from leapp.libraries.common.testutils import CurrentActorMocked, produce_mocked
 from leapp.libraries.stdlib import api
-from leapp.models import (
-    PESIDRepositoryEntry,
-    RepoMapEntry,
-    RepositoriesMapping,
-)
+from leapp.models import PESIDRepositoryEntry, RepoMapEntry, RepositoriesMapping
 
 
 def make_pesid_repo(pesid, major_version, repoid, arch='x86_64', repo_type='rpm', channel='ga', rhui=''):

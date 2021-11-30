@@ -1,5 +1,5 @@
-import re
 import codecs
+import re
 
 from leapp.libraries.stdlib import api
 from leapp.models import CPUInfo

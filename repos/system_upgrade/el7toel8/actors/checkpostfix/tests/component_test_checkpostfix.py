@@ -2,7 +2,6 @@ from leapp.models import InstalledRedHatSignedRPM, RPM
 from leapp.reporting import Report
 from leapp.snactor.fixture import current_actor_context
 
-
 RH_PACKAGER = 'Red Hat, Inc. <http://bugzilla.redhat.com/bugzilla>'
 
 with_postfix = [

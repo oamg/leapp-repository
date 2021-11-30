@@ -2,10 +2,9 @@ import os
 import shutil
 
 from leapp.actors import Actor
-from leapp.models import SELinuxModules, SELinuxCustom, SELinuxRequestRPMs
+from leapp.libraries.stdlib import CalledProcessError, run
+from leapp.models import SELinuxCustom, SELinuxModules, SELinuxRequestRPMs
 from leapp.tags import ApplicationsPhaseTag, IPUWorkflowTag
-from leapp.libraries.stdlib import run, CalledProcessError
-
 
 WORKING_DIRECTORY = '/tmp/selinux/'
 

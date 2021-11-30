@@ -1,6 +1,6 @@
 from leapp.libraries.common import config, mounting, rhsm
 from leapp.libraries.common.config.version import get_target_major_version
-from leapp.libraries.stdlib import CalledProcessError, api, run
+from leapp.libraries.stdlib import api, CalledProcessError, run
 from leapp.models import UsedTargetRepositories
 
 

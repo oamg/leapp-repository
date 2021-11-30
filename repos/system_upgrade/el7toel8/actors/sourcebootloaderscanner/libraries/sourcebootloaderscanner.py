@@ -1,7 +1,6 @@
-from leapp.models import BootEntry, SourceBootLoaderConfiguration
-from leapp.libraries.stdlib import api, CalledProcessError, run
 from leapp.exceptions import StopActorExecutionError
-
+from leapp.libraries.stdlib import api, CalledProcessError, run
+from leapp.models import BootEntry, SourceBootLoaderConfiguration
 
 CMD_GRUBBY_INFO_ALL = ['grubby', '--info', 'ALL']
 

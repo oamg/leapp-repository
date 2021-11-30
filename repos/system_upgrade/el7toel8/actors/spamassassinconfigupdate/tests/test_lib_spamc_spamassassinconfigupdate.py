@@ -5,7 +5,6 @@ from leapp.libraries.common.spamassassinutils import SPAMC_CONFIG_FILE
 from leapp.libraries.common.testutils import make_IOError, make_OSError
 from leapp.models.spamassassinfacts import SpamassassinFacts
 
-
 # The test cases reuse values from the SpamassassinConfigRead test cases
 
 

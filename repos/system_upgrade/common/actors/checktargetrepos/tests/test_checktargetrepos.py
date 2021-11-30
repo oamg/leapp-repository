@@ -1,5 +1,10 @@
 import pytest
 
+from leapp import reporting
+from leapp.libraries.actor import checktargetrepos
+from leapp.libraries.common import rhsm
+from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked
+from leapp.libraries.stdlib import api
 from leapp.models import (
     CustomTargetRepository,
     CustomTargetRepositoryFile,
@@ -7,13 +12,8 @@ from leapp.models import (
     Report,
     RepositoryData,
     RHELTargetRepository,
-    TargetRepositories,
+    TargetRepositories
 )
-from leapp.libraries.actor import checktargetrepos
-from leapp import reporting
-from leapp.libraries.stdlib import api
-from leapp.libraries.common import rhsm
-from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked
 
 
 class MockedConsume(object):

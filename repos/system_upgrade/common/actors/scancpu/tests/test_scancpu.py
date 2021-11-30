@@ -5,7 +5,6 @@ from leapp.libraries.common import testutils
 from leapp.libraries.stdlib import api
 from leapp.models import CPUInfo
 
-
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 
 

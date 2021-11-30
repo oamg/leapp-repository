@@ -3,7 +3,6 @@ from leapp.libraries.stdlib import api
 from leapp.libraries.stdlib.config import is_verbose
 from leapp.models import InstalledUnsignedRPM
 
-
 COMMON_REPORT_TAGS = [reporting.Tags.SANITY]
 
 

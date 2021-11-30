@@ -1,11 +1,7 @@
 from leapp.actors import Actor
-from leapp.models import (
-    InstalledRedHatSignedRPM,
-    InstalledRPM,
-    InstalledUnsignedRPM,
-)
-from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 from leapp.libraries.common import rhui
+from leapp.models import InstalledRedHatSignedRPM, InstalledRPM, InstalledUnsignedRPM
+from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 
 class RedHatSignedRpmScanner(Actor):

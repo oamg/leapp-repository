@@ -2,22 +2,18 @@ import pytest
 
 from leapp import reporting
 from leapp.libraries.actor import repositoriesblacklist
-from leapp.libraries.common.testutils import (
-    CurrentActorMocked,
-    create_report_mocked,
-    produce_mocked,
-)
+from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked, produce_mocked
 from leapp.libraries.stdlib import api
 from leapp.models import (
     CustomTargetRepository,
     EnvVar,
+    PESIDRepositoryEntry,
+    RepoMapEntry,
     RepositoriesBlacklisted,
     RepositoriesFacts,
-    RepositoryData,
-    RepositoryFile,
     RepositoriesMapping,
-    PESIDRepositoryEntry,
-    RepoMapEntry
+    RepositoryData,
+    RepositoryFile
 )
 
 

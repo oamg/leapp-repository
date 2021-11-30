@@ -1,7 +1,6 @@
 from leapp import reporting
 from leapp.libraries.stdlib import api, run
 
-
 related = [
     reporting.RelatedResource('package', 'ntpd'),
     reporting.RelatedResource('package', 'chrony'),

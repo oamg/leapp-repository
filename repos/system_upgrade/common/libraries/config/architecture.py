@@ -2,7 +2,6 @@ import six
 
 from leapp.libraries.stdlib import api
 
-
 ARCH_X86_64 = 'x86_64'
 ARCH_ARM64 = 'aarch64'
 ARCH_PPC64LE = 'ppc64le'

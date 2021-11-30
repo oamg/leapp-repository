@@ -1,9 +1,8 @@
 import pytest
 
-from leapp.libraries.common.testutils import produce_mocked
-from leapp.libraries.stdlib import api
 from leapp.libraries.actor import checkremovedenvvars
-from leapp.libraries.common.testutils import CurrentActorMocked
+from leapp.libraries.common.testutils import CurrentActorMocked, produce_mocked
+from leapp.libraries.stdlib import api
 
 
 def test_removed_vars(monkeypatch):

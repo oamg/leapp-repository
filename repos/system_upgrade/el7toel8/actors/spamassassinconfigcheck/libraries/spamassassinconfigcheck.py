@@ -1,6 +1,9 @@
 from leapp import reporting
-from leapp.libraries.common.spamassassinutils import \
-    SPAMC_CONFIG_FILE, SPAMASSASSIN_SERVICE_OVERRIDE, SYSCONFIG_SPAMASSASSIN
+from leapp.libraries.common.spamassassinutils import (
+    SPAMASSASSIN_SERVICE_OVERRIDE,
+    SPAMC_CONFIG_FILE,
+    SYSCONFIG_SPAMASSASSIN
+)
 
 
 def _check_spamc_config(facts, report_func):

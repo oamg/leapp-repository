@@ -1,6 +1,6 @@
-from leapp.snactor.fixture import current_actor_context
 from leapp.models import IpaInfo
 from leapp.reporting import Report
+from leapp.snactor.fixture import current_actor_context
 
 
 def mock_ipa_info(client, server_pkg, server_configured):

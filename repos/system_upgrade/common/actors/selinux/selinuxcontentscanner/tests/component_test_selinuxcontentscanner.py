@@ -2,10 +2,10 @@ import os
 
 import pytest
 
-from leapp.snactor.fixture import current_actor_context
-from leapp.models import SELinuxModule, SELinuxModules, SELinuxCustom, SELinuxFacts, SELinuxRequestRPMs
-from leapp.libraries.stdlib import api, run, CalledProcessError
+from leapp.libraries.stdlib import api, CalledProcessError, run
+from leapp.models import SELinuxCustom, SELinuxFacts, SELinuxModule, SELinuxModules, SELinuxRequestRPMs
 from leapp.reporting import Report
+from leapp.snactor.fixture import current_actor_context
 
 TEST_MODULES = [
     ["400", "mock1"],

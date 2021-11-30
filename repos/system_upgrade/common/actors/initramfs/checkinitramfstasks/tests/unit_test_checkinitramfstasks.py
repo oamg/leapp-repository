@@ -4,14 +4,9 @@ import pytest
 
 from leapp import reporting
 from leapp.libraries.actor import checkinitramfstasks
-from leapp.libraries.common.testutils import CurrentActorMocked, create_report_mocked
+from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked
 from leapp.libraries.stdlib import api
-from leapp.models import (
-    DracutModule,
-    Report,
-    TargetInitramfsTasks,
-    UpgradeInitramfsTasks,
-)
+from leapp.models import DracutModule, Report, TargetInitramfsTasks, UpgradeInitramfsTasks
 
 
 def gen_UIT(modules):

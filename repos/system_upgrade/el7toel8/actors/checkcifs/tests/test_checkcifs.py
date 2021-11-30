@@ -1,6 +1,6 @@
-from leapp.snactor.fixture import current_actor_context
-from leapp.models import StorageInfo, FstabEntry
+from leapp.models import FstabEntry, StorageInfo
 from leapp.reporting import Report
+from leapp.snactor.fixture import current_actor_context
 
 
 def test_actor_with_fstab_entry(current_actor_context):

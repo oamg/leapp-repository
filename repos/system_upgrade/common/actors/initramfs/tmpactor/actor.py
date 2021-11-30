@@ -1,6 +1,6 @@
 from leapp.actors import Actor
 from leapp.models import TargetInitramfsTasks
-from leapp.tags import TargetTransactionChecksPhaseTag, IPUWorkflowTag
+from leapp.tags import IPUWorkflowTag, TargetTransactionChecksPhaseTag
 
 
 class TMPActorToSatisfySanityChecks(Actor):

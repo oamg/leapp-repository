@@ -3,8 +3,8 @@ import pytest
 from leapp import reporting
 from leapp.libraries.actor import ziplcheckmultiplerescueentries
 from leapp.libraries.actor.ziplcheckmultiplerescueentries import inhibit_if_multiple_zipl_rescue_entries_present
-from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked
 from leapp.libraries.common.config import architecture
+from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked
 from leapp.libraries.stdlib import api
 from leapp.models import BootEntry, SourceBootLoaderConfiguration
 from leapp.snactor.fixture import current_actor_context

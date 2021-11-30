@@ -1,7 +1,6 @@
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.stdlib import api
 
-
 # The devel variable for target product channel can also contain 'beta'
 SUPPORTED_TARGET_CHANNELS = {'ga', 'tuv', 'e4s', 'eus', 'aus'}
 

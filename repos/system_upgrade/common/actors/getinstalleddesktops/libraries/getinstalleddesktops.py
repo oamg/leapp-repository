@@ -1,5 +1,5 @@
-from leapp.libraries.stdlib import api
 from leapp.libraries.common.rpms import has_package
+from leapp.libraries.stdlib import api
 from leapp.models import InstalledRPM
 
 

@@ -1,6 +1,5 @@
 import re
 
-
 SPAMC_CONFIG_FILE = '/etc/mail/spamassassin/spamc.conf'
 SPAMASSASSIN_SERVICE_OVERRIDE = '/etc/systemd/system/spamassassin.service'
 SYSCONFIG_SPAMASSASSIN = '/etc/sysconfig/spamassassin'

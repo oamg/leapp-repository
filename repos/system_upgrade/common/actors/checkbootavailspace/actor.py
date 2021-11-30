@@ -1,8 +1,5 @@
 from leapp.actors import Actor
-from leapp.libraries.actor.checkbootavailspace import (
-    check_avail_space_on_boot,
-    get_avail_bytes_on_boot,
-)
+from leapp.libraries.actor.checkbootavailspace import check_avail_space_on_boot, get_avail_bytes_on_boot
 from leapp.reporting import Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 

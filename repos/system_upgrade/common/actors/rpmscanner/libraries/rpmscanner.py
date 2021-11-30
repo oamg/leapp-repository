@@ -1,8 +1,8 @@
 import warnings
 
 from leapp.exceptions import StopActorExecutionError
-from leapp.libraries.stdlib import api
 from leapp.libraries.common import rpms
+from leapp.libraries.stdlib import api
 from leapp.models import InstalledRPM, RPM
 
 no_yum = False

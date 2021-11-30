@@ -1,9 +1,9 @@
 import pytest
 
 from leapp.exceptions import StopActorExecution
-from leapp.libraries.stdlib import api
-from leapp.libraries.common.testutils import logger_mocked
 from leapp.libraries.actor import removebootfiles
+from leapp.libraries.common.testutils import logger_mocked
+from leapp.libraries.stdlib import api
 from leapp.models import BootContent
 
 

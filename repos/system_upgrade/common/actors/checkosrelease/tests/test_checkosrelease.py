@@ -3,10 +3,7 @@ import os
 from leapp import reporting
 from leapp.libraries.actor import checkosrelease
 from leapp.libraries.common.config import version
-from leapp.libraries.common.testutils import (
-    create_report_mocked,
-    produce_mocked,
-)
+from leapp.libraries.common.testutils import create_report_mocked, produce_mocked
 
 
 def test_skip_check(monkeypatch):

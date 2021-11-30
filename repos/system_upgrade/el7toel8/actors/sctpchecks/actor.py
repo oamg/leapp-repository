@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.models import SCTPConfig, RpmTransactionTasks
+from leapp.models import RpmTransactionTasks, SCTPConfig
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 

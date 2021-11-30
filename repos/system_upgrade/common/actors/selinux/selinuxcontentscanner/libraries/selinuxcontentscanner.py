@@ -2,7 +2,7 @@ import os
 import re
 from shutil import rmtree
 
-from leapp.libraries.stdlib import api, run, CalledProcessError
+from leapp.libraries.stdlib import api, CalledProcessError, run
 from leapp.models import SELinuxModule
 
 # types and attributes that where removed between RHEL 7 and 8

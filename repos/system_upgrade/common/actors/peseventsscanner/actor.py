@@ -7,7 +7,7 @@ from leapp.models import (
     RepositoriesFacts,
     RepositoriesMapping,
     RepositoriesSetupTasks,
-    RpmTransactionTasks,
+    RpmTransactionTasks
 )
 from leapp.reporting import Report
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag

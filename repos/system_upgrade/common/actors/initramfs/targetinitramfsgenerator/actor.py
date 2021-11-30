@@ -1,11 +1,8 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import targetinitramfsgenerator
-from leapp.models import (
-    InitrdIncludes,  # deprecated
-    InstalledTargetKernelVersion,
-    TargetInitramfsTasks,
-)
-from leapp.tags import IPUWorkflowTag, FinalizationPhaseTag
+from leapp.models import InitrdIncludes  # deprecated
+from leapp.models import InstalledTargetKernelVersion, TargetInitramfsTasks
+from leapp.tags import FinalizationPhaseTag, IPUWorkflowTag
 from leapp.utils.deprecation import suppress_deprecation
 
 

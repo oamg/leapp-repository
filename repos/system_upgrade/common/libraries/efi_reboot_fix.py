@@ -1,8 +1,7 @@
-from re import compile as regexp
 import os
+from re import compile as regexp
 
 from leapp.libraries.stdlib import run
-
 
 _current_boot_matcher = regexp(r'BootCurrent: (?P<boot_current>([0-9A-F]*))')
 _next_boot_matcher = regexp(r'BootNext: (?P<boot_next>([0-9A-F]*))')

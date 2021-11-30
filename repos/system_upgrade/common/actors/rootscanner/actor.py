@@ -2,7 +2,7 @@ import os
 
 from leapp.actors import Actor
 from leapp.models import RootDirectory, RootSubdirectory
-from leapp.tags import IPUWorkflowTag, FactsPhaseTag
+from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 
 class RootScanner(Actor):

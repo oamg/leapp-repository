@@ -1,6 +1,6 @@
+from leapp import reporting
 from leapp.libraries.stdlib import api
 from leapp.models import DialogModel
-from leapp import reporting
 
 
 def check_dialogs(inhibit_if_no_userchoice=True):

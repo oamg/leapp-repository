@@ -4,7 +4,6 @@ from leapp.libraries import stdlib
 from leapp.libraries.actor import sourcebootloaderscanner
 from leapp.libraries.common.testutils import produce_mocked
 
-
 GRUBBY_INFO_ALL_STDOUT = '''index=0
 kernel="/boot/vmlinuz-4.18.0-305.7.1.el8_4.x86_64"
 args="ro uned_params"

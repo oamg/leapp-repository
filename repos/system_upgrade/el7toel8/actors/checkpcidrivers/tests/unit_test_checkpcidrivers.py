@@ -5,25 +5,10 @@ from functools import partial
 import pytest
 
 from leapp import reporting
-from leapp.libraries.actor.checkpcidrivers import (
-    checkpcidrivers_main,
-    create_dict_lookup,
-    render_report,
-)
-from leapp.libraries.common.testutils import (
-    CurrentActorMocked,
-    create_report_mocked,
-    produce_mocked,
-)
+from leapp.libraries.actor.checkpcidrivers import checkpcidrivers_main, create_dict_lookup, render_report
+from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked, produce_mocked
 from leapp.libraries.stdlib import api
-from leapp.models import (
-    Model,
-    PCIDevice,
-    PCIDevices,
-    RestrictedPCIDevice,
-    RestrictedPCIDevices,
-    fields,
-)
+from leapp.models import fields, Model, PCIDevice, PCIDevices, RestrictedPCIDevice, RestrictedPCIDevices
 from leapp.topics.systeminfo import SystemInfoTopic
 
 logger = logging.getLogger(__name__)

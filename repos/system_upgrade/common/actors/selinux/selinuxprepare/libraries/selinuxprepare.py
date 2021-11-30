@@ -1,4 +1,4 @@
-from leapp.libraries.stdlib import api, run, CalledProcessError
+from leapp.libraries.stdlib import api, CalledProcessError, run
 from leapp.models import SELinuxModules
 
 

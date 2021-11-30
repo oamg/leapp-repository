@@ -1,5 +1,5 @@
-from leapp.models import PCIDevices, PCIDevice
 from leapp.libraries.actor.pcidevicesscanner import parse_pci_devices, produce_pci_devices
+from leapp.models import PCIDevice, PCIDevices
 
 
 def test_parse_pci_devices():

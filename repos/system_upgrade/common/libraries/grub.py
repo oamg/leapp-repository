@@ -1,7 +1,7 @@
 import os
 
-from leapp.libraries.stdlib import run, api, CalledProcessError
 from leapp.exceptions import StopActorExecution
+from leapp.libraries.stdlib import api, CalledProcessError, run
 
 
 def has_grub(blk_dev):

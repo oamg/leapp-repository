@@ -1,7 +1,7 @@
-from leapp.libraries.actor.networkmanagerreadconfig import read_nm_config, parse_nm_config, check_nm_dhcp
 from leapp.actors import Actor
+from leapp.libraries.actor.networkmanagerreadconfig import check_nm_dhcp, parse_nm_config, read_nm_config
 from leapp.models import NetworkManagerConfig
-from leapp.tags import IPUWorkflowTag, FactsPhaseTag
+from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 
 class NetworkManagerReadConfig(Actor):

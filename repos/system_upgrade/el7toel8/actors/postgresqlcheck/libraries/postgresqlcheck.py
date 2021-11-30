@@ -3,7 +3,6 @@ from leapp.libraries.common.rpms import has_package
 from leapp.libraries.stdlib import api
 from leapp.models import InstalledRedHatSignedRPM
 
-
 # Summary for postgresql-server report
 report_server_inst_summary = (
     'PostgreSQL server component will be upgraded. Since RHEL-8 includes'

@@ -1,6 +1,6 @@
-from leapp.snactor.fixture import current_actor_context
-from leapp.models import StorageInfo, LsblkEntry
+from leapp.models import LsblkEntry, StorageInfo
 from leapp.reporting import Report
+from leapp.snactor.fixture import current_actor_context
 
 
 def test_actor_with_luks(current_actor_context):

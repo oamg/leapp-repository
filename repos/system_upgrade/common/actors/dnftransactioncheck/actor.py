@@ -6,9 +6,9 @@ from leapp.models import (
     StorageInfo,
     TargetUserSpaceInfo,
     UsedTargetRepositories,
-    XFSPresence,
+    XFSPresence
 )
-from leapp.tags import TargetTransactionChecksPhaseTag, IPUWorkflowTag
+from leapp.tags import IPUWorkflowTag, TargetTransactionChecksPhaseTag
 
 
 class DnfTransactionCheck(Actor):

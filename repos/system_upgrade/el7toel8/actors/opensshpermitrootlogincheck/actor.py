@@ -1,12 +1,11 @@
+from leapp import reporting
 from leapp.actors import Actor
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor.opensshpermitrootlogincheck import semantics_changes
-from leapp.models import Report, OpenSshConfig
-from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 from leapp.libraries.stdlib import api
+from leapp.models import OpenSshConfig, Report
 from leapp.reporting import create_report
-from leapp import reporting
-
+from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 COMMON_REPORT_TAGS = [
     reporting.Tags.AUTHENTICATION,

@@ -3,7 +3,6 @@ import re
 from leapp import reporting
 from leapp.libraries.stdlib import api, run
 
-
 COMMON_REPORT_TAGS = [reporting.Tags.SERVICES]
 
 
