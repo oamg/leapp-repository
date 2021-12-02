@@ -261,15 +261,17 @@ lint:
 		echo "--- Linting done. ---"; \
 	fi
 
-	. $(VENVNAME)/bin/activate; \
-	git diff $(MASTER_BRANCH) --name-only | xargs isort -c --diff || \
-	{ \
-		echo; \
-		echo "------------------------------------------------------------------------------"; \
-		echo "Hint: Apply the required changes."; \
-		echo "      Execute the following command to apply them automatically: make lint_fix"; \
-		exit 1; \
-	} && echo "--- isort check done. ---";
+	if [[  "`git rev-parse --abbrev-ref HEAD`" != "master" ]] && [[ -n "`git diff $(MASTER_BRANCH) --name-only`" ]]; then \
+		. $(VENVNAME)/bin/activate; \
+		git diff $(MASTER_BRANCH) --name-only | xargs isort -c --diff || \
+		{ \
+			echo; \
+			echo "------------------------------------------------------------------------------"; \
+			echo "Hint: Apply the required changes."; \
+			echo "      Execute the following command to apply them automatically: make lint_fix"; \
+			exit 1; \
+		} && echo "--- isort check done. ---"; \
+	fi
 
 lint_fix:
 	. $(VENVNAME)/bin/activate; \
