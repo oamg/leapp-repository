@@ -6,9 +6,8 @@ import shutil
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import dnfconfig, guards, mounting, overlaygen, rhsm, utils
-from leapp.libraries.common.config.version import get_target_major_version, get_source_major_version
-from leapp.libraries.stdlib import CalledProcessError, api, config
-
+from leapp.libraries.common.config.version import get_source_major_version, get_target_major_version
+from leapp.libraries.stdlib import api, CalledProcessError, config
 
 DNF_PLUGIN_NAME = 'rhel_upgrade.py'
 
@@ -24,7 +23,7 @@ class _DnfPluginPathStr(str):
 
     def _feed(self):
         major = get_target_major_version()
-        if major not in _DnfPluginPathStr._PATHS.keys():  # pylint: disable=W1655
+        if major not in _DnfPluginPathStr._PATHS:
             raise KeyError('{} is not a supported target version of RHEL'.format(major))
         self.data = _DnfPluginPathStr._PATHS[major]
 
