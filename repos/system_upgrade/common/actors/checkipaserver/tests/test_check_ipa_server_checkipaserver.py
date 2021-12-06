@@ -1,6 +1,9 @@
-from leapp.snactor.fixture import current_actor_context
+import pytest
+
+from leapp.libraries.common.config import version
 from leapp.models import IpaInfo
 from leapp.reporting import Report
+from leapp.snactor.fixture import current_actor_context
 
 
 def mock_ipa_info(client, server_pkg, server_configured):
@@ -12,7 +15,9 @@ def mock_ipa_info(client, server_pkg, server_configured):
     )
 
 
-def test_inhibit_ipa_configured(current_actor_context):
+@pytest.mark.parametrize('src_v', ['7', '8'])
+def test_inhibit_ipa_configured(monkeypatch, current_actor_context, src_v):
+    monkeypatch.setattr(version, "get_source_major_version", lambda: src_v)
     current_actor_context.feed(mock_ipa_info(True, True, True))
     current_actor_context.run()
     reports = current_actor_context.consume(Report)
@@ -23,7 +28,9 @@ def test_inhibit_ipa_configured(current_actor_context):
     assert "ipa-server" in fields["title"]
 
 
-def test_warn_server_pkg(current_actor_context):
+@pytest.mark.parametrize('src_v', ['7', '8'])
+def test_warn_server_pkg(monkeypatch, current_actor_context, src_v):
+    monkeypatch.setattr(version, "get_source_major_version", lambda: src_v)
     current_actor_context.feed(mock_ipa_info(True, True, False))
     current_actor_context.run()
     reports = current_actor_context.consume(Report)

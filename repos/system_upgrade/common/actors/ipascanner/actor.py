@@ -1,11 +1,7 @@
 from leapp.actors import Actor
-from leapp.libraries.actor.ipascanner import (
-    is_ipa_client_configured,
-    is_ipa_server_configured,
-)
+from leapp.libraries.actor.ipascanner import is_ipa_client_configured, is_ipa_server_configured
 from leapp.libraries.common.rpms import has_package
-from leapp.models import IpaInfo
-from leapp.models import InstalledRedHatSignedRPM
+from leapp.models import InstalledRedHatSignedRPM, IpaInfo
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 
