@@ -1,9 +1,16 @@
 from leapp import reporting
+from leapp.libraries.common.config.version import get_source_major_version
 
-MIGRATION_GUIDE = (
+MIGRATION_GUIDE_7 = (
     "https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux"
     "/8/html/installing_identity_management/migrate-7-to-8_migrating"
-)
+    )
+# TBD: update the doc url when migration guide 8->9 becomes available
+MIGRATION_GUIDE_8 = "https://red.ht/IdM-upgrading-RHEL-8-to-RHEL-9"
+MIGRATION_GUIDES = {
+    '7': MIGRATION_GUIDE_7,
+    '8': MIGRATION_GUIDE_8
+}
 
 
 def ipa_inhibit_upgrade(ipainfo):
@@ -12,18 +19,18 @@ def ipa_inhibit_upgrade(ipainfo):
     """
     entries = [
         reporting.Title(
-            "ipa-server does not support in-place upgrade from RHEL 7 to 8"
+            "ipa-server does not support in-place upgrade"
         ),
         reporting.Summary(
             "An IdM server installation was detected on the system. IdM "
-            "does not support in-place upgrade to RHEL 8. Please follow "
-            "the migration guide lines."
+            "does not support in-place upgrade."
         ),
         reporting.Remediation(
-            hint="Please follow the IdM RHEL 7 to 8 migration guide lines."
+            hint="Follow the IdM RHEL migration guide lines."
         ),
         reporting.ExternalLink(
-            url=MIGRATION_GUIDE, title="Migrating IdM from RHEL 7 to 8",
+            url=MIGRATION_GUIDES[get_source_major_version()],
+            title="IdM migration guide",
         ),
         reporting.Severity(reporting.Severity.HIGH),
         reporting.Flags([reporting.Flags.INHIBITOR]),
@@ -57,7 +64,8 @@ def ipa_warn_pkg_installed(ipainfo):
             commands=[["yum", "remove", "-y", "ipa-server"]],
         ),
         reporting.ExternalLink(
-            url=MIGRATION_GUIDE, title="Migrating IdM from RHEL 7 to 8",
+            url=MIGRATION_GUIDES[get_source_major_version()],
+            title="Migrating IdM from RHEL 7 to 8",
         ),
         reporting.Severity(reporting.Severity.MEDIUM),
         reporting.Tags([reporting.Tags.SERVICES]),
