@@ -11,3 +11,5 @@ distro==1.5.0
 ipaddress==1.0.23
 git+https://github.com/oamg/leapp
 requests
+# pinning a py27 troublemaking transitive dependency
+lazy-object-proxy==1.5.2; python_version < '3'
