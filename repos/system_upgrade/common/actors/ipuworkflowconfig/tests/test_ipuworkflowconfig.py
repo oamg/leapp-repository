@@ -1,4 +1,6 @@
+import json
 import os
+import tempfile
 
 import pytest
 
@@ -51,27 +53,6 @@ def test_leapp_env_vars(monkeypatch):
     monkeypatch.setenv('TEST2', 'test')
 
     assert len(ipuworkflowconfig.get_env_vars()) == 1
-
-
-def test_get_target_version(monkeypatch):
-    valid_release = _get_os_release(version='8.6', codename='Ootpa').version_id
-
-    monkeypatch.delenv('LEAPP_DEVEL_TARGET_RELEASE', raising=False)
-
-    monkeypatch.setattr(ipuworkflowconfig, 'get_os_release', lambda x: _get_os_release('8.6', 'Ootpa'))
-    assert ipuworkflowconfig.get_target_version() == ipuworkflowconfig.upgrade_paths_map[(valid_release, 'default')]
-
-    monkeypatch.setenv('LEAPP_DEVEL_TARGET_RELEASE', '')
-    monkeypatch.setattr(ipuworkflowconfig, 'get_os_release', lambda x: _get_os_release('8.6', 'Ootpa'))
-    assert ipuworkflowconfig.get_target_version() == ipuworkflowconfig.upgrade_paths_map[(valid_release, 'default')]
-
-    monkeypatch.setenv('LEAPP_DEVEL_TARGET_RELEASE', '1.2.3')
-    assert ipuworkflowconfig.get_target_version() == '1.2.3'
-
-    monkeypatch.delenv('LEAPP_DEVEL_TARGET_RELEASE', raising=True)
-    # unsupported path
-    monkeypatch.setattr(ipuworkflowconfig, 'get_os_release', lambda x: _get_os_release('8.5', 'Ootpa'))
-    assert ipuworkflowconfig.get_target_version() == ipuworkflowconfig.upgrade_paths_map[(valid_release, 'default')]
 
 
 def test_get_os_release_info(monkeypatch):

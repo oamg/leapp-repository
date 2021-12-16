@@ -5,10 +5,11 @@ import shutil
 import tarfile
 from datetime import datetime
 
+from leapp.cli.commands import command_utils
 from leapp.config import get_config
 from leapp.exceptions import CommandError
 from leapp.repository.scan import find_and_scan_repositories
-from leapp.utils.audit import get_connection, get_checkpoints, get_messages
+from leapp.utils.audit import get_checkpoints, get_connection, get_messages
 from leapp.utils.output import report_unsupported
 from leapp.utils.report import fetch_upgrade_report_messages, generate_report_file
 
@@ -174,6 +175,11 @@ def prepare_configuration(args):
 
     if args.channel:
         os.environ['LEAPP_TARGET_PRODUCT_CHANNEL'] = args.channel
+
+    # Check upgrade path and fail early if it's unsupported
+    target_version, flavor = command_utils.vet_upgrade_path(args)
+    os.environ['LEAPP_UPGRADE_PATH_TARGET_RELEASE'] = target_version
+    os.environ['LEAPP_UPGRADE_PATH_FLAVOUR'] = flavor
 
     configuration = {
         'debug': os.getenv('LEAPP_DEBUG', '0'),

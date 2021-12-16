@@ -1,14 +1,15 @@
 import os
-import uuid
 import sys
+import uuid
 
-from leapp.cli.commands.upgrade import util, breadcrumbs
+from leapp.cli.commands import command_utils
+from leapp.cli.commands.upgrade import breadcrumbs, util
 from leapp.config import get_config
 from leapp.exceptions import CommandError, LeappError
 from leapp.logger import configure_logger
 from leapp.utils.audit import Execution
 from leapp.utils.clicmd import command, command_opt
-from leapp.utils.output import (beautify_actor_exception, report_errors, report_info, report_inhibitors)
+from leapp.utils.output import beautify_actor_exception, report_errors, report_info, report_inhibitors
 
 
 @command('preupgrade', help='Generate preupgrade report')
@@ -23,6 +24,9 @@ from leapp.utils.output import (beautify_actor_exception, report_errors, report_
              help='Set preferred channel for the IPU target.',
              choices=['ga', 'tuv', 'e4s', 'eus', 'aus'],
              value_type=str.lower)  # This allows the choices to be case insensitive
+@command_opt('target', choices=command_utils.get_supported_target_versions(),
+             help='Specify RHEL version to upgrade to for {} detected upgrade flavour'.format(
+                 command_utils.get_upgrade_flavour()))
 @breadcrumbs.produces_breadcrumbs
 def preupgrade(args, breadcrumbs):
     context = str(uuid.uuid4())
@@ -44,6 +48,7 @@ def preupgrade(args, breadcrumbs):
         repositories = util.load_repositories()
     except LeappError as exc:
         raise CommandError(exc.message)
+
     workflow = repositories.lookup_workflow('IPUWorkflow')()
     util.warn_if_unsupported(configuration)
     util.process_whitelist_experimental(repositories, workflow, configuration, logger)
