@@ -112,7 +112,7 @@ def get_supported_target_versions(flavour=get_upgrade_flavour()):
 
 def get_target_version(flavour):
     target_versions = get_supported_target_versions(flavour)
-    return target_versions[0] if target_versions else None
+    return target_versions[-1] if target_versions else None
 
 
 def vet_upgrade_path(args):
