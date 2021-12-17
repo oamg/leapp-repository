@@ -38,7 +38,6 @@ def upgrade(args, breadcrumbs):
     context = str(uuid.uuid4())
     cfg = get_config()
     util.handle_output_level(args)
-    configuration = util.prepare_configuration(args)
     answerfile_path = cfg.get('report', 'answerfile')
     userchoices_path = cfg.get('report', 'userchoices')
 
@@ -64,6 +63,7 @@ def upgrade(args, breadcrumbs):
         util.restore_leapp_env_vars(context)
         skip_phases_until = util.get_last_phase(context)
     else:
+        configuration = util.prepare_configuration(args)
         e = Execution(context=context, kind='upgrade', configuration=configuration)
         e.store()
         util.archive_logfiles()
