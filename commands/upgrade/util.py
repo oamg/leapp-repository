@@ -158,6 +158,9 @@ def handle_output_level(args):
         os.environ['LEAPP_VERBOSE'] = os.getenv('LEAPP_VERBOSE', '0')
 
 
+# NOTE(ivasilev) Please make sure you are not calling prepare_configuration after first reboot.
+# If called as leapp upgrade --resume this will happily crash in target version container for
+# the latest supported release because of target_version discovery attempt.
 def prepare_configuration(args):
     """Returns a configuration dict object while setting a few env vars as a side-effect"""
     if args.whitelist_experimental:
