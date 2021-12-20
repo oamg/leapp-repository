@@ -146,25 +146,7 @@ jobs:
           arch: 'x86_64'
           copr: 'epel-7-x86_64'
           debug: ${{ secrets.ACTIONS_STEP_DEBUG }}
-
-      - name: Add comment with Testing Farm request/result
-        # This step adds a new comment to the pull request with a link to the test.
-
-        # TODO: This is a temporary workaround until a proper way to set a commit status is implemented.
-        if: ${{ steps.run_test_7to8.outputs.req_id != '' }}
-        id: comment_7to8
-        uses: actions/github-script@v4
-        with:
-          script: |
-            github.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: 'Testing Farm [request](${{ secrets.TF_ENDPOINT }}/requests/${{ steps.run_test_7to8.outputs.req_id }})' +
-                    ' for 7to8 regression testing has been created. Once finished, results should be available' +
-                    ' [here](http://artifacts.osci.redhat.com/testing-farm/${{ steps.run_test_7to8.outputs.req_id }}/).' +
-                    '\n[Full pipeline log](http://artifacts.osci.redhat.com/testing-farm/${{ steps.run_test_7to8.outputs.req_id }}/pipeline.log).'
-            })
+          test_name: '7to8'
 
       - name: Schedule regression testing for 8to9
         id: run_test_8to9
@@ -182,22 +164,4 @@ jobs:
           arch: 'x86_64'
           copr: 'epel-8-x86_64'
           debug: ${{ secrets.ACTIONS_STEP_DEBUG }}
-
-      - name: Add comment with Testing Farm request/result
-        # This step adds a new comment to the pull request with a link to the test.
-
-        # TODO: This is a temporary workaround until a proper way to set a commit status is implemented.
-        id: comment_8to9
-        if: ${{ steps.run_test_8to9.outputs.req_id != '' }}
-        uses: actions/github-script@v4
-        with:
-          script: |
-            github.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: 'Testing Farm [request](${{ secrets.TF_ENDPOINT }}/requests/${{ steps.run_test_8to9.outputs.req_id }})' +
-                    ' for 8to9 regression testing has been created. Once finished, results should be available' +
-                    ' [here](http://artifacts.osci.redhat.com/testing-farm/${{ steps.run_test_8to9.outputs.req_id }}/).' +
-                    '\n[Full pipeline log](http://artifacts.osci.redhat.com/testing-farm/${{ steps.run_test_8to9.outputs.req_id }}/pipeline.log).'
-            })
+          test_name: '8to9'
