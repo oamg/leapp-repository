@@ -130,7 +130,7 @@ jobs:
               body: 'Copr build succeeded: ${{ steps.copr_build_leapp.outputs.copr_url }}'
             })
 
-      - name: Schedule a test run
+      - name: Schedule regression testing for 7to8
         id: run_test_7to8
         env:
           ARTIFACTS: ${{ steps.leapp_pr_regex_match.outputs.match != '' && format('{},{}', steps.copr_build_leapp.outputs.copr_id, steps.copr_build.outputs.copr_id) || steps.copr_build.outputs.copr_id }}
@@ -151,7 +151,8 @@ jobs:
         # This step adds a new comment to the pull request with a link to the test.
 
         # TODO: This is a temporary workaround until a proper way to set a commit status is implemented.
-        id: comment
+        if: ${{ steps.run_test_7to8.outputs.req_id != '' }}
+        id: comment_7to8
         uses: actions/github-script@v4
         with:
           script: |
@@ -160,7 +161,43 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               body: 'Testing Farm [request](${{ secrets.TF_ENDPOINT }}/requests/${{ steps.run_test_7to8.outputs.req_id }})' +
-                    ' for tmt test was created. Once finished, results should be available' +
+                    ' for 7to8 regression testing has been created. Once finished, results should be available' +
                     ' [here](http://artifacts.osci.redhat.com/testing-farm/${{ steps.run_test_7to8.outputs.req_id }}/).' +
                     '\n[Full pipeline log](http://artifacts.osci.redhat.com/testing-farm/${{ steps.run_test_7to8.outputs.req_id }}/pipeline.log).'
+            })
+
+      - name: Schedule regression testing for 8to9
+        id: run_test_8to9
+        env:
+          ARTIFACTS: ${{ steps.leapp_pr_regex_match.outputs.match != '' && format('{},{}', steps.copr_build_leapp.outputs.copr_id, steps.copr_build.outputs.copr_id) || steps.copr_build.outputs.copr_id }}
+        uses: fernflower/testing-farm-service-action@main
+        with:
+          # required
+          tft_server: ${{ secrets.TF_ENDPOINT }}
+          tft_token: ${{ secrets.TF_API_KEY }}
+          compose: ${{ secrets.COMPOSE_RHEL86 }}
+          artifacts: ${{ env.ARTIFACTS }}
+          # optional
+          tests_regex: "^(?!.*c2r)(?!.*sap)(?!.*7to8)"
+          arch: 'x86_64'
+          copr: 'epel-8-x86_64'
+          debug: ${{ secrets.ACTIONS_STEP_DEBUG }}
+
+      - name: Add comment with Testing Farm request/result
+        # This step adds a new comment to the pull request with a link to the test.
+
+        # TODO: This is a temporary workaround until a proper way to set a commit status is implemented.
+        id: comment_8to9
+        if: ${{ steps.run_test_8to9.outputs.req_id != '' }}
+        uses: actions/github-script@v4
+        with:
+          script: |
+            github.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: 'Testing Farm [request](${{ secrets.TF_ENDPOINT }}/requests/${{ steps.run_test_8to9.outputs.req_id }})' +
+                    ' for 8to9 regression testing has been created. Once finished, results should be available' +
+                    ' [here](http://artifacts.osci.redhat.com/testing-farm/${{ steps.run_test_8to9.outputs.req_id }}/).' +
+                    '\n[Full pipeline log](http://artifacts.osci.redhat.com/testing-farm/${{ steps.run_test_8to9.outputs.req_id }}/pipeline.log).'
             })
