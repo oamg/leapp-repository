@@ -134,7 +134,7 @@ jobs:
         id: run_test_7to8
         env:
           ARTIFACTS: ${{ steps.leapp_pr_regex_match.outputs.match != '' && format('{},{}', steps.copr_build_leapp.outputs.copr_id, steps.copr_build.outputs.copr_id) || steps.copr_build.outputs.copr_id }}
-        uses: fernflower/testing-farm-service-action@main
+        uses: oamg/testing-farm-service-action@main
         with:
           # required
           tft_server: ${{ secrets.TF_ENDPOINT }}
@@ -152,7 +152,7 @@ jobs:
         id: run_test_8to9
         env:
           ARTIFACTS: ${{ steps.leapp_pr_regex_match.outputs.match != '' && format('{},{}', steps.copr_build_leapp.outputs.copr_id, steps.copr_build.outputs.copr_id) || steps.copr_build.outputs.copr_id }}
-        uses: fernflower/testing-farm-service-action@main
+        uses: oamg/testing-farm-service-action@main
         with:
           # required
           tft_server: ${{ secrets.TF_ENDPOINT }}
