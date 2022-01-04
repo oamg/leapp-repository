@@ -1,8 +1,9 @@
 import os
 
-from leapp.libraries.actor import checkvdo
 from leapp import reporting
+from leapp.libraries.actor import checkvdo
 from leapp.libraries.common.testutils import create_report_mocked
+
 
 def _patch_checkvdo_noop_unmigrated_vdo(monkeypatch):
     monkeypatch.setattr(checkvdo, '_check_for_unmigrated_vdo_devices', lambda: None)
@@ -21,7 +22,8 @@ def test_no_unmigrated_vdo(monkeypatch):
 
     _patch_checkvdo_noop_migration_failed_vdo(monkeypatch)
 
-    checkvdo.check_vdo(set(['vdo']))
+    monkeypatch.setattr(checkvdo, '_required_packages_not_installed', lambda: [])
+    checkvdo.check_vdo()
 
     assert reporting.create_report.called == 1
     assert 'VDO devices that require migration: None' in reporting.create_report.report_fields['summary']
@@ -36,7 +38,8 @@ def test_unmigrated_vdo(monkeypatch):
 
     _patch_checkvdo_noop_migration_failed_vdo(monkeypatch)
 
-    checkvdo.check_vdo(set(['vdo']))
+    monkeypatch.setattr(checkvdo, '_required_packages_not_installed', lambda: [])
+    checkvdo.check_vdo()
 
     assert reporting.create_report.called == 1
     assert 'VDO devices that require migration: None' not in reporting.create_report.report_fields['summary']
@@ -60,7 +63,8 @@ def test_no_migration_failed_vdo(monkeypatch):
                         lambda: os.linesep.join(['/dev/sda', '/dev/sdb']))
     monkeypatch.setattr(checkvdo, '_is_post_migration_vdo_device', lambda _: False)
 
-    checkvdo.check_vdo(set(['vdo']))
+    monkeypatch.setattr(checkvdo, '_required_packages_not_installed', lambda: [])
+    checkvdo.check_vdo()
 
     assert reporting.create_report.called == 0
 
@@ -80,7 +84,8 @@ def test_migration_failed_vdo_before_lvm(monkeypatch):
                         lambda: os.linesep.join(['/dev/sda', '/dev/sdb']))
     monkeypatch.setattr(checkvdo, '_is_post_migration_vdo_device', lambda _: True)
 
-    checkvdo.check_vdo(set(['vdo']))
+    monkeypatch.setattr(checkvdo, '_required_packages_not_installed', lambda: [])
+    checkvdo.check_vdo()
 
     assert reporting.create_report.called == 1
     assert 'VDO devices that did not complete migration:' in reporting.create_report.report_fields['summary']
@@ -92,8 +97,9 @@ def test_migration_failed_vdo_before_lvm(monkeypatch):
 def test_no_vdo_package_installed(monkeypatch):
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
 
-    checkvdo.check_vdo(set())
+    monkeypatch.setattr(checkvdo, '_required_packages_not_installed', lambda: ['vdo'])
+    checkvdo.check_vdo()
 
     assert reporting.create_report.called == 1
-    assert '"vdo" package required for upgrade validation check' in reporting.create_report.report_fields['summary']
+    assert 'package(s) required for upgrade validation check' in reporting.create_report.report_fields['summary']
     assert 'inhibitor' in reporting.create_report.report_fields['flags']

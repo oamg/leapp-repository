@@ -1,20 +1,30 @@
 import os
 
-from leapp import exceptions
-from leapp import models
-from leapp import reporting
+from leapp import exceptions, models, reporting
 from leapp.libraries import stdlib
+from leapp.libraries.common import rpms
+
+_report_title = reporting.Title('VDO devices migration to lvm-based management')
 
 def _run_cmd(command, checked = True):
     """ Run the specified command returning the result. """
-    try:
-        result = stdlib.run(command, checked = checked)
-    except stdlib.CalledProcessError:
-        raise exceptions.StopActorExecutionError('Failure to execute "{0}"'.format(' '.join(command)))
-    return result
+    return stdlib.run(command, checked = checked)
+
 
 def _canonicalize_device_path(path):
     return os.path.realpath(path)
+
+
+def _command_failure_report(command, exit_code):
+    reporting.create_report([
+        _report_title,
+        reporting.Summary('"{0}" required for successful opeation failed; exit_code: {1}'.format(' '.join(command),
+                                                                                                 exit_code)),
+        reporting.Severity(reporting.Severity.HIGH),
+        reporting.Tags([reporting.Tags.SERVICES, reporting.Tags.DRIVERS]),
+        reporting.Flags([reporting.Flags.INHIBITOR])
+    ])
+
 
 #
 # Methods used in discovering VDO devices which require migration to
@@ -27,8 +37,8 @@ def _get_unmigrated_vdo_blkid_results():
     command = ['blkid', '--output', 'device', '--match-token', 'TYPE=vdo']
     result = _run_cmd(command, checked = False)
     exit_code = result['exit_code']
-    if (exit_code != 0) and (exit_code != 2):
-        raise exceptions.StopActorExecutionError('blkid exited with code: {0}'.format(exit_code))
+    if exit_code not in (0, 2):
+        _command_failure_report(command, exit_code)
     return '' if exit_code != 0 else result['stdout']
 
 
@@ -74,7 +84,7 @@ def _get_migration_failed_lsblk_info():
         # Use 'kind' for type as 'type' is a python entity.
         (device, kind) = line.split()
         device = _canonicalize_device_path(device)
-        info[device] = { "type" : kind }
+        info[device] = {"type": kind}
     return info
 
 
@@ -99,9 +109,8 @@ def _is_post_migration_vdo_device(device):
     # 255: Not a vdo device
     #   0: A post-migration vdo device
     #   1: A pre-migration vdo device
-    if (exit_code != 255) and (exit_code != 0) and (exit_code != 1):
-        raise exceptions.StopActorExecutionError(
-                'failed to check device {0}; exit code: {1}'.format(device, exit_code))
+    if exit_code not in (255, 0, 1):
+        _command_failure_report(command, exit_code)
     return exit_code == 0
 
 
@@ -129,23 +138,22 @@ def _check_for_unmigrated_vdo_devices():
     # Find VDO devices that have not been migrated to lvm-based management.
     unmigrated_vdo_devices = _get_unmigrated_vdo_devices()
 
-    if len(unmigrated_vdo_devices) == 0:
-        # Generate report indicating there are no vdo devices to migrate.
+    if unmigrated_vdo_devices:
         reporting.create_report([
-            reporting.Title('VDO devices migration to lvm-based management'),
-            reporting.Summary('VDO devices that require migration: None'),
-            reporting.Severity(reporting.Severity.LOW),
-            reporting.Tags([reporting.Tags.SERVICES, reporting.Tags.DRIVERS])
-        ])
-    else:
-        devices = [device for device in unmigrated_vdo_devices]
-        reporting.create_report([
-            reporting.Title('VDO devices migration to lvm-based management'),
-            reporting.Summary('VDO devices that require migration: {0}'.format(', '.join(devices))),
+            _report_title,
+            reporting.Summary('VDO devices that require migration: {0}'.format(', '.join(unmigrated_vdo_devices))),
             reporting.Severity(reporting.Severity.HIGH),
             reporting.Tags([reporting.Tags.SERVICES, reporting.Tags.DRIVERS]),
             reporting.Remediation(hint = 'Perform VDO to LVM migration on the VDO devices.'),
             reporting.Flags([reporting.Flags.INHIBITOR])
+        ])
+    else:
+        # Generate report indicating there are no vdo devices to migrate.
+        reporting.create_report([
+            _report_title,
+            reporting.Summary('VDO devices that require migration: None'),
+            reporting.Severity(reporting.Severity.LOW),
+            reporting.Tags([reporting.Tags.SERVICES, reporting.Tags.DRIVERS])
         ])
 
 
@@ -153,11 +161,11 @@ def _check_for_migration_failed_vdo_devices():
     # Find VDO devices that did not complete migration to lvm-based management.
     # This could result from system failures during the migration process.
     migration_failed_vdo_devices = _get_migration_failed_vdo_devices()
-    if len(migration_failed_vdo_devices) > 0:
-        devices = [device for device in migration_failed_vdo_devices]
+    if migration_failed_vdo_devices:
         reporting.create_report([
-            reporting.Title('VDO devices migration to lvm-based management'),
-            reporting.Summary('VDO devices that did not complete migration: {0}'.format(', '.join(devices))),
+            _report_title,
+            reporting.Summary('VDO devices that did not complete migration: {0}'.format(
+                                ', '.join(migration_failed_vdo_devices))),
             reporting.Severity(reporting.Severity.HIGH),
             reporting.Tags([reporting.Tags.SERVICES, reporting.Tags.DRIVERS]),
             reporting.Remediation(hint = 'Complete VDO to LVM migration for the VDO devices.'),
@@ -165,14 +173,23 @@ def _check_for_migration_failed_vdo_devices():
         ])
 
 
-def check_vdo(installed_packages):
-    if 'vdo' not in installed_packages:
+def _required_packages_not_installed():
+    not_installed = []
+    if not rpms.has_package(models.InstalledRedHatSignedRPM, 'vdo'):
+        not_installed.append('vdo')
+    return not_installed
+
+
+def check_vdo():
+    packages_not_installed = _required_packages_not_installed()
+    if packages_not_installed:
         reporting.create_report([
-            reporting.Title('VDO devices migration to lvm-based management'),
-            reporting.Summary('"vdo" package required for upgrade validation check'),
+            _report_title,
+            reporting.Summary('"{0}" package(s) required for upgrade validation check'.format(
+                                ', '.join(packages_not_installed))),
             reporting.Severity(reporting.Severity.HIGH),
             reporting.Tags([reporting.Tags.SERVICES, reporting.Tags.DRIVERS]),
-            reporting.Remediation(hint = 'Install "vdo" RPM.'),
+            reporting.Remediation(hint = 'Install required package(s).'),
             reporting.Flags([reporting.Flags.INHIBITOR])
         ])
     else:
