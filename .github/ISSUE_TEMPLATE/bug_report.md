@@ -42,9 +42,9 @@ Attach (or provide link to) log files if applicable (optional - may contain conf
 
 **For your convenience you can pack all logs with this command:**
 
-`# tar -czf leapp-logs.tgz /var/log/leapp /var/lib/leapp/leapp.db`
+`# tar -czf leapp-logs.tar.gz /var/log/leapp /var/lib/leapp/leapp.db`
 
-Then you may attach only the `leapp-logs.tgz` file.
+Then you may attach only the `leapp-logs.tar.gz` file.
 
 ****
 
