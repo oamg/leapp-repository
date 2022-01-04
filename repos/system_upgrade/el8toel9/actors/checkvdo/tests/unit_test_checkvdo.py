@@ -1,99 +1,81 @@
-import os
+import functools
+import random
 
-from leapp.libraries.actor import checkvdo
 from leapp import reporting
+from leapp.libraries.actor import checkvdo
 from leapp.libraries.common.testutils import create_report_mocked
-
-def _patch_checkvdo_noop_unmigrated_vdo(monkeypatch):
-    monkeypatch.setattr(checkvdo, '_check_for_unmigrated_vdo_devices', lambda: None)
+from leapp.models import VdoConversionInfo, VdoPostConversion, VdoPreConversion
 
 
-def _patch_checkvdo_noop_migration_failed_vdo(monkeypatch):
-    monkeypatch.setattr(checkvdo, '_check_for_migration_failed_vdo_devices', lambda: None)
+def aslist(f):
+    """ Decorator used to convert generator to list """
+    @functools.wraps(f)
+    def inner(*args, **kwargs):
+        return list(f(*args, **kwargs))
+    return inner
 
 
-def test_no_unmigrated_vdo(monkeypatch):
+@aslist
+def _post_conversion_vdos(count = 0, complete = 0, start_char = 'a'):
+    complete = min(count, complete)
+    for x in range(complete):
+        yield VdoPostConversion(name = "sd{0}".format(chr(ord(start_char) + x)),
+                                complete = True)
+    for x in range(complete, count):
+        yield VdoPostConversion(name = "sd{0}".format(chr(ord(start_char) + x)),
+                                complete = False)
+
+
+@aslist
+def _pre_conversion_vdos(count = 0, start_char = 'a'):
+    for x in range(count):
+        yield VdoPreConversion(name = "sd{0}".format(chr(ord(start_char) + x)))
+
+
+def test_both_conversion_vdos(monkeypatch):
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
-    monkeypatch.setattr(checkvdo, '_canonicalize_device_path', lambda x: x)
+    post_count = random.randint(1, 10)
+    post_complete = random.randint(0, post_count)
+    pre_count = random.randint(0, 10)
+    checkvdo.check_vdo(
+        VdoConversionInfo(
+            post_conversion_vdos = _post_conversion_vdos(post_count, post_complete),
+            pre_conversion_vdos = _pre_conversion_vdos(pre_count,
+                                                       start_char = chr(ord('a') + post_count))))
+    assert reporting.create_report.called == (pre_count + (post_count - post_complete))
+    if (pre_count > 0) or ((post_count - post_complete) > 0):
+        assert 'inhibitor' in reporting.create_report.report_fields['flags']
+    elif 'flags' in reporting.create_report.report_fields:
+        assert 'inhibitor' not in reporting.create_report.report_fields['flags']
 
-    monkeypatch.setattr(checkvdo, '_get_unmigrated_vdo_blkid_results',
-                        lambda: os.linesep.join([]))
 
-    _patch_checkvdo_noop_migration_failed_vdo(monkeypatch)
-
-    checkvdo.check_vdo(set(['vdo']))
-
-    assert reporting.create_report.called == 1
-    assert 'VDO devices that require migration: None' in reporting.create_report.report_fields['summary']
-
-
-def test_unmigrated_vdo(monkeypatch):
+def test_no_vdos(monkeypatch):
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
-    monkeypatch.setattr(checkvdo, '_canonicalize_device_path', lambda x: x)
-
-    monkeypatch.setattr(checkvdo, '_get_unmigrated_vdo_blkid_results',
-                        lambda: os.linesep.join(['/dev/sda', '/dev/sdb']))
-
-    _patch_checkvdo_noop_migration_failed_vdo(monkeypatch)
-
-    checkvdo.check_vdo(set(['vdo']))
-
-    assert reporting.create_report.called == 1
-    assert 'VDO devices that require migration: None' not in reporting.create_report.report_fields['summary']
-    assert '/dev/sda' in reporting.create_report.report_fields['summary']
-    assert '/dev/sdb' in reporting.create_report.report_fields['summary']
-    assert 'inhibitor' in reporting.create_report.report_fields['flags']
-
-
-def test_no_migration_failed_vdo(monkeypatch):
-    monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
-    monkeypatch.setattr(checkvdo, '_canonicalize_device_path', lambda x: x)
-
-    _patch_checkvdo_noop_unmigrated_vdo(monkeypatch)
-
-    monkeypatch.setattr(checkvdo, '_get_migration_failed_lsblk_results',
-                        lambda: os.linesep.join(['/dev/sda disk',
-                                                 '/dev/sdb disk',
-                                                 '/dev/sdc disk',
-                                                 '/dev/sr0 rom']))
-    monkeypatch.setattr(checkvdo, '_get_migration_failed_blkid_results',
-                        lambda: os.linesep.join(['/dev/sda', '/dev/sdb']))
-    monkeypatch.setattr(checkvdo, '_is_post_migration_vdo_device', lambda _: False)
-
-    checkvdo.check_vdo(set(['vdo']))
-
+    checkvdo.check_vdo(
+        VdoConversionInfo(post_conversion_vdos = _post_conversion_vdos(),
+                          pre_conversion_vdos = _pre_conversion_vdos()))
     assert reporting.create_report.called == 0
 
 
-def test_migration_failed_vdo_before_lvm(monkeypatch):
+def test_post_conversion_vdos(monkeypatch):
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
-    monkeypatch.setattr(checkvdo, '_canonicalize_device_path', lambda x: x)
-
-    _patch_checkvdo_noop_unmigrated_vdo(monkeypatch)
-
-    monkeypatch.setattr(checkvdo, '_get_migration_failed_lsblk_results',
-                        lambda: os.linesep.join(['/dev/sda disk',
-                                                 '/dev/sdb disk',
-                                                 '/dev/sdc disk',
-                                                 '/dev/sr0 rom']))
-    monkeypatch.setattr(checkvdo, '_get_migration_failed_blkid_results',
-                        lambda: os.linesep.join(['/dev/sda', '/dev/sdb']))
-    monkeypatch.setattr(checkvdo, '_is_post_migration_vdo_device', lambda _: True)
-
-    checkvdo.check_vdo(set(['vdo']))
-
-    assert reporting.create_report.called == 1
-    assert 'VDO devices that did not complete migration:' in reporting.create_report.report_fields['summary']
-    assert '/dev/sda' not in reporting.create_report.report_fields['summary']
-    assert '/dev/sdb' not in reporting.create_report.report_fields['summary']
-    assert '/dev/sdc' in reporting.create_report.report_fields['summary']
+    count = random.randint(1, 10)
+    complete = random.randint(0, count)
+    checkvdo.check_vdo(
+        VdoConversionInfo(post_conversion_vdos = _post_conversion_vdos(count, complete),
+                          pre_conversion_vdos = _pre_conversion_vdos()))
+    assert reporting.create_report.called == (count - complete)
+    if count > complete:
+        assert 'inhibitor' in reporting.create_report.report_fields['flags']
+    elif 'flags' in reporting.create_report.report_fields:
+        assert 'inhibitor' not in reporting.create_report.report_fields['flags']
 
 
-def test_no_vdo_package_installed(monkeypatch):
+def test_pre_conversion_vdos(monkeypatch):
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
-
-    checkvdo.check_vdo(set())
-
-    assert reporting.create_report.called == 1
-    assert '"vdo" package required for upgrade validation check' in reporting.create_report.report_fields['summary']
+    count = random.randint(1, 10)
+    checkvdo.check_vdo(
+        VdoConversionInfo(post_conversion_vdos = _post_conversion_vdos(),
+                          pre_conversion_vdos = _pre_conversion_vdos(count)))
+    assert reporting.create_report.called == count
     assert 'inhibitor' in reporting.create_report.report_fields['flags']
