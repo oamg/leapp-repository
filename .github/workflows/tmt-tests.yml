@@ -152,6 +152,7 @@ jobs:
         id: run_test_8to9
         env:
           ARTIFACTS: ${{ steps.leapp_pr_regex_match.outputs.match != '' && format('{},{}', steps.copr_build_leapp.outputs.copr_id, steps.copr_build.outputs.copr_id) || steps.copr_build.outputs.copr_id }}
+          ENV_VARS: ${{ format('TARGET_VERSION=9.0,COMPOSE_URL={0}', secrets.COMPOSE_URL_RHEL9) }}
         uses: oamg/testing-farm-service-action@main
         with:
           # required
@@ -165,4 +166,4 @@ jobs:
           copr: 'epel-8-x86_64'
           debug: ${{ secrets.ACTIONS_STEP_DEBUG }}
           test_name: '8to9'
-          env_vars: 'TARGET_VERSION=9.0'
+          env_vars: ${{ env.ENV_VARS }}
