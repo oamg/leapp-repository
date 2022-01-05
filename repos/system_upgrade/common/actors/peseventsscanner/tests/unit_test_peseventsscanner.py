@@ -14,8 +14,8 @@ from leapp.libraries.actor.peseventsscanner import (
     Event,
     filter_events_by_architecture,
     filter_events_by_releases,
+    filter_irrelevant_releases,
     filter_out_pkgs_in_blacklisted_repos,
-    filter_releases,
     get_events,
     map_repositories,
     Package,
@@ -248,15 +248,16 @@ def test_filter_out_pkgs_in_blacklisted_repos(monkeypatch, caplog):
         ('skipped01', None): 'blacklisted',
         ('skipped02', ('module', 'stream')): 'blacklisted',
     }
+
+    pkgs_with_blacklisted_repo = sorted((pkg, repo) for pkg, repo in to_install.items() if repo == 'blacklisted')
+
     msg = '2 {}\n{}'.format(
         SKIPPED_PKGS_MSG,
         '\n'.join(
             [
                 '- {pkg}{ms} (repoid: {repo})'.format(pkg=pkg[0], repo=repo,
                                                       ms=(' [{}:{}]'.format(*pkg[1]) if pkg[1] else ''))
-                for pkg, repo in filter(    # pylint: disable=deprecated-lambda
-                    lambda item: item[1] == 'blacklisted', to_install.items()
-                )
+                for pkg, repo in pkgs_with_blacklisted_repo
             ]
         )
     )
@@ -590,13 +591,20 @@ def test_filter_events_by_releases():
     assert {Package('pkg5', 'repo', None)} not in [event.in_pkgs for event in filtered]
 
 
-def test_filter_releases():
+@pytest.mark.parametrize(('src_version', 'dst_version', 'expected_releases'),
+                         [('7.9', '8.6', [(8, 0), (8, 1), (8, 2), (8, 3), (8, 4), (8, 5), (8, 6)]),
+                          ('8.6', '9.0', [(9, 0)])])
+def test_filter_irrelevant_releases(monkeypatch, src_version, dst_version, expected_releases):
     """
-    Tests that all releases greater than the target gets correctly filtered out when using filter_releases.
+    Tests that all releases that happened before source version or after the target version are filtered out.
     """
-    releases = [(7, 6), (7, 7), (7, 8), (7, 9), (8, 0), (8, 1), (8, 2), (8, 3), (9, 0), (9, 1)]
-    filtered_releases = filter_releases(releases, (7, 6), (8, 1))
-    assert filtered_releases == [(7, 6), (7, 7), (7, 8), (7, 9), (8, 0), (8, 1)]
+
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(src_ver=src_version, dst_ver=dst_version))
+    releases = [
+        (7, 6), (7, 7), (7, 8), (7, 9), (8, 0), (8, 1), (8, 2), (8, 3), (8, 4), (8, 5), (8, 6), (9, 0), (9, 1)
+    ]
+    filtered_releases = filter_irrelevant_releases(releases)
+    assert filtered_releases == expected_releases
 
 
 def test_drop_conflicting_release_events():
