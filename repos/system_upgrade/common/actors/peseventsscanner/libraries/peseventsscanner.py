@@ -76,10 +76,8 @@ def pes_events_scanner(pes_json_directory, pes_json_filename):
     arch = api.current_actor().configuration.architecture
     events = get_events(pes_json_directory, pes_json_filename)
     releases = get_releases(events)
-    source = version._version_to_tuple(api.current_actor().configuration.version.source)
-    target = version._version_to_tuple(api.current_actor().configuration.version.target)
 
-    filtered_releases = filter_releases(releases, source, target)
+    filtered_releases = filter_irrelevant_releases(releases)
     filtered_events = filter_events_by_releases(events, filtered_releases)
     arch_events = filter_events_by_architecture(filtered_events, arch)
 
@@ -235,8 +233,20 @@ def get_transaction_configuration():
     return transaction_configuration
 
 
-def filter_releases(releases, source, target):
-    match_list = ['> {}.0'.format(source[0]), '<= {}.{}'.format(*target)]
+def filter_irrelevant_releases(releases):
+    """
+    Filter releases that are not relevant to this IPU.
+
+    Irrelevant releases are those that happened before the source version and after the target version.
+    :param List[Tuple[int, int]] releases: A list containing all releases present in the PES events being processed.
+    :returns: A list of releases relevant for the current IPU.
+    """
+
+    match_list = [
+        '> {0}'.format(api.current_actor().configuration.version.source),
+        '<= {0}'.format(api.current_actor().configuration.version.target)
+    ]
+
     return [r for r in releases if version.matches_version(match_list, '{}.{}'.format(*r))]
 
 
