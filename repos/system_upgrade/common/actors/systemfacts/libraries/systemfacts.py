@@ -8,11 +8,24 @@ import re
 
 import six
 
-from leapp.libraries.stdlib import CalledProcessError, api, run
 from leapp.libraries.common import repofileutils
-from leapp.models import SysctlVariablesFacts, SysctlVariable, ActiveKernelModulesFacts, ActiveKernelModule, \
-    KernelModuleParameter, UsersFacts, User, GroupsFacts, Group, RepositoriesFacts, \
-    SELinuxFacts, FirewallStatus, FirewallsFacts, FirmwareFacts
+from leapp.libraries.stdlib import api, CalledProcessError, run
+from leapp.models import (
+    ActiveKernelModule,
+    ActiveKernelModulesFacts,
+    FirewallsFacts,
+    FirewallStatus,
+    FirmwareFacts,
+    Group,
+    GroupsFacts,
+    KernelModuleParameter,
+    RepositoriesFacts,
+    SELinuxFacts,
+    SysctlVariable,
+    SysctlVariablesFacts,
+    User,
+    UsersFacts
+)
 
 
 def aslist(f):
@@ -149,7 +162,7 @@ def _get_sysctls():
 
     # sort our variables so they can be diffed directly when needed
     for var in sorted(variables):
-        name, value = tuple(map(type(var).strip, var.split('=')))
+        name, value = tuple(map(type(var).strip, var.split('=', 1)))
         yield SysctlVariable(
             name=name,
             value=value
