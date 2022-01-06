@@ -6,6 +6,7 @@ specfile_path: packaging/leapp-repository.spec
 upstream_package_name: leapp-repository
 downstream_package_name: leapp-repository
 upstream_tag_template: 'v{version}'
+merge_pr_in_ci: false
 
 # This is just for the build from the CLI - all other builds for jobs use own
 # actions
