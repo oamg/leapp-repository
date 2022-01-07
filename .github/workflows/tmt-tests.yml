@@ -165,4 +165,4 @@ jobs:
           copr: 'epel-8-x86_64'
           debug: ${{ secrets.ACTIONS_STEP_DEBUG }}
           test_name: '8to9'
-          env_vars: 'TARGET_VERSION=9.0'
+          env_vars: 'TARGET_RELEASE=9.0'
