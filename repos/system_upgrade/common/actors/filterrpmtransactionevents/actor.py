@@ -1,7 +1,10 @@
 from leapp.actors import Actor
-from leapp.models import (FilteredRpmTransactionTasks,
-                          InstalledRedHatSignedRPM, PESRpmTransactionTasks,
-                          RpmTransactionTasks)
+from leapp.models import (
+    FilteredRpmTransactionTasks,
+    InstalledRedHatSignedRPM,
+    PESRpmTransactionTasks,
+    RpmTransactionTasks
+)
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
@@ -29,11 +32,15 @@ class FilterRpmTransactionTasks(Actor):
         to_remove = set()
         to_keep = set()
         to_upgrade = set()
+        modules_to_enable = {}
+        modules_to_reset = {}
         for event in self.consume(RpmTransactionTasks, PESRpmTransactionTasks):
             local_rpms.update(event.local_rpms)
             to_install.update(event.to_install)
             to_remove.update(installed_pkgs.intersection(event.to_remove))
             to_keep.update(installed_pkgs.intersection(event.to_keep))
+            modules_to_enable.update({'{}:{}'.format(m.name, m.stream): m for m in event.modules_to_enable})
+            modules_to_reset.update({'{}:{}'.format(m.name, m.stream): m for m in event.modules_to_reset})
 
         to_remove.difference_update(to_keep)
 
@@ -45,4 +52,6 @@ class FilterRpmTransactionTasks(Actor):
             to_install=list(to_install),
             to_remove=list(to_remove),
             to_keep=list(to_keep),
-            to_upgrade=list(to_upgrade)))
+            to_upgrade=list(to_upgrade),
+            modules_to_reset=list(modules_to_reset.values()),
+            modules_to_enable=list(modules_to_enable.values())))

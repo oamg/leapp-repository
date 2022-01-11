@@ -1,13 +1,22 @@
+import functools
 import os
 import subprocess
-import functools
 
 import pyudev
 
-from leapp.models import StorageInfo, PartitionEntry, FstabEntry, MountEntry, LsblkEntry, \
-    PvsEntry, VgsEntry, LvdisplayEntry, SystemdMountEntry
 from leapp import reporting
 from leapp.libraries.stdlib import api
+from leapp.models import (
+    FstabEntry,
+    LsblkEntry,
+    LvdisplayEntry,
+    MountEntry,
+    PartitionEntry,
+    PvsEntry,
+    StorageInfo,
+    SystemdMountEntry,
+    VgsEntry
+)
 
 
 def aslist(f):

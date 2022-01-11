@@ -6,7 +6,11 @@ import shutil
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import dnfconfig, guards, mounting, overlaygen, rhsm, utils
-from leapp.libraries.common.config.version import get_source_major_version, get_target_major_version
+from leapp.libraries.common.config.version import (
+    get_source_major_version,
+    get_target_major_version,
+    get_target_version
+)
 from leapp.libraries.stdlib import api, CalledProcessError, config
 
 DNF_PLUGIN_NAME = 'rhel_upgrade.py'
@@ -83,7 +87,9 @@ def build_plugin_data(target_repoids, debug, test, tasks, on_aws):
             'local_rpms': [os.path.join('/installroot', pkg.lstrip('/')) for pkg in tasks.local_rpms],
             'to_install': tasks.to_install,
             'to_remove': tasks.to_remove,
-            'to_upgrade': tasks.to_upgrade
+            'to_upgrade': tasks.to_upgrade,
+            'modules_to_enable': ['{}:{}'.format(m.name, m.stream) for m in tasks.modules_to_enable],
+            'modules_to_reset': ['{}:{}'.format(m.name, m.stream) for m in tasks.modules_to_reset],
         },
         'dnf_conf': {
             'allow_erasing': True,
@@ -93,7 +99,7 @@ def build_plugin_data(target_repoids, debug, test, tasks, on_aws):
             'enable_repos': target_repoids,
             'gpgcheck': False,
             'platform_id': 'platform:el{}'.format(get_target_major_version()),
-            'releasever': api.current_actor().configuration.version.target,
+            'releasever': get_target_version(),
             'installroot': '/installroot',
             'test_flag': test
         },

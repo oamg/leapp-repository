@@ -35,6 +35,16 @@ def get_major_version(version):
     return version.split('.')[0]
 
 
+def get_source_version():
+    """
+    Return the version of the source system.
+
+    :rtype: str
+    :returns: The version of the source system.
+    """
+    return api.current_actor().configuration.version.source
+
+
 def get_source_major_version():
     """
     Return the major version of the source (original) system.
@@ -44,7 +54,17 @@ def get_source_major_version():
     :rtype: str
     :returns: The major version of the source system.
     """
-    return get_major_version(api.current_actor().configuration.version.source)
+    return get_major_version(get_source_version())
+
+
+def get_target_version():
+    """
+    Return the version of the target system.
+
+    :rtype: str
+    :returns: The version of the target system.
+    """
+    return api.current_actor().configuration.version.target
 
 
 def get_target_major_version():
@@ -56,7 +76,7 @@ def get_target_major_version():
     :rtype: str
     :returns: The major version of the target system.
     """
-    return get_major_version(api.current_actor().configuration.version.target)
+    return get_major_version(get_target_version())
 
 
 class _SupportedVersionsDict(dict):
@@ -186,8 +206,7 @@ def matches_source_version(*match_list):
     :param match_list: specification of versions to check against
     :type match_list: strings, for details see argument ``match_list`` of function :func:`matches_version`.
     """
-    source_version = api.current_actor().configuration.version.source
-    return matches_version(match_list, source_version)
+    return matches_version(match_list, get_source_version())
 
 
 def matches_target_version(*match_list):
@@ -197,8 +216,7 @@ def matches_target_version(*match_list):
     :param match_list: specification of versions to check against
     :type match_list: strings, for details see argument ``match_list`` of function :func:`matches_version`.
     """
-    target_version = api.current_actor().configuration.version.target
-    return matches_version(match_list, target_version)
+    return matches_version(match_list, get_target_version())
 
 
 def matches_release(allowed_releases, release):

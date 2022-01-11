@@ -2,12 +2,7 @@ from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common.config.version import get_source_major_version, get_target_major_version
 from leapp.libraries.stdlib import api
-from leapp.models import (
-    CustomTargetRepository,
-    RepositoriesBlacklisted,
-    RepositoriesFacts,
-    RepositoriesMapping
-)
+from leapp.models import CustomTargetRepository, RepositoriesBlacklisted, RepositoriesFacts, RepositoriesMapping
 
 # {OS_MAJOR_VERSION: PESID}
 UNSUPPORTED_PESIDS = {
@@ -39,7 +34,7 @@ def _report_excluded_repos(repos):
     )
 
     report = [
-        reporting.Title("Excluded RHEL 8 repositories"),
+        reporting.Title("Excluded target system repositories"),
         reporting.Summary(
             "The following repositories are not supported by "
             "Red Hat and are excluded from the list of repositories "

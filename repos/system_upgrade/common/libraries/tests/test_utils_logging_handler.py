@@ -2,8 +2,8 @@
 import os.path
 import sys
 
-from leapp.libraries.common.utils import logging_handler, config
-from leapp.libraries.stdlib.call import STDOUT, STDERR
+from leapp.libraries.common.utils import config, logging_handler
+from leapp.libraries.stdlib.call import STDERR, STDOUT
 
 
 def test_logging_handler(capfdbinary, monkeypatch):

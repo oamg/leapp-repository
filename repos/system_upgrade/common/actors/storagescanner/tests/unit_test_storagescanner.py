@@ -1,5 +1,5 @@
-import os
 import functools
+import os
 
 import pyudev
 
@@ -7,9 +7,16 @@ from leapp import reporting
 from leapp.libraries.actor import storagescanner
 from leapp.libraries.common.testutils import create_report_mocked, logger_mocked
 from leapp.libraries.stdlib import api
-from leapp.models import (FstabEntry, LsblkEntry, LvdisplayEntry, MountEntry, PartitionEntry, PvsEntry,
-                          SystemdMountEntry, VgsEntry, )
-
+from leapp.models import (
+    FstabEntry,
+    LsblkEntry,
+    LvdisplayEntry,
+    MountEntry,
+    PartitionEntry,
+    PvsEntry,
+    SystemdMountEntry,
+    VgsEntry
+)
 
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 
