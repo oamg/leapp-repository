@@ -49,6 +49,8 @@ License:        ASL 2.0
 URL:            https://oamg.github.io/leapp/
 Source0:        https://github.com/oamg/%{name}/archive/v%{version}.tar.gz#/%{name}-%{version}.tar.gz
 Source1:        deps-pkgs.tar.gz
+
+# NOTE: Our packages must be noarch. Do no drop this in any way.
 BuildArch:      noarch
 
 %description
