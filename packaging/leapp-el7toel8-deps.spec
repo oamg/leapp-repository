@@ -23,6 +23,8 @@ Name:       leapp-el7toel8-deps
 Version:    5.0.%{rhel}
 Release:    1%{?dist}
 Summary:    Dependencies for *leapp* packages
+
+# NOTE: Our packages must be noarch. Do no drop this in any way.
 BuildArch:  noarch
 
 License:    ASL 2.0
