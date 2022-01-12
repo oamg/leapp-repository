@@ -1,9 +1,9 @@
 import os
 
-from leapp.actors import Actor
 from leapp import reporting
-from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
+from leapp.actors import Actor
 from leapp.models import FirmwareFacts
+from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
 class EfiCheckBoot(Actor):
