@@ -166,16 +166,11 @@ class RhelUpgradeCommand(dnf.cli.Command):
 
         # Module tasks
         modules_to_enable = self.plugin_data['pkgs_info'].get('modules_to_enable', ())
-        # modules_to_reset = self.plugin_data['pkgs_info'].get('modules_to_reset', ())
 
         # Package tasks
         to_install = self.plugin_data['pkgs_info']['to_install']
         to_remove = self.plugin_data['pkgs_info']['to_remove']
         to_upgrade = self.plugin_data['pkgs_info']['to_upgrade']
-
-        # Modules to reset
-        # self._process_entities(entities=[[ms.split(':')[0] for ms in modules_to_reset]],
-        #                        op=module_base.reset, entity_name='Module stream')
 
         # Modules to enable
         self._process_entities(entities=[modules_to_enable], op=module_base.enable, entity_name='Module stream')

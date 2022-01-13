@@ -89,7 +89,6 @@ def build_plugin_data(target_repoids, debug, test, tasks, on_aws):
             'to_remove': tasks.to_remove,
             'to_upgrade': tasks.to_upgrade,
             'modules_to_enable': ['{}:{}'.format(m.name, m.stream) for m in tasks.modules_to_enable],
-            'modules_to_reset': ['{}:{}'.format(m.name, m.stream) for m in tasks.modules_to_reset],
         },
         'dnf_conf': {
             'allow_erasing': True,
@@ -163,29 +162,51 @@ def _transaction(context, stage, target_repoids, tasks, plugin_info, test=False,
 
     # FIXME: rhsm
     with guards.guarded_execution(guards.connection_guard(), guards.space_guard()):
+        cmd_prefix = cmd_prefix or []
+        common_params = []
+        if config.is_verbose():
+            common_params.append('-v')
+        if rhsm.skip_rhsm():
+            common_params += ['--disableplugin', 'subscription-manager']
+        if plugin_info:
+            for info in plugin_info:
+                if stage in info.disable_in:
+                    common_params += ['--disableplugin', info.name]
+        env = {}
+        if get_target_major_version() == '9':
+            # allow handling new RHEL 9 syscalls by systemd-nspawn
+            env = {'SYSTEMD_SECCOMP': '0'}
+
+            # We need to reset modules twice, once before we check, and the second time before we actually perform
+            # the upgrade. Not more often as the modules will be reset already.
+            if stage in ('check', 'upgrade') and tasks.modules_to_reset:
+                # We shall only reset modules that are not going to be enabled
+                # This will make sure it is so
+                modules_to_reset = {(module.name, module.stream) for module in tasks.modules_to_reset}
+                modules_to_enable = {(module.name, module.stream) for module in tasks.modules_to_enable}
+                module_reset_list = [module[0] for module in modules_to_reset - modules_to_enable]
+                # Perform module reset
+                cmd = ['/usr/bin/dnf', 'module', 'reset', '--enabled', ] + module_reset_list
+                cmd += ['--disablerepo', '*', '-y', '--installroot', '/installroot']
+                try:
+                    context.call(
+                        cmd=cmd_prefix + cmd + common_params,
+                        callback_raw=utils.logging_handler,
+                        env=env
+                    )
+                except (CalledProcessError, OSError):
+                    api.current_logger().debug('Failed to reset modules via dnf with an error. Ignoring.',
+                                               exc_info=True)
+
         cmd = [
             '/usr/bin/dnf',
             'rhel-upgrade',
             stage,
             DNF_PLUGIN_DATA_PATH
         ]
-        if config.is_verbose():
-            cmd.append('-v')
-        if rhsm.skip_rhsm():
-            cmd += ['--disableplugin', 'subscription-manager']
-        if plugin_info:
-            for info in plugin_info:
-                if stage in info.disable_in:
-                    cmd += ['--disableplugin', info.name]
-        if cmd_prefix:
-            cmd = cmd_prefix + cmd
-        env = {}
-        if get_target_major_version() == '9':
-            # allow handling new RHEL 9 syscalls by systemd-nspawn
-            env = {'SYSTEMD_SECCOMP': '0'}
         try:
             context.call(
-                cmd=cmd,
+                cmd=cmd_prefix + cmd + common_params,
                 callback_raw=utils.logging_handler,
                 env=env
             )

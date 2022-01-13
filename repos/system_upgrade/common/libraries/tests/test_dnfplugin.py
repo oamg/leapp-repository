@@ -36,13 +36,6 @@ TEST_ENABLE_MODULES = TaskData(
         leapp.models.Module(name='enable2', stream='stream2'),
     )
 )
-TEST_RESET_MODULES = TaskData(
-    expected=('reset1:stream1', 'reset2:stream2'),
-    initdata=(
-        leapp.models.Module(name='reset1', stream='stream1'),
-        leapp.models.Module(name='reset2', stream='stream2'),
-    )
-)
 
 
 class DATADnfPluginDataPkgsInfo(leapp.models.Model):
@@ -52,7 +45,6 @@ class DATADnfPluginDataPkgsInfo(leapp.models.Model):
     to_remove = fields.List(fields.StringEnum(choices=TEST_REMOVE_PACKAGES.expected))
     to_upgrade = fields.List(fields.StringEnum(choices=TEST_UPGRADE_PACKAGES.expected))
     modules_to_enable = fields.List(fields.StringEnum(choices=TEST_ENABLE_MODULES.expected))
-    modules_to_reset = fields.List(fields.StringEnum(choices=TEST_RESET_MODULES.expected))
 
 
 TEST_ENABLE_REPOS_CHOICES = ('enabled_repo', 'BASEOS', 'APPSTREAM')
@@ -151,8 +143,7 @@ def test_build_plugin_data_variations(
             to_install=TEST_INSTALL_PACKAGES.initdata,
             to_remove=TEST_REMOVE_PACKAGES.initdata,
             to_upgrade=TEST_UPGRADE_PACKAGES.initdata,
-            modules_to_enable=TEST_ENABLE_MODULES.initdata,
-            modules_to_reset=TEST_RESET_MODULES.initdata
+            modules_to_enable=TEST_ENABLE_MODULES.initdata
             )
     }
     inputs[parameter] = input_value
@@ -183,15 +174,13 @@ def test_build_plugin_data(monkeypatch):
                 to_install=TEST_INSTALL_PACKAGES.initdata,
                 to_remove=TEST_REMOVE_PACKAGES.initdata,
                 to_upgrade=TEST_UPGRADE_PACKAGES.initdata,
-                modules_to_enable=TEST_ENABLE_MODULES.initdata,
-                modules_to_reset=TEST_RESET_MODULES.initdata
+                modules_to_enable=TEST_ENABLE_MODULES.initdata
                 )
             )
     )
     assert created.dnf_conf.debugsolver is True
     assert created.dnf_conf.test_flag is True
     assert created.rhui.aws.on_aws is False
-    assert created.pkgs_info.modules_to_reset == list(TEST_RESET_MODULES.expected)
 
     with pytest.raises(fields.ModelViolationError):
         DATADnfPluginData.create(
@@ -204,9 +193,8 @@ def test_build_plugin_data(monkeypatch):
                     to_install=TEST_INSTALL_PACKAGES.initdata,
                     to_remove=TEST_REMOVE_PACKAGES.initdata,
                     to_upgrade=TEST_UPGRADE_PACKAGES.initdata,
-                    modules_to_enable=TEST_ENABLE_MODULES.initdata,
                     # Enforcing the failure
-                    modules_to_reset=(
+                    modules_to_enable=(
                         leapp.models.Module(
                             name='broken', stream=None
                         ),
