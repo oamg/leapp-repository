@@ -165,4 +165,4 @@ jobs:
           copr: 'epel-8-x86_64'
           debug: ${{ secrets.ACTIONS_STEP_DEBUG }}
           test_name: '8to9'
-          env_vars: 'TARGET_RELEASE=9.0'
+          env_vars: 'TARGET_RELEASE=9.0;TARGET_KERNEL=el9;RHSM_SKU=RH00069;RHSM_REPOS=rhel-8-for-x86_64-appstream-beta-rpms,rhel-8-for-x86_64-baseos-beta-rpms;LEAPP_EXEC_ENV_VARS=LEAPP_DEVEL_TARGET_PRODUCT_TYPE=beta'
