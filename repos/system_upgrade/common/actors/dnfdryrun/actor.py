@@ -1,6 +1,7 @@
 from leapp.actors import Actor
 from leapp.libraries.common import dnfplugin
 from leapp.models import (
+    BootContent,
     DNFPluginTask,
     FilteredRpmTransactionTasks,
     RHUIInfo,
@@ -8,7 +9,7 @@ from leapp.models import (
     TargetUserSpaceInfo,
     TransactionDryRun,
     UsedTargetRepositories,
-    XFSPresence,
+    XFSPresence
 )
 from leapp.tags import InterimPreparationPhaseTag, IPUWorkflowTag
 
@@ -23,6 +24,7 @@ class DnfDryRun(Actor):
 
     name = 'dnf_dry_run'
     consumes = (
+        BootContent,
         DNFPluginTask,
         FilteredRpmTransactionTasks,
         RHUIInfo,
