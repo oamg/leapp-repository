@@ -21,6 +21,7 @@ def test_dasd_exists(monkeypatch):
     for msg in scandasd.api.produce.model_instances:
         if isinstance(msg, TargetUserSpaceUpgradeTasks):
             assert [CopyFile(src=scandasd.DASD_CONF)] == msg.copy_files
+            assert msg.install_rpms == ['s390utils-core']
             tusut_flag = True
         elif isinstance(msg, UpgradeInitramfsTasks):
             assert [scandasd.DASD_CONF] == msg.include_files
@@ -35,7 +36,11 @@ def test_dasd_not_found(monkeypatch):
     monkeypatch.setattr(scandasd.api, 'produce', produce_mocked())
     scandasd.process()
     assert scandasd.api.current_logger.warnmsg
-    assert not scandasd.api.produce.called
+    assert scandasd.api.produce.called == 1
+    assert len(scandasd.api.produce.model_instances) == 1
+    assert isinstance(scandasd.api.produce.model_instances[0], TargetUserSpaceUpgradeTasks)
+    assert scandasd.api.produce.model_instances[0].install_rpms == ['s390utils-core']
+    assert not scandasd.api.produce.model_instances[0].copy_files
 
 
 @pytest.mark.parametrize('isfile', [True, False])
