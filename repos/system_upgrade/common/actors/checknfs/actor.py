@@ -37,7 +37,8 @@ class CheckNfs(Actor):
             for mount in storage.mount:
                 if _is_nfs(mount.tp):
                     nfs_found = True
-                    details += "- Currently mounted NFS shares\n"
+                    details += "- Currently mounted NFS share:\n"
+                    details += "%s %s %s %s\n" % (mount.name, mount.mount, mount.tp, mount.options)
                     break
 
             # Check systemd-mount
