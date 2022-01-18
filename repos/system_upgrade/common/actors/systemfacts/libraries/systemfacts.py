@@ -8,16 +8,21 @@ import re
 
 import six
 
+from leapp import reporting
 from leapp.libraries.common import repofileutils
+from leapp.libraries.common.config import architecture
 from leapp.libraries.stdlib import api, CalledProcessError, run
 from leapp.models import (
     ActiveKernelModule,
     ActiveKernelModulesFacts,
+    DefaultGrub,
+    DefaultGrubInfo,
     FirewallsFacts,
     FirewallStatus,
     FirmwareFacts,
     Group,
     GroupsFacts,
+    GrubCfgBios,
     KernelModuleParameter,
     RepositoriesFacts,
     SELinuxFacts,
@@ -254,4 +259,53 @@ def get_firewalls_status():
 
 def get_firmware():
     firmware = 'efi' if os.path.isdir('/sys/firmware/efi') else 'bios'
+    if architecture.matches_architecture(architecture.ARCH_PPC64LE):
+        ppc64le_opal = bool(os.path.isdir('/sys/firmware/opal/'))
+        return FirmwareFacts(firmware=firmware, ppc64le_opal=ppc64le_opal)
     return FirmwareFacts(firmware=firmware)
+
+
+@aslist
+def _default_grub_info():
+    default_grb_fpath = '/etc/default/grub'
+    if not os.path.isfile(default_grb_fpath):
+        reporting.create_report([
+            reporting.Title('File "{}" does not exist!'.format(default_grb_fpath)),
+            reporting.Summary(
+                'Leapp detected "{}" does not exist. The file is essential for the in-place upgrade '
+                'to finish successfully. This scenario might have occured if the system was already '
+                'upgraded from RHEL 6. Please re-create the file manually.'.format(default_grb_fpath)
+            ),
+            reporting.Severity(reporting.Severity.HIGH),
+            reporting.Flags([reporting.Flags.INHIBITOR]),
+            reporting.Tags([reporting.Tags.BOOT]),
+            reporting.RelatedResource('file', default_grb_fpath),
+            reporting.ExternalLink(
+                url='https://access.redhat.com/solutions/3185891',
+                title='How to re-create the missing "{}" file in Red Hat Enterprise Linux 7?'.format(
+                    default_grb_fpath
+                )
+            ),
+        ])
+    else:
+        for line in run(['cat', default_grb_fpath], split=True)['stdout']:
+            name, value = tuple(map(type(line).strip, line.split('=', 1)))
+            yield DefaultGrub(
+                name=name,
+                value=value
+            )
+
+
+def get_default_grub_conf():
+    """ Get a list of GRUB parameters from /etc/default/grub """
+    return DefaultGrubInfo(default_grub_info=_default_grub_info())
+
+
+def get_bios_grubcfg_details():
+    """ Get BIOS (non-EFI) Grub config details """
+    if get_firmware().firmware == 'bios' and not architecture.matches_architecture(architecture.ARCH_S390X):
+        with open('/boot/grub2/grub.cfg') as fo:
+            content = fo.read()
+        insmod_bls = bool('insmod blscfg' in content)
+        return GrubCfgBios(insmod_bls=insmod_bls)
+    return None
