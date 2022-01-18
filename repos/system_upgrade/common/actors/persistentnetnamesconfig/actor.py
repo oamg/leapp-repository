@@ -5,7 +5,7 @@ from leapp.models import (
     PersistentNetNamesFacts,
     PersistentNetNamesFactsInitramfs,
     RenamedInterfaces,
-    TargetInitramfsTasks,
+    TargetInitramfsTasks
 )
 from leapp.tags import ApplicationsPhaseTag, IPUWorkflowTag
 from leapp.utils.deprecation import suppress_deprecation

@@ -1,9 +1,9 @@
 import re
 
+from leapp import reporting
 from leapp.actors import Actor
 from leapp.models import KernelCmdlineArg, PersistentNetNamesFacts
-from leapp.reporting import Report, create_report
-from leapp import reporting
+from leapp.reporting import create_report, Report
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 

@@ -14,7 +14,7 @@ from leapp.models import (
     PersistentNetNamesFactsInitramfs,
     RenamedInterface,
     RenamedInterfaces,
-    TargetInitramfsTasks,
+    TargetInitramfsTasks
 )
 
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))
