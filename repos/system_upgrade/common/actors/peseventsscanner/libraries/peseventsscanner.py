@@ -296,7 +296,11 @@ def event_for_modulestram_mapping(from_to, event):
 
 def event_by_modulestream_mapping(mapping, event):
     if not mapping:
-        return [event_for_modulestram_mapping(None, event)]
+        # In case there is no mapping, assume all is going to non modular
+        mapping = {}
+        for package in event.in_pkgs:
+            for ms in package.modulestream or ():
+                mapping[ms] = None
     return [event_for_modulestram_mapping((from_ms, to_ms), event) for from_ms, to_ms in mapping.items()]
 
 
@@ -384,8 +388,14 @@ def parse_action(action_id):
 
 
 def parse_modulestream(package):
+    # It is possible that modulestream is absent, but modulestreams exist,
+    # which would refer to a list of modulestreams, if it is modulestream,
+    # it is supposed to be only one.
     modulestreams = package.get('modulestreams')
-    # in an older version of PES data, the field for module stream can be absent
+    if not modulestreams:
+        modulestreams = package.get('modulestream')
+        if isinstance(modulestreams, dict):
+            modulestreams = (modulestreams,)
     if not modulestreams:
         return (None,)
     return tuple((ms['name'], ms['stream']) if ms else None for ms in modulestreams)

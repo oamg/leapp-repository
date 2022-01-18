@@ -144,7 +144,7 @@ def test_parse_pes_events_with_modulestreams(current_actor_context):
     """
     with open(os.path.join(CUR_DIR, 'files/sample04.json')) as f:
         events = parse_pes_events(f.read())
-    assert len(events) == 3
+    assert len(events) == 5
     Expected = namedtuple('Expected', 'action,in_pkgs,out_pkgs')
     expected = [
         Expected(action=Action.SPLIT, in_pkgs={Package('original', 'repo', ('module', 'stream_in'))}, out_pkgs={
@@ -153,6 +153,10 @@ def test_parse_pes_events_with_modulestreams(current_actor_context):
                  out_pkgs={Package('split01', 'repo', ('module', 'stream_out')),
                            Package('split02', 'repo', ('module', 'stream_out'))}),
         Expected(action=Action.REMOVED, in_pkgs={Package('removed', 'repo', None)}, out_pkgs=set()),
+        Expected(action=Action.RENAMED, in_pkgs={Package('modularized', 'repo', ('module', 'stream_in'))}, out_pkgs={
+                 Package('demodularized', 'repo', None)}),
+        Expected(action=Action.RENAMED, in_pkgs={Package('modularized', 'repo', None)}, out_pkgs={
+                 Package('demodularized', 'repo', None)}),
     ]
 
     for event in events:
