@@ -1,6 +1,6 @@
-from leapp.snactor.fixture import current_actor_context
+from leapp.models import Interface, KernelCmdlineArg, PCIAddress, PersistentNetNamesFacts
 from leapp.reporting import Report
-from leapp.models import KernelCmdlineArg, PersistentNetNamesFacts, Interface, PCIAddress
+from leapp.snactor.fixture import current_actor_context
 
 
 def test_actor_single_eth0(current_actor_context):
