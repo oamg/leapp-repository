@@ -1,8 +1,20 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import systemfacts
-from leapp.models import SysctlVariablesFacts, ActiveKernelModulesFacts, UsersFacts, GroupsFacts, RepositoriesFacts, \
-    SELinuxFacts, FirewallsFacts, FirmwareFacts
-from leapp.tags import IPUWorkflowTag, FactsPhaseTag
+from leapp.libraries.common.config import architecture
+from leapp.models import (
+    ActiveKernelModulesFacts,
+    DefaultGrubInfo,
+    FirewallsFacts,
+    FirmwareFacts,
+    GroupsFacts,
+    GrubCfgBios,
+    Report,
+    RepositoriesFacts,
+    SELinuxFacts,
+    SysctlVariablesFacts,
+    UsersFacts
+)
+from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 
 class SystemFactsActor(Actor):
@@ -22,14 +34,19 @@ class SystemFactsActor(Actor):
 
     name = 'system_facts'
     consumes = ()
-    produces = (SysctlVariablesFacts,
-                ActiveKernelModulesFacts,
-                UsersFacts,
-                GroupsFacts,
-                RepositoriesFacts,
-                SELinuxFacts,
-                FirewallsFacts,
-                FirmwareFacts)
+    produces = (
+        SysctlVariablesFacts,
+        ActiveKernelModulesFacts,
+        UsersFacts,
+        GroupsFacts,
+        RepositoriesFacts,
+        SELinuxFacts,
+        FirewallsFacts,
+        FirmwareFacts,
+        DefaultGrubInfo,
+        GrubCfgBios,
+        Report
+    )
     tags = (IPUWorkflowTag, FactsPhaseTag,)
 
     def process(self):
@@ -41,3 +58,10 @@ class SystemFactsActor(Actor):
         self.produce(systemfacts.get_selinux_status())
         self.produce(systemfacts.get_firewalls_status())
         self.produce(systemfacts.get_firmware())
+
+        if not architecture.matches_architecture(architecture.ARCH_S390X):
+            self.produce(systemfacts.get_default_grub_conf())
+
+        bios_grubcfg_details = systemfacts.get_bios_grubcfg_details()
+        if bios_grubcfg_details:
+            self.produce(bios_grubcfg_details)

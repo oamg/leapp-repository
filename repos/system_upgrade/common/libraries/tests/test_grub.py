@@ -4,8 +4,9 @@ import pytest
 
 from leapp.exceptions import StopActorExecution
 from leapp.libraries.common import grub
-from leapp.libraries.stdlib import CalledProcessError, api
 from leapp.libraries.common.testutils import logger_mocked
+from leapp.libraries.stdlib import api, CalledProcessError
+from leapp.models import DefaultGrub, DefaultGrubInfo
 
 BOOT_PARTITION = '/dev/vda1'
 BOOT_DEVICE = '/dev/vda'
@@ -102,3 +103,22 @@ def test_device_no_grub_library(monkeypatch):
     result = grub.get_grub_device()
     assert grub.run.called == 2
     assert not result
+
+
+@pytest.mark.parametrize('enabled', [True, False])
+def test_is_blscfg_library(monkeypatch, enabled):
+    bls_cfg_enabled = DefaultGrubInfo(
+        default_grub_info=[DefaultGrub(name='GRUB_ENABLE_BLSCFG', value='true')]
+    )
+
+    bls_cfg_not_enabled = DefaultGrubInfo(
+        default_grub_info=[DefaultGrub(name='GRUB_ENABLE_BLSCFG', value='false')]
+    )
+
+    bls_cfg = bls_cfg_enabled if enabled else bls_cfg_not_enabled
+
+    result = grub.is_blscfg_enabled_in_defaultgrub(bls_cfg)
+    if enabled:
+        assert result
+    else:
+        assert not result

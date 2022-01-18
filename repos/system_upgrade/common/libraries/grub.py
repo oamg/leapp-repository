@@ -1,7 +1,7 @@
 import os
 
-from leapp.libraries.stdlib import run, api, CalledProcessError
 from leapp.exceptions import StopActorExecution
+from leapp.libraries.stdlib import api, CalledProcessError, run
 
 
 def has_grub(blk_dev):
@@ -70,3 +70,14 @@ def get_grub_device():
     api.current_logger().info('GRUB is installed on {}'.format(grub_dev))
     # if has_grub(grub_dev):
     return grub_dev if has_grub(grub_dev) else None
+
+
+def is_blscfg_enabled_in_defaultgrub(default_grub_msg):
+    """
+    Check if GRUB_ENABLE_BLSCFG is true in /etc/default/grub file
+    """
+    grub_options_lst = default_grub_msg.default_grub_info
+    default_grub_options = {
+        option.name: option.value.strip('"') for option in grub_options_lst
+    }
+    return bool(default_grub_options.get('GRUB_ENABLE_BLSCFG', '') == 'true')
