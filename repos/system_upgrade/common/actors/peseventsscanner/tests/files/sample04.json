@@ -43,6 +43,28 @@
       "in_packageset": { "set_id": 3, "package": [{ "name": "removed", "repository": "repo" }] },
       "out_packageset": null,
       "release": { "z_stream": null, "major_version": 8, "tag": null, "os_name": "RHEL", "minor_version": 0 }
-    }
+    },
+    {
+        "id": 3,
+        "action": 7,
+        "in_packageset": { 
+            "set_id": 3, 
+            "package": [{ 
+                "name": "modularized",
+                 "repository": "repo", 
+                "modulestreams": [null, { "name": "module", "stream": "stream_in" }] 
+            }]
+        },
+        "out_packageset": { 
+            "set_id": 3, 
+            "package": [{ 
+                "name": "demodularized",
+                "repository": "repo", 
+                "modulestreams": [null]
+            }]
+        },
+
+        "release": { "z_stream": null, "major_version": 8, "tag": null, "os_name": "RHEL", "minor_version": 0 }
+      }
   ]
 }
