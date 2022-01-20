@@ -10,15 +10,17 @@ is_dir_empty() {
 
 handle_dir() {
     # Move all files from $1 to $2 when the /etc/yum/$1 is not empty
+    # and not already a link
     # Then remove the $1 directory and relink it to $2
     # param $1: dirname under /etc/yum path
     # param $2: dirname under /etc/dnf path
+    if [ "$(readlink /etc/yum/pluginconf.d)" = "../dnf/plugins" ]; then
+        return
+    fi
     if ! is_dir_empty "/etc/yum/$1"; then
         mv /etc/yum/$1/* /etc/dnf/$2/
     fi
 
-    # FIXME: do not care whether these were already symlinks for now
-    #        just remove it
     rm -rf /etc/yum/$1
 
     #relink
