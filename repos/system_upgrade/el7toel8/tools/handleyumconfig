@@ -14,7 +14,7 @@ handle_dir() {
     # Then remove the $1 directory and relink it to $2
     # param $1: dirname under /etc/yum path
     # param $2: dirname under /etc/dnf path
-    if [ "$(readlink /etc/yum/pluginconf.d)" = "../dnf/plugins" ]; then
+    if [ "$(readlink /etc/yum/$1)" == "../dnf/$2" ]; then
         return
     fi
     if ! is_dir_empty "/etc/yum/$1"; then
