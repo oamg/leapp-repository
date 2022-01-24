@@ -4,7 +4,6 @@ from leapp.libraries import stdlib
 from leapp.libraries.actor import sourcebootloaderscanner
 from leapp.libraries.common.testutils import produce_mocked
 
-
 GRUBBY_INFO_ALL_STDOUT = '''index=0
 kernel="/boot/vmlinuz-4.18.0-305.7.1.el8_4.x86_64"
 args="ro uned_params"
@@ -18,7 +17,9 @@ args="ro"
 root="/someroot"
 initrd="/boot/initramfs-4.18.0-305.3.1.el8_4.x86_64.img"
 title="Linux old-kernel"
-id="some_id2"'''
+id="some_id2"
+index=2
+non linux entry'''
 
 
 def test_scan_boot_entries(monkeypatch):
@@ -47,6 +48,13 @@ def test_scan_boot_entries(monkeypatch):
     fail_description = 'Found different number of boot entries than present in provided mocks.'
     assert len(bootloader_config.entries) == 2, fail_description
 
-    expected_boot_entry_titles = ['Linux', 'Linux old-kernel']
-    for actual_boot_entry in bootloader_config.entries:
-        assert actual_boot_entry.title in expected_boot_entry_titles
+    expected_entries = [
+        {'title': 'Linux', 'kernel_image': '/boot/vmlinuz-4.18.0-305.7.1.el8_4.x86_64'},
+        {'title': 'Linux old-kernel', 'kernel_image': '/boot/vmlinuz-4.18.0-305.3.1.el8_4.x86_64'},
+    ]
+
+    actual_entries = sorted(bootloader_config.entries, key=lambda entry: entry.title)
+
+    for actual_entry, expected_entry in zip(actual_entries, expected_entries):
+        assert actual_entry.title == expected_entry['title']
+        assert actual_entry.kernel_image == expected_entry['kernel_image']

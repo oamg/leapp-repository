@@ -1,4 +1,4 @@
-from leapp.models import Model, fields
+from leapp.models import fields, Model
 from leapp.topics import SystemInfoTopic
 
 
@@ -12,6 +12,9 @@ class BootEntry(Model):
 
     title = fields.String()
     """Title of the boot entry."""
+
+    kernel_image = fields.String()
+    """Kernel image of the boot entry."""
 
 
 class SourceBootLoaderConfiguration(Model):
