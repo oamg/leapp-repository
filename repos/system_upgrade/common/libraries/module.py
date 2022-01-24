@@ -16,7 +16,12 @@ except ImportError:
 def _create_or_get_dnf_base(base=None):
     if not base:
         base = dnf.Base()
+        base.init_plugins()
         base.read_all_repos()
+        # configure plugins after the repositories are loaded
+        # e.g. the amazon-id plugin requires loaded repositories
+        # for the proper configuration.
+        base.configure_plugins()
         base.fill_sack()
     return base
 

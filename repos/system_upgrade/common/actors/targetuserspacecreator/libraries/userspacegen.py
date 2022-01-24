@@ -4,31 +4,23 @@ import os
 from leapp import reporting
 from leapp.exceptions import StopActorExecution, StopActorExecutionError
 from leapp.libraries.actor import constants
-from leapp.libraries.common import (
-    dnfplugin,
-    mounting,
-    overlaygen,
-    repofileutils,
-    rhsm,
-    rhui,
-    utils,
-)
-from leapp.libraries.common.config import get_product_type, get_env
+from leapp.libraries.common import dnfplugin, mounting, overlaygen, repofileutils, rhsm, rhui, utils
+from leapp.libraries.common.config import get_env, get_product_type
 from leapp.libraries.common.config.version import get_target_major_version
-from leapp.libraries.stdlib import CalledProcessError, api, config, run
+from leapp.libraries.stdlib import api, CalledProcessError, config, run
+from leapp.models import RequiredTargetUserspacePackages  # deprecated
+from leapp.models import TMPTargetRepositoriesFacts  # deprecated
 from leapp.models import (
     CustomTargetRepositoryFile,
-    RHUIInfo,
     RHSMInfo,
-    RequiredTargetUserspacePackages,  # deprecated
+    RHUIInfo,
     StorageInfo,
     TargetRepositories,
-    TargetUserSpacePreupgradeTasks,
     TargetUserSpaceInfo,
-    TMPTargetRepositoriesFacts,  # deprecated
+    TargetUserSpacePreupgradeTasks,
     UsedTargetRepositories,
     UsedTargetRepository,
-    XFSPresence,
+    XFSPresence
 )
 from leapp.utils.deprecation import suppress_deprecation
 
@@ -191,8 +183,9 @@ def _get_all_rhui_pkgs():
     the others are just taking bytes in memory...). It's a hot-fix. We are going
     to refactor the library later completely..
     """
+    upg_path = rhui.get_upg_path()
     pkgs = []
-    for rhui_map in rhui.RHUI_CLOUD_MAP[api.current_actor().configuration.architecture].values():
+    for rhui_map in rhui.RHUI_CLOUD_MAP[upg_path].values():
         for key in rhui_map.keys():
             if not key.endswith('pkg'):
                 continue
@@ -472,13 +465,13 @@ def _get_rh_available_repoids(context, indata):
     RHUI special packages (every cloud provider has itw own rpm).
     """
 
-    arch = api.current_actor().configuration.architecture
+    upg_path = rhui.get_upg_path()
 
     rh_repoids = _get_rhsm_available_repoids(context)
 
     if indata and indata.rhui_info:
         cloud_repo = os.path.join(
-            '/etc/yum.repos.d/', rhui.RHUI_CLOUD_MAP[arch][indata.rhui_info.provider]['leapp_pkg_repo']
+            '/etc/yum.repos.d/', rhui.RHUI_CLOUD_MAP[upg_path][indata.rhui_info.provider]['leapp_pkg_repo']
         )
         rhui_repoids = _get_rhui_available_repoids(context, cloud_repo)
         rh_repoids.update(rhui_repoids)
