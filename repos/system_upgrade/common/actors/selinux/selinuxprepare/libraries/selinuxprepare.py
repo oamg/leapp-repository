@@ -25,30 +25,34 @@ def remove_custom_modules():
         # Form a single "semodule" command to remove all given modules at once.
         # This will help with any inter-dependencies.
         # "semodule" continues removing modules even if it encounters errors - any issues are just printed to stdout
-        command = ['semodule']
+        if semodules.modules:
+            command = ['semodule']
 
-        for module in semodules.modules:
-            command.extend(['-X', str(module.priority), '-r', module.name])
-        try:
-            run(command)
-        except CalledProcessError as e:
-            api.current_logger().warning(
-                'Error removing modules in a single transaction:'
-                '{}\nRetrying -- now each module will be removed separately.'.format(e.stderr)
-            )
-            # Retry, but remove each module separately
             for module in semodules.modules:
-                try:
-                    run(['semodule', '-X', str(module.priority), '-r', module.name])
-                except CalledProcessError as e:
-                    api.current_logger().warning('Failed to remove module {} on priority {}: {}'.format(
-                                            module.name, module.priority, e.stderr))
-                    continue
+                command.extend(['-X', str(module.priority), '-r', module.name])
+            try:
+                run(command)
+            except CalledProcessError as e:
+                api.current_logger().warning(
+                    'Error removing modules in a single transaction:'
+                    '{}\nRetrying -- now each module will be removed separately.'.format(e.stderr)
+                )
+                # Retry, but remove each module separately
+                for module in semodules.modules:
+                    try:
+                        run(['semodule', '-X', str(module.priority), '-r', module.name])
+                    except CalledProcessError as e:
+                        api.current_logger().warning('Failed to remove module {} on priority {}: {}'.format(
+                                                module.name, module.priority, e.stderr))
+                        continue
 
         remove_udica_templates(semodules.templates)
 
 
 def remove_udica_templates(templates):
+    if not templates:
+        return
+
     api.current_logger().info('Removing "udica" policy templates. Count: {}'.format(len(templates)))
     command = ['semodule']
 
