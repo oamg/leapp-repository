@@ -36,6 +36,9 @@ def list_selinux_modules():
 
 # determine which (if any) udica templates where installed and install their new versions
 def install_udica_templates(templates):
+    if not templates:
+        return
+
     command = ['semodule']
     for module in templates:
         command.extend(

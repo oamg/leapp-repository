@@ -52,6 +52,9 @@ class SELinuxApplyCustom(Actor):
             # check for presence of udica templates and make sure to install their latest versions
             selinuxapplycustom.install_udica_templates(semodules.templates)
 
+            if not semodules.modules:
+                continue
+
             command = ['semodule']
             for module in semodules.modules:
                 # Skip modules that are already installed. This prevents DSP modules installed with wrong
