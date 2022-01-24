@@ -1,9 +1,33 @@
-from leapp.models import BootEntry, SourceBootLoaderConfiguration
-from leapp.libraries.stdlib import api, CalledProcessError, run
 from leapp.exceptions import StopActorExecutionError
-
+from leapp.libraries.stdlib import api, CalledProcessError, run
+from leapp.models import BootEntry, SourceBootLoaderConfiguration
 
 CMD_GRUBBY_INFO_ALL = ['grubby', '--info', 'ALL']
+
+
+def parse_grubby_output_line(line):
+    """
+    Parses a single output line of `grubby --info ALL` that has the property=value format and returns a tuple
+    (property, value).
+
+    Quotes are removed from the value.
+    :param str line: A line of the grubby output.
+    :returns: Tuple containing the key (boot entry property) and its value.
+    :rtype: tuple
+    """
+    line_fragments = line.split('=', 1)
+    if len(line_fragments) != 2:
+        # The line does not have the property=value format, something is wrong
+        raise StopActorExecutionError(
+            message='Failed to parse `grubby` output.',
+            details={
+                'details': 'The following line does not appear to have expected format: {0}'.format(line)
+            }
+        )
+
+    prop, value = line_fragments
+    value = value.strip('\'"')
+    return (prop, value)
 
 
 def scan_boot_entries():
@@ -26,20 +50,29 @@ def scan_boot_entries():
         )
 
     boot_entries = []
-    # Identify the available boot entries by searching for their titles in the grubby output
+    boot_entry_data = {}
     for output_line in grubby_output['stdout']:
-        # For now it is sufficient to look only for the titles as that is the only
-        # information we use. If need be, we would have to parse the structure
-        # of the grubby output into sections according to the `index` lines
-        if output_line.startswith('title='):
-            boot_entry = output_line[6:]  # Remove the `title=` prefix
+        if output_line == 'non linux entry':
+            # Grubby does not display info about non-linux entries
+            # Such an entry is not problematic from our PoV, therefore, skip it
+            boot_entry_data = {}
+            continue
 
-            # On s390x grubby produces quotes only when needed (whitespace in
-            # the configuration values), on x86 the values are quoted either way
-            boot_entry = boot_entry.strip('\'"')
+        prop, value = parse_grubby_output_line(output_line)
+        if prop == 'index':
+            # Start of a new boot entry section
+            if boot_entry_data:
+                # There has been a valid linux entry
+                boot_entries.append(
+                    BootEntry(title=boot_entry_data.get('title', ''),  # In theory, the title property can be missing
+                              kernel_image=boot_entry_data['kernel']))
+            boot_entry_data = {}
+        boot_entry_data[prop] = value
 
-            boot_entries.append(BootEntry(title=boot_entry))
-
+    # There was no 'index=' line after the last boot entry section, thus, its data has not been converted to a model.
+    if boot_entry_data:
+        boot_entries.append(BootEntry(title=boot_entry_data.get('title', ''),
+                                      kernel_image=boot_entry_data['kernel']))
     return boot_entries
 
 
