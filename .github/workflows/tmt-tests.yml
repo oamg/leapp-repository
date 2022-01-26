@@ -147,6 +147,7 @@ jobs:
           copr: 'epel-7-x86_64'
           debug: ${{ secrets.ACTIONS_STEP_DEBUG }}
           test_name: '7to8'
+          tmt_context: 'distro=rhel-7'
 
       - name: Schedule regression testing for 8to9
         id: run_test_8to9
@@ -166,3 +167,4 @@ jobs:
           debug: ${{ secrets.ACTIONS_STEP_DEBUG }}
           test_name: '8to9'
           env_vars: 'TARGET_RELEASE=9.0;TARGET_KERNEL=el9;RHSM_SKU=RH00069;RHSM_REPOS=rhel-8-for-x86_64-appstream-beta-rpms,rhel-8-for-x86_64-baseos-beta-rpms;LEAPP_EXEC_ENV_VARS=LEAPP_DEVEL_TARGET_PRODUCT_TYPE=beta'
+          tmt_context: 'distro=rhel-8'
