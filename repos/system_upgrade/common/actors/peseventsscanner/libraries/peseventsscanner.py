@@ -626,8 +626,8 @@ def filter_out_out_pkgs(event_in_pkgs, event_out_pkgs):
     to gdbm and gdbm-libs, we would incorrectly mandate removing gdbm without this filter. But for example in case of
     a split of Cython to python2-Cython and python3-Cython, we will correctly mandate removing Cython.
     """
-    out_pkgs_keys = {(p.name, p.modulestream) for p in event_out_pkgs}
-    return {p for p in event_in_pkgs if (p.name, p.modulestream) not in out_pkgs_keys}
+    out_pkgs_keys = {p.name for p in event_out_pkgs}
+    return {p for p in event_in_pkgs if p.name not in out_pkgs_keys}
 
 
 SKIPPED_PKGS_MSG = (
