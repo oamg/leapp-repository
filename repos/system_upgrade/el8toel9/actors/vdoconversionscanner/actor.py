@@ -1,8 +1,7 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import vdoconversionscanner
 from leapp.models import InstalledRedHatSignedRPM, StorageInfo, VdoConversionInfo
-from leapp.reporting import Report
-from leapp.tags import IPUWorkflowTag, FactsPhaseTag
+from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 
 class VdoConversionScanner(Actor):
@@ -18,43 +17,52 @@ class VdoConversionScanner(Actor):
     The `VdoConversionScanner` actor provides a pre-upgrade check for VDO
     devices.  Consuming the StorageInfo model `VdoConversionScanner` iterates
     over the contained lsblk information and checks each disk or partition for
-    being a VDO device.  There are three categories of devices in the eyes of
+    being a VDO device.  There are four categories of devices in the eyes of
     `VdoConversionScanner`:
 
       - not a VDO device
       - a pre-conversion VDO device
       - a post-conversion VDO device
+      - a device not falling into any of the above
 
-    Those devices identified as not a VDO device are skipped.  Those identified
-    as pre-conversion VDOs have their identifying data stored in a
-    VdoPreConversion model; their simple existence is sufficient reason to
-    prevent upgrade.  Devices identified as a post-conversion VDO device
-    require an additional check to determine if they should prevent upgrade.
+    Attempts to definitively identify a device as belonging to one of the first
+    three listed categories above may fail.  These devices may or may not be an
+    issue for upgrade.
 
-    Theoretically a VDO device may not complete its conversion to LVM-based
-    management (e.g., via a poorly timed system crash during the conversion).
-    For those VDO device's identified (at VDO level) as post-conversion
-    `VdoConversionScanner` performs an additional check to determine if the
-    device is identified by blkid as an LVM2_member.  This information is
-    recorded in the VdoPostConversion model.
+    If a device could not be identified as either a VDO device or not results
+    in that device's information being recorded in a
+    VdoConversionUndeterminedDevice model.  This includes both the situation
+    where LVM is installed on the system but the VDO management software is
+    not as well as the situation where both are installed but the check of
+    the device encountered an unexpected error.
 
-    Note that unexpected exit codes from querying a device to identify if it is
-    a VDO device or from from blkid in checking if the VDO device has completed
-    conversion to LVM-based management will cause VdoConversionScanner to
-    generate an inhibitory report as without being able to obtain the necessary
-    information the only safe course of action is to prevent upgrade.
+    Devices identified as not a VDO device are skipped.
 
-    The generated VdoPreConversion and VdoPostConversion models are used
-    together to produce the VdoConversionInfo model.  This latter model is
-    consumed by the CheckVdo actor (executed during ChecksPhase) which, based
-    on the contents of the model, may produce an upgrade inhibitory report.
+    Devices identified as pre-conversion VDOs have their identifying data
+    stored in a VdoConversionPreDevice model; their simple existence is
+    sufficient reason to prevent upgrade.
+
+    A post-conversion (at VDO level) VDO device may not have completed its
+    conversion to LVM-based management (e.g., via a poorly timed system crash
+    during the conversion). For those VDO device's identified as
+    post-conversion `VdoConversionScanner` performs an additional check to
+    determine if the device is identified by blkid as an LVM2_member.  As the
+    invocation of blkid may fail for reasons outside this scanner's control if
+    such happens the device's completion status will be set to indicate it did
+    not complete conversion.
+
+    The generated VdoConversionPostDevice, VdoConversionPreDevice and
+    VdoConversionUndeterminedDevice models are used together to produce the
+    VdoConversionInfo model.  This latter model is consumed by the CheckVdo
+    actor (executed during ChecksPhase) which, based on the contents of the
+    model, may produce upgrade inhibitory reports.
     """
 
     name = 'vdo_conversion_scanner'
     consumes = (InstalledRedHatSignedRPM, StorageInfo)
-    produces = (Report, VdoConversionInfo)
+    produces = (VdoConversionInfo,)
     tags = (IPUWorkflowTag, FactsPhaseTag)
 
     def process(self):
-        for storqge_info in self.consume(StorageInfo):
-            self.produce(vdoconversionscanner.get_info(storqge_info))
+        for storage_info in self.consume(StorageInfo):
+            self.produce(vdoconversionscanner.get_info(storage_info))
