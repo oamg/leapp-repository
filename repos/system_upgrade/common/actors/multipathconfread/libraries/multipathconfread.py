@@ -3,15 +3,15 @@ import os
 
 from leapp.libraries.common import multipathutil
 from leapp.libraries.common.rpms import has_package
+from leapp.libraries.stdlib import api
 from leapp.models import (
     CopyFile,
     InstalledRedHatSignedRPM,
     MultipathConfFacts,
     MultipathConfig,
     MultipathConfigOption,
-    TargetUserSpaceUpgradeTasks,
+    TargetUserSpaceUpgradeTasks
 )
-from leapp.libraries.stdlib import api
 
 
 def _change_existing_option(curr_options, opt_name, opt_value):
