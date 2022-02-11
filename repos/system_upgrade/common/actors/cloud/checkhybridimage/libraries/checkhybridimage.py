@@ -21,7 +21,7 @@ def is_grubenv_symlink_to_efi():
 def is_azure_agent_installed():
     """Check whether 'WALinuxAgent' package is installed."""
     upg_path = rhui.get_upg_path()
-    agent_pkg = rhui.RHUI_CLOUD_MAP[upg_path]['azure']['agent_pkg']
+    agent_pkg = rhui.RHUI_CLOUD_MAP[upg_path].get('azure', {}).get('agent_pkg', '')
     return has_package(InstalledRPM, agent_pkg)
 
 

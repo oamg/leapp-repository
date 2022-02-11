@@ -94,6 +94,48 @@ RHUI_CLOUD_MAP = {
                 ('leapp-aws.repo', YUM_REPOS_PATH)
             ],
         },
+        # not yet enabled
+        'aws-sap-e4s': {
+            'src_pkg': 'rh-amazon-rhui-client-sap-bundle',
+            'target_pkg': 'rh-amazon-rhui-client-sap-bundle-e4s',
+            'leapp_pkg': 'leapp-rhui-aws-sap-e4s',
+            'leapp_pkg_repo': 'leapp-aws-sap-e4s.repo',
+            'files_map': [
+                ('rhui-client-config-server-9-sap-bundle.crt', RHUI_PKI_PRODUCT_DIR),
+                ('rhui-client-config-server-9-sap-bundle.key', RHUI_PKI_DIR),
+                ('content-rhel9-sap.crt', RHUI_PKI_PRODUCT_DIR),
+                ('content-rhel9-sap.key', RHUI_PKI_DIR),
+                ('cdn.redhat.com-chain.crt', RHUI_PKI_DIR),
+                (AWS_DNF_PLUGIN_NAME, DNF_PLUGIN_PATH_PY2),
+                ('leapp-aws-sap-e4s.repo', YUM_REPOS_PATH)
+            ],
+        },
+        # not yet enabled
+        'azure': {
+            'src_pkg': 'rhui-azure-rhel8',
+            'target_pkg': 'rhui-azure-rhel9',
+            'agent_pkg': 'WALinuxAgent',
+            'leapp_pkg': 'leapp-rhui-azure',
+            'leapp_pkg_repo': 'leapp-azure.repo',
+            'files_map': [
+                ('content.crt', RHUI_PKI_PRODUCT_DIR),
+                ('key.pem', RHUI_PKI_PRIVATE_DIR),
+                ('leapp-azure.repo', YUM_REPOS_PATH)
+            ],
+        },
+        # not yet enabled
+        'azure-sap': {
+            'src_pkg': 'rhui-azure-rhel8-base-sap-ha',
+            'target_pkg': 'rhui-azure-rhel9-sap-ha',
+            'agent_pkg': 'WALinuxAgent',
+            'leapp_pkg': 'leapp-rhui-azure-sap',
+            'leapp_pkg_repo': 'leapp-azure-sap.repo',
+            'files_map': [
+                ('content-rhel9-sap-ha.crt', RHUI_PKI_PRODUCT_DIR),
+                ('key-rhel9-sap-ha.pem', RHUI_PKI_DIR),
+                ('leapp-azure-sap.repo', YUM_REPOS_PATH)
+            ],
+        },
     },
 }
 
