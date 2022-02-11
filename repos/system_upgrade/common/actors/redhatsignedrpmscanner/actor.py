@@ -58,10 +58,10 @@ class RedHatSignedRpmScanner(Actor):
             """Whitelist Azure config package."""
             upg_path = rhui.get_upg_path()
 
-            src_pkg = rhui.RHUI_CLOUD_MAP[upg_path]['azure']['src_pkg']
-            src_pkg_sap = rhui.RHUI_CLOUD_MAP[upg_path]['azure-sap']['src_pkg']
-            target_pkg = rhui.RHUI_CLOUD_MAP[upg_path]['azure']['target_pkg']
-            target_pkg_sap = rhui.RHUI_CLOUD_MAP[upg_path]['azure-sap']['target_pkg']
+            src_pkg = rhui.RHUI_CLOUD_MAP[upg_path].get('azure', {}).get('src_pkg')
+            src_pkg_sap = rhui.RHUI_CLOUD_MAP[upg_path].get('azure-sap', {}).get('src_pkg')
+            target_pkg = rhui.RHUI_CLOUD_MAP[upg_path].get('azure', {}).get('target_pkg')
+            target_pkg_sap = rhui.RHUI_CLOUD_MAP[upg_path].get('azure-sap', {}).get('target_pkg')
             return pkg.name in [src_pkg, src_pkg_sap, target_pkg, target_pkg_sap]
 
         for rpm_pkgs in self.consume(InstalledRPM):
