@@ -204,6 +204,12 @@ def prepare_configuration(args):
     os.environ['LEAPP_UPGRADE_PATH_TARGET_RELEASE'] = target_version
     os.environ['LEAPP_UPGRADE_PATH_FLAVOUR'] = flavor
 
+    current_version = command_utils.get_os_release_version_id('/etc/os-release')
+    os.environ['LEAPP_IPU_IN_PROGRESS'] = '{source}to{target}'.format(
+        source=command_utils.get_major_version(current_version),
+        target=command_utils.get_major_version(target_version)
+    )
+
     configuration = {
         'debug': os.getenv('LEAPP_DEBUG', '0'),
         'verbose': os.getenv('LEAPP_VERBOSE', '0'),
