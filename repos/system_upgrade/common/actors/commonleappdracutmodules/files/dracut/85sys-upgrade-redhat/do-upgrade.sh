@@ -29,7 +29,7 @@ export LEAPP3_BIN=$LEAPPHOME/leapp3
 
 export NEWROOT=${NEWROOT:-"/sysroot"}
 
-NSPAWN_OPTS="--capability=all --bind=/dev --bind=/dev/pts --bind=/proc --bind=/run/udev"
+NSPAWN_OPTS="--capability=all --bind=/dev --bind=/dev/pts --bind=/proc --bind=/run/udev --bind=/run/lock"
 [ -d /dev/mapper ] && NSPAWN_OPTS="$NSPAWN_OPTS --bind=/dev/mapper"
 if [ "$RHEL_OS_MAJOR_RELEASE" == "8" ]; then
     # IPU 7 -> 8
