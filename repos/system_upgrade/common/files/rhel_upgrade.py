@@ -22,7 +22,7 @@ Basic subcommands for the plugin.
                   BZ: 1976932 - not enough space on disk,
                   PR: https://github.com/oamg/leapp-repository/pull/734
                 )
-    upgrade  -> perform the DNF transactino using the cached data only
+    upgrade  -> perform the DNF transaction using the cached data only
 """
 
 
