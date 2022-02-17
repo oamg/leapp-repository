@@ -1,7 +1,7 @@
 import re
 
 from leapp.libraries.stdlib import api, run
-from leapp.models import PCIDevice, PCIDevices
+from leapp.models import DetectedDeviceOrDriver, DeviceDriverDeprecationData, PCIDevice, PCIDevices
 
 # Regex to capture Vendor, Device and SVendor and SDevice values
 PCI_ID_REG = re.compile(r"(?<=Vendor:\t|Device:\t)\w+")
@@ -69,6 +69,19 @@ def parse_pci_devices(pci_textual, pci_numeric):
     ]
 
 
+def produce_detected_devices(devices):
+    prefix_re = re.compile('0x')
+    entry_lookup = {
+        prefix_re.sub(' ', entry.device_id): entry
+        for message in api.consume(DeviceDriverDeprecationData) for entry in message.entries
+    }
+    api.produce(*[
+        DetectedDeviceOrDriver(**entry_lookup[device.pci_id].dump())
+        for device in devices
+        if device.pci_id in entry_lookup
+    ])
+
+
 def produce_pci_devices(producer, devices):
     """ Produce a Leapp message with all PCI devices """
     producer(PCIDevices(devices=devices))
@@ -79,4 +92,5 @@ def scan_pci_devices(producer):
     pci_textual = run(['lspci', '-vmmk'], checked=False)['stdout']
     pci_numeric = run(['lspci', '-vmmkn'], checked=False)['stdout']
     devices = parse_pci_devices(pci_textual, pci_numeric)
+    produce_detected_devices(devices)
     produce_pci_devices(producer, devices)
