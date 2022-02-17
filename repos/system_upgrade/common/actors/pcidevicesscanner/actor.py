@@ -1,7 +1,7 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import pcidevicesscanner
-from leapp.models import PCIDevices
-from leapp.tags import IPUWorkflowTag, FactsPhaseTag
+from leapp.models import DetectedDeviceOrDriver, DeviceDriverDeprecationData, PCIDevices
+from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 
 class PCIDevicesScanner(Actor):
@@ -12,8 +12,8 @@ class PCIDevicesScanner(Actor):
     """
 
     name = 'pci_devices_scanner'
-    consumes = ()
-    produces = (PCIDevices,)
+    consumes = (DeviceDriverDeprecationData,)
+    produces = (PCIDevices, DetectedDeviceOrDriver)
     tags = (IPUWorkflowTag, FactsPhaseTag,)
 
     def process(self):
