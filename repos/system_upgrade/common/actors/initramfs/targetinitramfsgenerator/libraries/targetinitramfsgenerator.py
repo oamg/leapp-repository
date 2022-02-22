@@ -1,12 +1,8 @@
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.stdlib import api, CalledProcessError, run
-from leapp.models import (
-    InitrdIncludes,  # deprecated
-    InstalledTargetKernelVersion,
-    TargetInitramfsTasks,
-)
+from leapp.models import InitrdIncludes  # deprecated
+from leapp.models import InstalledTargetKernelVersion, TargetInitramfsTasks
 from leapp.utils.deprecation import suppress_deprecation
-
 
 DRACUT_DIR = '/usr/lib/dracut/modules.d/'
 
@@ -75,9 +71,9 @@ def process():
         module_names = list({module.name for module in modules})
         cmd = ['dracut', '-f', '--kver', target_kernel.version]
         if files:
-            cmd += ['--install', '"{}"'.format(' '.join(files))]
+            cmd += ['--install', '{}'.format(' '.join(files))]
         if modules:
-            cmd += ['--add', '"{}"'.format(' '.join(module_names))]
+            cmd += ['--add', '{}'.format(' '.join(module_names))]
         run(cmd)
     except CalledProcessError as e:
         # just hypothetic check, it should not die
