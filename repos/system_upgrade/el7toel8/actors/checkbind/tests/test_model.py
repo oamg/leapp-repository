@@ -1,4 +1,4 @@
-from leapp.libraries.actor import model
+from leapp.libraries.actor import iscmodel
 from leapp.libraries.common import isccfg
 from leapp.models import BindFacts
 
@@ -11,7 +11,7 @@ def model_paths(issues_model):
 
 
 def get_facts(cfg):
-    facts = model.get_facts(cfg)
+    facts = iscmodel.get_facts(cfg)
     assert isinstance(facts, BindFacts)
     return facts
 
