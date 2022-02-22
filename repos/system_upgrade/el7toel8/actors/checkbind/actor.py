@@ -1,6 +1,6 @@
 from leapp import reporting
 from leapp.actors import Actor
-from leapp.libraries.actor import model
+from leapp.libraries.actor import iscmodel
 from leapp.libraries.stdlib import api
 from leapp.models import BindFacts, InstalledRedHatSignedRPM
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
@@ -29,8 +29,8 @@ class CheckBind(Actor):
             self.log.debug('bind is not installed')
             return
 
-        facts = model.get_facts('/etc/named.conf')
-        report = model.make_report(facts)
+        facts = iscmodel.get_facts('/etc/named.conf')
+        report = iscmodel.make_report(facts)
 
         if report:
             api.produce(facts)
