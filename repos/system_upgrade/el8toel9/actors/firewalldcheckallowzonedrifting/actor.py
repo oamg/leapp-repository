@@ -33,7 +33,7 @@ class FirewalldCheckAllowZoneDrifting(Actor):
                 return
 
         create_report([
-            reporting.Title('Unsupported Firewalld Configuration In Use'),
+            reporting.Title('Firewalld Configuration AllowZoneDrifting Is Unsupported'),
             reporting.Summary('Firewalld has enabled configuration option '
                               '"{conf_key}" which has been removed in RHEL-9. '
                               'New behavior is as if "{conf_key}" was set to "no".'.format(
