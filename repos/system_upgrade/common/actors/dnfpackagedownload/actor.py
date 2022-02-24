@@ -2,12 +2,13 @@ from leapp.actors import Actor
 from leapp.libraries.common import dnfplugin
 from leapp.models import (
     DNFPluginTask,
+    DNFWorkaround,
     FilteredRpmTransactionTasks,
     RHUIInfo,
     StorageInfo,
     TargetUserSpaceInfo,
     UsedTargetRepositories,
-    XFSPresence,
+    XFSPresence
 )
 from leapp.tags import DownloadPhaseTag, IPUWorkflowTag
 
@@ -23,6 +24,7 @@ class DnfPackageDownload(Actor):
     name = 'dnf_package_download'
     consumes = (
         DNFPluginTask,
+        DNFWorkaround,
         FilteredRpmTransactionTasks,
         RHUIInfo,
         StorageInfo,

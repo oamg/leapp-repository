@@ -5,12 +5,13 @@ from leapp.libraries.common import dnfplugin
 from leapp.libraries.stdlib import run
 from leapp.models import (
     DNFPluginTask,
+    DNFWorkaround,
     FilteredRpmTransactionTasks,
     RHSMInfo,
     StorageInfo,
     TargetUserSpaceInfo,
     TransactionCompleted,
-    UsedTargetRepositories,
+    UsedTargetRepositories
 )
 from leapp.tags import IPUWorkflowTag, RPMUpgradePhaseTag
 
@@ -26,6 +27,7 @@ class DnfUpgradeTransaction(Actor):
     name = 'dnf_upgrade_transaction'
     consumes = (
         DNFPluginTask,
+        DNFWorkaround,
         FilteredRpmTransactionTasks,
         RHSMInfo,
         StorageInfo,

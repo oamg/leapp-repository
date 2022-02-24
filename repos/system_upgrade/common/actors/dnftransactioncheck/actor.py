@@ -2,13 +2,14 @@ from leapp.actors import Actor
 from leapp.libraries.common import dnfplugin
 from leapp.models import (
     DNFPluginTask,
+    DNFWorkaround,
     FilteredRpmTransactionTasks,
     StorageInfo,
     TargetUserSpaceInfo,
     UsedTargetRepositories,
-    XFSPresence,
+    XFSPresence
 )
-from leapp.tags import TargetTransactionChecksPhaseTag, IPUWorkflowTag
+from leapp.tags import IPUWorkflowTag, TargetTransactionChecksPhaseTag
 
 
 class DnfTransactionCheck(Actor):
@@ -19,6 +20,7 @@ class DnfTransactionCheck(Actor):
     name = 'dnf_transaction_check'
     consumes = (
         DNFPluginTask,
+        DNFWorkaround,
         FilteredRpmTransactionTasks,
         StorageInfo,
         TargetUserSpaceInfo,
