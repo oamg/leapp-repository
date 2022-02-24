@@ -6,12 +6,9 @@ import shutil
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import dnfconfig, guards, mounting, overlaygen, rhsm, utils
-from leapp.libraries.common.config.version import (
-    get_source_major_version,
-    get_target_major_version,
-    get_target_version
-)
+from leapp.libraries.common.config.version import get_target_major_version, get_target_version
 from leapp.libraries.stdlib import api, CalledProcessError, config
+from leapp.models import DNFWorkaround
 
 DNF_PLUGIN_NAME = 'rhel_upgrade.py'
 
@@ -236,12 +233,20 @@ def _prepare_transaction(used_repos, target_userspace_info, binds=()):
         yield context, list(target_repoids), target_userspace_info
 
 
-def _apply_yum_workaround(context):
+def apply_workarounds(context=None):
     """
-    Apply the yum workaround in the given context environment if on RHEL 7.
+    Apply registered workarounds in the given context environment
     """
-    if get_source_major_version() == '7':
-        utils.apply_yum_workaround(context)
+    context = context or mounting.NotIsolatedActions(base_dir='/')
+    for workaround in api.consume(DNFWorkaround):
+        try:
+            api.show_message('Applying transaction workaround - {}'.format(workaround.display_name))
+            context.call(['/bin/bash', '-c', workaround.script_path])
+        except (OSError, CalledProcessError) as e:
+            raise StopActorExecutionError(
+                message=('Failed to exceute script to apply transaction workaround {display_name}.'
+                         ' Message: {error}'.format(error=str(e), display_name=workaround.display_name))
+            )
 
 
 def install_initramdisk_requirements(packages, target_userspace_info, used_repos):
@@ -353,7 +358,7 @@ def perform_transaction_check(target_userspace_info, used_repos, tasks, xfs_info
     """
     with _prepare_perform(used_repos=used_repos, target_userspace_info=target_userspace_info, xfs_info=xfs_info,
                           storage_info=storage_info) as (context, overlay, target_repoids):
-        _apply_yum_workaround(overlay.nspawn())
+        apply_workarounds(overlay.nspawn())
         dnfconfig.exclude_leapp_rpms(context)
         _transaction(
             context=context, stage='check', target_repoids=target_repoids, plugin_info=plugin_info, tasks=tasks
@@ -366,7 +371,7 @@ def perform_rpm_download(target_userspace_info, used_repos, tasks, xfs_info, sto
     """
     with _prepare_perform(used_repos=used_repos, target_userspace_info=target_userspace_info, xfs_info=xfs_info,
                           storage_info=storage_info) as (context, overlay, target_repoids):
-        _apply_yum_workaround(overlay.nspawn())
+        apply_workarounds(overlay.nspawn())
         dnfconfig.exclude_leapp_rpms(context)
         _transaction(
             context=context, stage='download', target_repoids=target_repoids, plugin_info=plugin_info, tasks=tasks,
@@ -380,7 +385,7 @@ def perform_dry_run(target_userspace_info, used_repos, tasks, xfs_info, storage_
     """
     with _prepare_perform(used_repos=used_repos, target_userspace_info=target_userspace_info, xfs_info=xfs_info,
                           storage_info=storage_info) as (context, overlay, target_repoids):
-        _apply_yum_workaround(overlay.nspawn())
+        apply_workarounds(overlay.nspawn())
         _transaction(
             context=context, stage='dry-run', target_repoids=target_repoids, plugin_info=plugin_info, tasks=tasks,
             test=True, on_aws=on_aws

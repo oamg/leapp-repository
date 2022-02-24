@@ -3,6 +3,7 @@ from leapp.libraries.common import dnfplugin
 from leapp.models import (
     BootContent,
     DNFPluginTask,
+    DNFWorkaround,
     FilteredRpmTransactionTasks,
     RHUIInfo,
     StorageInfo,
@@ -26,6 +27,7 @@ class DnfDryRun(Actor):
     consumes = (
         BootContent,
         DNFPluginTask,
+        DNFWorkaround,
         FilteredRpmTransactionTasks,
         RHUIInfo,
         StorageInfo,

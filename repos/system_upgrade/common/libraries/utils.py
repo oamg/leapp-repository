@@ -7,6 +7,7 @@ import six
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import mounting
 from leapp.libraries.stdlib import api, CalledProcessError, config, run, STDOUT
+from leapp.utils.deprecation import deprecated
 
 
 def parse_config(cfg=None, strict=True):
@@ -46,6 +47,11 @@ def makedirs(path, mode=0o777, exists_ok=True):
     mounting._makedirs(path=path, mode=mode, exists_ok=exists_ok)
 
 
+@deprecated(since='2022-02-03', message=(
+        'The "apply_yum_workaround" function has been deprecated, use "DNFWorkaround" '
+        'message as used in the successing "RegisterYumAdjustment" actor.'
+    )
+)
 def apply_yum_workaround(context=None):
     """
     Applies a workaround on the system to allow the upgrade to succeed for yum/dnf.
