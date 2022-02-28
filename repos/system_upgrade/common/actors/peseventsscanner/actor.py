@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.libraries.actor.peseventsscanner import pes_events_scanner
+from leapp.libraries.actor.pes_events_scanner import process
 from leapp.models import (
     EnabledModules,
     InstalledRedHatSignedRPM,
@@ -37,4 +37,4 @@ class PesEventsScanner(Actor):
     tags = (IPUWorkflowTag, FactsPhaseTag)
 
     def process(self):
-        pes_events_scanner('/etc/leapp/files', 'pes-events.json')
+        process()
