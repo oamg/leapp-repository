@@ -2,7 +2,6 @@ from leapp.libraries.common.config import get_target_product_channel
 from leapp.libraries.common.config.version import get_source_major_version, get_target_major_version
 from leapp.libraries.stdlib import api
 
-
 DEFAULT_PESID = {
     '7': 'rhel7-base',
     '8': 'rhel8-BaseOS',
@@ -23,7 +22,7 @@ class RepoMapDataHandler(object):
     Provide the basic functionality to work with the repository data easily.
     """
 
-    def __init__(self, repo_map, default_channels=None):
+    def __init__(self, repo_map, cloud_provider='', default_channels=None):
         """
         Initialize the object based on the given RepositoriesMapping msg.
 
@@ -50,6 +49,14 @@ class RepoMapDataHandler(object):
         # Make self.prio_channel None if the user did not specify any target channels, so that self.default_channels
         # will be used instead
         self.prio_channel = get_target_product_channel(default=None)
+
+        # Cloud provider might have multiple variants: aws: (aws, aws-sap-es4), azure: (azure, azure-sap)
+        if cloud_provider.startswith('aws'):
+            self.cloud_provider = 'aws'
+        elif cloud_provider.startswith('azure'):
+            self.cloud_provider = 'azure'
+        else:
+            self.cloud_provider = cloud_provider
 
     def set_default_channels(self, default_channels):
         """
@@ -81,6 +88,9 @@ class RepoMapDataHandler(object):
         """
         Retrieve the PESIDRepositoryEntry that matches the given repoid and OS major version.
 
+        If multiple pesid repo entries with the same repoid were found, the entry with rhui matching the source
+        system's rhui info will be returned. If no entry with matching rhui exists, the CDN one is returned if any.
+
         :param repoid: RepoID that should the PESIDRepositoryEntry match.
         :type repoid: str
         :param major_version: RepoID that should the PESIDRepositoryEntry match.
@@ -89,10 +99,25 @@ class RepoMapDataHandler(object):
                  entry could be found.
         :rtype: Optional[PESIDRepositoryEntry]
         """
+        matching_pesid_repos = []
         for pesid_repo in self.repositories:
             if pesid_repo.repoid == repoid and pesid_repo.major_version == major_version:
+                matching_pesid_repos.append(pesid_repo)
+
+        if len(matching_pesid_repos) == 1:
+            # Perform no heuristics if only a single pesid repository with matching repoid found
+            return matching_pesid_repos[0]
+
+        # Multiple (different) repositories with the same repoid found (can happen in clouds) - prefer the cloud one
+        cdn_pesid_repo = None
+        for pesid_repo in matching_pesid_repos:
+            if pesid_repo.rhui == self.cloud_provider:
                 return pesid_repo
-        return None
+            if not pesid_repo.rhui:
+                cdn_pesid_repo = pesid_repo
+
+        # If we did not find a repoid for the current cloud provider, return the CDN repository
+        return cdn_pesid_repo  # might be None e.g. if we are on Azure with an AWS repository enabled (unlikely)
 
     def get_target_pesids(self, source_pesid):
         """

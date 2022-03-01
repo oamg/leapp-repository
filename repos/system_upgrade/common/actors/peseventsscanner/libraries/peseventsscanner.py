@@ -22,6 +22,7 @@ from leapp.models import (
     RepositoriesFacts,
     RepositoriesMapping,
     RepositoriesSetupTasks,
+    RHUIInfo,
     RpmTransactionTasks
 )
 
@@ -147,7 +148,9 @@ def _get_repositories_mapping(target_pesids):
             details={'Problem': 'Did not receive a message with mapped repositories'}
         )
 
-    repomap = peseventsscanner_repomap.RepoMapDataHandler(repositories_map_msg)
+    rhui_info = next(api.consume(RHUIInfo), RHUIInfo(provider=''))
+
+    repomap = peseventsscanner_repomap.RepoMapDataHandler(repositories_map_msg, cloud_provider=rhui_info.provider)
     # NOTE: We have to calculate expected target repositories
     # like in the setuptargetrepos actor. It's planned to handle this in different
     # way in future...
