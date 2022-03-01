@@ -1,5 +1,6 @@
+from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import isccfg
-from leapp.libraries.stdlib import api, run
+from leapp.libraries.stdlib import api, CalledProcessError, run
 
 # Callback for walk function
 callbacks = {
@@ -22,7 +23,13 @@ def parser_file(parser, path):
 def make_backup(path, backup_suffix='.leapp'):
     """Make backup of a file before modification."""
     backup_path = path + backup_suffix
-    run(['cp', '--preserve=all', path, backup_path])
+    try:
+        run(['cp', '--preserve=all', path, backup_path])
+    except CalledProcessError as exc:
+        raise StopActorExecutionError(
+            'Could not create a backup copy',
+            details={'details': 'An exception during backup raised {}'.format(str(exc))}
+        )
 
 
 def update_section(parser, section):
