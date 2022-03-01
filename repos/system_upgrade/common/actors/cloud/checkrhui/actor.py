@@ -11,7 +11,7 @@ from leapp.models import (
     RpmTransactionTasks
 )
 from leapp.reporting import create_report, Report
-from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
+from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 
 class CheckRHUI(Actor):
@@ -29,7 +29,7 @@ class CheckRHUI(Actor):
         Report, DNFPluginTask,
         RpmTransactionTasks,
     )
-    tags = (ChecksPhaseTag, IPUWorkflowTag)
+    tags = (FactsPhaseTag, IPUWorkflowTag)
 
     def process(self):
         upg_path = rhui.get_upg_path()

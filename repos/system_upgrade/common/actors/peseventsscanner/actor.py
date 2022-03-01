@@ -8,6 +8,7 @@ from leapp.models import (
     RepositoriesFacts,
     RepositoriesMapping,
     RepositoriesSetupTasks,
+    RHUIInfo,
     RpmTransactionTasks
 )
 from leapp.reporting import Report
@@ -29,6 +30,7 @@ class PesEventsScanner(Actor):
         RepositoriesBlacklisted,
         RepositoriesFacts,
         RepositoriesMapping,
+        RHUIInfo,
         RpmTransactionTasks,
     )
     produces = (PESRpmTransactionTasks, RepositoriesSetupTasks, Report)

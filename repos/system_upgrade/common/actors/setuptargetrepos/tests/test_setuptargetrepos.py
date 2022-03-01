@@ -6,15 +6,15 @@ from leapp.libraries.common.testutils import CurrentActorMocked, produce_mocked
 from leapp.libraries.stdlib import api
 from leapp.models import (
     CustomTargetRepository,
-    TargetRepositories,
-    RepositoryData,
-    RepositoryFile,
-    RepositoriesFacts,
     PESIDRepositoryEntry,
     RepoMapEntry,
+    RepositoriesBlacklisted,
+    RepositoriesFacts,
     RepositoriesMapping,
     RepositoriesSetupTasks,
-    RepositoriesBlacklisted
+    RepositoryData,
+    RepositoryFile,
+    TargetRepositories
 )
 
 

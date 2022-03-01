@@ -4,14 +4,15 @@ from leapp.libraries.common.config.version import get_source_major_version
 from leapp.libraries.stdlib import api
 from leapp.models import (
     CustomTargetRepository,
-    RHELTargetRepository,
     RepositoriesBlacklisted,
     RepositoriesFacts,
     RepositoriesMapping,
     RepositoriesSetupTasks,
+    RHELTargetRepository,
+    RHUIInfo,
     SkippedRepositories,
     TargetRepositories,
-    UsedRepositories,
+    UsedRepositories
 )
 
 
@@ -59,7 +60,8 @@ def _get_used_repo_dict():
 
 def _setup_repomap_handler(src_repoids):
     repo_mappig_msg = next(api.consume(RepositoriesMapping), RepositoriesMapping())
-    repomap = setuptargetrepos_repomap.RepoMapDataHandler(repo_mappig_msg)
+    rhui_info = next(api.consume(RHUIInfo), RHUIInfo(provider=''))
+    repomap = setuptargetrepos_repomap.RepoMapDataHandler(repo_mappig_msg, cloud_provider=rhui_info.provider)
     # TODO(pstodulk): what about skip this completely and keep the default 'ga'..?
     default_channels = setuptargetrepos_repomap.get_default_repository_channels(repomap, src_repoids)
     repomap.set_default_channels(default_channels)

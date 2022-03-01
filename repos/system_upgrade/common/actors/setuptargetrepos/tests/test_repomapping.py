@@ -1,19 +1,13 @@
+import functools
 import logging
 
 import pytest
 
 from leapp.libraries.actor import setuptargetrepos_repomap
-from leapp.libraries.actor.setuptargetrepos_repomap import (
-    get_default_repository_channels,
-    RepoMapDataHandler
-)
+from leapp.libraries.actor.setuptargetrepos_repomap import get_default_repository_channels, RepoMapDataHandler
 from leapp.libraries.common.testutils import CurrentActorMocked, produce_mocked
 from leapp.libraries.stdlib import api
-from leapp.models import (
-    PESIDRepositoryEntry,
-    RepoMapEntry,
-    RepositoriesMapping,
-)
+from leapp.models import PESIDRepositoryEntry, RepoMapEntry, RepositoriesMapping
 
 
 def make_pesid_repo(pesid, major_version, repoid, arch='x86_64', repo_type='rpm', channel='ga', rhui=''):
@@ -633,3 +627,57 @@ def test_get_expected_target_pesid_repos_with_priority_channel_set(monkeypatch):
     fail_description = 'get_expected_target_peid_repos does not correcly respect preferred channel.'
     assert {'pesid2': repositories_mapping.repositories[2],
             'pesid3': repositories_mapping.repositories[4]} == target_repoids, fail_description
+
+
+@pytest.mark.parametrize('rhui', ('', 'aws', 'aws-sap-e4s', 'azure', 'azure-sap'))
+def test_multiple_repoids_in_repomapping(monkeypatch, rhui):
+    """
+    Tests whether a correct repository is selected when running on cloud with multiple repositories having the same ID.
+
+    In such a case, the actor should use the cloud provider as a guide on which of the repositores should it pick.
+    """
+
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(arch='x86_64', src_ver='7.9', dst_ver='8.6'))
+
+    mk_rhui_el7_pesid_repo = functools.partial(PESIDRepositoryEntry,
+                                               pesid='rhel7-rhui',
+                                               major_version='7',
+                                               repoid='repoid7-rhui',
+                                               repo_type='rpm',
+                                               arch='x86_64',
+                                               channel='ga')
+
+    mk_rhui_el8_pesid_repo = functools.partial(PESIDRepositoryEntry,
+                                               pesid='rhel8-rhui',
+                                               major_version='8',
+                                               repo_type='rpm',
+                                               arch='x86_64',
+                                               channel='ga')
+
+    repomap = RepositoriesMapping(
+        mapping=[RepoMapEntry(source='rhel7-rhui', target=['rhel8-rhui'])],
+        repositories=[
+            mk_rhui_el7_pesid_repo(rhui=''),
+            mk_rhui_el7_pesid_repo(rhui='aws'),
+            mk_rhui_el7_pesid_repo(rhui='azure'),
+            mk_rhui_el8_pesid_repo(repoid='repoid8-rhui', rhui=''),
+            mk_rhui_el8_pesid_repo(repoid='repoid8-rhui-aws', rhui='aws'),
+            mk_rhui_el8_pesid_repo(repoid='repoid8-rhui-azure', rhui='azure'),
+        ]
+    )
+
+    handler = RepoMapDataHandler(repomap, cloud_provider=rhui)
+    target_repoids = handler.get_expected_target_pesid_repos(['repoid7-rhui'])
+
+    assert len(target_repoids) == 1
+
+    expected_suffixes = {
+        '': '',
+        'aws': '-aws',
+        'aws-sap-e4s': '-aws',
+        'azure': '-azure',
+        'azure-sap': '-azure'
+    }
+
+    assert 'rhel8-rhui' in target_repoids
+    assert target_repoids['rhel8-rhui'].repoid == 'repoid8-rhui{0}'.format(expected_suffixes[rhui])
