@@ -289,6 +289,8 @@ def _default_grub_info():
         ])
     else:
         for line in run(['cat', default_grb_fpath], split=True)['stdout']:
+            if not line.strip():
+                continue
             name, value = tuple(map(type(line).strip, line.split('=', 1)))
             yield DefaultGrub(
                 name=name,
