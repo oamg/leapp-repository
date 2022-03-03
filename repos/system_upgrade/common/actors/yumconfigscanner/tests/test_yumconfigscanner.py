@@ -24,7 +24,7 @@ def assert_plugins_identified_as_enabled(expected_plugins, identified_plugins):
 @pytest.mark.parametrize(
     ('source_major_version', 'yum_command'),
     [
-        ('7', ['yum']),
+        ('7', ['yum', '--setopt=debuglevel=2']),
         ('8', ['dnf', '-v']),
     ]
 )
