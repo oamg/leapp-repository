@@ -63,8 +63,13 @@ def scan_enabled_yum_plugins():
     # /etc/yum/pluginconf.d/
 
     if get_source_major_version() == '7':
-        yum_cmd = ['yum']
+        # in case of yum, set debuglevel=2 to be sure the output is always
+        # same. The format of data is different for various debuglevels
+        yum_cmd = ['yum', '--setopt=debuglevel=2']
     else:
+        # the verbose mode in dnf always set particular debuglevel, so the
+        # output is not affected by the default debug level set on the
+        # system
         yum_cmd = ['dnf', '-v']  # On RHEL8 we need to supply an extra switch
 
     yum_output = run(yum_cmd, split=True, checked=False)  # The yum command will certainly fail (does not matter).
