@@ -7,7 +7,7 @@ DIST_VERSION ?= 7
 PKGNAME=leapp-repository
 DEPS_PKGNAME=leapp-el7toel8-deps
 VERSION=`grep -m1 "^Version:" packaging/$(PKGNAME).spec | grep -om1 "[0-9].[0-9.]**"`
-DEPS_VERSION=`grep -m1 "^Version:" packaging/$(DEPS_PKGNAME).spec | grep -om1 "[0-9].[0-9.]**"`
+DEPS_VERSION=`grep -m1 "^Version:" packaging/other_specs/$(DEPS_PKGNAME).spec | grep -om1 "[0-9].[0-9.]**"`
 REPOS_PATH=repos
 _SYSUPG_REPOS="$(REPOS_PATH)/system_upgrade"
 LIBRARY_PATH=
@@ -178,7 +178,7 @@ source: prepare
 	mkdir -p packaging/tmp/
 	@__TIMESTAMP=$(TIMESTAMP) $(MAKE) _build_subpkg
 	@__TIMESTAMP=$(TIMESTAMP) $(MAKE) DIST_VERSION=$$(($(DIST_VERSION) + 1)) _build_subpkg
-	@tar -czf packaging/sources/deps-pkgs.tar.gz -C packaging/RPMS/noarch `ls packaging/RPMS/noarch | grep -o "[^/]*rpm$$"`
+	@tar -czf packaging/sources/deps-pkgs.tar.gz -C packaging/RPMS/noarch `ls -1 packaging/RPMS/noarch | grep -o "[^/]*rpm$$"`
 	@rm -f packaging/RPMS/noarch/*.rpm
 
 srpm: source
@@ -195,8 +195,19 @@ srpm: source
 
 _build_subpkg:
 	@echo "--- Build RPM: $(DEPS_PKGNAME)-$(DEPS_VERSION)-$(RELEASE).. ---"
-	@cp packaging/$(DEPS_PKGNAME).spec packaging/$(DEPS_PKGNAME).spec.bak
+	@cp packaging/other_specs/$(DEPS_PKGNAME).spec packaging/$(DEPS_PKGNAME).spec
 	@sed -i "s/1%{?dist}/$(RELEASE)%{?dist}/g" packaging/$(DEPS_PKGNAME).spec
+	# Let's be explicit about the path to the binary RPMs; Copr builders can override this
+	# IMPORTANT:
+	# Also, explicitly set the _rpmfilename macro. This is super important as
+	# the COPR build servers are using Mock, which redefines the macro, so packages
+	# are stored inside RPMS directory, instead RPMS/%{ARCH}. The macro must be
+	# defined with double '%'. Using just single %, the macro is expanded when
+	# the specfile is loaded, but it is expected to be expanded during
+	# the build process when particular subpackages (RPMs) are created, so
+	# each RPM has the right name. Using the single %, all RPMs would have the
+	# name of the SRPM - which means effectively that only one RPM per build
+	# would be created. (hopefully the explanation is clear :))
 	@rpmbuild -ba packaging/$(DEPS_PKGNAME).spec \
 		--define "_sourcedir `pwd`/packaging/sources"  \
 		--define "_srcrpmdir `pwd`/packaging/SRPMS" \
@@ -205,8 +216,9 @@ _build_subpkg:
 		--define "_rpmdir `pwd`/packaging/RPMS" \
 		--define "rhel $$(($(DIST_VERSION) + 1))" \
 		--define "dist .el$$(($(DIST_VERSION) + 1))" \
-		--define "el$$(($(DIST_VERSION) + 1)) 1" || FAILED=1
-	@mv packaging/$(DEPS_PKGNAME).spec.bak packaging/$(DEPS_PKGNAME).spec
+		--define "el$$(($(DIST_VERSION) + 1)) 1" \
+		--define "_rpmfilename %%{ARCH}/%%{NAME}-%%{VERSION}-%%{RELEASE}.%%{ARCH}.rpm" || FAILED=1
+	@rm -f packaging/$(DEPS_PKGNAME).spec
 
 _build_local: source
 	@echo "--- Build RPM: $(PKGNAME)-$(VERSION)-$(RELEASE).. ---"

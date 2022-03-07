@@ -196,9 +196,9 @@ Requires:   dracut
 
 %build
 %if 0%{?rhel} == 7
-cp -a leapp*deps-el8*rpm repos/system_upgrade/el7toel8/files/bundled-rpms/
+cp -a leapp*deps*el8.noarch.rpm repos/system_upgrade/el7toel8/files/bundled-rpms/
 %else
-cp -a leapp*deps-el9*rpm repos/system_upgrade/el8toel9/files/bundled-rpms/
+cp -a leapp*deps*el9.noarch.rpm repos/system_upgrade/el8toel9/files/bundled-rpms/
 %endif
 
 
