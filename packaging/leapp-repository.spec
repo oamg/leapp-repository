@@ -18,6 +18,10 @@
     # Each of these lead into the removal of leapp rpms as python is changed between
     # major versions of RHEL
     %global __requires_exclude ^python\\(abi\\) = 3\\..+|/usr/libexec/platform-python|/usr/bin/python.*
+    %global _gpg_digest_algo sha256
+    %global _gpg_digest_algo sha256
+    %global _source_filedigest_algorithm 8
+    %global _binary_filedigest_algorithm 8
 %endif
 
 

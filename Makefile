@@ -151,6 +151,8 @@ prepare: clean
 	@mkdir -p packaging/{sources,SRPMS,BUILD,BUILDROOT,RPMS}/
 
 source: prepare
+	rpmbuild --showrc
+	rpm --eval '%__gpg_sign_cmd'
 	@echo "--- Create source tarball ---"
 	@echo git archive --prefix "$(PKGNAME)-$(VERSION)/" -o "packaging/sources/$(PKGNAME)-$(VERSION).tar.gz" HEAD
 	@git archive --prefix "$(PKGNAME)-$(VERSION)/" -o "packaging/sources/$(PKGNAME)-$(VERSION).tar.gz" HEAD

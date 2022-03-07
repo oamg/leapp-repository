@@ -6,6 +6,9 @@
     %define lpr_name_src leapp-upgrade-el7toel8-deps
 %else
     %define lpr_name_src leapp-upgrade-el8toel9-deps
+    %global _gpg_digest_algo sha256
+    %global _source_filedigest_algorithm 8
+    %global _binary_filedigest_algorithm 8
 %endif
 
 
