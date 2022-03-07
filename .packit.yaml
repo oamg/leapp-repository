@@ -8,6 +8,9 @@ downstream_package_name: leapp-repository
 upstream_tag_template: 'v{version}'
 merge_pr_in_ci: false
 
+srpm_build_deps:
+- make
+
 # This is just for the build from the CLI - all other builds for jobs use own
 # actions
 actions:
