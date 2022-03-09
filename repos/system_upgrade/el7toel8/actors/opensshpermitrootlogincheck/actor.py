@@ -42,9 +42,10 @@ class OpenSshPermitRootLoginCheck(Actor):
             reporting.RelatedResource('package', 'openssh-server'),
             reporting.RelatedResource('file', '/etc/ssh/sshd_config')
         ]
-        if not config.permit_root_login:
-            # TODO find out whether the file was modified and will be
-            # replaced by the update. If so, this message is bogus
+        # When the configuration does not contain the PermitRootLogin directive and
+        # the configuration file was locally modified, it will not get updated by
+        # RPM and the user might be locked away from the server. Warn the user here.
+        if not config.permit_root_login and config.modified:
             create_report([
                 reporting.Title('Possible problems with remote login using root account'),
                 reporting.Summary(
