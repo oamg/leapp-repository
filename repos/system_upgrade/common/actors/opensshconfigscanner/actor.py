@@ -15,6 +15,7 @@ class OpenSshConfigScanner(Actor):
      * Protocol
      * Ciphers
      * MACs
+     * Subsystem sftp
 
     """
 
