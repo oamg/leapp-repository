@@ -7,7 +7,7 @@ import tarfile
 from datetime import datetime
 
 from leapp.cli.commands import command_utils
-from leapp.config import get_config
+from leapp.cli.commands.config import get_config
 from leapp.exceptions import CommandError
 from leapp.repository.scan import find_and_scan_repositories
 from leapp.utils import audit
