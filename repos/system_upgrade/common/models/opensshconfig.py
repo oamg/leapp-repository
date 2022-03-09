@@ -34,7 +34,10 @@ class OpenSshConfig(Model):
     """ Value of the Ciphers directive, if present. Ciphers separated by comma. """
     macs = fields.Nullable(fields.String())
     """ Value of the MACs directive, if present. """
-    modified = fields.Boolean(default=False)
-    """ True if the configuration file was modified. """
     deprecated_directives = fields.List(fields.String())
     """ Configuration directives that were deprecated in the new version of openssh. """
+    subsystem_sftp = fields.Nullable(fields.String())
+    """ The "Subsystem sftp" configuration option, if present """
+
+    modified = fields.Boolean(default=False)
+    """ True if the configuration file was modified. """

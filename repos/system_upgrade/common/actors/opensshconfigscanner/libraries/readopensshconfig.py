@@ -61,6 +61,12 @@ def parse_config(config):
             if not ret.macs:
                 ret.macs = value
 
+        elif el[0].lower() == 'subsystem':
+            # Record only first occurence, which is effective
+            if el[1].lower() == 'sftp' and len(el) > 2 and not ret.subsystem_sftp:
+                # here we need to record all remaining items as command and arguments
+                ret.subsystem_sftp = ' '.join(el[2:])
+
         elif el[0].lower() in DEPRECATED_DIRECTIVES:
             # Filter out duplicit occurences of the same deprecated directive
             if el[0].lower() not in ret.deprecated_directives:

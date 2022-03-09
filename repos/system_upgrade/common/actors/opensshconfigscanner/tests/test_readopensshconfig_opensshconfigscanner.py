@@ -24,6 +24,8 @@ def test_parse_config():
         "hostkey /etc/ssh/ssh_host_ed25519_key",
         "ciphers aes128-ctr",
         "macs hmac-md5",
+        "subsystem sftp internal-sftp",
+        "subsystem other internal-other",  # this is ignored
     ]
 
     output = parse_config(config)
@@ -34,6 +36,7 @@ def test_parse_config():
     assert output.protocol == "2"
     assert output.ciphers == "aes128-ctr"
     assert output.macs == "hmac-md5"
+    assert output.subsystem_sftp == "internal-sftp"
 
 
 def test_parse_config_case():
@@ -41,6 +44,7 @@ def test_parse_config_case():
         "PermitRootLogin prohibit-password",
         "UsePrivilegeSeparation yes",
         "Protocol 1",
+        "SubSystem sftp sftp-server",
     ]
 
     output = parse_config(config)
@@ -49,6 +53,7 @@ def test_parse_config_case():
     assert output.permit_root_login[0].value == "prohibit-password"
     assert output.use_privilege_separation == "yes"
     assert output.protocol == "1"
+    assert output.subsystem_sftp == "sftp-server"
 
 
 def test_parse_config_multiple():
@@ -58,6 +63,8 @@ def test_parse_config_multiple():
         "PermitRootLogin yes",
         "Ciphers aes128-cbc",
         "Ciphers aes256-cbc",
+        "subsystem sftp internal-sftp",
+        "subsystem sftp internal-sftp2",
     ]
 
     output = parse_config(config)
@@ -69,6 +76,7 @@ def test_parse_config_multiple():
     assert output.use_privilege_separation is None
     assert output.protocol is None
     assert output.ciphers == 'aes128-cbc'
+    assert output.subsystem_sftp == 'internal-sftp'
 
 
 def test_parse_config_commented():
@@ -76,6 +84,7 @@ def test_parse_config_commented():
         "#PermitRootLogin no",
         "#UsePrivilegeSeparation no",
         "#Protocol 12",
+        "#SubSystem sftp internal-sftp",
     ]
 
     output = parse_config(config)
@@ -83,6 +92,7 @@ def test_parse_config_commented():
     assert not output.permit_root_login
     assert output.use_privilege_separation is None
     assert output.protocol is None
+    assert output.subsystem_sftp is None
 
 
 def test_parse_config_missing_argument():
@@ -90,6 +100,8 @@ def test_parse_config_missing_argument():
         "PermitRootLogin",
         "UsePrivilegeSeparation",
         "Protocol"
+        "SubSystem"
+        "SubSystem sftp"
     ]
 
     output = parse_config(config)
@@ -97,6 +109,7 @@ def test_parse_config_missing_argument():
     assert not output.permit_root_login
     assert output.use_privilege_separation is None
     assert output.protocol is None
+    assert output.subsystem_sftp is None
 
 
 def test_parse_config_match():
@@ -174,6 +187,7 @@ def test_produce_config():
         use_privilege_separation="yes",
         protocol="1",
         deprecated_directives=[],
+        subsystem_sftp="internal-sftp",
     )
 
     produce_config(fake_producer, config)
@@ -183,6 +197,7 @@ def test_produce_config():
     assert cfg.permit_root_login[0].value == "no"
     assert cfg.use_privilege_separation == "yes"
     assert cfg.protocol == '1'
+    assert cfg.subsystem_sftp == 'internal-sftp'
 
 
 def test_actor_execution(current_actor_context):
