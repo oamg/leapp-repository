@@ -45,7 +45,7 @@ def preupgrade(args, breadcrumbs):
     e = Execution(context=context, kind='preupgrade', configuration=configuration)
     e.store()
     util.archive_logfiles()
-    logger = configure_logger('leapp-preupgrade.log')
+    logger = configure_logger('leapp-upgrade.log')
     os.environ['LEAPP_EXECUTION_ID'] = context
 
     try:

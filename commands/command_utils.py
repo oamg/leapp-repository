@@ -3,6 +3,7 @@ import os
 import re
 
 from leapp.exceptions import CommandError
+from leapp.logger import configure_logger
 from leapp.utils import path
 
 HANA_BASE_PATH = '/hana/shared'
@@ -76,6 +77,10 @@ def get_os_release_version_id(filepath):
 def get_upgrade_paths_config():
     # NOTE(ivasilev) Importing here not to have circular dependencies
     from leapp.cli.commands.upgrade import util  # noqa: C415; pylint: disable=import-outside-toplevel
+
+    # NOTE(ivasilev) This function is called on module load level to figure out choices for --target argument when
+    # logging is not set up yet, so let's configure it on demand.
+    configure_logger('leapp-upgrade.log')
 
     repository = util.load_repositories_from('repo_path', '/etc/leapp/repo.d/', manager=None)
     with open(path.get_common_file_path(repository, LEAPP_UPGRADE_PATHS)) as f:
