@@ -1,7 +1,7 @@
 import itertools
 import sys
 
-from leapp.config import get_config
+from leapp.cli.commands.config import get_config
 from leapp.exceptions import UsageError
 from leapp.messaging.answerstore import AnswerStore
 from leapp.utils.clicmd import command, command_opt

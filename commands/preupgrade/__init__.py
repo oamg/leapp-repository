@@ -3,8 +3,8 @@ import sys
 import uuid
 
 from leapp.cli.commands import command_utils
+from leapp.cli.commands.config import get_config
 from leapp.cli.commands.upgrade import breadcrumbs, util
-from leapp.config import get_config
 from leapp.exceptions import CommandError, LeappError
 from leapp.logger import configure_logger
 from leapp.utils.audit import Execution
