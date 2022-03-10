@@ -51,26 +51,29 @@ class CheckVdo(Actor):
             components=(
                 BooleanComponent(
                     key='no_vdo_devices',
-                    label='The system has no VDO devices?',
-                    description='If the system has no VDO devices it is safe '
-                                'to continute the upgrade.  If there are VDO '
-                                'devices they must all be converted to LVM '
-                                'management before the upgrade can proceed.',
+                    label='Are there no VDO devices on the system?',
+                    description='Enter True if there are no VDO devices on '
+                                'the system and False continue the upgrade. '
+                                'If the system has no VDO devices, then it '
+                                'is safe to continue the upgrade. If there '
+                                'are VDO devices they must all be converted '
+                                'to LVM management before the upgrade can '
+                                'proceed.',
                     reason='Based on installed packages it is possible that '
                            'VDO devices exist on the system.  All VDO devices '
                            'must be converted to being managed by LVM before '
-                           'the upgrade occurs.  Because the \'vdo\' package '
-                           'is not installed it cannot be determined whether '
+                           'the upgrade occurs. Because the \'vdo\' package '
+                           'is not installed, Leapp cannot determine whether '
                            'any VDO devices exist that have not yet been '
                            'converted.  If the devices are not converted and '
-                           'upgrade proceeds the data on unconverted VDO '
-                           'devices will be inaccessible.  If you have any '
+                           'the upgrade proceeds the data on unconverted VDO '
+                           'devices will be inaccessible. If you have any '
                            'doubts you should choose to install the \'vdo\' '
                            'package and re-run the upgrade process to check '
-                           'for unconverted VDO devices.  If you are certain '
+                           'for unconverted VDO devices. If you are certain '
                            'that the system has no VDO devices or that all '
                            'VDO devices have been converted to LVM management '
-                           'you may opt to allow upgrade to proceed.'
+                           'you may opt to allow the upgrade to proceed.'
                 ),
             )
         ),
