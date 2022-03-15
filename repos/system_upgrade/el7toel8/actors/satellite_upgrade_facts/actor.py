@@ -129,6 +129,6 @@ class SatelliteUpgradeFacts(Actor):
             modules_to_enable=modules_to_enable
             )
         )
-        repositories_to_enable = ['ansible-2.9-for-rhel-8-x86_64-rpms', 'satellite-7.0-for-rhel-8-x86_64-rpms',
-                                  'satellite-maintenance-7.0-for-rhel-8-x86_64-rpms']
+        repositories_to_enable = ['ansible-2.9-for-rhel-8-x86_64-rpms', 'satellite-6.11-for-rhel-8-x86_64-rpms',
+                                  'satellite-maintenance-6.11-for-rhel-8-x86_64-rpms']
         self.produce(RepositoriesSetupTasks(to_enable=repositories_to_enable))
