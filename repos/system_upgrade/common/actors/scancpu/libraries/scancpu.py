@@ -48,7 +48,7 @@ def _is_detected_s390x(lscpu, entry):
 def _is_detected_ppc64le(lscpu, entry):
     try:
         _, _, machine_type, _ = entry.device_id.split(':', 4)
-        match = PPC64LE_MODEL.fullmatch(lscpu.get('Model'))
+        match = PPC64LE_MODEL.match(lscpu.get('Model'))
         if not match:
             return False
         family = match.group('family')
