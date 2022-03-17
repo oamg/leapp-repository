@@ -69,6 +69,7 @@ def rerun(args):
         reboot=False,
         no_rhsm=False,
         channel=None,
+        report_schema='1.1.0',
         whitelist_experimental=[],
         enablerepo=[]))
 
