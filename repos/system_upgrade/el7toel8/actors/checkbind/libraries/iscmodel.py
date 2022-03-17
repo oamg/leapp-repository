@@ -105,7 +105,6 @@ def make_report(facts):
             reporting.Summary(summary),
             reporting.Severity(reporting.Severity.HIGH),
             reporting.Tags([reporting.Tags.SERVICES, reporting.Tags.NETWORK]),
-            reporting.Flags([reporting.Flags.INHIBITOR]),
         ])
 
     return report
