@@ -11,6 +11,7 @@ from leapp.utils.audit import Execution
 from leapp.utils.clicmd import command, command_opt
 from leapp.utils.output import beautify_actor_exception, report_errors, report_info, report_inhibitors
 
+# NOTE:
 # If you are adding new parameters please ensure that they are set in the upgrade function invocation in `rerun`
 # otherwise there might be errors.
 
