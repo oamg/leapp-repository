@@ -1,8 +1,16 @@
+def global_value(config, default):
+    for opt in config.permit_root_login:
+        if (opt.in_match is None or opt.in_match[0].lower() == 'all'):
+            return opt.value
+    return default
 
 
 def semantics_changes(config):
     globally_enabled = False
     in_match_disabled = False
+    if not config.permit_root_login:
+        return True
+
     for opt in config.permit_root_login:
         if opt.value != "yes" and opt.in_match is not None \
                 and opt.in_match[0].lower() != 'all':
