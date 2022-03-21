@@ -1,5 +1,18 @@
-from leapp.libraries.actor.opensshpermitrootlogincheck import semantics_changes
+from leapp.libraries.actor.opensshpermitrootlogincheck import global_value, semantics_changes
 from leapp.models import OpenSshConfig, OpenSshPermitRootLogin
+
+
+def test_empty_file():
+    """ Empty file
+    """
+    config = OpenSshConfig(
+        permit_root_login=[
+        ],
+        deprecated_directives=[]
+    )
+
+    assert semantics_changes(config)
+    assert global_value(config, "default") == "default"
 
 
 def test_globally_enabled():
@@ -17,6 +30,7 @@ def test_globally_enabled():
     )
 
     assert not semantics_changes(config)
+    assert global_value(config, "default") == "yes"
 
 
 def test_globally_disabled():
@@ -34,6 +48,7 @@ def test_globally_disabled():
     )
 
     assert not semantics_changes(config)
+    assert global_value(config, "default") == "no"
 
 
 def test_globally_disabled_password():
@@ -51,6 +66,7 @@ def test_globally_disabled_password():
     )
 
     assert not semantics_changes(config)
+    assert global_value(config, "default") == "prohibit-password"
 
 
 def test_in_match_disabled():
@@ -70,6 +86,7 @@ def test_in_match_disabled():
     )
 
     assert semantics_changes(config)
+    assert global_value(config, "default") == "default"
 
 
 def test_in_match_disabled_password():
@@ -89,6 +106,7 @@ def test_in_match_disabled_password():
     )
 
     assert semantics_changes(config)
+    assert global_value(config, "default") == "default"
 
 
 def test_in_match_enabled():
@@ -109,6 +127,7 @@ def test_in_match_enabled():
     )
 
     assert not semantics_changes(config)
+    assert global_value(config, "default") == "default"
 
 
 def test_in_match_all_disabled():
@@ -128,6 +147,7 @@ def test_in_match_all_disabled():
     )
 
     assert not semantics_changes(config)
+    assert global_value(config, "default") == "no"
 
 
 def test_in_match_all_disabled_password():
@@ -147,6 +167,7 @@ def test_in_match_all_disabled_password():
     )
 
     assert not semantics_changes(config)
+    assert global_value(config, "default") == "prohibit-password"
 
 
 def test_in_match_all_enabled():
@@ -166,6 +187,7 @@ def test_in_match_all_enabled():
     )
 
     assert not semantics_changes(config)
+    assert global_value(config, "default") == "yes"
 
 
 def test_in_match_enabled_globally_disabled():
@@ -188,6 +210,7 @@ def test_in_match_enabled_globally_disabled():
     )
 
     assert not semantics_changes(config)
+    assert global_value(config, "default") == "no"
 
 
 def test_in_match_disabled_globally_enabled():
@@ -210,3 +233,4 @@ def test_in_match_disabled_globally_enabled():
     )
 
     assert not semantics_changes(config)
+    assert global_value(config, "default") == "yes"
