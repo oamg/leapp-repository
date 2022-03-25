@@ -19,6 +19,7 @@ class _BreadCrumbs(object):
         self._crumbs = {
             'activity': activity,
             'packages': self._get_packages(),
+            'leapp_file_changes': [],
             'executed': ' '.join([v if ' ' not in v else '"{}"'.format(v) for v in sys.argv]),
             'success': True,
             'activity_started': datetime.datetime.utcnow().isoformat() + 'Z',
@@ -35,6 +36,7 @@ class _BreadCrumbs(object):
 
     def save(self):
         self._crumbs['run_id'] = os.environ.get('LEAPP_EXECUTION_ID', 'N/A')
+        self._crumbs['leapp_file_changes'].extend(self._verify_leapp_pkgs())
         messages = get_messages(('IPUConfig',), self._crumbs['run_id'])
         versions = json.loads((messages or [{}])[0].get('message', {}).get(
             'data', '{}')).get('version', {'target': 'N/A', 'source': 'N/A'})
@@ -68,6 +70,16 @@ class _BreadCrumbs(object):
         if res.get('exit_code', None) == 0:
             if res.get('stdout', None):
                 return [{'nevra': t[0], 'signature': t[1]}
+                        for t in [line.strip().split(' ', 1) for line in res['stdout'].split('\n') if line.strip()]]
+        return []
+
+    def _verify_leapp_pkgs(self):
+        upg_path = os.environ.get('LEAPP_IPU_IN_PROGRESS').split('to')
+        cmd = ['/bin/bash', '-c', 'rpm -V leapp leapp-upgrade-el{}toel{}'.format(upg_path[0], upg_path[1])]
+        res = _call(cmd, lambda x, y: None, lambda x, y: None)
+        if res.get('exit_code', None) == 1:
+            if res.get('stdout', None):
+                return [{'result': t[0], 'file_name': t[1]}
                         for t in [line.strip().split(' ', 1) for line in res['stdout'].split('\n') if line.strip()]]
         return []
 
