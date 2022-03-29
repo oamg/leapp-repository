@@ -32,5 +32,4 @@ jobs:
           EOF
 
           pip install copr-cli
-          make copr_build
-
+          COPR_CONFIG=$COPR_CONFIG COPR_CHROOT=$COPR_CHROOT make copr_build
