@@ -20,8 +20,8 @@ def disable_database_sync():
     def disable_db_sync_decorator(f):
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
+            saved = os.environ.get('LEAPP_DEVEL_DATABASE_SYNC_OFF', None)
             try:
-                saved = os.environ.get('LEAPP_DEVEL_DATABASE_SYNC_OFF', None)
                 os.environ['LEAPP_DEVEL_DATABASE_SYNC_OFF'] = '1'
                 return f(*args, **kwargs)
             finally:

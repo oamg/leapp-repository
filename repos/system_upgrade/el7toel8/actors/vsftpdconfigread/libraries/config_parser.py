@@ -94,9 +94,9 @@ class VsftpdConfigParser(object):
 
     def _parse_config(self, contents):
         res = {}
-        try:
-            for (ix, line) in enumerate(contents.split('\n')):
+        for (ix, line) in enumerate(contents.split('\n')):
+            try:
                 self._parse_config_line(line, res)
-            return res
-        except ParsingError as e:
-            raise ParsingError("Syntax error on line %d: %s" % (ix + 1, e))
+            except ParsingError as e:
+                raise ParsingError("Syntax error on line %d: %s" % (ix + 1, e))
+        return res

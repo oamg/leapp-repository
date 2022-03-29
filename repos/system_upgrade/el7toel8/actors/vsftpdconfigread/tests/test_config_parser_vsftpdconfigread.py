@@ -1,7 +1,6 @@
 import pytest
 
-from leapp.libraries.actor.config_parser import ParsingError, VsftpdConfigOptionParser, \
-    VsftpdConfigParser
+from leapp.libraries.actor.config_parser import ParsingError, VsftpdConfigOptionParser, VsftpdConfigParser
 
 
 def test_VsftpdConfigOptionParser_invalid_syntax():
@@ -65,6 +64,11 @@ def test_VsftpdConfigParser_invalid_syntax():
         VsftpdConfigParser(' # comment with whitespace before the # character')
     with pytest.raises(ParsingError):
         VsftpdConfigParser('anonymous_enable')
+
+    # Make sure that line num is properly shown
+    with pytest.raises(ParsingError) as err:
+        VsftpdConfigParser('background=0\n#andthislineisalso=fine\nError on line 3')
+    assert "Syntax error on line 3" in str(err.value)
 
 
 def test_VsftpdConfigParser_empty_config():
