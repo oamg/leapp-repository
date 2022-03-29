@@ -93,21 +93,29 @@ def include_directive_check(read_func=_read_file):
     included_files = ['/etc/cups/cupsd.conf']
     error_list = []
 
-    for included_file in included_files:
+    vetted_included_files = []
+    while included_files:
+        # NOTE(ivasilev) Will be using stack to process last encountered include directives first
+        included_file = included_files.pop(-1)
         try:
             lines = read_func(included_file)
         except IOError:
             error_list.append('Error during reading file {}: file not'
                               ' found'.format(included_file))
-            included_files.remove(included_file)
             continue
-
+        # Append to the resulting list of vetted files if exception wasn't raised
+        vetted_included_files.append(included_file)
+        # Mark any other included file you find as need-to-be-validated
+        includes_to_process = []
         for line in lines:
             value = get_directive_value('Include', line)
             if value:
-                included_files.append(value)
+                includes_to_process.append(value)
+        # NOTE(ivasilev) Add discovered Include directives to the stack in reversed order, so that they are processed
+        # in the same order they appeared in the file
+        included_files.extend(reversed(includes_to_process))
 
-    return (included_files, error_list)
+    return (vetted_included_files, error_list)
 
 
 def digest_directive_check(path, read_func=_read_file):
