@@ -33,8 +33,8 @@ from leapp.utils.output import beautify_actor_exception, report_errors, report_i
 @command_opt('target', choices=command_utils.get_supported_target_versions(),
              help='Specify RHEL version to upgrade to for {} detected upgrade flavour'.format(
                  command_utils.get_upgrade_flavour()))
-@command_opt('report-schema', help='Specify report schema version for leapp-report.json', choices=['1.0.0', '1.1.0'],
-             default=get_config().get('report', 'schema'))
+@command_opt('report-schema', help='Specify report schema version for leapp-report.json',
+             choices=['1.0.0', '1.1.0', '1.2.0'], default=get_config().get('report', 'schema'))
 @breadcrumbs.produces_breadcrumbs
 def upgrade(args, breadcrumbs):
     skip_phases_until = None
@@ -49,7 +49,8 @@ def upgrade(args, breadcrumbs):
     only_with_tags = args.only_with_tags if 'only_with_tags' in args else None
     resume_context = args.resume_context if 'resume_context' in args else None
 
-    report_schema = util.process_report_schema(args, cfg)
+    # NOTE(ivasilev) argparse choices and defaults in enough for validation
+    report_schema = args.report_schema
 
     if os.getuid():
         raise CommandError('This command has to be run under the root user.')
