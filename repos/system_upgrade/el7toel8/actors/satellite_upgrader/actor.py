@@ -19,9 +19,13 @@ class SatelliteUpgrader(Actor):
         if not facts or not facts.has_foreman:
             return
 
+        installer_cmd = ['foreman-installer']
+        if facts.has_katello_installer:
+            installer_cmd.append('--disable-system-checks')
+
         api.current_actor().show_message('Running the installer. This can take a while.')
         try:
-            run(['foreman-installer'])
+            run(installer_cmd)
         except OSError as e:
             api.current_logger().error('Failed to run `foreman-installer`: {}'.format(str(e)))
         except CalledProcessError:

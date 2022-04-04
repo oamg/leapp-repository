@@ -21,6 +21,7 @@ def fake_package(pkg_name):
 
 FOREMAN_RPM = fake_package('foreman')
 FOREMAN_PROXY_RPM = fake_package('foreman-proxy')
+KATELLO_INSTALLER_RPM = fake_package('foreman-installer-katello')
 KATELLO_RPM = fake_package('katello')
 POSTGRESQL_RPM = fake_package('rh-postgresql12-postgresql-server')
 
@@ -44,6 +45,20 @@ def test_satellite_capsule_present(current_actor_context):
     current_actor_context.run()
     message = current_actor_context.consume(SatelliteFacts)[0]
     assert message.has_foreman
+
+
+def test_no_katello_installer_present(current_actor_context):
+    current_actor_context.feed(InstalledRPM(items=[FOREMAN_RPM]))
+    current_actor_context.run()
+    message = current_actor_context.consume(SatelliteFacts)[0]
+    assert not message.has_katello_installer
+
+
+def test_katello_installer_present(current_actor_context):
+    current_actor_context.feed(InstalledRPM(items=[FOREMAN_RPM, KATELLO_INSTALLER_RPM]))
+    current_actor_context.run()
+    message = current_actor_context.consume(SatelliteFacts)[0]
+    assert message.has_katello_installer
 
 
 def test_enables_ruby_module(current_actor_context):
