@@ -32,6 +32,8 @@ class SatelliteUpgradeFacts(Actor):
         if not has_foreman:
             return
 
+        has_katello_installer = has_package(InstalledRPM, 'foreman-installer-katello')
+
         local_postgresql = has_package(InstalledRPM, 'rh-postgresql12-postgresql-server')
         postgresql_contrib = has_package(InstalledRPM, 'rh-postgresql12-postgresql-contrib')
         postgresql_evr = has_package(InstalledRPM, 'rh-postgresql12-postgresql-evr')
@@ -114,6 +116,7 @@ class SatelliteUpgradeFacts(Actor):
 
         self.produce(SatelliteFacts(
             has_foreman=has_foreman,
+            has_katello_installer=has_katello_installer,
             postgresql=SatellitePostgresqlFacts(
                 local_postgresql=local_postgresql,
                 old_var_lib_pgsql_data=old_pgsql_data,
