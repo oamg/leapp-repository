@@ -15,6 +15,10 @@ jobs:
       && contains(fromJson('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)
     runs-on: ubuntu-20.04
     steps:
+      - name: Install necessary deps
+        id: deps_install
+        run: sudo apt-get install -y libkrb5-dev
+
       - name: Get pull request number
         id: pr_nr
         run: |
