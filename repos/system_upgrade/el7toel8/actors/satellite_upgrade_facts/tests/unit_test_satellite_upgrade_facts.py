@@ -1,6 +1,14 @@
 import os
 
-from leapp.models import DNFWorkaround, InstalledRPM, Module, RPM, RpmTransactionTasks, SatelliteFacts
+from leapp.models import (
+    DNFWorkaround,
+    InstalledRPM,
+    Module,
+    RepositoriesSetupTasks,
+    RPM,
+    RpmTransactionTasks,
+    SatelliteFacts
+)
 from leapp.snactor.fixture import current_actor_context
 
 RH_PACKAGER = 'Red Hat, Inc. <http://bugzilla.redhat.com/bugzilla>'
@@ -87,3 +95,27 @@ def test_detects_remote_postgresql(current_actor_context):
     assert not satellitemsg.postgresql.local_postgresql
 
     assert not current_actor_context.consume(DNFWorkaround)
+
+
+def test_enables_right_repositories_on_satellite(current_actor_context):
+    current_actor_context.feed(InstalledRPM(items=[FOREMAN_RPM]))
+    current_actor_context.run()
+
+    rpmmessage = current_actor_context.consume(RepositoriesSetupTasks)[0]
+
+    assert 'ansible-2.9-for-rhel-8-x86_64-rpms' in rpmmessage.to_enable
+    assert 'satellite-maintenance-6.11-for-rhel-8-x86_64-rpms' in rpmmessage.to_enable
+    assert 'satellite-6.11-for-rhel-8-x86_64-rpms' in rpmmessage.to_enable
+    assert 'satellite-capsule-6.11-for-rhel-8-x86_64-rpms' not in rpmmessage.to_enable
+
+
+def test_enables_right_repositories_on_capsule(current_actor_context):
+    current_actor_context.feed(InstalledRPM(items=[FOREMAN_PROXY_RPM]))
+    current_actor_context.run()
+
+    rpmmessage = current_actor_context.consume(RepositoriesSetupTasks)[0]
+
+    assert 'ansible-2.9-for-rhel-8-x86_64-rpms' in rpmmessage.to_enable
+    assert 'satellite-maintenance-6.11-for-rhel-8-x86_64-rpms' in rpmmessage.to_enable
+    assert 'satellite-6.11-for-rhel-8-x86_64-rpms' not in rpmmessage.to_enable
+    assert 'satellite-capsule-6.11-for-rhel-8-x86_64-rpms' in rpmmessage.to_enable
