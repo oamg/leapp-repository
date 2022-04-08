@@ -1,6 +1,7 @@
 import os
 
 from leapp.actors import Actor
+from leapp.libraries.common.config import architecture
 from leapp.libraries.common.rpms import has_package
 from leapp.libraries.stdlib import run
 from leapp.models import (
@@ -28,6 +29,9 @@ class SatelliteUpgradeFacts(Actor):
     tags = (IPUWorkflowTag, FactsPhaseTag)
 
     def process(self):
+        if not architecture.matches_architecture(architecture.ARCH_X86_64):
+            return
+
         has_foreman = has_package(InstalledRPM, 'foreman') or has_package(InstalledRPM, 'foreman-proxy')
         if not has_foreman:
             return
