@@ -9,6 +9,7 @@ import re
 import six
 
 from leapp import reporting
+from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import repofileutils
 from leapp.libraries.common.config import architecture
 from leapp.libraries.stdlib import api, CalledProcessError, run
@@ -289,9 +290,25 @@ def _default_grub_info():
         ])
     else:
         for line in run(['cat', default_grb_fpath], split=True)['stdout']:
-            if not line.strip():
+            line = line.strip()
+            if not line or line[0] == '#':
+                # skip comments and empty lines
                 continue
-            name, value = tuple(map(type(line).strip, line.split('=', 1)))
+            try:
+                name, value = tuple(map(type(line).strip, line.split('=', 1)))
+            except ValueError as e:
+                # we do not want to really continue when we cannot parse this file
+                # TODO(pstodulk): rewrite this in the form we produce inhibitor
+                # with problematic lines. This is improvement just in comparison
+                # to the original hard crash.
+                raise StopActorExecutionError(
+                    'Failed parsing of {}'.format(default_grb_fpath),
+                    details={
+                        'error': str(e),
+                        'problematic line': str(line)
+                    }
+                )
+
             yield DefaultGrub(
                 name=name,
                 value=value
