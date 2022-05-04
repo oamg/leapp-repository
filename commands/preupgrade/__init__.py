@@ -62,6 +62,7 @@ def preupgrade(args, breadcrumbs):
         logger.info('Executing workflow until phase: %s', until_phase)
 
         # Set the locale, so that the actors parsing command outputs that might be localized will not fail
+        os.environ['LANGUAGE'] = 'en_US.UTF-8'
         os.environ['LC_ALL'] = 'en_US.UTF-8'
         os.environ['LANG'] = 'en_US.UTF-8'
         workflow.run(context=context, until_phase=until_phase, skip_dialogs=True)
