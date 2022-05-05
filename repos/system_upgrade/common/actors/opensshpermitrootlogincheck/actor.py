@@ -55,10 +55,15 @@ class OpenSshPermitRootLoginCheck(Actor):
                                          .format(get_source_major_version()))
 
     def process7to8(self, config):
-        # When the configuration does not contain the PermitRootLogin directive and
+        # when the config was not modified, we can pass this check and let the
+        # rpm handle the configuration file update
+        if not config.modified:
+            return
+
+        # When the configuration does not contain *any* PermitRootLogin directive and
         # the configuration file was locally modified, it will not get updated by
-        # RPM and the user might be locked away from the server. Warn the user here.
-        if not config.permit_root_login and config.modified:
+        # RPM and the user might be locked away from the server with new default
+        if not config.permit_root_login:
             create_report([
                 reporting.Title('Possible problems with remote login using root account'),
                 reporting.Summary(
