@@ -74,13 +74,16 @@ class OpenSshPermitRootLoginCheck(Actor):
                 reporting.Severity(reporting.Severity.HIGH),
                 reporting.Tags(COMMON_REPORT_TAGS),
                 reporting.Remediation(
-                    hint='If you depend on remote root logins using '
-                         'passwords, consider setting up a different '
-                         'user for remote administration or adding '
-                         '"PermitRootLogin yes" to sshd_config.'
+                    hint='If you depend on remote root logins using passwords, consider '
+                         'setting up a different user for remote administration or adding '
+                         '"PermitRootLogin yes" to sshd_config. '
+                         'If this change is ok for you, add explicit '
+                         '"PermitRootLogin prohibit-password" to your sshd_config '
+                         'to ignore this inhibitor'
                 ),
                 reporting.Flags([reporting.Flags.INHIBITOR])
             ] + COMMON_RESOURCES)
+            return
 
         # Check if there is at least one PermitRootLogin other than "no"
         # in match blocks (other than Match All).
