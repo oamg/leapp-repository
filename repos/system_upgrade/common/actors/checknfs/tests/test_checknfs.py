@@ -1,8 +1,8 @@
 import pytest
 
-from leapp.snactor.fixture import current_actor_context
-from leapp.models import StorageInfo, SystemdMountEntry, FstabEntry, MountEntry
+from leapp.models import FstabEntry, MountEntry, StorageInfo, SystemdMountEntry
 from leapp.reporting import Report
+from leapp.snactor.fixture import current_actor_context
 
 
 @pytest.mark.parametrize('nfs_fstype', ('nfs', 'nfs4'))
@@ -46,6 +46,13 @@ def test_actor_without_fstab_entry(current_actor_context):
                                       fs_mntops="defaults,x-systemd.device-timeout=0",
                                       fs_freq="1", fs_passno="2")]
     current_actor_context.feed(StorageInfo(fstab=without_fstab_entry))
+    current_actor_context.run()
+    assert not current_actor_context.consume(Report)
+
+
+def test_actor_with_nfsd(current_actor_context):
+    with_nfsd = [MountEntry(name="nfsd", mount="/proc/fs/nfsd", tp="nfsd", options="rw,relatime")]
+    current_actor_context.feed(StorageInfo(mount=with_nfsd))
     current_actor_context.run()
     assert not current_actor_context.consume(Report)
 

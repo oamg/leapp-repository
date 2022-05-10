@@ -1,7 +1,7 @@
+from leapp import reporting
 from leapp.actors import Actor
 from leapp.models import StorageInfo
-from leapp.reporting import Report, create_report
-from leapp import reporting
+from leapp.reporting import create_report, Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
@@ -22,24 +22,27 @@ class CheckNfs(Actor):
                   "We have found NFS usage at the following locations:\n"
         nfs_found = False
 
+        def _is_nfs(a_type):
+            return a_type.startswith('nfs') and a_type != 'nfsd'
+
         for storage in self.consume(StorageInfo):
             # Check fstab
             for fstab in storage.fstab:
-                if fstab.fs_vfstype.startswith("nfs"):
+                if _is_nfs(fstab.fs_vfstype):
                     nfs_found = True
                     details += "- One or more NFS entries in /etc/fstab\n"
                     break
 
             # Check mount
             for mount in storage.mount:
-                if mount.tp.startswith("nfs"):
+                if _is_nfs(mount.tp):
                     nfs_found = True
                     details += "- Currently mounted NFS shares\n"
                     break
 
             # Check systemd-mount
             for systemdmount in storage.systemdmount:
-                if systemdmount.fs_type.startswith("nfs"):
+                if _is_nfs(systemdmount.fs_type):
                     nfs_found = True
                     details += "- One or more configured NFS mounts in systemd-mount\n"
                     break
