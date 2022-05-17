@@ -103,7 +103,6 @@ def test_enables_right_repositories_on_satellite(current_actor_context):
 
     rpmmessage = current_actor_context.consume(RepositoriesSetupTasks)[0]
 
-    assert 'ansible-2.9-for-rhel-8-x86_64-rpms' in rpmmessage.to_enable
     assert 'satellite-maintenance-6.11-for-rhel-8-x86_64-rpms' in rpmmessage.to_enable
     assert 'satellite-6.11-for-rhel-8-x86_64-rpms' in rpmmessage.to_enable
     assert 'satellite-capsule-6.11-for-rhel-8-x86_64-rpms' not in rpmmessage.to_enable
@@ -115,7 +114,6 @@ def test_enables_right_repositories_on_capsule(current_actor_context):
 
     rpmmessage = current_actor_context.consume(RepositoriesSetupTasks)[0]
 
-    assert 'ansible-2.9-for-rhel-8-x86_64-rpms' in rpmmessage.to_enable
     assert 'satellite-maintenance-6.11-for-rhel-8-x86_64-rpms' in rpmmessage.to_enable
     assert 'satellite-6.11-for-rhel-8-x86_64-rpms' not in rpmmessage.to_enable
     assert 'satellite-capsule-6.11-for-rhel-8-x86_64-rpms' in rpmmessage.to_enable

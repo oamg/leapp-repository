@@ -129,8 +129,7 @@ class SatelliteUpgradeFacts(Actor):
             modules_to_enable=modules_to_enable
             )
         )
-        repositories_to_enable = ['ansible-2.9-for-rhel-8-x86_64-rpms',
-                                  'satellite-maintenance-6.11-for-rhel-8-x86_64-rpms']
+        repositories_to_enable = ['satellite-maintenance-6.11-for-rhel-8-x86_64-rpms']
         if has_package(InstalledRPM, 'foreman'):
             repositories_to_enable.append('satellite-6.11-for-rhel-8-x86_64-rpms')
         else:
