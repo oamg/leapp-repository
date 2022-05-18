@@ -24,7 +24,10 @@ def process(openssh_messages):
                 title="SCP support in RHEL",
                 url="https://access.redhat.com/articles/5284081",
             ),
-            # TODO provide a link to documentation or blog post
+            reporting.ExternalLink(
+                title="OpenSSH SCP deprecation in RHEL 9: What you need to know ",
+                url="https://www.redhat.com/en/blog/openssh-scp-deprecation-rhel-9-what-you-need-know",
+            ),
         ]
         reporting.create_report([
             reporting.Title('OpenSSH configured without SFTP subsystem'),
