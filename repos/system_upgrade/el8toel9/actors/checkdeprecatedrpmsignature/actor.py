@@ -1,11 +1,7 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import checkdeprecatedrpmsignature
-from leapp.models import CryptoPolicyInfo, InstalledRPM, Report, TargetUserSpacePreupgradeTasks
+from leapp.models import CryptoPolicyInfo, InstalledRPM, Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
-
-# TODO(pstodulk): TargetUserSpacePreupgradeTasks regarding crypto policies should be set
-# in different actor. Let's keep it here for now, but we will generalize this with the next
-# iteration
 
 
 class CheckDeprecatedRPMSignature(Actor):
@@ -37,7 +33,7 @@ class CheckDeprecatedRPMSignature(Actor):
 
     name = 'check_deprecated_rpm_signature'
     consumes = (CryptoPolicyInfo, InstalledRPM)
-    produces = (Report, TargetUserSpacePreupgradeTasks)
+    produces = (Report,)
     tags = (IPUWorkflowTag, ChecksPhaseTag)
 
     def process(self):

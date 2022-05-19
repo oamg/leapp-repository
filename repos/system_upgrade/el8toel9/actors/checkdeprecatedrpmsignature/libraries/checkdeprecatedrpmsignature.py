@@ -1,6 +1,6 @@
 from leapp import reporting
 from leapp.libraries.stdlib import api
-from leapp.models import CryptoPolicyInfo, InstalledRPM, TargetUserSpacePreupgradeTasks
+from leapp.models import CryptoPolicyInfo, InstalledRPM
 
 FMT_LIST_SEPARATOR = '\n    - '
 
@@ -20,12 +20,12 @@ SUMMARY_FMT = (
     ' For more information see the following documents:\n'
     '  - Major changes in RHEL 9: {major_changes_url}\n'
     '  - Security Considerations in adopting RHEL 9: {crypto_policies_url}\n'
-    ' The list of problematic packages:{bad_pkgs}'
+    ' The list of problematic packages: {bad_pkgs}'
 )
 
 REMEDY_HINT = (
     'It is recommended that you contact your package vendor and ask them for new'
-    ' new builds signed with supported signatures and install the new packages before'
+    ' builds signed with supported signatures and install the new packages before'
     ' the upgrade. If this is not possible you may instead'
     ' remove the incompatible packages.'
 )
@@ -87,8 +87,3 @@ def process():
         if not _is_sha1_allowed(cpi.current_policy):
             report.append(reporting.Flags([reporting.Flags.INHIBITOR]))
         reporting.create_report(report)
-    if cpi.current_policy != 'DEFAULT':
-        # TODO(pstodulk): see todo in the actor.py file
-        # We have to change the crypto policies inside the target userspace container.
-        # To be able to do it, we need update-crypto-policies script inside
-        api.produce(TargetUserSpacePreupgradeTasks(install_rpms=['crypto-policies-scripts']))
