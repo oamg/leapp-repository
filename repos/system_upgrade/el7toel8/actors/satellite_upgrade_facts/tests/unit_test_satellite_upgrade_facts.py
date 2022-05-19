@@ -57,14 +57,14 @@ def test_satellite_capsule_present(current_actor_context):
 
 def test_no_katello_installer_present(current_actor_context):
     current_actor_context.feed(InstalledRPM(items=[FOREMAN_RPM]))
-    current_actor_context.run()
+    current_actor_context.run(config_model=mock_configs.CONFIG)
     message = current_actor_context.consume(SatelliteFacts)[0]
     assert not message.has_katello_installer
 
 
 def test_katello_installer_present(current_actor_context):
     current_actor_context.feed(InstalledRPM(items=[FOREMAN_RPM, KATELLO_INSTALLER_RPM]))
-    current_actor_context.run()
+    current_actor_context.run(config_model=mock_configs.CONFIG)
     message = current_actor_context.consume(SatelliteFacts)[0]
     assert message.has_katello_installer
 
@@ -122,7 +122,7 @@ def test_detects_remote_postgresql(current_actor_context):
 
 def test_enables_right_repositories_on_satellite(current_actor_context):
     current_actor_context.feed(InstalledRPM(items=[FOREMAN_RPM]))
-    current_actor_context.run()
+    current_actor_context.run(config_model=mock_configs.CONFIG)
 
     rpmmessage = current_actor_context.consume(RepositoriesSetupTasks)[0]
 
@@ -133,7 +133,7 @@ def test_enables_right_repositories_on_satellite(current_actor_context):
 
 def test_enables_right_repositories_on_capsule(current_actor_context):
     current_actor_context.feed(InstalledRPM(items=[FOREMAN_PROXY_RPM]))
-    current_actor_context.run()
+    current_actor_context.run(config_model=mock_configs.CONFIG)
 
     rpmmessage = current_actor_context.consume(RepositoriesSetupTasks)[0]
 
