@@ -54,15 +54,14 @@ class RedHatSignedRpmScanner(Actor):
             """Whitelist the katello package."""
             return pkg.name.startswith('katello-ca-consumer')
 
-        def is_azure_pkg(pkg):
-            """Whitelist Azure config package."""
-            upg_path = rhui.get_upg_path()
-
-            src_pkg = rhui.RHUI_CLOUD_MAP[upg_path].get('azure', {}).get('src_pkg')
-            src_pkg_sap = rhui.RHUI_CLOUD_MAP[upg_path].get('azure-sap', {}).get('src_pkg')
-            target_pkg = rhui.RHUI_CLOUD_MAP[upg_path].get('azure', {}).get('target_pkg')
-            target_pkg_sap = rhui.RHUI_CLOUD_MAP[upg_path].get('azure-sap', {}).get('target_pkg')
-            return pkg.name in [src_pkg, src_pkg_sap, target_pkg, target_pkg_sap]
+        upg_path = rhui.get_upg_path()
+        whitelisted_cloud_flavours = ('azure', 'azure-sap', 'google', 'google-sap')
+        whitelisted_cloud_pkgs = {
+            rhui.RHUI_CLOUD_MAP[upg_path].get(flavour, {}).get('src_pkg') for flavour in whitelisted_cloud_flavours
+        }
+        whitelisted_cloud_pkgs.update(
+            rhui.RHUI_CLOUD_MAP[upg_path].get(flavour, {}).get('target_pkg') for flavour in whitelisted_cloud_flavours
+        )
 
         for rpm_pkgs in self.consume(InstalledRPM):
             for pkg in rpm_pkgs.items:
@@ -71,7 +70,7 @@ class RedHatSignedRpmScanner(Actor):
                         has_rhsig(pkg),
                         is_gpg_pubkey(pkg),
                         has_katello_prefix(pkg),
-                        is_azure_pkg(pkg),
+                        pkg.name in whitelisted_cloud_pkgs,
                     ]
                 ):
                     signed_pkgs.items.append(pkg)
