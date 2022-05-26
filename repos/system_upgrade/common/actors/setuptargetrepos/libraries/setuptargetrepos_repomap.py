@@ -50,13 +50,14 @@ class RepoMapDataHandler(object):
         # will be used instead
         self.prio_channel = get_target_product_channel(default=None)
 
-        # Cloud provider might have multiple variants: aws: (aws, aws-sap-es4), azure: (azure, azure-sap)
-        if cloud_provider.startswith('aws'):
-            self.cloud_provider = 'aws'
-        elif cloud_provider.startswith('azure'):
-            self.cloud_provider = 'azure'
-        else:
-            self.cloud_provider = cloud_provider
+        self.cloud_provider = cloud_provider
+
+        # Cloud provider might have multiple variants, e.g, aws: (aws, aws-sap-es4) - normalize it
+        cloud_providers = ('aws', 'azure', 'google')
+        for provider in cloud_providers:
+            if cloud_provider.startswith(provider):
+                self.cloud_provider = provider
+                break
 
     def set_default_channels(self, default_channels):
         """

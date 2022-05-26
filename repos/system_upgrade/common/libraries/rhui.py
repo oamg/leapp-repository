@@ -78,6 +78,30 @@ RHUI_CLOUD_MAP = {
                 ('leapp-azure-sap.repo', YUM_REPOS_PATH)
             ],
         },
+        'google': {
+            'src_pkg': 'google-rhui-client-rhel7',
+            'target_pkg': 'google-rhui-client-rhel8',
+            'leapp_pkg': 'leapp-rhui-google',
+            'leapp_pkg_repo': 'leapp-google.repo',
+            'files_map': [
+                ('content.crt', RHUI_PKI_PRODUCT_DIR),
+                ('ca.crt', RHUI_PKI_DIR),
+                ('key.pem', RHUI_PKI_DIR),
+                ('leapp-google.repo', YUM_REPOS_PATH)
+            ],
+        },
+        'google-sap': {
+            'src_pkg': 'google-rhui-client-rhel79-sap',
+            'target_pkg': 'google-rhui-client-rhel8-sap',
+            'leapp_pkg': 'leapp-rhui-google-sap',
+            'leapp_pkg_repo': 'leapp-google-sap.repo',
+            'files_map': [
+                ('content.crt', RHUI_PKI_PRODUCT_DIR),
+                ('ca.crt', RHUI_PKI_DIR),
+                ('key.pem', RHUI_PKI_DIR),
+                ('leapp-google-sap.repo', YUM_REPOS_PATH)
+            ],
+        },
     },
     '8to9': {
         'aws': {
