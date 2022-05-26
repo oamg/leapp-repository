@@ -74,7 +74,7 @@ class CheckRHUI(Actor):
                     ])
                     return
 
-                # When upgrading with RHUI we cannot swich certs and let RHSM provide us repos for target OS content.
+                # When upgrading with RHUI we cannot switch certs and let RHSM provide us repos for target OS content.
                 # Instead, Leapp's provider-specific package containing target OS certs and repos has to be installed.
                 if not has_package(InstalledRPM, info['leapp_pkg']):
                     create_report([
