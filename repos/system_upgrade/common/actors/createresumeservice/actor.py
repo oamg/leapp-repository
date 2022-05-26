@@ -1,11 +1,12 @@
-import shutil
 import os
+import shutil
 
-from leapp.exceptions import StopActorExecutionError
-from leapp.actors import Actor
-from leapp.tags import FinalizationPhaseTag, IPUWorkflowTag
-from leapp.reporting import Report, create_report
 from leapp import reporting
+from leapp.actors import Actor
+from leapp.exceptions import StopActorExecutionError
+from leapp.libraries.stdlib import api
+from leapp.reporting import create_report, Report
+from leapp.tags import FinalizationPhaseTag, IPUWorkflowTag
 
 
 class CreateSystemdResumeService(Actor):
@@ -35,6 +36,12 @@ class CreateSystemdResumeService(Actor):
             os.mkdir(os.path.join(systemd_dir, 'default.target.wants'))
         except OSError:
             pass
+
+        if os.path.exists(symlink_path):
+            api.current_logger().debug(
+                'Symlink {} already exists (from previous upgrade?). Removing... '.format(symlink_path)
+            )
+            os.unlink(symlink_path)
 
         try:
             os.symlink(service_path, symlink_path)

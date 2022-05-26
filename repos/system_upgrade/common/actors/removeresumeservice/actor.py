@@ -1,10 +1,10 @@
-import os
 import errno
+import os
 
-from leapp.actors import Actor
-from leapp.libraries.stdlib import run
-from leapp.reporting import Report, create_report
 from leapp import reporting
+from leapp.actors import Actor
+from leapp.libraries.stdlib import api, run
+from leapp.reporting import create_report, Report
 from leapp.tags import FirstBootPhaseTag, IPUWorkflowTag
 
 
@@ -24,12 +24,17 @@ class RemoveSystemdResumeService(Actor):
         service_name = 'leapp_resume.service'
         if os.path.isfile('/etc/systemd/system/{}'.format(service_name)):
             run(['systemctl', 'disable', service_name])
-            try:
-                os.unlink('/etc/systemd/system/{}'.format(service_name))
-                os.unlink('/etc/systemd/system/default.target.wants/{}'.format(service_name))
-            except OSError as e:
-                if e.errno != errno.ENOENT:
-                    raise
+            paths_to_unlink = [
+                '/etc/systemd/system/{}'.format(service_name),
+                '/etc/systemd/system/default.target.wants/{}'.format(service_name),
+            ]
+            for path in paths_to_unlink:
+                try:
+                    os.unlink(path)
+                except OSError as e:
+                    api.current_logger().debug('Failed removing {}: {}'.format(path, str(e)))
+                    if e.errno != errno.ENOENT:
+                        raise
 
         create_report([
             reporting.Title('"{}" service deleted'.format(service_name)),
