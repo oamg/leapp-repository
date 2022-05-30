@@ -25,6 +25,8 @@ FOREMAN_PROXY_RPM = fake_package('foreman-proxy')
 KATELLO_INSTALLER_RPM = fake_package('foreman-installer-katello')
 KATELLO_RPM = fake_package('katello')
 POSTGRESQL_RPM = fake_package('rh-postgresql12-postgresql-server')
+SATELLITE_RPM = fake_package('satellite')
+SATELLITE_CAPSULE_RPM = fake_package('satellite-capsule')
 
 
 def test_no_satellite_present(current_actor_context):
@@ -84,6 +86,22 @@ def test_enables_pki_modules(current_actor_context):
     assert Module(name='pki-deps', stream='10.6') in message.modules_to_enable
 
 
+def test_enables_satellite_module(current_actor_context):
+    current_actor_context.feed(InstalledRPM(items=[FOREMAN_RPM, SATELLITE_RPM]))
+    current_actor_context.run(config_model=mock_configs.CONFIG)
+    message = current_actor_context.consume(RpmTransactionTasks)[0]
+    assert Module(name='satellite', stream='el8') in message.modules_to_enable
+    assert Module(name='satellite-capsule', stream='el8') not in message.modules_to_enable
+
+
+def test_enables_satellite_capsule_module(current_actor_context):
+    current_actor_context.feed(InstalledRPM(items=[FOREMAN_PROXY_RPM, SATELLITE_CAPSULE_RPM]))
+    current_actor_context.run(config_model=mock_configs.CONFIG)
+    message = current_actor_context.consume(RpmTransactionTasks)[0]
+    assert Module(name='satellite-capsule', stream='el8') in message.modules_to_enable
+    assert Module(name='satellite', stream='el8') not in message.modules_to_enable
+
+
 def test_detects_local_postgresql(monkeypatch, current_actor_context):
     def mock_stat():
         orig_stat = os.stat
@@ -121,7 +139,7 @@ def test_detects_remote_postgresql(current_actor_context):
 
 
 def test_enables_right_repositories_on_satellite(current_actor_context):
-    current_actor_context.feed(InstalledRPM(items=[FOREMAN_RPM]))
+    current_actor_context.feed(InstalledRPM(items=[FOREMAN_RPM, SATELLITE_RPM]))
     current_actor_context.run(config_model=mock_configs.CONFIG)
 
     rpmmessage = current_actor_context.consume(RepositoriesSetupTasks)[0]
@@ -132,7 +150,7 @@ def test_enables_right_repositories_on_satellite(current_actor_context):
 
 
 def test_enables_right_repositories_on_capsule(current_actor_context):
-    current_actor_context.feed(InstalledRPM(items=[FOREMAN_PROXY_RPM]))
+    current_actor_context.feed(InstalledRPM(items=[FOREMAN_PROXY_RPM, SATELLITE_CAPSULE_RPM]))
     current_actor_context.run(config_model=mock_configs.CONFIG)
 
     rpmmessage = current_actor_context.consume(RepositoriesSetupTasks)[0]
