@@ -130,15 +130,19 @@ class SatelliteUpgradeFacts(Actor):
             ),
         ))
 
+        repositories_to_enable = ['satellite-maintenance-6.11-for-rhel-8-x86_64-rpms']
+        if has_package(InstalledRPM, 'satellite'):
+            repositories_to_enable.append('satellite-6.11-for-rhel-8-x86_64-rpms')
+            modules_to_enable.append(Module(name='satellite', stream='el8'))
+        elif has_package(InstalledRPM, 'satellite-capsule'):
+            repositories_to_enable.append('satellite-capsule-6.11-for-rhel-8-x86_64-rpms')
+            modules_to_enable.append(Module(name='satellite-capsule', stream='el8'))
+
         self.produce(RpmTransactionTasks(
             to_remove=to_remove,
             to_install=to_install,
             modules_to_enable=modules_to_enable
             )
         )
-        repositories_to_enable = ['satellite-maintenance-6.11-for-rhel-8-x86_64-rpms']
-        if has_package(InstalledRPM, 'foreman'):
-            repositories_to_enable.append('satellite-6.11-for-rhel-8-x86_64-rpms')
-        else:
-            repositories_to_enable.append('satellite-capsule-6.11-for-rhel-8-x86_64-rpms')
+
         self.produce(RepositoriesSetupTasks(to_enable=repositories_to_enable))
