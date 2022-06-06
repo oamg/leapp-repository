@@ -6,193 +6,62 @@ on:
       - created
 
 jobs:
-  pr_commented:
-    # This job only runs for '/rerun' pull request comments by owner, member, or collaborator of the repo/organization.
-    name: Run tmt tests on Testing Farm service
+  call_workflow_copr_build:
+    uses: ./.github/workflows/reuse-copr-build.yml
+    secrets: inherit
+
+  call_workflow_tests_7to8_integration:
+    needs: call_workflow_copr_build
+    uses: oamg/leapp/.github/workflows/reuse-tests-7to8.yml@master
+    secrets: inherit
+    with:
+      copr_artifacts: ${{ needs.call_workflow_copr_build.outputs.artifacts }}
+      tmt_plan_regex: "^(?!.*c2r)(?!.*sap)(?!.*8to9)(?!.*morf)"
+
+  call_workflow_tests_7to8_sst:
+    needs: call_workflow_copr_build
+    uses: oamg/leapp/.github/workflows/reuse-tests-7to8.yml@master
+    secrets: inherit
+    with:
+      copr_artifacts: ${{ needs.call_workflow_copr_build.outputs.artifacts }}
+      tmt_plan_regex: "^(?!.*c2r)(?!.*sap)(?!.*8to9)(.*morf)"
+      pull_request_status_name: "7to8-sst"
+      update_pull_request_status: 'false'
     if: |
       github.event.issue.pull_request
-      && startsWith(github.event.comment.body, '/rerun')
+      && startsWith(github.event.comment.body, '/rerun-all')
       && contains(fromJson('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)
-    runs-on: ubuntu-20.04
-    steps:
-      - name: Install necessary deps
-        id: deps_install
-        run: sudo apt-get install -y libkrb5-dev
 
-      - name: Get pull request number
-        id: pr_nr
-        run: |
-          PR_URL="${{ github.event.comment.issue_url }}"
-          echo "::set-output name=pr_nr::${PR_URL##*/}"
+  call_workflow_tests_7to8_aws:
+    needs: call_workflow_copr_build
+    uses: oamg/leapp/.github/workflows/reuse-tests-7to8.yml@master
+    secrets: inherit
+    with:
+      copr_artifacts: ${{ needs.call_workflow_copr_build.outputs.artifacts }}
+      tmt_plan_regex: "^(?!.*c2r)(?!.*sap)(?!.*8to9)(.*e2e)"
+      compose: "RHEL-7.9-rhui"
+      environment_settings: '{"provisioning": {"post_install_script": "#!/bin/sh\nsudo sed -i s/.*ssh-rsa/ssh-rsa/ /root/.ssh/authorized_keys; echo 42; yum-config-manager --enable rhel-7-server-rhui-optional-rpms"}}'
+      pull_request_status_name: "7to8-aws-e2e"
+      variables: "RHUI=aws"
 
-      - name: Checkout
-        # TODO: The correct way to checkout would be to use simmilar approach as in get_commit_by_timestamp function of
-        #       the github gluetool module (i.e. do not use HEAD but the last commit before comment).
-        id: checkout
-        uses: actions/checkout@v2
-        with:
-          ref: "refs/pull/${{ steps.pr_nr.outputs.pr_nr }}/head"
+  call_workflow_tests_8to9_integration:
+    needs: call_workflow_copr_build
+    uses: oamg/leapp/.github/workflows/reuse-tests-8to9.yml@master
+    secrets: inherit
+    with:
+      copr_artifacts: ${{ needs.call_workflow_copr_build.outputs.artifacts }}
+      tmt_plan_regex: "^(?!.*c2r)(?!.*sap)(?!.*7to8)(?!.*morf)"
 
-      - name: Get ref and sha
-        id: ref_sha
-        run: |
-          echo "::set-output name=sha::$(git rev-parse --short HEAD)"
-          echo "::set-output name=ref::refs/pull/${{ steps.pr_nr.outputs.pr_nr }}/head"
-
-      - name: Trigger copr build
-        id: copr_build
-        env:
-          COPR_CONFIG: "copr_fedora.conf"
-          COPR_CHROOT: "epel-7-x86_64,epel-8-x86_64"
-        run: |
-          cat << EOF > $COPR_CONFIG
-          [copr-cli]
-          login = ${{ secrets.FEDORA_COPR_LOGIN }}
-          username = @oamg
-          token = ${{ secrets.FEDORA_COPR_TOKEN }}
-          copr_url = https://copr.fedorainfracloud.org
-          # expiration date: 2030-07-04
-          EOF
-
-          pip install copr-cli
-          PR=${{ steps.pr_nr.outputs.pr_nr }} COPR_CONFIG=$COPR_CONFIG COPR_CHROOT=$COPR_CHROOT make copr_build | tee copr.log
-
-          COPR_URL=$(grep -Po 'https://copr.fedorainfracloud.org/coprs/build/\d+' copr.log)
-          echo "::set-output name=copr_url::${COPR_URL}"
-          echo "::set-output name=copr_id::${COPR_URL##*/}"
-
-      - name: Add comment with copr build url
-        # TODO: Create comment when copr build fails.
-        id: link_copr
-        uses: actions/github-script@v4
-        with:
-          script: |
-            github.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: 'Copr build succeeded: ${{ steps.copr_build.outputs.copr_url }}'
-            })
-
-      - name: Get dependent leapp pr number from rerun comment
-        uses: actions-ecosystem/action-regex-match@v2
-        id: leapp_pr_regex_match
-        with:
-          text: ${{ github.event.comment.body }}
-          regex: '^/rerun\s+([0-9]+)\s*$'
-
-      - name: If leapp_pr was specified in the comment - trigger copr build
-        # TODO: XXX FIXME This should schedule copr build for leapp but for now it will be just setting an env var
-        id: leapp_pr
-        if: ${{ steps.leapp_pr_regex_match.outputs.match != '' }}
-        run: |
-          echo "::set-output name=leapp_pr::${{ steps.leapp_pr_regex_match.outputs.group1 }}"
-
-      - name: Checkout leapp
-        id: checkout_leapp
-        if: ${{ steps.leapp_pr_regex_match.outputs.match != '' }}
-        uses: actions/checkout@v2
-        with:
-          repository: "oamg/leapp"
-          ref: "refs/pull/${{ steps.leapp_pr.outputs.leapp_pr }}/head"
-
-      - name: Get ref and sha for leapp
-        id: ref_sha_leapp
-        if: ${{ steps.leapp_pr_regex_match.outputs.match != '' }}
-        run: |
-          echo "::set-output name=sha::$(git rev-parse --short HEAD)"
-          echo "::set-output name=ref::refs/pull/${{ steps.leapp_pr.outputs.leapp_pr }}/head"
-
-      - name: Trigger copr build for leapp
-        id: copr_build_leapp
-        if: ${{ steps.leapp_pr_regex_match.outputs.match != '' }}
-        env:
-          COPR_CONFIG: "copr_fedora.conf"
-          COPR_CHROOT: "epel-7-x86_64,epel-8-x86_64"
-        run: |
-          cat << EOF > $COPR_CONFIG
-          [copr-cli]
-          login = ${{ secrets.FEDORA_COPR_LOGIN }}
-          username = @oamg
-          token = ${{ secrets.FEDORA_COPR_TOKEN }}
-          copr_url = https://copr.fedorainfracloud.org
-          # expiration date: 2030-07-04
-          EOF
-
-          pip install copr-cli
-          PR=${{ steps.leapp_pr.outputs.leapp_pr }} COPR_CONFIG=$COPR_CONFIG COPR_CHROOT=$COPR_CHROOT make copr_build | tee copr.log
-
-          COPR_URL=$(grep -Po 'https://copr.fedorainfracloud.org/coprs/build/\d+' copr.log)
-          echo "::set-output name=copr_url::${COPR_URL}"
-          echo "::set-output name=copr_id::${COPR_URL##*/}"
-
-      - name: Add comment with copr build url for leapp
-        # TODO: Create comment when copr build fails.
-        id: link_copr_leapp
-        if: ${{ steps.leapp_pr_regex_match.outputs.match != '' }}
-        uses: actions/github-script@v4
-        with:
-          script: |
-            github.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: 'Copr build succeeded: ${{ steps.copr_build_leapp.outputs.copr_url }}'
-            })
-
-      - name: Schedule regression testing for 7to8
-        id: run_test_7to8
-        env:
-          ARTIFACTS: ${{ steps.leapp_pr_regex_match.outputs.match != '' && format('{0};{1}', steps.copr_build_leapp.outputs.copr_id, steps.copr_build.outputs.copr_id) || steps.copr_build.outputs.copr_id }}
-        uses: sclorg/testing-farm-as-github-action@v1.2.10
-        with:
-          # required
-          api_url: ${{ secrets.TF_ENDPOINT }}
-          api_key: ${{ secrets.TF_API_KEY }}
-          git_url: 'https://gitlab.cee.redhat.com/oamg/tmt-plans'
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          # optional
-          tf_scope: 'private'
-          tmt_plan_regex: "^(?!.*c2r)(?!.*sap)(?!.*8to9)"
-          compose: ${{ secrets.COMPOSE_RHEL79 }}
-          arch: 'x86_64'
-          copr: 'epel-7-x86_64'
-          copr_artifacts: ${{ env.ARTIFACTS }}
-          debug: ${{ secrets.ACTIONS_STEP_DEBUG }}
-          tmt_context: 'distro=rhel-7'
-          pull_request_status_name: '7to8'
-          create_issue_comment: 'true'
-          # NOTE(ivasilev) In order to update pr status this workflow has to be massively refactored with artifacts
-          # preparation moved out to a different workflow and the rest split into 2 workflows - 7to8 and 8to9 that are
-          # triggered on a specific repository dispatch event.
-          update_pull_request_status: 'false'
-          environment_settings: '{"provisioning": {"post_install_script": "#!/bin/sh\nsudo sed -i s/.*ssh-rsa/ssh-rsa/ /root/.ssh/authorized_keys"}}'
-
-      - name: Schedule regression testing for 8to9
-        id: run_test_8to9
-        env:
-          ARTIFACTS: ${{ steps.leapp_pr_regex_match.outputs.match != '' && format('{0};{1}', steps.copr_build_leapp.outputs.copr_id, steps.copr_build.outputs.copr_id) || steps.copr_build.outputs.copr_id }}
-        uses: sclorg/testing-farm-as-github-action@v1.2.10
-        with:
-          # required
-          api_url: ${{ secrets.TF_ENDPOINT }}
-          api_key: ${{ secrets.TF_API_KEY }}
-          git_url: 'https://gitlab.cee.redhat.com/oamg/tmt-plans'
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          # optional
-          tf_scope: 'private'
-          tmt_plan_regex: "^(?!.*c2r)(?!.*sap)(?!.*7to8)"
-          compose: ${{ secrets.COMPOSE_RHEL86 }}
-          arch: 'x86_64'
-          copr: 'epel-8-x86_64'
-          copr_artifacts: ${{ env.ARTIFACTS }}
-          debug: ${{ secrets.ACTIONS_STEP_DEBUG }}
-          variables: 'TARGET_RELEASE=9.0;TARGET_KERNEL=el9;RHSM_SKU=RH00069;RHSM_REPOS=rhel-8-for-x86_64-appstream-beta-rpms,rhel-8-for-x86_64-baseos-beta-rpms;LEAPP_EXEC_ENV_VARS=LEAPP_DEVEL_TARGET_PRODUCT_TYPE=beta'
-          tmt_context: 'distro=rhel-8'
-          pull_request_status_name: '8to9'
-          create_issue_comment: 'true'
-          # NOTE(ivasilev) In order to update pr status this workflow has to be massively refactored with artifacts
-          # preparation moved out to a different workflow and the rest split into 2 workflows - 7to8 and 8to9 that are
-          # triggered on a specific repository dispatch event.
-          update_pull_request_status: 'false'
-          environment_settings: '{"provisioning": {"post_install_script": "#!/bin/sh\nsudo sed -i s/.*ssh-rsa/ssh-rsa/ /root/.ssh/authorized_keys"}}'
+  call_workflow_tests_8to9_sst:
+    needs: call_workflow_copr_build
+    uses: oamg/leapp/.github/workflows/reuse-tests-8to9.yml@master
+    secrets: inherit
+    with:
+      copr_artifacts: ${{ needs.call_workflow_copr_build.outputs.artifacts }}
+      tmt_plan_regex: "^(?!.*c2r)(?!.*sap)(?!.*7to8)(.*morf)"
+      pull_request_status_name: "8to9-sst"
+      update_pull_request_status: 'false'
+    if: |
+      github.event.issue.pull_request
+      && startsWith(github.event.comment.body, '/rerun-all')
+      && contains(fromJson('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)
