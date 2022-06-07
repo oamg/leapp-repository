@@ -470,7 +470,7 @@ def is_event_relevant(event, installed_pkgs, tasks):
 def add_packages_to_tasks(tasks, packages, task_type):
     if packages:
         api.current_logger().debug('{v:7} {p}'.format(
-            v=task_type.name, p=', '.join([p.__repr__() for p in packages])))
+            v=task_type.name, p=', '.join([repr(p) for p in packages])))
         for p in packages:
             tasks[task_type][(p.name, p.modulestream)] = p.repository
 
