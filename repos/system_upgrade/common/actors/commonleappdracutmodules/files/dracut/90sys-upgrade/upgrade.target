@@ -2,6 +2,7 @@
 Description=System Upgrade
 Documentation=man:upgrade.target(7)
 # ##sysinit.target sockets.target initrd-root-fs.target initrd-root-device.target initrd-fs.target
+Wants=initrd-root-fs.target initrd-root-device.target initrd-fs.target initrd-usr-fs.target
 Requires=basic.target sysroot.mount
 After=basic.target sysroot.mount
 AllowIsolate=yes
