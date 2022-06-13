@@ -1,4 +1,4 @@
-from leapp.libraries.actor.readopensshconfig import line_empty, parse_config, parse_config_modification, produce_config
+from leapp.libraries.actor.readopensshconfig import line_empty, parse_config, produce_config
 from leapp.models import OpenSshConfig, OpenSshPermitRootLogin
 
 
@@ -147,33 +147,6 @@ def test_parse_config_empty():
     assert not output.permit_root_login
     assert output.use_privilege_separation is None
     assert output.protocol is None
-
-
-def test_parse_config_modification():
-    # This one was modified
-    data = [
-        "S.5....T.  c /etc/ssh/sshd_config",
-    ]
-    assert parse_config_modification(data)
-
-    # This one was just touched (timestamp does not match)
-    data = [
-        ".......T.  c /etc/ssh/sshd_config",
-    ]
-    assert not parse_config_modification(data)
-
-    # This one was not modified (not listed at all)
-    data = [
-        ".......T.  c /etc/sysconfig/sshd",
-    ]
-    assert not parse_config_modification(data)
-
-    # Parse multiple lines
-    data = [
-        "S.5....T.  c /etc/sysconfig/sshd",
-        "S.5....T.  c /etc/ssh/sshd_config",
-    ]
-    assert parse_config_modification(data)
 
 
 def test_produce_config():

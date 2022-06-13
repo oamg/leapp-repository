@@ -1,6 +1,7 @@
 import errno
 
-from leapp.libraries.stdlib import api, run
+from leapp.libraries.common.rpms import check_file_modification
+from leapp.libraries.stdlib import api
 from leapp.models import OpenSshConfig, OpenSshPermitRootLogin
 
 CONFIG = '/etc/ssh/sshd_config'
@@ -93,35 +94,6 @@ def read_sshd_config():
         return []
 
 
-def read_rpm_modifications():
-    """Asks RPM database whether the configuration file was modified."""
-
-    try:
-        return run(['rpm', '-Vf', CONFIG], split=True, checked=False)['stdout']
-    except OSError as err:
-        error = 'Failed to check the modification status of the {}: {}' \
-                ''.format(CONFIG, str(err))
-        api.current_logger().error(error)
-        return []
-
-
-def parse_config_modification(data):
-    """Handle the output of rpm verify to figure out configuration file was modified."""
-
-    # First assume it is not modified -- empty data says it is not modified
-    modified = False
-    for line in data:
-        parts = line.split(' ')
-        # The last part of the line is the actual file we care for
-        if parts[-1] == CONFIG:
-            # First part contains information, if the size and digest differ
-            if '5' in parts[0] or 'S' in parts[0]:
-                modified = True
-        # Ignore any other files lurking here
-
-    return modified
-
-
 def scan_sshd(producer):
     """Parse sshd_config configuration file to create OpenSshConfig message."""
 
@@ -130,7 +102,6 @@ def scan_sshd(producer):
     config = parse_config(output)
 
     # find out whether the file was modified from the one shipped in rpm
-    output = read_rpm_modifications()
-    config.modified = parse_config_modification(output)
+    config.modified = check_file_modification(CONFIG)
 
     produce_config(producer, config)
