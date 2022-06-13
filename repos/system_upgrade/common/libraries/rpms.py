@@ -54,3 +54,52 @@ def has_package(model, package_name, arch=None, context=stdlib.api):
     keys = ('name',) if not arch else ('name', 'arch')
     rpm_lookup = create_lookup(model, field='items', keys=keys, context=context)
     return (package_name, arch) in rpm_lookup if arch else (package_name,) in rpm_lookup
+
+
+def _read_rpm_modifications(config):
+    """
+    Ask RPM database whether the configuration file was modified.
+
+    :param config: a config file to check
+    """
+    try:
+        return stdlib.run(['rpm', '-Vf', config], split=True, checked=False)['stdout']
+    except OSError as err:
+        error = 'Failed to check the modification status of the file {}: {}'.format(config, str(err))
+        stdlib.api.current_logger().error(error)
+        return []
+
+
+def _parse_config_modification(data, config):
+    """
+    Handle the output of rpm verify command to figure out if configuration file was modified.
+
+    :param data: output of the rpm verify
+    :param config: a config file to check
+    """
+
+    # First assume it is not modified -- empty data says it is not modified
+    modified = False
+    for line in data:
+        parts = line.split(' ')
+        # The last part of the line is the actual file we care for
+        if parts[-1] == config:
+            # First part contains information, if the size and digest differ
+            if '5' in parts[0] or 'S' in parts[0]:
+                modified = True
+        # Ignore any other files lurking here
+
+    return modified
+
+
+def check_file_modification(config):
+    """
+    Check if the given configuration file tracked by RPM was modified
+
+    This is useful when figuring out if the file will be replaced by the rpm on the upgrade
+    or we need to take care of the upgrade manually.
+
+    :param config: The configuration file to check
+    """
+    output = _read_rpm_modifications(config)
+    return _parse_config_modification(output, config)
