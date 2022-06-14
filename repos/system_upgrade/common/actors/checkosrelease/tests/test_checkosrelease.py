@@ -8,7 +8,7 @@ from leapp.utils.report import is_inhibitor
 
 
 def test_skip_check(monkeypatch):
-    monkeypatch.setattr(os, "getenv", lambda _unused: True)
+    monkeypatch.setenv('LEAPP_DEVEL_SKIP_CHECK_OS_RELEASE', '1')
     monkeypatch.setattr(reporting, "create_report", create_report_mocked())
 
     assert checkosrelease.skip_check()
@@ -18,7 +18,7 @@ def test_skip_check(monkeypatch):
 
 
 def test_no_skip_check(monkeypatch):
-    monkeypatch.setattr(os, "getenv", lambda _unused: False)
+    monkeypatch.delenv('LEAPP_DEVEL_SKIP_CHECK_OS_RELEASE', raising=False)
     monkeypatch.setattr(reporting, "create_report", create_report_mocked())
 
     assert not checkosrelease.skip_check()

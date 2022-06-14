@@ -17,8 +17,7 @@ def test_check_spamc_config_tlsv1():
     assert 'SSLv3' in report_fields['summary']
     assert 'spamc configuration file' in report_fields['summary']
     assert '--ssl tlsv1' in report_fields['summary']
-    assert all('update your scripts' in r['remediations']['context']
-               for r in report_fields['remediations'])
+    assert all('update your scripts' in r['context'] for r in report_fields['detail']['remediations'])
     assert report_fields['severity'] == 'medium'
 
 
@@ -36,8 +35,7 @@ def test_check_spamc_config_sslv3():
     assert 'SSLv3' in report_fields['summary']
     assert 'spamc configuration file' in report_fields['summary']
     assert '--ssl sslv3' in report_fields['summary']
-    assert all('update your scripts' in r['remediations']['context']
-               for r in report_fields['remediations'])
+    assert all('update your scripts' in r['context'] for r in report_fields['detail']['remediations'])
     assert report_fields['severity'] == 'high'
 
 
@@ -54,8 +52,7 @@ def test_check_spamc_config_correct_config():
     assert '--ssl' in report_fields['summary']
     assert 'SSLv3' in report_fields['summary']
     assert 'spamc configuration file' not in report_fields['summary']
-    assert all('update your scripts' in r['remediations']['context']
-               for r in report_fields['remediations'])
+    assert all('update your scripts' in r['context'] for r in report_fields['detail']['remediations'])
     assert report_fields['severity'] == 'medium'
 
 
@@ -73,8 +70,7 @@ def test_check_spamd_config_ssl_tlsv1():
     assert 'SSLv3' in report_fields['summary']
     assert 'sysconfig' in report_fields['summary']
     assert '--ssl-version tlsv1' in report_fields['summary']
-    assert all('update your scripts' in r['remediations']['context']
-               for r in report_fields['remediations'])
+    assert all('update your scripts' in r['context'] for r in report_fields['detail']['remediations'])
     assert report_fields['severity'] == 'medium'
 
 
@@ -92,8 +88,7 @@ def test_check_spamd_config_ssl_sslv3():
     assert 'SSLv3' in report_fields['summary']
     assert 'sysconfig' in report_fields['summary']
     assert '--ssl-version sslv3' in report_fields['summary']
-    assert all('update your scripts' in r['remediations']['context']
-               for r in report_fields['remediations'])
+    assert all('update your scripts' in r['context'] for r in report_fields['detail']['remediations'])
     assert report_fields['severity'] == 'high'
 
 
@@ -110,8 +105,7 @@ def test_check_spamd_config_ssl_correct_config():
     assert '--ssl-version' in report_fields['summary']
     assert 'SSLv3' in report_fields['summary']
     assert 'sysconfig' not in report_fields['summary']
-    assert all('update your scripts' in r['remediations']['context']
-               for r in report_fields['remediations'])
+    assert all('update your scripts' in r['context'] for r in report_fields['detail']['remediations'])
     assert report_fields['severity'] == 'medium'
 
 
