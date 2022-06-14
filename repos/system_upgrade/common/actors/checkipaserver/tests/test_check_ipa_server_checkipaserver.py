@@ -4,6 +4,7 @@ from leapp.libraries.common.config import version
 from leapp.models import IpaInfo
 from leapp.reporting import Report
 from leapp.snactor.fixture import current_actor_context
+from leapp.utils.report import is_inhibitor
 
 
 def mock_ipa_info(client, server_pkg, server_configured):
@@ -24,7 +25,7 @@ def test_inhibit_ipa_configured(monkeypatch, current_actor_context, src_v):
 
     assert len(reports) == 1
     fields = reports[0].report
-    assert "inhibitor" in fields["flags"]
+    assert is_inhibitor(fields)
     assert "ipa-server" in fields["title"]
 
 
@@ -37,7 +38,7 @@ def test_warn_server_pkg(monkeypatch, current_actor_context, src_v):
 
     assert len(reports) == 1
     fields = reports[0].report
-    assert "flags" not in fields
+    assert not is_inhibitor(fields)
     assert "ipa-server" in fields["title"]
 
 

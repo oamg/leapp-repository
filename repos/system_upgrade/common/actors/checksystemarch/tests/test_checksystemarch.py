@@ -3,6 +3,7 @@ from leapp.libraries.actor import checksystemarch
 from leapp.libraries.common.config import architecture
 from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked
 from leapp.libraries.stdlib import api
+from leapp.utils.report import is_inhibitor
 
 
 def test_valid_architectures(monkeypatch):
@@ -23,4 +24,4 @@ def test_invalid_architecture(monkeypatch):
     assert 'Unsupported architecture' in reporting.create_report.report_fields['title']
     assert 'Upgrade process is only supported' in reporting.create_report.report_fields['summary']
     assert reporting.create_report.report_fields['severity'] == 'high'
-    assert 'inhibitor' in reporting.create_report.report_fields['flags']
+    assert is_inhibitor(reporting.create_report.report_fields)

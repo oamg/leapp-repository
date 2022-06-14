@@ -5,6 +5,7 @@ from leapp.libraries.actor.checkyumpluginsenabled import check_required_yum_plug
 from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked
 from leapp.libraries.stdlib import api
 from leapp.models import YumConfig
+from leapp.utils.report import is_inhibitor
 
 
 def test_report_when_missing_required_plugins(monkeypatch):
@@ -24,7 +25,7 @@ def test_report_when_missing_required_plugins(monkeypatch):
     assert 'subscription-manager' in actor_reports.report_fields['summary'], fail_description
 
     fail_description = 'The upgrade should be inhibited when plugins are not enabled.'
-    assert 'inhibitor' in actor_reports.report_fields['flags'], fail_description
+    assert is_inhibitor(actor_reports.report_fields), fail_description
 
 
 def test_nothing_is_reported_when_rhsm_disabled(monkeypatch):

@@ -10,6 +10,7 @@ from leapp.models import (
     VdoConversionPreDevice,
     VdoConversionUndeterminedDevice
 )
+from leapp.utils.report import is_inhibitor
 
 
 class MockedActorNoVdoDevices(CurrentActorMocked):
@@ -83,7 +84,7 @@ def test_both_conversion_vdo_incomplete(monkeypatch):
             pre_conversion=_pre_conversion_vdos(3, start_char=chr(ord('a') + post_count)),
             undetermined_conversion=_undetermined_conversion_vdos()))
     assert reporting.create_report.called == 2
-    assert 'inhibitor' in reporting.create_report.report_fields['flags']
+    assert is_inhibitor(reporting.create_report.report_fields)
 
 
 # Post-conversion tests.
@@ -94,7 +95,7 @@ def test_post_conversion_multiple_vdo_incomplete(monkeypatch):
                           pre_conversion=_pre_conversion_vdos(),
                           undetermined_conversion=_undetermined_conversion_vdos()))
     assert reporting.create_report.called == 1
-    assert 'inhibitor' in reporting.create_report.report_fields['flags']
+    assert is_inhibitor(reporting.create_report.report_fields)
     assert reporting.create_report.report_fields['summary'].startswith('VDO devices')
 
 
@@ -114,7 +115,7 @@ def test_post_conversion_single_vdo_incomplete(monkeypatch):
                           pre_conversion=_pre_conversion_vdos(),
                           undetermined_conversion=_undetermined_conversion_vdos()))
     assert reporting.create_report.called == 1
-    assert 'inhibitor' in reporting.create_report.report_fields['flags']
+    assert is_inhibitor(reporting.create_report.report_fields)
     assert (reporting.create_report.report_fields['summary'].startswith('VDO device')
             and (not reporting.create_report.report_fields['summary'].startswith('VDO devices')))
 
@@ -126,7 +127,7 @@ def test_post_conversion_single_check_failing(monkeypatch):
                           pre_conversion=_pre_conversion_vdos(),
                           undetermined_conversion=_undetermined_conversion_vdos()))
     assert reporting.create_report.called == 1
-    assert 'inhibitor' in reporting.create_report.report_fields['flags']
+    assert is_inhibitor(reporting.create_report.report_fields)
     assert (reporting.create_report.report_fields['summary'].startswith(
             'Unexpected result checking device') and
             (not reporting.create_report.report_fields['summary'].startswith(
@@ -140,7 +141,7 @@ def test_post_conversion_multiple_check_failing(monkeypatch):
                           pre_conversion=_pre_conversion_vdos(),
                           undetermined_conversion=_undetermined_conversion_vdos()))
     assert reporting.create_report.called == 1
-    assert 'inhibitor' in reporting.create_report.report_fields['flags']
+    assert is_inhibitor(reporting.create_report.report_fields)
     assert reporting.create_report.report_fields['summary'].startswith(
             'Unexpected result checking devices')
 
@@ -152,7 +153,7 @@ def test_post_conversion_incomplete_and_check_failing(monkeypatch):
                           pre_conversion=_pre_conversion_vdos(),
                           undetermined_conversion=_undetermined_conversion_vdos()))
     assert reporting.create_report.called == 2
-    assert 'inhibitor' in reporting.create_report.report_fields['flags']
+    assert is_inhibitor(reporting.create_report.report_fields)
 
 
 # Pre-conversion tests.
@@ -163,7 +164,7 @@ def test_pre_conversion_multiple_vdo_incomplete(monkeypatch):
                           pre_conversion=_pre_conversion_vdos(7),
                           undetermined_conversion=_undetermined_conversion_vdos()))
     assert reporting.create_report.called == 1
-    assert 'inhibitor' in reporting.create_report.report_fields['flags']
+    assert is_inhibitor(reporting.create_report.report_fields)
     assert reporting.create_report.report_fields['summary'].startswith('VDO devices')
 
 
@@ -174,7 +175,7 @@ def test_pre_conversion_single_vdo_incomplete(monkeypatch):
                           pre_conversion=_pre_conversion_vdos(1),
                           undetermined_conversion=_undetermined_conversion_vdos()))
     assert reporting.create_report.called == 1
-    assert 'inhibitor' in reporting.create_report.report_fields['flags']
+    assert is_inhibitor(reporting.create_report.report_fields)
     assert (reporting.create_report.report_fields['summary'].startswith('VDO device')
             and (not reporting.create_report.report_fields['summary'].startswith('VDO devices')))
 
@@ -187,7 +188,7 @@ def test_undetermined_single_check_failing(monkeypatch):
                           pre_conversion=_pre_conversion_vdos(),
                           undetermined_conversion=_undetermined_conversion_vdos(1, True)))
     assert reporting.create_report.called == 1
-    assert 'inhibitor' in reporting.create_report.report_fields['flags']
+    assert is_inhibitor(reporting.create_report.report_fields)
     assert (reporting.create_report.report_fields['summary'].startswith(
             'Unexpected result checking device') and
             (not reporting.create_report.report_fields['summary'].startswith(
@@ -201,7 +202,7 @@ def test_undetermined_multiple_check_failing(monkeypatch):
                           pre_conversion=_pre_conversion_vdos(),
                           undetermined_conversion=_undetermined_conversion_vdos(3, failing=True)))
     assert reporting.create_report.called == 1
-    assert 'inhibitor' in reporting.create_report.report_fields['flags']
+    assert is_inhibitor(reporting.create_report.report_fields)
     assert reporting.create_report.report_fields['summary'].startswith(
             'Unexpected result checking devices')
 
@@ -214,7 +215,7 @@ def test_undetermined_multiple_no_check_no_vdos(monkeypatch):
                           pre_conversion=_pre_conversion_vdos(),
                           undetermined_conversion=_undetermined_conversion_vdos(3)))
     assert reporting.create_report.called == 1
-    assert 'inhibitor' not in reporting.create_report.report_fields['flags']
+    assert not is_inhibitor(reporting.create_report.report_fields)
     assert reporting.create_report.report_fields['summary'].startswith(
             'User has asserted there are no VDO devices')
 
@@ -227,6 +228,6 @@ def test_undetermined_multiple_no_check_some_vdos(monkeypatch):
                           pre_conversion=_pre_conversion_vdos(),
                           undetermined_conversion=_undetermined_conversion_vdos(3)))
     assert reporting.create_report.called == 1
-    assert 'inhibitor' in reporting.create_report.report_fields['flags']
+    assert is_inhibitor(reporting.create_report.report_fields)
     assert reporting.create_report.report_fields['summary'].startswith(
             'User has opted to inhibit upgrade')

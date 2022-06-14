@@ -1,12 +1,6 @@
-from leapp.models import (
-    DaemonList,
-    InstalledRedHatSignedRPM,
-    RPM,
-    SendmailMigrationDecision,
-    TcpWrappersFacts,
-)
+from leapp.models import DaemonList, InstalledRedHatSignedRPM, RPM, SendmailMigrationDecision, TcpWrappersFacts
 from leapp.reporting import Report
-
+from leapp.utils.report import is_inhibitor
 
 RH_PACKAGER = 'Red Hat, Inc. <http://bugzilla.redhat.com/bugzilla>'
 
@@ -41,4 +35,4 @@ def test_actor_with_tcp_wrappers(current_actor_context):
     current_actor_context.feed(tcpwrap_facts)
     current_actor_context.run()
     report_fields = current_actor_context.consume(Report)[0].report
-    assert 'inhibitor' in report_fields['flags']
+    assert is_inhibitor(report_fields)

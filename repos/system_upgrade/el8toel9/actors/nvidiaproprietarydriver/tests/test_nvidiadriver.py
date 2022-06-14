@@ -1,5 +1,6 @@
 from leapp.models import ActiveKernelModule, ActiveKernelModulesFacts
 from leapp.reporting import Report
+from leapp.utils.report import is_inhibitor
 
 
 def test_actor_with_nvidia_driver(current_actor_context):
@@ -10,7 +11,7 @@ def test_actor_with_nvidia_driver(current_actor_context):
     current_actor_context.feed(ActiveKernelModulesFacts(kernel_modules=with_nvidia))
     current_actor_context.run()
     report_fields = current_actor_context.consume(Report)[0].report
-    assert 'inhibitor' in report_fields['flags']
+    assert is_inhibitor(report_fields)
 
 
 def test_actor_without_nvidia_driver(current_actor_context):

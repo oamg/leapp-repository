@@ -1,6 +1,7 @@
-from leapp.snactor.fixture import current_actor_context
-from leapp.models import StorageInfo, FstabEntry
+from leapp.models import FstabEntry, StorageInfo
 from leapp.reporting import Report
+from leapp.snactor.fixture import current_actor_context
+from leapp.utils.report import is_inhibitor
 
 
 def test_actor_with_fstab_entry(current_actor_context):
@@ -19,7 +20,7 @@ def test_actor_with_fstab_entry(current_actor_context):
     current_actor_context.feed(StorageInfo(fstab=with_fstab_entry))
     current_actor_context.run()
     report_fields = current_actor_context.consume(Report)[0].report
-    assert 'inhibitor' in report_fields['flags']
+    assert is_inhibitor(report_fields)
     assert report_fields['severity'] == 'high'
     assert report_fields['title'] == "Use of CIFS detected. Upgrade can't proceed"
 

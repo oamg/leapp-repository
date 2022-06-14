@@ -2,11 +2,12 @@ from __future__ import division
 
 from leapp import reporting
 from leapp.libraries.actor.checkbootavailspace import (
-    MIN_AVAIL_BYTES_FOR_BOOT,
     check_avail_space_on_boot,
     inhibit_upgrade,
+    MIN_AVAIL_BYTES_FOR_BOOT
 )
 from leapp.libraries.common.testutils import create_report_mocked
+from leapp.utils.report import is_inhibitor
 
 
 class fake_get_avail_bytes_on_boot(object):
@@ -48,6 +49,6 @@ def test_inhibit_upgrade(monkeypatch):
     inhibit_upgrade(bytes_available)
 
     assert reporting.create_report.called == 1
-    assert 'inhibitor' in reporting.create_report.report_fields['flags']
+    assert is_inhibitor(reporting.create_report.report_fields)
     mib_needed = (MIN_AVAIL_BYTES_FOR_BOOT - bytes_available) / 2**20
     assert "needs additional {0} MiB".format(mib_needed) in reporting.create_report.report_fields['summary']

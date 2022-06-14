@@ -13,6 +13,7 @@ from leapp.libraries.common.testutils import create_report_mocked, CurrentActorM
 from leapp.libraries.stdlib import api
 from leapp.models import BootEntry, SourceBootLoaderConfiguration
 from leapp.snactor.fixture import current_actor_context
+from leapp.utils.report import is_inhibitor
 
 
 def test_inhibition_multiple_rescue_entries_present(monkeypatch):
@@ -38,7 +39,7 @@ def test_inhibition_multiple_rescue_entries_present(monkeypatch):
         assert expected_rescue_entry in report_summary, fail_description
 
     fail_description = 'Upgrade should be inhibited on multiple rescue entries.'
-    assert 'inhibitor' in mocked_report.report_fields['flags'], fail_description
+    assert is_inhibitor(mocked_report.report_fields), fail_description
 
 
 def test_inhibition_multiple_rescue_entries_not_present(monkeypatch):
@@ -82,7 +83,7 @@ def test_inhibit_when_entries_share_kernel_image(monkeypatch, boot_entries):
     inhibit_if_entries_share_kernel_version(SourceBootLoaderConfiguration(entries=boot_entries))
 
     assert reporting.create_report.called
-    assert 'inhibitor' in reporting.create_report.report_fields['flags']
+    assert is_inhibitor(reporting.create_report.report_fields)
 
     report_summary = reporting.create_report.report_fields['summary']
     assert '- 4.18.0-240.1.1.el8_3.x86_64 (found in entries: "Linux0", "Linux1")' in report_summary

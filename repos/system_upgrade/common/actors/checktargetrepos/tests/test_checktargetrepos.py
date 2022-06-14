@@ -1,5 +1,10 @@
 import pytest
 
+from leapp import reporting
+from leapp.libraries.actor import checktargetrepos
+from leapp.libraries.common import rhsm
+from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked
+from leapp.libraries.stdlib import api
 from leapp.models import (
     CustomTargetRepository,
     CustomTargetRepositoryFile,
@@ -7,13 +12,9 @@ from leapp.models import (
     Report,
     RepositoryData,
     RHELTargetRepository,
-    TargetRepositories,
+    TargetRepositories
 )
-from leapp.libraries.actor import checktargetrepos
-from leapp import reporting
-from leapp.libraries.stdlib import api
-from leapp.libraries.common import rhsm
-from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked
+from leapp.utils.report import is_inhibitor
 
 
 class MockedConsume(object):
@@ -78,9 +79,9 @@ def test_checktargetrepos_no_rhsm(monkeypatch, enable_repos, custom_target_repos
 
     if not custom_target_repos:
         assert reporting.create_report.called == 1
-        assert 'inhibitor' in reporting.create_report.report_fields.get('flags', [])
+        assert is_inhibitor(reporting.create_report.report_fields)
     elif not enable_repos and custom_target_repos and not custom_target_repofile:
         assert reporting.create_report.called == 1
-        assert 'inhibitor' not in reporting.create_report.report_fields.get('flags', [])
+        assert not is_inhibitor(reporting.create_report.report_fields)
     else:
         assert reporting.create_report.called == 0

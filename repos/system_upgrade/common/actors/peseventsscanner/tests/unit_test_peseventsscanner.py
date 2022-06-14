@@ -32,6 +32,7 @@ from leapp.libraries.common import fetch
 from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked, produce_mocked
 from leapp.libraries.stdlib import api
 from leapp.models import PESIDRepositoryEntry, RepoMapEntry, RepositoriesMapping, RpmTransactionTasks
+from leapp.utils.report import is_inhibitor
 
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -483,14 +484,14 @@ def test_get_events(monkeypatch):
     with pytest.raises(StopActorExecution):
         get_events(os.path.join(CUR_DIR, 'files'), 'sample02.json')
     assert reporting.create_report.called == 1
-    assert 'inhibitor' in reporting.create_report.report_fields['flags']
+    assert is_inhibitor(reporting.create_report.report_fields)
 
     reporting.create_report.called = 0
     reporting.create_report.model_instances = []
     with pytest.raises(StopActorExecution):
         get_events(os.path.join(CUR_DIR, 'files'), 'sample03.json')
     assert reporting.create_report.called == 1
-    assert 'inhibitor' in reporting.create_report.report_fields['flags']
+    assert is_inhibitor(reporting.create_report.report_fields)
 
 
 def test_pes_data_not_found(monkeypatch):

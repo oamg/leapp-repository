@@ -3,6 +3,7 @@ from leapp.libraries.common import rhsm
 from leapp.libraries.common.testutils import create_report_mocked
 from leapp.libraries.stdlib import api
 from leapp.models import RHSMInfo
+from leapp.utils.report import is_inhibitor
 
 
 def test_sku_report_skipped(monkeypatch):
@@ -29,7 +30,7 @@ def test_sku_report_has_no_skus(monkeypatch):
     assert checkrhsmsku.create_report.called == 1
     assert checkrhsmsku.create_report.report_fields['title'] == 'The system is not registered or subscribed.'
     assert checkrhsmsku.create_report.report_fields['severity'] == 'high'
-    assert 'inhibitor' in checkrhsmsku.create_report.report_fields['flags']
+    assert is_inhibitor(checkrhsmsku.create_report.report_fields)
 
 
 def test_sku_report_has_sca(monkeypatch):

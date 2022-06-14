@@ -1,6 +1,7 @@
 from leapp.models import Interface, KernelCmdlineArg, PCIAddress, PersistentNetNamesFacts
 from leapp.reporting import Report
 from leapp.snactor.fixture import current_actor_context
+from leapp.utils.report import is_inhibitor
 
 
 def test_actor_single_eth0(current_actor_context):
@@ -25,7 +26,7 @@ def test_actor_more_ethX(current_actor_context):
     current_actor_context.feed(PersistentNetNamesFacts(interfaces=interface))
     current_actor_context.run()
     assert current_actor_context.consume(Report)
-    assert 'inhibitor' in current_actor_context.consume(Report)[0].report['flags']
+    assert is_inhibitor(current_actor_context.consume(Report)[0].report)
 
 
 def test_actor_single_int_not_ethX(current_actor_context):
@@ -50,4 +51,4 @@ def test_actor_ethX_and_not_ethX(current_actor_context):
     current_actor_context.feed(PersistentNetNamesFacts(interfaces=interface))
     current_actor_context.run()
     assert current_actor_context.consume(Report)
-    assert 'inhibitor' in current_actor_context.consume(Report)[0].report['flags']
+    assert is_inhibitor(current_actor_context.consume(Report)[0].report)
