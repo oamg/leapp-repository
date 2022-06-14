@@ -1,7 +1,9 @@
+import json
 import logging
 import os
 from collections import namedtuple
 
+from leapp import reporting
 from leapp.libraries.common.config import architecture
 from leapp.models import EnvVar
 from leapp.utils.deprecation import deprecated
@@ -24,11 +26,8 @@ class create_report_mocked(object):
 
     def __call__(self, report_fields):
         self.called += 1
-        full_report = {}
-        # iterate list of report primitives (classes)
-        for report in report_fields:
-            # last element of path is our field name
-            full_report.update(report.to_dict())
+        report_obj = reporting._create_report_object(report_fields)
+        full_report = json.loads(report_obj.dump()['report'])
         self.reports.append(full_report)
 
     @property

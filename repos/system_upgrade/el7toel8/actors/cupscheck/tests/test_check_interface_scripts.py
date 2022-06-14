@@ -21,5 +21,5 @@ def test_check_interface_scripts(interface_exists, n_reports):
         assert 'usage of interface scripts' in report_fields['title']
         assert 'Interface scripts are no longer' in report_fields['summary']
         assert report_fields['severity'] == reporting.Severity.MEDIUM
-        assert all('*cupsFilter2' in r['remediations']['context']
-                   for r in report_fields['remediations'])
+        assert all('*cupsFilter2' in r['context']
+                   for r in report_fields['detail']['remediations'])

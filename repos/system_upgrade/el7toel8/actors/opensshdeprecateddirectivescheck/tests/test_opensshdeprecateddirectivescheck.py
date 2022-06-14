@@ -34,7 +34,7 @@ def test_inhibit_if_deprecated_directives_used(monkeypatch):
     fail_description = 'Report should have the inhibition flag set when deprecated directive is present.'
     assert is_inhibitor(created_report.report_fields), fail_description
 
-    assert created_report.report_fields['remediations'], 'Report should carry some remediation information.'
+    assert created_report.report_fields['detail']['remediations'], 'Report should carry some remediation information.'
 
 
 def test_inhibit_if_deprecated_directives_used_no_deprecated_directives(monkeypatch):
