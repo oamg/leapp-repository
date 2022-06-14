@@ -1,5 +1,5 @@
 from leapp.models import InstalledDesktopsFacts, InstalledKdeAppsFacts, Report
-
+from leapp.utils.report import is_inhibitor
 
 no_desktop_env = InstalledDesktopsFacts(gnome_installed=False,
                                         kde_installed=False)
@@ -54,7 +54,7 @@ def test_KDE_desktop_no_apps(current_actor_context):
     current_actor_context.feed(no_KDE_apps)
     current_actor_context.run()
     message = current_actor_context.consume(Report)[0]
-    assert "inhibitor" in message.report["flags"]
+    assert is_inhibitor(message.report)
 
 
 def test_KDE_desktop_KDE_apps(current_actor_context):
@@ -65,7 +65,7 @@ def test_KDE_desktop_KDE_apps(current_actor_context):
     current_actor_context.feed(some_KDE_apps)
     current_actor_context.run()
     message = current_actor_context.consume(Report)[0]
-    assert "inhibitor" in message.report["flags"]
+    assert is_inhibitor(message.report)
 
 
 def test_both_desktops_no_apps(current_actor_context):

@@ -1,9 +1,10 @@
 import pytest
 
 from leapp import reporting
-from leapp.libraries.common.testutils import create_report_mocked, logger_mocked
 from leapp.libraries.actor.opensshdeprecateddirectivescheck import inhibit_if_deprecated_directives_used
+from leapp.libraries.common.testutils import create_report_mocked, logger_mocked
 from leapp.models import OpenSshConfig
+from leapp.utils.report import is_inhibitor
 
 
 def test_inhibit_if_deprecated_directives_used(monkeypatch):
@@ -31,7 +32,7 @@ def test_inhibit_if_deprecated_directives_used(monkeypatch):
     assert created_report.report_fields['severity'] == 'high', 'Report has incorrect severity.'
 
     fail_description = 'Report should have the inhibition flag set when deprecated directive is present.'
-    assert 'inhibitor' in created_report.report_fields['flags'], fail_description
+    assert is_inhibitor(created_report.report_fields), fail_description
 
     assert created_report.report_fields['remediations'], 'Report should carry some remediation information.'
 

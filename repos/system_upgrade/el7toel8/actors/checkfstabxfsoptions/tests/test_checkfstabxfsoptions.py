@@ -5,6 +5,7 @@ from leapp.libraries.actor import checkfstabxfsoptions
 from leapp.models import FstabEntry, StorageInfo
 from leapp.reporting import Report
 from leapp.snactor.fixture import current_actor_context
+from leapp.utils.report import is_inhibitor
 
 
 def _myint_gen():
@@ -65,4 +66,4 @@ def test_removed_xfs_option(fstab, current_actor_context):
     current_actor_context.run()
     report = current_actor_context.consume(Report)
     assert report and len(report) == 1
-    assert 'inhibitor' in report[0].report['flags']
+    assert is_inhibitor(report[0].report)

@@ -1,11 +1,12 @@
+from leapp.libraries.actor.checkhacluster import CIB_LOCATION, COROSYNC_CONF_LOCATION
 from leapp.reporting import Report
-from leapp.libraries.actor.checkhacluster import COROSYNC_CONF_LOCATION, CIB_LOCATION
+from leapp.utils.report import is_inhibitor
 
 
 def assert_inhibits(reports, node_type):
     assert len(reports) == 1
     report_fields = reports[0].report
-    assert "inhibitor" in report_fields['flags']
+    assert is_inhibitor(report_fields)
     assert "cluster {0}".format(node_type) in report_fields["summary"]
 
 

@@ -3,6 +3,7 @@ from leapp.libraries.actor import checkmemory
 from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked
 from leapp.libraries.stdlib import api
 from leapp.models import MemoryInfo
+from leapp.utils.report import is_inhibitor
 
 
 def test_check_memory_low(monkeypatch):
@@ -27,4 +28,4 @@ def test_report(monkeypatch):
     checkmemory.process()
     assert reporting.create_report.called
     assert title_msg == reporting.create_report.report_fields['title']
-    assert reporting.Flags.INHIBITOR in reporting.create_report.report_fields['flags']
+    assert is_inhibitor(reporting.create_report.report_fields)

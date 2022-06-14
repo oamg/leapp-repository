@@ -17,6 +17,7 @@ from leapp.models import (
     SystemdMountEntry,
     VgsEntry
 )
+from leapp.utils.report import is_inhibitor
 
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -87,7 +88,7 @@ def test_invalid_fstab_info(monkeypatch):
     assert reporting.create_report.called == 1
     assert reporting.create_report.report_fields['severity'] == 'high'
     assert 'Problems with parsing data in /etc/fstab' in reporting.create_report.report_fields['title']
-    assert 'inhibitor' in reporting.create_report.report_fields['flags']
+    assert is_inhibitor(reporting.create_report.report_fields)
     assert any("The fstab configuration file seems to be invalid" in msg for msg in api.current_logger.errmsg)
 
 

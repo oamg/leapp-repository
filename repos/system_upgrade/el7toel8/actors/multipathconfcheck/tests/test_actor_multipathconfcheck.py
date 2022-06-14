@@ -1,17 +1,14 @@
-from leapp.models import (
-    MultipathConfFacts,
-    MultipathConfig,
-    MultipathConfigOption
-)
+from leapp.models import MultipathConfFacts, MultipathConfig, MultipathConfigOption
 from leapp.reporting import Report
 from leapp.snactor.fixture import current_actor_context
+from leapp.utils.report import is_inhibitor
 
 
 def _assert_default_checker_report(report, pathname):
     assert report['title'] == \
         'Unsupported device-mapper-multipath configuration'
     assert report['severity'] == 'high'
-    assert 'inhibitor' in report['flags']
+    assert is_inhibitor(report)
     assert pathname in report['summary']
 
 

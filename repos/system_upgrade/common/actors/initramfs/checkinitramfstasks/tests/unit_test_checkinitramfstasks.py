@@ -4,14 +4,10 @@ import pytest
 
 from leapp import reporting
 from leapp.libraries.actor import checkinitramfstasks
-from leapp.libraries.common.testutils import CurrentActorMocked, create_report_mocked
+from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked
 from leapp.libraries.stdlib import api
-from leapp.models import (
-    DracutModule,
-    Report,
-    TargetInitramfsTasks,
-    UpgradeInitramfsTasks,
-)
+from leapp.models import DracutModule, Report, TargetInitramfsTasks, UpgradeInitramfsTasks
+from leapp.utils.report import is_inhibitor
 
 
 def gen_UIT(modules):
@@ -90,7 +86,7 @@ def test_report_uit(monkeypatch):
     assert reporting.create_report.called
     assert 'upgrade' in reporting.create_report.report_fields['title']
     assert sum_msg in reporting.create_report.report_fields['summary']
-    assert reporting.Flags.INHIBITOR in reporting.create_report.report_fields['flags']
+    assert is_inhibitor(reporting.create_report.report_fields)
 
 
 def test_report_tit(monkeypatch):
@@ -102,7 +98,7 @@ def test_report_tit(monkeypatch):
     assert reporting.create_report.called
     assert 'target' in reporting.create_report.report_fields['title']
     assert sum_msg in reporting.create_report.report_fields['summary']
-    assert reporting.Flags.INHIBITOR in reporting.create_report.report_fields['flags']
+    assert is_inhibitor(reporting.create_report.report_fields)
 
 
 def test_no_conflict(monkeypatch):
