@@ -68,6 +68,7 @@ def rerun(args):
         verbose=args.verbose,
         reboot=False,
         no_rhsm=False,
+        nogpgcheck=False,
         channel=None,
         report_schema='1.1.0',
         whitelist_experimental=[],

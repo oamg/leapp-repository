@@ -206,6 +206,9 @@ def prepare_configuration(args):
         # Make sure we convert rel paths into abs ones while we know what CWD is
         os.environ['LEAPP_TARGET_ISO'] = os.path.abspath(target_iso_path)
 
+    if args.nogpgcheck:
+        os.environ['LEAPP_NOGPGCHECK'] = '1'
+
     # Check upgrade path and fail early if it's unsupported
     target_version, flavor = command_utils.vet_upgrade_path(args)
     os.environ['LEAPP_UPGRADE_PATH_TARGET_RELEASE'] = target_version

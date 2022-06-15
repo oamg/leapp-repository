@@ -5,6 +5,8 @@ import pytest
 import leapp.models
 from leapp.libraries.common import dnfplugin
 from leapp.libraries.common.config.version import get_major_version
+from leapp.libraries.common.testutils import CurrentActorMocked
+from leapp.libraries.stdlib import api
 from leapp.models.fields import Boolean
 from leapp.topics import Topic
 
@@ -61,7 +63,7 @@ class DATADnfPluginDataDnfConf(leapp.models.Model):
     debugsolver = fields.Boolean()
     disable_repos = BooleanEnum(choices=[True])
     enable_repos = fields.List(fields.StringEnum(choices=TEST_ENABLE_REPOS_CHOICES))
-    gpgcheck = BooleanEnum(choices=[False])
+    gpgcheck = fields.Boolean()
     platform_id = fields.StringEnum(choices=['platform:el8', 'platform:el9'])
     releasever = fields.String()
     installroot = fields.StringEnum(choices=['/installroot'])
@@ -94,16 +96,6 @@ del leapp.models.DATADnfPluginDataRHUIAWS
 del leapp.models.DATADnfPluginData
 
 
-def _mocked_get_target_major_version(version):
-    def impl():
-        return version
-    return impl
-
-
-def _mocked_api_get_file_path(name):
-    return 'some/random/file/path/{}'.format(name)
-
-
 _CONFIG_BUILD_TEST_DEFINITION = (
     #   Parameter, Input Data, Expected Fields with data
     ('debug', False, ('dnf_conf', 'debugsolver'), False),
@@ -131,9 +123,7 @@ def test_build_plugin_data_variations(
     expected_value,
 ):
     used_target_major_version = get_major_version(used_target_version)
-    monkeypatch.setattr(dnfplugin, 'get_target_version', _mocked_get_target_major_version(used_target_version))
-    monkeypatch.setattr(dnfplugin, 'get_target_major_version',
-                        _mocked_get_target_major_version(used_target_major_version))
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(dst_ver=used_target_version))
     inputs = {
         'target_repoids': ['BASEOS', 'APPSTREAM'],
         'debug': True,
@@ -161,8 +151,7 @@ def test_build_plugin_data_variations(
 
 
 def test_build_plugin_data(monkeypatch):
-    monkeypatch.setattr(dnfplugin, 'get_target_version', _mocked_get_target_major_version('8.4'))
-    monkeypatch.setattr(dnfplugin, 'get_target_major_version', _mocked_get_target_major_version('8'))
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(dst_ver='8.4'))
     # Use leapp to validate format and data
     created = DATADnfPluginData.create(
         dnfplugin.build_plugin_data(
