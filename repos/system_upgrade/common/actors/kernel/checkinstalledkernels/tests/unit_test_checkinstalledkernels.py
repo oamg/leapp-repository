@@ -5,7 +5,7 @@ from leapp.libraries.actor import checkinstalledkernels
 from leapp.libraries.common.config import architecture
 from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked, logger_mocked
 from leapp.libraries.stdlib import api
-from leapp.models import RPM, InstalledRedHatSignedRPM
+from leapp.models import InstalledRedHatSignedRPM, RPM
 
 RH_PACKAGER = 'Red Hat, Inc. <http://bugzilla.redhat.com/bugzilla>'
 
@@ -206,3 +206,14 @@ def test_newest_kernel_realtime(monkeypatch, expect_report, msgs, curr_kernel):
         assert reporting.create_report.report_fields['title'] == 'Newest installed kernel not in use'
     else:
         assert not reporting.create_report.called
+
+
+@pytest.mark.parametrize('current_actor_mocked,expected_name', [
+    (CurrentActorMocked(kernel='3.10.0-957.43.1.el7.x86_64', src_ver='7.9'), 'kernel'),
+    (CurrentActorMocked(kernel='3.10.0-789.35.2.rt56.1133.el7.x86_64', src_ver='7.9'), 'kernel-rt'),
+    (CurrentActorMocked(kernel='4.14.0-115.29.1.el7.x86_64', src_ver='8.6'), 'kernel-core'),
+    (CurrentActorMocked(kernel='4.14.0-789.35.2.rt56.1133.el8.x86_64', src_ver='8.6'), 'kernel-rt-core'),
+])
+def test_kernel_name(monkeypatch, current_actor_mocked, expected_name):
+    monkeypatch.setattr(api, 'current_actor', current_actor_mocked)
+    assert expected_name == checkinstalledkernels._get_kernel_rpm_name()

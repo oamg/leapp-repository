@@ -87,12 +87,23 @@ def get_newest_evr(pkgs):
     return newest_evr
 
 
-def process():
-    kernel_name = 'kernel'
+def _get_kernel_rpm_name():
+    base_name = 'kernel'
     if version.is_rhel_realtime():
         api.current_logger().info('The Real Time kernel boot detected.')
-        kernel_name = 'kernel-rt'
+        base_name = 'kernel-rt'
 
+    if version.get_source_major_version() == '7':
+        return base_name
+
+    # Since RHEL 8, the kernel|kernel-rt rpm is just a metapackage that even
+    # does not have to be installed on the system.
+    # The kernel-core|kernel-rt-core rpm is the one we care about instead.
+    return '{}-core'.format(base_name)
+
+
+def process():
+    kernel_name = _get_kernel_rpm_name()
     pkgs = get_pkgs(kernel_name)
     if not pkgs:
         # Hypothatical, user is not allowed to install any kernel that is not signed by RH
