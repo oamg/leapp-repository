@@ -6,6 +6,7 @@ import shutil
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import dnfconfig, guards, mounting, overlaygen, rhsm, utils
+from leapp.libraries.common.config import get_env
 from leapp.libraries.common.config.version import get_target_major_version, get_target_version
 from leapp.libraries.stdlib import api, CalledProcessError, config
 from leapp.models import DNFWorkaround
@@ -74,6 +75,10 @@ def _rebuild_rpm_db(context, root=None):
     context.call(cmd)
 
 
+def _the_nogpgcheck_option_used():
+    return get_env('LEAPP_NOGPGCHECK', '0') == '1'
+
+
 def build_plugin_data(target_repoids, debug, test, tasks, on_aws):
     """
     Generates a dictionary with the DNF plugin data.
@@ -93,7 +98,7 @@ def build_plugin_data(target_repoids, debug, test, tasks, on_aws):
             'debugsolver': debug,
             'disable_repos': True,
             'enable_repos': target_repoids,
-            'gpgcheck': False,
+            'gpgcheck': not _the_nogpgcheck_option_used(),
             'platform_id': 'platform:el{}'.format(get_target_major_version()),
             'releasever': get_target_version(),
             'installroot': '/installroot',
@@ -269,8 +274,10 @@ def install_initramdisk_requirements(packages, target_userspace_info, used_repos
         cmd = [
             'dnf',
             'install',
-            '-y',
-            '--nogpgcheck',
+            '-y']
+        if _the_nogpgcheck_option_used():
+            cmd.append('--nogpgcheck')
+        cmd += [
             '--setopt=module_platform_id=platform:el{}'.format(get_target_major_version()),
             '--setopt=keepcache=1',
             '--releasever', api.current_actor().configuration.version.target,

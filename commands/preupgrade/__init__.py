@@ -30,6 +30,7 @@ from leapp.utils.output import beautify_actor_exception, report_errors, report_i
                  command_utils.get_upgrade_flavour()))
 @command_opt('report-schema', help='Specify report schema version for leapp-report.json',
              choices=['1.0.0', '1.1.0', '1.2.0'], default=get_config().get('report', 'schema'))
+@command_opt('nogpgcheck', is_flag=True, help='Disable RPM GPG checks. Same as yum/dnf --nogpgcheck option.')
 @breadcrumbs.produces_breadcrumbs
 def preupgrade(args, breadcrumbs):
     util.disable_database_sync()
