@@ -116,7 +116,7 @@ class IPUWorkflow(Workflow):
 
         name = 'InterimPreparation'
         filter = TagFilter(tags.InterimPreparationPhaseTag)
-        policies = Policies(Policies.Errors.FailPhase,
+        policies = Policies(Policies.Errors.FailImmediately,
                             Policies.Retry.Phase)
         flags = Flags(request_restart_after_phase=True)
 
