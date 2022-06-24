@@ -12,6 +12,8 @@ from leapp.models import RequiredTargetUserspacePackages  # deprecated
 from leapp.models import TMPTargetRepositoriesFacts  # deprecated
 from leapp.models import (
     CustomTargetRepositoryFile,
+    PkgManagerInfo,
+    RepositoriesFacts,
     RHSMInfo,
     RHUIInfo,
     StorageInfo,
@@ -166,10 +168,24 @@ def prepare_target_userspace(context, userspace_dir, enabled_repos, packages):
         try:
             context.call(cmd, callback_raw=utils.logging_handler)
         except CalledProcessError as exc:
-            raise StopActorExecutionError(
-                message='Unable to install RHEL {} userspace packages.'.format(target_major_version),
-                details={'details': str(exc), 'stderr': exc.stderr}
-            )
+            message = 'Unable to install RHEL {} userspace packages.'.format(target_major_version)
+            details = {'details': str(exc), 'stderr': exc.stderr}
+
+            # If a proxy was set in dnf config, it should be the reason why dnf
+            # failed since leapp does not support updates behind proxy yet.
+            for manager_info in api.consume(PkgManagerInfo):
+                if manager_info.configured_proxies:
+                    details['details'] = ("DNF failed to install userspace packages, likely due to the proxy "
+                                          "configuration detected in the YUM/DNF configuration file.")
+
+            # Similarly if a proxy was set specifically for one of the repositories.
+            for repo_facts in api.consume(RepositoriesFacts):
+                for repo_file in repo_facts.repositories:
+                    if any(repo_data.proxy and repo_data.enabled for repo_data in repo_file.data):
+                        details['details'] = ("DNF failed to install userspace packages, likely due to the proxy "
+                                              "configuration detected in a repository configuration file.")
+
+            raise StopActorExecutionError(message=message, details=details)
 
 
 def _get_all_rhui_pkgs():
