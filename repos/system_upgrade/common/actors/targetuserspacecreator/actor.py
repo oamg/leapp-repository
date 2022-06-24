@@ -5,7 +5,9 @@ from leapp.models import RequiredTargetUserspacePackages  # deprecated
 from leapp.models import TMPTargetRepositoriesFacts  # deprecated all the time
 from leapp.models import (
     CustomTargetRepositoryFile,
+    PkgManagerInfo,
     Report,
+    RepositoriesFacts,
     RepositoriesMapping,
     RHSMInfo,
     RHUIInfo,
@@ -36,12 +38,14 @@ class TargetUserspaceCreator(Actor):
         CustomTargetRepositoryFile,
         RHSMInfo,
         RHUIInfo,
+        RepositoriesFacts,
         RepositoriesMapping,
         RequiredTargetUserspacePackages,
         StorageInfo,
         TargetRepositories,
         TargetUserSpacePreupgradeTasks,
         XFSPresence,
+        PkgManagerInfo,
     )
     produces = (TargetUserSpaceInfo, UsedTargetRepositories, Report, TMPTargetRepositoriesFacts,)
     tags = (IPUWorkflowTag, TargetTransactionFactsPhaseTag)
