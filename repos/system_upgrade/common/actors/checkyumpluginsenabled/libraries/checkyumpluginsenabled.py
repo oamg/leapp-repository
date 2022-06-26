@@ -10,16 +10,16 @@ REQUIRED_YUM_PLUGINS = {'subscription-manager', 'product-id'}
 FMT_LIST_SEPARATOR = '\n    - '
 
 
-def check_required_yum_plugins_enabled(yum_config):
+def check_required_yum_plugins_enabled(pkg_manager_info):
     """
     Checks whether the yum plugins required by the IPU are enabled.
 
     If they are not enabled, a report is produced informing the user about it.
 
-    :param yum_config: YumConfig
+    :param pkg_manager_info: PkgManagerInfo
     """
 
-    missing_required_plugins = REQUIRED_YUM_PLUGINS - set(yum_config.enabled_plugins)
+    missing_required_plugins = REQUIRED_YUM_PLUGINS - set(pkg_manager_info.enabled_plugins)
 
     if skip_rhsm():
         missing_required_plugins -= {'subscription-manager', 'product-id'}
