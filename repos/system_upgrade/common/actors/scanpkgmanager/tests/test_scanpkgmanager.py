@@ -3,7 +3,7 @@ import os
 import pytest
 
 from leapp.libraries import stdlib
-from leapp.libraries.actor import scanpkgmanager
+from leapp.libraries.actor import pluginscanner, scanpkgmanager
 from leapp.libraries.common import testutils
 from leapp.libraries.common.testutils import CurrentActorMocked, produce_mocked
 from leapp.libraries.stdlib import api

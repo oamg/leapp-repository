@@ -22,3 +22,5 @@ class PkgManagerInfo(Model):
     """
     A sorted list of proxies present in yum and dnf configuration files.
     """
+
+    enabled_plugins = fields.List(fields.String(), default=[])

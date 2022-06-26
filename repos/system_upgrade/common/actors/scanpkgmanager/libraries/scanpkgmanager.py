@@ -1,6 +1,7 @@
 import os
 import re
 
+from leapp.libraries.actor import pluginscanner
 from leapp.libraries.common.config.version import get_source_major_version
 from leapp.libraries.stdlib import api
 from leapp.models import PkgManagerInfo
@@ -43,9 +44,9 @@ def _get_proxy_if_set(manager_config_path):
     """
     Get proxy address from specified package manager config.
 
-    :param manager_config_path: path to a package manager config
+    :param str manager_config_path: path to a package manager config
     :returns: proxy address or None when not set
-    :rtype: String
+    :rtype: str
     """
 
     config = _get_config_contents(manager_config_path)
@@ -79,5 +80,6 @@ def process():
     pkg_manager_info = PkgManagerInfo()
     pkg_manager_info.etc_releasever = get_etc_releasever()
     pkg_manager_info.configured_proxies = get_configured_proxies()
+    pkg_manager_info.enabled_plugins = pluginscanner.scan_enabled_package_manager_plugins()
 
     api.produce(pkg_manager_info)
