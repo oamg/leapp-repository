@@ -16,7 +16,7 @@ getarg 'rd.upgrade.break=upgrade' 'rd.break=upgrade' && \
 
 setstate() {
     export UPGRADE_STATE="$*"
-    echo "$UPGRADE_STATE" > $NEWROOT/var/tmp/system-upgrade.state
+    echo "$UPGRADE_STATE" > "${NEWROOT}/var/tmp/system-upgrade.state"
 }
 
 setstate running

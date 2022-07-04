@@ -1,7 +1,7 @@
 #!/bin/bash
 
-LEAPPBIN=/usr/bin/leapp
-LEAPP_VERSION=0.8.10
+# Variable not used at the moment; would be needed in case of a remote upgrade
+#LEAPPBIN=/usr/bin/leapp
 
 check() {
     require_binaries base64 || return 1
@@ -30,11 +30,17 @@ install() {
     #dracut_install /etc/selinux/*/policy/*
     #dracut_install $(find /etc/selinux/*/contexts)
 
+    # shellcheck disable=SC2154 # Following variables are assigned by dracut
+    { # NOTE: use these new variables instead to avoid the warning
+    local _initdir=$initdir
+    local _moddir=$moddir
+    }
+
     # NOTE: rather remove it then keep it; we really don't want plymouth now
     #       (hopefully forever)
     # remove the plymouth text plugin so we get either graphics or details
-    rm -rf ${initdir}/$(plymouth --get-splash-plugin-path)text.so \
-          ${initdir}/usr/share/plymouth/themes/text/*
+    rm -rf "${_initdir}/$(plymouth --get-splash-plugin-path)text.so" \
+           "${_initdir}"/usr/share/plymouth/themes/text/*
 
 
     # stuff we use in upgrade hook(s)
@@ -87,8 +93,8 @@ install() {
     inst_binary grep
 
     # script to actually run the upgrader binary
-    inst_hook upgrade 49 "$moddir/mount_usr.sh"
-    inst_hook upgrade 50 "$moddir/do-upgrade.sh"
+    inst_hook upgrade 49 "$_moddir/mount_usr.sh"
+    inst_hook upgrade 50 "$_moddir/do-upgrade.sh"
 
     #NOTE: some clean up?.. ideally, everything should be inside the leapp*
     #NOTE: current *.service is changed so in case we would like to use the

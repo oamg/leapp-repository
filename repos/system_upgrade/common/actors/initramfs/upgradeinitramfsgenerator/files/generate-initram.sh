@@ -14,15 +14,18 @@ dracut_install_modules()
 {
     stage "Installing leapp dracut modules"
     modir="/usr/lib/dracut/modules.d/";
-    pushd /dracut
-    for folder in $(find . -maxdepth 1 -type d);
-    do
-        /bin/cp -fa $folder $modir;
-    done;
+    pushd /dracut || {
+        echo "ERROR: Failed to change directory using 'pushd /dracut'.";
+        exit 1;
+    }
+    find . -maxdepth 1 -type d -exec /bin/cp -fa {} $modir \;
     stage "Fixing permissions on leapp dracut modules"
     chown -R "root:root" "$modir";
     restorecon -r "$modir"
-    popd
+    popd || {
+        echo "ERROR: Failed to change directory using 'popd'.";
+        exit 1;
+    }
 }
 
 
@@ -37,11 +40,11 @@ build() {
     DRACUT_CONF_DIR=${LEAPP_DRACUT_CONF:-/var/empty}
 
     DRACUT_LVMCONF_ARG="--nolvmconf"
-    if [[ ! -z "$LEAPP_DRACUT_LVMCONF" ]]; then
+    if [[ -n "$LEAPP_DRACUT_LVMCONF" ]]; then
         DRACUT_LVMCONF_ARG="--lvmconf"
     fi
     DRACUT_MDADMCONF_ARG="--nomdadmconf"
-    if [[ ! -z "$LEAPP_DRACUT_MDADMCONF" ]]; then
+    if [[ -n "$LEAPP_DRACUT_MDADMCONF" ]]; then
         # include local /etc/mdadm.conf
         DRACUT_MDADMCONF_ARG="--mdadmconf"
     fi
@@ -52,7 +55,7 @@ build() {
     fi
 
     KERNEL_ARCH='x86_64'
-    if [[ ! -z "$LEAPP_KERNEL_ARCH" ]]; then
+    if [[ -n "$LEAPP_KERNEL_ARCH" ]]; then
         KERNEL_ARCH=$LEAPP_KERNEL_ARCH
     fi
 
@@ -69,25 +72,32 @@ build() {
         DRACUT_INSTALL="$DRACUT_INSTALL $LEAPP_DRACUT_INSTALL_FILES"
     fi
 
-    pushd /artifacts
-    \cp /lib/modules/$KERNEL_VERSION/vmlinuz vmlinuz-upgrade.$KERNEL_ARCH
+    pushd /artifacts || {
+        echo "ERROR: Failed to change directory using 'pushd /artifacts'.";
+        exit 1;
+    }
+    \cp "/lib/modules/${KERNEL_VERSION}/vmlinuz" "vmlinuz-upgrade.$KERNEL_ARCH"
 
     stage "Building initram disk for kernel: $KERNEL_VERSION"
     \dracut \
         -vvvv \
         --force \
-        --conf $DRACUT_CONF \
-        --confdir $DRACUT_CONF_DIR \
+        --conf "$DRACUT_CONF" \
+        --confdir "$DRACUT_CONF_DIR" \
         --install "$DRACUT_INSTALL" \
         $DRACUT_MODULES_ADD \
-        $DRACUT_MDADMCONF_ARG \
-        $DRACUT_LVMCONF_ARG \
+        "$DRACUT_MDADMCONF_ARG" \
+        "$DRACUT_LVMCONF_ARG" \
         --no-hostonly \
-        --kver $KERNEL_VERSION \
-        --kernel-image vmlinuz-upgrade.$KERNEL_ARCH \
-        initramfs-upgrade.$KERNEL_ARCH.img
-    popd
-    stage "Building initram disk for kernel: $KERNEL_VERSION finished"
+        --kver "$KERNEL_VERSION" \
+        --kernel-image "vmlinuz-upgrade.$KERNEL_ARCH" \
+        "initramfs-upgrade.${KERNEL_ARCH}.img"
+    popd || {
+        echo "ERROR: Failed to change directory using 'popd'.";
+        exit 1;
+    }
+
+    stage "Building initram disk for kernel: ${KERNEL_VERSION} finished"
 }
 
 build
