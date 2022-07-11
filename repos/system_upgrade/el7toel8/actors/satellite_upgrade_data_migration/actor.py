@@ -8,6 +8,8 @@ from leapp.tags import ApplicationsPhaseTag, IPUWorkflowTag
 
 POSTGRESQL_DATA_PATH = '/var/lib/pgsql/data/'
 POSTGRESQL_SCL_DATA_PATH = '/var/opt/rh/rh-postgresql12/lib/pgsql/data/'
+POSTGRESQL_USER = 'postgres'
+POSTGRESQL_GROUP = 'postgres'
 
 SYSTEMD_WANTS_BASE = '/etc/systemd/system/multi-user.target.wants/'
 SERVICES_TO_DISABLE = ['dynflow-sidekiq@*', 'foreman', 'foreman-proxy',
@@ -41,3 +43,8 @@ class SatelliteUpgradeDataMigration(Actor):
                 os.rmdir(POSTGRESQL_DATA_PATH)
             # move PostgreSQL data to the new home
             shutil.move(POSTGRESQL_SCL_DATA_PATH, POSTGRESQL_DATA_PATH)
+            if not facts.postgresql.same_partition:
+                for dirpath, _, filenames in os.walk(POSTGRESQL_DATA_PATH):
+                    shutil.chown(dirpath, POSTGRESQL_USER, POSTGRESQL_GROUP)
+                    for filename in filenames:
+                        shutil.chown(os.path.join(dirpath, filename), POSTGRESQL_USER, POSTGRESQL_GROUP)
