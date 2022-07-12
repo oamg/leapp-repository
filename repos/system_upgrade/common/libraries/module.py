@@ -1,4 +1,7 @@
+import os
 import warnings
+
+from leapp.libraries.common.config.version import get_source_major_version
 
 try:
     import dnf
@@ -15,7 +18,21 @@ except ImportError:
 
 def _create_or_get_dnf_base(base=None):
     if not base:
-        base = dnf.Base()
+        # The DNF command reads /etc/yum/vars/releasever, but the DNF library does not. It parses redhat-release
+        # package to retrieve system's major version which it then uses as $releasever. However, some systems might
+        # have repositories only for the exact system version (including the minor number). In a case when
+        # /etc/yum/vars/releasever is present, read its contents so that we can access repositores on such systems.
+        conf = dnf.conf.Conf()
+        pkg_manager = 'yum' if get_source_major_version() == '7' else 'dnf'
+        releasever_path = '/etc/{0}/vars/releasever'.format(pkg_manager)
+        if os.path.exists(releasever_path):
+            with open(releasever_path) as releasever_file:
+                releasever = releasever_file.read().strip()
+                conf.substitutions['releasever'] = releasever
+        else:
+            conf.substitutions['releasever'] = get_source_major_version()
+
+        base = dnf.Base(conf=conf)
         base.init_plugins()
         base.read_all_repos()
         # configure plugins after the repositories are loaded

@@ -101,7 +101,8 @@ MODULES = [
 
 
 @pytest.mark.skipif(no_yum and no_dnf, reason='yum/dnf is unavailable')
-def test_actor_execution(current_actor_context):
+def test_actor_execution(monkeypatch, current_actor_context):
+    monkeypatch.setattr(rpmscanner.module_lib, 'get_modules', lambda: [])
     current_actor_context.run()
     assert current_actor_context.consume(InstalledRPM)
     assert current_actor_context.consume(InstalledRPM)[0].items
