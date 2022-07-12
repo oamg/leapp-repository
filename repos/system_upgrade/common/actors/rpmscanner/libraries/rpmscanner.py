@@ -1,8 +1,9 @@
 import warnings
 
 from leapp.exceptions import StopActorExecutionError
-from leapp.libraries.stdlib import api
+from leapp.libraries.common import module as module_lib
 from leapp.libraries.common import rpms
+from leapp.libraries.stdlib import api
 from leapp.models import InstalledRPM, RPM
 
 no_yum = False
@@ -79,33 +80,11 @@ def get_package_repository_data():
     raise StopActorExecutionError(message=no_yum_warning_msg)
 
 
-def get_modules():
-    """
-    Return info about all module streams as a list of libdnf.module.ModulePackage objects.
-    """
-    if no_dnf:
-        return []
-
-    base = dnf.Base()
-    base.init_plugins()
-    base.read_all_repos()
-    # e.g. the amazon-id plugin requires loaded repositories
-    # for the proper configuration.
-    base.configure_plugins()
-    base.fill_sack()
-
-    module_base = dnf.module.module_base.ModuleBase(base)
-    # this method is absent on RHEL 7, in which case there are no modules anyway
-    if 'get_modules' not in dir(module_base):
-        return []
-    return module_base.get_modules('*')[0]
-
-
 def map_modular_rpms_to_modules():
     """
     Map modular packages to the module streams they come from.
     """
-    modules = get_modules()
+    modules = module_lib.get_modules()
     # empty on RHEL 7 because of no modules
     if not modules:
         return {}
