@@ -118,17 +118,16 @@ RHUI_CLOUD_MAP = {
                 ('leapp-aws.repo', YUM_REPOS_PATH)
             ],
         },
-        # not yet enabled
         'aws-sap-e4s': {
-            'src_pkg': 'rh-amazon-rhui-client-sap-bundle',
+            'src_pkg': 'rh-amazon-rhui-client-sap-bundle-e4s',
             'target_pkg': 'rh-amazon-rhui-client-sap-bundle-e4s',
             'leapp_pkg': 'leapp-rhui-aws-sap-e4s',
             'leapp_pkg_repo': 'leapp-aws-sap-e4s.repo',
             'files_map': [
                 ('rhui-client-config-server-9-sap-bundle.crt', RHUI_PKI_PRODUCT_DIR),
                 ('rhui-client-config-server-9-sap-bundle.key', RHUI_PKI_DIR),
-                ('content-rhel9-sap.crt', RHUI_PKI_PRODUCT_DIR),
-                ('content-rhel9-sap.key', RHUI_PKI_DIR),
+                ('content-rhel9-sap-bundle-e4s.crt', RHUI_PKI_PRODUCT_DIR),
+                ('content-rhel9-sap-bundle-e4s.key', RHUI_PKI_DIR),
                 ('cdn.redhat.com-chain.crt', RHUI_PKI_DIR),
                 ('leapp-aws-sap-e4s.repo', YUM_REPOS_PATH)
             ],
