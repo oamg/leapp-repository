@@ -105,7 +105,7 @@ RHUI_CLOUD_MAP = {
     },
     '8to9': {
         'aws': {
-            'src_pkg': 'rh-amazon-rhui-client-ha',
+            'src_pkg': 'rh-amazon-rhui-client',
             'target_pkg': 'rh-amazon-rhui-client',
             'leapp_pkg': 'leapp-rhui-aws',
             'leapp_pkg_repo': 'leapp-aws.repo',
@@ -130,7 +130,6 @@ RHUI_CLOUD_MAP = {
                 ('content-rhel9-sap.crt', RHUI_PKI_PRODUCT_DIR),
                 ('content-rhel9-sap.key', RHUI_PKI_DIR),
                 ('cdn.redhat.com-chain.crt', RHUI_PKI_DIR),
-                (AWS_DNF_PLUGIN_NAME, DNF_PLUGIN_PATH_PY2),
                 ('leapp-aws-sap-e4s.repo', YUM_REPOS_PATH)
             ],
         },
