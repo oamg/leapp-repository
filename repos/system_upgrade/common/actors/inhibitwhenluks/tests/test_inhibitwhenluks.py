@@ -5,9 +5,8 @@ from leapp.utils.report import is_inhibitor
 
 
 def test_actor_with_luks(current_actor_context):
-    with_luks = [LsblkEntry(name='luks-132', maj_min='253:0', rm='0',
-                            size='10G', ro='0', tp='crypt', mountpoint=''
-                            )]
+    with_luks = [LsblkEntry(name='luks-132', kname='kname1', maj_min='253:0', rm='0',
+                            size='10G', bsize=10*(1 << 39), ro='0', tp='crypt', mountpoint='')]
 
     current_actor_context.feed(StorageInfo(lsblk=with_luks))
     current_actor_context.run()
@@ -17,9 +16,8 @@ def test_actor_with_luks(current_actor_context):
 
 
 def test_actor_with_luks_ceph_only(current_actor_context):
-    with_luks = [LsblkEntry(name='luks-132', maj_min='253:0', rm='0',
-                            size='10G', ro='0', tp='crypt', mountpoint=''
-                            )]
+    with_luks = [LsblkEntry(name='luks-132', kname='kname1', maj_min='253:0', rm='0',
+                            size='10G', bsize=10*(1 << 39), ro='0', tp='crypt', mountpoint='')]
     ceph_volume = ['luks-132']
     current_actor_context.feed(StorageInfo(lsblk=with_luks))
     current_actor_context.feed(CephInfo(encrypted_volumes=ceph_volume))
@@ -28,9 +26,8 @@ def test_actor_with_luks_ceph_only(current_actor_context):
 
 
 def test_actor_without_luks(current_actor_context):
-    without_luks = [LsblkEntry(name='sda1', maj_min='8:0', rm='0',
-                               size='10G', ro='0', tp='part', mountpoint='/boot'
-                               )]
+    without_luks = [LsblkEntry(name='sda1', kname='sda1', maj_min='8:0', rm='0',
+                               size='10G', bsize=10*(1 << 39), ro='0', tp='part', mountpoint='/boot')]
 
     current_actor_context.feed(StorageInfo(lsblk=without_luks))
     current_actor_context.run()

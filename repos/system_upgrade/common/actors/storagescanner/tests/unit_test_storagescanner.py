@@ -252,57 +252,92 @@ def test_get_mount_info(monkeypatch):
 
 
 def test_get_lsblk_info(monkeypatch):
+    bytes_per_gb = 1 << 30
+
     def get_cmd_output_mocked(cmd, delim, expected_len):
-        return [
-            ['vda', '252:0', '0', '40G', '0', 'disk', ''],
-            ['vda1', '252:1', '0', '1G', '0', 'part', '/boot'],
-            ['vda2', '252:2', '0', '39G', '0', 'part', ''],
-            ['rhel_ibm--p8--kvm--03--guest--02-root', '253:0', '0', '38G', '0', 'lvm', '/'],
-            ['rhel_ibm--p8--kvm--03--guest--02-swap', '253:1', '0', '1G', '0', 'lvm', '[SWAP]']]
+        if cmd == ['lsblk', '-pbnr', '--output', 'NAME,MAJ:MIN,RM,SIZE,RO,TYPE,MOUNTPOINT']:
+            output_lines_split_on_whitespace = [
+                ['vda', '252:0', '0', str(40 * bytes_per_gb), '0', 'disk', ''],
+                ['vda1', '252:1', '0', str(1 * bytes_per_gb), '0', 'part', '/boot'],
+                ['vda2', '252:2', '0', str(39 * bytes_per_gb), '0', 'part', ''],
+                ['rhel_ibm--p8--kvm--03--guest--02-root', '253:0', '0', str(38 * bytes_per_gb), '0', 'lvm', '/'],
+                ['rhel_ibm--p8--kvm--03--guest--02-swap', '253:1', '0', str(1 * bytes_per_gb), '0', 'lvm', '[SWAP]']
+            ]
+            for output_line_parts in output_lines_split_on_whitespace:
+                yield output_line_parts
+        elif len(cmd) == 5 and cmd[:4] == ['lsblk', '-nr', '--output', 'NAME,KNAME,SIZE']:
+            # We cannot have the output in a list, since the command is called per device. Therefore, we have to map
+            # each device path to its output.
+            output_lines_split_on_whitespace_per_device = {
+                'vda': ['vda', 'vda', '40G'],
+                'vda1': ['vda1', 'vda1', '1G'],
+                'vda2': ['vda2', 'vda2', '39G'],
+                'rhel_ibm--p8--kvm--03--guest--02-root': ['rhel_ibm--p8--kvm--03--guest--02-root', 'kname1', '38G'],
+                'rhel_ibm--p8--kvm--03--guest--02-swap': ['rhel_ibm--p8--kvm--03--guest--02-swap', 'kname2', '1G']
+            }
+            dev_path = cmd[4]
+            if dev_path not in output_lines_split_on_whitespace_per_device:
+                raise ValueError('Attempting to call lsblk on an unexpected device: {}'.format(dev_path))
+            yield output_lines_split_on_whitespace_per_device[dev_path]
+
+        else:
+            raise ValueError('Attempting to call unexpected command: {}'.format(cmd))
 
     monkeypatch.setattr(storagescanner, '_get_cmd_output', get_cmd_output_mocked)
     expected = [
         LsblkEntry(
             name='vda',
+            kname='vda',
             maj_min='252:0',
             rm='0',
             size='40G',
+            bsize=40 * bytes_per_gb,
             ro='0',
             tp='disk',
             mountpoint=''),
         LsblkEntry(
             name='vda1',
+            kname='vda1',
             maj_min='252:1',
             rm='0',
             size='1G',
+            bsize=1 * bytes_per_gb,
             ro='0',
             tp='part',
             mountpoint='/boot'),
         LsblkEntry(
             name='vda2',
+            kname='vda2',
             maj_min='252:2',
             rm='0',
             size='39G',
+            bsize=39 * bytes_per_gb,
             ro='0',
             tp='part',
             mountpoint=''),
         LsblkEntry(
             name='rhel_ibm--p8--kvm--03--guest--02-root',
+            kname='kname1',
             maj_min='253:0',
             rm='0',
             size='38G',
+            bsize=38 * bytes_per_gb,
             ro='0',
             tp='lvm',
             mountpoint='/'),
         LsblkEntry(
             name='rhel_ibm--p8--kvm--03--guest--02-swap',
+            kname='kname2',
             maj_min='253:1',
             rm='0',
             size='1G',
+            bsize=1 * bytes_per_gb,
             ro='0',
             tp='lvm',
             mountpoint='[SWAP]')]
-    assert expected == storagescanner._get_lsblk_info()
+
+    actual = storagescanner._get_lsblk_info()
+    assert expected == actual
 
 
 def test_get_pvs_info(monkeypatch):

@@ -169,14 +169,19 @@ def _get_lsblk_info():
     cmd = ['lsblk', '-pbnr', '--output', 'NAME,MAJ:MIN,RM,SIZE,RO,TYPE,MOUNTPOINT']
     for entry in _get_cmd_output(cmd, ' ', 7):
         dev_path, maj_min, rm, bsize, ro, tp, mountpoint = entry
-        name, kname, size = next(_get_cmd_output(['lsblk', '-nr', '--output', 'NAME,KNAME,SIZE', dev_path], ' ', 3))
+        lsblk_cmd = ['lsblk', '-nr', '--output', 'NAME,KNAME,SIZE', dev_path]
+        lsblk_info_for_devpath = next(_get_cmd_output(lsblk_cmd, ' ', 3), None)
+        if not lsblk_info_for_devpath:
+            return
+
+        name, kname, size = lsblk_info_for_devpath
         yield LsblkEntry(
             name=name,
             kname=kname,
             maj_min=maj_min,
             rm=rm,
             size=size,
-            bsize=bsize,
+            bsize=int(bsize),
             ro=ro,
             tp=tp,
             mountpoint=mountpoint)
