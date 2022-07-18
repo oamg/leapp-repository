@@ -20,35 +20,45 @@ class CheckNfs(Actor):
     def process(self):
         details = "NFS is currently not supported by the inplace upgrade.\n" \
                   "We have found NFS usage at the following locations:\n"
-        nfs_found = False
 
         def _is_nfs(a_type):
             return a_type.startswith('nfs') and a_type != 'nfsd'
 
         for storage in self.consume(StorageInfo):
             # Check fstab
+            fstab_nfs_mounts = []
             for fstab in storage.fstab:
                 if _is_nfs(fstab.fs_vfstype):
-                    nfs_found = True
-                    details += "- One or more NFS entries in /etc/fstab\n"
-                    break
+                    fstab_nfs_mounts.append(" - {} {}\n".format(fstab.fs_spec, fstab.fs_file))
 
             # Check mount
+            nfs_mounts = []
             for mount in storage.mount:
                 if _is_nfs(mount.tp):
-                    nfs_found = True
-                    details += "- Currently mounted NFS share:\n"
-                    details += "%s %s %s %s\n" % (mount.name, mount.mount, mount.tp, mount.options)
-                    break
+                    nfs_mounts.append(" - {} {}\n".format(mount.name, mount.mount))
 
             # Check systemd-mount
+            systemd_nfs_mounts = []
             for systemdmount in storage.systemdmount:
                 if _is_nfs(systemdmount.fs_type):
-                    nfs_found = True
-                    details += "- One or more configured NFS mounts in systemd-mount\n"
-                    break
+                    # mountpoint is not available in the model
+                    systemd_nfs_mounts.append(" - {}\n".format(systemdmount.node))
 
-        if nfs_found:
+        if any((fstab_nfs_mounts, nfs_mounts, systemd_nfs_mounts)):
+            if fstab_nfs_mounts:
+                details += "- NFS shares found in /etc/fstab:\n"
+                details += ''.join(fstab_nfs_mounts)
+
+            if nfs_mounts:
+                details += "- NFS shares currently mounted:\n"
+                details += ''.join(nfs_mounts)
+
+            if systemd_nfs_mounts:
+                details += "- NFS mounts configured with systemd-mount:\n"
+                details += ''.join(systemd_nfs_mounts)
+
+            fstab_related_resource = [reporting.RelatedResource('file', '/etc/fstab')] if fstab_nfs_mounts else []
+
             create_report([
                 reporting.Title("Use of NFS detected. Upgrade can't proceed"),
                 reporting.Summary(details),
@@ -59,5 +69,5 @@ class CheckNfs(Actor):
                 ]),
                 reporting.Remediation(hint='Disable NFS temporarily for the upgrade if possible.'),
                 reporting.Flags([reporting.Flags.INHIBITOR]),
-                reporting.RelatedResource('file', '/etc/fstab')
-            ])
+                ] + fstab_related_resource
+            )
