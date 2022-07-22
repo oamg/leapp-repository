@@ -1,0 +1,18 @@
+FROM fedora:34
+
+VOLUME /repo
+
+RUN dnf update -y && \
+    dnf install -y findutils make rsync
+
+ENV PYTHON_VENV python3.9
+
+RUN cp -a /repo /repocopy
+
+WORKDIR /repocopy
+
+RUN rm -rf tut*
+
+RUN make clean && make install-deps-fedora
+
+WORKDIR /
