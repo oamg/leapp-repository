@@ -133,12 +133,29 @@ RHUI_CLOUD_MAP = {
                 ('leapp-aws-sap-e4s.repo', YUM_REPOS_PATH)
             ],
         },
-        # not yet enabled
         'azure': {
             'src_pkg': 'rhui-azure-rhel8',
             'target_pkg': 'rhui-azure-rhel9',
             'agent_pkg': 'WALinuxAgent',
             'leapp_pkg': 'leapp-rhui-azure',
+            'leapp_pkg_repo': 'leapp-azure.repo',
+            'files_map': [
+                ('content.crt', RHUI_PKI_PRODUCT_DIR),
+                ('key.pem', RHUI_PKI_PRIVATE_DIR),
+                ('leapp-azure.repo', YUM_REPOS_PATH)
+            ],
+        },
+        # FIXME(mhecko): This entry is identical to the azure one, since we have no EUS content yet, therefore, it
+        # #              serves only the purpose of containing the name of rhui client package to correctly detect
+        # #              cloud provider. Trying to work around this entry by specifying --channel, will result in
+        # #              failures - there is no repomapping for EUS content, and the name of target pkg differs on EUS.
+        # #              If the EUS image is available sooner than the 'azure-eus' entry gets modified, the user can
+        # #              still upgrade to non-EUS, and switch the newly upgraded system to EUS manually.
+        'azure-eus': {
+            'src_pkg': 'rhui-azure-rhel8-eus',
+            'target_pkg': 'rhui-azure-rhel9',
+            'agent_pkg': 'WALinuxAgent',
+            'leapp_pkg': 'leapp-rhui-azure-eus',
             'leapp_pkg_repo': 'leapp-azure.repo',
             'files_map': [
                 ('content.crt', RHUI_PKI_PRODUCT_DIR),
