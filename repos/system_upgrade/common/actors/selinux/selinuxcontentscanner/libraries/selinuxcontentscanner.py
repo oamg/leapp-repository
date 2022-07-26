@@ -227,6 +227,10 @@ def get_selinux_customizations():
         # can be reapplied after the upgrade
         semanage = run(["semanage", "export"], split=True)
         for line in semanage.get("stdout", []):
+            # Skip "deleteall" commands to avoid removing customizations
+            # done by package scripts during upgrade
+            if " -D" in line:
+                continue
             for setype in removed_types:
                 if setype in line:
                     semanage_removed.append(line)
