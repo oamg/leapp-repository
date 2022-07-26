@@ -68,7 +68,8 @@ def test_get_selinux_customizations(monkeypatch):
 
     (semanage_valid, semanage_removed) = selinuxcontentscanner.get_selinux_customizations()
 
-    assert len(semanage_valid) == 11
-    assert semanage_valid[0] == "boolean -D"
-    assert semanage_valid[10] == "fcontext -a -f a -t httpd_sys_content_t '/web(/.*)?'"
+    assert len(semanage_valid) == 3
+    assert semanage_valid[0] == "boolean -m -1 cron_can_relabel"
+    assert semanage_valid[1] == "port -a -t http_port_t -p udp 81"
+    assert semanage_valid[2] == "fcontext -a -f a -t httpd_sys_content_t '/web(/.*)?'"
     assert semanage_removed == ["fcontext -a -f a -t cgdcbxd_exec_t '/ganesha(/.*)?'"]

@@ -101,6 +101,8 @@ class SELinuxApplyCustom(Actor):
                 )
                 # Retry, but install each module separately
                 for module in semodules.modules:
+                    if module.name in installed_modules:
+                        continue
                     cil_filename = os.path.join(
                         WORKING_DIRECTORY, '{}.cil'.format(module.name)
                     )
@@ -126,32 +128,20 @@ class SELinuxApplyCustom(Actor):
                     '\n'.join(custom.commands)
                 )
             )
-            semanage_filename = os.path.join(WORKING_DIRECTORY, 'semanage')
-            # save SELinux customizations to disk
-            try:
-                with open(semanage_filename, 'w') as s_file:
-                    s_file.write('\n'.join(custom.commands))
-            except OSError as e:
-                self.log.warning(
-                    'Error writing SELinux customizations to disk: {}'.format(e)
-                )
-                failed_custom.extend(custom.commands)
             # import customizations
             try:
-                run(['semanage', 'import', '-f', semanage_filename])
+                run(['semanage', 'import'], stdin='\n'.join(custom.commands))
             except CalledProcessError as e:
                 self.log.warning(
-                    'Failed to import SELinux customizations: {}'.format(e.stderr)
+                    'Error importing SELinux customizations in a single transaction:'
+                    '{}\nRetrying -- now each command will be applied separately.'.format(e.stderr)
                 )
-                failed_custom.extend(custom.commands)
-                continue
-            # clean-up
-            try:
-                os.remove(semanage_filename)
-            except OSError as e:
-                self.log.warning(
-                    'Failed to remove temporary file {}: {}'.format(semanage_filename, e)
-                )
+                for cmd in custom.commands:
+                    try:
+                        run(['semanage', 'import'], stdin='{}\n'.format(cmd))
+                    except CalledProcessError as e:
+                        self.log.warning('Error applying "semanage {}": {}'.format(cmd, e.stderr))
+                        failed_custom.append(cmd)
                 continue
 
         # clean-up
