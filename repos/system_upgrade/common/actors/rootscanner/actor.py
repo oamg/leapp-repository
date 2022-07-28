@@ -1,8 +1,10 @@
 import os
 
+import six
+
 from leapp.actors import Actor
-from leapp.models import RootDirectory, RootSubdirectory
-from leapp.tags import IPUWorkflowTag, FactsPhaseTag
+from leapp.models import InvalidRootSubdirectory, RootDirectory, RootSubdirectory
+from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 
 class RootScanner(Actor):
@@ -18,10 +20,18 @@ class RootScanner(Actor):
 
     def process(self):
         subdirs = []
-        for subdir in os.listdir('/'):
-            path = os.path.join('/', subdir)
+        invalid_subdirs = []
+
+        def _create_a_subdir(subdir_cls, name, path):
             if os.path.islink(path):
-                subdirs.append(RootSubdirectory(name=subdir, target=os.readlink(path)))
+                return subdir_cls(name=name, target=os.readlink(path))
+            return subdir_cls(name=name)
+
+        for subdir in os.listdir('/'):
+            # Note(ivasilev) non-utf encoded string will appear as byte strings
+            if isinstance(subdir, six.binary_type):
+                invalid_subdirs.append(_create_a_subdir(InvalidRootSubdirectory, subdir, os.path.join(b'/', subdir)))
             else:
-                subdirs.append(RootSubdirectory(name=subdir))
-        self.produce(RootDirectory(items=subdirs))
+                subdirs.append(_create_a_subdir(RootSubdirectory, subdir, os.path.join('/', subdir)))
+
+        self.produce(RootDirectory(items=subdirs, invalid_items=invalid_subdirs))
