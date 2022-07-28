@@ -42,15 +42,18 @@ class CheckRHUI(Actor):
         upg_path = rhui.get_upg_path()
         for provider, info in rhui.RHUI_CLOUD_MAP[upg_path].items():
             if has_package(InstalledRPM, info['src_pkg']):
-                is_azure_sap = False
-                azure_sap_pkg = rhui.RHUI_CLOUD_MAP[upg_path]['azure-sap']['src_pkg']
-                azure_nonsap_pkg = rhui.RHUI_CLOUD_MAP[upg_path]['azure']['src_pkg']
                 # we need to do this workaround in order to overcome our RHUI handling limitation
                 # in case there are more client packages on the source system
-                if 'azure' in info['src_pkg'] and has_package(InstalledRPM, azure_sap_pkg):
-                    is_azure_sap = True
-                    provider = 'azure-sap'
-                    info = rhui.RHUI_CLOUD_MAP[upg_path]['azure-sap']
+                if 'azure' in info['src_pkg']:
+                    azure_sap_variants = [
+                        'azure-sap',
+                        'azure-sap-apps',
+                    ]
+                    for azure_sap_variant in azure_sap_variants:
+                        sap_variant_info = rhui.RHUI_CLOUD_MAP[upg_path][azure_sap_variant]
+                        if has_package(InstalledRPM, sap_variant_info['src_pkg']):
+                            info = sap_variant_info
+                            provider = azure_sap_variant
 
                 if provider.startswith('google'):
                     rhui_dir = api.get_common_folder_path('rhui')
@@ -102,7 +105,8 @@ class CheckRHUI(Actor):
                 if info['src_pkg'] != info['target_pkg']:
                     self.produce(RpmTransactionTasks(to_install=[info['target_pkg']]))
                     self.produce(RpmTransactionTasks(to_remove=[info['src_pkg']]))
-                    if is_azure_sap:
+                    if provider in ('azure-sap', 'azure-sap-apps'):
+                        azure_nonsap_pkg = rhui.RHUI_CLOUD_MAP[upg_path]['azure']['src_pkg']
                         self.produce(RpmTransactionTasks(to_remove=[azure_nonsap_pkg]))
 
                 self.produce(RHUIInfo(provider=provider))

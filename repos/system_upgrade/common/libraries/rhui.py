@@ -66,6 +66,20 @@ RHUI_CLOUD_MAP = {
                 ('leapp-azure.repo', YUM_REPOS_PATH)
             ],
         },
+        'azure-sap-apps': {
+            'src_pkg': 'rhui-azure-rhel7-base-sap-apps',
+            'target_pkg': 'rhui-azure-rhel8-sapapps',
+            'agent_pkg': 'WALinuxAgent',
+            'leapp_pkg': 'leapp-rhui-azure-sap',
+            'leapp_pkg_repo': 'leapp-azure-sap-apps.repo',
+            'files_map': [
+                ('content-rhel8-eus.crt', RHUI_PKI_PRODUCT_DIR),
+                ('content-rhel8-sapapps.crt', RHUI_PKI_PRODUCT_DIR),
+                ('key-rhel8-eus.pem', RHUI_PKI_DIR),
+                ('key-rhel8-sapapps.pem', RHUI_PKI_DIR),
+                ('leapp-azure-sap-apps.repo', YUM_REPOS_PATH),
+            ],
+        },
         'azure-sap': {
             'src_pkg': 'rhui-azure-rhel7-base-sap-ha',
             'target_pkg': 'rhui-azure-rhel8-sap-ha',
