@@ -74,6 +74,7 @@ class SatelliteUpgradeFacts(Actor):
         bytes_required = None
         bytes_available = None
         old_pgsql_data = False
+        dedicated_partition = False
 
         if local_postgresql:
             """
@@ -100,6 +101,7 @@ class SatelliteUpgradeFacts(Actor):
                     break
 
             if scl_psql_stat.st_dev != nonscl_psql_stat.st_dev:
+                dedicated_partition = os.path.ismount(POSTGRESQL_SCL_DATA_PATH)
                 on_same_partition = False
                 # get the current disk usage of the PostgreSQL data
                 scl_du_call = run(['du', '--block-size=1', '--summarize', POSTGRESQL_SCL_DATA_PATH])
@@ -124,6 +126,7 @@ class SatelliteUpgradeFacts(Actor):
             postgresql=SatellitePostgresqlFacts(
                 local_postgresql=local_postgresql,
                 old_var_lib_pgsql_data=old_pgsql_data,
+                dedicated_partition=dedicated_partition,
                 same_partition=on_same_partition,
                 space_required=bytes_required,
                 space_available=bytes_available,

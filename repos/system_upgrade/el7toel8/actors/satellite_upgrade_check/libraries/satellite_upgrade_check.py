@@ -28,7 +28,10 @@ def satellite_upgrade_check(facts):
             summary = "Your PostgreSQL data will be automatically migrated."
         else:
             scl_psql_path = '/var/opt/rh/rh-postgresql12/lib/pgsql/data/'
-            if facts.postgresql.space_required > facts.postgresql.space_available:
+            if facts.dedicated_partition:
+                flags = [reporting.Flags.INHIBITOR]
+                severity = reporting.Severity.HIGH
+            elif facts.postgresql.space_required > facts.postgresql.space_available:
                 storage_message = """You currently don't have enough free storage to move the data.
                 Automatic moving cannot be performed."""
                 flags = [reporting.Flags.INHIBITOR]
