@@ -5,10 +5,10 @@ from leapp.models import InstalledRedHatSignedRPM
 
 # Summary for bacula-director report
 report_director_inst_summary = (
-    'Bacula director component will be upgraded. Since the upgraded RHEL'
-    ' release includes Bacula director that is incompatible with the version'
-    ' included in the previous RHEL release, it is necessary to proceed with'
-    ' additional steps for the complete upgrade of the Bacula backup database.'
+    'Bacula director component will be upgraded. Since the new version is'
+    ' incompatible with the current version, it is necessary to proceed'
+    ' with additional steps for the complete upgrade of the Bacula backup'
+    ' database.'
 )
 
 report_director_inst_hint = (
