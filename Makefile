@@ -41,6 +41,9 @@ _COPR_REPO=$${COPR_REPO:-leapp}
 _COPR_REPO_TMP=$${COPR_REPO_TMP:-leapp-tmp}
 _COPR_CONFIG=$${COPR_CONFIG:-~/.config/copr_rh_oamg.conf}
 
+# tool used to run containers for testing and building packages
+_CONTAINER_TOOL=$${CONTAINER_TOOL:-podman}
+
 # container to run tests in
 _TEST_CONTAINER=$${TEST_CONTAINER:-rhel8}
 
@@ -150,6 +153,7 @@ help:
 	@echo "  ACTOR=<actor> TEST_LIBS=y make test"
 	@echo "  BUILD_CONTAINER=el7 make build_container"
 	@echo "  TEST_CONTAINER=f34 make test_container"
+	@echo "  CONTAINER_TOOL=docker TEST_CONTAINER=rhel7 make test_container_no_lint"
 	@echo ""
 
 clean:
@@ -220,8 +224,9 @@ _build_local: source
 	@mv packaging/$(PKGNAME).spec.bak packaging/$(PKGNAME).spec
 
 build_container:
-	@echo "--- Build RPM ${PKGNAME}-${VERSION}-${RELEASE}.el$(DIST_VERSION).rpm in container ---"
-	@case "$(BUILD_CONTAINER)" in \
+	@[ "$(_CONTAINER_TOOL)" == "docker" -a "$$UID" -ne 0 ] && { echo "Container tool 'docker' must be run as root!"; exit 1; }; \
+	echo "--- Build RPM ${PKGNAME}-${VERSION}-${RELEASE}.el$(DIST_VERSION).rpm in container ---"; \
+	case "$(BUILD_CONTAINER)" in \
 		el7) \
 			CONT_FILE="utils/container-builds/Containerfile.centos7"; \
 			;; \
@@ -238,9 +243,9 @@ build_container:
 			;; \
 	esac && \
 	IMAGE="leapp-repo-build-$(BUILD_CONTAINER)"; \
-	podman image exists $$IMAGE || \
-	podman build -f $$CONT_FILE --tag $$IMAGE -v $$PWD:/repo:Z && \
-	podman run --rm --name "$${IMAGE}-cont" -v $$PWD:/repo:Z $$IMAGE
+	$(_CONTAINER_TOOL) image inspect $$IMAGE > /dev/null 2>&1 || \
+	$(_CONTAINER_TOOL) build -f $$CONT_FILE --tag $$IMAGE . && \
+	$(_CONTAINER_TOOL) run --rm --name "$${IMAGE}-cont" -v $$PWD:/repo:Z $$IMAGE
 
 copr_build: srpm
 	@echo "--- Build RPM ${PKGNAME}-${VERSION}-${RELEASE}.el$(DIST_VERSION).rpm in COPR ---"
@@ -347,9 +352,9 @@ test: lint test_no_lint
 _build_container_image:
 	@[ -z "$$CONT_FILE" ] && { echo "CONT_FILE must be set"; exit 1; } || \
 	[ -z "$$TEST_IMAGE" ] && { echo "TEST_IMAGE must be set"; exit 1; }; \
-	podman image exists "$$TEST_IMAGE" && exit 0; \
+	$(_CONTAINER_TOOL) image inspect "$$TEST_IMAGE" > /dev/null 2>&1 && exit 0; \
 	echo "=========== Building container test env image ==========="; \
-	podman build -f $$CONT_FILE --tag $$TEST_IMAGE -v $$PWD:/repo:Z
+	$(_CONTAINER_TOOL) build -f $$CONT_FILE --tag $$TEST_IMAGE .
 
 # tests one IPU, leapp repositories irrelevant to the tested IPU are deleted
 _test_container_ipu:
@@ -367,8 +372,8 @@ _test_container_ipu:
 		echo "Only supported TEST_CONT_IPUs are el7toel8, el8toel9"; exit 1; \
 		;; \
 	esac && \
-	podman exec -w /repocopy $$_CONT_NAME make clean && \
-	podman exec -w /repocopy -e REPOSITORIES $$_CONT_NAME make $${_TEST_CONT_TARGET:-test}
+	$(_CONTAINER_TOOL) exec -w /repocopy $$_CONT_NAME make clean && \
+	$(_CONTAINER_TOOL) exec -w /repocopy -e REPOSITORIES $$_CONT_NAME make $${_TEST_CONT_TARGET:-test}
 
 # Runs tests in a container
 # Builds testing image first if it doesn't exist
@@ -376,7 +381,8 @@ _test_container_ipu:
 # because e.g. RHEL7 to RHEL8 IPU must work on python2.7 and python3.6
 # and RHEL8 to RHEL9 IPU must work on python3.6 and python3.9.
 test_container:
-	@case $(_TEST_CONTAINER) in \
+	@[ "$(_CONTAINER_TOOL)" == "docker" -a "$$UID" -ne 0 ] && { echo "The 'docker' container tool must be run as root!"; exit 1; }; \
+	case $(_TEST_CONTAINER) in \
 	f34) \
 		export CONT_FILE="utils/container-tests/Containerfile.f34"; \
 		export _VENV="python3.9"; \
@@ -397,9 +403,9 @@ test_container:
 	$(MAKE) _build_container_image && \
 	echo "=========== Running tests in $(_TEST_CONTAINER) container ===============" && \
 	export _CONT_NAME="leapp-repo-tests-$(_TEST_CONTAINER)-cont"; \
-	podman container exists $$_CONT_NAME && { podman kill $$_CONT_NAME; podman rm $$_CONT_NAME; }; \
-	podman run -di --name $$_CONT_NAME -v "$$PWD":/repo:Z -e PYTHON_VENV=$$_VENV $$TEST_IMAGE && \
-	podman exec $$_CONT_NAME rsync -aur --delete --exclude "tut*" /repo/ /repocopy && \
+	$(_CONTAINER_TOOL) ps -q -f name=$$_CONT_NAME && { $(_CONTAINER_TOOL) kill $$_CONT_NAME; $(_CONTAINER_TOOL) rm $$_CONT_NAME; }; \
+	$(_CONTAINER_TOOL) run -di --name $$_CONT_NAME -v "$$PWD":/repo:Z -e PYTHON_VENV=$$_VENV $$TEST_IMAGE && \
+	$(_CONTAINER_TOOL) exec $$_CONT_NAME rsync -aur --delete --exclude "tut*" /repo/ /repocopy && \
 	case $$_VENV in \
 	python2.7) \
 		TEST_CONT_IPU=el7toel8 $(MAKE) _test_container_ipu; \
@@ -415,32 +421,32 @@ test_container:
 		TEST_CONT_IPU=el8toel9 $(MAKE) _test_container_ipu; \
 		;;\
 	esac; \
-	podman kill $$_CONT_NAME; \
-	podman rm $$_CONT_NAME
+	$(_CONTAINER_TOOL) kill $$_CONT_NAME; \
+	$(_CONTAINER_TOOL) rm $$_CONT_NAME
 
 test_container_all:
 	@for container in "f34" "rhel7" "rhel8"; do \
-		TEST_CONTAINER=$$container $(MAKE) test_container; \
+		TEST_CONTAINER=$$container $(MAKE) test_container || exit 1; \
 	done
 
 test_container_no_lint:
-	_TEST_CONT_TARGET="test_no_lint" $(MAKE) test_container
+	@_TEST_CONT_TARGET="test_no_lint" $(MAKE) test_container
 
 test_container_all_no_lint:
 	@for container in "f34" "rhel7" "rhel8"; do \
-		TEST_CONTAINER=$$container $(MAKE) test_container_no_lint; \
+		TEST_CONTAINER=$$container $(MAKE) test_container_no_lint || exit 1; \
 	done
 
 #TODO(mmatuska): Add lint_container and lint_container_all for running just lint in containers
 
-# clean all testing containers and their images, can't use podman rmi -i,
-# because it's unavailable on older podman versions
+# clean all testing and building containers and their images
 clean_containers:
-	@for i in "leapp-repo-tests-f34" "leapp-repo-tests-rhel7" "leapp-repo-tests-rhel8" \
+	@[ "$(_CONTAINER_TOOL)" == "docker" -a "$$UID" -ne 0 ] && { echo "Container tool 'docker' must be run as root!"; exit 1; }; \
+	for i in "leapp-repo-tests-f34" "leapp-repo-tests-rhel7" "leapp-repo-tests-rhel8" \
 	"leapp-repo-build-el7" "leapp-repo-build-el8"; do \
-		podman kill "$$i-cont" || :; \
-		podman rm "$$i-cont" || :; \
-		podman rmi "$$i" || :;  \
+		$(_CONTAINER_TOOL) kill "$$i-cont" || :; \
+		$(_CONTAINER_TOOL) rm "$$i-cont" || :; \
+		$(_CONTAINER_TOOL) rmi "$$i" || :;  \
 	done > /dev/null 2>&1
 
 fast_lint:

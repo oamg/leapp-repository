@@ -12,7 +12,7 @@ RUN yum -y install python27-python-pip && \
 
 ENV PYTHON_VENV python2.7
 
-RUN cp -a /repo /repocopy
+COPY . /repocopy
 
 WORKDIR /repocopy
 
