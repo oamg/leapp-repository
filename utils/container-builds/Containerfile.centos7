@@ -1,0 +1,10 @@
+FROM centos:7
+
+VOLUME /repo
+
+RUN yum update -y && \
+    yum install -y rpm-build python-devel make git
+
+WORKDIR /repo
+ENV DIST_VERSION 7
+ENTRYPOINT make _build_local
