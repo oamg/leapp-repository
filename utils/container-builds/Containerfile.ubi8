@@ -1,0 +1,10 @@
+FROM registry.access.redhat.com/ubi8/ubi:latest
+
+VOLUME /repo
+
+RUN dnf update -y && \
+    dnf install -y python3-devel rpm-build make git
+
+WORKDIR /repo
+ENV DIST_VERSION 8
+ENTRYPOINT make _build_local

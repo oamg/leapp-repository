@@ -101,10 +101,14 @@ help:
 	@echo "  source                      create the source tarball suitable for"
 	@echo "                              packaging"
 	@echo "  srpm                        create the SRPM"
+	@echo "  build_container             create the RPM in container"
+	@echo "                              - set BUILD_CONTAINER to el7 or el8"
+	@echo "                              - don't run more than one build at the same time"
+	@echo "                                since containers operate on the same files!"
 	@echo "  copr_build                  create the COPR build using the COPR TOKEN"
 	@echo "                              - default path is: $(_COPR_CONFIG)"
 	@echo "                              - can be changed by the COPR_CONFIG env"
-	@echo "  install-deps                 create python virtualenv and install there"
+	@echo "  install-deps                create python virtualenv and install there"
 	@echo "                              leapp-repository with dependencies"
 	@echo "  install-deps-fedora         create python virtualenv and install there"
 	@echo "                              leapp-repository with dependencies for Fedora OS"
@@ -118,7 +122,7 @@ help:
 	@echo "  test_container_all          run lint and tests in all available containers"
 	@echo "  test_container_no_lint      run tests without linting in container, see test_container"
 	@echo "  test_container_all_no_lint  run tests without linting in all available containers"
-	@echo "  clean_containers            clean all test container images (to force a rebuild for example)"
+	@echo "  clean_containers            clean all testing and building container images (to force a rebuild for example)"
 	@echo ""
 	@echo "Targets test, lint and test_no_lint support environment variables ACTOR and"
 	@echo "TEST_LIBS."
@@ -144,6 +148,8 @@ help:
 	@echo "  PR=7 SUFFIX='my_additional_suffix' make <target>"
 	@echo "  MR=6 COPR_CONFIG='path/to/the/config/copr/file' make <target>"
 	@echo "  ACTOR=<actor> TEST_LIBS=y make test"
+	@echo "  BUILD_CONTAINER=el7 make build_container"
+	@echo "  TEST_CONTAINER=f34 make test_container"
 	@echo ""
 
 clean:
@@ -169,6 +175,7 @@ source: prepare
 	@__TIMESTAMP=$(TIMESTAMP) $(MAKE) _build_subpkg
 	@__TIMESTAMP=$(TIMESTAMP) $(MAKE) DIST_VERSION=$$(($(DIST_VERSION) + 1)) _build_subpkg
 	@tar -czf packaging/sources/deps-pkgs.tar.gz -C packaging/RPMS/noarch `ls packaging/RPMS/noarch | grep -o "[^/]*rpm$$"`
+	@rm -f packaging/RPMS/noarch/*.rpm
 
 srpm: source
 	@echo "--- Build SRPM: $(PKGNAME)-$(VERSION)-$(RELEASE).. ---"
@@ -197,6 +204,43 @@ _build_subpkg:
 		--define "el$$(($(DIST_VERSION) + 1)) 1" || FAILED=1
 	@mv packaging/$(DEPS_PKGNAME).spec.bak packaging/$(DEPS_PKGNAME).spec
 
+_build_local: source
+	@echo "--- Build RPM: $(PKGNAME)-$(VERSION)-$(RELEASE).. ---"
+	@cp packaging/$(PKGNAME).spec packaging/$(PKGNAME).spec.bak
+	@sed -i "s/1%{?dist}/$(RELEASE)%{?dist}/g" packaging/$(PKGNAME).spec
+	@rpmbuild -ba packaging/$(PKGNAME).spec \
+		--define "_sourcedir `pwd`/packaging/sources"  \
+		--define "_srcrpmdir `pwd`/packaging/SRPMS" \
+		--define "_builddir `pwd`/packaging/BUILD" \
+		--define "_buildrootdir `pwd`/packaging/BUILDROOT" \
+		--define "_rpmdir `pwd`/packaging/RPMS" \
+		--define "rhel $(DIST_VERSION)" \
+		--define "dist .el$(DIST_VERSION)" \
+		--define "el$(DIST_VERSION) 1" || FAILED=1
+	@mv packaging/$(PKGNAME).spec.bak packaging/$(PKGNAME).spec
+
+build_container:
+	@echo "--- Build RPM ${PKGNAME}-${VERSION}-${RELEASE}.el$(DIST_VERSION).rpm in container ---"
+	@case "$(BUILD_CONTAINER)" in \
+		el7) \
+			CONT_FILE="utils/container-builds/Containerfile.centos7"; \
+			;; \
+		el8) \
+			CONT_FILE="utils/container-builds/Containerfile.ubi8"; \
+			;; \
+		"") \
+			echo "BUILD_CONTAINER must be set"; \
+			exit 1; \
+			;; \
+		*) \
+			echo "Available containers are el7, el8"; \
+			exit 1; \
+			;; \
+	esac && \
+	IMAGE="leapp-repo-build-$(BUILD_CONTAINER)"; \
+	podman image exists $$IMAGE || \
+	podman build -f $$CONT_FILE --tag $$IMAGE -v $$PWD:/repo:Z && \
+	podman run --rm --name "$${IMAGE}-cont" -v $$PWD:/repo:Z $$IMAGE
 
 copr_build: srpm
 	@echo "--- Build RPM ${PKGNAME}-${VERSION}-${RELEASE}.el$(DIST_VERSION).rpm in COPR ---"
@@ -392,7 +436,8 @@ test_container_all_no_lint:
 # clean all testing containers and their images, can't use podman rmi -i,
 # because it's unavailable on older podman versions
 clean_containers:
-	@for i in "leapp-repo-tests-f34" "leapp-repo-tests-rhel7" "leapp-repo-tests-rhel8"; do \
+	@for i in "leapp-repo-tests-f34" "leapp-repo-tests-rhel7" "leapp-repo-tests-rhel8" \
+	"leapp-repo-build-el7" "leapp-repo-build-el8"; do \
 		podman kill "$$i-cont" || :; \
 		podman rm "$$i-cont" || :; \
 		podman rmi "$$i" || :;  \
@@ -422,5 +467,5 @@ dashboard_data:
 	$(_PYTHON_VENV) ../../../utils/dashboard-json-dump.py > ../../../discover.json; \
 	popd
 
-.PHONY: help build clean prepare source srpm copr_build print_release register install-deps install-deps-fedora  lint test_no_lint test dashboard_data fast_lint
+.PHONY: help build clean prepare source srpm copr_build _build_local build_container print_release register install-deps install-deps-fedora  lint test_no_lint test dashboard_data fast_lint
 .PHONY: test_container test_container_no_lint test_container_all test_container_all_no_lint clean_containers _build_container_image _test_container_ipu
