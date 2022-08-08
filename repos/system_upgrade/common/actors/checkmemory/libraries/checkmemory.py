@@ -1,6 +1,6 @@
 from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
-from leapp.libraries.common.config import architecture
+from leapp.libraries.common.config import architecture, version
 from leapp.libraries.stdlib import api
 from leapp.models import MemoryInfo
 
@@ -32,7 +32,7 @@ def process():
     minimum_req_error = _check_memory(memoryinfo)
 
     if minimum_req_error:
-        title = 'Minimum memory requirements for RHEL 8 are not met'
+        title = 'Minimum memory requirements for RHEL {} are not met'.format(version.get_target_major_version())
         summary = 'Memory detected: {} KiB, required: {} KiB'.format(minimum_req_error['detected'],
                                                                      minimum_req_error['minimal_req'])
         reporting.create_report([
