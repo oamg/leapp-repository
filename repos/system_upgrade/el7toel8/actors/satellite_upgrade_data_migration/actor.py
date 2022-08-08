@@ -35,16 +35,27 @@ class SatelliteUpgradeDataMigration(Actor):
         # disable services, will be re-enabled by the installer
         for service_name in SERVICES_TO_DISABLE:
             for service in glob.glob(os.path.join(SYSTEMD_WANTS_BASE, '{}.service'.format(service_name))):
-                os.unlink(service)
+                try:
+                    os.unlink(service)
+                except Exception as e:  # pylint: disable=broad-except
+                    self.log.warning('Failed disabling service {}: {}'.format(service, e))
 
         if facts.postgresql.local_postgresql and os.path.exists(POSTGRESQL_SCL_DATA_PATH):
-            # remove empty PostgreSQL data from the package
-            if os.path.exists(POSTGRESQL_DATA_PATH):
-                os.rmdir(POSTGRESQL_DATA_PATH)
+            # we can assume POSTGRESQL_DATA_PATH exists and is empty
             # move PostgreSQL data to the new home
-            shutil.move(POSTGRESQL_SCL_DATA_PATH, POSTGRESQL_DATA_PATH)
+            for item in glob.glob(os.path.join(POSTGRESQL_SCL_DATA_PATH, '*')):
+                try:
+                    shutil.move(item, POSTGRESQL_DATA_PATH)
+                except Exception as e:  # pylint: disable=broad-except
+                    self.log.warning('Failed moving PostgreSQL data: {}'.format(e))
+                    return
+
             if not facts.postgresql.same_partition:
                 for dirpath, _, filenames in os.walk(POSTGRESQL_DATA_PATH):
-                    shutil.chown(dirpath, POSTGRESQL_USER, POSTGRESQL_GROUP)
-                    for filename in filenames:
-                        shutil.chown(os.path.join(dirpath, filename), POSTGRESQL_USER, POSTGRESQL_GROUP)
+                    try:
+                        shutil.chown(dirpath, POSTGRESQL_USER, POSTGRESQL_GROUP)
+                        for filename in filenames:
+                            shutil.chown(os.path.join(dirpath, filename), POSTGRESQL_USER, POSTGRESQL_GROUP)
+                    except Exception as e:  # pylint: disable=broad-except
+                        self.log.warning('Failed fixing ownership of PostgreSQL data: {}'.format(e))
+                        return
