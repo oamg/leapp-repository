@@ -3,8 +3,8 @@ import re
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common.config import architecture
-from leapp.libraries.stdlib import api, run, CalledProcessError
-from leapp.models import BootContent
+from leapp.libraries.stdlib import api, CalledProcessError, run
+from leapp.models import BootContent, KernelCmdlineArg, TargetKernelCmdlineArgTasks
 
 
 def add_boot_entry(configs=None):
@@ -33,6 +33,14 @@ def add_boot_entry(configs=None):
             # otherwise the new boot entry will not be set as default
             # See https://bugzilla.redhat.com/show_bug.cgi?id=1764306
             run(['/usr/sbin/zipl'])
+
+        if debug:
+            # The kernelopts for target kernel are generated based on the cmdline used in the upgrade initramfs,
+            # therefore, if we enabled debug above, and the original system did not have the debug kernelopt, we
+            # need to explicitly remove it from the target os boot entry.
+            # NOTE(mhecko): This will also unconditionally remove debug kernelopt if the source system used it.
+            api.produce(TargetKernelCmdlineArgTasks(to_remove=[KernelCmdlineArg(key='debug')]))
+
     except CalledProcessError as e:
         raise StopActorExecutionError(
            'Cannot configure bootloader.',
