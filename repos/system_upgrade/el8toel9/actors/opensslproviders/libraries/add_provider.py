@@ -12,9 +12,13 @@ LEAPP_COMMENT = '# Modified by leapp during upgrade to RHEL 9\n'
 APPEND_STRING = (
     '[provider_sect]\n'
     'default = default_sect\n'
+    '##legacy = legacy_sect\n'
     '\n'
     '[default_sect]\n'
     'activate = 1\n'
+    '\n'
+    '##[legacy_sect]\n'
+    '##activate = 1\n'
 )
 
 

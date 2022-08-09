@@ -71,7 +71,11 @@ class OpenSslConfigCheck(Actor):
         #
         # + [provider_sect]
         # + default = default_sect
+        # + ##legacy = legacy_sect
         # +
         # + [default_sect]
         # + activate = 1
+        # +
+        # + ##[legacy_sect]
+        # + ##activate = 1
         check_default_modules(config)
