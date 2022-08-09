@@ -1,4 +1,4 @@
-from leapp.models import Model, fields
+from leapp.models import fields, Model
 from leapp.topics import SystemInfoTopic
 
 
@@ -12,6 +12,16 @@ class KernelCmdlineArg(Model):
 
     key = fields.String()
     value = fields.Nullable(fields.String())
+
+
+class TargetKernelCmdlineArgTasks(Model):
+    """
+    Desired modifications of the target kernel args
+    """
+    topic = SystemInfoTopic
+
+    to_add = fields.List(fields.Model(KernelCmdlineArg), default=[])
+    to_remove = fields.List(fields.Model(KernelCmdlineArg), default=[])
 
 
 class KernelCmdline(Model):

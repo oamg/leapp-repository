@@ -1,10 +1,10 @@
 import os
 
 from leapp.actors import Actor
-from leapp.models import InstalledTargetKernelVersion, KernelCmdlineArg, FirmwareFacts
-from leapp.tags import FinalizationPhaseTag, IPUWorkflowTag
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import kernelcmdlineconfig
+from leapp.models import FirmwareFacts, InstalledTargetKernelVersion, KernelCmdlineArg, TargetKernelCmdlineArgTasks
+from leapp.tags import FinalizationPhaseTag, IPUWorkflowTag
 
 
 class KernelCmdlineConfig(Actor):
@@ -13,7 +13,7 @@ class KernelCmdlineConfig(Actor):
     """
 
     name = 'kernelcmdlineconfig'
-    consumes = (KernelCmdlineArg, InstalledTargetKernelVersion, FirmwareFacts)
+    consumes = (KernelCmdlineArg, InstalledTargetKernelVersion, FirmwareFacts, TargetKernelCmdlineArgTasks)
     produces = ()
     tags = (FinalizationPhaseTag, IPUWorkflowTag)
 
