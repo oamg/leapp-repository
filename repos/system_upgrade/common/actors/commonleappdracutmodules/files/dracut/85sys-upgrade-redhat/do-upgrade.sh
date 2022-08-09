@@ -228,6 +228,20 @@ do_upgrade() {
         #PY_LEAPP_PATH=/usr/lib/python2.7/site-packages/leapp/
         #$NEWROOT/bin/systemd-nspawn $NSPAWN_OPTS -D $NEWROOT -E PYTHONPATH="${PYTHONPATH}:${PY_LEAPP_PATH}" /usr/bin/python3 $LEAPPBIN upgrade --resume $args
 
+        # on aarch64 systems during el8 to el9 upgrades the swap is broken due to change in page size (64K to 4k)
+        # adjust the page size before booting into the new system, as it is possible the swap is necessary for to boot
+        # `arch` command is not available in the dracut shell, using uname -m instead
+        [ "$(uname -m)" = "aarch64" -a "$RHEL_OS_MAJOR_RELEASE" = "9" ] && {
+            cp -aS ".leapp_bp" $NEWROOT/etc/fstab /etc/fstab
+            # swapon internally uses mkswap and both swapon and mkswap aren't available in dracut shell
+            # as a workaround we can use the one from $NEWROOT in $NEWROOT/usr/sbin
+            # for swapon to find mkswap we must temporarily adjust the PATH
+            # NOTE: we want to continue the upgrade even when the swapon command fails as users can fix it
+            # manually later. It's not a major blocker.
+            PATH="$PATH:${NEWROOT}/usr/sbin/" swapon -af || echo >&2 "Error: Failed fixing the swap page size. Manual action is required after the upgrade."
+            mv /etc/fstab.leapp_bp /etc/leapp
+        }
+
         # NOTE:
         # mount everything from FSTAB before run of the leapp as mount inside
         # the container is not persistent and we need to have mounted /boot
