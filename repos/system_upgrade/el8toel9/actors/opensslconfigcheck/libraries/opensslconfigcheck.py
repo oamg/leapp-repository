@@ -337,9 +337,13 @@ def check_default_modules(config):
                 '\n'
                 ' + [provider_sect]\n'
                 ' + default = default_sect\n'
+                ' + ##legacy = legacy_sect\n'
                 ' + \n'
                 ' + [default_sect]\n'
                 ' + activate = 1\n'
+                ' + \n'
+                ' + ##[legacy_sect]\n'
+                ' + ##activate = 1\n'
             ),
             reporting.Severity(reporting.Severity.INFO),
             reporting.Tags([
