@@ -121,7 +121,11 @@ def _get_enabled_modules():
     return enabled_modules_msg.modules
 
 
-def compute_pkg_changes_between_consequent_releases(source_installed_pkgs, events, release, seen_pkgs):
+def compute_pkg_changes_between_consequent_releases(source_installed_pkgs,
+                                                    events,
+                                                    release,
+                                                    seen_pkgs,
+                                                    pkgs_to_demodularize):
     # Start with the installed packages and modify the set according to release events
     target_pkgs = set(source_installed_pkgs)
 
@@ -154,7 +158,9 @@ def compute_pkg_changes_between_consequent_releases(source_installed_pkgs, event
                 target_pkgs = target_pkgs.difference(event.in_pkgs)
                 target_pkgs = target_pkgs.union(event.out_pkgs)
 
-    return target_pkgs
+        pkgs_to_demodularize = pkgs_to_demodularize.difference(event.in_pkgs)
+
+    return (target_pkgs, pkgs_to_demodularize)
 
 
 def compute_packages_on_target_system(source_pkgs, events, releases):
@@ -162,14 +168,27 @@ def compute_packages_on_target_system(source_pkgs, events, releases):
     seen_pkgs = set(source_pkgs)  # Used to track whether PRESENCE events can be applied
     target_pkgs = set(source_pkgs)
 
+    source_major_version = int(version.get_source_major_version())
+    did_processing_cross_major_version = False
+    pkgs_to_demodularize = set()  # Modified by compute_pkg_changes
+
     for release in releases:
-        target_pkgs = compute_pkg_changes_between_consequent_releases(target_pkgs, events, release, seen_pkgs)
+        if not did_processing_cross_major_version and release[0] > source_major_version:
+            did_processing_cross_major_version = True
+            pkgs_to_demodularize = {pkg for pkg in target_pkgs if pkg.modulestream}
+
+        target_pkgs, pkgs_to_demodularize = compute_pkg_changes_between_consequent_releases(target_pkgs, events,
+                                                                                            release, seen_pkgs,
+                                                                                            pkgs_to_demodularize)
         seen_pkgs = seen_pkgs.union(target_pkgs)
 
-    return target_pkgs
+    demodularized_pkgs = {Package(pkg.name, pkg.repository, None) for pkg in pkgs_to_demodularize}
+    demodularized_target_pkgs = target_pkgs.difference(pkgs_to_demodularize).union(demodularized_pkgs)
+
+    return (demodularized_target_pkgs, pkgs_to_demodularize)
 
 
-def compute_rpm_tasks_from_pkg_set_diff(source_pkgs, target_pkgs):
+def compute_rpm_tasks_from_pkg_set_diff(source_pkgs, target_pkgs, pkgs_to_demodularize):
     source_state_pkg_names = {pkg.name for pkg in source_pkgs}
     target_state_pkg_names = {pkg.name for pkg in target_pkgs}
 
@@ -177,10 +196,14 @@ def compute_rpm_tasks_from_pkg_set_diff(source_pkgs, target_pkgs):
     pkgs_to_remove = sorted(source_state_pkg_names.difference(target_state_pkg_names))
 
     if pkgs_to_install or pkgs_to_remove:
-        enabled_modules = _get_enabled_modules()
-        modules_to_enable = [
-            Module(name=p.modulestream[0], stream=p.modulestream[1]) for p in target_pkgs if p.modulestream
-        ]
+        # NOTE(mhecko): Here we do not want to consider any package that does not have a reference in PES data. There
+        # might be missing modularity information, and although the algorithm is correct, trying to enable
+        # a non-existent modulestream due to missing modulestream information results in a crash.
+        target_pkgs_without_demodularized_pkgs = target_pkgs.difference(pkgs_to_demodularize)
+        enabled_modules = list(set(_get_enabled_modules()))  # Make sure modulestreams are unique (debug readability)
+
+        target_modulestreams = {pkg.modulestream for pkg in target_pkgs_without_demodularized_pkgs if pkg.modulestream}
+        modules_to_enable = [Module(name=ms[0], stream=ms[1]) for ms in target_modulestreams]
 
         return PESRpmTransactionTasks(to_install=pkgs_to_install,
                                       to_remove=pkgs_to_remove,
@@ -403,7 +426,7 @@ def process():
     repoids_of_source_pkgs = {pkg.repository for pkg in source_pkgs}
 
     # Apply events - compute what packages should the target system have
-    target_pkgs = compute_packages_on_target_system(source_pkgs, events, releases)
+    target_pkgs, pkgs_to_demodularize = compute_packages_on_target_system(source_pkgs, events, releases)
 
     # Packages coming out of the events have PESID as their repository, however, we need real repoid
     target_pkgs = replace_pesids_with_repoids_in_packages(target_pkgs, repoids_of_source_pkgs)
@@ -417,6 +440,6 @@ def process():
     api.produce(repos_to_enable)
 
     # Compare the packages on source system and the computed packages on target system and determine what to install
-    rpm_tasks = compute_rpm_tasks_from_pkg_set_diff(source_pkgs, target_pkgs)
+    rpm_tasks = compute_rpm_tasks_from_pkg_set_diff(source_pkgs, target_pkgs, pkgs_to_demodularize)
     if rpm_tasks:
         api.produce(rpm_tasks)
