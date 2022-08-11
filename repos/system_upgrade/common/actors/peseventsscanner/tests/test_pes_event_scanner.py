@@ -125,9 +125,10 @@ def pkgs_into_tuples(pkgs):
         ),
     )
 )
-def test_event_application_fundamentals(installed_pkgs, events, releases, expected_target_pkgs):
+def test_event_application_fundamentals(monkeypatch, installed_pkgs, events, releases, expected_target_pkgs):
     """Trivial checks validating that the core event application algorithm reflects event semantics as expected."""
-    actual_target_pkgs = compute_packages_on_target_system(installed_pkgs, events, releases)
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked())
+    actual_target_pkgs, dummy_demodularized_pkgs = compute_packages_on_target_system(installed_pkgs, events, releases)
 
     # Perform strict comparison
     actual_pkg_tuple_set = {(pkg.name, pkg.repository, pkg.modulestream) for pkg in actual_target_pkgs}
@@ -135,7 +136,8 @@ def test_event_application_fundamentals(installed_pkgs, events, releases, expect
     assert actual_pkg_tuple_set == expected_pkg_tuple_set
 
 
-def test_compute_pkg_state():
+def test_compute_pkg_state(monkeypatch):
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked())
     events = [
         Event(1, Action.SPLIT,
               {Package('original', 'rhel7-repo', None)},
@@ -165,7 +167,7 @@ def test_compute_pkg_state():
         Package('reintroduced', 'rhel7-repo', None),
     }
 
-    target_pkgs = compute_packages_on_target_system(installed_pkgs, events, [(8, 0), (8, 1)])
+    target_pkgs, dummy_demodularized_pkgs = compute_packages_on_target_system(installed_pkgs, events, [(8, 0), (8, 1)])
 
     expected_target_pkgs = {
         Package('split01', 'rhel8-repo', None),
@@ -192,7 +194,7 @@ def test_compute_rpm_tasks_from_pkg_set_diff(monkeypatch):
         Package('installed2', '8repo2', None),
     }
 
-    rpm_tasks = compute_rpm_tasks_from_pkg_set_diff(source_pkgs, target_pkgs)
+    rpm_tasks = compute_rpm_tasks_from_pkg_set_diff(source_pkgs, target_pkgs, set())
 
     assert rpm_tasks.to_install == ['installed1', 'installed2']
     assert rpm_tasks.to_remove == ['removed1', 'removed2']
@@ -361,7 +363,7 @@ def test_blacklisted_repoid_is_not_produced(monkeypatch):
         ({Package('in', 'rhel7-repo', None)}, {('out', 'rhel8-repo', None)}),
     )
 )
-def test_modularity_info_distinguishes_pkgs(installed_pkgs, expected_target_pkgs):
+def test_modularity_info_distinguishes_pkgs(monkeypatch, installed_pkgs, expected_target_pkgs):
     events = [
         Event(1, Action.MOVED,
               {Package('in', 'rhel7-repo', None)}, {Package('out', 'rhel8-repo', None)},
@@ -371,6 +373,32 @@ def test_modularity_info_distinguishes_pkgs(installed_pkgs, expected_target_pkgs
               (8, 0), (8, 1), []),
     ]
 
-    target_pkgs = compute_packages_on_target_system(installed_pkgs, events, [(8, 1)])
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked())
+    target_pkgs, dummy_demodularized_pkgs = compute_packages_on_target_system(installed_pkgs, events, [(8, 1)])
 
     assert pkgs_into_tuples(target_pkgs) == expected_target_pkgs
+
+
+def test_pkgs_are_demodularized_when_crossing_major_version(monkeypatch):
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(src_ver='7.9'))
+
+    events = [
+        Event(1, Action.MOVED,
+              {Package('modular', 'repo1-in', ('module1', 'stream'))},
+              {Package('modular', 'repo1-out', ('module2', 'stream'))},
+              (7, 9), (8, 0), []),
+    ]
+
+    installed_pkgs = {
+        Package('modular', 'repo1-in', ('module1', 'stream')),
+        Package('demodularized', 'repo', ('module-demodularized', 'stream'))
+    }
+
+    target_pkgs, demodularized_pkgs = compute_packages_on_target_system(installed_pkgs, events, [(8, 0)])
+
+    expected_target_pkgs = {
+        Package('modular', 'repo1-out', ('module2', 'stream')),
+        Package('demodularized', 'repo', None)
+    }
+    assert demodularized_pkgs == {Package('demodularized', 'repo', ('module-demodularized', 'stream'))}
+    assert target_pkgs == expected_target_pkgs
