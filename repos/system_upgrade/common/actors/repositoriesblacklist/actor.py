@@ -1,11 +1,6 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import repositoriesblacklist
-from leapp.models import (
-    CustomTargetRepository,
-    RepositoriesBlacklisted,
-    RepositoriesFacts,
-    RepositoriesMapping,
-)
+from leapp.models import CustomTargetRepository, RepositoriesBlacklisted, RepositoriesFacts, RepositoriesMapping
 from leapp.reporting import Report
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
