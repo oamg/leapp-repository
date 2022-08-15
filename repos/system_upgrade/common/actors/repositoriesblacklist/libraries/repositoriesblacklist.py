@@ -27,10 +27,9 @@ def _report_using_unsupported_repos(repos):
 
 
 def _report_excluded_repos(repos):
+    optional_repository_name = 'optional' if get_source_major_version() == '7' else 'CRB'
     api.current_logger().info(
-        "The optional repository is not enabled. Excluding %r "
-        "from the upgrade",
-        repos,
+        "The {0} repository is not enabled. Excluding {1} from the upgrade".format(optional_repository_name, repos)
     )
 
     report = [
