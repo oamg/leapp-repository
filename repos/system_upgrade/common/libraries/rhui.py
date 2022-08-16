@@ -176,17 +176,30 @@ RHUI_CLOUD_MAP = {
                 ('leapp-azure.repo', YUM_REPOS_PATH)
             ],
         },
-        # not yet enabled
         'azure-sap': {
-            'src_pkg': 'rhui-azure-rhel8-base-sap-ha',
+            'src_pkg': 'rhui-azure-rhel8-sap-ha',
             'target_pkg': 'rhui-azure-rhel9-sap-ha',
             'agent_pkg': 'WALinuxAgent',
             'leapp_pkg': 'leapp-rhui-azure-sap',
-            'leapp_pkg_repo': 'leapp-azure-sap.repo',
+            'leapp_pkg_repo': 'leapp-azure-sap-ha.repo',
             'files_map': [
-                ('content-rhel9-sap-ha.crt', RHUI_PKI_PRODUCT_DIR),
-                ('key-rhel9-sap-ha.pem', RHUI_PKI_DIR),
-                ('leapp-azure-sap.repo', YUM_REPOS_PATH)
+                ('content-sap-ha.crt', RHUI_PKI_PRODUCT_DIR),
+                ('key-sap-ha.pem', RHUI_PKI_DIR),
+                ('leapp-azure-sap-ha.repo', YUM_REPOS_PATH)
+            ],
+        },
+        'azure-sap-apps': {
+            'src_pkg': 'rhui-azure-rhel8-sapapps',
+            'target_pkg': 'rhui-azure-rhel9-sapapps',
+            'agent_pkg': 'WALinuxAgent',
+            'leapp_pkg': 'leapp-rhui-azure-sap',
+            'leapp_pkg_repo': 'leapp-azure-sap-apps.repo',
+            'files_map': [
+                ('content-sapapps.crt', RHUI_PKI_PRODUCT_DIR),
+                ('content-eus.crt', RHUI_PKI_PRODUCT_DIR),
+                ('key-sapapps.crt', RHUI_PKI_DIR),
+                ('key-eus.crt', RHUI_PKI_DIR),
+                ('leapp-azure-sap-apps.repo', YUM_REPOS_PATH)
             ],
         },
     },
