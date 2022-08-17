@@ -200,7 +200,10 @@ def compute_rpm_tasks_from_pkg_set_diff(source_pkgs, target_pkgs, pkgs_to_demodu
         # might be missing modularity information, and although the algorithm is correct, trying to enable
         # a non-existent modulestream due to missing modulestream information results in a crash.
         target_pkgs_without_demodularized_pkgs = target_pkgs.difference(pkgs_to_demodularize)
-        enabled_modules = list(set(_get_enabled_modules()))  # Make sure modulestreams are unique (debug readability)
+
+        # Collect the enabled modules as tuples in a set, so we produce every module to reset exactly once
+        enabled_modules = {(module.name, module.stream) for module in _get_enabled_modules()}
+        modules_to_reset = [Module(name=ms[0], stream=ms[1]) for ms in enabled_modules]
 
         target_modulestreams = {pkg.modulestream for pkg in target_pkgs_without_demodularized_pkgs if pkg.modulestream}
         modules_to_enable = [Module(name=ms[0], stream=ms[1]) for ms in target_modulestreams]
@@ -208,7 +211,7 @@ def compute_rpm_tasks_from_pkg_set_diff(source_pkgs, target_pkgs, pkgs_to_demodu
         return PESRpmTransactionTasks(to_install=pkgs_to_install,
                                       to_remove=pkgs_to_remove,
                                       modules_to_enable=modules_to_enable,
-                                      modules_to_reset=enabled_modules)
+                                      modules_to_reset=modules_to_reset)
     return None
 
 

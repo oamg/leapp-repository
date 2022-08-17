@@ -2,6 +2,7 @@
 from __future__ import print_function
 
 import json
+import logging
 import sys
 
 import dnf
@@ -167,13 +168,27 @@ class RhelUpgradeCommand(dnf.cli.Command):
         # Module tasks
         modules_to_enable = self.plugin_data['pkgs_info'].get('modules_to_enable', ())
 
+        available_modules_to_enable = []
+        unavailable_modules = []
+        for module in modules_to_enable:
+            matching_modules, dummy_nsvcap = module_base.get_modules(module)
+            target_bucket = available_modules_to_enable if matching_modules else unavailable_modules
+            target_bucket.append(module)
+
+        if unavailable_modules:
+            dnf_plugin_logger = logging.getLogger('dnf.plugin')
+            msg = 'The following modules were requested to be enabled, but they are unavailable: %s'
+            dnf_plugin_logger.warning(msg, ', '.join(unavailable_modules))
+
         # Package tasks
         to_install = self.plugin_data['pkgs_info']['to_install']
         to_remove = self.plugin_data['pkgs_info']['to_remove']
         to_upgrade = self.plugin_data['pkgs_info']['to_upgrade']
 
         # Modules to enable
-        self._process_entities(entities=[modules_to_enable], op=module_base.enable, entity_name='Module stream')
+        self._process_entities(entities=[available_modules_to_enable],
+                               op=module_base.enable,
+                               entity_name='Module stream')
 
         # Packages to be removed
         self._process_entities(entities=to_remove, op=self.base.remove, entity_name='Package')
@@ -181,7 +196,6 @@ class RhelUpgradeCommand(dnf.cli.Command):
         self._process_entities(entities=to_install, op=self.base.install, entity_name='Package')
         # Packages to be upgraded
         self._process_entities(entities=to_upgrade, op=self.base.upgrade, entity_name='Package')
-
         self.base.distro_sync()
 
         if self.opts.tid[0] == 'check':
