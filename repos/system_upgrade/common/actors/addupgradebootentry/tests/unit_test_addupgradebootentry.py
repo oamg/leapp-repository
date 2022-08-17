@@ -147,9 +147,17 @@ def test_get_boot_file_paths(monkeypatch):
         addupgradebootentry.get_boot_file_paths()
 
 
-def test_fix_grub_config_error(monkeypatch):
+@pytest.mark.parametrize(
+    ('error_type', 'test_file_name'),
+    [
+        ('GRUB_CMDLINE_LINUX syntax', 'grub_test'),
+        ('missing newline', 'grub_test_newline')
+    ]
+)
+def test_fix_grub_config_error(monkeypatch, error_type, test_file_name):
     monkeypatch.setattr(addupgradebootentry, 'write_to_file', write_to_file_mocked())
-    addupgradebootentry.fix_grub_config_error(os.path.join(CUR_DIR, 'files/grub_test.wrong'))
+    addupgradebootentry.fix_grub_config_error(os.path.join(CUR_DIR, 'files/{}.wrong'.format(test_file_name)),
+                                              error_type)
 
-    with open(os.path.join(CUR_DIR, 'files/grub_test.fixed')) as f:
+    with open(os.path.join(CUR_DIR, 'files/{}.fixed'.format(test_file_name))) as f:
         assert addupgradebootentry.write_to_file.content == f.read()

@@ -20,9 +20,9 @@ class AddUpgradeBootEntry(Actor):
     tags = (IPUWorkflowTag, InterimPreparationPhaseTag)
 
     def process(self):
-        grub_config_error_detected = next(self.consume(GrubConfigError), GrubConfigError()).error_detected
-        if grub_config_error_detected:
-            fix_grub_config_error('/etc/default/grub')
+        for grub_config_error in self.consume(GrubConfigError):
+            if grub_config_error.error_detected:
+                fix_grub_config_error('/etc/default/grub', grub_config_error.error_type)
 
         configs = None
         ff = next(self.consume(FirmwareFacts), None)
