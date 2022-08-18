@@ -110,6 +110,14 @@ Provides:       leapp-repository = %{version}-%{release}
 # to install "leapp-upgrade" in the official docs.
 Provides:       leapp-upgrade = %{version}-%{release}
 
+# Provide leapp-commands so the framework could refer to them when customers
+# do not have installed particular leapp-repositories
+Provides:       leapp-command(answer)
+Provides:       leapp-command(preupgrade)
+Provides:       leapp-command(upgrade)
+Provides:       leapp-command(rerun)
+Provides:       leapp-command(list-runs)
+
 
 %description -n %{lpr_name}
 Leapp repositories for the in-place upgrade to the next major version
