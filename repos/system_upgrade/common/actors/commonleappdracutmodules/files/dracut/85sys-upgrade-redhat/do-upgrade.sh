@@ -241,7 +241,7 @@ do_upgrade() {
             # NOTE: we want to continue the upgrade even when the swapon command fails as users can fix it
             # manually later. It's not a major blocker.
             PATH="$PATH:${NEWROOT}/usr/sbin/" swapon -af || echo >&2 "Error: Failed fixing the swap page size. Manual action is required after the upgrade."
-            mv /etc/fstab.leapp_bp /etc/leapp
+            mv /etc/fstab.leapp_bp /etc/fstab
         }
 
         # NOTE:
