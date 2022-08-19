@@ -224,7 +224,6 @@ _build_local: source
 	@mv packaging/$(PKGNAME).spec.bak packaging/$(PKGNAME).spec
 
 build_container:
-	@[ "$(_CONTAINER_TOOL)" == "docker" -a "$$UID" -ne 0 ] && { echo "Container tool 'docker' must be run as root!"; exit 1; }; \
 	echo "--- Build RPM ${PKGNAME}-${VERSION}-${RELEASE}.el$(DIST_VERSION).rpm in container ---"; \
 	case "$(BUILD_CONTAINER)" in \
 		el7) \
@@ -381,7 +380,6 @@ _test_container_ipu:
 # because e.g. RHEL7 to RHEL8 IPU must work on python2.7 and python3.6
 # and RHEL8 to RHEL9 IPU must work on python3.6 and python3.9.
 test_container:
-	@[ "$(_CONTAINER_TOOL)" == "docker" -a "$$UID" -ne 0 ] && { echo "The 'docker' container tool must be run as root!"; exit 1; }; \
 	case $(_TEST_CONTAINER) in \
 	f34) \
 		export CONT_FILE="utils/container-tests/Containerfile.f34"; \
@@ -441,7 +439,6 @@ test_container_all_no_lint:
 
 # clean all testing and building containers and their images
 clean_containers:
-	@[ "$(_CONTAINER_TOOL)" == "docker" -a "$$UID" -ne 0 ] && { echo "Container tool 'docker' must be run as root!"; exit 1; }; \
 	for i in "leapp-repo-tests-f34" "leapp-repo-tests-rhel7" "leapp-repo-tests-rhel8" \
 	"leapp-repo-build-el7" "leapp-repo-build-el8"; do \
 		$(_CONTAINER_TOOL) kill "$$i-cont" || :; \
