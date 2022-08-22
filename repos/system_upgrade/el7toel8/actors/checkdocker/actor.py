@@ -24,7 +24,7 @@ class CheckDocker(Actor):
                                   'docker package is going to be removed during the upgrade without migration of '
                                   'existing containers.'),
                 reporting.Severity(reporting.Severity.HIGH),
-                reporting.Tags([reporting.Tags.TOOLS]),
+                reporting.Groups([reporting.Groups.TOOLS]),
                 reporting.Remediation(hint='It is recommended to re-create the containers with the appropriate '
                                            'container images and reattach any in-use volumes using podman directly '
                                            'prior to the upgrade of the operating system, which should provide the '

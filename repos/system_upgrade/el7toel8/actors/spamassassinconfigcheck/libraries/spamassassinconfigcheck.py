@@ -26,7 +26,7 @@ def _check_spamc_config(facts, report_func):
     args = [
         reporting.Title(title),
         summary,
-        reporting.Tags([reporting.Tags.ENCRYPTION]),
+        reporting.Groups([reporting.Groups.ENCRYPTION]),
         reporting.Severity(severity),
         reporting.Remediation(hint=hint),
     ]
@@ -56,7 +56,7 @@ def _check_spamd_config_ssl(facts, report_func):
     args = [
         reporting.Title(title),
         summary,
-        reporting.Tags([reporting.Tags.ENCRYPTION, reporting.Tags.SERVICES]),
+        reporting.Groups([reporting.Groups.ENCRYPTION, reporting.Groups.SERVICES]),
         reporting.Severity(severity),
         reporting.Remediation(hint=hint)
     ]
@@ -77,7 +77,7 @@ def _check_spamd_config_service_type(facts, report_func):
     report_func([
         reporting.Title(title),
         reporting.Summary('%s %s' % (summary_generic, summary_detail)),
-        reporting.Tags([reporting.Tags.SERVICES]),
+        reporting.Groups([reporting.Groups.SERVICES]),
         reporting.Severity(reporting.Severity.MEDIUM),
         resource
     ])

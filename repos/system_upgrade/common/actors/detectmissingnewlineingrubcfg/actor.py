@@ -27,7 +27,7 @@ class DetectMissingNewlineInGrubCfg(Actor):
                     'problem by appending the missing newline to the grub configuration file.'
                 ),
                 reporting.Severity(reporting.Severity.LOW),
-                reporting.Tags([reporting.Tags.BOOT]),
+                reporting.Groups([reporting.Groups.BOOT]),
                 reporting.RelatedResource('file', config)
             ])
 

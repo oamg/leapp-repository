@@ -104,7 +104,7 @@ def make_report(facts):
             reporting.Title('BIND configuration issues found'),
             reporting.Summary(summary),
             reporting.Severity(reporting.Severity.HIGH),
-            reporting.Tags([reporting.Tags.SERVICES, reporting.Tags.NETWORK]),
+            reporting.Groups([reporting.Groups.SERVICES, reporting.Groups.NETWORK]),
         ])
 
     return report

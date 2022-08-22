@@ -21,8 +21,8 @@ def inhibit_if_deprecated_directives_used(ssh_config_msg):
                 .format(sshd_config_path, deprecated_directives_report_text)
             ),
             reporting.Severity(reporting.Severity.HIGH),
-            reporting.Tags([reporting.Tags.SERVICES]),
-            reporting.Flags([reporting.Flags.INHIBITOR]),
+            reporting.Groups([reporting.Groups.SERVICES]),
+            reporting.Groups([reporting.Groups.INHIBITOR]),
             reporting.RelatedResource('file', sshd_config_path),
             reporting.Remediation(
                 hint='Remove the deprecated directives from the sshd configuration.',

@@ -170,7 +170,7 @@ class SELinuxApplyCustom(Actor):
                     ),
                     reporting.Summary(summary),
                     reporting.Severity(reporting.Severity.MEDIUM),
-                    reporting.Tags([reporting.Tags.SECURITY, reporting.Tags.SELINUX]),
+                    reporting.Groups([reporting.Groups.SECURITY, reporting.Groups.SELINUX]),
                 ]
                 + [
                     reporting.RelatedResource(

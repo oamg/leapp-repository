@@ -39,8 +39,8 @@ class FirewalldCheckAllowZoneDrifting(Actor):
                               'New behavior is as if "{conf_key}" was set to "no".'.format(
                                   conf_key='AllowZoneDrifiting')),
             reporting.Severity(reporting.Severity.HIGH),
-            reporting.Tags([reporting.Tags.SANITY, reporting.Tags.FIREWALL]),
-            reporting.Flags([reporting.Flags.INHIBITOR]),
+            reporting.Groups([reporting.Groups.SANITY, reporting.Groups.FIREWALL]),
+            reporting.Groups([reporting.Groups.INHIBITOR]),
             reporting.ExternalLink(
                 url='https://access.redhat.com/articles/4855631',
                 title='Changes in firewalld related to Zone Drifting'),

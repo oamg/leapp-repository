@@ -38,7 +38,7 @@ def check_interface_scripts(facts, report_func):
         args = [
             reporting.Title(title),
             reporting.Summary(summary),
-            reporting.Tags([reporting.Tags.DRIVERS]),
+            reporting.Groups([reporting.Groups.DRIVERS]),
             reporting.Severity(reporting.Severity.MEDIUM),
             reporting.Remediation(hint=hint),
             reporting.ExternalLink(
@@ -66,7 +66,7 @@ def check_include_directive(facts, report_func):
         args = [
             reporting.Title(title),
             reporting.Summary(summary),
-            reporting.Tags([reporting.Tags.SERVICES]),
+            reporting.Groups([reporting.Groups.SERVICES]),
             reporting.Severity(reporting.Severity.MEDIUM),
         ] + [reporting.RelatedResource('file', f) for f in facts.include_files]
 
@@ -91,7 +91,7 @@ def check_printcap_directive(facts, report_func):
         args = [
             reporting.Title(title),
             reporting.Summary(summary),
-            reporting.Tags([reporting.Tags.SERVICES]),
+            reporting.Groups([reporting.Groups.SERVICES]),
             reporting.Severity(reporting.Severity.LOW),
             reporting.RelatedResource('file', '/etc/cups/cupsd.conf'),
             reporting.RelatedResource('file', '/etc/cups/cups-files.conf')
@@ -118,7 +118,7 @@ def check_env_directives(facts, report_func):
         args = [
             reporting.Title(title),
             reporting.Summary(summary),
-            reporting.Tags([reporting.Tags.SERVICES]),
+            reporting.Groups([reporting.Groups.SERVICES]),
             reporting.Severity(reporting.Severity.LOW),
             reporting.RelatedResource('file', '/etc/cups/cupsd.conf'),
             reporting.RelatedResource('file', '/etc/cups/cups-files.conf')
@@ -150,8 +150,8 @@ def check_certkey_directives(facts, report_func):
         args = [
             reporting.Title(title),
             reporting.Summary(summary),
-            reporting.Tags([reporting.Tags.SERVICES,
-                            reporting.Tags.AUTHENTICATION]),
+            reporting.Groups([reporting.Groups.SERVICES,
+                              reporting.Groups.AUTHENTICATION]),
             reporting.Severity(reporting.Severity.MEDIUM),
             reporting.RelatedResource('file', '/etc/cups/cups-files.conf')
         ]
@@ -185,10 +185,10 @@ def check_digest_values(facts, report_func):
         args = [
             reporting.Title(title),
             reporting.Summary(summary),
-            reporting.Tags([
-                reporting.Tags.AUTHENTICATION,
-                reporting.Tags.SECURITY,
-                reporting.Tags.SERVICES,
+            reporting.Groups([
+                reporting.Groups.AUTHENTICATION,
+                reporting.Groups.SECURITY,
+                reporting.Groups.SERVICES,
             ]),
             reporting.Severity(reporting.Severity.MEDIUM),
             reporting.RelatedResource('file', '/etc/cups/cupsd.conf')

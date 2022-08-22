@@ -31,8 +31,8 @@ def process():
                 'the title to get the issue prioritized.'
             ),
             reporting.Severity(reporting.Severity.HIGH),
-            reporting.Flags(['inhibitor']),
-            reporting.Tags([reporting.Tags.BOOT]),
+            reporting.Groups(['inhibitor']),
+            reporting.Groups([reporting.Groups.BOOT]),
         ])
 
     if (
@@ -50,5 +50,5 @@ def process():
 
             ),
             reporting.Severity(reporting.Severity.HIGH),
-            reporting.Tags([reporting.Tags.BOOT]),
+            reporting.Groups([reporting.Groups.BOOT]),
         ])

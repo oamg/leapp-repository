@@ -9,10 +9,10 @@ from leapp.reporting import create_report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 COMMON_REPORT_TAGS = [
-    reporting.Tags.AUTHENTICATION,
-    reporting.Tags.SECURITY,
-    reporting.Tags.NETWORK,
-    reporting.Tags.SERVICES
+    reporting.Groups.AUTHENTICATION,
+    reporting.Groups.SECURITY,
+    reporting.Groups.NETWORK,
+    reporting.Groups.SERVICES
 ]
 
 COMMON_RESOURCES = [
@@ -72,7 +72,7 @@ class OpenSshPermitRootLoginCheck(Actor):
                     'which will default in RHEL8 to "prohibit-password".'
                 ),
                 reporting.Severity(reporting.Severity.HIGH),
-                reporting.Tags(COMMON_REPORT_TAGS),
+                reporting.Groups(COMMON_REPORT_TAGS),
                 reporting.Remediation(
                     hint='If you depend on remote root logins using passwords, consider '
                          'setting up a different user for remote administration or adding '
@@ -81,7 +81,7 @@ class OpenSshPermitRootLoginCheck(Actor):
                          '"PermitRootLogin prohibit-password" to your sshd_config '
                          'to ignore this inhibitor'
                 ),
-                reporting.Flags([reporting.Flags.INHIBITOR])
+                reporting.Groups([reporting.Groups.INHIBITOR])
             ] + COMMON_RESOURCES)
             return
 
@@ -101,14 +101,14 @@ class OpenSshPermitRootLoginCheck(Actor):
                     'so your server migth get inaccessible.'
                 ),
                 reporting.Severity(reporting.Severity.HIGH),
-                reporting.Tags(COMMON_REPORT_TAGS),
+                reporting.Groups(COMMON_REPORT_TAGS),
                 reporting.Remediation(
                     hint='Consider using different user for administrative '
                          'logins or make sure your configration file '
                          'contains the line "PermitRootLogin yes" '
                          'in global context if desired.'
                 ),
-                reporting.Flags([reporting.Flags.INHIBITOR])
+                reporting.Groups([reporting.Groups.INHIBITOR])
             ] + COMMON_RESOURCES)
 
     def process8to9(self, config):
@@ -127,7 +127,7 @@ class OpenSshPermitRootLoginCheck(Actor):
                     'of this system.'
                 ),
                 reporting.Severity(reporting.Severity.HIGH),
-                reporting.Tags(COMMON_REPORT_TAGS),
+                reporting.Groups(COMMON_REPORT_TAGS),
                 reporting.Remediation(
                     hint='If you depend on remote root logins using passwords, '
                          'consider setting up a different user for remote '
@@ -135,7 +135,7 @@ class OpenSshPermitRootLoginCheck(Actor):
                          'sshd_config next to the "PermitRootLogin yes" directive '
                          'to prevent rpm replacing it during the upgrade.'
                 ),
-                reporting.Flags([reporting.Flags.INHIBITOR])
+                reporting.Groups([reporting.Groups.INHIBITOR])
             ] + COMMON_RESOURCES)
         # If the configuration is modified and contains any directive allowing
         # root login (which is in default configuration), we are upgrading to
@@ -152,7 +152,7 @@ class OpenSshPermitRootLoginCheck(Actor):
                     'This is not recommended and considered as a security risk.'
                 ),
                 reporting.Severity(reporting.Severity.HIGH),
-                reporting.Tags(COMMON_REPORT_TAGS),
+                reporting.Groups(COMMON_REPORT_TAGS),
                 reporting.Remediation(
                     hint='If you depend on remote root logins using passwords, '
                          'consider setting up a different user for remote '

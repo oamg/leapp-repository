@@ -22,8 +22,8 @@ def inhibit_upgrade_due_non_persistent_mount(mountpoint):
         reporting.Remediation(hint=hint.format(mountpoint)),
         reporting.RelatedResource('file', '/etc/fstab'),
         reporting.Severity(reporting.Severity.HIGH),
-        reporting.Tags([reporting.Tags.FILESYSTEM]),
-        reporting.Flags([reporting.Flags.INHIBITOR]),
+        reporting.Groups([reporting.Groups.FILESYSTEM]),
+        reporting.Groups([reporting.Groups.INHIBITOR]),
     ])
 
 

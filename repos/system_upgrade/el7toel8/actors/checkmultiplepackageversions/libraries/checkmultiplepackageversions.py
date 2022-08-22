@@ -1,6 +1,6 @@
 from leapp.libraries.common.rpms import has_package
 from leapp.models import InstalledRPM
-from leapp.reporting import create_report, Title, Summary, Severity, Flags, Remediation, RelatedResource
+from leapp.reporting import create_report, Title, Summary, Severity, Groups, Remediation, RelatedResource
 
 # package_name: remedy information
 PROBLEM_PACKAGE_MAP = {
@@ -33,5 +33,5 @@ def check():
                     'to cause rpm transaction test to fail:\n{}'.format(
                         '\n'.join(['- {}'.format(a) for a in actual_problems]))),
             Severity(Severity.HIGH),
-            Flags([Flags.INHIBITOR]),
+            Groups([Groups.INHIBITOR]),
             Remediation(commands=[remediation])] + related_resources)

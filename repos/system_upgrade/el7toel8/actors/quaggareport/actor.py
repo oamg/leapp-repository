@@ -5,8 +5,8 @@ from leapp.reporting import create_report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 COMMON_REPORT_TAGS = [
-    reporting.Tags.NETWORK,
-    reporting.Tags.SERVICES
+    reporting.Groups.NETWORK,
+    reporting.Groups.SERVICES
 ]
 
 
@@ -42,8 +42,8 @@ class QuaggaReport(Actor):
                     'is not available in RHEL8 in FRR due to licensing issues.'
                 ),
                 reporting.Severity(reporting.Severity.HIGH),
-                reporting.Tags(COMMON_REPORT_TAGS),
-                reporting.Flags([reporting.Flags.INHIBITOR]),
+                reporting.Groups(COMMON_REPORT_TAGS),
+                reporting.Groups([reporting.Groups.INHIBITOR]),
                 reporting.Remediation(hint='Please use RIP, OSPF or EIGRP instead of Babel')
             ])
         else:

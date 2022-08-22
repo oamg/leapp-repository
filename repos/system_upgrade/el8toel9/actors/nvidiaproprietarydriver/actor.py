@@ -41,7 +41,7 @@ class CheckNvidiaProprietaryDriver(Actor):
                             url='https://access.redhat.com/solutions/421683'
                     ),
                     reporting.Severity(reporting.Severity.HIGH),
-                    reporting.Flags([reporting.Flags.INHIBITOR]),
-                    reporting.Tags([reporting.Tags.KERNEL, reporting.Tags.DRIVERS]),
+                    reporting.Groups([reporting.Groups.INHIBITOR]),
+                    reporting.Groups([reporting.Groups.KERNEL, reporting.Groups.DRIVERS]),
                 ])
                 break

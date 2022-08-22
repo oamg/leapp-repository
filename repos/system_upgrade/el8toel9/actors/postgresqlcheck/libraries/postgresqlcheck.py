@@ -33,7 +33,7 @@ def _report_server_installed():
         reporting.Title('PostgreSQL (postgresql-server) has been detected on your system'),
         reporting.Summary(report_server_inst_summary),
         reporting.Severity(reporting.Severity.MEDIUM),
-        reporting.Tags([reporting.Tags.SERVICES]),
+        reporting.Groups([reporting.Groups.SERVICES]),
         reporting.ExternalLink(title='Migrating to a RHEL 9 version of PostgreSQL',
                                url=report_server_inst_link_url),
         reporting.RelatedResource('package', 'postgresql-server'),

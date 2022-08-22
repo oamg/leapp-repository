@@ -18,7 +18,7 @@ def check_dialogs(inhibit_if_no_userchoice=True):
         report_data = [reporting.Title('Missing required answers in the answer file'),
                        reporting.Severity(reporting.Severity.HIGH),
                        reporting.Summary(summary.format('\n'.join(sections))),
-                       reporting.Flags([reporting.Flags.INHIBITOR] if inhibit_if_no_userchoice else []),
+                       reporting.Groups([reporting.Groups.INHIBITOR] if inhibit_if_no_userchoice else []),
                        reporting.Remediation(hint=dialogs_remediation, commands=cmd_remediation),
                        reporting.Key(dialog.key)]
         reporting.create_report(report_data + dialog_resources)

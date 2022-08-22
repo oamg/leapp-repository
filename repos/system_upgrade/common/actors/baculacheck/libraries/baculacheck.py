@@ -31,7 +31,7 @@ def _report_director_installed():
         reporting.Title('bacula (bacula-director) has been detected on your system'),
         reporting.Summary(report_director_inst_summary),
         reporting.Severity(reporting.Severity.MEDIUM),
-        reporting.Tags([reporting.Tags.SERVICES]),
+        reporting.Groups([reporting.Groups.SERVICES]),
         reporting.RelatedResource('package', 'bacula-director'),
         reporting.Remediation(hint=report_director_inst_hint),
         ])

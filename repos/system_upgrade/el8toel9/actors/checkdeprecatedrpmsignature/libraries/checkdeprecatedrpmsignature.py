@@ -73,7 +73,7 @@ def process():
                 bad_pkgs=bad_rpms_str
             )),
             reporting.Severity(reporting.Severity.HIGH),
-            reporting.Tags([reporting.Tags.SECURITY, reporting.Tags.SANITY]),
+            reporting.Groups([reporting.Groups.SECURITY, reporting.Groups.SANITY]),
             reporting.Remediation(hint=REMEDY_HINT),
             reporting.ExternalLink(
                 url=MAJOR_CHANGE_URL,
@@ -85,5 +85,5 @@ def process():
             )
         ]
         if not _is_sha1_allowed(cpi.current_policy):
-            report.append(reporting.Flags([reporting.Flags.INHIBITOR]))
+            report.append(reporting.Groups([reporting.Groups.INHIBITOR]))
         reporting.create_report(report)

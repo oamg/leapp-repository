@@ -21,7 +21,7 @@ def _report_using_unsupported_repos(repos):
             "- {}".format("\n - ".join(repos))
         ),
         reporting.Severity(reporting.Severity.HIGH),
-        reporting.Tags([reporting.Tags.REPOSITORY]),
+        reporting.Groups([reporting.Groups.REPOSITORY]),
     ]
     reporting.create_report(report)
 
@@ -40,8 +40,8 @@ def _report_excluded_repos(repos):
             "used during the upgrade.\n- {}".format("\n- ".join(repos))
         ),
         reporting.Severity(reporting.Severity.INFO),
-        reporting.Tags([reporting.Tags.REPOSITORY]),
-        reporting.Flags([reporting.Flags.FAILURE]),
+        reporting.Groups([reporting.Groups.REPOSITORY]),
+        reporting.Groups([reporting.Groups.FAILURE]),
         reporting.Remediation(
             hint=(
                 "If some of excluded repositories are still required to be used"

@@ -33,8 +33,8 @@ def generate_report(existing_custom_network_scripts):
                 )
             ),
             reporting.Severity(reporting.Severity.HIGH),
-            reporting.Flags([reporting.Flags.INHIBITOR]),
-            reporting.Tags([reporting.Tags.NETWORK, reporting.Tags.SERVICES]),
+            reporting.Groups([reporting.Groups.INHIBITOR]),
+            reporting.Groups([reporting.Groups.NETWORK, reporting.Groups.SERVICES]),
             reporting.ExternalLink(
                 title=(
                     "Upgrading from RHEL 8 to 9 - migrating custom network-scripts to"

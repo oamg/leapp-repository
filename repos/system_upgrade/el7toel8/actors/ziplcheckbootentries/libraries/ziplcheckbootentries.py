@@ -48,9 +48,9 @@ def inhibit_if_multiple_zipl_rescue_entries_present(bootloader_config):
             reporting.Title('Multiple rescue boot entries present in the bootloader configuration.'),
             reporting.Summary(summary.format(ZIPL_CONFIG_PATH, rescue_entries_text)),
             reporting.Severity(reporting.Severity.HIGH),
-            reporting.Tags([reporting.Tags.BOOT]),
+            reporting.Groups([reporting.Groups.BOOT]),
             reporting.Remediation(hint='Remove rescue boot entries from the configuration and leave just one.'),
-            reporting.Flags([reporting.Flags.INHIBITOR])
+            reporting.Groups([reporting.Groups.INHIBITOR])
         ])
 
 
@@ -118,10 +118,10 @@ def inhibit_if_entries_share_kernel_version(bootloader_config):
             reporting.Title('Boot entries sharing the same kernel version found.'),
             reporting.Summary(summary.format(ZIPL_CONFIG_PATH, problematic_entries_details)),
             reporting.Severity(reporting.Severity.HIGH),
-            reporting.Tags([reporting.Tags.BOOT]),
+            reporting.Groups([reporting.Groups.BOOT]),
             reporting.Remediation(
                 hint='Remove boot entries sharing the same kernel version from the configuration and leave just one.'),
-            reporting.Flags([reporting.Flags.INHIBITOR])
+            reporting.Groups([reporting.Groups.INHIBITOR])
         ])
 
 

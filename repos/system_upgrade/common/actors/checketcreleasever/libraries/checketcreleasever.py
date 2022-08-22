@@ -21,7 +21,7 @@ def handle_etc_releasever():
             )
         ),
         reporting.Severity(reporting.Severity.INFO),
-        reporting.Tags([reporting.Tags.UPGRADE_PROCESS]),
+        reporting.Groups([reporting.Groups.UPGRADE_PROCESS]),
     ])
 
 

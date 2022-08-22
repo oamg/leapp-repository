@@ -124,8 +124,8 @@ def process():
             reporting.Title(title),
             reporting.Summary(summary),
             reporting.Severity(reporting.Severity.HIGH),
-            reporting.Tags([reporting.Tags.KERNEL, reporting.Tags.BOOT]),
-            reporting.Flags([reporting.Flags.INHIBITOR]),
+            reporting.Groups([reporting.Groups.KERNEL, reporting.Groups.BOOT]),
+            reporting.Groups([reporting.Groups.INHIBITOR]),
             reporting.Remediation(hint=remediation),
             reporting.RelatedResource('package', 'kernel')
         ])
@@ -146,8 +146,8 @@ def process():
             reporting.Title(title),
             reporting.Summary(summary),
             reporting.Severity(reporting.Severity.HIGH),
-            reporting.Tags([reporting.Tags.KERNEL, reporting.Tags.BOOT]),
-            reporting.Flags([reporting.Flags.INHIBITOR]),
+            reporting.Groups([reporting.Groups.KERNEL, reporting.Groups.BOOT]),
+            reporting.Groups([reporting.Groups.INHIBITOR]),
             reporting.Remediation(hint=remediation),
             reporting.RelatedResource('package', 'kernel')
         ])

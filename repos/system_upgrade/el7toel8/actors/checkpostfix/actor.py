@@ -60,7 +60,7 @@ class CheckPostfix(Actor):
                             'map to work, the postfix-pgsql RPM package has to be installed.\n',
                         ),
                         reporting.Severity(reporting.Severity.LOW),
-                        reporting.Tags([reporting.Tags.SERVICES, reporting.Tags.EMAIL]),
+                        reporting.Groups([reporting.Groups.SERVICES, reporting.Groups.EMAIL]),
                         reporting.RelatedResource('package', 'postfix')
                     ])
                     return

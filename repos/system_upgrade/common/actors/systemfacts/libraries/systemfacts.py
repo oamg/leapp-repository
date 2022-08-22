@@ -278,8 +278,8 @@ def _default_grub_info():
                 'upgraded from RHEL 6. Please re-create the file manually.'.format(default_grb_fpath)
             ),
             reporting.Severity(reporting.Severity.HIGH),
-            reporting.Flags([reporting.Flags.INHIBITOR]),
-            reporting.Tags([reporting.Tags.BOOT]),
+            reporting.Groups([reporting.Groups.INHIBITOR]),
+            reporting.Groups([reporting.Groups.BOOT]),
             reporting.RelatedResource('file', default_grb_fpath),
             reporting.ExternalLink(
                 url='https://access.redhat.com/solutions/3185891',

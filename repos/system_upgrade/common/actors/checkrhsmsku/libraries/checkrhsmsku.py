@@ -20,8 +20,8 @@ def process():
                         ' executing leapp.'
                     ),
                     reporting.Severity(reporting.Severity.HIGH),
-                    reporting.Tags([reporting.Tags.SANITY]),
-                    reporting.Flags([reporting.Flags.INHIBITOR]),
+                    reporting.Groups([reporting.Groups.SANITY]),
+                    reporting.Groups([reporting.Groups.INHIBITOR]),
                     reporting.Remediation(
                         hint='Register your system with the subscription-manager tool and attach'
                              ' proper SKUs to be able to proceed the upgrade or use the --no-rhsm'

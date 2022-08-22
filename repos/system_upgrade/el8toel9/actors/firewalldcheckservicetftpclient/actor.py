@@ -31,8 +31,8 @@ class FirewalldCheckServiceTftpClient(Actor):
                                   'Service "{service}" has been removed in RHEL-9.'.format(
                                       service=tftp_client_service)),
                 reporting.Severity(reporting.Severity.HIGH),
-                reporting.Tags([reporting.Tags.SANITY, reporting.Tags.FIREWALL]),
-                reporting.Flags([reporting.Flags.INHIBITOR]),
+                reporting.Groups([reporting.Groups.SANITY, reporting.Groups.FIREWALL]),
+                reporting.Groups([reporting.Groups.INHIBITOR]),
                 reporting.Remediation(
                     hint=(
                         'Remove all usage of service "{service}" from '

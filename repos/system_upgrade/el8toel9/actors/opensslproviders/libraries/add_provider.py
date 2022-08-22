@@ -124,10 +124,10 @@ def process(openssl_messages):
                 'updating the configuration manually. For reference, see the openssl.cnf.rpmnew'
             ),
             reporting.Severity(reporting.Severity.MEDIUM),
-            reporting.Tags([
-                    reporting.Tags.SECURITY,
-                    reporting.Tags.NETWORK,
-                    reporting.Tags.SERVICES
+            reporting.Groups([
+                    reporting.Groups.SECURITY,
+                    reporting.Groups.NETWORK,
+                    reporting.Groups.SERVICES
             ]),
             reporting.Groups([
                 reporting.Groups.POST

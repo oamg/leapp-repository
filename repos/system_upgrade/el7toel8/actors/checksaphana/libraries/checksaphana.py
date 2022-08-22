@@ -29,8 +29,8 @@ def running_check(info):
             ),
             reporting.RemediationHint('Shutdown all SAP HANA instances before you continue with the upgrade.'),
             reporting.Severity(reporting.Severity.HIGH),
-            reporting.Tags([reporting.Tags.SANITY]),
-            reporting.Flags([reporting.Flags.INHIBITOR]),
+            reporting.Groups([reporting.Groups.SANITY]),
+            reporting.Groups([reporting.Groups.INHIBITOR]),
             reporting.Audience('sysadmin')
         ])
 
@@ -79,8 +79,8 @@ def version1_check(info):
                 '{supported}.'.format(supported=SAP_HANA_MINIMAL_VERSION_STRING))),
             reporting.ExternalLink(url='https://launchpad.support.sap.com/#/notes/2235581',
                                    title='SAP HANA: Supported Operating Systems'),
-            reporting.Tags([reporting.Tags.SANITY]),
-            reporting.Flags([reporting.Flags.INHIBITOR]),
+            reporting.Groups([reporting.Groups.SANITY]),
+            reporting.Groups([reporting.Groups.INHIBITOR]),
             reporting.Audience('sysadmin')
         ])
 
@@ -162,8 +162,8 @@ def version2_check(info):
             reporting.ExternalLink(url='https://launchpad.support.sap.com/#/notes/2235581',
                                    title='SAP HANA: Supported Operating Systems'),
             reporting.Severity(reporting.Severity.HIGH),
-            reporting.Tags([reporting.Tags.SANITY]),
-            reporting.Flags([reporting.Flags.INHIBITOR]),
+            reporting.Groups([reporting.Groups.SANITY]),
+            reporting.Groups([reporting.Groups.INHIBITOR]),
             reporting.Audience('sysadmin')
         ])
 
@@ -178,8 +178,8 @@ def platform_check():
                  ' For more information please consult the documentation.')
             ),
             reporting.Severity(reporting.Severity.HIGH),
-            reporting.Tags([reporting.Tags.SANITY]),
-            reporting.Flags([reporting.Flags.INHIBITOR]),
+            reporting.Groups([reporting.Groups.SANITY]),
+            reporting.Groups([reporting.Groups.INHIBITOR]),
             reporting.Audience('sysadmin'),
             reporting.ExternalLink(
                 url='https://access.redhat.com/solutions/5533441',

@@ -29,7 +29,7 @@ class PowerTop(Actor):
                     '--help has been dropped.\n'
                 ),
                 reporting.Severity(reporting.Severity.LOW),
-                reporting.Tags([reporting.Tags.TOOLS, reporting.Tags.MONITORING]),
+                reporting.Groups([reporting.Groups.TOOLS, reporting.Groups.MONITORING]),
                 reporting.Remediation(hint='Please remove the dropped options from your scripts.'),
                 reporting.RelatedResource('package', 'powertop')
             ])

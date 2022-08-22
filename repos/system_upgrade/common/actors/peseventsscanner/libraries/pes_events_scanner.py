@@ -230,7 +230,7 @@ def report_skipped_packages(title, message, skipped_pkgs, remediation=None):
         reporting.Title(title),
         reporting.Summary(summary),
         reporting.Severity(reporting.Severity.HIGH),
-        reporting.Tags([reporting.Tags.REPOSITORY]),
+        reporting.Groups([reporting.Groups.REPOSITORY]),
     ]
     if remediation:
         report_content += [reporting.Remediation(hint=remediation)]

@@ -31,8 +31,8 @@ def inhibit_upgrade_due_var_with_noexec(mountpoint, found_in_fstab=False):
         reporting.Remediation(hint=hint.format(mountpoint)),
         reporting.RelatedResource('file', '/etc/fstab'),
         reporting.Severity(reporting.Severity.HIGH),
-        reporting.Tags([reporting.Tags.FILESYSTEM]),
-        reporting.Flags([reporting.Flags.INHIBITOR]),
+        reporting.Groups([reporting.Groups.FILESYSTEM]),
+        reporting.Groups([reporting.Groups.INHIBITOR]),
     ] + related_resource)
 
 

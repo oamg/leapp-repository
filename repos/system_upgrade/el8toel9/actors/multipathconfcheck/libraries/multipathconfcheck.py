@@ -18,7 +18,7 @@ def _report_foreign():
             'effects the devices that multipath lists. It has no impact on '
             'what devices are managed.'),
         reporting.Severity(reporting.Severity.INFO),
-        reporting.Tags([reporting.Tags.SERVICES]),
+        reporting.Groups([reporting.Groups.SERVICES]),
         reporting.RelatedResource('package', 'device-mapper-multipath')
     ])
 
@@ -37,7 +37,7 @@ def _report_allow_usb():
             'of "/etc/multipath.conf". If you wish to change to the default '
             'RHEL-9 behavior, please remove this line.'),
         reporting.Severity(reporting.Severity.INFO),
-        reporting.Tags([reporting.Tags.SERVICES]),
+        reporting.Groups([reporting.Groups.SERVICES]),
         reporting.RelatedResource('package', 'device-mapper-multipath')
     ])
 
@@ -62,7 +62,7 @@ def _report_invalid_regexes(paths):
             'These regular expression values have been found in {}. They '
             'will be converted to ".*"'.format(paths_str)),
         reporting.Severity(reporting.Severity.INFO),
-        reporting.Tags([reporting.Tags.SERVICES]),
+        reporting.Groups([reporting.Groups.SERVICES]),
         reporting.RelatedResource('package', 'device-mapper-multipath')
     ])
 
