@@ -41,6 +41,10 @@ def add_boot_entry(configs=None):
             # NOTE(mhecko): This will also unconditionally remove debug kernelopt if the source system used it.
             api.produce(TargetKernelCmdlineArgTasks(to_remove=[KernelCmdlineArg(key='debug')]))
 
+        # NOTE(mmatuska): This will remove the option even if the source system had it set.
+        # However enforcing=0 shouldn't be set persistently anyway.
+        api.produce(TargetKernelCmdlineArgTasks(to_remove=[KernelCmdlineArg(key='enforcing', value='0')]))
+
     except CalledProcessError as e:
         raise StopActorExecutionError(
            'Cannot configure bootloader.',
