@@ -6,7 +6,7 @@ The library is supposed to be used only for testing purposes. Import of the
 library is expected only inside test files.
 """
 
-from leapp.models import IPUConfig, EnvVar, OSRelease, Version
+from leapp.models import EnvVar, IPUConfig, OSRelease, Version
 
 CONFIG = IPUConfig(
     leapp_env_vars=[EnvVar(name='LEAPP_DEVEL', value='0')],

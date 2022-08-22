@@ -3,7 +3,7 @@ import os
 
 from leapp.libraries.common import mounting, utils
 from leapp.libraries.stdlib import api
-from leapp.models import RepositoryFile, RepositoryData, fields
+from leapp.models import fields, RepositoryData, RepositoryFile
 
 try:
     import dnf

@@ -1,8 +1,8 @@
 import os
 
+from leapp.exceptions import StopActorExecution
 from leapp.libraries.stdlib import api
 from leapp.models import BootContent
-from leapp.exceptions import StopActorExecution
 
 
 def remove_boot_files():

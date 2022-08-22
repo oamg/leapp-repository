@@ -10,9 +10,9 @@ from leapp.libraries.common.testutils import CurrentActorMocked
 from leapp.libraries.stdlib import api
 from leapp.models import (
     RequiredUpgradeInitramPackages,  # deprecated
-    TargetUserSpaceUpgradeTasks,
     UpgradeDracutModule,  # deprecated
-    UpgradeInitramfsTasks,
+    TargetUserSpaceUpgradeTasks,
+    UpgradeInitramfsTasks
 )
 from leapp.utils.deprecation import suppress_deprecation
 

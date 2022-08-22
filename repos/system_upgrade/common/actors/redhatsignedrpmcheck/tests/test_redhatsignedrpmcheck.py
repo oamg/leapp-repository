@@ -1,8 +1,8 @@
 from leapp import reporting
 from leapp.libraries.actor import redhatsignedrpmcheck
-from leapp.libraries.common.testutils import produce_mocked, create_report_mocked
+from leapp.libraries.common.testutils import create_report_mocked, produce_mocked
 from leapp.libraries.stdlib import api
-from leapp.models import RPM, InstalledUnsignedRPM
+from leapp.models import InstalledUnsignedRPM, RPM
 
 RH_PACKAGER = 'Red Hat, Inc. <http://bugzilla.redhat.com/bugzilla>'
 

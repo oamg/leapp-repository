@@ -2,7 +2,6 @@ import pytest
 
 from leapp.libraries.actor.vimmigrate import update_vim, vim_configs
 
-
 packages = [
     {
         'vim-minimal': '/etc/virc',

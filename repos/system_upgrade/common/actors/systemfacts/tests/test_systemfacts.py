@@ -1,4 +1,4 @@
-from leapp.libraries.actor.systemfacts import anyhasprefix, anyendswith, aslist
+from leapp.libraries.actor.systemfacts import anyendswith, anyhasprefix, aslist
 from leapp.snactor.fixture import current_actor_libraries
 
 

@@ -1,12 +1,12 @@
 import pytest
 
+from leapp import reporting
 from leapp.exceptions import StopActorExecution
+from leapp.libraries.actor import updategrubcore
+from leapp.libraries.common import testutils
+from leapp.libraries.stdlib import api, CalledProcessError
 from leapp.models import UpdateGrub
 from leapp.reporting import Report
-from leapp import reporting
-from leapp.libraries.common import testutils
-from leapp.libraries.actor import updategrubcore
-from leapp.libraries.stdlib import CalledProcessError, api
 
 UPDATE_OK_TITLE = 'GRUB core successfully updated'
 UPDATE_FAILED_TITLE = 'GRUB core update failed'

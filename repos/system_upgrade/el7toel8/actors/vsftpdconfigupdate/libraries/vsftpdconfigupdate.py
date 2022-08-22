@@ -1,8 +1,11 @@
 import re
 
-from leapp.libraries.common.vsftpdutils import get_default_config_hash, \
-    STRICT_SSL_READ_EOF, TCP_WRAPPERS, \
+from leapp.libraries.common.vsftpdutils import (
+    get_default_config_hash,
+    STRICT_SSL_READ_EOF,
+    TCP_WRAPPERS,
     VSFTPD_DEFAULT_CONFIG_PATH
+)
 from leapp.libraries.stdlib import api
 
 ANONYMOUS_ENABLE = 'anonymous_enable'

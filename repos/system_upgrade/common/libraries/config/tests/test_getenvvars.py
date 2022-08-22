@@ -1,6 +1,6 @@
 import pytest
 
-from leapp.libraries.common.config import get_env, get_all_envs, get_product_type
+from leapp.libraries.common.config import get_all_envs, get_env, get_product_type
 from leapp.libraries.common.testutils import CurrentActorMocked
 from leapp.libraries.stdlib import api
 

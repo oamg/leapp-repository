@@ -2,7 +2,7 @@ import logging
 
 from leapp.libraries.actor.rpmtransactionconfigtaskscollector import load_tasks, load_tasks_file
 from leapp.libraries.stdlib import api
-from leapp.models import RPM, InstalledRedHatSignedRPM
+from leapp.models import InstalledRedHatSignedRPM, RPM
 
 RH_PACKAGER = 'Red Hat, Inc. <http://bugzilla.redhat.com/bugzilla>'
 

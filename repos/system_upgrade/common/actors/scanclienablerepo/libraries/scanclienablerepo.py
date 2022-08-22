@@ -1,5 +1,5 @@
-from leapp.libraries.stdlib import api
 from leapp.libraries.common import config
+from leapp.libraries.stdlib import api
 from leapp.models import CustomTargetRepository
 
 

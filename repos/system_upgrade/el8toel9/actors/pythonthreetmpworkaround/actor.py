@@ -1,10 +1,10 @@
 import os
 
 from leapp.actors import Actor
-from leapp.libraries.stdlib import CalledProcessError, api, run
-from leapp.models import TransactionCompleted
-from leapp.tags import RPMUpgradePhaseTag, IPUWorkflowTag
 from leapp.exceptions import StopActorExecutionError
+from leapp.libraries.stdlib import api, CalledProcessError, run
+from leapp.models import TransactionCompleted
+from leapp.tags import IPUWorkflowTag, RPMUpgradePhaseTag
 
 
 class PythonThreeTmpWorkaround(Actor):

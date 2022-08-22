@@ -1,5 +1,4 @@
-from leapp.libraries.stdlib import api, run, CalledProcessError
-
+from leapp.libraries.stdlib import api, CalledProcessError, run
 
 BIOS_PATH = '/boot/grub2/grubenv'
 EFI_PATH = '/boot/efi/EFI/redhat/grubenv'

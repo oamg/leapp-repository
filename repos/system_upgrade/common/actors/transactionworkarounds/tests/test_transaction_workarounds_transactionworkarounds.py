@@ -1,5 +1,5 @@
-from leapp.models import RpmTransactionTasks
 from leapp.libraries.actor import transactionworkarounds as tw
+from leapp.models import RpmTransactionTasks
 
 
 def test_transactionworkarounds_2rpms(monkeypatch):

@@ -3,8 +3,8 @@
 #
 import re
 
-from leapp.libraries.stdlib import api
 from leapp.libraries.common import utils
+from leapp.libraries.stdlib import api
 
 
 def check_dlm_cfgfile(_open=open):

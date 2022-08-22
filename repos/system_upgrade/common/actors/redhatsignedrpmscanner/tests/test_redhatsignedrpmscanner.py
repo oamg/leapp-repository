@@ -3,13 +3,13 @@ import mock
 from leapp.libraries.common import rpms
 from leapp.libraries.common.config import mock_configs
 from leapp.models import (
-    RPM,
+    fields,
     InstalledRedHatSignedRPM,
     InstalledRPM,
     InstalledUnsignedRPM,
     IPUConfig,
     Model,
-    fields,
+    RPM
 )
 
 RH_PACKAGER = 'Red Hat, Inc. <http://bugzilla.redhat.com/bugzilla>'

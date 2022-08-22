@@ -3,7 +3,6 @@ import pytest
 from leapp.models import KernelCmdline, KernelCmdlineArg, Report
 from leapp.snactor.fixture import current_actor_context
 
-
 ballast1 = [KernelCmdlineArg(key=k, value=v) for k, v in [
     ('BOOT_IMAGE', '/vmlinuz-3.10.0-1127.el7.x86_64'),
     ('root', '/dev/mapper/rhel_ibm--p8--kvm--03--guest--02-root'),

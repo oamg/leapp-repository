@@ -1,10 +1,9 @@
-from leapp.actors import Actor
-from leapp.models import FirewalldFacts
-from leapp.libraries.actor import private
-from leapp.reporting import Report, create_report
 from leapp import reporting
+from leapp.actors import Actor
+from leapp.libraries.actor import private
+from leapp.models import FirewalldFacts
+from leapp.reporting import create_report, Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
-
 
 related = [reporting.RelatedResource('package', 'firewalld')]
 

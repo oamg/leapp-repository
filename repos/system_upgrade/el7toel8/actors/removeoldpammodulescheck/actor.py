@@ -1,10 +1,10 @@
+from leapp import reporting
 from leapp.actors import Actor
 from leapp.dialogs import Dialog
 from leapp.dialogs.components import BooleanComponent
 from leapp.models import RemovedPAMModules
-from leapp.reporting import Report, create_report
-from leapp import reporting
-from leapp.tags import IPUWorkflowTag, ChecksPhaseTag
+from leapp.reporting import create_report, Report
+from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
 class RemoveOldPAMModulesCheck(Actor):

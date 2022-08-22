@@ -2,9 +2,9 @@ from leapp.actors import Actor
 from leapp.libraries.actor.updategrubcore import update_grub_core
 from leapp.libraries.common import grub
 from leapp.libraries.stdlib import api
-from leapp.models import TransactionCompleted, FirmwareFacts
+from leapp.models import FirmwareFacts, TransactionCompleted
 from leapp.reporting import Report
-from leapp.tags import RPMUpgradePhaseTag, IPUWorkflowTag
+from leapp.tags import IPUWorkflowTag, RPMUpgradePhaseTag
 
 
 class UpdateGrubCore(Actor):

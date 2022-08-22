@@ -4,7 +4,7 @@ from leapp.libraries.common import rhsm
 from leapp.libraries.common.rpms import get_installed_rpms
 from leapp.models import LeftoverPackages, RemovedPackages, RPM
 from leapp.reporting import Report
-from leapp.tags import RPMUpgradePhaseTag, IPUWorkflowTag, ExperimentalTag
+from leapp.tags import ExperimentalTag, IPUWorkflowTag, RPMUpgradePhaseTag
 
 
 class RemoveLeftoverPackages(Actor):

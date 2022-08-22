@@ -5,8 +5,8 @@ import re
 import tarfile
 import tempfile
 
-from leapp.libraries.actor import checkntp
 from leapp import reporting
+from leapp.libraries.actor import checkntp
 from leapp.libraries.common.testutils import create_report_mocked
 
 

@@ -2,7 +2,6 @@ from leapp.libraries.common.rpms import has_package
 from leapp.libraries.stdlib import api
 from leapp.models import InstalledRedHatSignedRPM
 
-
 # Database of changes in configuration files of sane-backends
 # between RHELs
 

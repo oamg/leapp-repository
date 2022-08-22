@@ -1,12 +1,11 @@
 import pytest
 
+from leapp import reporting
 from leapp.libraries.actor import checkhybridimage
-from leapp.libraries.common.testutils import produce_mocked, create_report_mocked, CurrentActorMocked
+from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked, produce_mocked
 from leapp.libraries.stdlib import api
 from leapp.models import FirmwareFacts, InstalledRPM, RPM
 from leapp.reporting import Report
-from leapp import reporting
-
 
 RH_PACKAGER = 'Red Hat, Inc. <http://bugzilla.redhat.com/bugzilla>'
 WA_AGENT_RPM = RPM(

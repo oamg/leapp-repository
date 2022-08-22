@@ -3,6 +3,7 @@ from __future__ import print_function
 import sys
 
 import gi
+
 gi.require_version('NM', '1.0')
 from gi.repository import NM  # noqa: E402; pylint: disable=wrong-import-position
 

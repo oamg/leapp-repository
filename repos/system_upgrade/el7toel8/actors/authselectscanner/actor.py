@@ -3,7 +3,7 @@ from leapp.libraries.actor.authselectscanner import (
     Authconfig,
     AuthselectScannerLibrary,
     DConf,
-    read_file,
+    read_file
 )
 from leapp.libraries.common.pam import PAM
 from leapp.models import Authselect

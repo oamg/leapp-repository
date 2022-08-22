@@ -4,8 +4,8 @@ import textwrap
 
 from six import StringIO
 
-from leapp.libraries.stdlib import run, CalledProcessError
 from leapp.libraries.common import utils
+from leapp.libraries.stdlib import CalledProcessError, run
 from leapp.models import Authselect
 
 

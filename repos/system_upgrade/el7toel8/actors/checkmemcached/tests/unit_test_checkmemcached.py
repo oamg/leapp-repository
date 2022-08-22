@@ -1,5 +1,5 @@
-from leapp.libraries.actor import checkmemcached
 from leapp import reporting
+from leapp.libraries.actor import checkmemcached
 from leapp.libraries.common.testutils import create_report_mocked
 
 

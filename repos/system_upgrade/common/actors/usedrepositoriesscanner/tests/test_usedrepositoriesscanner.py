@@ -1,6 +1,12 @@
+from leapp.models import (
+    InstalledRedHatSignedRPM,
+    RepositoriesFacts,
+    RepositoryData,
+    RepositoryFile,
+    RPM,
+    UsedRepositories
+)
 from leapp.snactor.fixture import current_actor_context
-from leapp.models import RPM, InstalledRedHatSignedRPM, RepositoryFile, RepositoryData, \
-    RepositoriesFacts, UsedRepositories
 
 
 def get_sample_rpm(name, repository):

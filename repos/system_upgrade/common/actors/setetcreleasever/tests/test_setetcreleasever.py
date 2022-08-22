@@ -3,14 +3,13 @@ import os
 import pytest
 
 from leapp.libraries.actor import setetcreleasever
-from leapp.models import PkgManagerInfo, RHUIInfo
-from leapp.libraries.stdlib import api
 from leapp.libraries.common.testutils import (
     create_report_mocked,
     CurrentActorMocked,
     logger_mocked
 )
-
+from leapp.libraries.stdlib import api
+from leapp.models import PkgManagerInfo, RHUIInfo
 
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 

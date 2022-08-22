@@ -1,6 +1,6 @@
+from leapp import reporting
 from leapp.libraries.common.config import get_all_envs
 from leapp.reporting import create_report
-from leapp import reporting
 
 DEPRECATED_VARS = ['LEAPP_GRUB_DEVICE']
 

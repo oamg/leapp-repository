@@ -1,7 +1,7 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import rpmscanner
 from leapp.models import InstalledRPM
-from leapp.tags import IPUWorkflowTag, FactsPhaseTag
+from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 
 class RpmScanner(Actor):

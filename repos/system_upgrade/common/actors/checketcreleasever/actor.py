@@ -1,6 +1,6 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import checketcreleasever
-from leapp.models import Report, PkgManagerInfo, RHUIInfo
+from leapp.models import PkgManagerInfo, Report, RHUIInfo
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 

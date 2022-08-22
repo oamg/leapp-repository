@@ -1,6 +1,6 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import opensshuseprivilegeseparationcheck
-from leapp.models import Report, OpenSshConfig
+from leapp.models import OpenSshConfig, Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 

@@ -1,7 +1,7 @@
 from leapp.libraries.actor import xfsinfoscanner
 from leapp.libraries.common.testutils import produce_mocked
 from leapp.libraries.stdlib import api
-from leapp.models import StorageInfo, FstabEntry, MountEntry, SystemdMountEntry, XFSPresence
+from leapp.models import FstabEntry, MountEntry, StorageInfo, SystemdMountEntry, XFSPresence
 
 
 class run_mocked(object):

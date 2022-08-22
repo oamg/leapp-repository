@@ -1,11 +1,10 @@
+from leapp import reporting
 from leapp.actors import Actor
 from leapp.libraries.common.config import architecture
 from leapp.models import FirmwareFacts, GrubDevice, UpdateGrub
-from leapp.reporting import Report, create_report
-from leapp import reporting
+from leapp.reporting import create_report, Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 from leapp.utils.deprecation import suppress_deprecation
-
 
 GRUB_SUMMARY = ('On legacy (BIOS) systems, GRUB core (located in the gap between the MBR and the '
                 'first partition) does not get automatically updated when GRUB is upgraded.')

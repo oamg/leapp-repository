@@ -2,9 +2,9 @@ from leapp.actors import Actor
 from leapp.libraries.actor import modscan
 from leapp.models import (
     RequiredUpgradeInitramPackages,  # deprecated
-    TargetUserSpaceUpgradeTasks,
     UpgradeDracutModule,  # deprecated
-    UpgradeInitramfsTasks,
+    TargetUserSpaceUpgradeTasks,
+    UpgradeInitramfsTasks
 )
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 from leapp.utils.deprecation import suppress_deprecation

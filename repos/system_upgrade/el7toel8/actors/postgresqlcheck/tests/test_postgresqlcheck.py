@@ -2,7 +2,7 @@ import pytest
 
 from leapp import reporting
 from leapp.libraries.actor.postgresqlcheck import report_installed_packages
-from leapp.libraries.common.testutils import CurrentActorMocked, create_report_mocked
+from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked
 from leapp.libraries.stdlib import api
 from leapp.models import InstalledRedHatSignedRPM, RPM
 
