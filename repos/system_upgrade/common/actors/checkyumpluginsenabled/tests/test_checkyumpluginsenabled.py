@@ -16,8 +16,8 @@ def _create_report_with_multiple_base_list_primitive_fields():
             reporting.RelatedResource('file', '/path/to/some/configB'),
             reporting.RelatedResource('file', '/path/to/some/configC'),
             reporting.Severity(reporting.Severity.HIGH),
-            reporting.Flags([reporting.Flags.INHIBITOR]),
-            reporting.Tags([reporting.Tags.REPOSITORY])]
+            reporting.Groups([reporting.Groups.INHIBITOR]),
+            reporting.Groups([reporting.Groups.REPOSITORY])]
     reporting.create_report(report_fields)
 
 
@@ -32,7 +32,7 @@ def test__create_report_mocked(monkeypatch):
         assert config in [rr['title'] for rr in actor_reports.report_fields['detail']['related_resources']]
 
     # make sure that tags/flags joined as groups are present under groups
-    for group in [reporting.Groups.INHIBITOR, reporting.Tags.REPOSITORY]:
+    for group in [reporting.Groups.INHIBITOR, reporting.Groups.REPOSITORY]:
         assert group in actor_reports.report_fields['groups']
 
 

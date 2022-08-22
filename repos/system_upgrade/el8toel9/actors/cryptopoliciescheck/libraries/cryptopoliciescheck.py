@@ -40,7 +40,7 @@ def process(cpi_messages):
                     " system."
                 ).format(cpi.current_policy)),
             reporting.Severity(reporting.Severity.MEDIUM),
-            reporting.Tags([reporting.Tags.SECURITY, reporting.Tags.SANITY]),
+            reporting.Groups([reporting.Groups.SECURITY, reporting.Groups.SANITY]),
             reporting.Remediation(hint="Review the current policy in /etc/crypto-policies/state/CURRENT.pol"),
             reporting.RelatedResource('package', 'crypto-policies'),
             reporting.ExternalLink(

@@ -33,7 +33,7 @@ def _report_server_installed():
         reporting.Title('MariaDB (mariadb-server) has been detected on your system'),
         reporting.Summary(report_server_inst_summary),
         reporting.Severity(reporting.Severity.MEDIUM),
-        reporting.Tags([reporting.Tags.SERVICES]),
+        reporting.Groups([reporting.Groups.SERVICES]),
         reporting.ExternalLink(title='Migrating to a RHEL 9 version of MariaDB',
                                url=report_server_inst_link_url),
         reporting.RelatedResource('package', 'mariadb-server'),

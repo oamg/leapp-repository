@@ -19,7 +19,7 @@ def inhibit_upgrade():
                 )
             ),
             reporting.Severity(reporting.Severity.HIGH),
-            reporting.Tags([reporting.Tags.SANITY]),
-            reporting.Flags([reporting.Flags.INHIBITOR]),
+            reporting.Groups([reporting.Groups.SANITY]),
+            reporting.Groups([reporting.Groups.INHIBITOR]),
         ]
     )

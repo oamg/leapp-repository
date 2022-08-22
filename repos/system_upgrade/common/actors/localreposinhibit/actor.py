@@ -50,8 +50,8 @@ class LocalReposInhibit(Actor):
                     reporting.Title("Local repository detected"),
                     reporting.Summary(warn_msg),
                     reporting.Severity(reporting.Severity.HIGH),
-                    reporting.Tags([reporting.Tags.REPOSITORY]),
-                    reporting.Flags([reporting.Flags.INHIBITOR]),
+                    reporting.Groups([reporting.Groups.REPOSITORY]),
+                    reporting.Groups([reporting.Groups.INHIBITOR]),
                     reporting.Remediation(
                         hint=(
                             "By using Apache HTTP Server you can expose "

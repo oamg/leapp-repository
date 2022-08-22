@@ -83,8 +83,8 @@ def process():
             reporting.Summary(summary),
             reporting.Remediation(hint=remediation),
             reporting.Severity(reporting.Severity.HIGH),
-            reporting.Tags([reporting.Tags.NETWORK, reporting.Tags.SERVICES]),
-            reporting.Flags([reporting.Flags.INHIBITOR]),
+            reporting.Groups([reporting.Groups.NETWORK, reporting.Groups.SERVICES]),
+            reporting.Groups([reporting.Groups.INHIBITOR]),
             reporting.RelatedResource('package', 'NetworkManager-wifi'),
         ] + [
             reporting.RelatedResource('file', fname)

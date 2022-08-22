@@ -26,7 +26,7 @@ def process():
                     'However, Red Hat strongly recommends to have SELinux enabled'
                 ),
                 reporting.Severity(reporting.Severity.INFO),
-                reporting.Tags([reporting.Tags.SELINUX]),
+                reporting.Groups([reporting.Groups.SELINUX]),
                 reporting.RelatedResource('file', '/etc/selinux/config'),
                 reporting.ExternalLink(url=DOC_URL, title='Disabling SELinux'),
             ])
@@ -39,12 +39,12 @@ def process():
                     '"/etc/selinux/config" to see whether the configuration is set as expected.'
                 ),
                 reporting.Severity(reporting.Severity.LOW),
-                reporting.Tags([reporting.Tags.SELINUX, reporting.Tags.SECURITY])
+                reporting.Groups([reporting.Groups.SELINUX, reporting.Groups.SECURITY])
             ])
         reporting.create_report([
             reporting.Title('SElinux disabled'),
             reporting.Summary('SElinux disabled, continuing...'),
-            reporting.Tags([reporting.Tags.SELINUX, reporting.Tags.SECURITY])
+            reporting.Groups([reporting.Groups.SELINUX, reporting.Groups.SECURITY])
         ])
         return
 
@@ -54,7 +54,7 @@ def process():
             reporting.Title('SElinux relabeling will be scheduled'),
             reporting.Summary('SElinux relabeling will be scheduled as the status is permissive/enforcing.'),
             reporting.Severity(reporting.Severity.INFO),
-            reporting.Tags([reporting.Tags.SELINUX, reporting.Tags.SECURITY])
+            reporting.Groups([reporting.Groups.SELINUX, reporting.Groups.SECURITY])
         ])
 
     if conf_status == 'enforcing':
@@ -73,5 +73,5 @@ def process():
                 'manually afterwards. Notice: You can ignore the "/root/tmp_leapp_py3" SElinux warnings.'
                 )
             ),
-            reporting.Tags([reporting.Tags.SELINUX, reporting.Tags.SECURITY])
+            reporting.Groups([reporting.Groups.SELINUX, reporting.Groups.SECURITY])
         ])

@@ -237,11 +237,11 @@ def check_crypto_policies(config):
                 'needs, it is recommended to use custom crypto policies.'
             ),
             reporting.Severity(reporting.Severity.MEDIUM),
-            reporting.Tags([
-                    reporting.Tags.AUTHENTICATION,
-                    reporting.Tags.SECURITY,
-                    reporting.Tags.NETWORK,
-                    reporting.Tags.SERVICES
+            reporting.Groups([
+                    reporting.Groups.AUTHENTICATION,
+                    reporting.Groups.SECURITY,
+                    reporting.Groups.NETWORK,
+                    reporting.Groups.SERVICES
             ]),
             reporting.RelatedResource('package', 'crypto-policies'),
         ] + resources)
@@ -264,10 +264,10 @@ def check_min_max_protocol(config):
                 '`MinProtocol TLSv1.2` add the following line `DTLS.MinProtocol = DTLSv1.2`.'
             ),
             reporting.Severity(reporting.Severity.MEDIUM),
-            reporting.Tags([
-                    reporting.Tags.SECURITY,
-                    reporting.Tags.NETWORK,
-                    reporting.Tags.SERVICES
+            reporting.Groups([
+                    reporting.Groups.SECURITY,
+                    reporting.Groups.NETWORK,
+                    reporting.Groups.SERVICES
             ]),
         ] + resources)
 
@@ -284,10 +284,10 @@ def check_duplicate_extensions(config):
                 'extensions to silence this warning.'.format(', '.join(dup))
             ),
             reporting.Severity(reporting.Severity.LOW),
-            reporting.Tags([
-                    reporting.Tags.SECURITY,
-                    reporting.Tags.NETWORK,
-                    reporting.Tags.SERVICES
+            reporting.Groups([
+                    reporting.Groups.SECURITY,
+                    reporting.Groups.NETWORK,
+                    reporting.Groups.SERVICES
             ]),
         ] + resources)
 
@@ -307,12 +307,12 @@ def check_default_modules(config):
                 'block. The `openssl_conf` now contains {} or the `[ default_modules ]` '
                 'block is missing. '.format(config.openssl_conf)
             ),
-            reporting.Flags([reporting.Flags.INHIBITOR]),
+            reporting.Groups([reporting.Groups.INHIBITOR]),
             reporting.Severity(reporting.Severity.HIGH),
-            reporting.Tags([
-                    reporting.Tags.SECURITY,
-                    reporting.Tags.NETWORK,
-                    reporting.Tags.SERVICES
+            reporting.Groups([
+                    reporting.Groups.SECURITY,
+                    reporting.Groups.NETWORK,
+                    reporting.Groups.SERVICES
             ]),
         ] + resources)
     else:
@@ -346,9 +346,9 @@ def check_default_modules(config):
                 ' + ##activate = 1\n'
             ),
             reporting.Severity(reporting.Severity.INFO),
-            reporting.Tags([
-                    reporting.Tags.SECURITY,
-                    reporting.Tags.NETWORK,
-                    reporting.Tags.SERVICES
+            reporting.Groups([
+                    reporting.Groups.SECURITY,
+                    reporting.Groups.NETWORK,
+                    reporting.Groups.SERVICES
             ]),
         ] + resources)

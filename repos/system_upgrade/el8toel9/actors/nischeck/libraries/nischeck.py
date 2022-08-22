@@ -60,7 +60,7 @@ def report_nis():
         reporting.Title('NIS component has been detected on your system'),
         reporting.Summary(report_summary),
         reporting.Severity(reporting.Severity.MEDIUM),
-        reporting.Tags([reporting.Tags.SERVICES]),
+        reporting.Groups([reporting.Groups.SERVICES]),
         reporting.ExternalLink(title='RHEL 9 (NIS) discontinuation',
                                url=report_link_url),
         reporting.Remediation(hint=report_hint),

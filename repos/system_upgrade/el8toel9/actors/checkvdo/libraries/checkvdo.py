@@ -19,9 +19,9 @@ def _create_unexpected_resuilt_report(devices):
         _report_title,
         reporting.Summary(summary),
         reporting.Severity(reporting.Severity.HIGH),
-        reporting.Tags([reporting.Tags.SERVICES, reporting.Tags.DRIVERS]),
+        reporting.Groups([reporting.Groups.SERVICES, reporting.Groups.DRIVERS]),
         reporting.Remediation(hint=remedy_hint),
-        reporting.Flags([reporting.Flags.INHIBITOR])
+        reporting.Groups([reporting.Groups.INHIBITOR])
     ])
 
 
@@ -51,9 +51,9 @@ def _process_post_conversion_vdos(vdos):
             _report_title,
             reporting.Summary(summary),
             reporting.Severity(reporting.Severity.HIGH),
-            reporting.Tags([reporting.Tags.SERVICES, reporting.Tags.DRIVERS]),
+            reporting.Groups([reporting.Groups.SERVICES, reporting.Groups.DRIVERS]),
             reporting.Remediation(hint=remedy_hint),
-            reporting.Flags([reporting.Flags.INHIBITOR])
+            reporting.Groups([reporting.Groups.INHIBITOR])
         ])
 
     # Post-conversion VDOs that were not successfully checked for having
@@ -85,9 +85,9 @@ def _process_pre_conversion_vdos(vdos):
             _report_title,
             reporting.Summary(summary),
             reporting.Severity(reporting.Severity.HIGH),
-            reporting.Tags([reporting.Tags.SERVICES, reporting.Tags.DRIVERS]),
+            reporting.Groups([reporting.Groups.SERVICES, reporting.Groups.DRIVERS]),
             reporting.Remediation(hint=remedy_hint),
-            reporting.Flags([reporting.Flags.INHIBITOR])
+            reporting.Groups([reporting.Groups.INHIBITOR])
         ])
 
 
@@ -120,8 +120,8 @@ def _process_undetermined_conversion_devices(devices):
                 _report_title,
                 reporting.Summary(summary),
                 reporting.Severity(reporting.Severity.INFO),
-                reporting.Tags([reporting.Tags.SERVICES, reporting.Tags.DRIVERS]),
-                reporting.Flags([])
+                reporting.Groups([reporting.Groups.SERVICES, reporting.Groups.DRIVERS]),
+                reporting.Groups([])
             ])
         elif no_vdo_devices is False:
             summary = ('User has opted to inhibit upgrade in regard to '
@@ -134,9 +134,9 @@ def _process_undetermined_conversion_devices(devices):
                 _report_title,
                 reporting.Summary(summary),
                 reporting.Severity(reporting.Severity.HIGH),
-                reporting.Tags([reporting.Tags.SERVICES, reporting.Tags.DRIVERS]),
+                reporting.Groups([reporting.Groups.SERVICES, reporting.Groups.DRIVERS]),
                 reporting.Remediation(hint=remedy_hint),
-                reporting.Flags([reporting.Flags.INHIBITOR])
+                reporting.Groups([reporting.Groups.INHIBITOR])
             ])
 
 

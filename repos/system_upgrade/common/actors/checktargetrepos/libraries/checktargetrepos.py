@@ -78,8 +78,8 @@ def process():
                 .format(CUSTOM_REPO_PATH, summary_ctrf)
             )),
             reporting.Severity(reporting.Severity.HIGH),
-            reporting.Tags([reporting.Tags.SANITY]),
-            reporting.Flags([reporting.Flags.INHIBITOR]),
+            reporting.Groups([reporting.Groups.SANITY]),
+            reporting.Groups([reporting.Groups.INHIBITOR]),
             reporting.ExternalLink(url=ipu_doc_url, title='UPGRADING TO RHEL {}'.format(target_major_version)),
             reporting.RelatedResource('file', CUSTOM_REPO_PATH),
         ])

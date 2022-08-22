@@ -41,10 +41,10 @@ def process(openssh_messages):
                      'Subsystem sftp /usr/libexec/openssh/sftp-server'
             ),
             reporting.Severity(reporting.Severity.MEDIUM),
-            reporting.Tags([
-                    reporting.Tags.AUTHENTICATION,
-                    reporting.Tags.SECURITY,
-                    reporting.Tags.NETWORK,
-                    reporting.Tags.SERVICES
+            reporting.Groups([
+                    reporting.Groups.AUTHENTICATION,
+                    reporting.Groups.SECURITY,
+                    reporting.Groups.NETWORK,
+                    reporting.Groups.SERVICES
             ]),
         ] + resources)

@@ -19,8 +19,8 @@ def perform_check():
             ' the system is running on S390x architecture. To avoid this from happening, we'
             ' are inhibiting the upgrade process in this release until the issue has been fixed.'
         )),
-        reporting.Flags([reporting.Flags.INHIBITOR]),
-        reporting.Tags([reporting.Tags.FILESYSTEM, reporting.Tags.UPGRADE_PROCESS, reporting.Tags.BOOT]),
+        reporting.Groups([reporting.Groups.INHIBITOR]),
+        reporting.Groups([reporting.Groups.FILESYSTEM, reporting.Groups.UPGRADE_PROCESS, reporting.Groups.BOOT]),
         reporting.Severity(reporting.Severity.HIGH),
     ]
 

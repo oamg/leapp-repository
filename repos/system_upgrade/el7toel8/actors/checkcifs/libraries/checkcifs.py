@@ -9,11 +9,11 @@ def checkcifs(storage_info):
                 reporting.Title("Use of CIFS detected. Upgrade can't proceed"),
                 reporting.Summary("CIFS is currently not supported by the inplace upgrade."),
                 reporting.Severity(reporting.Severity.HIGH),
-                reporting.Tags([
-                        reporting.Tags.FILESYSTEM,
-                        reporting.Tags.NETWORK
+                reporting.Groups([
+                        reporting.Groups.FILESYSTEM,
+                        reporting.Groups.NETWORK
                 ]),
                 reporting.Remediation(hint='Comment out CIFS entries to proceed with the upgrade.'),
-                reporting.Flags([reporting.Flags.INHIBITOR]),
+                reporting.Groups([reporting.Groups.INHIBITOR]),
                 reporting.RelatedResource('file', '/etc/fstab')
             ])

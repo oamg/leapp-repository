@@ -55,10 +55,10 @@ class OpenSshDropInDirectoryCheck(Actor):
                 'ApplicationsPhase: `Include /etc/ssh/sshd_config.d/*.conf`'
             ),
             reporting.Severity(reporting.Severity.INFO),
-            reporting.Tags([
-                    reporting.Tags.AUTHENTICATION,
-                    reporting.Tags.SECURITY,
-                    reporting.Tags.NETWORK,
-                    reporting.Tags.SERVICES
+            reporting.Groups([
+                    reporting.Groups.AUTHENTICATION,
+                    reporting.Groups.SECURITY,
+                    reporting.Groups.NETWORK,
+                    reporting.Groups.SERVICES
             ]),
         ] + resources)

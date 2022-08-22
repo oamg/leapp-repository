@@ -36,9 +36,9 @@ def create_inhibitors(inhibiting_entries):
                 )
             ),
             reporting.Audience('sysadmin'),
-            reporting.Tags([reporting.Tags.KERNEL, reporting.Tags.DRIVERS]),
+            reporting.Groups([reporting.Groups.KERNEL, reporting.Groups.DRIVERS]),
             reporting.Severity(reporting.Severity.HIGH),
-            reporting.Flags([reporting.Flags.INHIBITOR])
+            reporting.Groups([reporting.Groups.INHIBITOR])
         ])
 
     devices = inhibiting_entries.get(MessagingClass.DEVICES)
@@ -59,9 +59,9 @@ def create_inhibitors(inhibiting_entries):
                 )
             ),
             reporting.Audience('sysadmin'),
-            reporting.Tags([reporting.Tags.KERNEL]),
+            reporting.Groups([reporting.Groups.KERNEL]),
             reporting.Severity(reporting.Severity.HIGH),
-            reporting.Flags([reporting.Flags.INHIBITOR])
+            reporting.Groups([reporting.Groups.INHIBITOR])
         ])
 
     cpus = inhibiting_entries.get(MessagingClass.CPUS)
@@ -81,9 +81,9 @@ def create_inhibitors(inhibiting_entries):
                 )
             ),
             reporting.Audience('sysadmin'),
-            reporting.Tags([reporting.Tags.KERNEL, reporting.Tags.BOOT]),
+            reporting.Groups([reporting.Groups.KERNEL, reporting.Groups.BOOT]),
             reporting.Severity(reporting.Severity.HIGH),
-            reporting.Flags([reporting.Flags.INHIBITOR])
+            reporting.Groups([reporting.Groups.INHIBITOR])
         ])
 
 
@@ -109,7 +109,7 @@ def create_warnings(unmaintained_entries):
                 )
             ),
             reporting.Audience('sysadmin'),
-            reporting.Tags([reporting.Tags.KERNEL, reporting.Tags.DRIVERS]),
+            reporting.Groups([reporting.Groups.KERNEL, reporting.Groups.DRIVERS]),
             reporting.Severity(reporting.Severity.HIGH),
         ])
 
@@ -131,7 +131,7 @@ def create_warnings(unmaintained_entries):
                 )
             ),
             reporting.Audience('sysadmin'),
-            reporting.Tags([reporting.Tags.KERNEL]),
+            reporting.Groups([reporting.Groups.KERNEL]),
             reporting.Severity(reporting.Severity.HIGH),
         ])
 
@@ -152,7 +152,7 @@ def create_warnings(unmaintained_entries):
                 )
             ),
             reporting.Audience('sysadmin'),
-            reporting.Tags([reporting.Tags.KERNEL, reporting.Tags.BOOT]),
+            reporting.Groups([reporting.Groups.KERNEL, reporting.Groups.BOOT]),
             reporting.Severity(reporting.Severity.HIGH),
         ])
 

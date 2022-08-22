@@ -322,8 +322,8 @@ def _get_product_certificate_path():
                 'Expected certificate: {cert} with path {path} but it could not be found.{additional}'.format(
                     cert=cert, path=cert_path, additional=additional_summary)
             ),
-            reporting.Tags([reporting.Tags.REPOSITORY]),
-            reporting.Flags([reporting.Flags.INHIBITOR]),
+            reporting.Groups([reporting.Groups.REPOSITORY]),
+            reporting.Groups([reporting.Groups.INHIBITOR]),
             reporting.Severity(reporting.Severity.HIGH),
             reporting.Remediation(hint=(
                 'Set the corresponding target os version in the LEAPP_DEVEL_TARGET_RELEASE environment variable for'
@@ -379,8 +379,8 @@ def _inhibit_on_duplicate_repos(repofiles):
             .format(list_separator_fmt, list_separator_fmt.join(duplicates))
         ),
         reporting.Severity(reporting.Severity.MEDIUM),
-        reporting.Tags([reporting.Tags.REPOSITORY]),
-        reporting.Flags([reporting.Flags.INHIBITOR]),
+        reporting.Groups([reporting.Groups.REPOSITORY]),
+        reporting.Groups([reporting.Groups.INHIBITOR]),
         reporting.Remediation(hint=(
             'Remove the duplicate repository definitions or change repoids of'
             ' conflicting repositories on the system to prevent the'
@@ -422,9 +422,9 @@ def _get_rhsm_available_repoids(context):
                 'This can happen when a repository ID was entered incorrectly either while using the --enablerepo'
                 ' option of leapp or in a third party actor that produces a CustomTargetRepositoryMessage.'
             ),
-            reporting.Tags([reporting.Tags.REPOSITORY]),
+            reporting.Groups([reporting.Groups.REPOSITORY]),
             reporting.Severity(reporting.Severity.HIGH),
-            reporting.Flags([reporting.Flags.INHIBITOR]),
+            reporting.Groups([reporting.Groups.INHIBITOR]),
             reporting.Remediation(hint=(
                 'It is required to have RHEL repositories on the system'
                 ' provided by the subscription-manager unless the --no-rhsm'
@@ -529,8 +529,8 @@ def gather_target_repositories(context, indata):
                 ' or, when the leapp --no-rhsm option has been used, no custom repositories have been'
                 ' passed on the command line.'
             ),
-            reporting.Tags([reporting.Tags.REPOSITORY]),
-            reporting.Flags([reporting.Flags.INHIBITOR]),
+            reporting.Groups([reporting.Groups.REPOSITORY]),
+            reporting.Groups([reporting.Groups.INHIBITOR]),
             reporting.Severity(reporting.Severity.HIGH),
             reporting.Remediation(hint=(
                 'Ensure the system is correctly registered with the subscription manager and that'
@@ -560,8 +560,8 @@ def gather_target_repositories(context, indata):
                 'The following repositories IDs could not be found in the target configuration:\n'
                 '- {}\n'.format('\n- '.join(missing_custom_repoids))
             ),
-            reporting.Tags([reporting.Tags.REPOSITORY]),
-            reporting.Flags([reporting.Flags.INHIBITOR]),
+            reporting.Groups([reporting.Groups.REPOSITORY]),
+            reporting.Groups([reporting.Groups.INHIBITOR]),
             reporting.Severity(reporting.Severity.HIGH),
             reporting.ExternalLink(
                 # TODO: How to handle different documentation links for each version?

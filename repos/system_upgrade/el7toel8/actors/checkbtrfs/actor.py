@@ -42,8 +42,8 @@ class CheckBtrfs(Actor):
                             url='https://access.redhat.com/solutions/41278'
                         ),
                         reporting.Severity(reporting.Severity.HIGH),
-                        reporting.Flags([reporting.Flags.INHIBITOR]),
-                        reporting.Tags([reporting.Tags.FILESYSTEM]),
+                        reporting.Groups([reporting.Groups.INHIBITOR]),
+                        reporting.Groups([reporting.Groups.FILESYSTEM]),
                         reporting.Remediation(hint=hint, commands=[command]),
                         reporting.RelatedResource('kernel-driver', 'btrfs')
                     ])

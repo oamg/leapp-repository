@@ -16,8 +16,8 @@ def satellite_upgrade_check(facts):
                 reporting.Title(title),
                 reporting.Summary(textwrap.dedent(summary).strip()),
                 reporting.Severity(reporting.Severity.HIGH),
-                reporting.Tags([]),
-                reporting.Flags([reporting.Flags.INHIBITOR])
+                reporting.Groups([]),
+                reporting.Groups([reporting.Groups.INHIBITOR])
             ])
 
         title = "Satellite PostgreSQL data migration"
@@ -31,7 +31,7 @@ def satellite_upgrade_check(facts):
             if facts.postgresql.space_required > facts.postgresql.space_available:
                 storage_message = """You currently don't have enough free storage to move the data.
                 Automatic moving cannot be performed."""
-                flags = [reporting.Flags.INHIBITOR]
+                flags = [reporting.Groups.INHIBITOR]
                 severity = reporting.Severity.HIGH
             else:
                 storage_message = """You currently have enough free storage to move the data.
@@ -48,6 +48,6 @@ def satellite_upgrade_check(facts):
             reporting.Title(title),
             reporting.Summary(textwrap.dedent(summary).strip()),
             reporting.Severity(severity),
-            reporting.Tags([]),
-            reporting.Flags(flags)
+            reporting.Groups([]),
+            reporting.Groups(flags)
         ])

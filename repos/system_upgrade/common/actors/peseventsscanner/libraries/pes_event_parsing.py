@@ -79,8 +79,8 @@ def get_pes_events(pes_json_directory, pes_json_filename):
             reporting.Title(title),
             reporting.Summary(summary),
             reporting.Severity(reporting.Severity.HIGH),
-            reporting.Tags([reporting.Tags.SANITY]),
-            reporting.Flags([reporting.Flags.INHIBITOR]),
+            reporting.Groups([reporting.Groups.SANITY]),
+            reporting.Groups([reporting.Groups.INHIBITOR]),
             reporting.RelatedResource('file', os.path.join(pes_json_directory, pes_json_filename))
         ])
         raise StopActorExecution()

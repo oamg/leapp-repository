@@ -50,8 +50,8 @@ def process():
                 list_separator_fmt,
                 list_separator_fmt.join(list(REMOVED_XFS_OPTIONS)))),
         reporting.Severity(reporting.Severity.HIGH),
-        reporting.Flags([reporting.Flags.INHIBITOR]),
-        reporting.Tags([reporting.Tags.FILESYSTEM]),
+        reporting.Groups([reporting.Groups.INHIBITOR]),
+        reporting.Groups([reporting.Groups.FILESYSTEM]),
         reporting.RelatedResource('file', '/etc/fstab'),
         reporting.Remediation(hint=(
             'Drop the following mount options from the /etc/fstab file for any'

@@ -31,6 +31,6 @@ class CheckWireshark(Actor):
                     'Now it shows SHA256 instead. SHA1 might get removed very soon as well. '
                     'If you use these output values, please change your scripts.'),
                 reporting.Severity(reporting.Severity.LOW),
-                reporting.Tags([reporting.Tags.MONITORING, reporting.Tags.SANITY, reporting.Tags.TOOLS]),
+                reporting.Groups([reporting.Groups.MONITORING, reporting.Groups.SANITY, reporting.Groups.TOOLS]),
                 reporting.RelatedResource('package', 'wireshark'),
             ])

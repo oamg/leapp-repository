@@ -67,6 +67,6 @@ def check_required_yum_plugins_enabled(yum_config):
             reporting.RelatedResource('file', subscription_manager_plugin_conf),
             reporting.RelatedResource('file', product_id_plugin_conf),
             reporting.Severity(reporting.Severity.HIGH),
-            reporting.Flags([reporting.Flags.INHIBITOR]),
-            reporting.Tags([reporting.Tags.REPOSITORY]),
+            reporting.Groups([reporting.Groups.INHIBITOR]),
+            reporting.Groups([reporting.Groups.REPOSITORY]),
         ])

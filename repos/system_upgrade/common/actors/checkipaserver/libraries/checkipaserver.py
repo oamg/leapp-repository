@@ -33,8 +33,8 @@ def ipa_inhibit_upgrade(ipainfo):
             title="IdM migration guide",
         ),
         reporting.Severity(reporting.Severity.HIGH),
-        reporting.Flags([reporting.Flags.INHIBITOR]),
-        reporting.Tags([reporting.Tags.SERVICES]),
+        reporting.Groups([reporting.Groups.INHIBITOR]),
+        reporting.Groups([reporting.Groups.SERVICES]),
         reporting.RelatedResource("package", "ipa-server"),
     ]
     return reporting.create_report(entries)
@@ -68,7 +68,7 @@ def ipa_warn_pkg_installed(ipainfo):
             title="Migrating IdM from RHEL 7 to 8",
         ),
         reporting.Severity(reporting.Severity.MEDIUM),
-        reporting.Tags([reporting.Tags.SERVICES]),
+        reporting.Groups([reporting.Groups.SERVICES]),
         reporting.RelatedResource("package", "ipa-server"),
     ]
     return reporting.create_report(entries)

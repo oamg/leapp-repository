@@ -54,6 +54,6 @@ class PersistentNetNamesDisable(Actor):
                     hint='Rename all ethX network interfaces following the attached KB solution article.'
                 ),
                 reporting.Severity(reporting.Severity.HIGH),
-                reporting.Tags([reporting.Tags.NETWORK]),
-                reporting.Flags([reporting.Flags.INHIBITOR])
+                reporting.Groups([reporting.Groups.NETWORK]),
+                reporting.Groups([reporting.Groups.INHIBITOR])
             ])

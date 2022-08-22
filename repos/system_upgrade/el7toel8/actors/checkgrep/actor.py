@@ -36,7 +36,7 @@ class CheckGrep(Actor):
                     'line.\n'
                 ),
                 reporting.Severity(reporting.Severity.LOW),
-                reporting.Tags([reporting.Tags.TOOLS]),
+                reporting.Groups([reporting.Groups.TOOLS]),
                 reporting.Remediation(hint='Please update your scripts to be compatible with the changes.'),
                 reporting.RelatedResource('package', 'grep')
             ])

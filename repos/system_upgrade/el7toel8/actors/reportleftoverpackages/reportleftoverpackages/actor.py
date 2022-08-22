@@ -32,7 +32,7 @@ class ReportLeftoverPackages(Actor):
                     reporting.Title(title),
                     reporting.Summary('Following packages have been removed:\n{}'.format('\n'.join(removed))),
                     reporting.Severity(reporting.Severity.HIGH),
-                    reporting.Tags([reporting.Tags.SANITY]),
+                    reporting.Groups([reporting.Groups.SANITY]),
                 ] + [reporting.RelatedResource('package', pkg.name) for pkg in removed_packages.items])
             else:
                 summary = ('Following packages have been removed:\n'
@@ -44,7 +44,7 @@ class ReportLeftoverPackages(Actor):
                     reporting.Title(title),
                     reporting.Summary(summary),
                     reporting.Severity(reporting.Severity.HIGH),
-                    reporting.Tags([reporting.Tags.SANITY]),
+                    reporting.Groups([reporting.Groups.SANITY]),
                 ] + [reporting.RelatedResource('package', pkg.name) for pkg in leftover_packages.items])
             return
 
@@ -58,5 +58,5 @@ class ReportLeftoverPackages(Actor):
             reporting.Title('Some RHEL 7 packages have not been upgraded'),
             reporting.Summary(summary),
             reporting.Severity(reporting.Severity.HIGH),
-            reporting.Tags([reporting.Tags.SANITY]),
+            reporting.Groups([reporting.Groups.SANITY]),
         ] + [reporting.RelatedResource('package', pkg.name) for pkg in leftover_packages.items])
