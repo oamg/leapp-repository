@@ -1,6 +1,6 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import updateetcsysconfigkernel
-from leapp.tags import PreparationPhaseTag, IPUWorkflowTag
+from leapp.tags import IPUWorkflowTag, PreparationPhaseTag
 
 
 class UpdateEtcSysconfigKernel(Actor):

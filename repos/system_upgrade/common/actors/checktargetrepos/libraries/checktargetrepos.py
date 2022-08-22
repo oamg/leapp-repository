@@ -1,9 +1,8 @@
-from leapp.models import CustomTargetRepositoryFile, TargetRepositories, RHUIInfo
-from leapp.libraries.stdlib import api
 from leapp import reporting
 from leapp.libraries.common import config, rhsm
 from leapp.libraries.common.config.version import get_target_major_version
-
+from leapp.libraries.stdlib import api
+from leapp.models import CustomTargetRepositoryFile, RHUIInfo, TargetRepositories
 
 # TODO: we need to provide this path in a shared library
 CUSTOM_REPO_PATH = '/etc/leapp/files/leapp_upgrade_repositories.repo'

@@ -4,10 +4,9 @@ import os
 import shutil
 from collections import namedtuple
 
-from leapp.libraries.stdlib import run, CalledProcessError, api
 from leapp.libraries.common.config import get_all_envs
 from leapp.libraries.common.config.version import get_source_major_version
-
+from leapp.libraries.stdlib import api, CalledProcessError, run
 
 # Using ALWAYS_BIND will crash the upgrade process if the file does not exist.
 # Consider instead adding an entry to the ScanFilesToCopyIntoTargetSystem actor that

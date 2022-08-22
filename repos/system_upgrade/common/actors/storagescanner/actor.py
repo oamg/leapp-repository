@@ -2,7 +2,7 @@ from leapp.actors import Actor
 from leapp.libraries.actor import storagescanner
 from leapp.models import StorageInfo
 from leapp.reporting import Report
-from leapp.tags import IPUWorkflowTag, FactsPhaseTag
+from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 
 class StorageScanner(Actor):

@@ -1,7 +1,7 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import scanpkgmanager
 from leapp.models import PkgManagerInfo
-from leapp.tags import IPUWorkflowTag, FactsPhaseTag
+from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 
 class ScanPkgManager(Actor):

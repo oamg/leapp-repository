@@ -1,12 +1,12 @@
-from collections import defaultdict
 import json
 import os
+from collections import defaultdict
 
 from leapp.exceptions import StopActorExecutionError
-from leapp.libraries.common.config.version import get_target_major_version, get_source_major_version
+from leapp.libraries.common.config.version import get_source_major_version, get_target_major_version
 from leapp.libraries.common.fetch import read_or_fetch
 from leapp.libraries.stdlib import api
-from leapp.models import RepositoriesMapping, PESIDRepositoryEntry, RepoMapEntry
+from leapp.models import PESIDRepositoryEntry, RepoMapEntry, RepositoriesMapping
 from leapp.models.fields import ModelViolationError
 
 OLD_REPOMAP_FILE = 'repomap.csv'

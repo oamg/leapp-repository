@@ -6,7 +6,7 @@ from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import enablerhsmtargetrepos
 from leapp.libraries.common import config, mounting, rhsm
 from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked
-from leapp.libraries.stdlib import CalledProcessError, api
+from leapp.libraries.stdlib import api, CalledProcessError
 from leapp.models import EnvVar, UsedTargetRepositories, UsedTargetRepository
 
 

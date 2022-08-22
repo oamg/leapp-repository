@@ -1,4 +1,4 @@
-from leapp.models import InstalledRedHatSignedRPM, RPM, BrlttyMigrationDecision
+from leapp.models import BrlttyMigrationDecision, InstalledRedHatSignedRPM, RPM
 from leapp.reporting import Report
 
 RH_PACKAGER = 'Red Hat, Inc. <http://bugzilla.redhat.com/bugzilla>'

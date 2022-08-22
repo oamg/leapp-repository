@@ -1,5 +1,5 @@
 from leapp.libraries.common.config import mock_configs
-from leapp.models import GrubDevice, UpdateGrub, FirmwareFacts
+from leapp.models import FirmwareFacts, GrubDevice, UpdateGrub
 from leapp.reporting import Report
 
 

@@ -1,9 +1,9 @@
-from leapp.actors import Actor
-from leapp.tags import FinalizationPhaseTag, IPUWorkflowTag
-from leapp.models import SelinuxPermissiveDecision
-from leapp.reporting import Report, create_report
 from leapp import reporting
+from leapp.actors import Actor
 from leapp.libraries.actor.setpermissiveselinux import selinux_set_permissive
+from leapp.models import SelinuxPermissiveDecision
+from leapp.reporting import create_report, Report
+from leapp.tags import FinalizationPhaseTag, IPUWorkflowTag
 
 
 class SetPermissiveSelinux(Actor):

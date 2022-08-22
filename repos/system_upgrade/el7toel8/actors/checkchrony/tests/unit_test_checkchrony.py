@@ -1,6 +1,6 @@
+from leapp import reporting
 from leapp.libraries.actor import checkchrony
 from leapp.libraries.common.testutils import create_report_mocked
-from leapp import reporting
 
 
 def test_uninstalled(monkeypatch):

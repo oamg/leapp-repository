@@ -1,7 +1,7 @@
 from leapp.actors import Actor
+from leapp.libraries.actor.grubenvtofile import grubenv_to_file
 from leapp.models import HybridImage
 from leapp.tags import FinalizationPhaseTag, IPUWorkflowTag
-from leapp.libraries.actor.grubenvtofile import grubenv_to_file
 
 
 class GrubenvToFile(Actor):

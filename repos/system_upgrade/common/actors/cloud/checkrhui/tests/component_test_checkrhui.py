@@ -2,18 +2,17 @@ from collections import namedtuple
 
 import pytest
 
-from leapp.snactor.fixture import current_actor_context
+from leapp.libraries.common import rhsm
+from leapp.libraries.common.config import mock_configs
 from leapp.models import (
     InstalledRedHatSignedRPM,
     InstalledRPM,
-    RPM,
-    RHUIInfo,
     RequiredTargetUserspacePackages,
+    RHUIInfo,
+    RPM
 )
 from leapp.reporting import Report
-from leapp.libraries.common.config import mock_configs
-from leapp.libraries.common import rhsm
-
+from leapp.snactor.fixture import current_actor_context
 
 RH_PACKAGER = 'Red Hat, Inc. <http://bugzilla.redhat.com/bugzilla>'
 

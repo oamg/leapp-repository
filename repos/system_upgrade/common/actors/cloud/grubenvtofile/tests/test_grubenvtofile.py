@@ -1,9 +1,9 @@
 import pytest
 
-from leapp.models import HybridImage
-from leapp.libraries.common.testutils import logger_mocked
 from leapp.libraries.actor import grubenvtofile
-from leapp.libraries.stdlib import CalledProcessError, api
+from leapp.libraries.common.testutils import logger_mocked
+from leapp.libraries.stdlib import api, CalledProcessError
+from leapp.models import HybridImage
 
 
 def raise_call_error(args=None):

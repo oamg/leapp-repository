@@ -1,6 +1,6 @@
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common.config.version import get_source_major_version
-from leapp.libraries.stdlib import CalledProcessError, api
+from leapp.libraries.stdlib import api, CalledProcessError
 
 
 def get_leapp_packages():

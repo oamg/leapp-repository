@@ -5,7 +5,7 @@ import pytest
 from leapp.exceptions import StopActorExecution
 from leapp.libraries.actor import grubdevname
 from leapp.libraries.common import testutils
-from leapp.libraries.stdlib import CalledProcessError, api
+from leapp.libraries.stdlib import api, CalledProcessError
 
 BOOT_PARTITION = '/dev/vda1'
 

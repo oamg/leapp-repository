@@ -1,7 +1,7 @@
 from leapp.actors import Actor
-from leapp.models import RpmTransactionTasks
-from leapp.tags import IPUWorkflowTag, FactsPhaseTag
 from leapp.libraries.actor import transactionworkarounds
+from leapp.models import RpmTransactionTasks
+from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 
 class TransactionWorkarounds(Actor):

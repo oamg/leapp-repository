@@ -4,7 +4,6 @@ from leapp.libraries.stdlib import api
 from leapp.models import RHSMInfo
 from leapp.reporting import create_report
 
-
 SCA_TEXT = "Content Access Mode is set to Simple Content Access"
 
 

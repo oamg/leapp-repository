@@ -1,8 +1,8 @@
-from leapp.actors import Actor
-from leapp.reporting import create_report
 from leapp import reporting
+from leapp.actors import Actor
 from leapp.libraries.stdlib import config
 from leapp.models import Report, SkippedRepositories
+from leapp.reporting import create_report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 

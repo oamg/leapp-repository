@@ -1,7 +1,7 @@
 from leapp.actors import Actor
-from leapp.models import InstalledRPM, HybridImage, FirmwareFacts
-from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 from leapp.libraries.actor.checkhybridimage import check_hybrid_image
+from leapp.models import FirmwareFacts, HybridImage, InstalledRPM
+from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
 class CheckHybridImage(Actor):

@@ -1,10 +1,10 @@
+from leapp import reporting
 from leapp.actors import Actor
 from leapp.exceptions import StopActorExecutionError
-from leapp.models import Report, PamConfiguration
-from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 from leapp.libraries.stdlib import api
+from leapp.models import PamConfiguration, Report
 from leapp.reporting import create_report
-from leapp import reporting
+from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
 class CheckRemovedPamModules(Actor):

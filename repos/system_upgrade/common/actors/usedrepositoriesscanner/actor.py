@@ -1,7 +1,11 @@
 from leapp.actors import Actor
-from leapp.models import InstalledRedHatSignedRPM, RepositoriesFacts, UsedRepositories, \
+from leapp.models import (
+    InstalledRedHatSignedRPM,
+    RepositoriesFacts,
+    UsedRepositories,
     UsedRepository
-from leapp.tags import IPUWorkflowTag, FactsPhaseTag
+)
+from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 
 class UsedRepositoriesScanner(Actor):

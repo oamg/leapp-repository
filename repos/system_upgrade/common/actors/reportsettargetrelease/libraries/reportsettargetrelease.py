@@ -1,6 +1,6 @@
 from leapp import reporting
-from leapp.libraries.stdlib import api
 from leapp.libraries.common import rhsm
+from leapp.libraries.stdlib import api
 
 
 def _report_set_release():

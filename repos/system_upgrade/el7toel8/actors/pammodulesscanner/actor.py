@@ -1,10 +1,10 @@
 import os
 
 from leapp.actors import Actor
+from leapp.libraries.common.pam import PAM
+from leapp.libraries.stdlib import api
 from leapp.models import PamConfiguration, PamService
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
-from leapp.libraries.stdlib import api
-from leapp.libraries.common.pam import PAM
 
 
 class PamModulesScanner(Actor):

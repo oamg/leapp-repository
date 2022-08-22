@@ -1,11 +1,10 @@
-from os import symlink, path, access, X_OK
 from collections import namedtuple
+from os import access, path, symlink, X_OK
 
 import pytest
 
 from leapp.libraries.actor import workaround
 from leapp.libraries.common.utils import makedirs
-
 
 SysVersionInfo = namedtuple('version_info', ['major', 'minor', 'micro', 'releaselevel', 'serial'])
 

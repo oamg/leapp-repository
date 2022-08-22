@@ -4,13 +4,13 @@ import pytest
 
 from leapp import reporting
 from leapp.libraries.actor import checketcreleasever
-from leapp.libraries.stdlib import api
 from leapp.libraries.common.testutils import (
     create_report_mocked,
     CurrentActorMocked,
     logger_mocked
 )
-from leapp.models import PkgManagerInfo, RHUIInfo, Report
+from leapp.libraries.stdlib import api
+from leapp.models import PkgManagerInfo, Report, RHUIInfo
 
 
 @pytest.mark.parametrize('exists', [True, False])

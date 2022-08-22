@@ -1,7 +1,7 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import scanmemory
 from leapp.models import MemoryInfo
-from leapp.tags import IPUWorkflowTag, FactsPhaseTag
+from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 
 class ScanMemory(Actor):

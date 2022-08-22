@@ -1,7 +1,7 @@
 from leapp.actors import Actor
 from leapp.libraries.stdlib import run
 from leapp.models import UdevAdmInfoData
-from leapp.tags import IPUWorkflowTag, FactsPhaseTag
+from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 
 class UdevAdmInfo(Actor):

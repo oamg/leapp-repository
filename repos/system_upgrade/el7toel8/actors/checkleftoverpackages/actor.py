@@ -1,7 +1,7 @@
 from leapp.actors import Actor
 from leapp.libraries.common.rpms import get_installed_rpms
-from leapp.models import LeftoverPackages, TransactionCompleted, InstalledUnsignedRPM, RPM
-from leapp.tags import RPMUpgradePhaseTag, IPUWorkflowTag
+from leapp.models import InstalledUnsignedRPM, LeftoverPackages, RPM, TransactionCompleted
+from leapp.tags import IPUWorkflowTag, RPMUpgradePhaseTag
 
 
 class CheckLeftoverPackages(Actor):

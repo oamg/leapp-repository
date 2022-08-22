@@ -1,7 +1,7 @@
 from leapp.actors import Actor
-from leapp.tags import IPUWorkflowTag, FactsPhaseTag
 from leapp.libraries.actor import scanrhsm
 from leapp.models import RHSMInfo
+from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 
 class ScanSubscriptionManagerInfo(Actor):

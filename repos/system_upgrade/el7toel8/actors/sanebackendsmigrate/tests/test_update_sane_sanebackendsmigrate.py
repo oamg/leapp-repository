@@ -1,7 +1,6 @@
 import pytest
 
-from leapp.libraries.actor.sanebackendsmigrate import update_sane, NEW_QUIRKS
-
+from leapp.libraries.actor.sanebackendsmigrate import NEW_QUIRKS, update_sane
 
 testdata = [
     {'sane-backends': '/etc/sane.d/canon_dr.conf'},

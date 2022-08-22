@@ -1,8 +1,8 @@
 from leapp.actors import Actor
-from leapp.models import InstalledRedHatSignedRPM
-from leapp.tags import IPUWorkflowTag, ChecksPhaseTag
-from leapp.reporting import Report
 from leapp.libraries.actor import checkinstalleddebugkernels
+from leapp.models import InstalledRedHatSignedRPM
+from leapp.reporting import Report
+from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
 class CheckInstalledDebugKernels(Actor):

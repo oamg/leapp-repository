@@ -1,8 +1,8 @@
 import os
 
+from leapp.libraries.common.config.version import get_source_major_version
 from leapp.libraries.stdlib import api
 from leapp.models import PkgManagerInfo
-from leapp.libraries.common.config.version import get_source_major_version
 
 
 def _get_releasever_path():

@@ -1,8 +1,7 @@
-from leapp.libraries.stdlib import api
-from leapp.libraries.common.config import architecture
-from leapp.models import SapHanaInfo
 from leapp import reporting
-
+from leapp.libraries.common.config import architecture
+from leapp.libraries.stdlib import api
+from leapp.models import SapHanaInfo
 
 # SAP HANA Compatibility
 # Requirement is SAP HANA 2.00 rev 54 which is the minimal supported revision for both RHEL 7.9 and RHEL 8.2

@@ -1,6 +1,6 @@
+from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.stdlib import api
-from leapp import reporting
 
 
 def process(openssh_messages):

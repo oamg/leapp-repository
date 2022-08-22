@@ -1,7 +1,7 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import checkrhsmsku
 from leapp.models import Report, RHSMInfo
-from leapp.tags import IPUWorkflowTag, ChecksPhaseTag
+from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
 class CheckRedHatSubscriptionManagerSKU(Actor):

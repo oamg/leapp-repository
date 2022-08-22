@@ -1,7 +1,7 @@
 from six.moves.configparser import ParsingError
 
 from leapp.libraries.common import utils
-from leapp.libraries.stdlib import CalledProcessError, run, api
+from leapp.libraries.stdlib import api, CalledProcessError, run
 
 
 def read_nm_config(file_path=None):

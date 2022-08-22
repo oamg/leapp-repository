@@ -1,7 +1,7 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import checktargetrepos
-from leapp.models import CustomTargetRepositoryFile, Report, TargetRepositories, RHUIInfo
-from leapp.tags import IPUWorkflowTag, ChecksPhaseTag
+from leapp.models import CustomTargetRepositoryFile, Report, RHUIInfo, TargetRepositories
+from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
 class Checktargetrepos(Actor):

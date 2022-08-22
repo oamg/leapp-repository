@@ -4,11 +4,9 @@ import pytest
 
 from leapp.libraries import stdlib
 from leapp.libraries.actor import scanpkgmanager
-from leapp.libraries.stdlib import api
-from leapp.libraries.common.testutils import CurrentActorMocked
 from leapp.libraries.common import testutils
-from leapp.libraries.common.testutils import produce_mocked
-
+from leapp.libraries.common.testutils import CurrentActorMocked, produce_mocked
+from leapp.libraries.stdlib import api
 
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 

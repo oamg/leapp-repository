@@ -1,6 +1,5 @@
+from leapp.models import InstalledKdeAppsFacts, InstalledRPM, RPM
 from leapp.snactor.fixture import current_actor_context
-from leapp.models import InstalledRPM, RPM, InstalledKdeAppsFacts
-
 
 RH_PACKAGER = 'Red Hat, Inc. <http://bugzilla.redhat.com/bugzilla>'
 

@@ -1,6 +1,6 @@
 from leapp.libraries.common.rpms import has_package
 from leapp.models import InstalledRPM
-from leapp.reporting import create_report, Title, Summary, Severity, Groups, Remediation, RelatedResource
+from leapp.reporting import create_report, Groups, RelatedResource, Remediation, Severity, Summary, Title
 
 # package_name: remedy information
 PROBLEM_PACKAGE_MAP = {

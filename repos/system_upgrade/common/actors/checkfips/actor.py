@@ -1,8 +1,8 @@
+from leapp import reporting
 from leapp.actors import Actor
 from leapp.exceptions import StopActorExecutionError
-from leapp.models import Report, KernelCmdline
-from leapp.tags import IPUWorkflowTag, ChecksPhaseTag
-from leapp import reporting
+from leapp.models import KernelCmdline, Report
+from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
 class CheckFips(Actor):

@@ -1,8 +1,7 @@
 import pytest
 
-from leapp.models import InstalledRedHatSignedRPM, RPM, Report
+from leapp.models import InstalledRedHatSignedRPM, Report, RPM
 from leapp.snactor.fixture import current_actor_context
-
 
 RH_PACKAGER = 'Red Hat, Inc. <http://bugzilla.redhat.com/bugzilla>'
 

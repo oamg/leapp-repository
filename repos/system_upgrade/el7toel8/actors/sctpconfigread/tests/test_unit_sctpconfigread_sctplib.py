@@ -3,9 +3,9 @@ from functools import partial
 
 import pytest
 
-from leapp.libraries.actor import sctplib, sctpdlm
+from leapp.libraries.actor import sctpdlm, sctplib
 from leapp.libraries.common.testutils import CurrentActorMocked
-from leapp.models import ActiveKernelModulesFacts, ActiveKernelModule
+from leapp.models import ActiveKernelModule, ActiveKernelModulesFacts
 
 FILENAME_SCTP = 'sctp'
 FILENAME_NO_SCTP = 'no_sctp'

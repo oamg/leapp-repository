@@ -1,6 +1,6 @@
 from leapp import reporting
-from leapp.models import PkgManagerInfo, RHUIInfo
 from leapp.libraries.stdlib import api
+from leapp.models import PkgManagerInfo, RHUIInfo
 
 
 def handle_etc_releasever():

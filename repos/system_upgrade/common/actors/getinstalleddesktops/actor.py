@@ -1,7 +1,7 @@
 from leapp.actors import Actor
-from leapp.tags import FactsPhaseTag, IPUWorkflowTag
-from leapp.models import InstalledDesktopsFacts, InstalledRPM
 from leapp.libraries.actor.getinstalleddesktops import get_installed_desktops
+from leapp.models import InstalledDesktopsFacts, InstalledRPM
+from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 
 class GetInstalledDesktops(Actor):

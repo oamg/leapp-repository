@@ -8,12 +8,12 @@ from leapp.libraries.actor import upgradeinitramfsgenerator
 from leapp.libraries.common.config import architecture
 from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked, produce_mocked
 from leapp.models import (
+    RequiredUpgradeInitramPackages,  # deprecated
+    UpgradeDracutModule,  # deprecated
     BootContent,
     CopyFile,
     DracutModule,
-    RequiredUpgradeInitramPackages,  # deprecated
     TargetUserSpaceUpgradeTasks,
-    UpgradeDracutModule,  # deprecated
     UpgradeInitramfsTasks,
 )
 from leapp.utils.deprecation import suppress_deprecation

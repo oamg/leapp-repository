@@ -1,7 +1,7 @@
 from leapp.actors import Actor
 from leapp.libraries.actor.postgresqlcheck import report_installed_packages
-from leapp.models import Report, InstalledRedHatSignedRPM
-from leapp.tags import IPUWorkflowTag, ChecksPhaseTag
+from leapp.models import InstalledRedHatSignedRPM, Report
+from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
 class PostgresqlCheck(Actor):

@@ -1,5 +1,5 @@
-import os
 import io  # Python2/Python3 compatible IO (open etc.)
+import os
 
 import requests
 

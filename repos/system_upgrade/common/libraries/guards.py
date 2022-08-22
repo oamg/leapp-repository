@@ -4,8 +4,8 @@ import os
 from six.moves.urllib.error import URLError
 from six.moves.urllib.request import urlopen
 
-from leapp.libraries.stdlib import CalledProcessError
 from leapp.exceptions import StopActorExecutionError
+from leapp.libraries.stdlib import CalledProcessError
 
 
 @contextlib.contextmanager

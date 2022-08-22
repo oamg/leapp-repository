@@ -3,9 +3,9 @@ from leapp.libraries.actor import targetinitramfsgenerator
 from leapp.models import (
     InitrdIncludes,  # deprecated
     InstalledTargetKernelVersion,
-    TargetInitramfsTasks,
+    TargetInitramfsTasks
 )
-from leapp.tags import IPUWorkflowTag, FinalizationPhaseTag
+from leapp.tags import FinalizationPhaseTag, IPUWorkflowTag
 from leapp.utils.deprecation import suppress_deprecation
 
 

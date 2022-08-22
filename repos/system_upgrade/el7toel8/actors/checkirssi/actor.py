@@ -1,9 +1,9 @@
+from leapp import reporting
 from leapp.actors import Actor
 from leapp.libraries.common.rpms import has_package
 from leapp.models import InstalledRedHatSignedRPM
+from leapp.reporting import create_report, Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
-from leapp.reporting import Report, create_report
-from leapp import reporting
 
 
 class CheckIrssi(Actor):

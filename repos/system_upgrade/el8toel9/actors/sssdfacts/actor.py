@@ -3,7 +3,7 @@ from six.moves import configparser
 from leapp.actors import Actor
 from leapp.libraries.actor.sssdfacts8to9 import SSSDFactsLibrary
 from leapp.models import SSSDConfig8to9
-from leapp.tags import IPUWorkflowTag, FactsPhaseTag
+from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 
 class SSSDFacts8to9(Actor):
