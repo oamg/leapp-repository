@@ -319,7 +319,7 @@ lint:
 		echo "--- Linting done. ---"; \
 	fi
 
-#	if [[  "`git rev-parse --abbrev-ref HEAD`" != "master" ]] && [[ -n "`git diff $(MASTER_BRANCH) --name-only`" ]]; then \
+	if [[  "`git rev-parse --abbrev-ref HEAD`" != "master" ]] && [[ -n "`git diff $(MASTER_BRANCH) --name-only`" ]]; then \
 		. $(VENVNAME)/bin/activate; \
 		git diff $(MASTER_BRANCH) --name-only | xargs isort -c --diff || \
 		{ \
