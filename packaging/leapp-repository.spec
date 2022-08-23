@@ -2,7 +2,7 @@
 %global repositorydir %{leapp_datadir}/repositories
 %global custom_repositorydir %{leapp_datadir}/custom-repositories
 
-%define leapp_repo_deps  6
+%define leapp_repo_deps  7
 
 %if 0%{?rhel} == 7
     %define leapp_python_sitelib %{python2_sitelib}
@@ -161,6 +161,13 @@ Requires:   python3-requests
 Requires:   python3-six
 # required by SELinux actors
 Requires:   policycoreutils-python-utils
+# required by systemfacts, and several other actors
+Requires:   procps-ng
+Requires:   kmod
+# since RHEL 8+ dracut does not have to be present on the system all the time
+# and missing dracut could be killing situation for us :)
+Requires:   dracut
+
 %endif
 ##################################################
 # end requirement

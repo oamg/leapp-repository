@@ -9,7 +9,7 @@
 %endif
 
 
-%define leapp_repo_deps  6
+%define leapp_repo_deps  7
 %define leapp_framework_deps 5
 
 # NOTE: the Version contains the %{rhel} macro just for the convenience to
@@ -55,6 +55,14 @@ Requires:   policycoreutils-python-utils
 # The package is first installed inside the target userspace container
 # Than we ensure the rpm will be present after the upgrade transaction.
 Requires:   dnf-command(config-manager)
+
+# It should not happen that dracut is not present on the target system,
+# but as dracut is removable on RHEL 8+, let's rather require it to be really
+# sure
+Requires:   dracut
+
+# just to be sure that /etc/modprobe.d is present
+Requires:   kmod
 
 %description -n %{lrdname}
 %{summary}
