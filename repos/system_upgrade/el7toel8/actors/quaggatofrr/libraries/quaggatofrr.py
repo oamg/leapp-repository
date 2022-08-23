@@ -6,7 +6,7 @@ from leapp.libraries.common.config import version
 from leapp.libraries.stdlib import api, CalledProcessError, run
 
 DAEMON_FILE = '/etc/frr/daemons'
-# if this file sitll exists after the removal of quagga, it has been modified
+# if this file still exists after the removal of quagga, it has been modified
 CONFIG_FILE = '/etc/sysconfig/quagga.rpmsave'
 QUAGGA_CONF_FILES = '/etc/quagga/'
 FRR_CONF_FILES = '/etc/frr/'

@@ -31,11 +31,11 @@ def test_actor_nis(monkeypatch, pkgs_installed, pkgs_configured):
     Parametrized helper function for test_actor_* functions.
 
     First generate list of RPM models based on set arguments. Then, run
-    the actor feeded with our RPM list and mocked functions. Finally, assert
+    the actor fed with our RPM list and mocked functions. Finally, assert
     Reports according to set arguments.
 
     Parameters:
-        pkgs_installed  (touple): installed pkgs
+        pkgs_installed  (tuple): installed pkgs
         fill_conf_file  (bool): not default ypbind config file
         fill_ypserv_dir  (bool): not default ypserv dir content
     """
@@ -55,7 +55,7 @@ def test_actor_nis(monkeypatch, pkgs_installed, pkgs_configured):
     monkeypatch.setattr(api, 'current_actor', curr_actor_mocked)
     monkeypatch.setattr(reporting, "create_report", create_report_mocked())
 
-    # Executed actor feeded with out fake msgs
+    # Executed actor fed with out fake msgs
     nischeck.report_nis()
 
     # Iterate through installed packages

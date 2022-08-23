@@ -17,7 +17,7 @@ def is_processable():
 def get_spamassassin_facts(read_func, listdir):
     """
     Reads the spamc configuration file, the spamassassin sysconfig file and checks
-    whether the spamassassin service is overriden. Returns SpamassassinFacts.
+    whether the spamassassin service is overridden. Returns SpamassassinFacts.
     """
     spamc_ssl_argument = spamassassinconfigread_spamc.get_spamc_ssl_argument(read_func)
     service_overriden = spamassassinconfigread_spamd.spamassassin_service_overriden(listdir)

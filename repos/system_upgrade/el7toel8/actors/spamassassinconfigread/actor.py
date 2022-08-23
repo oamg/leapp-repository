@@ -11,7 +11,7 @@ class SpamassassinConfigRead(Actor):
     """
     Reads spamc configuration (/etc/mail/spamassassin/spamc.conf), the
     spamassassin sysconfig file (/etc/sysconfig/spamassassin) and checks
-    whether the spamassassin service has been overriden. Produces
+    whether the spamassassin service has been overridden. Produces
     SpamassassinFacts containing the extracted information.
     """
 

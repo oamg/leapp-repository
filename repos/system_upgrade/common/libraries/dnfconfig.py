@@ -12,7 +12,7 @@ def get_leapp_packages():
     installed.
 
     The snactor RPM doesn't have to be installed, but if so, we have to take
-    care about that too as well to preven broken dnf transaction.
+    care about that too as well to prevent broken dnf transaction.
     """
     # TODO: should we set the seatbelt and exclude leapp RPMs from the target
     # system too?

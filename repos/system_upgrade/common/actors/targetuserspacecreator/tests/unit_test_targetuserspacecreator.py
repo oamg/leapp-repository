@@ -373,5 +373,5 @@ def test_perform_ok(monkeypatch):
     assert userspacegen.api.produce.called == 3
     assert isinstance(userspacegen.api.produce.model_instances[0], models.TMPTargetRepositoriesFacts)
     assert userspacegen.api.produce.model_instances[1] == msg_target_repos
-    # this one is full of contants, so it's safe to check just the instance
+    # this one is full of constants, so it's safe to check just the instance
     assert isinstance(userspacegen.api.produce.model_instances[2], models.TargetUserSpaceInfo)

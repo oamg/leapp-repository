@@ -19,7 +19,7 @@ class SetupTargetRepos(Actor):
     Produces list of repositories that should be available to be used by Upgrade process.
 
     Based on current set of Red Hat Enterprise Linux repositories, produces the list of target
-    repositories. Additionaly process request to use custom repositories during the upgrade
+    repositories. Additionally process request to use custom repositories during the upgrade
     transaction.
     """
 

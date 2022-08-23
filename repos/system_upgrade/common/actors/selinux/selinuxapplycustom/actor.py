@@ -17,7 +17,7 @@ class SELinuxApplyCustom(Actor):
     Re-apply SELinux customizations from the original RHEL installation
 
     Re-apply SELinux policy customizations (custom policy modules and changes
-    introduced by semanage). Any changes (due to incompatiblity with
+    introduced by semanage). Any changes (due to incompatibility with
     SELinux policy in the upgraded system) are reported to user.
     """
     name = 'selinuxapplycustom'

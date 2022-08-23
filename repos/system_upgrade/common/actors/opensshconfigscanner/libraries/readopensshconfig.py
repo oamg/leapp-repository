@@ -43,33 +43,33 @@ def parse_config(config):
             ret.permit_root_login.append(v)
 
         elif el[0].lower() == 'useprivilegeseparation':
-            # Record only first occurence, which is effective
+            # Record only first occurrence, which is effective
             if not ret.use_privilege_separation:
                 ret.use_privilege_separation = value
 
         elif el[0].lower() == 'protocol':
-            # Record only first occurence, which is effective
+            # Record only first occurrence, which is effective
             if not ret.protocol:
                 ret.protocol = value
 
         elif el[0].lower() == 'ciphers':
-            # Record only first occurence, which is effective
+            # Record only first occurrence, which is effective
             if not ret.ciphers:
                 ret.ciphers = value
 
         elif el[0].lower() == 'macs':
-            # Record only first occurence, which is effective
+            # Record only first occurrence, which is effective
             if not ret.macs:
                 ret.macs = value
 
         elif el[0].lower() == 'subsystem':
-            # Record only first occurence, which is effective
+            # Record only first occurrence, which is effective
             if el[1].lower() == 'sftp' and len(el) > 2 and not ret.subsystem_sftp:
                 # here we need to record all remaining items as command and arguments
                 ret.subsystem_sftp = ' '.join(el[2:])
 
         elif el[0].lower() in DEPRECATED_DIRECTIVES:
-            # Filter out duplicit occurences of the same deprecated directive
+            # Filter out duplicit occurrences of the same deprecated directive
             if el[0].lower() not in ret.deprecated_directives:
                 # Use the directive in the form as found in config for user convenience
                 ret.deprecated_directives.append(el[0])

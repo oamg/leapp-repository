@@ -239,7 +239,7 @@ def test_rewrite_spamd_config():
 
 
 def test_rewrite_spamd_config_service_overriden():
-    # If the service is overriden, the service type (simple/forking) remains
+    # If the service is overridden, the service type (simple/forking) remains
     # the same after upgrade. So we must not remove the -d option.
     facts = SpamassassinFacts(spamd_ssl_version='sslv3', service_overriden=True)
     content = '# Options to spamd\n' \

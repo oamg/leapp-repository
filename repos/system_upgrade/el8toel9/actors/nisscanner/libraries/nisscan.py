@@ -26,7 +26,7 @@ class NISScanLibrary:
             lines = [line.strip() for line in f.readlines() if line.strip()]
 
         for line in lines:
-            # Cheks for any valid configuration entry
+            # Checks for any valid configuration entry
             if not line.startswith('#'):
                 return True
         return False

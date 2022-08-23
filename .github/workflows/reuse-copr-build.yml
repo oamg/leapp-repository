@@ -35,7 +35,7 @@ jobs:
           echo "::set-output name=pr_nr::${PR_URL##*/}"
 
       - name: Checkout
-        # TODO: The correct way to checkout would be to use simmilar approach as in get_commit_by_timestamp function of
+        # TODO: The correct way to checkout would be to use similar approach as in get_commit_by_timestamp function of
         #       the github gluetool module (i.e. do not use HEAD but the last commit before comment).
         id: checkout
         uses: actions/checkout@v2

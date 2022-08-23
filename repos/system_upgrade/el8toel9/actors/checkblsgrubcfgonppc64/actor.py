@@ -10,7 +10,7 @@ class CheckBlsGrubOnPpc64(Actor):
 
     After a ppc64 system is upgraded from RHEL 8 to RHEL 9 and
     GRUB config on RHEL 8 is not yet BLS aware, the system boots
-    into el8 kernel because the config is not successfuly migrated by
+    into el8 kernel because the config is not successfully migrated by
     GRUB during the upgrade process.
 
     IMPORTANT NOTE: The later fix which is based on the outcome of this

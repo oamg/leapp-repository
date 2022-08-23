@@ -92,7 +92,7 @@ class MockedOpen(object):
         Get list of MockedFilePointer objects with the specified fname.
 
         if the mode is set (expected 'r', 'rw', 'w' ..) discovered files are
-        additionaly filtered to match the same mode (same string).
+        additionally filtered to match the same mode (same string).
         """
         fnames = [i for i in self._open_called if i.fname == fname]
         return fnames if not mode else [i for i in fnames if i.mode == mode]

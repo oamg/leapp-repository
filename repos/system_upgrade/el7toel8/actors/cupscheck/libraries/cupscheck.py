@@ -135,10 +135,10 @@ def check_certkey_directives(facts, report_func):
     :param obj facts: model object containing info about CUPS configuration
     :param func report_func: creates report
     """
-    title = ('ServerKey/ServerCertificate directives are substitued '
+    title = ('ServerKey/ServerCertificate directives are substituted '
              'by ServerKeychain directive')
     summary = (
-        'The directives were substitued by ServerKeychain directive, '
+        'The directives were substituted by ServerKeychain directive, '
         'which now takes a directory as value (/etc/cups/ssl is default). '
         'The previous directives took a file as value. '
         'The migration script will copy the files specified in '

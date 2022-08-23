@@ -10,7 +10,7 @@ from leapp.libraries.stdlib import api, CalledProcessError, run
 
 # Using ALWAYS_BIND will crash the upgrade process if the file does not exist.
 # Consider instead adding an entry to the ScanFilesToCopyIntoTargetSystem actor that
-# conditionaly (only if it exists) creates CopyFile message to the TargetUserspaceCreator.
+# conditionally (only if it exists) creates CopyFile message to the TargetUserspaceCreator.
 ALWAYS_BIND = []
 
 ErrorData = namedtuple('ErrorData', ['summary', 'details'])

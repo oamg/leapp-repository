@@ -8,17 +8,17 @@ def config_affects_daemons(tcp_wrappers_facts, packages_list, daemons):
 
     :param tcp_wrappers_facts: Facts provided by the TcpWrappersFacts
     :param packages_list: List of packages provided by InstalledRedHatSignedRPM
-    :param deamons: List of packages and keywords affecting daemons in this format:
+    :param daemons: List of packages and keywords affecting daemons in this format:
                     [{"package-name", ["daemon1", "daemon2", ...], ...}]
     """
     found_packages = set()
 
     for (package, keywords) in daemons:
-        # We do not care for particular deamon if the providing package is not installed
+        # We do not care for particular daemon if the providing package is not installed
         if package not in packages_list:
             continue
 
-        # Every package can have several deamons or deamons reacting to several keywords
+        # Every package can have several daemons or daemons reacting to several keywords
         for daemon in keywords:
             # Is this daemon/keyword affected by the current configuration?
             if not config_applies_to_daemon(tcp_wrappers_facts, daemon):

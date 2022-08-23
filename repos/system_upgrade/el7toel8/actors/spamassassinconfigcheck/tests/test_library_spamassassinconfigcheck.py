@@ -119,7 +119,7 @@ def test_check_spamd_config_service_type_service_overriden():
     report_fields = report_func.report_fields
     assert 'type of the spamassassin systemd service' in report_fields['title']
     assert 'The type of spamassassin.service' in report_fields['summary']
-    assert 'overriden' in report_fields['summary']
+    assert 'overridden' in report_fields['summary']
     assert report_fields['severity'] == 'medium'
 
 

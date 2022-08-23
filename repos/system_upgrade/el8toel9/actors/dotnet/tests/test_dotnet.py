@@ -33,7 +33,7 @@ def test_actor_execution(monkeypatch, current_actor_context, unsupported_version
     for version in unsupported_versions:
         rpms += [_generate_rpm_with_name(f'dotnet-runtime-{version}')]
 
-    # Executed actor feeded with fake RPMs
+    # Executed actor fed with fake RPMs
     current_actor_context.feed(InstalledRedHatSignedRPM(items=rpms))
     current_actor_context.run()
 

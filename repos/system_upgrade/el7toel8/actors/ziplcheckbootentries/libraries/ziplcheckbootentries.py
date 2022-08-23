@@ -58,7 +58,7 @@ def extract_kernel_version(kernel_img_path):
     """
     Extracts the kernel version out of the given image path.
 
-    The extraction logic is designed to closely mimick the logic Zipl configuration to BLS
+    The extraction logic is designed to closely mimic the logic Zipl configuration to BLS
     conversion script works, so that it is possible to identify the possible issues with kernel
     images.
 
@@ -67,7 +67,7 @@ def extract_kernel_version(kernel_img_path):
     :rtype: str
     """
 
-    # Mimick bash substitution used in the conversion script, see:
+    # Mimic bash substitution used in the conversion script, see:
     # https://github.com/ibm-s390-linux/s390-tools/blob/b5604850ab66f862850568a37404faa647b5c098/scripts/zipl-switch-to-blscfg#L168
     if 'vmlinuz-' in kernel_img_path:
         fragments = kernel_img_path.rsplit('/vmlinuz-', 1)

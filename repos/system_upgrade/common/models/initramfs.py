@@ -63,7 +63,7 @@ class UpgradeInitramfsTasks(Model):
 
     include_files = fields.List(fields.String(), default=[])
     """
-    List of files (cannonical filesystem paths) to include in the initramfs
+    List of files (canonical filesystem paths) to include in the initramfs
     """
 
     include_dracut_modules = fields.List(fields.Model(DracutModule), default=[])
@@ -91,7 +91,7 @@ class TargetInitramfsTasks(UpgradeInitramfsTasks):
 @deprecated(since='2021-10-10', message='Replaced by TargetInitramfsTasks.')
 class InitrdIncludes(Model):
     """
-    List of files (cannonical filesystem paths) to include in RHEL-8 initramfs
+    List of files (canonical filesystem paths) to include in RHEL-8 initramfs
     """
     topic = SystemInfoTopic
 

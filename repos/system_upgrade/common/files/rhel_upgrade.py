@@ -143,7 +143,7 @@ class RhelUpgradeCommand(dnf.cli.Command):
                     # folder in "/var/cache/dnf" as it has different digest calculated based on already substituted
                     # placeholder.
                     # E.g
-                    # "https://rhui3.REGION.aws.ce.redhat.com" becames "https://rhui3.eu-central-1.aws.ce.redhat.com"
+                    # "https://rhui3.REGION.aws.ce.redhat.com" becomes "https://rhui3.eu-central-1.aws.ce.redhat.com"
                     #
                     # region should be same for all repos so we are fine to collect it from
                     # the last one

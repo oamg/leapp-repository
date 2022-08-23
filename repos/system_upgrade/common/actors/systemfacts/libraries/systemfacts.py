@@ -113,7 +113,7 @@ def _get_active_kernel_modules(logger):
 
         signature_string = None
         if signature:
-            # Remove whitspace from the signature string
+            # Remove whitespace from the signature string
             signature_string = re.sub(r"\s+", "", signature, flags=re.UNICODE)
 
         # Since we're using the `/sys` VFS we need to use `os.listdir()` to get
@@ -274,7 +274,7 @@ def _default_grub_info():
             reporting.Title('File "{}" does not exist!'.format(default_grb_fpath)),
             reporting.Summary(
                 'Leapp detected "{}" does not exist. The file is essential for the in-place upgrade '
-                'to finish successfully. This scenario might have occured if the system was already '
+                'to finish successfully. This scenario might have occurred if the system was already '
                 'upgraded from RHEL 6. Please re-create the file manually.'.format(default_grb_fpath)
             ),
             reporting.Severity(reporting.Severity.HIGH),

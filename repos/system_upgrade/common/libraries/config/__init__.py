@@ -63,7 +63,7 @@ def get_target_product_channel(default='ga'):
         - Using the environment variable LEAPP_DEVEL_TARGET_PRODUCT_TYPE (devel variable with higher priority than
         any other way of specifying target channel).
         - Using the environment variable LEAPP_TARGET_PRODUCT_CHANNEL
-        - Using the '--channel' option when runnning leapp preupgrade/upgrade
+        - Using the '--channel' option when running leapp preupgrade/upgrade
 
     :param default: Value to be returned if no target product type has been specified when running leapp.
     :type default: str

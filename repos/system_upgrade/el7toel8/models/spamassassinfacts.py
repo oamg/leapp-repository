@@ -19,5 +19,5 @@ class SpamassassinFacts(Model):
 
     service_overriden = fields.Boolean()
     """
-    True if spamassassin.service is overriden, else False.
+    True if spamassassin.service is overridden, else False.
     """

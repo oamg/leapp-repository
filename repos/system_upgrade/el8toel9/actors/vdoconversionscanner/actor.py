@@ -10,7 +10,7 @@ class VdoConversionScanner(Actor):
 
     A VdoConversionInfo message containing the data will be produced.
 
-    In RHEL 9.0 the indepdent VDO management software, `vdo manager`, is
+    In RHEL 9.0 the independent VDO management software, `vdo manager`, is
     superseded by LVM management.  Existing VDOs must be converted to LVM-based
     management *before* upgrading to RHEL 9.0.
 

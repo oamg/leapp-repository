@@ -16,7 +16,7 @@ def USAGE():
     lines = [
         "usage: %s path/to/console.log path/to/target.tar.xz" % self,
         "",
-        "Decode debug tarball emited by leapp's initramfs in-band",
+        "Decode debug tarball emitted by leapp's initramfs in-band",
         "console debugger, ibdmp().",
     ]
     sys.stderr.writelines('%s\n' % l for l in lines)

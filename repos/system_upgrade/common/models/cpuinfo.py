@@ -8,7 +8,7 @@ class CPUInfo(Model):
 
     The model currently doesn't represent all information about cpus could
     provide on the machine. Just part of them, in case any other attributes
-    will be neded, the model can be extended.
+    will be needed, the model can be extended.
 
     The provided info is aggregated - like from lscpu command. Expecting all
     CPUs are same on the machine (at least for now).

@@ -72,7 +72,7 @@ def _check_spamd_config_service_type(facts, report_func):
     title = 'The type of the spamassassin systemd service has changed'
     summary_generic = 'The type of spamassassin.service has been changed from "forking" to "simple".'
     if facts.service_overriden:
-        summary_detail = 'However, the service appears to be overriden; no migration action will occur.'
+        summary_detail = 'However, the service appears to be overridden; no migration action will occur.'
         resource = reporting.RelatedResource('file', SPAMASSASSIN_SERVICE_OVERRIDE)
     else:
         summary_detail = 'The spamassassin sysconfig file will be updated.'

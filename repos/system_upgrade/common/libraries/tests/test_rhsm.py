@@ -244,7 +244,7 @@ def test_get_release(monkeypatch, actor_mocked, context_mocked):
 
 def test_get_release_with_release_not_set(monkeypatch, actor_mocked, context_mocked):
     """Tests whether the library does not retrieve release information when the release is not set."""
-    # Test whether no realease is detected correctly too
+    # Test whether no release is detected correctly too
     context_mocked.add_mocked_command_call_with_stdout(CMD_RHSM_RELEASE, 'Release not set')
 
     release = rhsm.get_release(context_mocked)

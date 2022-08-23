@@ -133,7 +133,7 @@ def _sp_rev_patchlevel_check(instance):
 
 
 def _fullfills_hana_min_version(instance):
-    """ Performs a check whether the version of SAP HANA fullfills the minimal requirements for the target RHEL """
+    """ Performs a check whether the version of SAP HANA fulfills the minimal requirements for the target RHEL """
     return _major_version_check(instance) and _sp_rev_patchlevel_check(instance)
 
 

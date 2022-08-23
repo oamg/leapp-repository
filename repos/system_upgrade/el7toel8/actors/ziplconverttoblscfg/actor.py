@@ -73,5 +73,5 @@ class ZiplConvertToBLSCFG(Actor):
                         # NOTE: Basically, just removal of the /boot/loader dir content inside
                         # could be enough, but we cannot remove /boot/loader because of boom
                         # - - if we remove it, we will remove the snapshot as well
-                        # - - on the other hand, we should't keep it there if zipl
+                        # - - on the other hand, we shouldn't keep it there if zipl
                         # - - has not been converted to BLS

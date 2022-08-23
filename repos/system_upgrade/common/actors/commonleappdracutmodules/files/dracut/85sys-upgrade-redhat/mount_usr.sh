@@ -75,7 +75,7 @@ mount_usr()
 }
 
 if [ -f "${NEWROOT}/etc/fstab" ]; then
-    # Incase we have the LVM command available try make it activate all partitions
+    # In case we have the LVM command available try make it activate all partitions
     if command -v lvm 2>/dev/null 1>/dev/null; then
         lvm vgchange -a y
     fi

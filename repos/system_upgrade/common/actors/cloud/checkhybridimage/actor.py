@@ -9,7 +9,7 @@ class CheckHybridImage(Actor):
     Check if the system is using Azure hybrid image.
 
     These images have a default relative symlink to EFI
-    partion even when booted using BIOS and in such cases
+    partition even when booted using BIOS and in such cases
     GRUB is not able find "grubenv" to get the kernel cmdline
     options and fails to boot after upgrade`.
     """

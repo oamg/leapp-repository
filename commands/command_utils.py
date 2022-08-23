@@ -43,7 +43,7 @@ def get_major_version(version):
 
 def detect_sap_hana():
     """
-    Detect SAP HANA based on existance of /hana/shared/*/exe/linuxx86_64/hdb/sapcontrol
+    Detect SAP HANA based on existence of /hana/shared/*/exe/linuxx86_64/hdb/sapcontrol
     """
     if os.path.exists(HANA_BASE_PATH):
         for entry in os.listdir(HANA_BASE_PATH):
