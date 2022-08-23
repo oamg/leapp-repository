@@ -54,7 +54,7 @@ class CopyFile(Model):
 
     src = fields.String()
     """
-    Cannonical path to the file (on the host) that should be copied
+    Canonical path to the file (on the host) that should be copied
     """
 
     dst = fields.Nullable(fields.String())

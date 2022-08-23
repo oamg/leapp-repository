@@ -38,7 +38,7 @@ def all_interfaces_biosdevname(interfaces):
 
 def enable_biosdevname():
     api.current_logger().info(
-        "Biosdevname naming scheme in use, explicitely enabling biosdevname on the target RHEL system"
+        "Biosdevname naming scheme in use, explicitly enabling biosdevname on the target RHEL system"
     )
     api.produce(KernelCmdlineArg(**{'key': 'biosdevname', 'value': '1'}))
 

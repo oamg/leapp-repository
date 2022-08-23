@@ -113,7 +113,7 @@ def get_instance_status(instance_number, sapcontrol_path, admin_name):
         # GetProcessList has some oddities, like returning non zero exit codes with special meanings.
         # Exit code 3 = All processes are running correctly
         # Exit code 4 = All processes stopped
-        # Other exit codes aren't handled at this time and it's assumed that SAP HANA is possibly in some unusal
+        # Other exit codes aren't handled at this time and it's assumed that SAP HANA is possibly in some unusual
         # state. Such as starting/stopping but also that it is in some kind of failure state.
         output = run([
             'sudo', '-u', admin_name, sapcontrol_path, '-nr', instance_number, '-function', 'GetProcessList'],

@@ -30,7 +30,7 @@ from leapp.utils.deprecation import suppress_deprecation
 # # (0.) consume process input data
 # # 1. prepare the first container, to be able to obtain repositories for the
 # #    target system (this is extra neededwhen rhsm is used, but not reason to
-# #    do such thing only when rhsm is used. Be persistant here
+# #    do such thing only when rhsm is used. Be persistent here
 # # 2. gather target repositories that should AND can be used
 # #    - basically here is the main thing that is PITA; I started
 # #      the refactoring but realized that it needs much more changes because
@@ -60,7 +60,7 @@ def _check_deprecated_rhsm_skip():
     if get_env('LEAPP_DEVEL_SKIP_RHSM', '0') == '1':
         api.current_logger().warning(
             'The LEAPP_DEVEL_SKIP_RHSM has been deprecated. Use'
-            ' LEAPP_NO_RHSM istead or use the --no-rhsm option for'
+            ' LEAPP_NO_RHSM instead or use the --no-rhsm option for'
             ' leapp. as well custom repofile has not been defined.'
             ' Please read documentation about new "skip rhsm" solution.'
         )
@@ -510,7 +510,7 @@ def gather_target_repositories(context, indata):
             else:
                 # TODO: We shall report that the RHEL repos that we deem necessary for
                 # the upgrade are not available; but currently it would just print bunch of
-                # data everytime as we maps EUS and other repositories as well. But these
+                # data every time as we maps EUS and other repositories as well. But these
                 # do not have to be necessary available on the target system in the time
                 # of the upgrade. Let's skip it for now until it's clear how we will deal
                 # with it.
@@ -582,7 +582,7 @@ def _install_custom_repofiles(context, custom_repofiles):
     """
     Install the required custom repository files into the container.
 
-    The repostory files are copied from the host into the /etc/yum.repos.d
+    The repository files are copied from the host into the /etc/yum.repos.d
     directory into the container.
 
     :param context: the container where the repofiles should be copied

@@ -29,7 +29,7 @@ def inhibit_upgrade(avail_bytes):
     reporting.create_report([
         reporting.Title('Not enough space on /boot'),
         reporting.Summary(
-            '/boot needs additional {0} MiB to be able to accomodate the upgrade initramfs and new kernel.'.format(
+            '/boot needs additional {0} MiB to be able to accommodate the upgrade initramfs and new kernel.'.format(
              additional_mib_needed)
         ),
         reporting.Severity(reporting.Severity.HIGH),

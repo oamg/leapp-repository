@@ -17,7 +17,7 @@ class PersistentNetNamesConfig(Actor):
     Generate udev persistent network naming configuration
 
     This actor generates systemd-udevd link files for each physical ethernet interface present on RHEL-7
-    in case we notice that interace name differs on RHEL-8. Link file configuration will assign RHEL-7 version of
+    in case we notice that interface name differs on RHEL-8. Link file configuration will assign RHEL-7 version of
     a name. Actors produces list of interfaces which changed name between RHEL-7 and RHEL-8.
     """
 

@@ -12,7 +12,7 @@ class CheckRemovedPamModules(Actor):
     Check for modules that are not available in RHEL 8 anymore
 
     At this moment, we check only for pam_tally2. Few more modules
-    are alredy covered in RemoveOldPAMModulesApply actor
+    are already covered in RemoveOldPAMModulesApply actor
     """
 
     name = 'removed_pam_modules'
@@ -30,7 +30,7 @@ class CheckRemovedPamModules(Actor):
                 'Could not check pam configuration', details={'details': 'No PamConfiguration facts found.'}
             )
 
-        # This list contain tupples of removed modules and their recommended replacements
+        # This list contain tuples of removed modules and their recommended replacements
         removed_modules = [
             ('pam_tally2', 'pam_faillock'),
             ]

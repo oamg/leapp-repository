@@ -185,7 +185,7 @@ def test_get_target_pesid_repos(monkeypatch, repomap_data_for_pesid_repo_retriev
         assert actual_pesid_repo in expected_pesid_repos, fail_description
 
     fail_description = (
-        'The get_target_pesid_repos method doesn\'t take into account the taget system version correctly.'
+        'The get_target_pesid_repos method doesn\'t take into account the target system version correctly.'
     )
     monkeypatch.setattr(api, 'current_actor',
                         CurrentActorMocked(arch='x86_64', src_ver='9.4', dst_ver='10.0'))
@@ -244,7 +244,7 @@ def test_find_repository_target_equivalent_fallback_to_default(monkeypatch,
     """
     Test for the RepoMapDataHandler._find_repository_target_equivalent method.
 
-    Verifies that the method will find a target equivalent with matchin some of the fallback
+    Verifies that the method will find a target equivalent with matching some of the fallback
     channels if a target equivalent that matches the source pesid repository completely is not
     available in the repository mapping data.
     """
@@ -591,7 +591,7 @@ def test_find_repository_equivalent_with_priority_channel(monkeypatch):
 
     assert handler.prio_channel == 'eus'
 
-    fail_description = '_find_repository_target_equivalent does not correcly respect preferred channel.'
+    fail_description = '_find_repository_target_equivalent does not correctly respect preferred channel.'
     expected_target_equivalent = repositories_mapping.repositories[2]
     actual_target_equivalent = handler._find_repository_target_equivalent(repositories_mapping.repositories[0],
                                                                           'pesid2')
@@ -624,7 +624,7 @@ def test_get_expected_target_pesid_repos_with_priority_channel_set(monkeypatch):
     handler.set_default_channels(['tuv', 'ga'])
     target_repoids = handler.get_expected_target_pesid_repos(['pesid1-repoid-ga'])
 
-    fail_description = 'get_expected_target_peid_repos does not correcly respect preferred channel.'
+    fail_description = 'get_expected_target_peid_repos does not correctly respect preferred channel.'
     assert {'pesid2': repositories_mapping.repositories[2],
             'pesid3': repositories_mapping.repositories[4]} == target_repoids, fail_description
 

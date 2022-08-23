@@ -44,7 +44,7 @@ def update_section(parser, section):
 
 
 def update_config(parser, cfg):
-    """Modify contents of file accoriding to rules.
+    """Modify contents of file according to rules.
 
     :type cfg: ConfigFile
     :returns str: Modified config contents

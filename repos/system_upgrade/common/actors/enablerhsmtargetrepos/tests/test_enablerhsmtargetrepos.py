@@ -27,7 +27,7 @@ def not_isolated_actions(raise_err=False):
 
 def raise_call_error(args=None):
     raise CalledProcessError(
-        message='A Leapp Command Error occured.',
+        message='A Leapp Command Error occurred.',
         command=args,
         result={'signal': None, 'exit_code': 1, 'pid': 0, 'stdout': 'fake', 'stderr': 'fake'}
     )
@@ -61,7 +61,8 @@ def test_setrelease_submgr_throwing_error(monkeypatch):
     monkeypatch.setattr(mounting, 'NotIsolatedActions', klass)
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(dst_ver='8.0', envars={'LEAPP_NO_RHSM': '0'}))
     monkeypatch.setattr(config, 'get_product_type', lambda dummy: 'ga')
-    # free the set_release funtion from the @_rhsm_retry decorator which would otherwise cause 25 sec delay of the test
+    # free the set_release function from the @_rhsm_retry decorator
+    # which would otherwise cause 25 sec delay of the test
     if sys.version_info.major < 3:
         monkeypatch.setattr(rhsm, 'set_release',
                             rhsm.set_release.func_closure[0].cell_contents.func_closure[0].cell_contents)

@@ -13,7 +13,7 @@ from leapp.models import (  # isort:skip
     TargetInitramfsTasks
 )
 
-FILES = ['/file1', '/file2', '/dir/ect/ory/file3', '/file4', '/file5']
+FILES = ['/file1', '/file2', '/dir/subdir/subsubdir/file3', '/file4', '/file5']
 MODULES = [
     ('moduleA', None),
     ('moduleB', None),
@@ -26,7 +26,7 @@ NO_INCLUDE_MSG = 'No additional files or modules required to add into the target
 
 def raise_call_error(args=None):
     raise CalledProcessError(
-        message='A Leapp Command Error occured.',
+        message='A Leapp Command Error occurred.',
         command=args,
         result={'signal': None, 'exit_code': 1, 'pid': 0, 'stdout': 'fake', 'stderr': 'fake'})
 

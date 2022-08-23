@@ -261,7 +261,7 @@ def test_generate_initram_disk(monkeypatch, input_msgs, modules):
 
     # TODO(pstodulk): this test is not created properly, as context.call check
     # is skipped completely. Testing will more convenient with fixed #376
-    # similar fo the files...
+    # similar to the files...
 
 
 def test_copy_dracut_modules_rmtree_ignore(monkeypatch):

@@ -80,7 +80,7 @@ class SatelliteUpgradeFacts(Actor):
             Handle migration of the PostgreSQL legacy-actions files.
             RPM cannot handle replacement of directories by symlinks by default
             without the %pretrans scriptlet. As PostgreSQL package is packaged wrong,
-            we have to workround that by migration of the PostgreSQL files
+            we have to workaround that by migration of the PostgreSQL files
             before the rpm transaction is processed.
             """
             self.produce(

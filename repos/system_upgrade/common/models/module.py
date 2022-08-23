@@ -4,7 +4,7 @@ from leapp.topics import SystemFactsTopic
 
 class Module(Model):
     """
-    A single DNF module indentified by its name and stream.
+    A single DNF module identified by its name and stream.
     """
     topic = SystemFactsTopic
     name = fields.String()

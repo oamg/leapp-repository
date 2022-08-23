@@ -35,7 +35,7 @@ def test_actor_execution(monkeypatch, has_server):
     Parametrized helper function for test_actor_* functions.
 
     First generate list of RPM models based on set arguments. Then, run
-    the actor feeded with our RPM list. Finally, assert Reports
+    the actor fed with our RPM list. Finally, assert Reports
     according to set arguments.
 
     Parameters:
@@ -54,7 +54,7 @@ def test_actor_execution(monkeypatch, has_server):
     monkeypatch.setattr(api, 'current_actor', curr_actor_mocked)
     monkeypatch.setattr(reporting, "create_report", create_report_mocked())
 
-    # Executed actor feeded with fake RPMs
+    # Executed actor fed with fake RPMs
     report_installed_packages(_context=api)
 
     if has_server:

@@ -13,7 +13,7 @@ INCLUDE_BLOCK = ''.join(('# Added by leapp during upgrade from RHEL8 to RHEL9\n'
 
 def prepend_string_if_not_present(f, content, check_string):
     """
-    This reads the open file descriptor and checks for presense of the `check_string`.
+    This reads the open file descriptor and checks for presence of the `check_string`.
     If not present, the `content` is prepended to the original content of the file and
     result is written.
     Note, that this requires opened file for both reading and writing, for example with:

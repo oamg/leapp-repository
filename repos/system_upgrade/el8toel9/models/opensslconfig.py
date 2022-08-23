@@ -58,7 +58,7 @@ class OpenSslConfig(Model):
 
     It is used to load default TLS policy in RHEL8, but controls loading of all
     providers in RHEL9 so it needs to be adjusted for upgrade. This is listed
-    befor any block.
+    before any block.
     """
 
     blocks = fields.List(fields.Model(OpenSslConfigBlock))

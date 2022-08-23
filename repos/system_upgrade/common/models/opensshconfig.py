@@ -9,7 +9,7 @@ class OpenSshPermitRootLogin(Model):
                                'forced-commands-only', 'no'])
     """ Value of a PermitRootLogin directive. """
     in_match = fields.Nullable(fields.List(fields.String()))
-    """ Criteria of Match blocks the PermitRootLogin directive occured in, if any. """
+    """ Criteria of Match blocks the PermitRootLogin directive occurred in, if any. """
 
 
 class OpenSshConfig(Model):

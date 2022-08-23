@@ -38,7 +38,7 @@ def connection_guard(url='https://example.com'):
             return None
         except URLError as e:
             cause = '''Failed to open url '{url}' with error: {error}'''.format(url=url, error=e)
-            return ('There was probably a problem with internet conection ({cause}).'
+            return ('There was probably a problem with internet connection ({cause}).'
                     ' Check your connection and try again.'.format(cause=cause))
     return closure
 

@@ -1,0 +1,23 @@
+name: Codespell
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  codespell:
+    name: Check for spelling errors
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: codespell-project/actions-codespell@master
+        with:
+          ignore_words_list: ro,fo
+          skip: "./repos/system_upgrade/common/actors/storagescanner/tests/files/mounts,\
+            ./repos/system_upgrade/el7toel8/actors/networkmanagerreadconfig/tests/files/nm_cfg_file_error,\
+            ./repos/system_upgrade/common/actors/scancpu/tests/files/lscpu_s390x"
