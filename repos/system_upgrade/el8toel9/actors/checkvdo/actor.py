@@ -32,12 +32,24 @@ class CheckVdo(Actor):
     If the VdoConversionInfo model indicates unexpected errors occurred during
     scanning CheckVdo will produce appropriate inhibitory reports.
 
-    Lastly, if the VdoConversionInfo model indicates conditions exist where VDO
-    devices could exist but the necessary software to check was not installed
-    on the system CheckVdo will present a dialog to the user. This dialog will
-    ask the user to either install the required software if the user knows or
-    is unsure that VDO devices exist or to approve the continuation of the
-    upgrade if the user is certain that no VDO devices exist.
+    If the VdoConversionInfo model indicates conditions exist where VDO devices
+    could exist but the necessary software to check was not installed on the
+    system CheckVdo will present a dialog to the user. This dialog will ask the
+    user to either install the required software if the user knows or is unsure
+    that VDO devices exist or to approve the continuation of the upgrade if the
+    user is certain that either there are no VDO devices present or that all
+    VDO devices have been successfully converted.
+
+    To maximize safety CheckVdo operates against all block devices which
+    match the criteria for potential VDO devices.  Given the dynamic nature
+    of device presence within a system some devices which may have been present
+    during leapp discovery may not be present when CheckVdo runs.  As CheckVdo
+    defaults to producing inhibitory reports if a device cannot be checked
+    (for any reason) this dynamism may be problematic.  To prevent CheckVdo
+    producing an inhibitory report for devices which are dynamically no longer
+    present within the system the user may answer the previously mentioned
+    dialog in the affirmative when the user knows that all VDO devices have
+    been converted.  This will circumvent checks of block devices.
     """
 
     name = 'check_vdo'
@@ -50,37 +62,55 @@ class CheckVdo(Actor):
             reason='Confirmation',
             components=(
                 BooleanComponent(
-                    key='no_vdo_devices',
-                    label='Are there no VDO devices on the system?',
-                    description='Enter True if there are no VDO devices on '
-                                'the system and False continue the upgrade. '
-                                'If the system has no VDO devices, then it '
-                                'is safe to continue the upgrade. If there '
-                                'are VDO devices they must all be converted '
-                                'to LVM management before the upgrade can '
-                                'proceed.',
-                    reason='Based on installed packages it is possible that '
-                           'VDO devices exist on the system.  All VDO devices '
-                           'must be converted to being managed by LVM before '
-                           'the upgrade occurs. Because the \'vdo\' package '
-                           'is not installed, Leapp cannot determine whether '
-                           'any VDO devices exist that have not yet been '
-                           'converted.  If the devices are not converted and '
-                           'the upgrade proceeds the data on unconverted VDO '
-                           'devices will be inaccessible. If you have any '
-                           'doubts you should choose to install the \'vdo\' '
-                           'package and re-run the upgrade process to check '
-                           'for unconverted VDO devices. If you are certain '
-                           'that the system has no VDO devices or that all '
-                           'VDO devices have been converted to LVM management '
-                           'you may opt to allow the upgrade to proceed.'
+                    key='confirm',
+                    label='Are all VDO devices, if any, successfully converted to LVM management?',
+                    description='Enter True if no VDO devices are present '
+                                'on the system or all VDO devices on the system '
+                                'have been successfully converted to LVM '
+                                'management. '
+                                'Entering True will circumvent check of failures '
+                                'and undetermined devices. '
+                                'Recognized VDO devices that have not been '
+                                'converted to LVM management can still block '
+                                'the upgrade despite the answer.'
+                                'All VDO devices must be converted to LVM '
+                                'management before upgrading.',
+                    reason='To maximize safety all block devices on a system '
+                           'that meet the criteria as possible VDO devices '
+                           'are checked to verify that, if VDOs, they have '
+                           'been converted to LVM management. '
+                           'If the devices are not converted and the upgrade '
+                           'proceeds the data on unconverted VDO devices will '
+                           'be inaccessible. '
+                           'In order to perform checking the \'vdo\' package '
+                           'must be installed. '
+                           'If the \'vdo\' package is not installed and there '
+                           'are any doubts the \'vdo\' package should be '
+                           'installed and the upgrade process re-run to check '
+                           'for unconverted VDO devices. '
+                           'If the check of any device fails for any reason '
+                           'an upgrade inhibiting report is generated. '
+                           'This may be problematic if devices are '
+                           'dynamically removed from the system subsequent to '
+                           'having been identified during device discovery. '
+                           'If it is certain that all VDO devices have been '
+                           'successfully converted to LVM management this '
+                           'dialog may be answered in the affirmative which '
+                           'will circumvent block device checking.'
                 ),
             )
         ),
     )
+    _asked_answer = False
+    _vdo_answer = None
 
-    def get_no_vdo_devices_response(self):
-        return self.get_answers(self.dialogs[0]).get('no_vdo_devices')
+    def get_vdo_answer(self):
+        if not self._asked_answer:
+            self._asked_answer = True
+            # calling this multiple times could lead to possible issues
+            # or at least in redundant reports
+            self._vdo_answer = self.get_answers(self.dialogs[0]).get('confirm')
+        return self._vdo_answer
 
     def process(self):
         for conversion_info in self.consume(VdoConversionInfo):
