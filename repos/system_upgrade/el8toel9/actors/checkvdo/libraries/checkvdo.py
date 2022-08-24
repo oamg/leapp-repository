@@ -141,6 +141,19 @@ def _process_undetermined_conversion_devices(devices):
 
 
 def check_vdo(conversion_info):
-    _process_pre_conversion_vdos(conversion_info.pre_conversion)
-    _process_post_conversion_vdos(conversion_info.post_conversion)
-    _process_undetermined_conversion_devices(conversion_info.undetermined_conversion)
+    all_vdo_converted = api.current_actor().get_all_vdo_converted_response()
+    if all_vdo_converted:
+        summary = ('User has asserted all VDO devices on the system have been '
+                   'successfully converted to LVM management.')
+
+        reporting.create_report([
+            _report_title,
+            reporting.Summary(summary),
+            reporting.Severity(reporting.Severity.INFO),
+            reporting.Groups([reporting.Groups.SERVICES, reporting.Groups.DRIVERS]),
+            reporting.Groups([])
+        ])
+    else:
+        _process_pre_conversion_vdos(conversion_info.pre_conversion)
+        _process_post_conversion_vdos(conversion_info.post_conversion)
+        _process_undetermined_conversion_devices(conversion_info.undetermined_conversion)

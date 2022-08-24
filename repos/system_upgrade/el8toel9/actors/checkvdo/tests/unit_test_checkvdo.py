@@ -13,14 +13,29 @@ from leapp.models import (
 from leapp.utils.report import is_inhibitor
 
 
-class MockedActorNoVdoDevices(CurrentActorMocked):
+# Mock actor base for CheckVdo tests.
+class MockedActorCheckVdo(CurrentActorMocked):
+    def get_all_vdo_converted_response(self):
+        return False
+
     def get_no_vdo_devices_response(self):
+        return False
+
+
+# Mock actor for all_vdo_converted dialog response.
+class MockedActorAllVdoConvertedTrue(MockedActorCheckVdo):
+    def get_all_vdo_converted_response(self):
         return True
 
 
-class MockedActorSomeVdoDevices(CurrentActorMocked):
+# Mock actors for no_vdo_devices dialog response.
+class MockedActorNoVdoDevicesFalse(MockedActorCheckVdo):
+    pass
+
+
+class MockedActorNoVdoDevicesTrue(MockedActorCheckVdo):
     def get_no_vdo_devices_response(self):
-        return False
+        return True
 
 
 def aslist(f):
@@ -66,6 +81,7 @@ def _undetermined_conversion_vdos(count=0, failing=False, start_char='a'):
 
 # No VDOs tests.
 def test_no_vdos(monkeypatch):
+    monkeypatch.setattr(api, 'current_actor', MockedActorCheckVdo())
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
     checkvdo.check_vdo(
         VdoConversionInfo(post_conversion=_post_conversion_vdos(),
@@ -76,6 +92,7 @@ def test_no_vdos(monkeypatch):
 
 # Concurrent pre- and post-conversion tests.
 def test_both_conversion_vdo_incomplete(monkeypatch):
+    monkeypatch.setattr(api, 'current_actor', MockedActorCheckVdo())
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
     post_count = 7
     checkvdo.check_vdo(
@@ -89,6 +106,7 @@ def test_both_conversion_vdo_incomplete(monkeypatch):
 
 # Post-conversion tests.
 def test_post_conversion_multiple_vdo_incomplete(monkeypatch):
+    monkeypatch.setattr(api, 'current_actor', MockedActorCheckVdo())
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
     checkvdo.check_vdo(
         VdoConversionInfo(post_conversion=_post_conversion_vdos(7, 5),
@@ -100,6 +118,7 @@ def test_post_conversion_multiple_vdo_incomplete(monkeypatch):
 
 
 def test_post_conversion_multiple_vdo_complete(monkeypatch):
+    monkeypatch.setattr(api, 'current_actor', MockedActorCheckVdo())
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
     checkvdo.check_vdo(
         VdoConversionInfo(post_conversion=_post_conversion_vdos(7, 7),
@@ -109,6 +128,7 @@ def test_post_conversion_multiple_vdo_complete(monkeypatch):
 
 
 def test_post_conversion_single_vdo_incomplete(monkeypatch):
+    monkeypatch.setattr(api, 'current_actor', MockedActorCheckVdo())
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
     checkvdo.check_vdo(
         VdoConversionInfo(post_conversion=_post_conversion_vdos(1),
@@ -121,6 +141,7 @@ def test_post_conversion_single_vdo_incomplete(monkeypatch):
 
 
 def test_post_conversion_single_check_failing(monkeypatch):
+    monkeypatch.setattr(api, 'current_actor', MockedActorCheckVdo())
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
     checkvdo.check_vdo(
         VdoConversionInfo(post_conversion=_post_conversion_vdos(2, complete=1, failing=1),
@@ -135,6 +156,7 @@ def test_post_conversion_single_check_failing(monkeypatch):
 
 
 def test_post_conversion_multiple_check_failing(monkeypatch):
+    monkeypatch.setattr(api, 'current_actor', MockedActorCheckVdo())
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
     checkvdo.check_vdo(
         VdoConversionInfo(post_conversion=_post_conversion_vdos(7, complete=4, failing=3),
@@ -147,6 +169,7 @@ def test_post_conversion_multiple_check_failing(monkeypatch):
 
 
 def test_post_conversion_incomplete_and_check_failing(monkeypatch):
+    monkeypatch.setattr(api, 'current_actor', MockedActorCheckVdo())
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
     checkvdo.check_vdo(
         VdoConversionInfo(post_conversion=_post_conversion_vdos(2, failing=1),
@@ -158,6 +181,7 @@ def test_post_conversion_incomplete_and_check_failing(monkeypatch):
 
 # Pre-conversion tests.
 def test_pre_conversion_multiple_vdo_incomplete(monkeypatch):
+    monkeypatch.setattr(api, 'current_actor', MockedActorCheckVdo())
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
     checkvdo.check_vdo(
         VdoConversionInfo(post_conversion=_post_conversion_vdos(),
@@ -169,6 +193,7 @@ def test_pre_conversion_multiple_vdo_incomplete(monkeypatch):
 
 
 def test_pre_conversion_single_vdo_incomplete(monkeypatch):
+    monkeypatch.setattr(api, 'current_actor', MockedActorCheckVdo())
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
     checkvdo.check_vdo(
         VdoConversionInfo(post_conversion=_post_conversion_vdos(),
@@ -182,6 +207,7 @@ def test_pre_conversion_single_vdo_incomplete(monkeypatch):
 
 # Undetermined tests.
 def test_undetermined_single_check_failing(monkeypatch):
+    monkeypatch.setattr(api, 'current_actor', MockedActorCheckVdo())
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
     checkvdo.check_vdo(
         VdoConversionInfo(post_conversion=_post_conversion_vdos(),
@@ -196,6 +222,7 @@ def test_undetermined_single_check_failing(monkeypatch):
 
 
 def test_undetermined_multiple_check_failing(monkeypatch):
+    monkeypatch.setattr(api, 'current_actor', MockedActorCheckVdo())
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
     checkvdo.check_vdo(
         VdoConversionInfo(post_conversion=_post_conversion_vdos(),
@@ -207,8 +234,9 @@ def test_undetermined_multiple_check_failing(monkeypatch):
             'Unexpected result checking devices')
 
 
-def test_undetermined_multiple_no_check_no_vdos(monkeypatch):
-    monkeypatch.setattr(api, 'current_actor', MockedActorNoVdoDevices())
+# Undetermined, no_vdo_devices tests.
+def test_undetermined_multiple_no_check_no_vdos_true(monkeypatch):
+    monkeypatch.setattr(api, 'current_actor', MockedActorNoVdoDevicesTrue())
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
     checkvdo.check_vdo(
         VdoConversionInfo(post_conversion=_post_conversion_vdos(),
@@ -220,8 +248,8 @@ def test_undetermined_multiple_no_check_no_vdos(monkeypatch):
             'User has asserted there are no VDO devices')
 
 
-def test_undetermined_multiple_no_check_some_vdos(monkeypatch):
-    monkeypatch.setattr(api, 'current_actor', MockedActorSomeVdoDevices())
+def test_undetermined_multiple_no_check_no_vdos_false(monkeypatch):
+    monkeypatch.setattr(api, 'current_actor', MockedActorNoVdoDevicesFalse())
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
     checkvdo.check_vdo(
         VdoConversionInfo(post_conversion=_post_conversion_vdos(),
@@ -231,3 +259,17 @@ def test_undetermined_multiple_no_check_some_vdos(monkeypatch):
     assert is_inhibitor(reporting.create_report.report_fields)
     assert reporting.create_report.report_fields['summary'].startswith(
             'User has opted to inhibit upgrade')
+
+
+# all_vdo_converted test.
+def test_all_vdo_converted_true(monkeypatch):
+    monkeypatch.setattr(api, 'current_actor', MockedActorAllVdoConvertedTrue())
+    monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
+    checkvdo.check_vdo(
+        VdoConversionInfo(post_conversion=_post_conversion_vdos(),
+                          pre_conversion=_pre_conversion_vdos(),
+                          undetermined_conversion=_undetermined_conversion_vdos(3)))
+    assert reporting.create_report.called == 1
+    assert not is_inhibitor(reporting.create_report.report_fields)
+    assert reporting.create_report.report_fields['summary'].startswith(
+            'User has asserted all VDO devices on the system have been successfully converted')

@@ -32,12 +32,23 @@ class CheckVdo(Actor):
     If the VdoConversionInfo model indicates unexpected errors occurred during
     scanning CheckVdo will produce appropriate inhibitory reports.
 
-    Lastly, if the VdoConversionInfo model indicates conditions exist where VDO
-    devices could exist but the necessary software to check was not installed
-    on the system CheckVdo will present a dialog to the user. This dialog will
-    ask the user to either install the required software if the user knows or
-    is unsure that VDO devices exist or to approve the continuation of the
-    upgrade if the user is certain that no VDO devices exist.
+    If the VdoConversionInfo model indicates conditions exist where VDO devices
+    could exist but the necessary software to check was not installed on the
+    system CheckVdo will present a dialog to the user. This dialog will ask the
+    user to either install the required software if the user knows or is unsure
+    that VDO devices exist or to approve the continuation of the upgrade if the
+    user is certain that no VDO devices exist.
+
+    To maximize safety CheckVdo will operate against all block devices which
+    match the criteria for potential VDO devices.  Given the dynamic nature
+    of device presence within a system some devices which may have been present
+    during leapp discovery may not be present when CheckVdo runs.  As CheckVdo
+    defaults to producing inhibitory reports if a device cannot be checked
+    (for any reason) this dynamism may be problematic.  To prevent CheckVdo
+    producing an inhibitory report for devices which are dynamically no longer
+    present within the system the user may answer in the affirmative a dialog
+    indicating that all VDO instances have been converted and the non-existence
+    of a device is to be ignored.
     """
 
     name = 'check_vdo'
@@ -45,6 +56,37 @@ class CheckVdo(Actor):
     produces = (Report,)
     tags = (ChecksPhaseTag, IPUWorkflowTag)
     dialogs = (
+        Dialog(
+            scope='check_vdo',
+            reason='Confirmation',
+            components=(
+                BooleanComponent(
+                    key='all_vdo_converted',
+                    label='Are all VDO devices succesfully converted to LVM '
+                          'management?',
+                    description='Enter True if all VDO devices on the system '
+                                'have been successfully converted to LVM '
+                                'management.  Entering True will circumvent '
+                                'checking block devices states as VDO devices '
+                                'in need of conversion.  All VDO devices must '
+                                'be converted to LVM management before '
+                                'upgrading.',
+                    reason='To maximize safety all block devices on a system '
+                           'that meet the criteria as possible VDO devices '
+                           'are checked to verify that, if VDOs, they have'
+                           'been converted to LVM management.  If the check '
+                           'of any device fails for any reason an upgrade'
+                           'inhibiting report is generated.  This may be'
+                           'problematic when devices are dynamically removed'
+                           'from by the system subsequent to having been'
+                           'identified during device discovery.  By '
+                           'specifying that all VDO devices have been'
+                           'successfully converted to LVM management the'
+                           'checking of devices is not performed thus '
+                           'avoiding any issues with checking devices.'
+                ),
+            )
+        ),
         Dialog(
             scope='check_vdo',
             reason='Confirmation',
@@ -79,8 +121,11 @@ class CheckVdo(Actor):
         ),
     )
 
+    def get_all_vdo_converted_response(self):
+        return self.get_answers(self.dialogs[0]).get('all_vdo_converted')
+
     def get_no_vdo_devices_response(self):
-        return self.get_answers(self.dialogs[0]).get('no_vdo_devices')
+        return self.get_answers(self.dialogs[1]).get('no_vdo_devices')
 
     def process(self):
         for conversion_info in self.consume(VdoConversionInfo):
