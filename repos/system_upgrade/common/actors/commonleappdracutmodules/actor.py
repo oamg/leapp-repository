@@ -1,13 +1,14 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import modscan
-from leapp.models import (
+from leapp.tags import FactsPhaseTag, IPUWorkflowTag
+from leapp.utils.deprecation import suppress_deprecation
+
+from leapp.models import (  # isort:skip
     RequiredUpgradeInitramPackages,  # deprecated
     UpgradeDracutModule,  # deprecated
     TargetUserSpaceUpgradeTasks,
     UpgradeInitramfsTasks
 )
-from leapp.tags import FactsPhaseTag, IPUWorkflowTag
-from leapp.utils.deprecation import suppress_deprecation
 
 
 @suppress_deprecation(RequiredUpgradeInitramPackages, UpgradeDracutModule)
