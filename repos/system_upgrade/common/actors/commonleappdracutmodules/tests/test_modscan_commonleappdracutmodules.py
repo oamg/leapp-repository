@@ -8,13 +8,14 @@ from leapp.libraries.actor import modscan
 from leapp.libraries.common.config import architecture
 from leapp.libraries.common.testutils import CurrentActorMocked
 from leapp.libraries.stdlib import api
-from leapp.models import (
+from leapp.utils.deprecation import suppress_deprecation
+
+from leapp.models import (  # isort:skip
     RequiredUpgradeInitramPackages,  # deprecated
     UpgradeDracutModule,  # deprecated
     TargetUserSpaceUpgradeTasks,
     UpgradeInitramfsTasks
 )
-from leapp.utils.deprecation import suppress_deprecation
 
 
 def _files_get_folder_path(name):

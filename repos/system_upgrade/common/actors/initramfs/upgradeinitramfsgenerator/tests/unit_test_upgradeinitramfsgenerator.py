@@ -7,7 +7,9 @@ from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import upgradeinitramfsgenerator
 from leapp.libraries.common.config import architecture
 from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked, produce_mocked
-from leapp.models import (
+from leapp.utils.deprecation import suppress_deprecation
+
+from leapp.models import (  # isort:skip
     RequiredUpgradeInitramPackages,  # deprecated
     UpgradeDracutModule,  # deprecated
     BootContent,
@@ -16,7 +18,6 @@ from leapp.models import (
     TargetUserSpaceUpgradeTasks,
     UpgradeInitramfsTasks,
 )
-from leapp.utils.deprecation import suppress_deprecation
 
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 PKGS = ['pkg{}'.format(c) for c in 'ABCDEFGHIJ']

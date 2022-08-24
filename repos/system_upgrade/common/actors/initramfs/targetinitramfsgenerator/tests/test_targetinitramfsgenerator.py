@@ -4,13 +4,14 @@ from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import targetinitramfsgenerator
 from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked
 from leapp.libraries.stdlib import api, CalledProcessError
-from leapp.models import (
+from leapp.utils.deprecation import suppress_deprecation
+
+from leapp.models import (  # isort:skip
     InitrdIncludes,  # deprecated
     DracutModule,
     InstalledTargetKernelVersion,
     TargetInitramfsTasks
 )
-from leapp.utils.deprecation import suppress_deprecation
 
 FILES = ['/file1', '/file2', '/dir/ect/ory/file3', '/file4', '/file5']
 MODULES = [
