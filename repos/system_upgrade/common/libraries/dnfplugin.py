@@ -146,7 +146,8 @@ def backup_debug_data(context):
             api.current_logger().warning('Failed to copy debugdata. Message: {}'.format(str(e)), exc_info=True)
 
 
-def _transaction(context, stage, target_repoids, tasks, plugin_info, test=False, cmd_prefix=None, on_aws=False):
+def _transaction(context, stage, target_repoids, tasks, plugin_info, xfs_info,
+                 test=False, cmd_prefix=None, on_aws=False):
     """
     Perform the actual DNF rpm download via our DNF plugin
     """
@@ -219,10 +220,25 @@ def _transaction(context, stage, target_repoids, tasks, plugin_info, test=False,
             )
         except CalledProcessError as e:
             api.current_logger().error('DNF execution failed: ')
-            raise StopActorExecutionError(
-                message='DNF execution failed with non zero exit code.\nSTDOUT:\n{stdout}\nSTDERR:\n{stderr}'.format(
-                    stdout=e.stdout, stderr=e.stderr)
-            )
+
+            message = 'DNF execution failed with non zero exit code.'
+            details = {'STDOUT': e.stdout, 'STDERR': e.stderr}
+
+            if 'more space needed on the' in e.stderr:
+                # The stderr contains this error summary:
+                # Disk Requirements:
+                #   At least <size> more space needed on the <path> filesystem.
+
+                article_section = 'Generic case'
+                if xfs_info.present and xfs_info.without_ftype:
+                    article_section = 'XFS ftype=0 case'
+
+                message = ('There is not enough space on the file system hosting /var/lib/leapp directory '
+                           'to extract the packages.')
+                details = {'hint': "Please follow the instructions in the '{}' section of the article at: "
+                                   "link: https://access.redhat.com/solutions/5057391".format(article_section)}
+
+            raise StopActorExecutionError(message=message, details=details)
         finally:
             if stage == 'check':
                 backup_debug_data(context=context)
@@ -294,7 +310,7 @@ def install_initramdisk_requirements(packages, target_userspace_info, used_repos
         context.call(cmd, env=env)
 
 
-def perform_transaction_install(target_userspace_info, storage_info, used_repos, tasks, plugin_info):
+def perform_transaction_install(target_userspace_info, storage_info, used_repos, tasks, plugin_info, xfs_info):
     """
     Performs the actual installation with the DNF rhel-upgrade plugin using the target userspace
     """
@@ -353,8 +369,8 @@ def perform_transaction_install(target_userspace_info, storage_info, used_repos,
         if get_target_major_version() == '9':
             _rebuild_rpm_db(context, root='/installroot')
         _transaction(
-            context=context, stage=stage, target_repoids=target_repoids, plugin_info=plugin_info, tasks=tasks,
-            cmd_prefix=cmd_prefix
+            context=context, stage='upgrade', target_repoids=target_repoids, plugin_info=plugin_info,
+            xfs_info=xfs_info, tasks=tasks, cmd_prefix=cmd_prefix
         )
 
         # we have to ensure the leapp packages will stay untouched even after the
@@ -400,7 +416,8 @@ def perform_transaction_check(target_userspace_info,
 
         dnfconfig.exclude_leapp_rpms(context, disable_plugins)
         _transaction(
-            context=context, stage='check', target_repoids=target_repoids, plugin_info=plugin_info, tasks=tasks
+            context=context, stage='check', target_repoids=target_repoids, plugin_info=plugin_info, xfs_info=xfs_info,
+            tasks=tasks
         )
 
 
@@ -434,7 +451,7 @@ def perform_rpm_download(target_userspace_info,
         dnfconfig.exclude_leapp_rpms(context, disable_plugins)
         _transaction(
             context=context, stage='download', target_repoids=target_repoids, plugin_info=plugin_info, tasks=tasks,
-            test=True, on_aws=on_aws
+            test=True, on_aws=on_aws, xfs_info=xfs_info
         )
 
 
@@ -457,5 +474,5 @@ def perform_dry_run(target_userspace_info,
         apply_workarounds(overlay.nspawn())
         _transaction(
             context=context, stage='dry-run', target_repoids=target_repoids, plugin_info=plugin_info, tasks=tasks,
-            test=True, on_aws=on_aws
+            test=True, on_aws=on_aws, xfs_info=xfs_info
         )

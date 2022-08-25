@@ -11,7 +11,8 @@ from leapp.models import (
     StorageInfo,
     TargetUserSpaceInfo,
     TransactionCompleted,
-    UsedTargetRepositories
+    UsedTargetRepositories,
+    XFSPresence
 )
 from leapp.tags import IPUWorkflowTag, RPMUpgradePhaseTag
 
@@ -33,6 +34,7 @@ class DnfUpgradeTransaction(Actor):
         StorageInfo,
         TargetUserSpaceInfo,
         UsedTargetRepositories,
+        XFSPresence
     )
     produces = (TransactionCompleted,)
     tags = (RPMUpgradePhaseTag, IPUWorkflowTag)
@@ -48,10 +50,11 @@ class DnfUpgradeTransaction(Actor):
         plugin_info = list(self.consume(DNFPluginTask))
         tasks = next(self.consume(FilteredRpmTransactionTasks), FilteredRpmTransactionTasks())
         target_userspace_info = next(self.consume(TargetUserSpaceInfo), None)
+        xfs_info = next(self.consume(XFSPresence), XFSPresence())
 
         dnfplugin.perform_transaction_install(
             tasks=tasks, used_repos=used_repos, storage_info=storage_info, target_userspace_info=target_userspace_info,
-            plugin_info=plugin_info
+            plugin_info=plugin_info, xfs_info=xfs_info
         )
         self.produce(TransactionCompleted())
         userspace = next(self.consume(TargetUserSpaceInfo), None)
