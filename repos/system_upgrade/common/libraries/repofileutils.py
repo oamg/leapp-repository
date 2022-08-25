@@ -15,11 +15,10 @@ def _parse_repository(repoid, repo_data):
     def asbool(x):
         return x == '1'
     prepared = {'repoid': repoid, 'additional_fields': {}}
-    for key in repo_data.keys():
+    for key, value in repo_data.items():
         if key in RepositoryData.fields:
-            if isinstance(RepositoryData.fields[key], fields.Boolean):
-                repo_data[key] = asbool(repo_data[key])
-            prepared[key] = repo_data[key]
+            is_bool = isinstance(RepositoryData.fields[key], fields.Boolean)
+            prepared[key] = asbool(value) if is_bool else value
         else:
             prepared['additional_fields'][key] = repo_data[key]
     prepared['additional_fields'] = json.dumps(prepared['additional_fields'])

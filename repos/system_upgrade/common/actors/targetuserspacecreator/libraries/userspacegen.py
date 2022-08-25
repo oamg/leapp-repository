@@ -4,23 +4,16 @@ import os
 from leapp import reporting
 from leapp.exceptions import StopActorExecution, StopActorExecutionError
 from leapp.libraries.actor import constants
-from leapp.libraries.common import dnfplugin, mounting, overlaygen, repofileutils, rhsm, rhui, utils
+from leapp.libraries.common import dnfplugin, mounting, overlaygen, repofileutils, rhsm, rhui
 from leapp.libraries.common.config import get_env, get_product_type
 from leapp.libraries.common.config.version import get_target_major_version
 from leapp.libraries.stdlib import api, CalledProcessError, config, run
-from leapp.models import RequiredTargetUserspacePackages  # deprecated
 from leapp.models import TMPTargetRepositoriesFacts  # deprecated
 from leapp.models import (
-    CustomTargetRepositoryFile,
-    RHSMInfo,
-    RHUIInfo,
-    StorageInfo,
     TargetRepositories,
     TargetUserSpaceInfo,
-    TargetUserSpacePreupgradeTasks,
     UsedTargetRepositories,
     UsedTargetRepository,
-    XFSPresence
 )
 from leapp.utils.deprecation import suppress_deprecation
 
@@ -48,9 +41,6 @@ from leapp.utils.deprecation import suppress_deprecation
 # and do not mess.
 # Issue: #486
 
-PROD_CERTS_FOLDER = 'prod-certs'
-PERSISTENT_PACKAGE_CACHE_DIR = '/var/lib/leapp/persistent_package_cache'
-
 
 def _check_deprecated_rhsm_skip():
     # we do not plan to cover this case by tests as it is purely
@@ -64,112 +54,6 @@ def _check_deprecated_rhsm_skip():
             ' leapp. as well custom repofile has not been defined.'
             ' Please read documentation about new "skip rhsm" solution.'
         )
-
-
-class _InputData(object):
-    def __init__(self):
-        self._consume_data()
-
-    @suppress_deprecation(RequiredTargetUserspacePackages)
-    def _consume_data(self):
-        """
-        Wrapper function to consume majority input data.
-
-        It doesn't consume TargetRepositories, which are consumed in the
-        own function.
-        """
-        self.packages = {'dnf', 'dnf-command(config-manager)'}
-        self.files = []
-        _cftuples = set()
-
-        def _update_files(copy_files):
-            # add just uniq CopyFile objects to omit duplicate copying of files
-            for cfile in copy_files:
-                cftuple = (cfile.src, cfile.dst)
-                if cftuple not in _cftuples:
-                    _cftuples.add(cftuple)
-                    self.files.append(cfile)
-
-        for task in api.consume(TargetUserSpacePreupgradeTasks):
-            self.packages.update(task.install_rpms)
-            _update_files(task.copy_files)
-
-        for message in api.consume(RequiredTargetUserspacePackages):
-            self.packages.update(message.packages)
-
-        # Get the RHSM information (available repos, attached SKUs, etc.) of the source system
-        self.rhsm_info = next(api.consume(RHSMInfo), None)
-        self.rhui_info = next(api.consume(RHUIInfo), None)
-        if not self.rhsm_info and not rhsm.skip_rhsm():
-            api.current_logger().warning('Could not receive RHSM information - Is this system registered?')
-            raise StopActorExecution()
-        if rhsm.skip_rhsm() and self.rhsm_info:
-            # this should not happen. if so, raise an error as something in
-            # other actors is wrong really
-            raise StopActorExecutionError("RHSM is not handled but the RHSMInfo message has been produced.")
-
-        self.custom_repofiles = list(api.consume(CustomTargetRepositoryFile))
-        self.xfs_info = next(api.consume(XFSPresence), XFSPresence())
-        self.storage_info = next(api.consume(StorageInfo), None)
-        if not self.storage_info:
-            raise StopActorExecutionError('No storage info available cannot proceed.')
-
-
-def _restore_persistent_package_cache(userspace_dir):
-    if get_env('LEAPP_DEVEL_USE_PERSISTENT_PACKAGE_CACHE', None) == '1':
-        if os.path.exists(PERSISTENT_PACKAGE_CACHE_DIR):
-            with mounting.NspawnActions(base_dir=userspace_dir) as target_context:
-                target_context.copytree_to(PERSISTENT_PACKAGE_CACHE_DIR, '/var/cache/dnf')
-    # We always want to remove the persistent cache here to unclutter the system
-    run(['rm', '-rf', PERSISTENT_PACKAGE_CACHE_DIR])
-
-
-def _backup_to_persistent_package_cache(userspace_dir):
-    if get_env('LEAPP_DEVEL_USE_PERSISTENT_PACKAGE_CACHE', None) == '1':
-        # Clean up any dead bodies, just in case
-        run(['rm', '-rf', PERSISTENT_PACKAGE_CACHE_DIR])
-        if os.path.exists(os.path.join(userspace_dir, 'var', 'cache', 'dnf')):
-            with mounting.NspawnActions(base_dir=userspace_dir) as target_context:
-                target_context.copytree_from('/var/cache/dnf', PERSISTENT_PACKAGE_CACHE_DIR)
-
-
-def prepare_target_userspace(context, userspace_dir, enabled_repos, packages):
-    """
-    Implement the creation of the target userspace.
-    """
-    _backup_to_persistent_package_cache(userspace_dir)
-
-    target_major_version = get_target_major_version()
-    run(['rm', '-rf', userspace_dir])
-    _create_target_userspace_directories(userspace_dir)
-    with mounting.BindMount(
-        source=userspace_dir, target=os.path.join(context.base_dir, 'el{}target'.format(target_major_version))
-    ):
-        _restore_persistent_package_cache(userspace_dir)
-
-        repos_opt = [['--enablerepo', repo] for repo in enabled_repos]
-        repos_opt = list(itertools.chain(*repos_opt))
-        cmd = ['dnf',
-               'install',
-               '-y',
-               '--nogpgcheck',
-               '--setopt=module_platform_id=platform:el{}'.format(target_major_version),
-               '--setopt=keepcache=1',
-               '--releasever', api.current_actor().configuration.version.target,
-               '--installroot', '/el{}target'.format(target_major_version),
-               '--disablerepo', '*'
-               ] + repos_opt + packages
-        if config.is_verbose():
-            cmd.append('-v')
-        if rhsm.skip_rhsm():
-            cmd += ['--disableplugin', 'subscription-manager']
-        try:
-            context.call(cmd, callback_raw=utils.logging_handler)
-        except CalledProcessError as exc:
-            raise StopActorExecutionError(
-                message='Unable to install RHEL {} userspace packages.'.format(target_major_version),
-                details={'details': str(exc), 'stderr': exc.stderr}
-            )
 
 
 def _get_all_rhui_pkgs():
@@ -218,7 +102,7 @@ def _get_files_owned_by_rpms(context, dirpath, pkgs=None):
     return files_owned_by_rpms
 
 
-def _prep_repository_access(context, target_userspace):
+def prep_repository_access(context, target_userspace):
     """
     Prepare repository access by copying all relevant certificates and configuration files to the userspace
     """
@@ -276,7 +160,7 @@ def _get_product_certificate_path():
     architecture = api.current_actor().configuration.architecture
     target_version = api.current_actor().configuration.version.target
     target_product_type = get_product_type('target')
-    certs_dir = api.get_common_folder_path(PROD_CERTS_FOLDER)
+    certs_dir = api.get_common_folder_path(constants.PROD_CERTS_FOLDER)
 
     # We do not need any special certificates to reach repos from non-ga channels, only beta requires special cert.
     if target_product_type != 'beta':
@@ -333,23 +217,6 @@ def _get_product_certificate_path():
         raise StopActorExecution()
 
     return cert_path
-
-
-def _create_target_userspace_directories(target_userspace):
-    api.current_logger().debug('Creating target userspace directories.')
-    try:
-        utils.makedirs(target_userspace)
-        api.current_logger().debug('Done creating target userspace directories.')
-    except OSError:
-        api.current_logger().error(
-            'Failed to create temporary target userspace directories %s', target_userspace, exc_info=True)
-        # This is an attempt for giving the user a chance to resolve it on their own
-        raise StopActorExecutionError(
-            message='Failed to prepare environment for package download while creating directories.',
-            details={
-                'hint': 'Please ensure that {directory} is empty and modifiable.'.format(directory=target_userspace)
-            }
-        )
 
 
 def _inhibit_on_duplicate_repos(repofiles):
@@ -645,7 +512,7 @@ def _create_target_userspace(context, packages, files, target_repoids):
     """Create the target userspace."""
     target_path = _get_target_userspace()
     prepare_target_userspace(context, target_path, target_repoids, list(packages))
-    _prep_repository_access(context, target_path)
+    prep_repository_access(context, target_path)
 
     with mounting.NspawnActions(base_dir=target_path) as target_context:
         _copy_files(target_context, files)
