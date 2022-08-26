@@ -1,0 +1,4 @@
+disable example.*
+enable globbed*.service
+
+disable *
