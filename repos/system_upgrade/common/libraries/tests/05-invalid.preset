@@ -1,0 +1,8 @@
+# missing unit or glob
+enable
+; missing enable or disable
+hello.service
+# only enable and disable directives are allowed
+mask hello.service
+
+disable example.service

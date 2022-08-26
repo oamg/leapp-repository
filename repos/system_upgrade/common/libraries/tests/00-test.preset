@@ -1,0 +1,10 @@
+enable example.service
+# first line takes priority
+disable example.service
+
+#           hello, world!
+disable abc.service
+
+; another comment format
+disable template@.service
+enable template@.service instance1 instance2
