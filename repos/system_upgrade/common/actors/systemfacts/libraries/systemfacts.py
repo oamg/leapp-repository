@@ -60,13 +60,26 @@ def anyhasprefix(value, prefixes):
 
 @aslist
 def _get_system_users():
+    skipped_user_names = []
     for p in pwd.getpwall():
-        yield User(
-            name=p.pw_name,
-            uid=p.pw_uid,
-            gid=p.pw_gid,
-            home=p.pw_dir
-        )
+        # The /etc/passwd can contain special entries from another service source such as NIS or LDAP. These entries
+        # start with + or - sign and might not contain all the mandatory fields, thus are skipped along with other
+        # invalid entries for now. The UID and GID fields are always defined by pwd to 0 even when not specifiead in
+        # /etc/passwd.
+        if p.pw_name != '' and not p.pw_name.startswith(('+', '-')) and p.pw_dir:
+            yield User(
+                name=p.pw_name,
+                uid=p.pw_uid,
+                gid=p.pw_gid,
+                home=p.pw_dir
+            )
+        else:
+            skipped_user_names.append(p.pw_name)
+
+    if skipped_user_names:
+        api.current_logger().debug("These users from /etc/passwd that are special entries for service "
+                                   "like NIS, or don't contain all mandatory fields won't be included "
+                                   "in UsersFacts: {}".format(skipped_user_names))
 
 
 def get_system_users_status():
@@ -76,12 +89,25 @@ def get_system_users_status():
 
 @aslist
 def _get_system_groups():
+    skipped_group_names = []
     for g in grp.getgrall():
-        yield Group(
-            name=g.gr_name,
-            gid=g.gr_gid,
-            members=g.gr_mem
-        )
+        # The /etc/group can contain special entries from another service source such as NIS or LDAP. These entries
+        # start with + or - sign and might not contain all the mandatory fields, thus are skipped along with other
+        # invalid entries for now. The GID field is always defined by pwd to 0 even when not specifiead in
+        # /etc/group.
+        if g.gr_name != '' and not g.gr_name.startswith(('+', '-')):
+            yield Group(
+                name=g.gr_name,
+                gid=g.gr_gid,
+                members=g.gr_mem
+            )
+        else:
+            skipped_group_names.append(g.gr_name)
+
+    if skipped_group_names:
+        api.current_logger().debug("These groups from /etc/group that are special entries for service "
+                                   "like NIS, or don't contain all mandatory fields won't be included "
+                                   "in GroupsFacts: {}".format(skipped_group_names))
 
 
 def get_system_groups_status():
