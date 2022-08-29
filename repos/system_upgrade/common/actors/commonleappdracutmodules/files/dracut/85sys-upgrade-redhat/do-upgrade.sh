@@ -194,6 +194,19 @@ ibdmp() {
     done
 }
 
+bring_up_network() {
+    if [ -f /etc/leapp-initram-network-manager ]; then
+	# NOTE(ivasilev) Reverting the change to see if it caused the crash
+	. /lib/dracut/hooks/cmdline/99-nm-config.sh
+        . /lib/dracut/hooks/initqueue/settled/99-nm-run.sh
+    fi
+    if [ -f /etc/leapp-initram-network-scripts ]; then
+        for interface in /sys/class/net/*;
+        do
+            ifup ${interface##*/};
+        done;
+    fi
+}
 
 do_upgrade() {
     local args="" rv=0
@@ -201,6 +214,8 @@ do_upgrade() {
     #getargbool 0 rd.upgrade.test && args="$args --testing"
     #getargbool 0 rd.upgrade.verbose && args="$args --verbose"
     getargbool 0 rd.upgrade.debug && args="$args --debug"
+
+    bring_up_network
 
     # Force selinux into permissive mode unless booted with 'enforcing=1'.
     # FIXME: THIS IS A BIG STUPID HAMMER AND WE SHOULD ACTUALLY SOLVE THE ROOT
