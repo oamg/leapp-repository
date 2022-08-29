@@ -86,7 +86,7 @@ def test_actor_without_mount_share(current_actor_context, monkeypatch):
 
 def test_actor_skipped_if_initram_network_enabled(current_actor_context, monkeypatch):
     """Check that previous inhibitors are not stopping the upgrade in case env var is set"""
-    monkeypatch.setattr(config, 'get_env', lambda x, y: 'network-manager' if x == 'LEAPP_INITRAM_NETWORK' else y)
+    monkeypatch.setattr(config, 'get_env', lambda x, y: 'network-manager' if x == 'LEAPP_DEVEL_INITRAM_NETWORK' else y)
     with_mount_share = [MountEntry(name="nfs", mount="/mnt/data", tp='nfs',
                                    options="rw,nosuid,nodev,relatime,user_id=1000,group_id=1000")]
     with_systemdmount_entry = [SystemdMountEntry(node="nfs", path="n/a", model="n/a",
@@ -105,7 +105,7 @@ def test_actor_skipped_if_initram_network_enabled(current_actor_context, monkeyp
 
 def test_actor_not_skipped_if_initram_network_empty(current_actor_context, monkeypatch):
     """Check that previous inhibitors are not stopping the upgrade in case env var is set"""
-    monkeypatch.setattr(config, 'get_env', lambda x, y: '' if x == 'LEAPP_INITRAM_NETWORK' else y)
+    monkeypatch.setattr(config, 'get_env', lambda x, y: '' if x == 'LEAPP_DEVEL_INITRAM_NETWORK' else y)
     with_mount_share = [MountEntry(name="nfs", mount="/mnt/data", tp='nfs',
                                    options="rw,nosuid,nodev,relatime,user_id=1000,group_id=1000")]
     with_systemdmount_entry = [SystemdMountEntry(node="nfs", path="n/a", model="n/a",

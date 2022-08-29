@@ -20,7 +20,7 @@ class CheckNfs(Actor):
 
     def process(self):
         # if network in initramfs is enabled NFS inhibitors are redundant
-        if get_env('LEAPP_INITRAM_NETWORK', None):
+        if get_env('LEAPP_DEVEL_INITRAM_NETWORK', None):
             return
         details = "NFS is currently not supported by the inplace upgrade.\n" \
                   "We have found NFS usage at the following locations:\n"
