@@ -62,7 +62,7 @@ class CheckVdo(Actor):
             components=(
                 BooleanComponent(
                     key='all_vdo_converted',
-                    label='Are all VDO devices succesfully converted to LVM '
+                    label='Are all VDO devices successfully converted to LVM '
                           'management?',
                     description='Enter True if all VDO devices on the system '
                                 'have been successfully converted to LVM '
