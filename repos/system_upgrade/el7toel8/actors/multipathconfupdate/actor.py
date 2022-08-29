@@ -11,7 +11,7 @@ class MultipathConfUpdate(Actor):
     1. commenting out lines for options that no longer exist, or whose value
        is no longer current in RHEL-8
     2. Migrating any options in an devices section with all_devs to an
-       overrides setions
+       overrides sections
     3. Rename options that have changed names
     """
 

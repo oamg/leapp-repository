@@ -244,7 +244,7 @@ def apply_workarounds(context=None):
             context.call(['/bin/bash', '-c', workaround.script_path])
         except (OSError, CalledProcessError) as e:
             raise StopActorExecutionError(
-                message=('Failed to exceute script to apply transaction workaround {display_name}.'
+                message=('Failed to execute script to apply transaction workaround {display_name}.'
                          ' Message: {error}'.format(error=str(e), display_name=workaround.display_name))
             )
 
@@ -336,7 +336,7 @@ def perform_transaction_install(target_userspace_info, storage_info, used_repos,
         )
 
         # we have to ensure the leapp packages will stay untouched even after the
-        # upgrade is fully finished (it cannot be done before the upgarde
+        # upgrade is fully finished (it cannot be done before the upgrade
         # on the host as the config-manager plugin is available since rhel-8)
         dnfconfig.exclude_leapp_rpms(mounting.NotIsolatedActions(base_dir='/'))
 

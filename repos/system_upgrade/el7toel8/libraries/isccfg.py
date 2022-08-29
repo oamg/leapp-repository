@@ -51,7 +51,7 @@ class ConfigFile(object):
 
 
 class MockConfig(ConfigFile):
-    """Configuration file with contens defined on constructor.
+    """Configuration file with contents defined on constructor.
 
        Intended for testing the library.
     """
@@ -501,7 +501,7 @@ class IscConfigParser(object):
         choose the first one.
 
         The function would be confusing in case of brackets, but content between
-        brackets is not evaulated as new tokens.
+        brackets is not evaluated as new tokens.
         E.g.:
 
         "find { me };"      : 5
@@ -630,7 +630,7 @@ class IscConfigParser(object):
         :param index: start searching from the index
         :param end_index: stop searching at the end_index or end of the string
 
-        Funtion is not recursive. Searched key has to be in the current scope.
+        Function is not recursive. Searched key has to be in the current scope.
         Attention:
 
         In case that input string contains data outside of section by mistake,

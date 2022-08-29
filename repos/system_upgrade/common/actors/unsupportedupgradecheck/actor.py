@@ -6,7 +6,7 @@ from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 class UnsupportedUpgradeCheck(Actor):
     """
-    Checks enviroment variables and produces a warning report if the upgrade is unsupported.
+    Checks environment variables and produces a warning report if the upgrade is unsupported.
 
     Upgrade is unsupported if any LEAPP_DEVEL_* variable is used or an experimental actor is enabled.
     This can be overridden by setting the variable LEAPP_UNSUPPORTED (at user's own risk).

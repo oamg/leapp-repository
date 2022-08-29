@@ -45,32 +45,32 @@ class MockListDir(object):
 
 def test_spamassassin_service_overriden():
     listdir = MockListDir(path='/etc/systemd/system', file_names=['spamassassin.service'])
-    overriden = spamassassinconfigread_spamd.spamassassin_service_overriden(listdir.listdir)
-    assert overriden is True
+    overridden = spamassassinconfigread_spamd.spamassassin_service_overriden(listdir.listdir)
+    assert overridden is True
 
     listdir = MockListDir(path='/etc/systemd/system',
                           file_names=['foo.service', 'spamassassin.service', 'bar.service'])
-    overriden = spamassassinconfigread_spamd.spamassassin_service_overriden(listdir.listdir)
-    assert overriden is True
+    overridden = spamassassinconfigread_spamd.spamassassin_service_overriden(listdir.listdir)
+    assert overridden is True
     assert not listdir.error
 
 
 def test_spamassassin_service_overriden_nonexistent():
     listdir = MockListDir(path='/etc/systemd/system', file_names=[])
-    overriden = spamassassinconfigread_spamd.spamassassin_service_overriden(listdir.listdir)
-    assert overriden is False
+    overridden = spamassassinconfigread_spamd.spamassassin_service_overriden(listdir.listdir)
+    assert overridden is False
 
     listdir = MockListDir(path='/etc/systemd/system',
                           file_names=['foo.service', 'bar.service'])
-    overriden = spamassassinconfigread_spamd.spamassassin_service_overriden(listdir.listdir)
-    assert overriden is False
+    overridden = spamassassinconfigread_spamd.spamassassin_service_overriden(listdir.listdir)
+    assert overridden is False
     assert not listdir.error
 
 
 def test_spamassassin_service_overriden_nonexistent_dir():
     listdir = MockListDir(to_raise=make_OSError(errno.ENOENT))
-    overriden = spamassassinconfigread_spamd.spamassassin_service_overriden(listdir.listdir)
-    assert overriden is False
+    overridden = spamassassinconfigread_spamd.spamassassin_service_overriden(listdir.listdir)
+    assert overridden is False
 
 
 def test_spamassassin_service_overriden_nonexistent_inaccessible():
@@ -78,8 +78,8 @@ def test_spamassassin_service_overriden_nonexistent_inaccessible():
     # so that the SpamassassinConfigUpdate actor doesn't make changes to
     # /etc/sysconfig/spamassassin that may not be justified.
     listdir = MockListDir(to_raise=make_OSError(errno.EACCES))
-    overriden = spamassassinconfigread_spamd.spamassassin_service_overriden(listdir.listdir)
-    assert overriden is True
+    overridden = spamassassinconfigread_spamd.spamassassin_service_overriden(listdir.listdir)
+    assert overridden is True
 
 
 def test_parse_ssl_version_sslv3():

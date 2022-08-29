@@ -58,7 +58,7 @@ def test_etc_hosts_present(monkeypatch, isfile_default_config):
 
     preupgrade_task_msg = actor_produces.model_instances[0]
 
-    fail_msg = 'Didn\'t indentify any files to copy into target userspace (at least /etc/hosts shoud be).'
+    fail_msg = 'Didn\'t identify any files to copy into target userspace (at least /etc/hosts should be).'
     assert preupgrade_task_msg.copy_files, fail_msg
 
     should_copy_hostsfile = do_files_to_copy_contain_entry_with_src(preupgrade_task_msg.copy_files, '/etc/hosts')
@@ -70,7 +70,7 @@ def test_etc_hosts_present(monkeypatch, isfile_default_config):
 
 def test_etc_hosts_missing(monkeypatch, isfile_default_config):
     """Tests whether /etc/hosts is not identified as "to be copied" into target userspace when it is missing."""
-    isfile_default_config['/etc/hosts'] = False  # The file is not present or is a directory (-> shoud not be copied)
+    isfile_default_config['/etc/hosts'] = False  # The file is not present or is a directory (-> should not be copied)
     mocked_isfile = make_mocked_isfile(isfile_default_config)
     actor_produces = produce_mocked()
 

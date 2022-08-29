@@ -71,7 +71,7 @@ def _append(lines, add, comment=None):
 
 def _modify_file(f, fail_on_error=True):
     """
-    Modify the openssl configuration file to accomodate el8toel9 changes
+    Modify the openssl configuration file to accommodate el8toel9 changes
     """
     lines = f.readlines()
     lines = _replace(lines, r"openssl_conf\s*=\s*default_modules",

@@ -23,7 +23,7 @@ def report_nis():
     Create the report if any of NIS packages (RH signed)
     is installed and configured.
 
-    Should notify user about present NIS compnent package
+    Should notify user about present NIS component package
     installation, warn them about discontinuation, and
     redirect them to online documentation for possible
     alternatives.

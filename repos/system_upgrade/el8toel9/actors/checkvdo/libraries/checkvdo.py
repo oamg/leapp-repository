@@ -40,7 +40,7 @@ def _process_post_conversion_vdos(vdos):
                            'device format level; however, the expected LVM management '
                            'portion of the conversion did not take place. This '
                            'indicates that an exceptional condition (for example, a '
-                           'system crash) likely occured during the conversion '
+                           'system crash) likely occurred during the conversion '
                            'process. The LVM portion of the conversion must be '
                            'performed in order for upgrade to proceed.'))
 

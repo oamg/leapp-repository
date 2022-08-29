@@ -113,7 +113,7 @@ def process():
         raise StopActorExecutionError('Cannot find any installed kernel signed by Red Hat.')
 
     if len(pkgs) > 1 and architecture.matches_architecture(architecture.ARCH_S390X):
-        # It's temporary solution, so no need to try automatize everything.
+        # It's temporary solution, so no need to try automate everything.
         title = 'Multiple kernels installed'
         summary = ('The upgrade process does not handle well the case when multiple kernels'
                    ' are installed on s390x. There is a severe risk of the bootloader configuration'

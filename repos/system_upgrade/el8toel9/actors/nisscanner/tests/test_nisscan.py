@@ -32,11 +32,11 @@ def test_actor_nisscan(monkeypatch, pkgs_installed, fill_conf_file, fill_ypserv_
     """
     Parametrized helper function for test_actor_* functions.
 
-    Run the actor feeded with our mocked functions and assert
+    Run the actor fed with our mocked functions and assert
     produced messages according to set arguments.
 
     Parameters:
-        pkgs_installed  (touple): installed pkgs
+        pkgs_installed  (tuple): installed pkgs
         fill_conf_file  (bool): not default ypbind config file
         fill_ypserv_dir  (bool): not default ypserv dir content
     """
@@ -64,7 +64,7 @@ def test_actor_nisscan(monkeypatch, pkgs_installed, fill_conf_file, fill_ypserv_
         monkeypatch.setattr(nisscan.os.path, 'isfile', lambda dummy: mocked_isfile)
         monkeypatch.setattr(nisscan.os.path, 'isdir', lambda dummy: mocked_isdir)
 
-        # Executed actor feeded with mocked functions
+        # Executed actor fed with mocked functions
         nisscan.NISScanLibrary().process()
 
     # Filter NIS pkgs

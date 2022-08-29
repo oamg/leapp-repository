@@ -47,7 +47,7 @@ export NSPAWN_OPTS="$NSPAWN_OPTS --keep-unit --register=no --timezone=off --reso
 
 
 #
-# Temp for collecting and preparing tarbal
+# Temp for collecting and preparing tarball
 #
 LEAPP_DEBUG_TMP="/tmp/leapp-debug-root"
 
@@ -135,7 +135,7 @@ ibdmp() {
     #   3. decorate each chunk with prefix `N:` where
     #      N is number of given chunk.
     #
-    #   4. Finally print all lines (pre-pended "header"
+    #   4. Finally print all lines (prepended "header"
     #      line and all chunks) several times, where
     #      every iteration should be prefixed by
     #      `_ibdmp:I/TTL|` and suffixed by `|`.

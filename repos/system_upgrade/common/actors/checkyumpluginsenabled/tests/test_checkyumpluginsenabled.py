@@ -47,7 +47,7 @@ def test_report_when_missing_required_plugins(monkeypatch):
 
     check_required_yum_plugins_enabled(yum_config)
 
-    assert actor_reports.called, 'Report wasn\'t created when required a plugin is missing.'
+    assert actor_reports.called, "Report wasn't created when required a plugin is missing."
 
     fail_description = 'The missing required plugin is not mentioned in the report.'
     assert 'subscription-manager' in actor_reports.report_fields['summary'], fail_description

@@ -78,7 +78,7 @@ def _install_initram_deps(packages):
         used_repos=used_repos)
 
 
-# duplicate of _copy_files fro userspacegen.py
+# duplicate of _copy_files from userspacegen.py
 def _copy_files(context, files):
     """
     Copy the files/dirs from the host to the `context` userspace

@@ -41,7 +41,7 @@ def _set_crypto_policy(context, current_policy):
 def process():
     target_userspace_info = next(api.consume(TargetUserSpaceInfo), None)
     if not target_userspace_info:
-        # nothing to do - an error occured in previous actors and upgrade will be inhibited
+        # nothing to do - an error occurred in previous actors and upgrade will be inhibited
         api.current_logger().error('Missing the TargetUserSpaceInfo message. Probably it has not been created before.')
         return
     cpi = next(api.consume(CryptoPolicyInfo), None)

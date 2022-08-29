@@ -60,7 +60,7 @@ endif
 # someone will call copr_build without additional parameters
 MASTER_BRANCH=master
 
-# In case the PR or MR is defined or in case build is not comming from the
+# In case the PR or MR is defined or in case build is not coming from the
 # MATER_BRANCH branch, N_REL=0; (so build is not update of the approved
 # upstream solution). For upstream builds N_REL=100;
 N_REL=`_NR=$${PR:+0}; if test "$${_NR:-100}" == "100"; then _NR=$${MR:+0}; fi; git rev-parse --abbrev-ref HEAD | grep -qE "^($(MASTER_BRANCH)|stable)$$" || _NR=0;  echo $${_NR:-100}`

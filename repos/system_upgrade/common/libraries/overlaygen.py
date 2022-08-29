@@ -55,7 +55,7 @@ def _prepare_required_mounts(scratch_dir, mounts_dir, mount_points, xfs_info):
     space_needed = _overlay_disk_size() * len(xfs_info.mountpoints_without_ftype)
     disk_images_directory = os.path.join(scratch_dir, 'diskimages')
 
-    # Ensure we cleanup old disk images before we check for space contraints.
+    # Ensure we cleanup old disk images before we check for space constraints.
     run(['rm', '-rf', disk_images_directory])
     _create_diskimages_dir(scratch_dir, disk_images_directory)
     _ensure_enough_diskimage_space(space_needed, scratch_dir)

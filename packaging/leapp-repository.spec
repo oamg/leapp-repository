@@ -70,7 +70,7 @@ Requires:       python2-leapp
 Obsoletes:      leapp-repository-data <= 0.6.1
 Provides:       leapp-repository-data <= 0.6.1
 
-# Former leapp subpackage that is part of the sos package since HEL 7.8
+# Former leapp subpackage that is part of the sos package since RHEL 7.8
 Obsoletes:      leapp-repository-sos-plugin <= 0.9.0
 
 # Set the conflict to be sure this RPM is not upgraded automatically to
@@ -90,7 +90,7 @@ Conflicts:      leapp-upgrade-el7toel8
 
 %endif
 
-# IMPORTANT: everytime the requirements are changed, increment number by one
+# IMPORTANT: every time the requirements are changed, increment number by one
 # - same for Provides in deps subpackage
 Requires:       leapp-repository-dependencies = %{leapp_repo_deps}
 
@@ -124,7 +124,7 @@ Leapp repositories for the in-place upgrade to the next major version
 of the Red Hat Enterprise Linux system.
 
 
-# This metapackage should contain all RPM dependencies exluding deps on *leapp*
+# This metapackage should contain all RPM dependencies excluding deps on *leapp*
 # RPMs. This metapackage will be automatically replaced during the upgrade
 # to satisfy dependencies with RPMs from target system.
 %package -n %{lpr_name}-deps
@@ -133,7 +133,7 @@ Summary:    Meta-package with system dependencies of %{lpr_name} package
 # The package has been renamed, so let's obsoletes the old one
 Obsoletes:      leapp-repository-deps < 0.14.0-%{release}
 
-# IMPORTANT: everytime the requirements are changed, increment number by one
+# IMPORTANT: every time the requirements are changed, increment number by one
 # - same for Requires in main package
 Provides:  leapp-repository-dependencies = %{leapp_repo_deps}
 ##################################################

@@ -7,7 +7,7 @@ from leapp.tags import IPUWorkflowTag, PreparationPhaseTag
 
 class BindUpdate(Actor):
     """
-    Actor parsing facts found in configuration and modifing configuration.
+    Actor parsing facts found in configuration and modifying configuration.
     """
 
     name = 'bind_update'

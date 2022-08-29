@@ -100,7 +100,7 @@ def process():
 
     api.produce(RenamedInterfaces(renamed=renamed_interfaces))
     api.produce(InitrdIncludes(files=initrd_files))
-    # TODO: cover actor by tests in future. I am skipping writting of tests
+    # TODO: cover actor by tests in future. I am skipping writing of tests
     # now as some refactoring and bugfixing related to this actor
     # is planned already.
     api.produce(TargetInitramfsTasks(include_files=initrd_files))

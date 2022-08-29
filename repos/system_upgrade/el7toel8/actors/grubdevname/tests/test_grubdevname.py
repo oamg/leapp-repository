@@ -20,7 +20,7 @@ CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def raise_call_error(args=None):
     raise CalledProcessError(
-        message='A Leapp Command Error occured.',
+        message='A Leapp Command Error occurred.',
         command=args,
         result={'signal': None, 'exit_code': 1, 'pid': 0, 'stdout': 'fake', 'stderr': 'fake'}
     )

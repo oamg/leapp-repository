@@ -6,7 +6,7 @@ from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 class MultipathConfRead(Actor):
     """
-    Read multipath configuration files and extract the necessary informaton
+    Read multipath configuration files and extract the necessary information
 
     Related files:
       - /etc/multipath.conf

@@ -50,7 +50,7 @@ class IPUWorkflow(Workflow):
         Get information about target system. Analogy of FactsCollectionPhase for target system.
 
         Here we can collect information what repositories are available on target system,
-        what is expected calculation of target transaction (what will be instaled, removed, ...
+        what is expected calculation of target transaction (what will be installed, removed, ...
         """
 
         name = 'TargetTransactionFactsCollection'
@@ -176,7 +176,7 @@ class IPUWorkflow(Workflow):
 
     class ApplicationsPhase(Phase):
         """
-        Perform the neccessary steps to finish upgrade of applications provided by Red Hat.
+        Perform the necessary steps to finish upgrade of applications provided by Red Hat.
 
         This may include moving/renaming of configuration files, modifying configuration of applications to be able
         to run correctly and with as similar behaviour to the original as possible.

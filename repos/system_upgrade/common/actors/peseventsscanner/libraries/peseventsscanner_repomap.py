@@ -155,7 +155,7 @@ class RepoMapDataHandler(object):
     def get_source_pesid_repos(self, pesid):
         """
         Return the list of PESIDRepositoryEntry objects for a specified PES ID
-        mathing the source OS major version.
+        matching the source OS major version.
 
         :param pesid: The PES ID for which to retrieve PESIDRepositoryEntries.
         :type pesid: str
@@ -168,7 +168,7 @@ class RepoMapDataHandler(object):
     def get_target_pesid_repos(self, pesid):
         """
         Return the list of PESIDRepositoryEntry objects for a specified PES ID
-        mathing the target OS major version.
+        matching the target OS major version.
 
         :param pesid: The PES ID for which to retrieve PESIDRepositoryEntries.
         :type pesid: str

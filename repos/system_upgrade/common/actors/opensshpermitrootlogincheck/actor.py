@@ -97,14 +97,14 @@ class OpenSshPermitRootLoginCheck(Actor):
                     'OpenSSH is configured to deny root logins in match '
                     'blocks, but not explicitly enabled in global or '
                     '"Match all" context. This update changes the '
-                    'default to disable root logins using paswords '
-                    'so your server migth get inaccessible.'
+                    'default to disable root logins using passwords '
+                    'so your server might get inaccessible.'
                 ),
                 reporting.Severity(reporting.Severity.HIGH),
                 reporting.Groups(COMMON_REPORT_TAGS),
                 reporting.Remediation(
                     hint='Consider using different user for administrative '
-                         'logins or make sure your configration file '
+                         'logins or make sure your configuration file '
                          'contains the line "PermitRootLogin yes" '
                          'in global context if desired.'
                 ),
