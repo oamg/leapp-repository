@@ -14,6 +14,13 @@ def is_zone_in_use(conf):
     return False
 
 
+def is_zone_in_use_tuple(conf):
+    conf_dict = {'interfaces': conf[10],
+                 'sources': conf[11]}
+
+    return is_zone_in_use(conf_dict)
+
+
 def is_policy_in_use(conf, used_zones):
     # A policy is in use if both ingress_zones and egress_zones contain at
     # least one of following: an active zone, 'ANY', 'HOST'.
@@ -49,6 +56,18 @@ def get_used_services(conf, isZone):
     return used_services
 
 
+def get_used_services_tuple(conf, isZone):
+    if not isZone:
+        return set()
+
+    conf_dict = {'services': conf[5],
+                 'interfaces': conf[10],
+                 'sources': conf[11],
+                 'rules_str': conf[12]}
+
+    return get_used_services(conf_dict, isZone)
+
+
 def read_config():
     try:
         fw = Firewall(offline=True)
@@ -65,12 +84,12 @@ def read_config():
     used_zones = set([fw.get_default_zone()])
     for zone in fw.config.get_zones():
         obj = fw.config.get_zone(zone)
-        conf = fw.config.get_zone_config_dict(obj)
-        if is_zone_in_use(conf):
+        conf = fw.config.get_zone_config(obj)
+        if is_zone_in_use_tuple(conf):
             used_zones.add(zone)
 
     used_policies = []
-    for policy in fw.config.get_policy_objects():
+    for policy in fw.config.get_policy_objects() if hasattr(fw.config, "get_policy_objects") else []:
         obj = fw.config.get_policy_object(policy)
         conf = fw.config.get_policy_object_config_dict(obj)
         if is_policy_in_use(conf, used_zones):
@@ -79,9 +98,9 @@ def read_config():
     used_services = set()
     for zone in fw.config.get_zones():
         obj = fw.config.get_zone(zone)
-        conf = fw.config.get_zone_config_dict(obj)
-        used_services.update(get_used_services(conf, True))
-    for policy in fw.config.get_policy_objects():
+        conf = fw.config.get_zone_config(obj)
+        used_services.update(get_used_services_tuple(conf, True))
+    for policy in fw.config.get_policy_objects() if hasattr(fw.config, "get_policy_objects") else []:
         obj = fw.config.get_policy_object(policy)
         conf = fw.config.get_policy_object_config_dict(obj)
         used_services.update(get_used_services(conf, False))
