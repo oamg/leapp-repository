@@ -1,7 +1,9 @@
 from leapp.libraries.actor.private_firewalldcollectusedobjectnames import (
     get_used_services,
+    get_used_services_tuple,
     is_policy_in_use,
-    is_zone_in_use
+    is_zone_in_use,
+    is_zone_in_use_tuple
 )
 
 
@@ -20,6 +22,35 @@ def test_is_zone_in_use():
     assert is_zone_in_use(conf)
 
 
+def test_is_zone_in_use_tuple():
+    conf = (None, None, None, None, None,
+            ['tftp-client'],  # conf[5], services
+            None, None, None, None,
+            ['dummy0'],  # conf[10], interfaces
+            [],  # conf[11], sources
+            [],  # conf[12], rules_str
+            None, None, None)
+    assert is_zone_in_use_tuple(conf)
+
+    conf = (None, None, None, None, None,
+            ['tftp-client'],  # conf[5], services
+            None, None, None, None,
+            [],  # conf[10], interfaces
+            ['10.1.2.0/24'],  # conf[11], sources
+            [],  # conf[12], rules_str
+            None, None, None)
+    assert is_zone_in_use_tuple(conf)
+
+    conf = (None, None, None, None, None,
+            ['tftp-client'],  # conf[5], services
+            None, None, None, None,
+            ['dummy0'],  # conf[10], interfaces
+            ['fd00::/8'],  # conf[11], sources
+            [],  # conf[12], rules_str
+            None, None, None)
+    assert is_zone_in_use_tuple(conf)
+
+
 def test_is_zone_in_use_negative():
     conf = {'interfaces': [],
             'services': ['tftp-client']}
@@ -31,6 +62,17 @@ def test_is_zone_in_use_negative():
 
     conf = {'services': ['tftp-client']}
     assert not is_zone_in_use(conf)
+
+
+def test_is_zone_in_use_tuple_negative():
+    conf = (None, None, None, None, None,
+            ['tftp-client'],  # conf[5], services
+            None, None, None, None,
+            [],  # conf[10], interfaces
+            [],  # conf[11], sources
+            [],  # conf[12], rules_str
+            None, None, None)
+    assert not is_zone_in_use_tuple(conf)
 
 
 def test_is_policy_in_use():
@@ -88,6 +130,35 @@ def test_get_used_services_zone():
     assert 'tftp-client' in get_used_services(conf, True)
 
 
+def test_get_used_services_tuple_zone():
+    conf = (None, None, None, None, None,
+            ['tftp-client'],  # conf[5], services
+            None, None, None, None,
+            ['dummy0'],  # conf[10], interfaces
+            [],  # conf[11], sources
+            [],  # conf[12], rules_str
+            None, None, None)
+    assert 'tftp-client' in get_used_services_tuple(conf, True)
+
+    conf = (None, None, None, None, None,
+            [],  # conf[5], services
+            None, None, None, None,
+            [],  # conf[10], interfaces
+            ['10.1.2.0/24'],  # conf[11], sources
+            ['rule family="ipv4" source address="10.1.1.0/24" service name="tftp-client" reject'],
+            None, None, None)
+    assert 'tftp-client' in get_used_services_tuple(conf, True)
+
+    conf = (None, None, None, None, None,
+            [],  # conf[5], services
+            None, None, None, None,
+            ['dummy0'],  # conf[10], interfaces
+            ['fd00::/8'],  # conf[11], sources
+            ['rule service name="ssh" accept', 'rule service name="tftp-client" accept'],  # conf[12], rules_str
+            None, None, None)
+    assert 'tftp-client' in get_used_services_tuple(conf, True)
+
+
 def test_get_used_services_zone_negative():
     conf = {'interfaces': ['dummy0'],
             'services': ['https']}
@@ -103,6 +174,38 @@ def test_get_used_services_zone_negative():
             'rules_str': ['rule service name="ssh" accept',
                           'rule service name="http" accept']}
     assert 'tftp-client' not in get_used_services(conf, True)
+
+
+def test_get_used_services_tuple_zone_negative():
+    conf = (None, None, None, None, None,
+            ['https'],  # conf[5], services
+            None, None, None, None,
+            ['dummy0'],  # conf[10], interfaces
+            [],  # conf[11], sources
+            [],  # conf[12], rules_str
+            None, None, None)
+    assert 'tftp-client' not in get_used_services_tuple(conf, True)
+
+    conf = {'sources': ['10.1.2.0/24'],
+            'rules_str': ['rule family="ipv4" source address="10.1.1.0/24" service name="ssh" reject'],
+            'services': ['https']}
+    conf = (None, None, None, None, None,
+            ['https'],  # conf[5], services
+            None, None, None, None,
+            [],  # conf[10], interfaces
+            ['10.1.2.0/24'],  # conf[11], sources
+            ['rule family="ipv4" source address="10.1.1.0/24" service name="ssh" reject'],  # conf[12], rules_str
+            None, None, None)
+    assert 'tftp-client' not in get_used_services_tuple(conf, True)
+
+    conf = (None, None, None, None, None,
+            [],  # conf[5], services
+            None, None, None, None,
+            ['dummy0'],  # conf[10], interfaces
+            ['fd00::/8'],  # conf[11], sources
+            ['rule service name="ssh" accept', 'rule service name="http" accept'],  # conf[12], rules_str
+            None, None, None)
+    assert 'tftp-client' not in get_used_services_tuple(conf, True)
 
 
 def test_get_used_services_policy():
