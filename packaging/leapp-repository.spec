@@ -53,6 +53,10 @@ Source1:        deps-pkgs.tar.gz
 # NOTE: Our packages must be noarch. Do no drop this in any way.
 BuildArch:      noarch
 
+### PATCHES HERE
+# Patch0001:    filename.patch
+
+
 %description
 %{summary}
 
@@ -181,6 +185,9 @@ Requires:   dracut
 %prep
 %setup -n %{name}-%{version}
 %setup -q  -n %{name}-%{version} -D -T -a 1
+
+# APPLY PATCHES HERE
+# %%patch0001 -p1
 
 
 %build
