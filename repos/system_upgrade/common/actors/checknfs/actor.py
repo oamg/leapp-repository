@@ -1,5 +1,6 @@
 from leapp import reporting
 from leapp.actors import Actor
+from leapp.libraries.common.config import get_env
 from leapp.models import StorageInfo
 from leapp.reporting import create_report, Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
@@ -18,6 +19,9 @@ class CheckNfs(Actor):
     tags = (ChecksPhaseTag, IPUWorkflowTag,)
 
     def process(self):
+        # if network in initramfs is enabled NFS inhibitors are redundant
+        if get_env('LEAPP_INITRAM_NETWORK', None):
+            return
         details = "NFS is currently not supported by the inplace upgrade.\n" \
                   "We have found NFS usage at the following locations:\n"
 
