@@ -233,7 +233,7 @@ do_upgrade() {
         # on aarch64 systems during el8 to el9 upgrades the swap is broken due to change in page size (64K to 4k)
         # adjust the page size before booting into the new system, as it is possible the swap is necessary for to boot
         # `arch` command is not available in the dracut shell, using uname -m instead
-        [ "$(uname -m)" = "aarch64" -a "$RHEL_OS_MAJOR_RELEASE" = "9" ] && {
+        [ "$(uname -m)" = "aarch64" ] && [ "$RHEL_OS_MAJOR_RELEASE" = "9" ] && {
             cp -aS ".leapp_bp" $NEWROOT/etc/fstab /etc/fstab
             # swapon internally uses mkswap and both swapon and mkswap aren't available in dracut shell
             # as a workaround we can use the one from $NEWROOT in $NEWROOT/usr/sbin
