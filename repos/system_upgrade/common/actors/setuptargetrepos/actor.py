@@ -2,6 +2,7 @@ from leapp.actors import Actor
 from leapp.libraries.actor import setuptargetrepos
 from leapp.models import (
     CustomTargetRepository,
+    InstalledRPM,
     RepositoriesBlacklisted,
     RepositoriesFacts,
     RepositoriesMapping,
@@ -25,6 +26,7 @@ class SetupTargetRepos(Actor):
 
     name = 'setuptargetrepos'
     consumes = (CustomTargetRepository,
+                InstalledRPM,
                 RepositoriesSetupTasks,
                 RepositoriesMapping,
                 RepositoriesFacts,
