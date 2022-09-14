@@ -44,7 +44,7 @@ class ntp2chrony_mocked(object):
     def __call__(self, *args):
         self.called += 1
         self.args = args
-        return self.ignored_lines * ['a line']
+        return True, self.ignored_lines * ['a line']
 
 
 def test_migration(monkeypatch):

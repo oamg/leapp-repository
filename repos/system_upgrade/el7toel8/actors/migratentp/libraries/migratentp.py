@@ -2,7 +2,6 @@ import base64
 import io
 import tarfile
 
-from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.stdlib import api, CalledProcessError, run
 
 
@@ -17,7 +16,7 @@ def enable_service(name):
     try:
         run(['systemctl', 'enable', '{}.service'.format(name)])
     except CalledProcessError:
-        raise StopActorExecutionError('Could not enable {} service'.format(name))
+        api.current_logger().error('Could not enable {} service'.format(name))
 
 
 def write_file(name, content):
@@ -34,11 +33,12 @@ def ntp2chrony(root, ntp_conf, step_tickers):
         ntp_configuration.write_chrony_configuration('/etc/chrony.conf', '/etc/chrony.keys',
                                                      False, True)
     except OSError as e:
-        raise StopActorExecutionError('ntp2chrony failed: {}'.format(e))
+        api.current_logger().error('ntp2chrony failed: {}'.format(e))
+        return False, set()
 
     # Return ignored lines from ntp.conf, except 'disable monitor' from
     # the default ntp.conf
-    return set(ntp_configuration.ignored_lines) - set(['disable monitor'])
+    return True, set(ntp_configuration.ignored_lines) - set(['disable monitor'])
 
 
 def migrate_ntp(migrate_services, config_tgz64):
@@ -61,7 +61,8 @@ def migrate_ntp(migrate_services, config_tgz64):
     migrate_configs = []
     for service in migrate_services:
         if service not in service_map:
-            raise StopActorExecutionError('Unknown service {}'.format(service))
+            api.current_logger().error('Unknown service {}'.format(service))
+            continue
         enable_service(service_map[service][0])
         if service_map[service][1]:
             migrate_configs.append(service)
@@ -77,9 +78,10 @@ def migrate_ntp(migrate_services, config_tgz64):
 
     step_tickers = '/etc/ntp/step-tickers' if 'ntpdate' in migrate_configs else ''
 
-    ignored_lines = ntp2chrony('/', ntp_conf, step_tickers)
+    conf_migrated, ignored_lines = ntp2chrony('/', ntp_conf, step_tickers)
 
-    api.current_logger().info('Configuration files migrated to chrony: {}'.format(' '.join(migrate_configs)))
-    if ignored_lines:
-        api.current_logger().warning('Some lines in /etc/ntp.conf were ignored in migration'
-                                     ' (check /etc/chrony.conf)')
+    if conf_migrated:
+        api.current_logger().info('Configuration files migrated to chrony: {}'.format(' '.join(migrate_configs)))
+        if ignored_lines:
+            api.current_logger().warning('Some lines in /etc/ntp.conf were ignored in migration'
+                                         ' (check /etc/chrony.conf)')
