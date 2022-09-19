@@ -33,7 +33,7 @@ def ntp2chrony(root, ntp_conf, step_tickers):
         ntp_configuration = ntp2chrony.NtpConfiguration(root, ntp_conf, step_tickers)
         ntp_configuration.write_chrony_configuration('/etc/chrony.conf', '/etc/chrony.keys',
                                                      False, True)
-    except Exception as e:
+    except OSError as e:
         raise StopActorExecutionError('ntp2chrony failed: {}'.format(e))
 
     # Return ignored lines from ntp.conf, except 'disable monitor' from
