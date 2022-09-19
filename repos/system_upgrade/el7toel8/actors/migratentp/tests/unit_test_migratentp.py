@@ -55,7 +55,6 @@ def test_migration(monkeypatch):
                 (['ntp-wait'], ['chrony-wait'], 0),
                 (['ntpd', 'ntpdate', 'ntp-wait'], ['chronyd', 'chronyd', 'chrony-wait'], 1),
             ]:
-        monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
         monkeypatch.setattr(migratentp, 'extract_tgz64', extract_tgz64_mocked())
         monkeypatch.setattr(migratentp, 'enable_service', enable_service_mocked())
         monkeypatch.setattr(migratentp, 'write_file', write_file_mocked())
@@ -64,14 +63,6 @@ def test_migration(monkeypatch):
         migratentp.migrate_ntp(ntp_services, 'abcdef')
 
         if ntp_services:
-            assert reporting.create_report.called == 1
-            if ignored_lines > 0:
-                assert 'configuration partially migrated to chrony' in \
-                        reporting.create_report.report_fields['title']
-            else:
-                assert 'configuration migrated to chrony' in \
-                        reporting.create_report.report_fields['title']
-
             assert migratentp.extract_tgz64.called == 1
             assert migratentp.extract_tgz64.s == 'abcdef'
             assert migratentp.enable_service.called == len(chrony_services)
@@ -86,7 +77,6 @@ def test_migration(monkeypatch):
                     '/etc/ntp.conf' if 'ntpd' in ntp_services else '/etc/ntp.conf.nosources',
                     '/etc/ntp/step-tickers' if 'ntpdate' in ntp_services else '')
         else:
-            assert reporting.create_report.called == 0
             assert migratentp.extract_tgz64.called == 0
             assert migratentp.enable_service.called == 0
             assert migratentp.write_file.called == 0
