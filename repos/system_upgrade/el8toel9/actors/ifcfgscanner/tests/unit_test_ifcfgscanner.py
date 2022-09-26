@@ -55,8 +55,8 @@ def test_ifcfg1(monkeypatch):
         TYPE=Wireless  # Some comment
         # Another comment
         ESSID=wep1
-        NAME=wep1
-        MODE=Managed
+        NAME="wep1"
+        MODE='Managed'   # comment
         WEP_KEY_FLAGS=ask
         SECURITYMODE=open
         DEFAULTKEY=1
@@ -81,6 +81,10 @@ def test_ifcfg1(monkeypatch):
         assert ifcfg.properties[0].value == "Wireless"
         assert ifcfg.properties[1].name == "ESSID"
         assert ifcfg.properties[1].value == "wep1"
+        assert ifcfg.properties[2].name == "NAME"
+        assert ifcfg.properties[2].value == "wep1"
+        assert ifcfg.properties[3].name == "MODE"
+        assert ifcfg.properties[3].value == "Managed"
 
 
 def test_ifcfg2(monkeypatch):
