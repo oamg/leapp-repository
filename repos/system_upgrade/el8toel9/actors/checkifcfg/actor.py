@@ -1,7 +1,7 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import checkifcfg_ifcfg as ifcfg
-from leapp.models import InstalledRPM, Report, RpmTransactionTasks
-from leapp.tags import FactsPhaseTag, IPUWorkflowTag
+from leapp.models import IfCfg, InstalledRPM, Report, RpmTransactionTasks
+from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
 class CheckIfcfg(Actor):
@@ -16,9 +16,9 @@ class CheckIfcfg(Actor):
     """
 
     name = "check_ifcfg"
-    consumes = (InstalledRPM,)
+    consumes = (IfCfg, InstalledRPM,)
     produces = (Report, RpmTransactionTasks,)
-    tags = (IPUWorkflowTag, FactsPhaseTag,)
+    tags = (ChecksPhaseTag, IPUWorkflowTag,)
 
     def process(self):
         ifcfg.process()
