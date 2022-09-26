@@ -28,6 +28,12 @@ def process_ifcfg(filename, secrets=False):
             # simple assignments. Play it safe.
             continue
 
+        # Deal with simple quoting. We don't expand anything, nor do
+        # multiline strings or anything of that sort.
+        if value is not None and len(value) > 1 and value[0] == value[-1]:
+            if value.startswith('"') or value.startswith("'"):
+                value = value[1:-1]
+
         properties.append(IfCfgProperty(name=name, value=value))
     return properties
 
