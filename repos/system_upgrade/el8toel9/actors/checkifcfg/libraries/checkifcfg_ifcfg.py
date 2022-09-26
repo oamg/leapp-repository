@@ -3,13 +3,12 @@ import os
 from leapp import reporting
 from leapp.libraries.common.rpms import has_package
 from leapp.libraries.stdlib import api
-from leapp.models import InstalledRPM, RpmTransactionTasks
+from leapp.models import IfCfg, InstalledRPM, RpmTransactionTasks
 
 FMT_LIST_SEPARATOR = '\n    - '
 
 
 def process():
-    SYSCONFIG_DIR = '/etc/sysconfig/network-scripts'
     TRUE_VALUES = ['yes', 'true', '1']
     TYPE_MAP = {
         'ethernet':     'NetworkManager',
@@ -31,48 +30,33 @@ def process():
         # we don't do anything.
         return
 
-    for f in os.listdir(SYSCONFIG_DIR):
+    for ifcfg in api.consume(IfCfg):
         bad_type = False
         got_type = None
         nm_controlled = True
 
-        path = os.path.join(SYSCONFIG_DIR, f)
-
-        if not os.path.isfile(path):
-            continue
-
-        if f.startswith('rule-') or f.startswith('rule6-'):
+        if ifcfg.rules is not None or ifcfg.rules6 is not None:
             if 'NetworkManager-dispatcher-routing-rules' not in rpms_to_install:
                 rpms_to_install.append('NetworkManager-dispatcher-routing-rules')
             continue
 
-        if not f.startswith('ifcfg-'):
+        if os.path.basename(ifcfg.filename) == 'ifcfg-lo':
             continue
 
-        if f == 'ifcfg-lo':
-            continue
-
-        for line in open(path).readlines():
-            try:
-                (key, value) = line.split('#')[0].strip().split('=')
-            except ValueError:
-                # We're not interested in lines that are not
-                # simple assignments. Play it safe.
-                continue
-
-            if key in ('TYPE', 'DEVICETYPE'):
+        for prop in ifcfg.properties:
+            if prop.name in ('TYPE', 'DEVICETYPE'):
                 if got_type is None:
-                    got_type = value.lower()
-                elif got_type != value.lower():
+                    got_type = prop.value.lower()
+                elif got_type != prop.value.lower():
                     bad_type = True
 
-            if key == 'BONDING_MASTER':
+            if prop.name == 'BONDING_MASTER':
                 if got_type is None:
                     got_type = 'bond'
                 elif got_type != 'bond':
                     bad_type = True
 
-            if key == 'NM_CONTROLLED' and value.lower() not in TRUE_VALUES:
+            if prop.name == 'NM_CONTROLLED' and prop.value.lower() not in TRUE_VALUES:
                 nm_controlled = False
 
         if got_type in TYPE_MAP:
@@ -84,9 +68,9 @@ def process():
         # Don't bother reporting the file for NM_CONTROLLED=no
         # if its type is not supportable with NetworkManager anyway
         if bad_type is True:
-            bad_type_files.append(path)
+            bad_type_files.append(ifcfg.filename)
         elif nm_controlled is False:
-            not_controlled_files.append(path)
+            not_controlled_files.append(ifcfg.filename)
 
     if bad_type_files:
         title = 'Network configuration for unsupported device types detected'
