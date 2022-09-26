@@ -1,11 +1,6 @@
-import errno
-import os
-
 from leapp import reporting
-from leapp.libraries.common import utils
-
-SYSCONFIG_DIR = '/etc/sysconfig/network-scripts'
-NM_CONN_DIR = '/etc/NetworkManager/system-connections'
+from leapp.libraries.stdlib import api
+from leapp.models import IfCfg, NetworkManagerConnection
 
 FMT_LIST_SEPARATOR = '\n    - '
 
@@ -13,56 +8,36 @@ FMT_LIST_SEPARATOR = '\n    - '
 def process():
     wep_files = []
 
-    # Scan NetworkManager native keyfiles
-    try:
-        keyfiles = os.listdir(NM_CONN_DIR)
-    except OSError as e:
-        if e.errno != errno.ENOENT:
-            raise
-        keyfiles = []
-
-    for f in keyfiles:
-        path = os.path.join(NM_CONN_DIR, f)
-
-        cp = utils.parse_config(open(path, mode='r').read())
-
-        if not cp.has_section('wifi-security'):
-            continue
-
-        key_mgmt = cp.get('wifi-security', 'key-mgmt')
-        if key_mgmt in ('none', 'ieee8021x'):
-            wep_files.append(path)
-
-    # Scan legacy ifcfg files & secrets
-    try:
-        ifcfgs = os.listdir(SYSCONFIG_DIR)
-    except OSError as e:
-        if e.errno != errno.ENOENT:
-            raise
-        ifcfgs = []
-
-    for f in ifcfgs:
-        path = os.path.join(SYSCONFIG_DIR, f)
-
-        if not f.startswith('ifcfg-') and not f.startswith('keys-'):
-            continue
-
-        for line in open(path).readlines():
-            try:
-                (key, value) = line.split('#')[0].strip().split('=')
-            except ValueError:
-                # We're not interested in lines that are not
-                # simple assignments. Play it safe.
+    # Scan NetworkManager native keyfile connections
+    for nmconn in api.consume(NetworkManagerConnection):
+        for setting in nmconn.settings:
+            if not setting.name == 'wifi-security':
                 continue
 
+            for prop in setting.properties:
+                if not prop.name == 'key-mgmt':
+                    continue
+                if prop.value in ('none', 'ieee8021x'):
+                    wep_files.append(nmconn.filename)
+
+    # Scan legacy ifcfg files & secrets
+    for ifcfg in api.consume(IfCfg):
+        props = ifcfg.properties
+        if ifcfg.secrets is not None:
+            props = props + ifcfg.secrets
+
+        for prop in props:
+            name = prop.name
+            value = prop.value
+
             # Dynamic WEP
-            if key == 'KEY_MGMT' and value.upper() == 'IEEE8021X':
-                wep_files.append(path)
+            if name == 'KEY_MGMT' and value.upper() == 'IEEE8021X':
+                wep_files.append(ifcfg.filename)
                 continue
 
             # Static WEP, possibly with agent-owned secrets
-            if key in ('KEY_PASSPHRASE1', 'KEY1', 'WEP_KEY_FLAGS'):
-                wep_files.append(path)
+            if name in ('KEY_PASSPHRASE1', 'KEY1', 'WEP_KEY_FLAGS'):
+                wep_files.append(ifcfg.filename)
                 continue
 
     if wep_files:

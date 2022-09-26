@@ -1,7 +1,7 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import networkdeprecations
-from leapp.models import Report
-from leapp.tags import FactsPhaseTag, IPUWorkflowTag
+from leapp.models import IfCfg, NetworkManagerConnection, Report
+from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
 class CheckNetworkDeprecations(Actor):
@@ -16,8 +16,9 @@ class CheckNetworkDeprecations(Actor):
     """
 
     name = "network_deprecations"
+    consumes = (IfCfg, NetworkManagerConnection,)
     produces = (Report,)
-    tags = (IPUWorkflowTag, FactsPhaseTag,)
+    tags = (ChecksPhaseTag, IPUWorkflowTag,)
 
     def process(self):
         networkdeprecations.process()
