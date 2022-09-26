@@ -9,7 +9,7 @@
 %endif
 
 
-%define leapp_repo_deps  8
+%define leapp_repo_deps  9
 %define leapp_framework_deps 5
 
 # NOTE: the Version contains the %{rhel} macro just for the convenience to
@@ -67,6 +67,7 @@ Requires:   cpio
 
 # just to be sure that /etc/modprobe.d is present
 Requires:   kmod
+
 
 %description -n %{lrdname}
 %{summary}

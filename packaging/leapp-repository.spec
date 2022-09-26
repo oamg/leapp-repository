@@ -2,7 +2,7 @@
 %global repositorydir %{leapp_datadir}/repositories
 %global custom_repositorydir %{leapp_datadir}/custom-repositories
 
-%define leapp_repo_deps  8
+%define leapp_repo_deps  9
 
 %if 0%{?rhel} == 7
     %define leapp_python_sitelib %{python2_sitelib}
@@ -175,6 +175,11 @@ Requires:   kmod
 # since RHEL 8+ dracut does not have to be present on the system all the time
 # and missing dracut could be killing situation for us :)
 Requires:   dracut
+
+# Required to scan NetworkManagerConnection (e.g. to recognize secrets)
+# NM is requested to be used on RHEL 8+ systems
+Requires:   NetworkManager-libnm
+Requires:   python3-gobject-base
 
 %endif
 ##################################################
