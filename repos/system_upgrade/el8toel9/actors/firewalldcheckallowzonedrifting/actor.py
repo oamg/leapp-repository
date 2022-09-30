@@ -46,6 +46,6 @@ class FirewalldCheckAllowZoneDrifting(Actor):
                 title='Changes in firewalld related to Zone Drifting'),
             reporting.Remediation(
                 hint='Set AllowZoneDrifting=no in /etc/firewalld/firewalld.conf',
-                commands=[['sed -i "s/^AllowZoneDrifting=.*/AllowZoneDrifting=no/" '
+                commands=[['sed', '-i', 's/^AllowZoneDrifting=.*/AllowZoneDrifting=no/',
                            '/etc/firewalld/firewalld.conf']]),
         ])
