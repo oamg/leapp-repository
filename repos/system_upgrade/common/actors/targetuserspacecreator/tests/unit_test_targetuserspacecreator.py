@@ -5,7 +5,7 @@ import pytest
 
 from leapp import models, reporting
 from leapp.exceptions import StopActorExecution, StopActorExecutionError
-from leapp.libraries.actor import userspacegen
+from leapp.libraries.actor import repoinfo, userspacegen
 from leapp.libraries.common import overlaygen, repofileutils, rhsm
 from leapp.libraries.common.config import architecture
 from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked, produce_mocked
@@ -37,6 +37,15 @@ class MockedMountingBase(object):
 
     def call(self, *args, **kwargs):
         return {'stdout': ''}
+
+    def is_isolated(self):
+        return False
+
+    def full_path(self, path):
+        return path
+
+    def copy_to(self, src, dst):
+        pass
 
     def nspawn(self):
         return self
@@ -260,12 +269,24 @@ def test_gather_target_repositories(monkeypatch):
     assert target_repoids == ['repoidX', 'repoidY', 'repoidCustom']
 
 
+def _mocked_repo_info(rhel_repos=(), custom_repos=(), rhui_repos=()):
+    class RepositoryInformationMocked(repoinfo.RepositoryInformation):
+        def __init__(self, context, cloud_repo=None):
+            super(RepositoryInformationMocked, self).__init__(context, cloud_repo=cloud_repo)
+
+        def _load_repofiles(self, context, cloud_repo=None):
+            self.repo_type_map[repoinfo.REPO_KIND_RHSM] = set(rhel_repos)
+            self.repo_type_map[repoinfo.REPO_KIND_CUSTOM] = set(custom_repos)
+            self.repo_type_map[repoinfo.REPO_KIND_RHUI] = set(rhui_repos)
+    return RepositoryInformationMocked
+
+
 def test_gather_target_repositories_none_available(monkeypatch):
 
     mocked_produce = produce_mocked()
     monkeypatch.setattr(userspacegen.api, 'current_actor', CurrentActorMocked())
+    monkeypatch.setattr(repoinfo, 'RepositoryInformation', _mocked_repo_info())
     monkeypatch.setattr(userspacegen.api.current_actor(), 'produce', mocked_produce)
-    monkeypatch.setattr(rhsm, 'get_available_repo_ids', lambda x: [])
     monkeypatch.setattr(rhsm, 'skip_rhsm', lambda: False)
     with pytest.raises(StopActorExecution):
         userspacegen.gather_target_repositories(None, None)
@@ -283,9 +304,10 @@ def test_gather_target_repositories_rhui(monkeypatch):
     )
 
     monkeypatch.setattr(userspacegen.api, 'current_actor', CurrentActorMocked())
-    monkeypatch.setattr(userspacegen, '_get_all_available_repoids', lambda x: [])
     monkeypatch.setattr(
-        userspacegen, '_get_rh_available_repoids', lambda x, y: ['rhui-1', 'rhui-2', 'rhui-3']
+        repoinfo,
+        'RepositoryInformation',
+        _mocked_repo_info(rhui_repos=['rhui-1', 'rhui-2', 'rhui-3'])
     )
     monkeypatch.setattr(rhsm, 'skip_rhsm', lambda: True)
     monkeypatch.setattr(
@@ -311,7 +333,11 @@ def test_gather_target_repositories_required_not_available(monkeypatch):
     monkeypatch.setattr(userspacegen.api, 'current_actor', CurrentActorMocked())
     monkeypatch.setattr(userspacegen.api.current_actor(), 'produce', mocked_produce)
     # The available RHSM repos
-    monkeypatch.setattr(rhsm, 'get_available_repo_ids', lambda x: ['repoidA', 'repoidB', 'repoidC'])
+    monkeypatch.setattr(
+        repoinfo,
+        'RepositoryInformation',
+        _mocked_repo_info(custom_repos=['repoidA', 'repoidB', 'repoidC'])
+    )
     monkeypatch.setattr(rhsm, 'skip_rhsm', lambda: False)
     # The required RHEL repos based on the repo mapping and PES data + custom repos required by third party actors
     monkeypatch.setattr(userspacegen.api, 'consume', lambda x: iter([models.TargetRepositories(
@@ -362,17 +388,25 @@ def test_perform_ok(monkeypatch):
     repoids = ['repoidX', 'repoidY']
     monkeypatch.setattr(userspacegen, '_InputData', mocked_consume_data)
     monkeypatch.setattr(userspacegen, '_get_product_certificate_path', lambda: _DEFAULT_CERT_PATH)
+    monkeypatch.setattr(userspacegen.rhsm, 'skip_rhsm', lambda: True)
     monkeypatch.setattr(overlaygen, 'create_source_overlay', MockedMountingBase)
-    monkeypatch.setattr(userspacegen, '_gather_target_repositories', lambda *x: repoids)
+    monkeypatch.setattr(
+        repoinfo,
+        'RepositoryInformation',
+        _mocked_repo_info(rhel_repos=repoids)
+    )
+    monkeypatch.setattr(userspacegen.api, 'consume', lambda x: iter([models.TargetRepositories(
+        rhel_repos=[models.RHELTargetRepository(repoid=repoid) for repoid in repoids])]
+        if x == models.TargetRepositories else ()))
     monkeypatch.setattr(userspacegen, '_create_target_userspace', lambda *x: None)
     monkeypatch.setattr(userspacegen.api, 'current_actor', CurrentActorMocked())
     monkeypatch.setattr(userspacegen.api, 'produce', produce_mocked())
+    monkeypatch.setattr(userspacegen.reporting, 'produce', produce_mocked())
     monkeypatch.setattr(repofileutils, 'get_repodirs', lambda: ['/etc/yum.repos.d'])
     userspacegen.perform()
-    msg_target_repos = models.UsedTargetRepositories(
-        repos=[models.UsedTargetRepository(repoid=repo) for repo in repoids])
     assert userspacegen.api.produce.called == 3
     assert isinstance(userspacegen.api.produce.model_instances[0], models.TMPTargetRepositoriesFacts)
-    assert userspacegen.api.produce.model_instances[1] == msg_target_repos
+    reported_used_target_repositories = userspacegen.api.produce.model_instances[1]
+    assert {r.repoid for r in reported_used_target_repositories.repos} == set(repoids)
     # this one is full of constants, so it's safe to check just the instance
     assert isinstance(userspacegen.api.produce.model_instances[2], models.TargetUserSpaceInfo)

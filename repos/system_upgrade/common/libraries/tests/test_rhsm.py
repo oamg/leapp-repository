@@ -3,13 +3,11 @@ from collections import namedtuple
 
 import pytest
 
-from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import repofileutils, rhsm
-from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked, logger_mocked
+from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked
 from leapp.libraries.stdlib import api, CalledProcessError
 from leapp.models import RepositoryData, RepositoryFile
-from leapp.utils.report import is_inhibitor
 
 Repository = namedtuple('Repository', ['repoid', 'file'])
 LIST_SEPARATOR = '\n    - '
@@ -143,7 +141,6 @@ def test_get_available_repo_ids(monkeypatch, other_repofiles, rhsm_repofile):
     rhsm_repos = [repo.repoid for repo in rhsm_repofile.data] if rhsm_repofile else []
 
     monkeypatch.setattr(api, 'current_logger', logger_mocked())
-    monkeypatch.setattr(rhsm, '_inhibit_on_duplicate_repos', lambda x: None)
     monkeypatch.setattr(repofileutils, 'get_parsed_repofiles', lambda x: repos)
 
     result = rhsm.get_available_repo_ids(context_mocked)
@@ -168,37 +165,6 @@ def test_get_available_repo_ids_error():
         rhsm.get_available_repo_ids(context_mocked)
 
     assert 'Unable to use yum' in str(err)
-
-
-def test_inhibit_on_duplicate_repos(monkeypatch):
-    monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
-    monkeypatch.setattr(api, 'current_logger', logger_mocked())
-    repofiles = [
-        _gen_repofile("foo", [_gen_repo('repoX'), _gen_repo('repoY')]),
-        _gen_repofile("bar", [_gen_repo('repoX')]),
-    ]
-
-    rhsm._inhibit_on_duplicate_repos(repofiles)
-
-    dups = ['repoX']
-    assert ('The following repoids are defined multiple times:{0}{1}'
-            .format(LIST_SEPARATOR, LIST_SEPARATOR.join(dups))) in api.current_logger.warnmsg
-    assert reporting.create_report.called == 1
-    assert is_inhibitor(reporting.create_report.report_fields)
-    assert reporting.create_report.report_fields['title'] == 'A YUM/DNF repository defined multiple times'
-    summary = ('The following repositories are defined multiple times:{0}{1}'
-               .format(LIST_SEPARATOR, LIST_SEPARATOR.join(dups)))
-    assert summary in reporting.create_report.report_fields['summary']
-
-
-def test_inhibit_on_duplicate_repos_no_dups(monkeypatch):
-    monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
-    monkeypatch.setattr(api, 'current_logger', logger_mocked())
-
-    rhsm._inhibit_on_duplicate_repos([_gen_repofile("foo")])
-
-    assert not api.current_logger.warnmsg
-    assert reporting.create_report.called == 0
 
 
 def test_sku_listing(monkeypatch, actor_mocked, context_mocked):

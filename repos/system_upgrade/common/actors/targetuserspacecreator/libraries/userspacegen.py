@@ -3,7 +3,7 @@ import os
 
 from leapp import reporting
 from leapp.exceptions import StopActorExecution, StopActorExecutionError
-from leapp.libraries.actor import constants
+from leapp.libraries.actor import constants, repos
 from leapp.libraries.common import dnfplugin, mounting, overlaygen, repofileutils, rhsm, rhui, utils
 from leapp.libraries.common.config import get_env, get_product_type
 from leapp.libraries.common.config.version import get_target_major_version
@@ -18,7 +18,6 @@ from leapp.models import (
     RHUIInfo,
     StorageInfo,
     TargetOSInstallationImage,
-    TargetRepositories,
     TargetUserSpaceInfo,
     TargetUserSpacePreupgradeTasks,
     UsedTargetRepositories,
@@ -431,23 +430,19 @@ def _create_target_userspace_directories(target_userspace):
         )
 
 
-def _inhibit_on_duplicate_repos(repofiles):
+def _inhibit_on_duplicate_repos(repoinfo):
     """
     Inhibit the upgrade if any repoid is defined multiple times.
 
     When that happens, it not only shows misconfigured system, but then
     we can't get details of all the available repos as well.
     """
-    # TODO: this is is duplicate of rhsm._inhibit_on_duplicate_repos
-    # Issue: #486
-    duplicates = repofileutils.get_duplicate_repositories(repofiles).keys()
-
-    if not duplicates:
+    if not repoinfo.duplicated_repoids:
         return
     list_separator_fmt = '\n    - '
     api.current_logger().warning(
         'The following repoids are defined multiple times:{0}{1}'
-        .format(list_separator_fmt, list_separator_fmt.join(duplicates))
+        .format(list_separator_fmt, list_separator_fmt.join(repoinfo.duplicated_repoids.keys()))
     )
 
     reporting.create_report([
@@ -455,7 +450,7 @@ def _inhibit_on_duplicate_repos(repofiles):
         reporting.Summary(
             'The following repositories are defined multiple times inside the'
             ' "upgrade" container:{0}{1}'
-            .format(list_separator_fmt, list_separator_fmt.join(duplicates))
+            .format(list_separator_fmt, list_separator_fmt.join(repoinfo.duplicated_repoids.keys()))
         ),
         reporting.Severity(reporting.Severity.MEDIUM),
         reporting.Groups([reporting.Groups.REPOSITORY]),
@@ -469,22 +464,7 @@ def _inhibit_on_duplicate_repos(repofiles):
     ])
 
 
-def _get_all_available_repoids(context):
-    repofiles = repofileutils.get_parsed_repofiles(context)
-    # TODO: this is not good solution, but keep it as it is now
-    # Issue: #486
-    if rhsm.skip_rhsm():
-        # only if rhsm is skipped, the duplicate repos are not detected
-        # automatically and we need to do it extra
-        _inhibit_on_duplicate_repos(repofiles)
-    repoids = []
-    for rfile in repofiles:
-        if rfile.data:
-            repoids += [repo.repoid for repo in rfile.data]
-    return set(repoids)
-
-
-def _get_rhsm_available_repoids(context):
+def _check_available_rhel_repos(repoinfo):
     target_major_version = get_target_major_version()
     # FIXME: check that required repo IDs (baseos, appstream)
     # + or check that all required RHEL repo IDs are available.
@@ -493,8 +473,7 @@ def _get_rhsm_available_repoids(context):
     # Get the RHSM repos available in the target RHEL container
     # TODO: very similar thing should happens for all other repofiles in container
     #
-    repoids = rhsm.get_available_repo_ids(context)
-    if not repoids or len(repoids) < 2:
+    if len(repoinfo.rhel_repoids) < 2:
         reporting.create_report([
             reporting.Title('Cannot find required basic RHEL target repositories.'),
             reporting.Summary(
@@ -520,42 +499,107 @@ def _get_rhsm_available_repoids(context):
                 url='https://red.ht/preparing-for-upgrade-to-rhel8',
                 title='Preparing for the upgrade')
             ])
+        api.current_actor().show_message(
+            'Cannot find required basic RHEL target repositories. Available: {}'.format(
+                ', '.join(repoinfo.rhel_repoids)
+            ))
         raise StopActorExecution()
-    return set(repoids)
 
 
-def _get_rhui_available_repoids(context, cloud_repo):
-    repofiles = repofileutils.get_parsed_repofiles(context)
+def _check_available_rhsm_repos(repoinfo):
+    if not repoinfo.target_repoids:
+        reporting.create_report([
+            reporting.Title('There are no enabled target repositories'),
+            reporting.Summary(
+                'This can happen when a system is not correctly registered with the subscription manager'
+                ' or, when the leapp --no-rhsm option has been used, no custom repositories have been'
+                ' passed on the command line.'
+                ),
+            reporting.Groups([reporting.Groups.REPOSITORY]),
+            reporting.Groups([reporting.Groups.INHIBITOR]),
+            reporting.Severity(reporting.Severity.HIGH),
+            reporting.Remediation(hint=(
+                'Ensure the system is correctly registered with the subscription manager and that'
+                ' the current subscription is entitled to install the requested target version {version}.'
+                ' If you used the --no-rhsm option (or the LEAPP_NO_RHSM=1 environment variable is set),'
+                ' ensure the custom repository file is provided with'
+                ' properly defined repositories and that the --enablerepo option for leapp is set if the'
+                ' repositories are defined in any repofiles under the /etc/yum.repos.d/ directory.'
+                ' For more information on custom repository files, see the documentation.'
+                ' Finally, verify that the "/etc/leapp/files/repomap.json" file is up-to-date.'
+                ).format(version=api.current_actor().configuration.version.target)),
+            reporting.ExternalLink(
+                # TODO: How to handle different documentation links for each version?
+                url='https://red.ht/preparing-for-upgrade-to-rhel8',
+                title='Preparing for the upgrade'),
+            reporting.RelatedResource("file", "/etc/leapp/files/repomap.json"),
+            reporting.RelatedResource("file", "/etc/yum.repos.d/")
+            ])
+        raise StopActorExecution()
 
-    # TODO: same refactoring as Issue #486?
-    _inhibit_on_duplicate_repos(repofiles)
-    repoids = []
-    for rfile in repofiles:
-        if rfile.file == cloud_repo and rfile.data:
-            repoids = [repo.repoid for repo in rfile.data]
-            repoids.sort()
-            break
-    return set(repoids)
+
+def _check_available_custom_repos(repoinfo):
+    if repoinfo.missing_custom_repoids:
+        reporting.create_report([
+            reporting.Title('Some required custom target repositories have not been found'),
+            reporting.Summary(
+                'This can happen when a repository ID was entered incorrectly either'
+                ' while using the --enablerepo option of leapp, or in a third party actor that produces a'
+                ' CustomTargetRepositoryMessage.\n'
+                'The following repositories IDs could not be found in the target configuration:\n'
+                '- {}\n'.format('\n- '.join(repoinfo.missing_custom_repoids))
+            ),
+            reporting.Groups([reporting.Groups.REPOSITORY]),
+            reporting.Groups([reporting.Groups.INHIBITOR]),
+            reporting.Severity(reporting.Severity.HIGH),
+            reporting.ExternalLink(
+                # TODO: How to handle different documentation links for each version?
+                url='https://access.redhat.com/articles/4977891',
+                title='Customizing your Red Hat Enterprise Linux in-place upgrade'),
+            reporting.Remediation(hint=(
+                'Consider using the custom repository file, which is documented in the official'
+                ' upgrade documentation. Check whether a repository ID has been'
+                ' entered incorrectly with the --enablerepo option of leapp.'
+                ' Check the leapp logs to see the list of all available repositories.'
+            ))
+        ])
+        raise StopActorExecution()
 
 
-def _get_rh_available_repoids(context, indata):
+def target_repo_checks(repoinfo):
+    """
+    Check if the target repositories are available.
+
+    :param repoinfo: a named tuple with the following attributes:
+                     rhel_repoids: a set of RHEL repository IDs
+                     rhsm_repoids: a set of RHSM repository IDs
+                     duplicated_repoids: a dict of duplicated repoids and their repofiles
+    """
+    _inhibit_on_duplicate_repos(repoinfo)
+    _check_available_rhel_repos(repoinfo)
+    _check_available_rhsm_repos(repoinfo)
+    _check_available_custom_repos(repoinfo)
+
+    # TODO: We shall report that the RHEL repos that we deem necessary for
+    # the upgrade are not available; but currently it would just print bunch of
+    # data every time as we maps EUS and other repositories as well. But these
+    # do not have to be necessary available on the target system in the time
+    # of the upgrade. Let's skip it for now until it's clear how we will deal
+    # with it.
+
+
+def _get_cloud_repo(indata):
     """
     RH repositories are provided either by RHSM or are stored in the expected repo file provided by
     RHUI special packages (every cloud provider has itw own rpm).
     """
 
-    upg_path = rhui.get_upg_path()
-
-    rh_repoids = _get_rhsm_available_repoids(context)
-
     if indata and indata.rhui_info:
-        cloud_repo = os.path.join(
+        upg_path = rhui.get_upg_path()
+        return os.path.join(
             '/etc/yum.repos.d/', rhui.RHUI_CLOUD_MAP[upg_path][indata.rhui_info.provider]['leapp_pkg_repo']
         )
-        rhui_repoids = _get_rhui_available_repoids(context, cloud_repo)
-        rh_repoids.update(rhui_repoids)
-
-    return rh_repoids
+    return None
 
 
 def gather_target_repositories(context, indata):
@@ -577,124 +621,13 @@ def gather_target_repositories(context, indata):
     :return: List of target system repoids
     :rtype: List(string)
     """
-    rh_available_repoids = _get_rh_available_repoids(context, indata)
-    all_available_repoids = _get_all_available_repoids(context)
 
-    target_repoids = []
-    missing_custom_repoids = []
-    for target_repo in api.consume(TargetRepositories):
-        for rhel_repo in target_repo.rhel_repos:
-            if rhel_repo.repoid in rh_available_repoids:
-                target_repoids.append(rhel_repo.repoid)
-            else:
-                # TODO: We shall report that the RHEL repos that we deem necessary for
-                # the upgrade are not available; but currently it would just print bunch of
-                # data every time as we maps EUS and other repositories as well. But these
-                # do not have to be necessary available on the target system in the time
-                # of the upgrade. Let's skip it for now until it's clear how we will deal
-                # with it.
-                pass
-        for custom_repo in target_repo.custom_repos:
-            if custom_repo.repoid in all_available_repoids:
-                target_repoids.append(custom_repo.repoid)
-            else:
-                missing_custom_repoids.append(custom_repo.repoid)
-    api.current_logger().debug("Gathered target repositories: {}".format(', '.join(target_repoids)))
-    if not target_repoids:
-        reporting.create_report([
-            reporting.Title('There are no enabled target repositories'),
-            reporting.Summary(
-                'This can happen when a system is not correctly registered with the subscription manager'
-                ' or, when the leapp --no-rhsm option has been used, no custom repositories have been'
-                ' passed on the command line.'
-            ),
-            reporting.Groups([reporting.Groups.REPOSITORY]),
-            reporting.Groups([reporting.Groups.INHIBITOR]),
-            reporting.Severity(reporting.Severity.HIGH),
-            reporting.Remediation(hint=(
-                'Ensure the system is correctly registered with the subscription manager and that'
-                ' the current subscription is entitled to install the requested target version {version}.'
-                ' If you used the --no-rhsm option (or the LEAPP_NO_RHSM=1 environment variable is set),'
-                ' ensure the custom repository file is provided with'
-                ' properly defined repositories and that the --enablerepo option for leapp is set if the'
-                ' repositories are defined in any repofiles under the /etc/yum.repos.d/ directory.'
-                ' For more information on custom repository files, see the documentation.'
-                ' Finally, verify that the "/etc/leapp/files/repomap.json" file is up-to-date.'
-            ).format(version=api.current_actor().configuration.version.target)),
-            reporting.ExternalLink(
-                # TODO: How to handle different documentation links for each version?
-                url='https://red.ht/preparing-for-upgrade-to-rhel8',
-                title='Preparing for the upgrade'),
-            reporting.RelatedResource("file", "/etc/leapp/files/repomap.json"),
-            reporting.RelatedResource("file", "/etc/yum.repos.d/")
-        ])
-        raise StopActorExecution()
-    if missing_custom_repoids:
-        reporting.create_report([
-            reporting.Title('Some required custom target repositories have not been found'),
-            reporting.Summary(
-                'This can happen when a repository ID was entered incorrectly either'
-                ' while using the --enablerepo option of leapp, or in a third party actor that produces a'
-                ' CustomTargetRepositoryMessage.\n'
-                'The following repositories IDs could not be found in the target configuration:\n'
-                '- {}\n'.format('\n- '.join(missing_custom_repoids))
-            ),
-            reporting.Groups([reporting.Groups.REPOSITORY]),
-            reporting.Groups([reporting.Groups.INHIBITOR]),
-            reporting.Severity(reporting.Severity.HIGH),
-            reporting.ExternalLink(
-                # TODO: How to handle different documentation links for each version?
-                url='https://access.redhat.com/articles/4977891',
-                title='Customizing your Red Hat Enterprise Linux in-place upgrade'),
-            reporting.Remediation(hint=(
-                'Consider using the custom repository file, which is documented in the official'
-                ' upgrade documentation. Check whether a repository ID has been'
-                ' entered incorrectly with the --enablerepo option of leapp.'
-                ' Check the leapp logs to see the list of all available repositories.'
-            ))
-        ])
-        raise StopActorExecution()
-    return set(target_repoids)
+    repoinfo = repos.collect_repositories(context, cloud_repo=_get_cloud_repo(indata))
+    target_repo_checks(repoinfo)
 
+    api.current_logger().debug("Gathered target repositories: {}".format(', '.join(repoinfo.target_repoids)))
 
-def _install_custom_repofiles(context, custom_repofiles):
-    """
-    Install the required custom repository files into the container.
-
-    The repository files are copied from the host into the /etc/yum.repos.d
-    directory into the container.
-
-    :param context: the container where the repofiles should be copied
-    :type context: mounting.IsolatedActions class
-    :param custom_repofiles: list of custom repo files
-    :type custom_repofiles: List(CustomTargetRepositoryFile)
-    """
-    for rfile in custom_repofiles:
-        _dst_path = os.path.join('/etc/yum.repos.d', os.path.basename(rfile.file))
-        context.copy_to(rfile.file, _dst_path)
-
-
-def _gather_target_repositories(context, indata, prod_cert_path):
-    """
-    This is wrapper function to gather the target repoids.
-
-    Probably the function could be partially merged into gather_target_repositories
-    and this could be really just wrapper with the switch of certificates.
-    I am keeping that for now as it is as interim step.
-
-    :param context: the container where the repofiles should be copied
-    :type context: mounting.IsolatedActions class
-    :param indata: majority of input data for the actor
-    :type indata: class _InputData
-    :param prod_cert_path: path where the target product cert is stored
-    :type prod_cert_path: string
-    """
-    rhsm.set_container_mode(context)
-    rhsm.switch_certificate(context, indata.rhsm_info, prod_cert_path)
-    if indata.rhui_info:
-        rhui.copy_rhui_data(context, indata.rhui_info.provider)
-    _install_custom_repofiles(context, indata.custom_repofiles)
-    return gather_target_repositories(context, indata)
+    return repoinfo.target_repoids
 
 
 def _copy_files(context, files):
@@ -752,7 +685,8 @@ def perform():
             # Mount the ISO into the scratch container
             target_iso = next(api.consume(TargetOSInstallationImage), None)
             with mounting.mount_upgrade_iso_to_root_dir(overlay.target, target_iso):
-                target_repoids = _gather_target_repositories(context, indata, prod_cert_path)
+                repos.prepare_repository_collection(context, indata, prod_cert_path)
+                target_repoids = gather_target_repositories(context, indata)
                 _create_target_userspace(context, indata.packages, indata.files, target_repoids)
                 # TODO: this is tmp solution as proper one needs significant refactoring
                 target_repo_facts = repofileutils.get_parsed_repofiles(context)
