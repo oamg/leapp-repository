@@ -56,7 +56,7 @@ class RedHatSignedRpmScanner(Actor):
 
         upg_path = rhui.get_upg_path()
         # AWS RHUI packages do not have to be whitelisted because they are signed by RedHat
-        whitelisted_cloud_flavours = ('azure', 'azure-eus', 'azure-sap', 'google', 'google-sap')
+        whitelisted_cloud_flavours = ('azure', 'azure-eus', 'azure-sap', 'azure-sap-apps', 'google', 'google-sap')
         whitelisted_cloud_pkgs = {
             rhui.RHUI_CLOUD_MAP[upg_path].get(flavour, {}).get('src_pkg') for flavour in whitelisted_cloud_flavours
         }
