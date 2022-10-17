@@ -448,7 +448,7 @@ clean_containers:
 
 fast_lint:
 	@. $(VENVNAME)/bin/activate; \
-	FILES_TO_LINT="$$(git diff --name-only $(MASTER_BRANCH)| grep '\.py$$')"; \
+	FILES_TO_LINT="$$(git diff --name-only $(MASTER_BRANCH) --diff-filter AMR | grep '\.py$$')"; \
 	if [[ -n "$$FILES_TO_LINT" ]]; then \
 		pylint -j 0 $$FILES_TO_LINT && \
 		flake8 $$FILES_TO_LINT; \

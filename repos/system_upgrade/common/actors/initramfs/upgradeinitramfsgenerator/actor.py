@@ -4,10 +4,11 @@ from leapp.models import RequiredUpgradeInitramPackages  # deprecated
 from leapp.models import UpgradeDracutModule  # deprecated
 from leapp.models import (
     BootContent,
+    TargetOSInstallationImage,
     TargetUserSpaceInfo,
     TargetUserSpaceUpgradeTasks,
     UpgradeInitramfsTasks,
-    UsedTargetRepositories
+    UsedTargetRepositories,
 )
 from leapp.tags import InterimPreparationPhaseTag, IPUWorkflowTag
 
@@ -27,6 +28,7 @@ class UpgradeInitramfsGenerator(Actor):
     name = 'upgrade_initramfs_generator'
     consumes = (
         RequiredUpgradeInitramPackages,  # deprecated
+        TargetOSInstallationImage,
         TargetUserSpaceInfo,
         TargetUserSpaceUpgradeTasks,
         UpgradeDracutModule,  # deprecated

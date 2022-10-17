@@ -9,10 +9,11 @@ from leapp.models import RequiredUpgradeInitramPackages  # deprecated
 from leapp.models import UpgradeDracutModule  # deprecated
 from leapp.models import (
     BootContent,
+    TargetOSInstallationImage,
     TargetUserSpaceInfo,
     TargetUserSpaceUpgradeTasks,
     UpgradeInitramfsTasks,
-    UsedTargetRepositories
+    UsedTargetRepositories,
 )
 from leapp.utils.deprecation import suppress_deprecation
 
@@ -200,7 +201,8 @@ def copy_boot_files(context):
 
 def process():
     userspace_info = next(api.consume(TargetUserSpaceInfo), None)
-
+    target_iso = next(api.consume(TargetOSInstallationImage), None)
     with mounting.NspawnActions(base_dir=userspace_info.path) as context:
-        prepare_userspace_for_initram(context)
-        generate_initram_disk(context)
+        with mounting.mount_upgrade_iso_to_root_dir(userspace_info.path, target_iso):
+            prepare_userspace_for_initram(context)
+            generate_initram_disk(context)

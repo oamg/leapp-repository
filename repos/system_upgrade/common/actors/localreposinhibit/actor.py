@@ -1,6 +1,6 @@
 from leapp import reporting
 from leapp.actors import Actor
-from leapp.models import TMPTargetRepositoriesFacts, UsedTargetRepositories
+from leapp.models import TargetOSInstallationImage, TMPTargetRepositoriesFacts, UsedTargetRepositories
 from leapp.reporting import Report
 from leapp.tags import IPUWorkflowTag, TargetTransactionChecksPhaseTag
 from leapp.utils.deprecation import suppress_deprecation
@@ -13,6 +13,7 @@ class LocalReposInhibit(Actor):
     name = "local_repos_inhibit"
     consumes = (
         UsedTargetRepositories,
+        TargetOSInstallationImage,
         TMPTargetRepositoriesFacts,
     )
     produces = (Report,)
@@ -39,7 +40,8 @@ class LocalReposInhibit(Actor):
     def process(self):
         if not all(next(self.consume(model), None) for model in self.consumes):
             return
-        if self.file_baseurl_in_use():
+        target_iso = next(self.consume(TargetOSInstallationImage), None)
+        if self.file_baseurl_in_use() and not target_iso:
             warn_msg = (
                 "Local repository found (baseurl starts with file:///). "
                 "Currently leapp does not support this option."
