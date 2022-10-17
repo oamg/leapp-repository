@@ -3,6 +3,7 @@ import os
 from leapp import reporting
 from leapp.actors import Actor
 from leapp.libraries.common import rhsm, rhui
+from leapp.libraries.common.config.version import get_source_major_version
 from leapp.libraries.common.rpms import has_package
 from leapp.libraries.stdlib import api
 from leapp.models import (
@@ -105,8 +106,14 @@ class CheckRHUI(Actor):
                 if info['src_pkg'] != info['target_pkg']:
                     self.produce(RpmTransactionTasks(to_install=[info['target_pkg']]))
                     self.produce(RpmTransactionTasks(to_remove=[info['src_pkg']]))
-                    if provider in ('azure-sap', 'azure-sap-apps'):
+                    # Handle azure SAP systems that use two RHUI clients - one for RHEL content, one for SAP content
+                    if provider == 'azure-sap':
                         azure_nonsap_pkg = rhui.RHUI_CLOUD_MAP[upg_path]['azure']['src_pkg']
+                        self.produce(RpmTransactionTasks(to_remove=[azure_nonsap_pkg]))
+                    elif provider == 'azure-sap-apps':
+                        # SAP Apps systems have EUS content channel from RHEL8+
+                        src_rhel_content_type = 'azure' if get_source_major_version() == '7' else 'azure-eus'
+                        azure_nonsap_pkg = rhui.RHUI_CLOUD_MAP[upg_path][src_rhel_content_type]['src_pkg']
                         self.produce(RpmTransactionTasks(to_remove=[azure_nonsap_pkg]))
 
                 self.produce(RHUIInfo(provider=provider))
