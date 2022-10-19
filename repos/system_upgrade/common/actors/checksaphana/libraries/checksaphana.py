@@ -1,5 +1,5 @@
 from leapp import reporting
-from leapp.libraries.common.config import architecture
+from leapp.libraries.common.config import architecture, version
 from leapp.libraries.stdlib import api
 from leapp.models import SapHanaInfo
 
@@ -7,8 +7,17 @@ from leapp.models import SapHanaInfo
 # Requirement is SAP HANA 2.00 rev 54 which is the minimal supported revision for both RHEL 7.9 and RHEL 8.2
 
 SAP_HANA_MINIMAL_MAJOR_VERSION = 2
-SAP_HANA_RHEL8_REQUIRED_PATCH_LEVELS = ((5, 54, 0),)
-SAP_HANA_MINIMAL_VERSION_STRING = 'HANA 2.0 SPS05 rev 54 or later'
+# RHEL 8.2 target requirements
+SAP_HANA_RHEL82_REQUIRED_PATCH_LEVELS = ((5, 54, 0),)
+SAP_HANA_RHEL82_MINIMAL_VERSION_STRING = 'HANA 2.0 SPS05 rev 54 or later'
+
+# RHEL 8.6 target requirements
+SAP_HANA_RHEL86_REQUIRED_PATCH_LEVELS = ((5, 59, 2),)
+SAP_HANA_RHEL86_MINIMAL_VERSION_STRING = 'HANA 2.0 SPS05 rev 59.02 or later'
+
+# RHEL 9 target requirements
+SAP_HANA_RHEL9_REQUIRED_PATCH_LEVELS = ((5, 59, 4), (6, 63, 0))
+SAP_HANA_RHEL9_MINIMAL_VERSION_STRING = 'HANA 2.0 SPS05 rev 59.04 or later, or SPS06 rev 63 or later'
 
 
 def _manifest_get(manifest, key, default_value=None):
@@ -56,6 +65,16 @@ def _create_detected_instances_list(details):
     return ''
 
 
+def _min_ver_string():
+    if version.get_target_major_version() == '8':
+        ver_str = SAP_HANA_RHEL86_MINIMAL_VERSION_STRING
+        if version.matches_target_version('8.2'):
+            ver_str = SAP_HANA_RHEL82_MINIMAL_VERSION_STRING
+    else:
+        ver_str = SAP_HANA_RHEL9_MINIMAL_VERSION_STRING
+    return ver_str
+
+
 def version1_check(info):
     """ Creates a report for SAP HANA instances running on version 1 """
     found = {}
@@ -64,6 +83,7 @@ def version1_check(info):
             _add_hana_details(found, instance)
 
     if found:
+        min_ver_string = _min_ver_string()
         detected = _create_detected_instances_list(found)
         reporting.create_report([
             reporting.Title('Found SAP HANA 1 which is not supported with the target version of RHEL'),
@@ -75,7 +95,7 @@ def version1_check(info):
             reporting.Severity(reporting.Severity.HIGH),
             reporting.RemediationHint((
                 'In order to upgrade RHEL, you will have to upgrade your SAP HANA 1.0 software to '
-                '{supported}.'.format(supported=SAP_HANA_MINIMAL_VERSION_STRING))),
+                '{supported}.'.format(supported=min_ver_string))),
             reporting.ExternalLink(url='https://launchpad.support.sap.com/#/notes/2235581',
                                    title='SAP HANA: Supported Operating Systems'),
             reporting.Groups([reporting.Groups.SANITY]),
@@ -100,11 +120,11 @@ def _major_version_check(instance):
         return False
 
 
-def _sp_rev_patchlevel_check(instance):
+def _sp_rev_patchlevel_check(instance, patchlevels):
     """ Checks whether this SP, REV & PatchLevel are eligible """
     number = _manifest_get(instance.manifest, 'rev-number', '000')
     if len(number) > 2 and number.isdigit():
-        required_sp_levels = [r[0] for r in SAP_HANA_RHEL8_REQUIRED_PATCH_LEVELS]
+        required_sp_levels = [r[0] for r in patchlevels]
         lowest_sp = min(required_sp_levels)
         highest_sp = max(required_sp_levels)
         sp = int(number[0:2].lstrip('0') or '0')
@@ -114,7 +134,7 @@ def _sp_rev_patchlevel_check(instance):
         if sp > highest_sp:
             # Less than minimal required SP
             return True
-        for requirements in SAP_HANA_RHEL8_REQUIRED_PATCH_LEVELS:
+        for requirements in patchlevels:
             req_sp, req_rev, req_pl = requirements
             if sp == req_sp:
                 rev = int(number.lstrip('0') or '0')
@@ -134,7 +154,13 @@ def _sp_rev_patchlevel_check(instance):
 
 def _fullfills_hana_min_version(instance):
     """ Performs a check whether the version of SAP HANA fulfills the minimal requirements for the target RHEL """
-    return _major_version_check(instance) and _sp_rev_patchlevel_check(instance)
+    if version.get_target_major_version() == '8':
+        patchlevels = SAP_HANA_RHEL86_REQUIRED_PATCH_LEVELS
+        if version.matches_target_version('8.2'):
+            patchlevels = SAP_HANA_RHEL82_REQUIRED_PATCH_LEVELS
+    else:
+        patchlevels = SAP_HANA_RHEL9_REQUIRED_PATCH_LEVELS
+    return _major_version_check(instance) and _sp_rev_patchlevel_check(instance, patchlevels)
 
 
 def version2_check(info):
@@ -147,17 +173,18 @@ def version2_check(info):
             _add_hana_details(found, instance)
 
     if found:
+        min_ver_string = _min_ver_string()
         detected = _create_detected_instances_list(found)
         reporting.create_report([
-            reporting.Title('SAP HANA needs to be updated before upgrade'),
+            reporting.Title('SAP HANA needs to be updated before the RHEL upgrade'),
             reporting.Summary(
                 ('A newer version of SAP HANA is required in order continue with the upgrade.'
                  ' {min_hana_version} is required for the target version of RHEL.\n\n'
-                 'The following SAP HANA instances have been detected to be running with a lower version'
+                 'The following SAP HANA instances have been detected to be installed with a lower version'
                  ' than required on the target system:\n'
-                 '{detected}').format(detected=detected, min_hana_version=SAP_HANA_MINIMAL_VERSION_STRING)
+                 '{detected}').format(detected=detected, min_hana_version=min_ver_string)
             ),
-            reporting.RemediationHint('Update SAP HANA at least to {}'.format(SAP_HANA_MINIMAL_VERSION_STRING)),
+            reporting.RemediationHint('Update SAP HANA at least to {}'.format(min_ver_string)),
             reporting.ExternalLink(url='https://launchpad.support.sap.com/#/notes/2235581',
                                    title='SAP HANA: Supported Operating Systems'),
             reporting.Severity(reporting.Severity.HIGH),
@@ -170,6 +197,15 @@ def version2_check(info):
 def platform_check():
     """ Creates an inhibitor report in case the system is not running on x86_64 """
     if not architecture.matches_architecture(architecture.ARCH_X86_64):
+        if version.get_target_major_version() == '8':
+            elink = reporting.ExternalLink(
+                url='https://access.redhat.com/solutions/5533441',
+                title='How do I upgrade from Red Hat Enterprise Linux 7 to Red Hat Enterprise Linux 8 with SAP HANA')
+        else:
+            elink = reporting.ExternalLink(
+                url='https://access.redhat.com/solutions/6980855',
+                title='How to in-place upgrade SAP environments from RHEL 8 to RHEL 9')
+
         reporting.create_report([
             reporting.Title('SAP HANA upgrades are only supported on X86_64 systems'),
             reporting.Summary(
@@ -180,9 +216,7 @@ def platform_check():
             reporting.Groups([reporting.Groups.SANITY]),
             reporting.Groups([reporting.Groups.INHIBITOR]),
             reporting.Audience('sysadmin'),
-            reporting.ExternalLink(
-                url='https://access.redhat.com/solutions/5533441',
-                title='How do I upgrade from Red Hat Enterprise Linux 7 to Red Hat Enterprise Linux 8 with SAP HANA')
+            elink,
         ])
         return False
 
