@@ -2,7 +2,6 @@ import pytest
 
 from leapp.libraries.actor import checksaphana
 from leapp.libraries.common import testutils
-from leapp.libraries.stdlib import run
 from leapp.models import SapHanaManifestEntry
 
 SAPHANA1_MANIFEST = '''comptype: HDB
@@ -181,7 +180,7 @@ class MockSAPHanaVersionInstance(object):
     )
 )
 def test_checksaphana__fullfills_hana_min_version(monkeypatch, major, rev, patchlevel, result):
-    monkeypatch.setattr(checksaphana, 'SAP_HANA_RHEL8_REQUIRED_PATCH_LEVELS1', ((4, 48, 2), (5, 52, 0)))
+    monkeypatch.setattr(checksaphana, 'SAP_HANA_RHEL8_REQUIRED_PATCH_LEVELS1', ((4, 48, 2), (5, 59, 4)))
     assert checksaphana._fullfills_hana_min_version(
         MockSAPHanaVersionInstance(
             major=major,
@@ -196,7 +195,7 @@ def test_checksaphana_perform_check(monkeypatch):
     v2names = ('JKL', 'MNO', 'PQR', 'STU')
     v2lownames = ('VWX', 'YZA')
     reports = []
-    monkeypatch.setattr(checksaphana, 'SAP_HANA_RHEL8_REQUIRED_PATCH_LEVELS1', ((4, 48, 2), (5, 52, 0)))
+    monkeypatch.setattr(checksaphana, 'SAP_HANA_RHEL8_REQUIRED_PATCH_LEVELS1', ((4, 48, 2), (5, 59, 4)))
     monkeypatch.setattr(checksaphana.reporting, 'create_report', _report_collector(reports))
     monkeypatch.setattr(checksaphana.api, 'consume', _consume_mock_sap_hana_info(
         v1names=v1names, v2names=v2names, v2lownames=v2lownames, running=True))

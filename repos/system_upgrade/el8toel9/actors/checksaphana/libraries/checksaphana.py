@@ -10,7 +10,7 @@ from leapp.models import SapHanaInfo
 SAP_HANA_MINIMAL_MAJOR_VERSION = 2
 SAP_HANA_RHEL8_REQUIRED_PATCH_LEVELS1 = ((5, 59, 4),)
 SAP_HANA_RHEL8_REQUIRED_PATCH_LEVELS2 = ((6, 63, 0),)
-SAP_HANA_MINIMAL_VERSION_STRING = 'HANA 2.0 SPS05 rev 59.04 or later and SPS06 rev 63 or later'
+SAP_HANA_MINIMAL_VERSION_STRING = 'HANA 2.0 SPS05 rev 59.04 or later, or SPS06 rev 63 or later'
 
 
 def _manifest_get(manifest, key, default_value=None):
@@ -108,14 +108,10 @@ def _sp_rev_patchlevel_check(instance):
     if len(number) > 2 and number.isdigit():
         required_sp_levels = [r[0] for r in SAP_HANA_RHEL8_REQUIRED_PATCH_LEVELS1]
         lowest_sp = min(required_sp_levels)
-        highest_sp = max(required_sp_levels)
         sp = int(number[0:2].lstrip('0') or '0')
         if sp < lowest_sp:
             # Less than minimal required SP
             return False
-        #if sp > highest_sp:
-        #    # Less than minimal required SP
-        #    return True
         for requirements in SAP_HANA_RHEL8_REQUIRED_PATCH_LEVELS1:
             req_sp, req_rev, req_pl = requirements
             if sp == req_sp:
@@ -162,11 +158,11 @@ def version2_check(info):
     if found:
         detected = _create_detected_instances_list(found)
         reporting.create_report([
-            reporting.Title('SAP HANA needs to be updated before upgrade'),
+            reporting.Title('SAP HANA needs to be updated before the RHEL upgrade'),
             reporting.Summary(
                 ('A newer version of SAP HANA is required in order continue with the upgrade.'
                  ' {min_hana_version} is required for the target version of RHEL.\n\n'
-                 'The following SAP HANA instances have been detected to be running with a lower version'
+                 'The following SAP HANA instances have been detected to be installed with a lower version'
                  ' than required on the target system:\n'
                  '{detected}').format(detected=detected, min_hana_version=SAP_HANA_MINIMAL_VERSION_STRING)
             ),
@@ -194,8 +190,8 @@ def platform_check():
             reporting.Groups([reporting.Groups.INHIBITOR]),
             reporting.Audience('sysadmin'),
             reporting.ExternalLink(
-                url='https://access.redhat.com/solutions/5533441',
-                title='How do I upgrade from Red Hat Enterprise Linux 7 to Red Hat Enterprise Linux 8 with SAP HANA')
+                url='https://access.redhat.com/solutions/6980855',
+                title='How to in-place upgrade SAP environments from RHEL 8 to RHEL 9')
         ])
         return False
 
