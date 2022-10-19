@@ -2,7 +2,7 @@ import pytest
 
 from leapp.libraries.actor import checksaphana
 from leapp.libraries.common import testutils
-from leapp.libraries.stdlib import run
+from leapp.libraries.common.config import version
 from leapp.models import SapHanaManifestEntry
 
 SAPHANA1_MANIFEST = '''comptype: HDB
@@ -77,7 +77,7 @@ def _report_has_pattern(report, pattern):
 EXPECTED_TITLE_PATTERNS = {
     'running': lambda report: _report_has_pattern(report, 'running SAP HANA'),
     'v1': lambda report: _report_has_pattern(report, 'Found SAP HANA 1'),
-    'low': lambda report: _report_has_pattern(report, 'SAP HANA needs to be updated before upgrade'),
+    'low': lambda report: _report_has_pattern(report, 'SAP HANA needs to be updated before the RHEL upgrade'),
 }
 
 
@@ -180,8 +180,69 @@ class MockSAPHanaVersionInstance(object):
         (2, 49, 0, True),
     )
 )
-def test_checksaphana__fullfills_hana_min_version(monkeypatch, major, rev, patchlevel, result):
-    monkeypatch.setattr(checksaphana, 'SAP_HANA_RHEL8_REQUIRED_PATCH_LEVELS', ((4, 48, 2), (5, 52, 0)))
+def test_checksaphana__fullfills_rhel82_hana_min_version(monkeypatch, major, rev, patchlevel, result):
+    monkeypatch.setattr(version, 'get_target_major_version', lambda: '8')
+    monkeypatch.setattr(version, 'get_target_version', lambda: '8.2')
+    monkeypatch.setattr(checksaphana, 'SAP_HANA_RHEL82_REQUIRED_PATCH_LEVELS', ((4, 48, 2), (5, 52, 0)))
+    assert checksaphana._fullfills_hana_min_version(
+        MockSAPHanaVersionInstance(
+            major=major,
+            rev=rev,
+            patchlevel=patchlevel,
+        )
+    ) == result
+
+
+@pytest.mark.parametrize(
+    'major,rev,patchlevel,result', (
+        (2, 52, 0, True),
+        (2, 52, 1, True),
+        (2, 52, 2, True),
+        (2, 53, 0, True),
+        (2, 60, 0, True),
+        (2, 48, 2, True),
+        (2, 48, 1, False),
+        (2, 48, 0, False),
+        (2, 38, 2, False),
+        (2, 49, 0, True),
+    )
+)
+def test_checksaphana__fullfills_rhel86_hana_min_version(monkeypatch, major, rev, patchlevel, result):
+    monkeypatch.setattr(version, 'get_target_major_version', lambda: '8')
+    monkeypatch.setattr(version, 'get_target_version', lambda: '8.6')
+    monkeypatch.setattr(checksaphana, 'SAP_HANA_RHEL86_REQUIRED_PATCH_LEVELS', ((4, 48, 2), (5, 52, 0)))
+    assert checksaphana._fullfills_hana_min_version(
+        MockSAPHanaVersionInstance(
+            major=major,
+            rev=rev,
+            patchlevel=patchlevel,
+        )
+    ) == result
+
+
+@pytest.mark.parametrize(
+    'major,rev,patchlevel,result', (
+        (2, 59, 4, True),
+        (2, 59, 5, True),
+        (2, 59, 6, True),
+        (2, 60, 0, False),
+        (2, 61, 0, False),
+        (2, 62, 0, False),
+        (2, 63, 2, True),
+        (2, 48, 1, False),
+        (2, 48, 0, False),
+        (2, 59, 0, False),
+        (2, 59, 1, False),
+        (2, 59, 2, False),
+        (2, 59, 3, False),
+        (2, 38, 2, False),
+        (2, 64, 0, True),
+    )
+)
+def test_checksaphana__fullfills_hana_rhel9_min_version(monkeypatch, major, rev, patchlevel, result):
+    monkeypatch.setattr(version, 'get_target_major_version', lambda: '9')
+    monkeypatch.setattr(version, 'get_target_version', lambda: '9.0')
+    monkeypatch.setattr(checksaphana, 'SAP_HANA_RHEL9_REQUIRED_PATCH_LEVELS', ((5, 59, 4), (6, 63, 0)))
     assert checksaphana._fullfills_hana_min_version(
         MockSAPHanaVersionInstance(
             major=major,
@@ -196,7 +257,9 @@ def test_checksaphana_perform_check(monkeypatch):
     v2names = ('JKL', 'MNO', 'PQR', 'STU')
     v2lownames = ('VWX', 'YZA')
     reports = []
-    monkeypatch.setattr(checksaphana, 'SAP_HANA_RHEL8_REQUIRED_PATCH_LEVELS', ((4, 48, 2), (5, 52, 0)))
+    monkeypatch.setattr(checksaphana, 'SAP_HANA_RHEL86_REQUIRED_PATCH_LEVELS', ((4, 48, 2), (5, 52, 0)))
+    monkeypatch.setattr(version, 'get_target_major_version', lambda: '8')
+    monkeypatch.setattr(version, 'get_target_version', lambda: '8.6')
     monkeypatch.setattr(checksaphana.reporting, 'create_report', _report_collector(reports))
     monkeypatch.setattr(checksaphana.api, 'consume', _consume_mock_sap_hana_info(
         v1names=v1names, v2names=v2names, v2lownames=v2lownames, running=True))
