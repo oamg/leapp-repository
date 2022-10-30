@@ -4,7 +4,7 @@ from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common.config import version
 from leapp.libraries.stdlib import api, CalledProcessError, run
-from leapp.models import TargetOSInstallationImage
+from leapp.models import StorageInfo, TargetOSInstallationImage
 
 
 def inhibit_if_not_valid_iso_file(iso):
@@ -42,15 +42,75 @@ def inhibit_if_not_valid_iso_file(iso):
 
 
 def inhibit_if_not_target_rhel_iso(iso):
-    # TODO(mhecko): Not implementing this would likely result in crashes due to leapp being unable to find target
-    # #             content. However, that is bad user experience, since the user has likely no idea what went really
-    # #             wrong.
-    pass
+    # If the major version could not be determined, the iso.rhel_version will be an empty string
+    if not iso.rhel_version:
+        reporting.create_report([
+            reporting.Title(
+                'Failed to determine RHEL version of available from the provided RHEL installation image.'),
+            reporting.Summary(
+                'Could not determine what RHEL version does the supplied installation image'
+                ' located at {iso_path} provide.'.format(iso_path=iso.path)
+            ),
+            reporting.Remediation(hint='Check that the supplied image is a valid RHEL installation image.'),
+            reporting.Severity(reporting.Severity.MEDIUM),
+            reporting.Groups([reporting.Groups.INHIBITOR]),
+            reporting.Groups([reporting.Groups.REPOSITORY]),
+        ])
+        return
+
+    iso_rhel_major_version = iso.rhel_version.split('.')[0]
+    req_major_ver = version.get_target_major_version()
+    if iso_rhel_major_version != req_major_ver:
+        summary = ('The provided RHEL installation image provides RHEL {iso_rhel_ver}, however, a RHEL '
+                   '{required_rhel_ver} image is required for the upgrade.')
+
+        reporting.create_report([
+            reporting.Title(
+                'The provided installation image provides invalid RHEL version.'),
+            reporting.Summary(summary.format(iso_rhel_ver=iso.rhel_version,  required_rhel_ver=req_major_ver)),
+            reporting.Remediation(hint='Check that the supplied image is a valid RHEL installation image.'),
+            reporting.Severity(reporting.Severity.MEDIUM),
+            reporting.Groups([reporting.Groups.INHIBITOR]),
+            reporting.Groups([reporting.Groups.REPOSITORY]),
+        ])
+        return
 
 
 def inhibit_if_iso_not_located_on_persistent_partition(iso):
-    # TODO(mhecko)
-    pass
+    # Check whether the filesystem that on which the ISO resides is mounted in a persistent fashion
+    storage_info = next(api.consume(StorageInfo), None)
+    if not storage_info:
+        raise StopActorExecutionError('Actor did not receive any StorageInfo message.')
+
+    # Assumes that the path has been already checked for validity, e.g., the ISO path points to a file
+    iso_mountpoint = iso.path
+    while not os.path.ismount(iso_mountpoint):  # Guaranteed to terminate because we must reach / eventually
+        iso_mountpoint = os.path.dirname(iso_mountpoint)
+
+    is_iso_on_persistent_partition = False
+    for fstab_entry in storage_info.fstab:
+        if fstab_entry.fs_file == iso_mountpoint:
+            is_iso_on_persistent_partition = True
+            break
+
+    if not is_iso_on_persistent_partition:
+        target_ver = version.get_target_major_version()
+        title = 'The RHEL {target_ver} installation image is not located on a persistently mounted partition'
+        summary = ('The provided RHEL {target_ver} installation image {iso_path} is located'
+                   ' on a partition without an entry in /etc/fstab, causing the partition '
+                   ' to be persistently mounted.')
+        hint = ('Move the installation image to a partition that is persistently mounted, or create an /etc/fstab'
+                ' entry for the partition on which the installation image is located.')
+
+        reporting.create_report([
+            reporting.Title(title.format(target_ver=target_ver)),
+            reporting.Summary(summary.format(target_ver=target_ver, iso_path=iso.path)),
+            reporting.Remediation(hint=hint),
+            reporting.RelatedResource('file', '/etc/fstab'),
+            reporting.Severity(reporting.Severity.MEDIUM),
+            reporting.Groups([reporting.Groups.INHIBITOR]),
+            reporting.Groups([reporting.Groups.REPOSITORY]),
+        ])
 
 
 def perform_target_iso_checks():

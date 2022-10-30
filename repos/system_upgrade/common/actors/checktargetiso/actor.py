@@ -1,6 +1,6 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import check_target_iso
-from leapp.models import Report, TargetOSInstallationImage
+from leapp.models import Report, StorageInfo, TargetOSInstallationImage
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
@@ -10,7 +10,7 @@ class CheckTargetISO(Actor):
     """
 
     name = 'check_target_iso'
-    consumes = (TargetOSInstallationImage,)
+    consumes = (StorageInfo, TargetOSInstallationImage,)
     produces = (Report,)
     tags = (IPUWorkflowTag, ChecksPhaseTag)
 

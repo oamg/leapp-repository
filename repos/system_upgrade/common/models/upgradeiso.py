@@ -10,3 +10,5 @@ class TargetOSInstallationImage(Model):
     path = fields.String()
     mountpoint = fields.String()
     repositories = fields.List(fields.Model(CustomTargetRepository))
+    rhel_version = fields.String(default='')
+    was_mounted_successfully = fields.Boolean(default=False)
