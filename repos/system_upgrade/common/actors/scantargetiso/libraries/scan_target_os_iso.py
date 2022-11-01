@@ -40,7 +40,7 @@ def determine_rhel_version_from_iso_mountpoint(iso_mountpoint):
 
 
 def inform_ipu_about_request_to_use_target_iso():
-    target_iso_path = os.getenv('LEAPP_DEVEL_TARGET_ISO')
+    target_iso_path = os.getenv('LEAPP_TARGET_ISO')
     if not target_iso_path:
         return
 

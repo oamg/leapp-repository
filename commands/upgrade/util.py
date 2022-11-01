@@ -199,6 +199,9 @@ def prepare_configuration(args):
     if args.channel:
         os.environ['LEAPP_TARGET_PRODUCT_CHANNEL'] = args.channel
 
+    if args.iso:
+        os.environ['LEAPP_TARGET_ISO'] = args.iso
+
     # Check upgrade path and fail early if it's unsupported
     target_version, flavor = command_utils.vet_upgrade_path(args)
     os.environ['LEAPP_UPGRADE_PATH_TARGET_RELEASE'] = target_version
