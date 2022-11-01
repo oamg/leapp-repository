@@ -7,7 +7,7 @@ from leapp.models import CustomTargetRepository, TargetOSInstallationImage
 
 def determine_rhel_version_from_iso_mountpoint(iso_mountpoint):
     baseos_packages = os.path.join(iso_mountpoint, 'BaseOS/Packages')
-    if os.path.exists(baseos_packages):
+    if os.path.isdir(baseos_packages):
         def is_rh_release_pkg(pkg_name):
             return pkg_name.startswith('redhat-release') and 'eula' not in pkg_name
 
@@ -30,9 +30,13 @@ def determine_rhel_version_from_iso_mountpoint(iso_mountpoint):
             cpio_archive = run(['rpm2cpio', rh_release_pkg_path])
             etc_rh_release_contents = run(['cpio', '--extract', '--to-stdout', './etc/redhat-release'],
                                           stdin=cpio_archive['stdout'])
-            version_prefix = 'Red Hat Enterprise Linux release '
-            determined_rhel_ver = etc_rh_release_contents['stdout'][len(version_prefix):].strip()
-            determined_rhel_ver = determined_rhel_ver.split(' ', 1)[0]  # Remove release name
+
+            # 'Red Hat Enterprise Linux Server release 7.9 (Maipo)' -> ['Red Hat...', '7.9 (Maipo']
+            product_release_fragments = etc_rh_release_contents['stdout'].split('release')
+            if len(product_release_fragments) != 2:
+                return ''  # Unlikely. Either way we failed to parse the release
+
+            determined_rhel_ver = product_release_fragments[1].strip().split(' ', 1)[0]  # Remove release name (Maipo)
             return determined_rhel_ver
         except CalledProcessError:
             return ''
