@@ -16,6 +16,7 @@ def inhibit_if_not_valid_iso_file(iso):
         inhibit_summary = inhibit_summary_tpl.format(target_os=target_os, iso_path=iso.path)
     else:
         try:
+            # TODO(mhecko): Figure out whether we will keep this since the scanner actor is mounting the ISO anyway
             file_cmd_output = run(['file', '--mime', iso.path])
             if 'application/x-iso9660-image' not in file_cmd_output['stdout']:
                 inhibit_title = 'Provided {target_os} installation image is not a valid ISO.'.format(
@@ -39,6 +40,26 @@ def inhibit_if_not_valid_iso_file(iso):
             reporting.Groups([reporting.Groups.INHIBITOR]),
             reporting.Groups([reporting.Groups.REPOSITORY]),
         ])
+        return True
+    return False
+
+
+def inhibit_if_failed_to_mount_iso(iso):
+    if not iso.was_mounted_successfully:
+        target_os = 'RHEL {0}'.format(version.get_target_major_version())
+        title = 'Failed to mount the provided {target_os} installation image.'
+        summary = 'The provided {target_os} installation image {iso_path} could not be mounted.'
+        hint = 'Verify that the provided ISO is a valid {target_os} installation image'
+        reporting.create_report([
+            reporting.Title(title.format(target_os=target_os)),
+            reporting.Summary(summary.format(target_os=target_os, iso_path=iso.path)),
+            reporting.Remediation(hint=hint.format(target_os=target_os)),
+            reporting.Severity(reporting.Severity.MEDIUM),
+            reporting.Groups([reporting.Groups.INHIBITOR]),
+            reporting.Groups([reporting.Groups.REPOSITORY]),
+        ])
+        return True
+    return False
 
 
 def inhibit_if_not_target_rhel_iso(iso):
@@ -73,7 +94,6 @@ def inhibit_if_not_target_rhel_iso(iso):
             reporting.Groups([reporting.Groups.INHIBITOR]),
             reporting.Groups([reporting.Groups.REPOSITORY]),
         ])
-        return
 
 
 def inhibit_if_iso_not_located_on_persistent_partition(iso):
@@ -113,6 +133,35 @@ def inhibit_if_iso_not_located_on_persistent_partition(iso):
         ])
 
 
+def inihibit_if_iso_does_not_contain_basic_repositories(iso):
+    missing_basic_repoids = {'BaseOS', 'AppStream'}
+
+    for custom_repo in iso.repositories:
+        missing_basic_repoids.remove(custom_repo.repoid)
+        if not missing_basic_repoids:
+            break
+
+    if missing_basic_repoids:
+        target_ver = version.get_target_major_version()
+
+        title = 'Provided RHEL {target_ver} installation ISO is missing fundamental repositories.'
+        summary = ('The supplied RHEL {target_ver} installation ISO {iso_path} does not contain '
+                   '{missing_repos} repositor{suffix}')
+        hint = 'Check whether the supplied ISO is a valid RHEL {target_ver} installation image.'
+
+        reporting.create_report([
+            reporting.Title(title.format(target_ver=target_ver)),
+            reporting.Summary(summary.format(target_ver=target_ver,
+                                             iso_path=iso.path,
+                                             missing_repos=','.join(missing_basic_repoids),
+                                             suffix=('y' if len(missing_basic_repoids) == 1 else 'ies'))),
+            reporting.Remediation(hint=hint.format(target_ver=target_ver)),
+            reporting.Severity(reporting.Severity.MEDIUM),
+            reporting.Groups([reporting.Groups.INHIBITOR]),
+            reporting.Groups([reporting.Groups.REPOSITORY]),
+        ])
+
+
 def perform_target_iso_checks():
     requested_target_iso_msg_iter = api.consume(TargetOSInstallationImage)
     target_iso = next(requested_target_iso_msg_iter, None)
@@ -123,6 +172,11 @@ def perform_target_iso_checks():
     if next(requested_target_iso_msg_iter, None):
         api.current_logger().warn('Received multiple msgs with target ISO to use.')
 
-    inhibit_if_not_valid_iso_file(target_iso)
-    inhibit_if_not_target_rhel_iso(target_iso)
-    inhibit_if_iso_not_located_on_persistent_partition(target_iso)
+    # Cascade the inhibiting conditions so that we do not spam the user with inhibitors
+    is_iso_invalid = inhibit_if_not_valid_iso_file(target_iso)
+    if not is_iso_invalid:
+        failed_to_mount_iso = inhibit_if_failed_to_mount_iso(target_iso)
+        if not failed_to_mount_iso:
+            inhibit_if_not_target_rhel_iso(target_iso)
+            inhibit_if_iso_not_located_on_persistent_partition(target_iso)
+            inihibit_if_iso_does_not_contain_basic_repositories(target_iso)
