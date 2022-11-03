@@ -3,7 +3,7 @@ FROM fedora:34
 VOLUME /repo
 
 RUN dnf update -y && \
-    dnf install -y findutils make rsync
+    dnf install -y findutils make rsync python3-gobject-base NetworkManager-libnm
 
 ENV PYTHON_VENV python3.9
 
