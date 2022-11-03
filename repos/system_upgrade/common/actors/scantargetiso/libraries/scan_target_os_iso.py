@@ -1,5 +1,6 @@
 import os
 
+import leapp.libraries.common.config as ipu_config
 from leapp.libraries.common.mounting import LoopMount, MountError
 from leapp.libraries.stdlib import api, CalledProcessError, run
 from leapp.models import CustomTargetRepository, TargetOSInstallationImage
@@ -36,6 +37,9 @@ def determine_rhel_version_from_iso_mountpoint(iso_mountpoint):
             if len(product_release_fragments) != 2:
                 return ''  # Unlikely. Either way we failed to parse the release
 
+            if not product_release_fragments[0].startswith('Red Hat'):
+                return ''
+
             determined_rhel_ver = product_release_fragments[1].strip().split(' ', 1)[0]  # Remove release name (Maipo)
             return determined_rhel_ver
         except CalledProcessError:
@@ -44,15 +48,24 @@ def determine_rhel_version_from_iso_mountpoint(iso_mountpoint):
 
 
 def inform_ipu_about_request_to_use_target_iso():
-    target_iso_path = os.getenv('LEAPP_TARGET_ISO')
+    target_iso_path = ipu_config.get_env('LEAPP_TARGET_ISO')
     if not target_iso_path:
+        return
+
+    iso_mountpoint = '/iso'
+
+    if not os.path.exists(target_iso_path):
+        # If the path does not exists, do not attempt to mount it and let the upgrade be inhibited by the check actor
+        api.produce(TargetOSInstallationImage(path=target_iso_path,
+                                              repositories=[],
+                                              mountpoint=iso_mountpoint,
+                                              was_mounted_successfully=False))
         return
 
     # Mount the given ISO, extract the available repositories and determine provided RHEL version
     iso_scan_mountpoint = '/var/lib/leapp/iso_scan_mountpoint'
     try:
         with LoopMount(source=target_iso_path, target=iso_scan_mountpoint):
-            iso_mountpoint = '/iso'
             required_repositories = ('BaseOS', 'AppStream')
 
             # Check what required repositories are present in the root of the ISO
@@ -67,7 +80,6 @@ def inform_ipu_about_request_to_use_target_iso():
                 api.produce(iso_repo)
                 iso_repos.append(iso_repo)
 
-            # Figure out what RHEL version
             rhel_version = determine_rhel_version_from_iso_mountpoint(iso_scan_mountpoint)
 
             api.produce(TargetOSInstallationImage(path=target_iso_path,
