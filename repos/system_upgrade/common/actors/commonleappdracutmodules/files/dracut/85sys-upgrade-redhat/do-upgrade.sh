@@ -211,6 +211,9 @@ do_upgrade() {
         getargbool 0 enforcing || echo 0 > /sys/fs/selinux/enforce
     fi
 
+    getarg 'rd.upgrade.break=leapp-pre-upgrade' 'rd.break=leapp-pre-upgrade' && \
+        emergency_shell -n upgrade "Break before LEAPP upgrade resume starts."
+
     # and off we go...
     # NOTE: in case we would need to run leapp before pivot, we would need to
     #       specify where the root is, e.g. --root=/sysroot
