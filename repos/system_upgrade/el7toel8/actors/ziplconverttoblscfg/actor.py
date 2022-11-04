@@ -5,7 +5,7 @@ from leapp.actors import Actor
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import mounting
 from leapp.libraries.common.config import architecture
-from leapp.libraries.stdlib import CalledProcessError
+from leapp.libraries.stdlib import CalledProcessError, run
 from leapp.models import TargetUserSpaceInfo
 from leapp.tags import IPUWorkflowTag, PreparationPhaseTag
 
@@ -39,6 +39,7 @@ class ZiplConvertToBLSCFG(Actor):
         # - as we cannot use zipl* pointing anywhere else than default directory
         # - no, --bls-directory is not solution
         with mounting.BindMount(source='/boot', target=os.path.join(userspace.path, 'boot')):
+            run(['mount', '--bind', '/dev', os.path.join(userspace.path, 'dev')])
             userspace_zipl_conf = os.path.join(userspace.path, 'etc', 'zipl.conf')
             if os.path.exists(userspace_zipl_conf):
                 os.remove(userspace_zipl_conf)
@@ -54,6 +55,7 @@ class ZiplConvertToBLSCFG(Actor):
                             raise OSError('Failed to convert the ZIPL configuration to BLS.')
                         context.copy_from('/etc/zipl.conf', '/etc/zipl.conf')
                     except OSError as e:
+                        run(['umount', os.path.join(userspace.path, 'dev')])
                         self.log.error('Could not call zipl-switch-to-blscfg command.',
                                        exc_info=True)
                         raise StopActorExecutionError(
@@ -61,13 +63,13 @@ class ZiplConvertToBLSCFG(Actor):
                             details={'details': str(e)}
                         )
                     except CalledProcessError as e:
+                        run(['umount', os.path.join(userspace.path, 'dev')])
                         self.log.error('zipl-switch-to-blscfg execution failed,',
                                        exc_info=True)
                         raise StopActorExecutionError(
                             message='zipl-switch-to-blscfg execution failed with non zero exit code.',
                             details={'details': str(e), 'stdout': e.stdout, 'stderr': e.stderr}
                         )
-
                         # FIXME: we do not want to continue anymore, but we should clean
                         # better.
                         # NOTE: Basically, just removal of the /boot/loader dir content inside
@@ -75,3 +77,4 @@ class ZiplConvertToBLSCFG(Actor):
                         # - - if we remove it, we will remove the snapshot as well
                         # - - on the other hand, we shouldn't keep it there if zipl
                         # - - has not been converted to BLS
+            run(['umount', os.path.join(userspace.path, 'dev')])
