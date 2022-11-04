@@ -16,7 +16,7 @@ def inhibit_if_not_valid_iso_file(iso):
         inhibit_summary = inhibit_summary_tpl.format(target_os=target_os, iso_path=iso.path)
     else:
         try:
-            # TODO(mhecko): Figure out whether we will keep this since the scanner actor is mounting the ISO anyway
+            # TODO(mhecko): Figure out whether we will keep this since the scan actor is mounting the ISO anyway
             file_cmd_output = run(['file', '--mime', iso.path])
             if 'application/x-iso9660-image' not in file_cmd_output['stdout']:
                 inhibit_title = 'Provided {target_os} installation image is not a valid ISO.'.format(
@@ -45,24 +45,25 @@ def inhibit_if_not_valid_iso_file(iso):
 
 
 def inhibit_if_failed_to_mount_iso(iso):
-    if not iso.was_mounted_successfully:
-        target_os = 'RHEL {0}'.format(version.get_target_major_version())
-        title = 'Failed to mount the provided {target_os} installation image.'
-        summary = 'The provided {target_os} installation image {iso_path} could not be mounted.'
-        hint = 'Verify that the provided ISO is a valid {target_os} installation image'
-        reporting.create_report([
-            reporting.Title(title.format(target_os=target_os)),
-            reporting.Summary(summary.format(target_os=target_os, iso_path=iso.path)),
-            reporting.Remediation(hint=hint.format(target_os=target_os)),
-            reporting.Severity(reporting.Severity.MEDIUM),
-            reporting.Groups([reporting.Groups.INHIBITOR]),
-            reporting.Groups([reporting.Groups.REPOSITORY]),
-        ])
-        return True
-    return False
+    if iso.was_mounted_successfully:
+        return False
+
+    target_os = 'RHEL {0}'.format(version.get_target_major_version())
+    title = 'Failed to mount the provided {target_os} installation image.'
+    summary = 'The provided {target_os} installation image {iso_path} could not be mounted.'
+    hint = 'Verify that the provided ISO is a valid {target_os} installation image'
+    reporting.create_report([
+        reporting.Title(title.format(target_os=target_os)),
+        reporting.Summary(summary.format(target_os=target_os, iso_path=iso.path)),
+        reporting.Remediation(hint=hint.format(target_os=target_os)),
+        reporting.Severity(reporting.Severity.MEDIUM),
+        reporting.Groups([reporting.Groups.INHIBITOR]),
+        reporting.Groups([reporting.Groups.REPOSITORY]),
+    ])
+    return True
 
 
-def inhibit_if_not_target_rhel_iso(iso):
+def inhibit_if_wrong_iso_rhel_version(iso):
     # If the major version could not be determined, the iso.rhel_version will be an empty string
     if not iso.rhel_version:
         reporting.create_report([
@@ -86,8 +87,7 @@ def inhibit_if_not_target_rhel_iso(iso):
                    '{required_rhel_ver} image is required for the upgrade.')
 
         reporting.create_report([
-            reporting.Title(
-                'The provided installation image provides invalid RHEL version.'),
+            reporting.Title('The provided installation image provides invalid RHEL version.'),
             reporting.Summary(summary.format(iso_rhel_ver=iso.rhel_version,  required_rhel_ver=req_major_ver)),
             reporting.Remediation(hint='Check that the supplied image is a valid RHEL installation image.'),
             reporting.Severity(reporting.Severity.MEDIUM),
@@ -177,6 +177,6 @@ def perform_target_iso_checks():
     if not is_iso_invalid:
         failed_to_mount_iso = inhibit_if_failed_to_mount_iso(target_iso)
         if not failed_to_mount_iso:
-            inhibit_if_not_target_rhel_iso(target_iso)
+            inhibit_if_wrong_iso_rhel_version(target_iso)
             inhibit_if_iso_not_located_on_persistent_partition(target_iso)
             inihibit_if_iso_does_not_contain_basic_repositories(target_iso)

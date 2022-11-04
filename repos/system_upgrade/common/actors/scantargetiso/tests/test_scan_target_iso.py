@@ -1,14 +1,14 @@
 import contextlib
-from functools import partial
 import os
+from functools import partial
+
+import pytest
 
 from leapp.libraries.actor import scan_target_os_iso
 from leapp.libraries.common.mounting import MountError
 from leapp.libraries.common.testutils import CurrentActorMocked, produce_mocked
 from leapp.libraries.stdlib import api, CalledProcessError
 from leapp.models import CustomTargetRepository, TargetOSInstallationImage
-
-import pytest
 
 
 def fail_if_called(fail_reason, *args, **kwargs):

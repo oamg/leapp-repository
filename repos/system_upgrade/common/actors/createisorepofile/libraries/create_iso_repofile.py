@@ -28,7 +28,7 @@ def produce_repofile_if_iso_used():
                                                            reponame=repo.repoid,
                                                            baseurl=repo.baseurl)
 
-    target_os_path_prefix = 'el' + get_target_major_version()
+    target_os_path_prefix = 'el{target_major_ver}'.format(target_major_ver=get_target_major_version())
     iso_repofile_path = os.path.join('/var/lib/leapp/', '{}_iso.repo'.format(target_os_path_prefix))
     with open(iso_repofile_path, 'w') as iso_repofile:
         iso_repofile.write(repofile_content)
