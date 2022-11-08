@@ -5,10 +5,10 @@ from leapp.libraries.stdlib import api
 from leapp.models import MemoryInfo
 
 min_req_memory = {
-    architecture.ARCH_X86_64: 1536,  # 1.5G
-    architecture.ARCH_ARM64: 2048,  # 2Gb
-    architecture.ARCH_PPC64LE: 2048,  # 2Gb
-    architecture.ARCH_S390X: 1024  # 1Gb
+    architecture.ARCH_X86_64: 1572864,  # 1.5G
+    architecture.ARCH_ARM64: 1572864,  # 1.5G
+    architecture.ARCH_PPC64LE: 3145728,  # 3G
+    architecture.ARCH_S390X: 1572864,  # 1.5G
 }
 
 
@@ -33,12 +33,17 @@ def process():
 
     if minimum_req_error:
         title = 'Minimum memory requirements for RHEL {} are not met'.format(version.get_target_major_version())
-        summary = 'Memory detected: {} KiB, required: {} KiB'.format(minimum_req_error['detected'],
-                                                                     minimum_req_error['minimal_req'])
+        summary = 'Memory detected: {} MiB, required: {} MiB'.format(
+            int(minimum_req_error['detected'] / 1024),  # noqa: W1619; pylint: disable=old-division
+            int(minimum_req_error['minimal_req'] / 1024),  # noqa: W1619; pylint: disable=old-division
+        )
         reporting.create_report([
                           reporting.Title(title),
                           reporting.Summary(summary),
                           reporting.Severity(reporting.Severity.HIGH),
-                          reporting.Groups([reporting.Groups.SANITY]),
-                          reporting.Groups([reporting.Groups.INHIBITOR]),
+                          reporting.Groups([reporting.Groups.SANITY, reporting.Groups.INHIBITOR]),
+                          reporting.ExternalLink(
+                            url='https://access.redhat.com/articles/rhel-limits',
+                            title='Red Hat Enterprise Linux Technology Capabilities and Limits'
+                          ),
                       ])
