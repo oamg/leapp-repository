@@ -12,7 +12,6 @@ CONTAINER = "ceph-osd"
 
 
 def select_osd_container(engine):
-    container_name = ""
     try:
         output = run([engine, 'ps'])
     except CalledProcessError as cpe:
@@ -24,7 +23,7 @@ def select_osd_container(engine):
         container_name = line.split()[-1]
         if re.match(CONTAINER, container_name):
             return container_name
-    return container_name
+    return None
 
 
 def get_ceph_lvm_list():
@@ -35,6 +34,8 @@ def get_ceph_lvm_list():
         cmd_ceph_lvm_list = base_cmd
     else:
         container_name = select_osd_container(container_binary)
+        if container_name is None:
+            return None
         cmd_ceph_lvm_list = [container_binary, 'exec', container_name]
         cmd_ceph_lvm_list.extend(base_cmd)
     try:
@@ -58,5 +59,6 @@ def encrypted_osds_list():
     result = []
     if os.path.isfile(CEPH_CONF):
         output = get_ceph_lvm_list()
-        result = [output[key][0]['lv_uuid'] for key in output if output[key][0]['tags']['ceph.encrypted']]
+        if output is not None:
+            result = [output[key][0]['lv_uuid'] for key in output if output[key][0]['tags']['ceph.encrypted']]
     return result
