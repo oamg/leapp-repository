@@ -88,7 +88,7 @@ jobs:
         id: leapp_pr_regex_match
         with:
           text: ${{ github.event.comment.body }}
-          regex: '^/(rerun|rerun-all)\s+([0-9]+)\s*$'
+          regex: '^/(rerun|rerun-sst)\s+([0-9]+)\s*$'
 
       - name: If leapp_pr was specified in the comment - trigger copr build
         # TODO: XXX FIXME This should schedule copr build for leapp but for now it will be just setting an env var
