@@ -68,7 +68,7 @@ def inhibit_if_wrong_iso_rhel_version(iso):
     if not iso.rhel_version:
         reporting.create_report([
             reporting.Title(
-                'Failed to determine RHEL version of available from the provided RHEL installation image.'),
+                'Failed to determine RHEL version provided by the supplied installation image.'),
             reporting.Summary(
                 'Could not determine what RHEL version does the supplied installation image'
                 ' located at {iso_path} provide.'.format(iso_path=iso.path)
