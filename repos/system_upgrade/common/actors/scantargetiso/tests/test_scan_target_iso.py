@@ -54,7 +54,7 @@ def test_determine_rhel_version_valid_iso(monkeypatch):
             assert cmd == ['cpio', '--extract', '--to-stdout', './etc/redhat-release']
             assert kwargs['stdin'] == rpm2cpio_output
             return {'stdout': 'Red Hat Enterprise Linux Server release 7.9 (Maipo)'}
-        assert False, 'Unexpected command has been called.'
+        raise ValueError('Unexpected command has been called.')
 
     monkeypatch.setattr(os.path, 'isdir', isdir_mocked)
     monkeypatch.setattr(os, 'listdir', listdir_mocked)
@@ -125,7 +125,7 @@ def test_determine_rhel_version_unexpected_etc_rh_release_contents(monkeypatch, 
             return {'stdout': 'rpm2cpio_output'}
         if cmd[0] == 'cpio':
             return {'stdout': etc_rh_release_contents}
-        assert False, 'Actor called an unexpected command: {0}'.format(cmd)
+        raise ValueError('Actor called an unexpected command: {0}'.format(cmd))
 
     monkeypatch.setattr(os.path, 'isdir', isdir_mocked)
     monkeypatch.setattr(os, 'listdir', listdir_mocked)
@@ -181,7 +181,7 @@ def test_iso_repository_detection(monkeypatch, repodirs_in_iso, expected_repoids
     def mocked_os_path_exits(path):
         if path == iso_path:
             return True
-        assert False, 'Only the ISO path should be probed for existence.'
+        raise ValueError('Only the ISO path should be probed for existence.')
 
     def mocked_os_listdir(path):
         # Add some extra files as an ISO will always have some extra files in / as the ones parametrizing this test

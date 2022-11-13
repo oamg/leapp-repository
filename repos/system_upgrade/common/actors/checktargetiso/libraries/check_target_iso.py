@@ -88,7 +88,7 @@ def inhibit_if_wrong_iso_rhel_version(iso):
 
         reporting.create_report([
             reporting.Title('The provided installation image provides invalid RHEL version.'),
-            reporting.Summary(summary.format(iso_rhel_ver=iso.rhel_version,  required_rhel_ver=req_major_ver)),
+            reporting.Summary(summary.format(iso_rhel_ver=iso.rhel_version, required_rhel_ver=req_major_ver)),
             reporting.Remediation(hint='Check that the supplied image is a valid RHEL installation image.'),
             reporting.Severity(reporting.Severity.MEDIUM),
             reporting.Groups([reporting.Groups.INHIBITOR]),
