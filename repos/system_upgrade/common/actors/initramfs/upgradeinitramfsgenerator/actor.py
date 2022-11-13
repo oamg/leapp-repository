@@ -1,12 +1,12 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import upgradeinitramfsgenerator
-from leapp.models import RequiredUpgradeInitramPackages  # deprecated
-from leapp.models import UpgradeDracutModule  # deprecated
 from leapp.models import (
     BootContent,
+    RequiredUpgradeInitramPackages,  # deprecated
     TargetOSInstallationImage,
     TargetUserSpaceInfo,
     TargetUserSpaceUpgradeTasks,
+    UpgradeDracutModule,  # deprecated
     UpgradeInitramfsTasks,
     UsedTargetRepositories,
 )
