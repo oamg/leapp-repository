@@ -61,6 +61,10 @@ Requires:   dnf-command(config-manager)
 # sure
 Requires:   dracut
 
+# Used to determine RHEL version of a given target RHEL installation image -
+# uncompressing redhat-release package from the ISO.
+Requires:   cpio
+
 # just to be sure that /etc/modprobe.d is present
 Requires:   kmod
 
