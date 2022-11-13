@@ -11,7 +11,7 @@ from leapp.models import (
     TargetUserSpaceInfo,
     TransactionDryRun,
     UsedTargetRepositories,
-    XFSPresence,
+    XFSPresence
 )
 from leapp.tags import InterimPreparationPhaseTag, IPUWorkflowTag
 

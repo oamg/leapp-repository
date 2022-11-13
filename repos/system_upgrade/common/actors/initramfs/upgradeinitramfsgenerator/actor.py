@@ -8,7 +8,7 @@ from leapp.models import (
     TargetUserSpaceInfo,
     TargetUserSpaceUpgradeTasks,
     UpgradeInitramfsTasks,
-    UsedTargetRepositories,
+    UsedTargetRepositories
 )
 from leapp.tags import InterimPreparationPhaseTag, IPUWorkflowTag
 

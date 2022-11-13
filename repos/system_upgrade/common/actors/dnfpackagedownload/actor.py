@@ -9,7 +9,7 @@ from leapp.models import (
     TargetOSInstallationImage,
     TargetUserSpaceInfo,
     UsedTargetRepositories,
-    XFSPresence,
+    XFSPresence
 )
 from leapp.tags import DownloadPhaseTag, IPUWorkflowTag
 

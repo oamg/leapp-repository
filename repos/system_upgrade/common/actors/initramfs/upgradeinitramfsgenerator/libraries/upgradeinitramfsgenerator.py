@@ -13,7 +13,7 @@ from leapp.models import (
     TargetUserSpaceInfo,
     TargetUserSpaceUpgradeTasks,
     UpgradeInitramfsTasks,
-    UsedTargetRepositories,
+    UsedTargetRepositories
 )
 from leapp.utils.deprecation import suppress_deprecation
 
