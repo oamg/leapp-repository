@@ -437,7 +437,7 @@ def mount_upgrade_iso_to_root_dir(root_dir, target_iso):
     :rtype: Optional[LoopMount]
     """
     if not target_iso:
-        return None
+        return NullMount(root_dir)
 
     mountpoint = target_iso.mountpoint[1:]  # Strip the leading / from the absolute mountpoint
     mountpoint_in_root_dir = os.path.join(root_dir, mountpoint)
