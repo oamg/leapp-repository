@@ -7,17 +7,16 @@ from leapp.tags import IPUWorkflowTag, TargetTransactionChecksPhaseTag
 
 class CheckSystemdServicesTasks(Actor):
     """
-    Inhibits upgrade if SystemdServicesTasks tasks are in conflict
+    Inhibit the upgrade if SystemdServicesTasks tasks are in conflict
 
-    There is possibility, that SystemdServicesTasks messages with conflicting
-    requested service states could be produced. For example a service is
-    requested to be both enabled and disabled. This actor inhibits upgrade in
-    such cases.
+    SystemdServicesTasks messages with conflicting requested service states
+    could be produced. For example a service could be requested to be both
+    - enabled and disabled. This actor inhibits upgrade in such cases.
 
     Note: We expect that SystemdServicesTasks could be produced even after the
     TargetTransactionChecksPhase (e.g. during the ApplicationPhase). The
     purpose of this actor is to report collisions in case we can already detect
-    them. In case of conflicts caused by produced messages later we just log
+    them. In case of conflicts caused by messages produced later we just log
     the collisions and the services will end up disabled.
     """
 

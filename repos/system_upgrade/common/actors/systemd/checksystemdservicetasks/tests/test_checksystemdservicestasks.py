@@ -5,6 +5,7 @@ from leapp.libraries.actor import checksystemdservicetasks
 from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked
 from leapp.libraries.stdlib import api
 from leapp.models import SystemdServicesTasks
+from leapp.utils.report import is_inhibitor
 
 
 @pytest.mark.parametrize(
@@ -44,6 +45,18 @@ from leapp.models import SystemdServicesTasks
             ],
             True
         ),
+        (
+            [
+                SystemdServicesTasks(to_enable=['hello.service']),
+                SystemdServicesTasks(to_disable=['world.service']),
+                SystemdServicesTasks(to_enable=['hello.service', 'kitty.service'])
+            ],
+            False
+        ),
+        (
+            [],
+            False
+        )
     ]
 )
 def test_conflicts_detected(monkeypatch, tasks, should_inhibit):
@@ -55,6 +68,7 @@ def test_conflicts_detected(monkeypatch, tasks, should_inhibit):
     checksystemdservicetasks.check_conflicts()
 
     assert bool(created_reports.called) == should_inhibit
+    assert is_inhibitor(created_reports.report_fields) == should_inhibit
 
 
 @pytest.mark.parametrize(
@@ -84,5 +98,5 @@ def test_coflict_reported(monkeypatch, tasks, expected_reported):
 
     checksystemdservicetasks.check_conflicts()
 
-    report_summary = reporting.create_report.report_fields['summary']
+    report_summary = created_reports.report_fields['summary']
     assert all(service in report_summary for service in expected_reported)
