@@ -1,15 +1,6 @@
-from leapp.libraries.stdlib import api, CalledProcessError, run
+from leapp.libraries.common import systemd
+from leapp.libraries.stdlib import api, CalledProcessError
 from leapp.models import SystemdServicesTasks
-
-
-def _try_set_service_state(command, service):
-    try:
-        # it is possible to call this on multiple units at once,
-        # but failing to enable one service would cause others to not enable as well
-        run(['systemctl', command, service])
-    except CalledProcessError as err:
-        api.current_logger().error('Failed to {} systemd unit "{}". Message: {}'.format(command, service, str(err)))
-        # TODO(mmatuska) produce post-upgrade report
 
 
 def process():
@@ -25,7 +16,15 @@ def process():
         api.current_logger().error(msg)
 
     for service in services_to_enable:
-        _try_set_service_state('enable', service)
+        try:
+            systemd.enable_unit(service)
+        except CalledProcessError:
+            # TODO(mmatuska) produce post-upgrade report
+            pass
 
     for service in services_to_disable:
-        _try_set_service_state('disable', service)
+        try:
+            systemd.disable_unit(service)
+        except CalledProcessError:
+            # TODO(mmatuska) produce post-upgrade report
+            pass
