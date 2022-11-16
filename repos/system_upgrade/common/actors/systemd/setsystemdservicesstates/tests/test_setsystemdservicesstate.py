@@ -2,50 +2,60 @@ import pytest
 
 from leapp.libraries import stdlib
 from leapp.libraries.actor import setsystemdservicesstate
+from leapp.libraries.common import systemd
 from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked
 from leapp.libraries.stdlib import api, CalledProcessError
 from leapp.models import SystemdServicesTasks
 
 
-class MockedRun(object):
+class MockedSystemdCmd(object):
     def __init__(self):
-        self.commands = []
+        self.units = []
 
-    def __call__(self, cmd, *args, **kwargs):
-        self.commands.append(cmd)
+    def __call__(self, unit, *args, **kwargs):
+        self.units.append(unit)
         return {}
 
 
 @pytest.mark.parametrize(
-    ('msgs', 'expected_calls'),
+    ('msgs', 'expect_enable_units', 'expect_disable_units'),
     [
         (
             [SystemdServicesTasks(to_enable=['hello.service'],
                                   to_disable=['getty.service'])],
-            [['systemctl', 'enable', 'hello.service'], ['systemctl', 'disable', 'getty.service']]
+            ['hello.service'],
+            ['getty.service']
         ),
         (
             [SystemdServicesTasks(to_disable=['getty.service'])],
-            [['systemctl', 'disable', 'getty.service']]
+            [],
+            ['getty.service']
         ),
         (
             [SystemdServicesTasks(to_enable=['hello.service'])],
-            [['systemctl', 'enable', 'hello.service']]
+            ['hello.service'],
+            []
         ),
         (
             [SystemdServicesTasks()],
+            [],
             []
         ),
     ]
 )
-def test_process(monkeypatch, msgs, expected_calls):
-    mocked_run = MockedRun()
-    monkeypatch.setattr(setsystemdservicesstate, 'run', mocked_run)
+def test_process(monkeypatch, msgs, expect_enable_units, expect_disable_units):
+    mocked_enable = MockedSystemdCmd()
+    monkeypatch.setattr(systemd, 'enable_unit', mocked_enable)
+
+    mocked_disable = MockedSystemdCmd()
+    monkeypatch.setattr(systemd, 'disable_unit', mocked_disable)
+
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=msgs))
 
     setsystemdservicesstate.process()
 
-    assert mocked_run.commands == expected_calls
+    assert mocked_enable.units == expect_enable_units
+    assert mocked_disable.units == expect_disable_units
 
 
 def test_process_invalid(monkeypatch):
@@ -57,7 +67,7 @@ def test_process_invalid(monkeypatch):
 
     msgs = [SystemdServicesTasks(to_enable=['invalid.service'])]
 
-    monkeypatch.setattr(setsystemdservicesstate, 'run', mocked_run)
+    monkeypatch.setattr(systemd, 'run', mocked_run)
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=msgs))
     monkeypatch.setattr(api, 'current_logger', logger_mocked())
 
@@ -69,10 +79,14 @@ def test_process_invalid(monkeypatch):
 
 
 def test_enable_disable_conflict_logged(monkeypatch):
-    msgs = [SystemdServicesTasks(to_enable=['hello.service'],
-                                 to_disable=['hello.service'])]
-    mocked_run = MockedRun()
-    monkeypatch.setattr(setsystemdservicesstate, 'run', mocked_run)
+    msgs = [SystemdServicesTasks(to_enable=['hello.service'], to_disable=['hello.service'])]
+
+    mocked_enable = MockedSystemdCmd()
+    monkeypatch.setattr(systemd, 'enable_unit', mocked_enable)
+
+    mocked_disable = MockedSystemdCmd()
+    monkeypatch.setattr(systemd, 'disable_unit', mocked_disable)
+
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=msgs))
     monkeypatch.setattr(api, 'current_logger', logger_mocked())
 

@@ -32,6 +32,56 @@ def get_broken_symlinks():
         raise
 
 
+def _try_call_unit_command(command, unit):
+    try:
+        # it is possible to call this on multiple units at once,
+        # but failing to enable one service would cause others to not enable as well
+        run(['systemctl', command, unit])
+    except CalledProcessError as err:
+        msg = 'Failed to {} systemd unit "{}". Message: {}'.format(command, unit, str(err))
+        api.current_logger().error(msg)
+        raise err
+
+
+def enable_unit(unit):
+    """
+    Enable a systemd unit
+
+    It is strongly recommended to produce SystemdServicesTasks message instead,
+    unless it is absolutely necessary to handle failure yourself.
+
+    :param unit: The systemd unit to enable
+    :raises CalledProcessError: In case of failure
+    """
+    _try_call_unit_command('enable', unit)
+
+
+def disable_unit(unit):
+    """
+    Disable a systemd unit
+
+    It is strongly recommended to produce SystemdServicesTasks message instead,
+    unless it is absolutely necessary to handle failure yourself.
+
+    :param unit: The systemd unit to disable
+    :raises CalledProcessError: In case of failure
+    """
+    _try_call_unit_command('disable', unit)
+
+
+def reenable_unit(unit):
+    """
+    Re-enable a systemd unit
+
+    It is strongly recommended to produce SystemdServicesTasks message, unless it
+    is absolutely necessary to handle failure yourself.
+
+    :param unit: The systemd unit to re-enable
+    :raises CalledProcessError: In case of failure
+    """
+    _try_call_unit_command('reenable', unit)
+
+
 def get_service_files():
     """
     Get list of unit files of systemd services on the system
