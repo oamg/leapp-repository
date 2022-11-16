@@ -342,22 +342,29 @@ def perform_transaction_install(target_userspace_info, storage_info, used_repos,
 
 
 @contextlib.contextmanager
-def _prepare_perform(used_repos, target_userspace_info, xfs_info, storage_info):
+def _prepare_perform(used_repos, target_userspace_info, xfs_info, storage_info, target_iso=None):
     with _prepare_transaction(used_repos=used_repos,
                               target_userspace_info=target_userspace_info
                               ) as (context, target_repoids, userspace_info):
         with overlaygen.create_source_overlay(mounts_dir=userspace_info.mounts, scratch_dir=userspace_info.scratch,
                                               xfs_info=xfs_info, storage_info=storage_info,
                                               mount_target=os.path.join(context.base_dir, 'installroot')) as overlay:
-            yield context, overlay, target_repoids
+            with mounting.mount_upgrade_iso_to_root_dir(target_userspace_info.path, target_iso):
+                yield context, overlay, target_repoids
 
 
-def perform_transaction_check(target_userspace_info, used_repos, tasks, xfs_info, storage_info, plugin_info):
+def perform_transaction_check(target_userspace_info,
+                              used_repos,
+                              tasks,
+                              xfs_info,
+                              storage_info,
+                              plugin_info,
+                              target_iso=None):
     """
     Perform DNF transaction check using our plugin
     """
     with _prepare_perform(used_repos=used_repos, target_userspace_info=target_userspace_info, xfs_info=xfs_info,
-                          storage_info=storage_info) as (context, overlay, target_repoids):
+                          storage_info=storage_info, target_iso=target_iso) as (context, overlay, target_repoids):
         apply_workarounds(overlay.nspawn())
         dnfconfig.exclude_leapp_rpms(context)
         _transaction(
@@ -365,12 +372,22 @@ def perform_transaction_check(target_userspace_info, used_repos, tasks, xfs_info
         )
 
 
-def perform_rpm_download(target_userspace_info, used_repos, tasks, xfs_info, storage_info, plugin_info, on_aws=False):
+def perform_rpm_download(target_userspace_info,
+                         used_repos,
+                         tasks,
+                         xfs_info,
+                         storage_info,
+                         plugin_info,
+                         target_iso=None,
+                         on_aws=False):
     """
     Perform RPM download including the transaction test using dnf with our plugin
     """
-    with _prepare_perform(used_repos=used_repos, target_userspace_info=target_userspace_info, xfs_info=xfs_info,
-                          storage_info=storage_info) as (context, overlay, target_repoids):
+    with _prepare_perform(used_repos=used_repos,
+                          target_userspace_info=target_userspace_info,
+                          xfs_info=xfs_info,
+                          storage_info=storage_info,
+                          target_iso=target_iso) as (context, overlay, target_repoids):
         apply_workarounds(overlay.nspawn())
         dnfconfig.exclude_leapp_rpms(context)
         _transaction(
@@ -379,12 +396,22 @@ def perform_rpm_download(target_userspace_info, used_repos, tasks, xfs_info, sto
         )
 
 
-def perform_dry_run(target_userspace_info, used_repos, tasks, xfs_info, storage_info, plugin_info, on_aws=False):
+def perform_dry_run(target_userspace_info,
+                    used_repos,
+                    tasks,
+                    xfs_info,
+                    storage_info,
+                    plugin_info,
+                    target_iso=None,
+                    on_aws=False):
     """
     Perform the dnf transaction test / dry-run using only cached data.
     """
-    with _prepare_perform(used_repos=used_repos, target_userspace_info=target_userspace_info, xfs_info=xfs_info,
-                          storage_info=storage_info) as (context, overlay, target_repoids):
+    with _prepare_perform(used_repos=used_repos,
+                          target_userspace_info=target_userspace_info,
+                          xfs_info=xfs_info,
+                          storage_info=storage_info,
+                          target_iso=target_iso) as (context, overlay, target_repoids):
         apply_workarounds(overlay.nspawn())
         _transaction(
             context=context, stage='dry-run', target_repoids=target_repoids, plugin_info=plugin_info, tasks=tasks,

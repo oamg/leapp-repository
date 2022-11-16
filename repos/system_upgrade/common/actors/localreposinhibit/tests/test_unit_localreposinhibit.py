@@ -3,6 +3,7 @@ import pytest
 from leapp.models import (
     RepositoryData,
     RepositoryFile,
+    TargetOSInstallationImage,
     TMPTargetRepositoriesFacts,
     UsedTargetRepositories,
     UsedTargetRepository
@@ -70,3 +71,11 @@ def test_unit_localreposinhibit(current_actor_context, baseurl, mirrorlist, meta
     )
     current_actor_context.run()
     assert len(current_actor_context.messages()) == exp_msgs_len
+
+
+def test_upgrade_not_inhibited_if_iso_used(current_actor_context):
+    repofile = RepositoryFile(file="path/to/some/file",
+                              data=[RepositoryData(name="BASEOS", baseurl="file:///path", repoid="BASEOS")])
+    current_actor_context.feed(TMPTargetRepositoriesFacts(repositories=[repofile]))
+    current_actor_context.feed(UsedTargetRepositories(repos=[UsedTargetRepository(repoid="BASEOS")]))
+    current_actor_context.feed(TargetOSInstallationImage(path='', mountpoint='', repositories=[]))

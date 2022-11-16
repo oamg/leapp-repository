@@ -2,7 +2,7 @@ from leapp.actors import Actor
 from leapp.libraries.actor import userspacegen
 from leapp.libraries.common.config import get_env, version
 from leapp.models import RequiredTargetUserspacePackages  # deprecated
-from leapp.models import TMPTargetRepositoriesFacts  # deprecated all the time
+from leapp.models import TMPTargetRepositoriesFacts  # deprecated
 from leapp.models import (
     CustomTargetRepositoryFile,
     PkgManagerInfo,
@@ -12,6 +12,7 @@ from leapp.models import (
     RHSMInfo,
     RHUIInfo,
     StorageInfo,
+    TargetOSInstallationImage,
     TargetRepositories,
     TargetUserSpaceInfo,
     TargetUserSpacePreupgradeTasks,
@@ -42,6 +43,7 @@ class TargetUserspaceCreator(Actor):
         RepositoriesMapping,
         RequiredTargetUserspacePackages,
         StorageInfo,
+        TargetOSInstallationImage,
         TargetRepositories,
         TargetUserSpacePreupgradeTasks,
         XFSPresence,

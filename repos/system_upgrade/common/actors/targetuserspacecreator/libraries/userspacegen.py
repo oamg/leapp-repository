@@ -9,7 +9,7 @@ from leapp.libraries.common.config import get_env, get_product_type
 from leapp.libraries.common.config.version import get_target_major_version
 from leapp.libraries.stdlib import api, CalledProcessError, config, run
 from leapp.models import RequiredTargetUserspacePackages  # deprecated
-from leapp.models import TMPTargetRepositoriesFacts  # deprecated
+from leapp.models import TMPTargetRepositoriesFacts  # deprecated all the time
 from leapp.models import (
     CustomTargetRepositoryFile,
     PkgManagerInfo,
@@ -17,6 +17,7 @@ from leapp.models import (
     RHSMInfo,
     RHUIInfo,
     StorageInfo,
+    TargetOSInstallationImage,
     TargetRepositories,
     TargetUserSpaceInfo,
     TargetUserSpacePreupgradeTasks,
@@ -686,15 +687,18 @@ def perform():
             storage_info=indata.storage_info,
             xfs_info=indata.xfs_info) as overlay:
         with overlay.nspawn() as context:
-            target_repoids = _gather_target_repositories(context, indata, prod_cert_path)
-            _create_target_userspace(context, indata.packages, indata.files, target_repoids)
-            # TODO: this is tmp solution as proper one needs significant refactoring
-            target_repo_facts = repofileutils.get_parsed_repofiles(context)
-            api.produce(TMPTargetRepositoriesFacts(repositories=target_repo_facts))
-            # ## TODO ends here
-            api.produce(UsedTargetRepositories(
-                repos=[UsedTargetRepository(repoid=repo) for repo in target_repoids]))
-            api.produce(TargetUserSpaceInfo(
-                path=_get_target_userspace(),
-                scratch=constants.SCRATCH_DIR,
-                mounts=constants.MOUNTS_DIR))
+            # Mount the ISO into the scratch container
+            target_iso = next(api.consume(TargetOSInstallationImage), None)
+            with mounting.mount_upgrade_iso_to_root_dir(overlay.target, target_iso):
+                target_repoids = _gather_target_repositories(context, indata, prod_cert_path)
+                _create_target_userspace(context, indata.packages, indata.files, target_repoids)
+                # TODO: this is tmp solution as proper one needs significant refactoring
+                target_repo_facts = repofileutils.get_parsed_repofiles(context)
+                api.produce(TMPTargetRepositoriesFacts(repositories=target_repo_facts))
+                # ## TODO ends here
+                api.produce(UsedTargetRepositories(
+                    repos=[UsedTargetRepository(repoid=repo) for repo in target_repoids]))
+                api.produce(TargetUserSpaceInfo(
+                    path=_get_target_userspace(),
+                    scratch=constants.SCRATCH_DIR,
+                    mounts=constants.MOUNTS_DIR))

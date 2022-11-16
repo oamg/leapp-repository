@@ -2,7 +2,7 @@
 %global repositorydir %{leapp_datadir}/repositories
 %global custom_repositorydir %{leapp_datadir}/custom-repositories
 
-%define leapp_repo_deps  7
+%define leapp_repo_deps  8
 
 %if 0%{?rhel} == 7
     %define leapp_python_sitelib %{python2_sitelib}
@@ -105,6 +105,10 @@ Requires:       leapp-framework >= 3.1, leapp-framework < 4
 # Since we provide sub-commands for the leapp utility, we expect the leapp
 # tool to be installed as well.
 Requires:       leapp
+
+# Used to determine RHEL version of a given target RHEL installation image -
+# uncompressing redhat-release package from the ISO.
+Requires:   cpio
 
 # The leapp-repository rpm is renamed to %%{lpr_name}
 Obsoletes:      leapp-repository < 0.14.0-%{release}

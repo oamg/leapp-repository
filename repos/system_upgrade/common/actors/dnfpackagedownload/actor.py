@@ -6,6 +6,7 @@ from leapp.models import (
     FilteredRpmTransactionTasks,
     RHUIInfo,
     StorageInfo,
+    TargetOSInstallationImage,
     TargetUserSpaceInfo,
     UsedTargetRepositories,
     XFSPresence
@@ -28,6 +29,7 @@ class DnfPackageDownload(Actor):
         FilteredRpmTransactionTasks,
         RHUIInfo,
         StorageInfo,
+        TargetOSInstallationImage,
         TargetUserSpaceInfo,
         UsedTargetRepositories,
         XFSPresence,
@@ -45,8 +47,10 @@ class DnfPackageDownload(Actor):
         rhui_info = next(self.consume(RHUIInfo), None)
         # there are several "variants" related to the *AWS* provider (aws, aws-sap)
         on_aws = bool(rhui_info and rhui_info.provider.startswith('aws'))
+        target_iso = next(self.consume(TargetOSInstallationImage), None)
 
         dnfplugin.perform_rpm_download(
             tasks=tasks, used_repos=used_repos, target_userspace_info=target_userspace_info,
-            xfs_info=xfs_info, storage_info=storage_info, plugin_info=plugin_info, on_aws=on_aws
+            xfs_info=xfs_info, storage_info=storage_info, plugin_info=plugin_info, on_aws=on_aws,
+            target_iso=target_iso
         )

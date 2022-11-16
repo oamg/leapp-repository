@@ -9,7 +9,7 @@
 %endif
 
 
-%define leapp_repo_deps  7
+%define leapp_repo_deps  8
 %define leapp_framework_deps 5
 
 # NOTE: the Version contains the %{rhel} macro just for the convenience to
@@ -60,6 +60,10 @@ Requires:   dnf-command(config-manager)
 # but as dracut is removable on RHEL 8+, let's rather require it to be really
 # sure
 Requires:   dracut
+
+# Used to determine RHEL version of a given target RHEL installation image -
+# uncompressing redhat-release package from the ISO.
+Requires:   cpio
 
 # just to be sure that /etc/modprobe.d is present
 Requires:   kmod

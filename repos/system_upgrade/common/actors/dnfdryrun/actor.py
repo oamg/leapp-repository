@@ -7,6 +7,7 @@ from leapp.models import (
     FilteredRpmTransactionTasks,
     RHUIInfo,
     StorageInfo,
+    TargetOSInstallationImage,
     TargetUserSpaceInfo,
     TransactionDryRun,
     UsedTargetRepositories,
@@ -31,6 +32,7 @@ class DnfDryRun(Actor):
         FilteredRpmTransactionTasks,
         RHUIInfo,
         StorageInfo,
+        TargetOSInstallationImage,
         TargetUserSpaceInfo,
         UsedTargetRepositories,
         XFSPresence,
@@ -46,10 +48,12 @@ class DnfDryRun(Actor):
         tasks = next(self.consume(FilteredRpmTransactionTasks), FilteredRpmTransactionTasks())
         target_userspace_info = next(self.consume(TargetUserSpaceInfo), None)
         rhui_info = next(self.consume(RHUIInfo), None)
+        target_iso = next(self.consume(TargetOSInstallationImage), None)
         on_aws = bool(rhui_info and rhui_info.provider == 'aws')
 
         dnfplugin.perform_dry_run(
             tasks=tasks, used_repos=used_repos, target_userspace_info=target_userspace_info,
-            xfs_info=xfs_info, storage_info=storage_info, plugin_info=plugin_info, on_aws=on_aws
+            xfs_info=xfs_info, storage_info=storage_info, plugin_info=plugin_info, on_aws=on_aws,
+            target_iso=target_iso,
         )
         self.produce(TransactionDryRun())

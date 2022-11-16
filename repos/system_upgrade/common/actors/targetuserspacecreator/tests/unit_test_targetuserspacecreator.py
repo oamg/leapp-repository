@@ -27,6 +27,7 @@ def adjust_cwd():
 class MockedMountingBase(object):
     def __init__(self, **dummy_kwargs):
         self.called_copytree_from = []
+        self.target = ''
 
     def copytree_from(self, src, dst):
         self.called_copytree_from.append((src, dst))

@@ -5,6 +5,7 @@ from leapp.models import (
     DNFWorkaround,
     FilteredRpmTransactionTasks,
     StorageInfo,
+    TargetOSInstallationImage,
     TargetUserSpaceInfo,
     UsedTargetRepositories,
     XFSPresence
@@ -23,6 +24,7 @@ class DnfTransactionCheck(Actor):
         DNFWorkaround,
         FilteredRpmTransactionTasks,
         StorageInfo,
+        TargetOSInstallationImage,
         TargetUserSpaceInfo,
         UsedTargetRepositories,
         XFSPresence,
@@ -37,9 +39,10 @@ class DnfTransactionCheck(Actor):
         plugin_info = list(self.consume(DNFPluginTask))
         tasks = next(self.consume(FilteredRpmTransactionTasks), FilteredRpmTransactionTasks())
         target_userspace_info = next(self.consume(TargetUserSpaceInfo), None)
+        target_iso = next(self.consume(TargetOSInstallationImage), None)
 
         if target_userspace_info:
             dnfplugin.perform_transaction_check(
                 tasks=tasks, used_repos=used_repos, target_userspace_info=target_userspace_info,
-                xfs_info=xfs_info, storage_info=storage_info, plugin_info=plugin_info
+                xfs_info=xfs_info, storage_info=storage_info, plugin_info=plugin_info, target_iso=target_iso
             )

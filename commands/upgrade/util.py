@@ -199,6 +199,13 @@ def prepare_configuration(args):
     if args.channel:
         os.environ['LEAPP_TARGET_PRODUCT_CHANNEL'] = args.channel
 
+    if args.iso:
+        os.environ['LEAPP_TARGET_ISO'] = args.iso
+    target_iso_path = os.environ.get('LEAPP_TARGET_ISO')
+    if target_iso_path:
+        # Make sure we convert rel paths into abs ones while we know what CWD is
+        os.environ['LEAPP_TARGET_ISO'] = os.path.abspath(target_iso_path)
+
     # Check upgrade path and fail early if it's unsupported
     target_version, flavor = command_utils.vet_upgrade_path(args)
     os.environ['LEAPP_UPGRADE_PATH_TARGET_RELEASE'] = target_version
