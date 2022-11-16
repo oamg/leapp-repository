@@ -9,7 +9,7 @@
 %endif
 
 
-%define leapp_repo_deps  7
+%define leapp_repo_deps  8
 %define leapp_framework_deps 5
 
 # NOTE: the Version contains the %{rhel} macro just for the convenience to
