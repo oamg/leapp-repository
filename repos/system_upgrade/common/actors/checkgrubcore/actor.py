@@ -1,25 +1,23 @@
 from leapp import reporting
 from leapp.actors import Actor
+from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common.config import architecture
-from leapp.models import FirmwareFacts, GrubDevice, UpdateGrub
+from leapp.models import FirmwareFacts, GrubInfo
 from leapp.reporting import create_report, Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
-from leapp.utils.deprecation import suppress_deprecation
 
 GRUB_SUMMARY = ('On legacy (BIOS) systems, GRUB core (located in the gap between the MBR and the '
                 'first partition) does not get automatically updated when GRUB is upgraded.')
 
 
-# TODO: remove this actor completely after the deprecation period expires
-@suppress_deprecation(GrubDevice, UpdateGrub)
 class CheckGrubCore(Actor):
     """
     Check whether we are on legacy (BIOS) system and instruct Leapp to upgrade GRUB core
     """
 
     name = 'check_grub_core'
-    consumes = (FirmwareFacts, GrubDevice)
-    produces = (Report, UpdateGrub)
+    consumes = (FirmwareFacts, GrubInfo)
+    produces = (Report,)
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 
     def process(self):
@@ -29,9 +27,10 @@ class CheckGrubCore(Actor):
 
         ff = next(self.consume(FirmwareFacts), None)
         if ff and ff.firmware == 'bios':
-            dev = next(self.consume(GrubDevice), None)
-            if dev:
-                self.produce(UpdateGrub(grub_device=dev.grub_device))
+            grub_info = next(self.consume(GrubInfo), None)
+            if not grub_info:
+                raise StopActorExecutionError('Actor did not receive any GrubInfo message.')
+            if grub_info.orig_device_name:
                 create_report([
                     reporting.Title(
                         'GRUB core will be updated during upgrade'

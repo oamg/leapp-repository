@@ -5,7 +5,6 @@ from leapp.exceptions import StopActorExecution
 from leapp.libraries.actor import updategrubcore
 from leapp.libraries.common import testutils
 from leapp.libraries.stdlib import api, CalledProcessError
-from leapp.models import UpdateGrub
 from leapp.reporting import Report
 
 UPDATE_OK_TITLE = 'GRUB core successfully updated'
@@ -34,7 +33,6 @@ class run_mocked(object):
 
 
 def test_update_grub(monkeypatch):
-    monkeypatch.setattr(api, 'consume', lambda x: iter([UpdateGrub(grub_device='/dev/vda')]))
     monkeypatch.setattr(reporting, "create_report", testutils.create_report_mocked())
     monkeypatch.setattr(updategrubcore, 'run', run_mocked())
     updategrubcore.update_grub_core('/dev/vda')
@@ -43,7 +41,6 @@ def test_update_grub(monkeypatch):
 
 
 def test_update_grub_failed(monkeypatch):
-    monkeypatch.setattr(api, 'consume', lambda x: iter([UpdateGrub(grub_device='/dev/vda')]))
     monkeypatch.setattr(reporting, "create_report", testutils.create_report_mocked())
     monkeypatch.setattr(updategrubcore, 'run', run_mocked(raise_err=True))
     with pytest.raises(StopActorExecution):
