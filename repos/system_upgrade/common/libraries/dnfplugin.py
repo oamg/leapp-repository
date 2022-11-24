@@ -241,7 +241,14 @@ def apply_workarounds(context=None):
     for workaround in api.consume(DNFWorkaround):
         try:
             api.show_message('Applying transaction workaround - {}'.format(workaround.display_name))
-            context.call(['/bin/bash', '-c', workaround.script_path])
+            if workaround.script_args:
+                cmd_str = '{script} {args}'.format(
+                    script=workaround.script_path,
+                    args=' '.join(workaround.script_args)
+                )
+            else:
+                cmd_str = workaround.script_path
+            context.call(['/bin/bash', '-c', cmd_str])
         except (OSError, CalledProcessError) as e:
             raise StopActorExecutionError(
                 message=('Failed to execute script to apply transaction workaround {display_name}.'
