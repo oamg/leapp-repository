@@ -1,0 +1,35 @@
+#!/usr/bin/bash -ef
+
+log_error() {
+  echo >&2 "Error: $1"
+}
+
+log_info() {
+  echo >&2 "Info: $1"
+}
+
+if [ "$#" -eq 0 ]; then
+    log_error "Missing the required path to the directory with trusted GPG keys."
+    exit 1
+elif [ "$#" -ge 2 ]; then
+    log_error "Expected only one argument, received $#. Possibly unescaped whitespaces? '$*'"
+    exit 1
+fi
+
+if [ ! -e "$1" ]; then
+    log_error "The $1 directory does not exist."
+    exit 1
+fi
+
+error_flag=0
+IFS=$'\n'
+# shellcheck disable=SC2044
+for key_file in $(find -L "$1" -type f); do
+    log_info "Importing GPG keys from: $key_file"
+    rpm --import "$key_file" || {
+      error_flag=2
+      log_error "Unable to import GPG keys from: $key_file"
+    }
+done
+
+exit $error_flag
