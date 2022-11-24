@@ -15,6 +15,20 @@ class DNFWorkaround(Model):
     topic = SystemInfoTopic
 
     script_path = fields.String()
-    """ Absolute path to a bash script to execute """
+    """
+    Absolute path to a bash script to execute
+    """
+
+    script_args = fields.List(fields.String(), default=[])
+    """
+    Arguments with which the script should be executed
+
+    In case that an argument contains a whitespace or an escapable character,
+    the argument must be already treated correctly. e.g.
+        `script_args = ['-i', 'my\\ string']
+    """
+
     display_name = fields.String()
-    """ Name to display for this script when executed """
+    """
+    Name to display for this script when executed
+    """
