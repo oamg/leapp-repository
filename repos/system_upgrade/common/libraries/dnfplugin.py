@@ -299,6 +299,8 @@ def perform_transaction_install(target_userspace_info, storage_info, used_repos,
     Performs the actual installation with the DNF rhel-upgrade plugin using the target userspace
     """
 
+    stage = 'upgrade'
+
     # These bind mounts are performed by systemd-nspawn --bind parameters
     bind_mounts = [
         '/:/installroot',
@@ -337,22 +339,28 @@ def perform_transaction_install(target_userspace_info, storage_info, used_repos,
         # communicate with udev
         cmd_prefix = ['nsenter', '--ipc=/installroot/proc/1/ns/ipc']
 
+        disable_plugins = []
+        if plugin_info:
+            for info in plugin_info:
+                if stage in info.disable_in:
+                    disable_plugins += [info.name]
+
         # we have to ensure the leapp packages will stay untouched
         # Note: this is the most probably duplicate action - it should be already
         # set like that, however seatbelt is a good thing.
-        dnfconfig.exclude_leapp_rpms(context)
+        dnfconfig.exclude_leapp_rpms(context, disable_plugins)
 
         if get_target_major_version() == '9':
             _rebuild_rpm_db(context, root='/installroot')
         _transaction(
-            context=context, stage='upgrade', target_repoids=target_repoids, plugin_info=plugin_info, tasks=tasks,
+            context=context, stage=stage, target_repoids=target_repoids, plugin_info=plugin_info, tasks=tasks,
             cmd_prefix=cmd_prefix
         )
 
         # we have to ensure the leapp packages will stay untouched even after the
         # upgrade is fully finished (it cannot be done before the upgrade
         # on the host as the config-manager plugin is available since rhel-8)
-        dnfconfig.exclude_leapp_rpms(mounting.NotIsolatedActions(base_dir='/'))
+        dnfconfig.exclude_leapp_rpms(mounting.NotIsolatedActions(base_dir='/'), disable_plugins=disable_plugins)
 
 
 @contextlib.contextmanager
@@ -377,10 +385,20 @@ def perform_transaction_check(target_userspace_info,
     """
     Perform DNF transaction check using our plugin
     """
+
+    stage = 'check'
+
     with _prepare_perform(used_repos=used_repos, target_userspace_info=target_userspace_info, xfs_info=xfs_info,
                           storage_info=storage_info, target_iso=target_iso) as (context, overlay, target_repoids):
         apply_workarounds(overlay.nspawn())
-        dnfconfig.exclude_leapp_rpms(context)
+
+        disable_plugins = []
+        if plugin_info:
+            for info in plugin_info:
+                if stage in info.disable_in:
+                    disable_plugins += [info.name]
+
+        dnfconfig.exclude_leapp_rpms(context, disable_plugins)
         _transaction(
             context=context, stage='check', target_repoids=target_repoids, plugin_info=plugin_info, tasks=tasks
         )
@@ -397,13 +415,23 @@ def perform_rpm_download(target_userspace_info,
     """
     Perform RPM download including the transaction test using dnf with our plugin
     """
+
+    stage = 'download'
+
     with _prepare_perform(used_repos=used_repos,
                           target_userspace_info=target_userspace_info,
                           xfs_info=xfs_info,
                           storage_info=storage_info,
                           target_iso=target_iso) as (context, overlay, target_repoids):
+
+        disable_plugins = []
+        if plugin_info:
+            for info in plugin_info:
+                if stage in info.disable_in:
+                    disable_plugins += [info.name]
+
         apply_workarounds(overlay.nspawn())
-        dnfconfig.exclude_leapp_rpms(context)
+        dnfconfig.exclude_leapp_rpms(context, disable_plugins)
         _transaction(
             context=context, stage='download', target_repoids=target_repoids, plugin_info=plugin_info, tasks=tasks,
             test=True, on_aws=on_aws
