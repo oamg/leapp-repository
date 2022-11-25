@@ -75,7 +75,9 @@ class CurrentActorMocked(object):  # pylint:disable=R0904
         release = namedtuple('OS_release', ['release_id', 'version_id'])(release_id, src_ver)
 
         self._common_folder = '../../files'
+        self._common_tools_folder = '../../tools'
         self._actor_folder = 'files'
+        self._actor_tools_folder = 'tools'
         self.configuration = namedtuple(
             'configuration', ['architecture', 'kernel', 'leapp_env_vars', 'os_release', 'version', 'flavour']
         )(arch, kernel, envarsList, release, version, flavour)
@@ -86,6 +88,9 @@ class CurrentActorMocked(object):  # pylint:disable=R0904
 
     def get_common_folder_path(self, folder):
         return os.path.join(self._common_folder, folder)
+
+    def get_common_tool_path(self, name):
+        return os.path.join(self._common_tools_folder, name)
 
     def consume(self, model):
         return iter(filter(  # pylint:disable=W0110,W1639
@@ -147,9 +152,6 @@ class CurrentActorMocked(object):  # pylint:disable=R0904
         raise NotImplementedError
 
     def get_tool_path(self, name):
-        raise NotImplementedError
-
-    def get_common_tool_path(self, name):
         raise NotImplementedError
 
     def get_actor_tool_path(self, name):
