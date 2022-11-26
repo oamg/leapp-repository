@@ -235,6 +235,33 @@ def _get_files_owned_by_rpms(context, dirpath, pkgs=None):
     return files_owned_by_rpms
 
 
+def _copy_certificates(context, target_userspace):
+    """
+    Copy the needed cetificates into the container, but preserve original ones
+
+    Some certificates are already installed in the container and those are
+    default certificates for the target OS. We know we should preserve at
+    least certificates located at rpm-gpg directory. So preserve these for
+    now at least.
+    """
+    target_pki = os.path.join(target_userspace, 'etc', 'pki')
+    backup_pki = os.path.join(target_userspace, 'etc', 'pki.backup')
+
+    # FIXME(pstodulk): search for all files owned by RPMs inside the container
+    # before the mv, and all such files restore
+    # - this is requirement to not break IPU with RHUI when making the copy
+    # of certificates unconditional
+    run(['mv', target_pki, backup_pki])
+    context.copytree_from('/etc/pki', target_pki)
+
+    # TODO(pstodulk): restore the files owned by rpms instead of the code below
+    for fname in os.listdir(os.path.join(backup_pki, 'rpm-gpg')):
+        src_path = os.path.join(backup_pki, 'rpm-gpg', fname)
+        dst_path = os.path.join(target_pki, 'rpm-gpg', fname)
+        run(['rm', '-rf', dst_path])
+        run(['cp', '-a', src_path, dst_path])
+
+
 def _prep_repository_access(context, target_userspace):
     """
     Prepare repository access by copying all relevant certificates and configuration files to the userspace
@@ -243,9 +270,10 @@ def _prep_repository_access(context, target_userspace):
     target_yum_repos_d = os.path.join(target_etc, 'yum.repos.d')
     backup_yum_repos_d = os.path.join(target_etc, 'yum.repos.d.backup')
     if not rhsm.skip_rhsm():
-        run(['rm', '-rf', os.path.join(target_etc, 'pki')])
+        # TODO: make the _copy_certificates unconditional. keeping it conditional
+        # due to issues causing on RHUI
+        _copy_certificates(context, target_userspace)
         run(['rm', '-rf', os.path.join(target_etc, 'rhsm')])
-        context.copytree_from('/etc/pki', os.path.join(target_etc, 'pki'))
         context.copytree_from('/etc/rhsm', os.path.join(target_etc, 'rhsm'))
     # NOTE: we cannot just remove the original target yum.repos.d dir
     # as e.g. in case of RHUI a special RHUI repofiles are installed by a pkg
