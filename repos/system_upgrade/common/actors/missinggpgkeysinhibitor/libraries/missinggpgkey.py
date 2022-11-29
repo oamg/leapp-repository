@@ -21,6 +21,7 @@ from leapp.models import (
 from leapp.utils.deprecation import suppress_deprecation
 
 GPG_CERTS_FOLDER = 'rpm-gpg'
+FMT_LIST_SEPARATOR = '\n    - '
 
 
 def _gpg_show_keys(key_path):
@@ -251,16 +252,29 @@ def _report_missing_keys(missing_keys):
     # TODO(pstodulk): polish the report, use FMT_LIST_SEPARATOR
     # the list of keys should be mentioned in the summary
     summary = (
-        "Some of the target repositories require GPG keys that are missing from the current"
-        " RPM DB. Leapp will not be able to verify packages from these repositories during the upgrade process."
+        'Some of the target repositories require GPG keys that are not installed'
+        ' in the current RPM DB or are not stored in the {trust_dir} directory.'
+        ' Leapp is not able to guarantee validity of such gpg keys and manual'
+        ' review is required, so any spurious keys are not imported in the system'
+        ' during the in-place upgrade.'
+        ' The following additional gpg keys are required to be imported during'
+        ' the upgrade:{sep}{key_list}'
+        .format(
+            trust_dir=_get_path_to_gpg_certs(),
+            sep=FMT_LIST_SEPARATOR,
+            key_list=FMT_LIST_SEPARATOR.join(missing_keys)
+        )
     )
     hint = (
-        "Please, review the following list and import the GPG keys before "
-        "continuing the upgrade:\n * {}".format('\n * '.join(missing_keys))
+        'Check the listed GPG keys they are valid and import them into the'
+        ' host RPM DB or store them inside the {} directory prior the upgrade.'
+        ' If you want to proceed the in-place upgrade without checking any RPM'
+        ' signatures, execute leapp with the `--nogpgcheck` option.'
+        .format(_get_path_to_gpg_certs())
     )
     reporting.create_report(
         [
-            reporting.Title("Missing GPG key from target system repository"),
+            reporting.Title('Detected unknown GPG keys for target system repositories'),
             reporting.Summary(summary),
             reporting.Severity(reporting.Severity.HIGH),
             reporting.Groups([reporting.Groups.REPOSITORY, reporting.Groups.INHIBITOR]),
@@ -351,7 +365,7 @@ def process():
             if not fps:
                 # TODO: for now. I think it should be treated better
                 api.current_logger().warning(
-                    "Cannot get any gpg key from the file: {}".format(gpgkey_url)
+                    'Cannot get any gpg key from the file: {}'.format(gpgkey_url)
                 )
                 continue
             for fp in fps:
