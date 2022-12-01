@@ -134,9 +134,11 @@ class SatelliteUpgradeFacts(Actor):
         if has_package(InstalledRPM, 'satellite'):
             repositories_to_enable.append('satellite-6.11-for-rhel-8-x86_64-rpms')
             modules_to_enable.append(Module(name='satellite', stream='el8'))
+            to_install.append('satellite')
         elif has_package(InstalledRPM, 'satellite-capsule'):
             repositories_to_enable.append('satellite-capsule-6.11-for-rhel-8-x86_64-rpms')
             modules_to_enable.append(Module(name='satellite-capsule', stream='el8'))
+            to_install.append('satellite-capsule')
 
         self.produce(RpmTransactionTasks(
             to_remove=to_remove,
