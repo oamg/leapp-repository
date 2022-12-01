@@ -102,6 +102,22 @@ def test_enables_satellite_capsule_module(current_actor_context):
     assert Module(name='satellite', stream='el8') not in message.modules_to_enable
 
 
+def test_installs_satellite_package(current_actor_context):
+    current_actor_context.feed(InstalledRPM(items=[FOREMAN_RPM, SATELLITE_RPM]))
+    current_actor_context.run(config_model=mock_configs.CONFIG)
+    message = current_actor_context.consume(RpmTransactionTasks)[0]
+    assert 'satellite' in message.to_install
+    assert 'satellite-capsule' not in message.to_install
+
+
+def test_installs_satellite_capsule_package(current_actor_context):
+    current_actor_context.feed(InstalledRPM(items=[FOREMAN_PROXY_RPM, SATELLITE_CAPSULE_RPM]))
+    current_actor_context.run(config_model=mock_configs.CONFIG)
+    message = current_actor_context.consume(RpmTransactionTasks)[0]
+    assert 'satellite-capsule' in message.to_install
+    assert 'satellite' not in message.to_install
+
+
 def test_detects_local_postgresql(monkeypatch, current_actor_context):
     def mock_stat():
         orig_stat = os.stat
