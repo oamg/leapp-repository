@@ -63,6 +63,9 @@ class RedHatSignedRpmScanner(Actor):
         whitelisted_cloud_pkgs.update(
             rhui.RHUI_CLOUD_MAP[upg_path].get(flavour, {}).get('target_pkg') for flavour in whitelisted_cloud_flavours
         )
+        whitelisted_cloud_pkgs.update(
+            rhui.RHUI_CLOUD_MAP[upg_path].get(flavour, {}).get('leapp_pkg') for flavour in whitelisted_cloud_flavours
+        )
 
         for rpm_pkgs in self.consume(InstalledRPM):
             for pkg in rpm_pkgs.items:
