@@ -1,6 +1,6 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import deviceanddriverdeprecationdataload
-from leapp.models import DeviceDriverDeprecationData
+from leapp.models import ConsumedDataAsset, DeviceDriverDeprecationData
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 
@@ -14,7 +14,7 @@ class LoadDeviceDriverDeprecationData(Actor):
 
     name = 'load_device_driver_deprecation_data'
     consumes = ()
-    produces = (DeviceDriverDeprecationData,)
+    produces = (DeviceDriverDeprecationData, ConsumedDataAsset)
     tags = (IPUWorkflowTag, FactsPhaseTag)
 
     def process(self, *args, **kwargs):

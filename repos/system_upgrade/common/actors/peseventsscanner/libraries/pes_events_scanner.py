@@ -482,6 +482,9 @@ def apply_transaction_configuration(source_pkgs):
 def process():
     # Retrieve data - installed_pkgs, transaction configuration, pes events
     events = get_pes_events('/etc/leapp/files', 'pes-events.json')
+    if not events:
+        return
+
     releases = get_relevant_releases(events)
     source_pkgs = get_installed_pkgs()
     source_pkgs = apply_transaction_configuration(source_pkgs)

@@ -17,6 +17,7 @@ from leapp.libraries.actor.pes_event_parsing import (
 from leapp.libraries.common import fetch
 from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked
 from leapp.libraries.stdlib import api
+from leapp.models import ConsumedDataAsset
 
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -155,10 +156,10 @@ def test_parse_pes_events_with_modulestreams(current_actor_context):
 
 
 def test_get_pes_events_invalid_data_reported(monkeypatch):
-    def read_or_fetch_mocked(*args, **kwargs):
+    def load_data_asset_mocked(*args, **kwargs):
         raise ValueError()
 
-    monkeypatch.setattr(fetch, 'read_or_fetch', read_or_fetch_mocked)
+    monkeypatch.setattr(fetch, 'load_data_asset', load_data_asset_mocked)
     created_reports = create_report_mocked()
     monkeypatch.setattr(reporting, "create_report", created_reports)
     monkeypatch.setattr(api, "current_actor", CurrentActorMocked())

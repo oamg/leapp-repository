@@ -10,7 +10,7 @@ from leapp.libraries.common import fetch
 from leapp.libraries.common.config import architecture, version
 from leapp.libraries.common.testutils import CurrentActorMocked, produce_mocked
 from leapp.libraries.stdlib import api
-from leapp.models import PESIDRepositoryEntry
+from leapp.models import ConsumedDataAsset, PESIDRepositoryEntry, RPM
 
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -94,9 +94,18 @@ def test_scan_repositories_with_missing_data(monkeypatch):
     """
     Tests whether the scanning process fails gracefully when no data are read.
     """
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(src_ver='7.9', dst_ver='8.4'))
+    mocked_actor = CurrentActorMocked(src_ver='7.9', dst_ver='8.4', msgs=[])
+
+    # Patch the mocked actor as the library will verify caller/callee contract
+    mocked_actor.produces = (ConsumedDataAsset, )
+
+    monkeypatch.setattr(api, 'current_actor', mocked_actor)
     monkeypatch.setattr(api, 'produce', produce_mocked())
-    monkeypatch.setattr(repositoriesmapping, 'read_or_fetch', lambda dummy: '')
+
+    def read_or_fetch_mocked(*args, **kwargs):
+        return ''
+
+    monkeypatch.setattr(fetch, 'read_or_fetch', read_or_fetch_mocked)
 
     with pytest.raises(StopActorExecutionError) as missing_data_error:
         repositoriesmapping.scan_repositories()

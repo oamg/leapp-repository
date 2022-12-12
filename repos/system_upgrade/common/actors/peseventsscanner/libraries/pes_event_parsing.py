@@ -66,8 +66,19 @@ def get_pes_events(pes_json_directory, pes_json_filename):
     :return: List of Event tuples, where each event contains event type and input/output pkgs
     """
     try:
-        all_events = parse_pes_events(fetch.read_or_fetch(pes_json_filename, directory=pes_json_directory,
-                                                          allow_empty=True))
+        events_data = fetch.load_data_asset(api.current_actor(),
+                                            pes_json_filename,
+                                            asset_fulltext_name='PES events file',
+                                            docs_url='https://access.redhat.com/articles/3664871',
+                                            docs_title=('Leapp utility metadata in-place upgrades of RHEL '
+                                                        'for disconnected upgrades (including Satellite)'))
+        if not events_data:
+            return None
+
+        if not events_data.get('packageinfo'):
+            raise ValueError('Found PES data with invalid structure')
+
+        all_events = list(chain(*[parse_entry(entry) for entry in events_data['packageinfo']]))
         arch = api.current_actor().configuration.architecture
         events_matching_arch = [e for e in all_events if not e.architectures or arch in e.architectures]
         return events_matching_arch
