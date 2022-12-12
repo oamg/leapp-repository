@@ -1,10 +1,9 @@
-import json
 import os
 from collections import defaultdict
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common.config.version import get_source_major_version, get_target_major_version
-from leapp.libraries.common.fetch import read_or_fetch
+from leapp.libraries.common.fetch import load_data_asset
 from leapp.libraries.stdlib import api
 from leapp.models import PESIDRepositoryEntry, RepoMapEntry, RepositoriesMapping
 from leapp.models.fields import ModelViolationError
@@ -143,12 +142,13 @@ def _read_repofile(repofile):
     # obtained -> then check whether old_repomap file exists and in such a case
     # inform user they have to provde the new repomap.json file (we have the
     # warning now only which could be potentially overlooked)
-    try:
-        return json.loads(read_or_fetch(repofile))
-    except ValueError:
-        # The data does not contain a valid json
-        _inhibit_upgrade('The repository mapping file is invalid: file does not contain a valid JSON object.')
-    return None  # Avoids inconsistent-return-statements warning
+    repofile_data = load_data_asset(api.current_actor(),
+                                    repofile,
+                                    asset_fulltext_name='Repositories mapping',
+                                    docs_url='https://access.redhat.com/articles/3664871',
+                                    docs_title=('Leapp utility metadata in-place upgrades of RHEL '
+                                                'for disconnected upgrades (including Satellite)'))
+    return repofile_data  # If the file does not contain a valid json then load_asset will do a stop actor execution
 
 
 def scan_repositories(read_repofile_func=_read_repofile):

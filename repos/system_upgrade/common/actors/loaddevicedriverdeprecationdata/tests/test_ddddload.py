@@ -1,4 +1,5 @@
 from leapp.libraries.actor import deviceanddriverdeprecationdataload as ddddload
+from leapp.libraries.common import fetch
 
 TEST_DATA = {
     'data': [
@@ -44,7 +45,11 @@ TEST_DATA = {
 
 def test_filtered_load(monkeypatch):
     produced = []
-    monkeypatch.setattr(ddddload, '_load_file', lambda: TEST_DATA)
+
+    def load_data_asset_mock(*args, **kwargs):
+        return TEST_DATA
+
+    monkeypatch.setattr(fetch, 'load_data_asset', load_data_asset_mock)
     monkeypatch.setattr(ddddload.api, 'produce', lambda *v: produced.extend(v))
 
     ddddload.process()

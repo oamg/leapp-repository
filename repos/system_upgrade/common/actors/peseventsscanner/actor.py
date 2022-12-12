@@ -1,6 +1,7 @@
 from leapp.actors import Actor
 from leapp.libraries.actor.pes_events_scanner import process
 from leapp.models import (
+    ConsumedDataAsset,
     EnabledModules,
     InstalledRedHatSignedRPM,
     PESRpmTransactionTasks,
@@ -33,7 +34,7 @@ class PesEventsScanner(Actor):
         RHUIInfo,
         RpmTransactionTasks,
     )
-    produces = (PESRpmTransactionTasks, RepositoriesSetupTasks, Report)
+    produces = (ConsumedDataAsset, PESRpmTransactionTasks, RepositoriesSetupTasks, Report)
     tags = (IPUWorkflowTag, FactsPhaseTag)
 
     def process(self):
