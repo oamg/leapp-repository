@@ -1,3 +1,4 @@
+#!/bin/sh
 # library containing some useful functions for debugging in initramfs
 
 # mounts the sysroot
@@ -29,10 +30,12 @@ leapp_dbg_chroot() {
 
     for dir in /sys /run /proc /dev /dev/pts; do
         mount --bind $dir "$NEWROOT$dir"
-    done || { echo "Failed to mount some directories" || return 1 }
+    done || {
+        echo "Failed to mount some directories" || return 1
+    }
 
-    chroot $NEWROOT sh -c "mount -a; /bin/bash"
+    chroot "$NEWROOT" sh -c "mount -a; /bin/bash"
     for dir in /sys /run /proc /dev/pts /dev; do
-        umount $NEWROOT$dir
+        umount "$NEWROOT$dir"
     done
 }

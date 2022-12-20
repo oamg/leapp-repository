@@ -73,6 +73,8 @@ install() {
                 "${generatordir}/initrd-system-upgrade-generator"
 
     inst_script "${_moddir}/leapp_debug_tools.sh" "/bin/leapp_debug_tools.sh"
+    inst_script "${_moddir}/.profile" "/.profile"
+    inst_script "${_moddir}/.shrc" "/.shrc"
 
     ## upgrade shell service
     #sysinit_wantsdir="${_initdir}${unitdir}/sysinit.target.wants"

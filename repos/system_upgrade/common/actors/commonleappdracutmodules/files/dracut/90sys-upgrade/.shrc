@@ -1,0 +1,4 @@
+#!/bin/sh
+
+# shell commands to execute on interactive shell startup
+. leapp_debug_tools.sh
