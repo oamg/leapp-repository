@@ -193,6 +193,10 @@ def prepare_configuration(args):
         os.environ['LEAPP_NO_RHSM'] = '1'
     elif os.getenv('LEAPP_NO_RHSM') != '1':
         os.environ['LEAPP_NO_RHSM'] = os.getenv('LEAPP_DEVEL_SKIP_RHSM', '0')
+
+    if args.no_insights_register:
+        os.environ['LEAPP_NO_INSIGHTS_REGISTER'] = '1'
+
     if args.enablerepo:
         os.environ['LEAPP_ENABLE_REPOS'] = ','.join(args.enablerepo)
 
