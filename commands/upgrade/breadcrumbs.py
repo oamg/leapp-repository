@@ -3,6 +3,7 @@ import json
 import os
 import sys
 from functools import wraps
+from itertools import chain
 
 from leapp import FULL_VERSION
 from leapp.libraries.stdlib.call import _call
@@ -12,6 +13,27 @@ try:
     from json.decoder import JSONDecodeError  # pylint: disable=ungrouped-imports
 except ImportError:
     JSONDecodeError = ValueError
+
+
+def runs_in_container():
+    """
+    Check if the current process is running inside a container
+
+    :return: True if the process is running inside a container, False otherwise
+    """
+    return os.path.exists('/run/host/container-manager')
+
+
+def _flattened(d):
+    """ Flatten nested dicts and lists into a single dict """
+    def expand(key, value):
+        if isinstance(value, dict):
+            return [(key + '.' + k, v) for k, v in _flattened(value).items()]
+        if isinstance(value, list):
+            return chain(*[expand(key + '.' + str(i), v) for i, v in enumerate(value)])
+        return [(key, value)]
+    items = [item for k, v in d.items() for item in expand(k, v)]
+    return dict(items)
 
 
 class _BreadCrumbs(object):
@@ -32,6 +54,35 @@ class _BreadCrumbs(object):
 
     def fail(self):
         self._crumbs['success'] = False
+
+    def _save_rhsm_facts(self, activities):
+        if not os.path.isdir('/etc/rhsm/facts'):
+            if not os.path.exists('/etc/rhsm'):
+                # If there's no /etc/rhsm folder just skip it
+                return
+            os.path.mkdir('/etc/rhsm/facts')
+        try:
+            with open('/etc/rhsm/facts/leapp.facts', 'w') as f:
+                json.dump(_flattened({
+                    'leapp': [
+                        activity for activity in activities
+                        if activity.get('activity', '') in ('preupgrade', 'upgrade')]
+                    }), f, indent=4)
+            self._commit_rhsm_facts()
+        except OSError:
+            # We don't care about failing to 'create' the file here
+            # even though it shouldn't though, just ignore it
+            pass
+
+    def _commit_rhsm_facts(self):
+        if runs_in_container():
+            return
+        cmd = ['/usr/sbin/subscription-manager', 'facts', '--update']
+        try:
+            _call(cmd, lambda x, y: None, lambda x, y: None)
+        except (OSError, ValueError, TypeError):
+            # We don't care about errors here, just ignore them
+            pass
 
     def save(self):
         self._crumbs['run_id'] = os.environ.get('LEAPP_EXECUTION_ID', 'N/A')
@@ -59,6 +110,8 @@ class _BreadCrumbs(object):
                 crumbs.truncate()
                 json.dump(doc, crumbs, indent=2, sort_keys=True)
                 crumbs.write('\n')
+                if os.environ.get('LEAPP_NO_RHSM_FACTS', '0') == '1':
+                    self._save_rhsm_facts(doc['activities'])
         except OSError:
             sys.stderr.write('WARNING: Could not write to /etc/migration-results\n')
 
