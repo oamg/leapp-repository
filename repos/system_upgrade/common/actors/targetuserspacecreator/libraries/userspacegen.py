@@ -494,7 +494,10 @@ def _get_rhsm_available_repoids(context):
     # TODO: very similar thing should happens for all other repofiles in container
     #
     repoids = rhsm.get_available_repo_ids(context)
-    if not repoids or len(repoids) < 2:
+    # NOTE(ivasilev) For the moment at least AppStream and BaseOS repos are required. While we are still
+    # contemplating on what can be a generic solution to checking this, let's introduce a minimal check for
+    # at-least-one-appstream and at-least-one-baseos among present repoids
+    if not repoids or all("baseos" not in ri for ri in repoids) or all("appstream" not in ri for ri in repoids):
         reporting.create_report([
             reporting.Title('Cannot find required basic RHEL target repositories.'),
             reporting.Summary(
