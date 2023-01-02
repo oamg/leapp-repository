@@ -8,6 +8,11 @@ downstream_package_name: leapp-repository
 upstream_tag_template: 'v{version}'
 merge_pr_in_ci: false
 
+# keep the empty list for now (the same is used for the leapp project).
+# the list is mandatory and currently we still build srpm via the Makefile.
+# but it's supposed to be (most likely) updated in upcoming months.
+srpm_build_deps: []
+
 # This is just for the build from the CLI - all other builds for jobs use own
 # actions
 actions:
