@@ -196,8 +196,7 @@ ibdmp() {
 
 bring_up_network() {
     if [ -f /etc/leapp-initram-network-manager ]; then
-	# NOTE(ivasilev) Reverting the change to see if it caused the crash
-	. /lib/dracut/hooks/cmdline/99-nm-config.sh
+        . /lib/dracut/hooks/cmdline/99-nm-config.sh
         . /lib/dracut/hooks/initqueue/settled/99-nm-run.sh
     fi
     if [ -f /etc/leapp-initram-network-scripts ]; then
