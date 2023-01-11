@@ -6,4 +6,4 @@ class GrubConfigError(Model):
     topic = SystemFactsTopic
 
     error_detected = fields.Boolean(default=False)
-    error_type = fields.StringEnum(['GRUB_CMDLINE_LINUX syntax', 'missing newline'])
+    error_type = fields.StringEnum(['GRUB_CMDLINE_LINUX syntax', 'missing newline', 'corrupted grubenv'])
