@@ -42,9 +42,11 @@ def test_same_disk(monkeypatch):
 
     expected_title = 'Satellite PostgreSQL data migration'
     expected_summary = 'Your PostgreSQL data will be automatically migrated.'
+    expected_reindex = 'all databases will require a REINDEX'
 
     assert expected_title == reporting.create_report.report_fields['title']
-    assert expected_summary == reporting.create_report.report_fields['summary']
+    assert expected_summary in reporting.create_report.report_fields['summary']
+    assert expected_reindex in reporting.create_report.report_fields['summary']
 
 
 def test_different_disk_sufficient_storage(monkeypatch):
@@ -58,9 +60,11 @@ def test_different_disk_sufficient_storage(monkeypatch):
 
     expected_title = 'Satellite PostgreSQL data migration'
     expected_summary = 'You currently have enough free storage to move the data'
+    expected_reindex = 'all databases will require a REINDEX'
 
     assert expected_title == reporting.create_report.report_fields['title']
     assert expected_summary in reporting.create_report.report_fields['summary']
+    assert expected_reindex in reporting.create_report.report_fields['summary']
 
 
 def test_different_disk_insufficient_storage(monkeypatch):

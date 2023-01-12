@@ -32,3 +32,10 @@ class SatelliteUpgrader(Actor):
             api.current_logger().error(
                 'Could not run the installer, please inspect the logs in /var/log/foreman-installer!'
             )
+
+        if facts.postgresql.local_postgresql:
+            api.current_actor().show_message('Re-indexing the database. This can take a while.')
+            try:
+                run(['runuser', '-u', 'postgres', '--', 'reindexdb', '-a'])
+            except (OSError, CalledProcessError) as e:
+                api.current_logger().error('Failed to run `reindexdb`: {}'.format(str(e)))
