@@ -1,4 +1,4 @@
-from collections import namedtuple
+from collections import defaultdict, namedtuple
 from functools import partial
 
 from leapp import reporting
@@ -126,6 +126,7 @@ def compute_pkg_changes_between_consequent_releases(source_installed_pkgs,
                                                     release,
                                                     seen_pkgs,
                                                     pkgs_to_demodularize):
+    logger = api.current_logger()
     # Start with the installed packages and modify the set according to release events
     target_pkgs = set(source_installed_pkgs)
 
@@ -154,6 +155,12 @@ def compute_pkg_changes_between_consequent_releases(source_installed_pkgs,
 
             # For MERGE to be relevant it is sufficient for only one of its in_pkgs to be installed
             if are_all_in_pkgs_present or (event.action == Action.MERGED and is_any_in_pkg_present):
+                removed_pkgs = target_pkgs.intersection(event.in_pkgs)
+                removed_pkgs_str = ', '.join(str(pkg) for pkg in removed_pkgs) if removed_pkgs else '[]'
+                added_pkgs_str = ', '.join(str(pkg) for pkg in event.out_pkgs) if event.out_pkgs else '[]'
+                logger.debug('Applying event %d (%s): replacing packages %s with %s',
+                             event.id, event.action, removed_pkgs_str, added_pkgs_str)
+
                 # In pkgs are present, event can be applied
                 target_pkgs = target_pkgs.difference(event.in_pkgs)
                 target_pkgs = target_pkgs.union(event.out_pkgs)
@@ -161,6 +168,55 @@ def compute_pkg_changes_between_consequent_releases(source_installed_pkgs,
         pkgs_to_demodularize = pkgs_to_demodularize.difference(event.in_pkgs)
 
     return (target_pkgs, pkgs_to_demodularize)
+
+
+def remove_undesired_events(events, relevant_to_releases):
+    """
+    Conservatively remove events that needless, or cause problems for the current implementation:
+    - (needless) events with to_release not in relevant releases
+    - (problematic) events with the same from_release and the same in_pkgs
+    """
+
+    logger = api.current_logger()
+    relevant_to_releases = set(relevant_to_releases)
+
+    events_with_same_in_pkgs_and_from_release = defaultdict(list)
+    for event in events:
+        if event.to_release in relevant_to_releases:
+            # NOTE(mhecko): The tuple(sorted(event.in_pkgs))) is ugly, however, the removal of the events with the same
+            # #             from_release and in_pkgs is needed only because the current implementation is flawed.
+            # #             I would love to rewrite the core algorithm as a "solution to graph reachability problem",
+            # #             making the behaviour of PES event scanner purely data driven.
+            events_with_same_in_pkgs_and_from_release[(event.from_release, tuple(sorted(event.in_pkgs)))].append(event)
+
+    cleaned_events = []
+    for from_release_in_pkgs_pair, problematic_events in events_with_same_in_pkgs_and_from_release.items():
+        if len(problematic_events) == 1:
+            cleaned_events.append(problematic_events[0])  # There is no problem
+            continue
+
+        # E.g., one of the problematic events is to=8.6, other one to=8.7, keep only 8.7
+        from_release, dummy_in_pkgs = from_release_in_pkgs_pair
+        max_to_release = max((e.to_release for e in problematic_events))
+        events_with_max_to_release = [event for event in problematic_events if event.to_release == max_to_release]
+
+        if len(events_with_max_to_release) == 1:
+            # If there is a single event with maximal to_release, keep only that
+            kept_event = events_with_max_to_release[0]
+            event_ids = [event.id for event in problematic_events]
+            logger.debug('Events %s have the same in packages and the same from_release %s, keeping %d',
+                         event_ids, from_release, kept_event.id)
+            cleaned_events.append(kept_event)
+            continue
+
+        # There are at least 2 events A, B with the same in_release, out_release and in_pkgs. If A is REMOVE and B
+        # performs some conditional mutation (e.g. SPLIT) a race-conflict arises. However, the current
+        # implementation would apply these events as `A(input_state) union B(input_state)`, where the input_state
+        # is kept immutable. Therefore, B will have an effect regardless of whether A is REMOVAL or not.
+        for event in problematic_events:
+            cleaned_events.append(event)
+
+    return cleaned_events
 
 
 def compute_packages_on_target_system(source_pkgs, events, releases):
@@ -427,6 +483,8 @@ def process():
     # Keep track of what repoids have the source packages to be able to determine what are the PESIDs of the computed
     # packages of the target system, so we can distinguish what needs to be repomapped
     repoids_of_source_pkgs = {pkg.repository for pkg in source_pkgs}
+
+    events = remove_undesired_events(events, releases)
 
     # Apply events - compute what packages should the target system have
     target_pkgs, pkgs_to_demodularize = compute_packages_on_target_system(source_pkgs, events, releases)
