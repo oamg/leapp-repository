@@ -139,6 +139,7 @@ def _get_fstab_info(fstab_path):
                     api.current_logger().error(summary)
                     break
 
+                # NOTE: fstab entries are yielded in the same order as in the /etc/fstab
                 fs_spec, fs_file, fs_vfstype, fs_mntops, fs_freq, fs_passno = entries
                 yield FstabEntry(
                     fs_spec=fs_spec,
