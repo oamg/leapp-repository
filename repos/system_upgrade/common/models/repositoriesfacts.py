@@ -7,13 +7,47 @@ class RepositoryData(Model):
     topic = SystemFactsTopic
 
     repoid = fields.String()
+    """
+    Unique identifier for the repository.
+    """
     name = fields.String()
+    """
+    Display name of the repository.
+    """
     baseurl = fields.Nullable(fields.String())
+    """
+    URL where the repository data is located, possibly missing if there's a meta link or mirror list.
+    """
     metalink = fields.Nullable(fields.String())
+    """
+    See documentation for repository files.
+    """
     mirrorlist = fields.Nullable(fields.String())
+    """
+    See documentation for repository files.
+    """
     enabled = fields.Boolean(default=True)
+    """
+    Is this repository enabled?
+    """
     additional_fields = fields.Nullable(fields.String())
+    """
+    See documentation for repository files.
+    """
     proxy = fields.Nullable(fields.String())
+    """
+    Proxy URL necessary for this repository
+    """
+    # TODO: Remove default
+    file = fields.String(default='')
+    """
+    The repository file where this repo was defined
+    """
+    # TODO: Remove default
+    kind = fields.StringEnum(choices=['custom', 'rhui', 'rhsm'], default='custom')
+    """
+    Declares if this comes through RHSM, RHUI or from a custom repo file.
+    """
 
 
 class RepositoryFile(Model):

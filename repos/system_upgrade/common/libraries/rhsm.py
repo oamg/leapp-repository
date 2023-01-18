@@ -4,7 +4,6 @@ import os
 import re
 import time
 
-from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import repofileutils
 from leapp.libraries.common.config import get_env
@@ -169,13 +168,6 @@ def get_available_repo_ids(context):
         )
 
     repofiles = repofileutils.get_parsed_repofiles(context)
-
-    # TODO: move this functionality out! Create check actor that will do
-    # the inhibit. The functionality is really not good here in the current
-    # shape of the leapp-repository. See the targetuserspacecreator and
-    # systemfacts actor if this is moved out.
-    # Issue: #486
-    _inhibit_on_duplicate_repos(repofiles)
     rhsm_repos = []
     for rfile in repofiles:
         if rfile.file == _DEFAULT_RHSM_REPOFILE and rfile.data:
@@ -190,36 +182,6 @@ def get_available_repo_ids(context):
     else:
         api.current_logger().info('There are no repos available through RHSM.')
     return rhsm_repos
-
-
-def _inhibit_on_duplicate_repos(repofiles):
-    """
-    Inhibit the upgrade if any repoid is defined multiple times.
-
-    When that happens, it not only shows misconfigured system, but then
-    we can't get details of all the available repos as well.
-    """
-    duplicates = repofileutils.get_duplicate_repositories(repofiles).keys()
-
-    if not duplicates:
-        return
-    list_separator_fmt = '\n    - '
-    api.current_logger().warning(
-        'The following repoids are defined multiple times:{0}{1}'
-        .format(list_separator_fmt, list_separator_fmt.join(duplicates))
-    )
-
-    reporting.create_report([
-        reporting.Title('A YUM/DNF repository defined multiple times'),
-        reporting.Summary(
-            'The following repositories are defined multiple times:{0}{1}'
-            .format(list_separator_fmt, list_separator_fmt.join(duplicates))
-        ),
-        reporting.Severity(reporting.Severity.MEDIUM),
-        reporting.Groups([reporting.Groups.REPOSITORY]),
-        reporting.Groups([reporting.Groups.INHIBITOR]),
-        reporting.Remediation(hint='Remove the duplicate repository definitions.')
-    ])
 
 
 @with_rhsm

@@ -11,10 +11,10 @@ except ImportError:
     api.current_logger().warning('repofileutils.py: failed to import dnf')
 
 
-def _parse_repository(repoid, repo_data):
+def _parse_repository(repoid, repo_data, path, kind='custom'):
     def asbool(x):
         return x == '1'
-    prepared = {'repoid': repoid, 'additional_fields': {}}
+    prepared = {'repoid': repoid, 'additional_fields': {}, 'file': path, 'kind': kind}
     for key in repo_data.keys():
         if key in RepositoryData.fields:
             if isinstance(RepositoryData.fields[key], fields.Boolean):
@@ -26,7 +26,7 @@ def _parse_repository(repoid, repo_data):
     return RepositoryData(**prepared)
 
 
-def parse_repofile(repofile):
+def parse_repofile(repofile, rfile=None, kind='custom'):
     """
     Parse the given repo file.
 
@@ -38,7 +38,7 @@ def parse_repofile(repofile):
     with open(repofile, mode='r') as fp:
         cp = utils.parse_config(fp, strict=False)
         for repoid in cp.sections():
-            data.append(_parse_repository(repoid, dict(cp.items(repoid))))
+            data.append(_parse_repository(repoid, dict(cp.items(repoid)), kind=kind, path=rfile or repofile))
     return RepositoryFile(file=repofile, data=data)
 
 
@@ -56,7 +56,7 @@ def get_repodirs():
         return list({os.path.realpath(d) for d in base.conf.reposdir if os.path.isdir(d)})
 
 
-def get_parsed_repofiles(context=mounting.NotIsolatedActions(base_dir='/')):
+def get_parsed_repofiles(context=None, kind_resolve=lambda rpath: 'custom'):
     """
     Scan all repositories on the system.
 
@@ -70,14 +70,16 @@ def get_parsed_repofiles(context=mounting.NotIsolatedActions(base_dir='/')):
     :type context: mounting.IsolatedActions class
     :rtype: List(RepositoryFile)
     """
+    context = context or mounting.NotIsolatedActions(base_dir='/')
     repofiles = []
     cmd = ['find', '-L'] + get_repodirs() + ['-maxdepth', '1', '-type', 'f', '-name', '*.repo']
     repofiles_paths = context.call(cmd, split=True)['stdout']
     for repofile_path in repofiles_paths:
-        repofile = parse_repofile(context.full_path(repofile_path))
-        # we want full path in cotext, not the real full path
-        repofile.file = repofile_path
-        repofiles.append(repofile)
+        repofiles.append(
+            parse_repofile(
+                repofile=context.full_path(repofile_path),
+                rfile=repofile_path,
+                kind=kind_resolve(repofile_path)))
     return repofiles
 
 

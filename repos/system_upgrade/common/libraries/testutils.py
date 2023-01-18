@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import json
 import logging
 import os
@@ -113,7 +115,7 @@ class CurrentActorMocked(object):  # pylint:disable=R0904
         raise NotImplementedError
 
     def show_message(self, message):
-        raise NotImplementedError
+        print('SHOW_MESSAGE({})'.format(message))
 
     @property
     def actor_files_paths(self):
