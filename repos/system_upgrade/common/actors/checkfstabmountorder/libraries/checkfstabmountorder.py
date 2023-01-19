@@ -1,5 +1,3 @@
-import os
-
 from leapp import reporting
 from leapp.libraries.stdlib import api
 from leapp.models import StorageInfo
@@ -27,44 +25,55 @@ def _get_common_path(path1, path2):
     return '/' + '/'.join(common_path)
 
 
-def _get_incorrectly_ordered_fstab_entries(fstab_entries):
+def _get_overshadowing_mount_points(mount_points):
     """
-    Retrieve pairs of incorrectly ordered entries in /etc/fstab based on mount point overshadowing.
+    Retrieve set of overshadowing and overshadowed mount points.
 
-    :param list[FstabEntry] fstab_entries: fstab entries from StorageInfo
-    :returns: pairs of fstab entries with incorrect order
+    :param list[str] mount_points: absolute paths to mount points
+    :returns: set of mount points
     """
 
-    for i, fstab_entry in enumerate(fstab_entries):
-        mount_point = os.path.abspath(fstab_entry.fs_file)
+    overshadowing = set()
+    for i, mount_point in enumerate(mount_points):
+        if mount_point[-1] == '/':
+            mount_point = mount_point[:-1]
 
-        for overshadowing_fstab_entry in fstab_entries[i+1:]:
-            overshadowing_mount_point = os.path.abspath(overshadowing_fstab_entry.fs_file)
+        for overshadowing_mount_point in mount_points[i+1:]:
+            if overshadowing_mount_point[-1] == '/':
+                overshadowing_mount_point = overshadowing_mount_point[:-1]
 
             if _get_common_path(mount_point, overshadowing_mount_point) == overshadowing_mount_point:
-                yield fstab_entry, overshadowing_fstab_entry
+                overshadowing.add(overshadowing_mount_point)
+                overshadowing.add(mount_point)
+
+    return overshadowing
 
 
 def check_fstab_mount_order():
     storage_info = next(api.consume(StorageInfo), None)
 
     if storage_info:
-        overshadowing_pairs = list(_get_incorrectly_ordered_fstab_entries(storage_info.fstab))
-        if overshadowing_pairs:
-            mount_points = [fstab_entry.fs_file for fstab_entry in storage_info.fstab]
 
-            duplicates = set()
-            overshadowing = set()
-            for overshadowed_entry, overshadowing_entry in overshadowing_pairs:
-                if overshadowed_entry == overshadowing_entry:
-                    duplicates.add(overshadowed_entry.fs_file)
-                overshadowing.add(overshadowed_entry.fs_file)
-                overshadowing.add(overshadowing_entry.fs_file)
+        mount_points = []
+        for fstab_entry in storage_info.fstab:
+            mount_point = fstab_entry.fs_file
+            if mount_point[-1] == '/':
+                mount_point = mount_point[:-1]
+            mount_points.append(mount_point)
+
+        overshadowing = _get_overshadowing_mount_points(mount_points)
+
+        if overshadowing:
 
             overshadowing_in_order = []
             for mount_point in mount_points:
                 if mount_point in overshadowing:
                     overshadowing_in_order.append(mount_point)
+
+            duplicates = set()
+            for mount_point in mount_points:
+                if mount_points.count(mount_point) > 1:
+                    duplicates.add(mount_point)
 
             summary = (
                 'Leapp detected incorrect order of entries in /etc/fstab that causes '

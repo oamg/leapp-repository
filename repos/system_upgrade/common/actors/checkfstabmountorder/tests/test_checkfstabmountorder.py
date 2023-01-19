@@ -3,23 +3,19 @@ import pytest
 from leapp import reporting
 from leapp.libraries.actor.checkfstabmountorder import (
     _get_common_path,
-    _get_incorrectly_ordered_fstab_entries,
+    _get_overshadowing_mount_points,
     check_fstab_mount_order
 )
 from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked
 from leapp.libraries.stdlib import api
 from leapp.models import FstabEntry, MountEntry, StorageInfo
 
-VAR_ENTRY = FstabEntry(fs_spec='', fs_file='/var/', fs_vfstype='',
+VAR_ENTRY = FstabEntry(fs_spec='', fs_file='/var', fs_vfstype='',
                        fs_mntops='defaults', fs_freq='0', fs_passno='0')
+VAR_DUPLICATE_ENTRY = FstabEntry(fs_spec='', fs_file='/var/', fs_vfstype='',
+                                 fs_mntops='defaults', fs_freq='0', fs_passno='0')
 VAR_LOG_ENTRY = FstabEntry(fs_spec='', fs_file='/var/log', fs_vfstype='',
                            fs_mntops='defaults', fs_freq='0', fs_passno='0')
-HOME_ENTRY = FstabEntry(fs_spec='', fs_file='/home', fs_vfstype='',
-                        fs_mntops='defaults', fs_freq='0', fs_passno='0')
-VAR_LIB_LEAPP_ENTRY = FstabEntry(fs_spec='', fs_file='/var/lib/leapp', fs_vfstype='',
-                                 fs_mntops='defaults', fs_freq='0', fs_passno='0')
-VAR_LIB_LEA_ENTRY = FstabEntry(fs_spec='', fs_file='/var/lib/lea/', fs_vfstype='',
-                               fs_mntops='defaults', fs_freq='0', fs_passno='0')
 
 
 @pytest.mark.parametrize(
@@ -40,33 +36,33 @@ def test_get_common_path(path1, path2, expected_output):
     ('fstab_entries', 'expected_output'),
     [
         (
-           [VAR_ENTRY, VAR_LOG_ENTRY],
-           []
+           ['/var', '/var/log'],
+           set()
         ),
         (
-           [VAR_LOG_ENTRY, VAR_ENTRY],
-           [(VAR_LOG_ENTRY, VAR_ENTRY)]
+           ['/var/log', '/var'],
+           {'/var/log', '/var'}
         ),
         (
-           [VAR_LOG_ENTRY, VAR_ENTRY, VAR_ENTRY],
-           [(VAR_LOG_ENTRY, VAR_ENTRY), (VAR_LOG_ENTRY, VAR_ENTRY), (VAR_ENTRY, VAR_ENTRY)]
+           ['/var/log', '/var', '/var/'],
+           {'/var/log', '/var'}
         ),
         (
-           [VAR_LOG_ENTRY, HOME_ENTRY, VAR_ENTRY, VAR_LIB_LEAPP_ENTRY],
-           [(VAR_LOG_ENTRY, VAR_ENTRY)]
+           ['/var/log', '/home', '/var', '/var/lib/leapp'],
+           {'/var/log', '/var'}
         ),
         (
-           [VAR_LOG_ENTRY, HOME_ENTRY, VAR_LIB_LEAPP_ENTRY, VAR_ENTRY],
-           [(VAR_LOG_ENTRY, VAR_ENTRY), (VAR_LIB_LEAPP_ENTRY, VAR_ENTRY)]
+           ['/var/log', '/home', '/var/lib/leapp', '/var'],
+           {'/var/log', '/var', '/var/lib/leapp'}
         ),
         (
-           [VAR_LOG_ENTRY, HOME_ENTRY, VAR_ENTRY, VAR_LIB_LEA_ENTRY, VAR_LIB_LEAPP_ENTRY],
-           [(VAR_LOG_ENTRY, VAR_ENTRY)]
+           ['/var/log', '/home', '/var', '/var/lib/lea', '/var/lib/leapp'],
+           {'/var/log', '/var'}
         ),
     ]
 )
-def test_incorrectly_ordered_fstab_entries(fstab_entries, expected_output):
-    assert list(_get_incorrectly_ordered_fstab_entries(fstab_entries)) == expected_output
+def test_get_overshadowing_mount_points(fstab_entries, expected_output):
+    assert _get_overshadowing_mount_points(fstab_entries) == expected_output
 
 
 @pytest.mark.parametrize(
@@ -81,7 +77,7 @@ def test_incorrectly_ordered_fstab_entries(fstab_entries, expected_output):
             True
         ),
         (
-            StorageInfo(fstab=[VAR_LOG_ENTRY, VAR_ENTRY, VAR_ENTRY]),
+            StorageInfo(fstab=[VAR_LOG_ENTRY, VAR_ENTRY, VAR_DUPLICATE_ENTRY]),
             True
         ),
         (
