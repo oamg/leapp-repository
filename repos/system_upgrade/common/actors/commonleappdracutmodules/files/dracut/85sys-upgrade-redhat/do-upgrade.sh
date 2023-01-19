@@ -274,7 +274,7 @@ do_upgrade() {
         # set the upgrade failed flag to prevent the upgrade from running again
         # when the emergency shell exits and the upgrade.target is restarted
         local dirname
-        dirname="$(dirname "$NEWROOT$LEAPP_FAILED_FLAG_FILE")"
+        dirname="$("$NEWROOT/bin/dirname" "$NEWROOT$LEAPP_FAILED_FLAG_FILE")"
         [ -d "$dirname" ] || mkdir "$dirname"
         "$NEWROOT/bin/touch" "$NEWROOT$LEAPP_FAILED_FLAG_FILE"
     fi
