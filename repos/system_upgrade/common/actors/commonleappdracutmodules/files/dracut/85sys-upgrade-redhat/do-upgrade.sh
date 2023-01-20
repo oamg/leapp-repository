@@ -46,6 +46,8 @@ fi
 export NSPAWN_OPTS="$NSPAWN_OPTS --keep-unit --register=no --timezone=off --resolv-conf=off"
 
 
+export LEAPP_FAILED_FLAG_FILE="/root/tmp_leapp_py3/.leapp_upgrade_failed"
+
 #
 # Temp for collecting and preparing tarball
 #
@@ -268,6 +270,15 @@ do_upgrade() {
         rv=$?
     fi
 
+    if [ "$rv" -ne 0 ]; then
+        # set the upgrade failed flag to prevent the upgrade from running again
+        # when the emergency shell exits and the upgrade.target is restarted
+        local dirname
+        dirname="$("$NEWROOT/bin/dirname" "$NEWROOT$LEAPP_FAILED_FLAG_FILE")"
+        [ -d "$dirname" ] || mkdir "$dirname"
+        "$NEWROOT/bin/touch" "$NEWROOT$LEAPP_FAILED_FLAG_FILE"
+    fi
+
     # Dump debug data in case something went wrong
     if want_inband_dump "$rv"; then
         collect_and_dump_debug_data
@@ -338,6 +349,15 @@ mount -o "remount,rw" "$NEWROOT"
 
 ##### do the upgrade #######
 (
+    # check if leapp previously failed in the initramfs, if it did return to the emergency shell
+    [ -f "$NEWROOT$LEAPP_FAILED_FLAG_FILE" ] && {
+        echo >&2 "Found file $NEWROOT$LEAPP_FAILED_FLAG_FILE"
+        echo >&2 "Error: Leapp previously failed and cannot continue, returning back to emergency shell"
+        echo >&2 "Please file a support case with $NEWROOT/var/log/leapp/leapp-upgrade.log attached"
+        echo >&2 "To rerun the upgrade upon exiting the dracut shell remove the $NEWROOT$LEAPP_FAILED_FLAG_FILE file"
+        exit 1
+    }
+
     [ ! -x "$NEWROOT$LEAPPBIN" ] && {
         warn "upgrade binary '$LEAPPBIN' missing!"
         exit 1
