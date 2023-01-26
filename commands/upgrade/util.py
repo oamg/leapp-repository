@@ -200,6 +200,9 @@ def prepare_configuration(args):
     if args.enablerepo:
         os.environ['LEAPP_ENABLE_REPOS'] = ','.join(args.enablerepo)
 
+    if os.environ.get('LEAPP_NO_RHSM', '0') == '1' or args.no_rhsm_facts:
+        os.environ['LEAPP_NO_RHSM_FACTS'] = '1'
+
     if args.channel:
         os.environ['LEAPP_TARGET_PRODUCT_CHANNEL'] = args.channel
 

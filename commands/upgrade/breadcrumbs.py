@@ -110,7 +110,7 @@ class _BreadCrumbs(object):
                 crumbs.truncate()
                 json.dump(doc, crumbs, indent=2, sort_keys=True)
                 crumbs.write('\n')
-                if os.environ.get('LEAPP_NO_RHSM_FACTS', '0') == '1':
+                if os.environ.get('LEAPP_NO_RHSM_FACTS', '0') != '1':
                     self._save_rhsm_facts(doc['activities'])
         except OSError:
             sys.stderr.write('WARNING: Could not write to /etc/migration-results\n')

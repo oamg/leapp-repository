@@ -25,6 +25,8 @@ from leapp.utils.output import beautify_actor_exception, report_errors, report_i
 @command_opt('no-rhsm', is_flag=True, help='Use only custom repositories and skip actions'
                                            ' with Red Hat Subscription Manager')
 @command_opt('no-insights-register', is_flag=True, help='Do not register into Red Hat Insights')
+@command_opt('no-rhsm-facts', is_flag=True, help='Do not store migration information using Red Hat '
+                                                 'Subscription Manager. Automatically implied by --no-rhsm.')
 @command_opt('enablerepo', action='append', metavar='<repoid>',
              help='Enable specified repository. Can be used multiple times.')
 @command_opt('channel',
