@@ -48,7 +48,7 @@ def test_get_common_path(path1, path2, expected_output):
            {'/var/log', '/var'}
         ),
         (
-           ['/var/log', '/home', '/var', '/var/lib/leapp'],
+           ['/var/log', '/home', '/var/', '/var/lib/leapp'],
            {'/var/log', '/var'}
         ),
         (
@@ -68,22 +68,10 @@ def test_get_overshadowing_mount_points(fstab_entries, expected_output):
 @pytest.mark.parametrize(
     ('storage_info', 'should_inhibit'),
     [
-        (
-            StorageInfo(fstab=[]),
-            False
-        ),
-        (
-            StorageInfo(fstab=[VAR_LOG_ENTRY, VAR_ENTRY]),
-            True
-        ),
-        (
-            StorageInfo(fstab=[VAR_LOG_ENTRY, VAR_ENTRY, VAR_DUPLICATE_ENTRY]),
-            True
-        ),
-        (
-            StorageInfo(fstab=[VAR_ENTRY, VAR_LOG_ENTRY]),
-            False
-        ),
+        (StorageInfo(fstab=[]), False),
+        (StorageInfo(fstab=[VAR_LOG_ENTRY, VAR_ENTRY]), True),
+        (StorageInfo(fstab=[VAR_LOG_ENTRY, VAR_ENTRY, VAR_DUPLICATE_ENTRY]), True),
+        (StorageInfo(fstab=[VAR_ENTRY, VAR_LOG_ENTRY]), False),
     ]
 )
 def test_var_lib_leapp_non_persistent_is_detected(monkeypatch, storage_info, should_inhibit):
@@ -97,6 +85,6 @@ def test_var_lib_leapp_non_persistent_is_detected(monkeypatch, storage_info, sho
     if should_inhibit:
         assert created_reports.called == 1
 
-        mount_points = [fstab_entry.fs_file for fstab_entry in storage_info.fstab]
+        mount_points = [fstab_entry.fs_file.rstrip('/') for fstab_entry in storage_info.fstab]
         if len(set(mount_points)) != len(mount_points):
-            assert 'Detected duplicate mount points:' in created_reports.reports[-1]['summary']
+            assert 'Detected mount points with duplicates:' in created_reports.reports[-1]['summary']
