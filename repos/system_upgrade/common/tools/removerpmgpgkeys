@@ -1,0 +1,13 @@
+#!/usr/bin/sh
+
+exit_code=0
+
+for key in "$@"; do
+    echo >&2 "Info: Removing RPM GPG key: $key"
+    rpm --erase "$key" || {
+        exit_code=1
+        echo >&2 "Error: Failed to remove RPM GPG key: $key"
+    }
+done
+
+exit $exit_code
