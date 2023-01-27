@@ -31,7 +31,7 @@ def apply_python3_workaround():
     os.symlink(_get_orig_leapp_path(), leapp_lib_symlink_path)
     with open(py3_leapp, 'w') as f:
         f_content = [
-            '#!/usr/bin/python3',
+            '#!/usr/bin/python3 -B',
             'import sys',
             'sys.path.append(\'{}\')'.format(LEAPP_HOME),
             '',
