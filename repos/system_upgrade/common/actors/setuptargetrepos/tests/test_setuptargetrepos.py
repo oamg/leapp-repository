@@ -6,6 +6,7 @@ from leapp.libraries.common.testutils import CurrentActorMocked, produce_mocked
 from leapp.libraries.stdlib import api
 from leapp.models import (
     CustomTargetRepository,
+    InstalledRPM,
     PESIDRepositoryEntry,
     RepoMapEntry,
     RepositoriesBlacklisted,
@@ -14,8 +15,16 @@ from leapp.models import (
     RepositoriesSetupTasks,
     RepositoryData,
     RepositoryFile,
+    RPM,
     TargetRepositories
 )
+
+RH_PACKAGER = 'Red Hat, Inc. <http://bugzilla.redhat.com/bugzilla>'
+
+
+def mock_package(pkg_name, repository=None):
+    return RPM(name=pkg_name, version='0.1', release='1.sm01', epoch='1', packager=RH_PACKAGER, arch='noarch',
+               pgpsig='RSA/SHA256, Mon 01 Jan 1970 00:00:00 AM -03, Key ID 199e2f91fd431d51', repository=repository)
 
 
 def test_minimal_execution(monkeypatch):
@@ -103,9 +112,13 @@ def test_repos_mapping(monkeypatch):
 
     repos_files = [RepositoryFile(file='/etc/yum.repos.d/redhat.repo', data=repos_data)]
     facts = RepositoriesFacts(repositories=repos_files)
+    installed_rpms = InstalledRPM(
+        items=[mock_package('foreman', 'rhel-7-for-x86_64-satellite-extras-rpms'),
+               mock_package('foreman-proxy', 'nosuch-rhel-7-for-x86_64-satellite-extras-rpms')])
 
     repomap = RepositoriesMapping(
-        mapping=[RepoMapEntry(source='rhel7-base', target=['rhel8-baseos', 'rhel8-appstream', 'rhel8-blacklist'])],
+        mapping=[RepoMapEntry(source='rhel7-base', target=['rhel8-baseos', 'rhel8-appstream', 'rhel8-blacklist']),
+                 RepoMapEntry(source='rhel7-satellite-extras', target=['rhel8-satellite-extras'])],
         repositories=[
             PESIDRepositoryEntry(
                 pesid='rhel7-base',
@@ -143,12 +156,30 @@ def test_repos_mapping(monkeypatch):
                 channel='ga',
                 rhui=''
             ),
+            PESIDRepositoryEntry(
+                pesid='rhel7-satellite-extras',
+                repoid='rhel-7-for-x86_64-satellite-extras-rpms',
+                major_version='7',
+                arch='x86_64',
+                repo_type='rpm',
+                channel='ga',
+                rhui=''
+            ),
+            PESIDRepositoryEntry(
+                pesid='rhel8-satellite-extras',
+                repoid='rhel-8-for-x86_64-satellite-extras-rpms',
+                major_version='8',
+                arch='x86_64',
+                repo_type='rpm',
+                channel='ga',
+                rhui=''
+            ),
         ]
     )
 
     repos_blacklisted = RepositoriesBlacklisted(repoids=['rhel-8-blacklisted-rpms'])
 
-    msgs = [facts, repomap, repos_blacklisted]
+    msgs = [facts, repomap, repos_blacklisted, installed_rpms]
 
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=msgs))
     monkeypatch.setattr(api, 'produce', produce_mocked())
@@ -157,8 +188,9 @@ def test_repos_mapping(monkeypatch):
     assert api.produce.called
 
     rhel_repos = api.produce.model_instances[0].rhel_repos
-    assert len(rhel_repos) == 2
+    assert len(rhel_repos) == 3
 
     produced_rhel_repoids = {repo.repoid for repo in rhel_repos}
-    expected_rhel_repoids = {'rhel-8-for-x86_64-baseos-htb-rpms', 'rhel-8-for-x86_64-appstream-htb-rpms'}
+    expected_rhel_repoids = {'rhel-8-for-x86_64-baseos-htb-rpms', 'rhel-8-for-x86_64-appstream-htb-rpms',
+                             'rhel-8-for-x86_64-satellite-extras-rpms'}
     assert produced_rhel_repoids == expected_rhel_repoids
