@@ -43,6 +43,8 @@ def test_run_reindexdb(monkeypatch, current_actor_context):
                                               postgresql=SatellitePostgresqlFacts(local_postgresql=True)))
     current_actor_context.run()
     assert mocked_run.commands
-    assert len(mocked_run.commands) == 2
-    assert mocked_run.commands[0] == ['foreman-installer', '--disable-system-checks']
-    assert mocked_run.commands[1] == ['runuser', '-u', 'postgres', '--', 'reindexdb', '-a']
+    assert len(mocked_run.commands) == 4
+    assert mocked_run.commands[0] == ['sed', '-i', '/data_directory/d', '/var/lib/pgsql/data/postgresql.conf']
+    assert mocked_run.commands[1] == ['systemctl', 'start', 'postgresql']
+    assert mocked_run.commands[2] == ['runuser', '-u', 'postgres', '--', 'reindexdb', '-a']
+    assert mocked_run.commands[3] == ['foreman-installer', '--disable-system-checks']
