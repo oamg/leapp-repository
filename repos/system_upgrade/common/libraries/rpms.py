@@ -39,7 +39,7 @@ def create_lookup(model, field, keys, context=stdlib.api):
         return set()
 
 
-def has_package(model, package_name, arch=None, context=stdlib.api):
+def has_package(model, package_name, arch=None, version=None, release=None, context=stdlib.api):
     """
     Expects a model InstalledRedHatSignedRPM or InstalledUnsignedRPM.
     Can be useful in cases like a quick item presence check, ex. check in actor that
@@ -48,12 +48,23 @@ def has_package(model, package_name, arch=None, context=stdlib.api):
     :param model: model class
     :param package_name: package to be checked
     :param arch: filter by architecture. None means all arches.
+    :param version: filter by version. None means all versions.
+    :param release: filter by release. None means all releases.
     """
     if not (isinstance(model, type) and issubclass(model, InstalledRPM)):
         return False
-    keys = ('name',) if not arch else ('name', 'arch')
+    keys = ['name']
+    if arch:
+        keys.append('arch')
+    if version:
+        keys.append('version')
+    if release:
+        keys.append('release')
+
+    attributes = [package_name]
+    attributes += [attr for attr in (arch, version, release) if attr is not None]
     rpm_lookup = create_lookup(model, field='items', keys=keys, context=context)
-    return (package_name, arch) in rpm_lookup if arch else (package_name,) in rpm_lookup
+    return tuple(attributes) in rpm_lookup
 
 
 def _read_rpm_modifications(config):
