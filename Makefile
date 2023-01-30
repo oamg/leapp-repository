@@ -383,8 +383,8 @@ _test_container_ipu:
 		echo "Only supported TEST_CONT_IPUs are el7toel8, el8toel9"; exit 1; \
 		;; \
 	esac && \
-	$(_CONTAINER_TOOL) exec -w /repocopy $$_CONT_NAME $(MAKE) clean && \
-	$(_CONTAINER_TOOL) exec -w /repocopy -e REPOSITORIES $$_CONT_NAME $(MAKE) $${_TEST_CONT_TARGET:-test} TEST_PATHS="$(TEST_PATHS)"
+	$(_CONTAINER_TOOL) exec -w /repocopy $$_CONT_NAME make clean && \
+	$(_CONTAINER_TOOL) exec -w /repocopy -e REPOSITORIES $$_CONT_NAME make $${_TEST_CONT_TARGET:-test}
 
 # Runs tests in a container
 # Builds testing image first if it doesn't exist
