@@ -25,13 +25,13 @@ def process():
     # was realtime
 
     if is_rhel_realtime():
-        version = _get_kernel_version('kernel-rt')
+        version = _get_kernel_version('kernel-rt-core')
         if version:
             api.produce(InstalledTargetKernelVersion(version=version))
             return
         else:
             api.current_logger().warning(
-                'The kernel-rt rpm from the target RHEL has not been detected. '
+                'The kernel-rt-core rpm from the target RHEL has not been detected. '
                 'Switching to non-preemptive kernel.'
             )
             # TODO: create report with instructions to install kernel-rt manually
@@ -40,7 +40,7 @@ def process():
             # # is not enabled during the upgrade.
 
     # standard (non-preemptive) kernel
-    version = _get_kernel_version('kernel')
+    version = _get_kernel_version('kernel-core')
     if version:
         api.produce(InstalledTargetKernelVersion(version=version))
     else:
