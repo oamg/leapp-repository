@@ -7,6 +7,7 @@ from leapp.libraries.actor.missinggpgkey import _pubkeys_from_rpms, process
 from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked, logger_mocked, produce_mocked
 from leapp.libraries.stdlib import api
 from leapp.models import (
+    DNFWorkaround,
     InstalledRPM,
     Report,
     RepositoriesFacts,
@@ -26,6 +27,9 @@ from leapp.utils.deprecation import suppress_deprecation
 
 
 def _get_test_installedrpm_no_my_key():
+    """
+    Valid RPM packages missing the key we are looking for (epel9)
+    """
     return [
         RPM(
             name='rpm',
@@ -59,6 +63,9 @@ def _get_test_installedrpm_no_my_key():
 
 
 def _get_test_installedrpm():
+    """
+    All test RPMS packages
+    """
     return InstalledRPM(
         items=[
             RPM(
@@ -66,7 +73,7 @@ def _get_test_installedrpm():
                 version='3228467c',
                 release='613798eb',
                 epoch='0',
-                packager='edora (epel9) <epel@fedoraproject.org>',
+                packager='Fedora (epel9) <epel@fedoraproject.org>',
                 arch='noarch',
                 pgpsig=''
             ),
@@ -74,7 +81,10 @@ def _get_test_installedrpm():
     )
 
 
-def _get_test_targuserspaceinfo(path='nopath'):
+def _get_test_targuserspaceinfo(path='/'):
+    """
+    Test TargetUserSpaceInfo which is needed to access the files in container root dir
+    """
     return TargetUserSpaceInfo(
         path=path,
         scratch='',
@@ -83,6 +93,9 @@ def _get_test_targuserspaceinfo(path='nopath'):
 
 
 def _get_test_usedtargetrepositories_list():
+    """
+    All target userspace directories
+    """
     return [
         UsedTargetRepository(
             repoid='BaseOS',
@@ -97,12 +110,18 @@ def _get_test_usedtargetrepositories_list():
 
 
 def _get_test_usedtargetrepositories():
+    """
+    The UsedTargetRepositories containing all repositories
+    """
     return UsedTargetRepositories(
         repos=_get_test_usedtargetrepositories_list()
     )
 
 
 def _get_test_target_repofile():
+    """
+    The valid RepositoryFile containing valid BaseOS and AppStream repositories
+    """
     return RepositoryFile(
         file='/etc/yum.repos.d/target_rhel.repo',
         data=[
@@ -125,6 +144,9 @@ def _get_test_target_repofile():
 
 
 def _get_test_target_repofile_additional():
+    """
+    The custom target repofile containing "problematic" repositories
+    """
     return RepositoryFile(
         file='/etc/yum.repos.d/my_target_rhel.repo',
         data=[
@@ -147,6 +169,9 @@ def _get_test_target_repofile_additional():
 
 @suppress_deprecation(TMPTargetRepositoriesFacts)
 def _get_test_tmptargetrepositoriesfacts():
+    """
+    All target repositories facts
+    """
     return TMPTargetRepositoriesFacts(
         repositories=[
             _get_test_target_repofile(),
@@ -342,9 +367,9 @@ def test_perform_https_gpgkey_unused(monkeypatch):
 
     process()
     assert not api.current_logger.warnmsg
-    # This is the DNFWorkaround
     assert api.produce.called == 1
-    assert reporting.create_report.called == 1
+    assert isinstance(api.produce.model_instances[0], DNFWorkaround)
+    assert reporting.create_report.called == 0
 
 
 @suppress_deprecation(TMPTargetRepositoriesFacts)
@@ -434,9 +459,11 @@ def test_perform_https_gpgkey(monkeypatch):
     monkeypatch.setattr('six.moves.urllib.request.urlretrieve', _urlretrive_mocked)
 
     process()
-    # This is the DNFWorkaround
     assert api.produce.called == 1
+    assert isinstance(api.produce.model_instances[0], DNFWorkaround)
     assert reporting.create_report.called == 1
+    assert "Detected unknown GPG keys for target system repositories" in reporting.create_report.reports[0]['title']
+    assert "https://example.com/rpm-gpg/key.gpg" in reporting.create_report.reports[0]['summary']
 
 
 def _urlretrive_mocked_urlerror(url, filename=None, reporthook=None, data=None):
@@ -462,9 +489,11 @@ def test_perform_https_gpgkey_urlerror(monkeypatch):
     process()
     assert len(api.current_logger.warnmsg) == 1
     assert 'Failed to download the gpgkey https://example.com/rpm-gpg/key.gpg:' in api.current_logger.warnmsg[0]
-    # This is the DNFWorkaround
     assert api.produce.called == 1
+    assert isinstance(api.produce.model_instances[0], DNFWorkaround)
     assert reporting.create_report.called == 1
+    assert "Failed to download GPG key for target repository" in reporting.create_report.reports[0]['title']
+    assert "https://example.com/rpm-gpg/key.gpg" in reporting.create_report.reports[0]['summary']
 
 
 def test_perform_ftp_gpgkey(monkeypatch):
@@ -485,9 +514,11 @@ def test_perform_ftp_gpgkey(monkeypatch):
     process()
     assert len(api.current_logger.errmsg) == 1
     assert 'Skipping unknown protocol for gpgkey ftp://example.com/rpm-gpg/key.gpg' in api.current_logger.errmsg[0]
-    # This is the DNFWorkaround
     assert api.produce.called == 1
+    assert isinstance(api.produce.model_instances[0], DNFWorkaround)
     assert reporting.create_report.called == 1
+    assert 'GPG keys provided using unknown protocol' in reporting.create_report.reports[0]['title']
+    assert 'ftp://example.com/rpm-gpg/key.gpg' in reporting.create_report.reports[0]['summary']
 
 
 @suppress_deprecation(TMPTargetRepositoriesFacts)
@@ -517,6 +548,59 @@ def test_perform_report(monkeypatch):
 
     process()
     assert not api.current_logger.warnmsg
-    # This is the DNFWorkaround
     assert api.produce.called == 1
+    assert isinstance(api.produce.model_instances[0], DNFWorkaround)
     assert reporting.create_report.called == 1
+    assert "Detected unknown GPG keys for target system repositories" in reporting.create_report.reports[0]['title']
+    assert "/etc/pki/rpm-gpg/RPM-GPG-KEY-my-release" in reporting.create_report.reports[0]['summary']
+
+
+@suppress_deprecation(TMPTargetRepositoriesFacts)
+def get_test_data_no_gpg_data():
+    return [
+        _get_test_targuserspaceinfo(),
+        _get_test_installedrpm(),
+        _get_test_usedtargetrepositories(),
+        _get_test_tmptargetrepositoriesfacts(),
+    ]
+
+
+def _gpg_show_keys_mocked_my_empty(key_path):
+    """
+    Get faked output from gpg reading keys.
+
+    This is needed to get away from dependency on the filesystem. This time, the key
+    /etc/pki/rpm-gpg/RPM-GPG-KEY-my-release does not return any GPG data
+    """
+    if key_path == '/etc/pki/rpm-gpg/RPM-GPG-KEY-my-release':
+        return {
+            'stdout': (),
+            'stderr': ('gpg: no valid OpenPGP data found.\n'),
+            'exit_code': 2,
+        }
+    return _gpg_show_keys_mocked(key_path)
+
+
+def test_perform_invalid_key(monkeypatch):
+    """
+    Executes the "main" function with a gpgkey not containing any GPG data
+
+    This should result in report outlining what key does not contain any valid data.
+    """
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(
+        msgs=get_test_data_no_gpg_data())
+    )
+    monkeypatch.setattr(api, 'produce', produce_mocked())
+    monkeypatch.setattr(api, 'current_logger', logger_mocked())
+    monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
+    monkeypatch.setattr('leapp.libraries.actor.missinggpgkey._gpg_show_keys', _gpg_show_keys_mocked_my_empty)
+    monkeypatch.setattr('leapp.libraries.actor.missinggpgkey._get_pubkeys', _get_pubkeys_mocked)
+
+    process()
+    assert len(api.current_logger.warnmsg) == 1
+    assert 'Cannot get any gpg key from the file' in api.current_logger.warnmsg[0]
+    assert api.produce.called == 1
+    assert isinstance(api.produce.model_instances[0], DNFWorkaround)
+    assert reporting.create_report.called == 1
+    assert 'Failed to read GPG keys from provided key files' in reporting.create_report.reports[0]['title']
+    assert 'file:///etc/pki/rpm-gpg/RPM-GPG-KEY-my-release' in reporting.create_report.reports[0]['summary']
