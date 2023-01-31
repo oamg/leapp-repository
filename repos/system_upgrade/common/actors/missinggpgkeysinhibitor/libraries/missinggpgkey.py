@@ -248,36 +248,37 @@ def _get_repo_gpgkey_urls(repo):
     return re.findall(r'[^,\s]+', _expand_vars(repo_additional['gpgkey']))
 
 
-def _report_missing_keys(missing_keys):
-    # TODO(pstodulk): polish the report, use FMT_LIST_SEPARATOR
-    # the list of keys should be mentioned in the summary
+def _report(title, summary, keys, inhibitor=False):
     summary = (
-        'Some of the target repositories require GPG keys that are not installed'
-        ' in the current RPM DB or are not stored in the {trust_dir} directory.'
+        '{summary}'
         ' Leapp is not able to guarantee validity of such gpg keys and manual'
         ' review is required, so any spurious keys are not imported in the system'
         ' during the in-place upgrade.'
         ' The following additional gpg keys are required to be imported during'
         ' the upgrade:{sep}{key_list}'
         .format(
-            trust_dir=_get_path_to_gpg_certs(),
+            summary=summary,
             sep=FMT_LIST_SEPARATOR,
-            key_list=FMT_LIST_SEPARATOR.join(missing_keys)
+            key_list=FMT_LIST_SEPARATOR.join(keys)
         )
     )
     hint = (
-        'Check the listed GPG keys they are valid and import them into the'
-        ' host RPM DB or store them inside the {} directory prior the upgrade.'
+        'Check the path to the listed GPG keys is correct, the keys are valid and'
+        ' import them into the host RPM DB or store them inside the {} directory'
+        ' prior the upgrade.'
         ' If you want to proceed the in-place upgrade without checking any RPM'
         ' signatures, execute leapp with the `--nogpgcheck` option.'
         .format(_get_path_to_gpg_certs())
     )
+    groups = [reporting.Groups.REPOSITORY]
+    if inhibitor:
+        groups.append(reporting.Groups.INHIBITOR)
     reporting.create_report(
         [
-            reporting.Title('Detected unknown GPG keys for target system repositories'),
+            reporting.Title(title),
             reporting.Summary(summary),
             reporting.Severity(reporting.Severity.HIGH),
-            reporting.Groups([reporting.Groups.REPOSITORY, reporting.Groups.INHIBITOR]),
+            reporting.Groups(groups),
             reporting.Remediation(hint=hint),
             # TODO(pstodulk): @Jakuje: let's sync about it
             # TODO update external documentation ?
@@ -293,6 +294,39 @@ def _report_missing_keys(missing_keys):
             # ),
         ]
     )
+
+
+def _report_missing_keys(keys):
+    summary = (
+        'Some of the target repositories require GPG keys that are not installed'
+        ' in the current RPM DB or are not stored in the {trust_dir} directory.'
+        .format(trust_dir=_get_path_to_gpg_certs())
+    )
+    _report('Detected unknown GPG keys for target system repositories', summary, keys, True)
+
+
+def _report_failed_download(keys):
+    summary = (
+        'Some of the target repositories require GPG keys that are referenced'
+        ' using remote protocol (http:// or https://) but can not be downloaded.'
+    )
+    _report('Failed to download GPG key for target repository', summary, keys)
+
+
+def _report_unknown_protocol(keys):
+    summary = (
+        'Some of the target repositories require GPG keys that are provided'
+        ' using unknown protocol.'
+    )
+    _report('GPG keys provided using unknown protocol', summary, keys)
+
+
+def _report_invalid_keys(keys):
+    summary = (
+        'Some of the target repositories require GPG keys, which point to files'
+        ' that do not contain any gpg keys.'
+    )
+    _report('Failed to read GPG keys from provided key files', summary, keys)
 
 
 def register_dnfworkaround():
@@ -324,9 +358,14 @@ def process():
         for repo in repofile.data
     }
 
+    # For reporting all the issues in one batch instead of reporting each issue in separate report
+    missing_keys = list()
+    failed_download = list()
+    unknown_protocol = list()
+    invalid_keys = list()
+
     # These are used only for getting the installed gpg-pubkey "packages"
     pubkeys = _get_pubkeys(installed_rpms)
-    missing_keys = list()
     processed_gpgkey_urls = set()
     tmpdir = None
     for repoid in used_target_repos:
@@ -351,19 +390,18 @@ def process():
                     urllib.request.urlretrieve(gpgkey_url, tmp_file)
                     key_file = tmp_file
                 except urllib.error.URLError as err:
-                    # TODO(pstodulk): create report for the repoids which cannot be checked?
-                    # (no inhibitor)
                     api.current_logger().warning(
                         'Failed to download the gpgkey {}: {}'.format(gpgkey_url, str(err)))
+                    failed_download.append(gpgkey_url)
                     continue
             else:
-                # TODO: report?
+                unknown_protocol.append(gpgkey_url)
                 api.current_logger().error(
                     'Skipping unknown protocol for gpgkey {}'.format(gpgkey_url))
                 continue
             fps = _read_gpg_fp_from_file(key_file)
             if not fps:
-                # TODO: for now. I think it should be treated better
+                invalid_keys.append(gpgkey_url)
                 api.current_logger().warning(
                     'Cannot get any gpg key from the file: {}'.format(gpgkey_url)
                 )
@@ -376,6 +414,13 @@ def process():
         # clean up temporary directory with downloaded gpg keys
         shutil.rmtree(tmpdir)
 
+    # report
+    if failed_download:
+        _report_failed_download(failed_download)
+    if unknown_protocol:
+        _report_unknown_protocol(unknown_protocol)
+    if invalid_keys:
+        _report_invalid_keys(invalid_keys)
     if missing_keys:
         _report_missing_keys(missing_keys)
 
