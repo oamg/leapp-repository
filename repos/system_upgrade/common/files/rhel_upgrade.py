@@ -37,7 +37,7 @@ def _do_not_download_packages(packages, progress=None, total=None):
 
 class RhelUpgradeCommand(dnf.cli.Command):
     aliases = ('rhel-upgrade',)
-    summary = ("Plugin for upgrading to the next RHEL major release")
+    summary = 'Plugin for upgrading to the next RHEL major release'
 
     def __init__(self, cli):
         super(RhelUpgradeCommand, self).__init__(cli)

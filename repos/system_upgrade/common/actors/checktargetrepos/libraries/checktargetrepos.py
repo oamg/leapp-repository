@@ -35,7 +35,7 @@ def process():
             'red_hat_enterprise_linux/8/html-single/upgrading_to_rhel_8/index'
         )
     elif target_major_version == '9':
-        ipu_doc_url = ('TBA')
+        ipu_doc_url = 'TBA'
 
     rhui_info = next(api.consume(RHUIInfo), None)
 

@@ -27,7 +27,7 @@ class CheckRHUI(Actor):
     """
 
     name = 'checkrhui'
-    consumes = (InstalledRPM)
+    consumes = (InstalledRPM,)
     produces = (
         KernelCmdlineArg,
         RHUIInfo,

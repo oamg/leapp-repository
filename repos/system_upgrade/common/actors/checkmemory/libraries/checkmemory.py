@@ -27,7 +27,7 @@ def _check_memory(mem_info):
 def process():
     memoryinfo = next(api.consume(MemoryInfo), None)
     if memoryinfo is None:
-        raise StopActorExecutionError(message=("Missing information about Memory."))
+        raise StopActorExecutionError(message="Missing information about Memory.")
 
     minimum_req_error = _check_memory(memoryinfo)
 

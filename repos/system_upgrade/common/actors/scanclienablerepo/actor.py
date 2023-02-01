@@ -11,7 +11,7 @@ class ScanCLIenablrepo(Actor):
 
     name = 'scanclienablerepo'
     consumes = ()
-    produces = (CustomTargetRepository)
+    produces = (CustomTargetRepository,)
     tags = (FactsPhaseTag, IPUWorkflowTag)
 
     def process(self):
