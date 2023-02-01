@@ -224,7 +224,13 @@ def _get_repo_gpgkey_urls(repo):
     Returned gpgkeys are URLs with already expanded variables
     (e.g. $releasever) as gpgkey can contain list of URLs separated by comma
     or whitespaces.
+    If gpgcheck=0 is present in the repo file, [] is returned. If the
+    gpgcheck is missing or enabled and no gpgkey is present, None is
+    returned, which means the repo can not be checked.
     """
+
+    if not repo.additional_fields:
+        return None
 
     repo_additional = json.loads(repo.additional_fields)
 
@@ -238,15 +244,12 @@ def _get_repo_gpgkey_urls(repo):
         # This means rpm will bail out at some time if the key is not present
         # but we will not know if the needed key is present or not before we will have
         # the packages at least downloaded
-        # TODO(pstodulk): possibly we should return None if gpgcheck is disabled
-        # and empty list when gpgkey is missing? So we could evaluate that better
-        # outside.
         api.current_logger().warning(
             'The gpgcheck for the {} repository is enabled'
             ' but gpgkey is not specified. Cannot be checked.'
             .format(repo.repoid)
         )
-        return []
+        return None
 
     return re.findall(r'[^,\s]+', _expand_vars(repo_additional['gpgkey']))
 

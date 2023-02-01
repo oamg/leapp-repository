@@ -193,10 +193,15 @@ def test_pubkeys_from_rpms():
 
 
 @pytest.mark.parametrize('repo, exp', [
-    (RepositoryData(repoid='dummy', name='name', additional_fields='{"gpgcheck":0}'), []),
+    (RepositoryData(repoid='dummy', name='name'), None),
+    (RepositoryData(repoid='dummy', name='name', additional_fields='{}'), None),
+    (RepositoryData(repoid='dummy', name='name', additional_fields='{"gpgcheck":"1"}'), None),
+    (RepositoryData(repoid='dummy', name='name', additional_fields='{"gpgcheck":"0"}'), []),
     (RepositoryData(repoid='dummy', name='name', additional_fields='{"gpgcheck":"no"}'), []),
     (RepositoryData(repoid='dummy', name='name', additional_fields='{"gpgcheck":"False"}'), []),
     (RepositoryData(repoid='dummy', name='name', additional_fields='{"gpgkey":"dummy"}'), ["dummy"]),
+    (RepositoryData(repoid='dummy', name='name', additional_fields='{"gpgcheck":"1","gpgkey":"dummy"}'),
+     ["dummy"]),
     (RepositoryData(repoid='dummy', name='name', additional_fields='{"gpgkey":"dummy, another"}'),
      ["dummy", "another"]),
     (RepositoryData(repoid='dummy', name='name', additional_fields='{"gpgkey":"dummy\\nanother"}'),
