@@ -73,7 +73,7 @@ def get_pes_events(pes_json_directory, pes_json_filename):
         return events_matching_arch
     except (ValueError, KeyError):
         title = 'Missing/Invalid PES data file ({}/{})'.format(pes_json_directory, pes_json_filename)
-        summary = ('Read documentation at: https://access.redhat.com/articles/3664871 for more information ',
+        summary = ('Read documentation at: https://access.redhat.com/articles/3664871 for more information '
                    'about how to retrieve the files')
         reporting.create_report([
             reporting.Title(title),

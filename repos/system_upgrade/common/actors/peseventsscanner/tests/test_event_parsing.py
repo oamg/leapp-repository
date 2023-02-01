@@ -3,14 +3,20 @@ from collections import namedtuple
 
 import pytest
 
+from leapp import reporting
+from leapp.exceptions import StopActorExecution
 from leapp.libraries.actor.pes_event_parsing import (
     Action,
     Event,
+    get_pes_events,
     Package,
     parse_entry,
     parse_packageset,
     parse_pes_events
 )
+from leapp.libraries.common import fetch
+from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked
+from leapp.libraries.stdlib import api
 
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -146,3 +152,18 @@ def test_parse_pes_events_with_modulestreams(current_actor_context):
         if not expected:
             break
     assert not expected
+
+
+def test_get_pes_events_invalid_data_reported(monkeypatch):
+    def read_or_fetch_mocked(*args, **kwargs):
+        raise ValueError()
+
+    monkeypatch.setattr(fetch, 'read_or_fetch', read_or_fetch_mocked)
+    created_reports = create_report_mocked()
+    monkeypatch.setattr(reporting, "create_report", created_reports)
+    monkeypatch.setattr(api, "current_actor", CurrentActorMocked())
+
+    with pytest.raises(StopActorExecution):
+        get_pes_events("doesn't", "matter")
+
+    assert created_reports.called
