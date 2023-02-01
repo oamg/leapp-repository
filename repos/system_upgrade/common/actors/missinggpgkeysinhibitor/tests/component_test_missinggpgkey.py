@@ -604,3 +604,60 @@ def test_perform_invalid_key(monkeypatch):
     assert reporting.create_report.called == 1
     assert 'Failed to read GPG keys from provided key files' in reporting.create_report.reports[0]['title']
     assert 'file:///etc/pki/rpm-gpg/RPM-GPG-KEY-my-release' in reporting.create_report.reports[0]['summary']
+
+
+@suppress_deprecation(TMPTargetRepositoriesFacts)
+def get_test_data_gpgcheck_without_gpgkey():
+    return [
+        _get_test_targuserspaceinfo(),
+        _get_test_installedrpm(),
+        UsedTargetRepositories(
+            repos=_get_test_usedtargetrepositories_list() + [
+                UsedTargetRepository(
+                    repoid='InvalidRepo',
+                ),
+            ]
+        ),
+        TMPTargetRepositoriesFacts(
+            repositories=[
+                _get_test_target_repofile(),
+                _get_test_target_repofile_additional(),
+                RepositoryFile(
+                    file='/etc/yum.repos.d/invalid.repo',
+                    data=[
+                        RepositoryData(
+                            repoid='InvalidRepo',
+                            name="Invalid repository",
+                            baseurl="/whatever/path",
+                            enabled=True,
+                            additional_fields='{"gpgcheck":"1"}',  # this should be default
+                        ),
+                    ],
+                )
+            ],
+        ),
+    ]
+
+
+def test_perform_gpgcheck_without_gpgkey(monkeypatch):
+    """
+    Executes the "main" function with a repository containing a gpgcheck=1 without any gpgkey=
+
+    This should result in report outlining that this configuration is not supported
+    """
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(
+        msgs=get_test_data_gpgcheck_without_gpgkey())
+    )
+    monkeypatch.setattr(api, 'produce', produce_mocked())
+    monkeypatch.setattr(api, 'current_logger', logger_mocked())
+    monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
+    monkeypatch.setattr('leapp.libraries.actor.missinggpgkey._gpg_show_keys', _gpg_show_keys_mocked)
+    monkeypatch.setattr('leapp.libraries.actor.missinggpgkey._get_pubkeys', _get_pubkeys_mocked)
+
+    process()
+    assert len(api.current_logger.warnmsg) == 1
+    assert ('The gpgcheck for the InvalidRepo repository is enabled but gpgkey is not specified.'
+            ' Cannot be checked.') in api.current_logger.warnmsg[0]
+    assert api.produce.called == 1
+    assert isinstance(api.produce.model_instances[0], DNFWorkaround)
+    assert reporting.create_report.called == 0
