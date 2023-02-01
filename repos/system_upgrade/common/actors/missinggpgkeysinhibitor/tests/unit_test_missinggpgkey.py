@@ -8,6 +8,7 @@ import pytest
 
 from leapp.libraries.actor.missinggpgkey import (
     _expand_vars,
+    _get_abs_file_path,
     _get_path_to_gpg_certs,
     _get_pubkeys,
     _get_repo_gpgkey_urls,
@@ -17,7 +18,7 @@ from leapp.libraries.actor.missinggpgkey import (
 )
 from leapp.libraries.common.testutils import CurrentActorMocked
 from leapp.libraries.stdlib import api
-from leapp.models import InstalledRPM, RepositoryData, RPM
+from leapp.models import InstalledRPM, RepositoryData, RPM, TargetUserSpaceInfo
 
 
 def is_rhel7():
@@ -207,3 +208,15 @@ def test_get_repo_gpgkey_urls(monkeypatch, repo, exp):
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(dst_ver='9.1'))
     keys = _get_repo_gpgkey_urls(repo)
     assert keys == exp
+
+
+@pytest.mark.parametrize('target_userspace, file_url, exp', [
+    (TargetUserSpaceInfo(path='/', scratch='', mounts=''), 'file:///path/to/key', '/path/to/key'),
+    (TargetUserSpaceInfo(path='/path/to/container/', scratch='', mounts=''), 'file:///path/to/key',
+     '/path/to/container/path/to/key'),
+    (TargetUserSpaceInfo(path='/path/to/container/', scratch='', mounts=''), 'https://example.com/path/to/key',
+     'https://example.com/path/to/key'),
+])
+def test_get_abs_file_path(target_userspace, file_url, exp):
+    path = _get_abs_file_path(target_userspace, file_url)
+    assert path == exp
