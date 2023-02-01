@@ -1,6 +1,8 @@
+import os
+
 from leapp.libraries.actor import xfsinfoscanner
 from leapp.libraries.common.testutils import produce_mocked
-from leapp.libraries.stdlib import api
+from leapp.libraries.stdlib import api, CalledProcessError
 from leapp.models import FstabEntry, MountEntry, StorageInfo, SystemdMountEntry, XFSPresence
 
 
@@ -87,6 +89,7 @@ def test_scan_xfs_mount(monkeypatch):
 
 def test_is_xfs_without_ftype(monkeypatch):
     monkeypatch.setattr(xfsinfoscanner, "run", run_mocked())
+    monkeypatch.setattr(os.path, "ismount", lambda _: True)
 
     assert xfsinfoscanner.is_xfs_without_ftype("/var")
     assert ' '.join(xfsinfoscanner.run.args) == "/usr/sbin/xfs_info /var"
@@ -95,8 +98,22 @@ def test_is_xfs_without_ftype(monkeypatch):
     assert ' '.join(xfsinfoscanner.run.args) == "/usr/sbin/xfs_info /boot"
 
 
+def test_is_xfs_command_failed(monkeypatch):
+    def _run_mocked_exception(*args, **kwargs):
+        raise CalledProcessError(message="No such file or directory", command=["xfs_info", "/nosuchmountpoint"],
+                                 result=1)
+    # not a mountpoint
+    monkeypatch.setattr(os.path, "ismount", lambda _: False)
+    monkeypatch.setattr(xfsinfoscanner, "run", _run_mocked_exception)
+    assert not xfsinfoscanner.is_xfs_without_ftype("/nosuchmountpoint")
+    # a real mountpoint but something else caused command to fail
+    monkeypatch.setattr(os.path, "ismount", lambda _: True)
+    assert not xfsinfoscanner.is_xfs_without_ftype("/nosuchmountpoint")
+
+
 def test_scan_xfs(monkeypatch):
     monkeypatch.setattr(xfsinfoscanner, "run", run_mocked())
+    monkeypatch.setattr(os.path, "ismount", lambda _: True)
 
     def consume_no_xfs_message_mocked(*models):
         yield StorageInfo()

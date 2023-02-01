@@ -1,4 +1,6 @@
-from leapp.libraries.stdlib import api, run
+import os
+
+from leapp.libraries.stdlib import api, CalledProcessError, run
 from leapp.models import StorageInfo, XFSPresence
 
 
@@ -21,7 +23,17 @@ def scan_xfs_mount(data):
 
 
 def is_xfs_without_ftype(mp):
-    for l in run(['/usr/sbin/xfs_info', '{}'.format(mp)], split=True)['stdout']:
+    if not os.path.ismount(mp):
+        # Check if mp is actually a mountpoint
+        api.current_logger().warning('{} is not mounted'.format(mp))
+        return False
+    try:
+        xfs_info = run(['/usr/sbin/xfs_info', '{}'.format(mp)], split=True)
+    except CalledProcessError as err:
+        api.current_logger().warning('Error during command execution: {}'.format(err))
+        return False
+
+    for l in xfs_info['stdout']:
         if 'ftype=0' in l:
             return True
 
