@@ -34,7 +34,7 @@ def _report_broken_symlinks(symlinks):
         reporting.Summary(summary),
         reporting.Remediation(hint=hint, commands=[command]),
         reporting.Severity(reporting.Severity.LOW),
-        reporting.Tags([reporting.Tags.FILESYSTEM]),
+        reporting.Groups([reporting.Groups.FILESYSTEM]),
     ])
 
 
@@ -61,7 +61,7 @@ def _report_enabled_services_broken_symlinks(symlinks):
         reporting.Summary(summary),
         reporting.Remediation(hint=hint),
         reporting.Severity(reporting.Severity.MEDIUM),
-        reporting.Tags([reporting.Tags.FILESYSTEM]),
+        reporting.Groups([reporting.Groups.FILESYSTEM]),
     ])
 
 
