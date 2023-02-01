@@ -130,15 +130,11 @@ def _get_abs_file_path(target_userspace, file_url):
 
     If the file_url starts with 'file:///', return its absolute path to
     the target userspace container, as such a file is supposed to be located
-    on the target system.
+    on the target system. If the path does not exist in the container, the
+    the path to the source OS filesystem is returned regardless it exists or not.
 
     For all other cases, return the originally obtained value.
     """
-    # TODO(pstodulk): @Jakuje: are we sure the file will be inside the
-    # target userspace container? What if it's a file locally stored by user
-    # and the repository is defined like that as well? Possibly it's just
-    # a corner corner case. I guess it does not have a high prio tbh, but want
-    # to be sure.
     if not isinstance(target_userspace, TargetUserSpaceInfo):
         # not need to cover this by tests, it's seatbelt
         raise ValueError('target_userspace must by TargetUserSpaceInfo object')
@@ -146,7 +142,14 @@ def _get_abs_file_path(target_userspace, file_url):
     prefix = 'file:///'
     if not file_url.startswith(prefix):
         return file_url
-    return os.path.join(target_userspace.path, file_url[len(prefix):])
+
+    file_path = file_url[len(prefix):]
+    expanded = os.path.join(target_userspace.path, file_path)
+    if os.path.exists(expanded):
+        return expanded
+
+    # the file does not exist in the container -- try the path in the source OS
+    return os.path.join('/', file_path)
 
 
 def _pubkeys_from_rpms(installed_rpms):
