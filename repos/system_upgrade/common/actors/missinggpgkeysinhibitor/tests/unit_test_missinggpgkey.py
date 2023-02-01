@@ -210,13 +210,24 @@ def test_get_repo_gpgkey_urls(monkeypatch, repo, exp):
     assert keys == exp
 
 
-@pytest.mark.parametrize('target_userspace, file_url, exp', [
-    (TargetUserSpaceInfo(path='/', scratch='', mounts=''), 'file:///path/to/key', '/path/to/key'),
-    (TargetUserSpaceInfo(path='/path/to/container/', scratch='', mounts=''), 'file:///path/to/key',
+@pytest.mark.parametrize('target_userspace, file_url, exists_in_container, exp', [
+    (TargetUserSpaceInfo(path='/', scratch='', mounts=''), 'file:///path/to/key', True, '/path/to/key'),
+    (TargetUserSpaceInfo(path='/', scratch='', mounts=''), 'file:///path/to/key', False, '/path/to/key'),
+    (TargetUserSpaceInfo(path='/path/to/container/', scratch='', mounts=''), 'file:///path/to/key', True,
      '/path/to/container/path/to/key'),
+    (TargetUserSpaceInfo(path='/path/to/container/', scratch='', mounts=''), 'file:///path/to/key', False,
+     '/path/to/key'),
     (TargetUserSpaceInfo(path='/path/to/container/', scratch='', mounts=''), 'https://example.com/path/to/key',
-     'https://example.com/path/to/key'),
+     True, 'https://example.com/path/to/key'),
+    (TargetUserSpaceInfo(path='/path/to/container/', scratch='', mounts=''), 'https://example.com/path/to/key',
+     False, 'https://example.com/path/to/key'),
 ])
-def test_get_abs_file_path(target_userspace, file_url, exp):
+def test_get_abs_file_path(monkeypatch, target_userspace, file_url, exists_in_container, exp):
+    def os_path_exists_mocked(path):
+        if path == os.path.join(target_userspace.path, file_url[8:]) and exists_in_container:
+            return True
+        return False
+
+    monkeypatch.setattr('os.path.exists', os_path_exists_mocked)
     path = _get_abs_file_path(target_userspace, file_url)
     assert path == exp
