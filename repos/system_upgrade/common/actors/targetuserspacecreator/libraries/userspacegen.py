@@ -399,7 +399,7 @@ def _get_product_certificate_path():
     try:
         cert = prod_certs[architecture][target_product_type]
     except KeyError as e:
-        raise StopActorExecutionError(message=('Failed to determine what certificate to use for {}.'.format(e)))
+        raise StopActorExecutionError(message='Failed to determine what certificate to use for {}.'.format(e))
 
     cert_path = os.path.join(certs_dir, target_version, cert)
     if not os.path.isfile(cert_path):

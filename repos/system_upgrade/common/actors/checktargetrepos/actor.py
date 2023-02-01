@@ -40,7 +40,7 @@ class Checktargetrepos(Actor):
 
     name = 'checktargetrepos'
     consumes = (CustomTargetRepositoryFile, TargetRepositories, RHUIInfo)
-    produces = (Report)
+    produces = (Report,)
     tags = (IPUWorkflowTag, ChecksPhaseTag)
 
     def process(self):
