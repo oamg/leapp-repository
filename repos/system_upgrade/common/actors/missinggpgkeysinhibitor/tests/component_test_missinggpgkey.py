@@ -660,4 +660,6 @@ def test_perform_gpgcheck_without_gpgkey(monkeypatch):
             ' Cannot be checked.') in api.current_logger.warnmsg[0]
     assert api.produce.called == 1
     assert isinstance(api.produce.model_instances[0], DNFWorkaround)
-    assert reporting.create_report.called == 0
+    assert reporting.create_report.called == 1
+    assert 'Inconsistent repository without GPG key' in reporting.create_report.reports[0]['title']
+    assert 'InvalidRepo' in reporting.create_report.reports[0]['summary']

@@ -335,6 +335,50 @@ def _report_invalid_keys(keys):
     _report('Failed to read GPG keys from provided key files', summary, keys)
 
 
+def _report_repos_missing_keys(repos):
+    summary = (
+        'Some of the target repositories require checking GPG signatures, but do'
+        ' not provide any gpg keys.'
+        ' Leapp is not able to guarantee validity of such gpg keys and manual'
+        ' review is required, so any spurious keys are not imported in the system'
+        ' during the in-place upgrade.'
+        ' The following repositories require some attention before the upgrade:'
+        ' {sep}{key_list}'
+        .format(
+            sep=FMT_LIST_SEPARATOR,
+            key_list=FMT_LIST_SEPARATOR.join(repos)
+        )
+    )
+    hint = (
+        'Check the repositories are correct and either add a respective gpgkey='
+        ' option, disable checking RPM signature using gpgcheck=0 per-repository.'
+        ' If you want to proceed the in-place upgrade without checking any RPM'
+        ' signatures, execute leapp with the `--nogpgcheck` option.'
+    )
+    groups = [reporting.Groups.REPOSITORY]
+    reporting.create_report(
+        [
+            reporting.Title('Inconsistent repository without GPG key'),
+            reporting.Summary(summary),
+            reporting.Severity(reporting.Severity.HIGH),
+            reporting.Groups(groups),
+            reporting.Remediation(hint=hint),
+            # TODO(pstodulk): @Jakuje: let's sync about it
+            # TODO update external documentation ?
+            # reporting.ExternalLink(
+            #     title=(
+            #         "Customizing your Red Hat Enterprise Linux "
+            #         "in-place upgrade"
+            #     ),
+            #     url=(
+            #         "https://access.redhat.com/articles/4977891/"
+            #         "#repos-known-issues"
+            #     ),
+            # ),
+        ]
+    )
+
+
 def register_dnfworkaround():
     api.produce(DNFWorkaround(
         display_name='import trusted gpg keys to RPM DB',
@@ -369,6 +413,7 @@ def process():
     failed_download = list()
     unknown_protocol = list()
     invalid_keys = list()
+    repos_missing_keys = list()
 
     # These are used only for getting the installed gpg-pubkey "packages"
     pubkeys = _get_pubkeys(installed_rpms)
@@ -380,7 +425,11 @@ def process():
             continue
 
         repo = target_repo_id_to_repositories_facts_map[repoid.repoid]
-        for gpgkey_url in _get_repo_gpgkey_urls(repo):
+        gpgkeys = _get_repo_gpgkey_urls(repo)
+        if gpgkeys is None:
+            repos_missing_keys.append(repo.repoid)
+            continue
+        for gpgkey_url in gpgkeys:
             if gpgkey_url in processed_gpgkey_urls:
                 continue
             processed_gpgkey_urls.add(gpgkey_url)
@@ -429,5 +478,7 @@ def process():
         _report_invalid_keys(invalid_keys)
     if missing_keys:
         _report_missing_keys(missing_keys)
+    if repos_missing_keys:
+        _report_repos_missing_keys(repos_missing_keys)
 
     register_dnfworkaround()
