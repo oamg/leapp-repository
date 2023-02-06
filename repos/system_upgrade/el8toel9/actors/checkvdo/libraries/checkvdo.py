@@ -1,6 +1,8 @@
 from leapp import reporting
 from leapp.libraries.stdlib import api
 
+VDO_DOC_URL = 'https://red.ht/import-existing-vdo-volumes-to-lvm'
+
 
 def _report_skip_check():
     if not api.current_actor().get_vdo_answer():
@@ -46,7 +48,8 @@ def _process_failed_check_devices(conversion_info):
         reporting.Severity(reporting.Severity.HIGH),
         reporting.Groups([reporting.Groups.SERVICES, reporting.Groups.DRIVERS]),
         reporting.Remediation(hint=remedy_hint),
-        reporting.Groups([reporting.Groups.INHIBITOR])
+        reporting.Groups([reporting.Groups.INHIBITOR]),
+        reporting.ExternalLink(url=VDO_DOC_URL, title='Importing existing VDO volumes to LVM')
     ])
     return True
 
@@ -84,7 +87,8 @@ def _process_post_conversion_vdos(vdos):
             reporting.Severity(reporting.Severity.HIGH),
             reporting.Groups([reporting.Groups.SERVICES, reporting.Groups.DRIVERS]),
             reporting.Remediation(hint=remedy_hint),
-            reporting.Groups([reporting.Groups.INHIBITOR])
+            reporting.Groups([reporting.Groups.INHIBITOR]),
+            reporting.ExternalLink(url=VDO_DOC_URL, title='Importing existing VDO volumes to LVM')
         ])
 
 
@@ -117,7 +121,8 @@ def _process_pre_conversion_vdos(vdos):
             reporting.Severity(reporting.Severity.HIGH),
             reporting.Groups([reporting.Groups.SERVICES, reporting.Groups.DRIVERS]),
             reporting.Remediation(hint=remedy_hint),
-            reporting.Groups([reporting.Groups.INHIBITOR])
+            reporting.Groups([reporting.Groups.INHIBITOR]),
+            reporting.ExternalLink(url=VDO_DOC_URL, title='Importing existing VDO volumes to LVM')
         ])
 
 
@@ -158,7 +163,8 @@ def _process_undetermined_conversion_devices(devices):
         reporting.Severity(reporting.Severity.HIGH),
         reporting.Groups([reporting.Groups.SERVICES, reporting.Groups.DRIVERS]),
         reporting.Remediation(hint=remedy_hint),
-        reporting.Groups([reporting.Groups.INHIBITOR])
+        reporting.Groups([reporting.Groups.INHIBITOR]),
+        reporting.ExternalLink(url=VDO_DOC_URL, title='Importing existing VDO volumes to LVM')
     ])
     return True
 
