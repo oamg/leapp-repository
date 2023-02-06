@@ -84,7 +84,7 @@ class CheckRHUI(Actor):
                     create_report([
                         reporting.Title('Package "{}" is missing'.format(info['leapp_pkg'])),
                         reporting.Summary(
-                            'On {} using RHUI infrastructure, a package "{}" is needed for'
+                            'On {} using RHUI infrastructure, a package "{}" is needed for '
                             'in-place upgrade'.format(provider.upper(), info['leapp_pkg'])
                         ),
                         reporting.Severity(reporting.Severity.HIGH),
