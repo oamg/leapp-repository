@@ -116,6 +116,9 @@ help:
 	@echo "  install-deps-fedora         create python virtualenv and install there"
 	@echo "                              leapp-repository with dependencies for Fedora OS"
 	@echo "  lint                        lint source code"
+	@echo "  lint_container              run lint in container"
+	@echo "  lint_container_all          run lint in all available containers"
+	@echo "                              see test_container for options"
 	@echo "  lint_fix                    attempt to fix isort violations inplace"
 	@echo "  test                        lint source code and run tests"
 	@echo "  test_no_lint                run tests without linting the source code"
@@ -369,7 +372,7 @@ _build_container_image:
 
 # tests one IPU, leapp repositories irrelevant to the tested IPU are deleted
 _test_container_ipu:
-	case $$TEST_CONT_IPU in \
+	@case $$TEST_CONT_IPU in \
 	el7toel8) \
 		export REPOSITORIES="common,el7toel8"; \
 		;; \
@@ -386,13 +389,23 @@ _test_container_ipu:
 	$(_CONTAINER_TOOL) exec -w /repocopy $$_CONT_NAME make clean && \
 	$(_CONTAINER_TOOL) exec -w /repocopy -e REPOSITORIES $$_CONT_NAME make $${_TEST_CONT_TARGET:-test}
 
+
+# Runs lint in a container
+lint_container:
+	@_TEST_CONT_TARGET="lint" $(MAKE) test_container
+
+lint_container_all:
+	@for container in "f34" "rhel7" "rhel8"; do \
+		TEST_CONTAINER=$$container $(MAKE) lint_container || exit 1; \
+	done
+
 # Runs tests in a container
 # Builds testing image first if it doesn't exist
 # On some Python versions, we need to test both IPUs,
 # because e.g. RHEL7 to RHEL8 IPU must work on python2.7 and python3.6
 # and RHEL8 to RHEL9 IPU must work on python3.6 and python3.9.
 test_container:
-	case $(_TEST_CONTAINER) in \
+	@case $(_TEST_CONTAINER) in \
 	f34) \
 		export CONT_FILE="utils/container-tests/Containerfile.f34"; \
 		export _VENV="python3.9"; \
@@ -411,7 +424,7 @@ test_container:
 	esac; \
 	export TEST_IMAGE="leapp-repo-tests-$(_TEST_CONTAINER)"; \
 	$(MAKE) _build_container_image && \
-	echo "=========== Running tests in $(_TEST_CONTAINER) container ===============" && \
+	echo "=== Running $(_TEST_CONT_TARGET) in $(_TEST_CONTAINER) container ===" && \
 	export _CONT_NAME="leapp-repo-tests-$(_TEST_CONTAINER)-cont"; \
 	$(_CONTAINER_TOOL) ps -q -f name=$$_CONT_NAME && { $(_CONTAINER_TOOL) kill $$_CONT_NAME; $(_CONTAINER_TOOL) rm $$_CONT_NAME; }; \
 	$(_CONTAINER_TOOL) run -di --name $$_CONT_NAME -v "$$PWD":/repo:Z -e PYTHON_VENV=$$_VENV $$TEST_IMAGE && \
@@ -447,11 +460,9 @@ test_container_all_no_lint:
 		TEST_CONTAINER=$$container $(MAKE) test_container_no_lint || exit 1; \
 	done
 
-#TODO(mmatuska): Add lint_container and lint_container_all for running just lint in containers
-
 # clean all testing and building containers and their images
 clean_containers:
-	for i in "leapp-repo-tests-f34" "leapp-repo-tests-rhel7" "leapp-repo-tests-rhel8" \
+	@for i in "leapp-repo-tests-f34" "leapp-repo-tests-rhel7" "leapp-repo-tests-rhel8" \
 	"leapp-repo-build-el7" "leapp-repo-build-el8"; do \
 		$(_CONTAINER_TOOL) kill "$$i-cont" || :; \
 		$(_CONTAINER_TOOL) rm "$$i-cont" || :; \
