@@ -46,8 +46,6 @@ def report_installed_packages(_context=api):
     Create reports according to detected PostgreSQL packages.
 
     Create the report if the postgresql-server rpm (RH signed) is installed.
-    Additionally, create another report if the postgresql-contrib rpm
-    is installed.
     """
     has_server = has_package(InstalledRedHatSignedRPM, 'postgresql-server', context=_context)
 
