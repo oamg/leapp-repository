@@ -629,7 +629,7 @@ def test_get_expected_target_pesid_repos_with_priority_channel_set(monkeypatch):
             'pesid3': repositories_mapping.repositories[4]} == target_repoids, fail_description
 
 
-@pytest.mark.parametrize('rhui', ('', 'aws', 'aws-sap-e4s', 'azure', 'azure-sap'))
+@pytest.mark.parametrize('rhui', ('', 'aws', 'aws-sap-e4s', 'azure', 'azure-sap-ha', 'azure-sap-apps'))
 def test_multiple_repoids_in_repomapping(monkeypatch, rhui):
     """
     Tests whether a correct repository is selected when running on cloud with multiple repositories having the same ID.
@@ -676,7 +676,8 @@ def test_multiple_repoids_in_repomapping(monkeypatch, rhui):
         'aws': '-aws',
         'aws-sap-e4s': '-aws',
         'azure': '-azure',
-        'azure-sap': '-azure'
+        'azure-sap-apps': '-azure',
+        'azure-sap-ha': '-azure'
     }
 
     assert 'rhel8-rhui' in target_repoids

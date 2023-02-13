@@ -73,23 +73,21 @@ RHUI_CLOUD_MAP = {
             'leapp_pkg': 'leapp-rhui-azure-sap',
             'leapp_pkg_repo': 'leapp-azure-sap-apps.repo',
             'files_map': [
-                ('content-rhel8-eus.crt', RHUI_PKI_PRODUCT_DIR),
-                ('content-rhel8-sapapps.crt', RHUI_PKI_PRODUCT_DIR),
-                ('key-rhel8-eus.pem', RHUI_PKI_DIR),
-                ('key-rhel8-sapapps.pem', RHUI_PKI_DIR),
+                ('content-sapapps.crt', RHUI_PKI_PRODUCT_DIR),
+                ('key-sapapps.pem', RHUI_PKI_PRIVATE_DIR),
                 ('leapp-azure-sap-apps.repo', YUM_REPOS_PATH),
             ],
         },
-        'azure-sap': {
+        'azure-sap-ha': {
             'src_pkg': 'rhui-azure-rhel7-base-sap-ha',
             'target_pkg': 'rhui-azure-rhel8-sap-ha',
             'agent_pkg': 'WALinuxAgent',
             'leapp_pkg': 'leapp-rhui-azure-sap',
-            'leapp_pkg_repo': 'leapp-azure-sap.repo',
+            'leapp_pkg_repo': 'leapp-azure-sap-ha.repo',
             'files_map': [
-                ('content-rhel8-sap-ha.crt', RHUI_PKI_PRODUCT_DIR),
-                ('key-rhel8-sap-ha.pem', RHUI_PKI_DIR),
-                ('leapp-azure-sap.repo', YUM_REPOS_PATH)
+                ('content-sap-ha.crt', RHUI_PKI_PRODUCT_DIR),
+                ('key-sap-ha.pem', RHUI_PKI_PRIVATE_DIR),
+                ('leapp-azure-sap-ha.repo', YUM_REPOS_PATH)
             ],
         },
         'google': {
@@ -174,7 +172,7 @@ RHUI_CLOUD_MAP = {
                 ('leapp-azure.repo', YUM_REPOS_PATH)
             ],
         },
-        'azure-sap': {
+        'azure-sap-ha': {
             'src_pkg': 'rhui-azure-rhel8-sap-ha',
             'target_pkg': 'rhui-azure-rhel9-sap-ha',
             'agent_pkg': 'WALinuxAgent',
@@ -194,9 +192,7 @@ RHUI_CLOUD_MAP = {
             'leapp_pkg_repo': 'leapp-azure-sap-apps.repo',
             'files_map': [
                 ('content-sapapps.crt', RHUI_PKI_PRODUCT_DIR),
-                ('content-eus.crt', RHUI_PKI_PRODUCT_DIR),
-                ('key-sapapps.crt', RHUI_PKI_DIR),
-                ('key-eus.crt', RHUI_PKI_DIR),
+                ('key-sapapps.pem', RHUI_PKI_PRIVATE_DIR),
                 ('leapp-azure-sap-apps.repo', YUM_REPOS_PATH)
             ],
         },
