@@ -10,8 +10,8 @@ def set_rhsm_release():
         api.current_logger().debug('Skipping setting the RHSM release due to --no-rhsm or environment variables.')
         return
 
-    if config.get_product_type('target') != 'ga':
-        api.current_logger().debug('Skipping setting the RHSM release as target product is set to beta/htb')
+    if config.get_product_type('target') == 'beta':
+        api.current_logger().debug('Skipping setting the RHSM release as target product is set to beta')
         return
     target_version = api.current_actor().configuration.version.target
     try:
