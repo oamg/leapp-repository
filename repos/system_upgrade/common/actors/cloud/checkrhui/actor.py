@@ -45,11 +45,11 @@ class CheckRHUI(Actor):
             if has_package(InstalledRPM, info['src_pkg']):
                 # we need to do this workaround in order to overcome our RHUI handling limitation
                 # in case there are more client packages on the source system
+                # @Note(mhecko): Azure has changed the structure of their images to not use a pair of RHUI clients and
+                # #              instead they started to use a single package. However, it could happen that a user
+                # #              does not run `dnf upgrade` and thus has both packages installed.
                 if 'azure' in info['src_pkg']:
-                    azure_sap_variants = [
-                        'azure-sap',
-                        'azure-sap-apps',
-                    ]
+                    azure_sap_variants = ['azure-sap-ha', 'azure-sap-apps']
                     for azure_sap_variant in azure_sap_variants:
                         sap_variant_info = rhui.RHUI_CLOUD_MAP[upg_path][azure_sap_variant]
                         if has_package(InstalledRPM, sap_variant_info['src_pkg']):
@@ -106,14 +106,17 @@ class CheckRHUI(Actor):
                 if info['src_pkg'] != info['target_pkg']:
                     self.produce(RpmTransactionTasks(to_install=[info['target_pkg']]))
                     self.produce(RpmTransactionTasks(to_remove=[info['src_pkg']]))
-                    # Handle azure SAP systems that use two RHUI clients - one for RHEL content, one for SAP content
-                    if provider == 'azure-sap':
+
+                    # Although SAP systems on Azure should not rely on a pair of RHUI clients, it is still possible
+                    # that the source system has both clients installed, and it is safer to remove both of them.
+                    azure_nonsap_pkg = None
+                    if provider == 'azure-sap-ha':
                         azure_nonsap_pkg = rhui.RHUI_CLOUD_MAP[upg_path]['azure']['src_pkg']
-                        self.produce(RpmTransactionTasks(to_remove=[azure_nonsap_pkg]))
                     elif provider == 'azure-sap-apps':
                         # SAP Apps systems have EUS content channel from RHEL8+
                         src_rhel_content_type = 'azure' if get_source_major_version() == '7' else 'azure-eus'
                         azure_nonsap_pkg = rhui.RHUI_CLOUD_MAP[upg_path][src_rhel_content_type]['src_pkg']
+                    if azure_nonsap_pkg and has_package(InstalledRPM, azure_nonsap_pkg):
                         self.produce(RpmTransactionTasks(to_remove=[azure_nonsap_pkg]))
 
                 self.produce(RHUIInfo(provider=provider))
