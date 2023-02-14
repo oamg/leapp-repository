@@ -17,6 +17,7 @@ class PythonInformUser(Actor):
         summary = ("In RHEL 8, there is no 'python' command."
                    " Python 3 (backward incompatible) is the primary Python version"
                    " and Python 2 is available with limited support and limited set of packages."
+                   " If you no longer require Python 2 packages following the upgrade, please remove them."
                    " Read more here: {}".format(url))
         create_report([
             reporting.Title(title),
