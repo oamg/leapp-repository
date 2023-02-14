@@ -1,8 +1,12 @@
 from leapp import reporting
+from leapp.libraries.common.config import get_env
 from leapp.reporting import create_report
 
 
 def checkcifs(storage_info):
+    # if network in initramfs is enabled CIFS inhibitor is redundant
+    if get_env('LEAPP_DEVEL_INITRAM_NETWORK', None):
+        return
     for storage in storage_info:
         if any(entry.fs_vfstype == "cifs" for entry in storage.fstab):
             create_report([
