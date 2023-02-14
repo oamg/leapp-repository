@@ -4,6 +4,12 @@ from leapp.libraries.common.config import architecture
 from leapp.libraries.stdlib import api
 from leapp.models import DefaultGrubInfo, FirmwareFacts, GrubCfgBios
 
+URL = (
+    'https://www.ibm.com/docs/en/linux-on-systems?topic=lpo-linux-distributions-virtualization'
+    '-options-power8-power9-linux-power-systems'
+)
+TITLE = 'Linux distributions and virtualization options for POWER8 and POWER9 Linux on Power systems'
+
 
 def process():
     default_grub_msg = next(api.consume(DefaultGrubInfo), None)
@@ -25,14 +31,16 @@ def process():
                 'Leapp cannot continue with upgrade on "ppc64le" bare metal systems'
             ),
             reporting.Summary(
-                'Currently, there is a known issue that prevents Leapp from upgrading '
-                'ppc64le bare metal systems. You can file a bug in http://bugzilla.redhat.com/ '
-                'for leapp-repository component and include "[ppc64le bare metal upgrade]" in '
-                'the title to get the issue prioritized.'
+                'In-place upgrade to RHEL 9 is not supported on POWER8 and POWER9 bare metal systems. '
+                'For more information, refer to the following article: {}'.format(URL)
             ),
             reporting.Severity(reporting.Severity.HIGH),
             reporting.Groups(['inhibitor']),
             reporting.Groups([reporting.Groups.BOOT]),
+            reporting.ExternalLink(
+                url=URL,
+                title=TITLE
+            )
         ])
 
     if (
