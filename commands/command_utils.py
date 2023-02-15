@@ -6,7 +6,8 @@ from leapp.exceptions import CommandError
 from leapp.utils import path
 
 HANA_BASE_PATH = '/hana/shared'
-HANA_SAPCONTROL_PATH = 'exe/linuxx86_64/hdb/sapcontrol'
+HANA_SAPCONTROL_PATH_X86_64 = 'exe/linuxx86_64/hdb/sapcontrol'
+HANA_SAPCONTROL_PATH_PPC64LE = 'exe/linuxppc64le/hdb/sapcontrol'
 
 LEAPP_UPGRADE_FLAVOUR_DEFAULT = 'default'
 LEAPP_UPGRADE_FLAVOUR_SAP_HANA = 'saphana'
@@ -48,7 +49,9 @@ def detect_sap_hana():
     if os.path.exists(HANA_BASE_PATH):
         for entry in os.listdir(HANA_BASE_PATH):
             # Does /hana/shared/{entry}/exe/linuxx86_64/hdb/sapcontrol exist?
-            if os.path.exists(os.path.join(HANA_BASE_PATH, entry, HANA_SAPCONTROL_PATH)):
+            sap_on_intel = os.path.exists(os.path.join(HANA_BASE_PATH, entry, HANA_SAPCONTROL_PATH_X86_64))
+            sap_on_power = os.path.exists(os.path.join(HANA_BASE_PATH, entry, HANA_SAPCONTROL_PATH_PPC64LE))
+            if sap_on_intel or sap_on_power:
                 return True
     return False
 

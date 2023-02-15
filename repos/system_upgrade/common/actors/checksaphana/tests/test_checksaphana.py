@@ -2,7 +2,7 @@ import pytest
 
 from leapp.libraries.actor import checksaphana
 from leapp.libraries.common import testutils
-from leapp.libraries.common.config import version
+from leapp.libraries.common.config import architecture, version
 from leapp.models import SapHanaManifestEntry
 
 SAPHANA1_MANIFEST = '''comptype: HDB
@@ -252,6 +252,34 @@ def test_checksaphana__fullfills_hana_rhel9_min_version(monkeypatch, major, rev,
     ) == result
 
 
+@pytest.mark.parametrize('flavour', ('default', 'saphana'))
+@pytest.mark.parametrize('version,arch,inhibitor_expected', (
+    ('8.6', architecture.ARCH_X86_64, False),
+    ('8.6', architecture.ARCH_PPC64LE, True),
+    ('8.6', architecture.ARCH_ARM64, True),
+    ('8.6', architecture.ARCH_S390X, True),
+
+    ('9.0', architecture.ARCH_X86_64, False),
+    ('9.0', architecture.ARCH_PPC64LE, False),
+    ('9.0', architecture.ARCH_ARM64, True),
+    ('9.0', architecture.ARCH_S390X, True),
+))
+def test_checksaphsana_test_arch(monkeypatch, flavour, version, arch, inhibitor_expected):
+    reports = []
+    monkeypatch.setattr(checksaphana.reporting, 'create_report', _report_collector(reports))
+    curr_actor_mocked = testutils.CurrentActorMocked(arch=arch, flavour=flavour, dst_ver=version)
+    monkeypatch.setattr(checksaphana.api, 'current_actor', curr_actor_mocked)
+    checksaphana.perform_check()
+    if flavour == 'saphana' and inhibitor_expected:
+        # the system has SAP HANA but unsupported target arch
+        assert reports and len(reports) == 1
+        assert 'x86_64' in reports[0][1].to_dict()['summary']
+        if version[0] == '9':
+            assert 'ppc64le' in reports[0][1].to_dict()['summary']
+    elif flavour != 'saphana' or not inhibitor_expected:
+        assert not reports
+
+
 def test_checksaphana_perform_check(monkeypatch):
     v1names = ('ABC', 'DEF', 'GHI')
     v2names = ('JKL', 'MNO', 'PQR', 'STU')
@@ -264,31 +292,16 @@ def test_checksaphana_perform_check(monkeypatch):
     monkeypatch.setattr(checksaphana.api, 'consume', _consume_mock_sap_hana_info(
         v1names=v1names, v2names=v2names, v2lownames=v2lownames, running=True))
 
-    for arch in (testutils.architecture.ARCH_PPC64LE,
-                 testutils.architecture.ARCH_ARM64,
-                 testutils.architecture.ARCH_S390X):
-        for flavour in ('default', 'saphana'):
-            list_clear(reports)
-            monkeypatch.setattr(checksaphana.api,
-                                'current_actor',
-                                testutils.CurrentActorMocked(arch=arch, flavour=flavour))
-            checksaphana.perform_check()
-            if flavour == 'saphana':
-                assert reports and len(reports) == 1
-                assert 'X86_64' in reports[0][0].to_dict()['title']
-            else:
-                assert not reports
-
     list_clear(reports)
     monkeypatch.setattr(checksaphana.api,
                         'current_actor',
-                        testutils.CurrentActorMocked(arch=testutils.architecture.ARCH_X86_64))
+                        testutils.CurrentActorMocked(arch=architecture.ARCH_X86_64))
     checksaphana.perform_check()
     assert not reports
 
     monkeypatch.setattr(checksaphana.api,
                         'current_actor',
-                        testutils.CurrentActorMocked(arch=testutils.architecture.ARCH_X86_64, flavour='saphana'))
+                        testutils.CurrentActorMocked(arch=architecture.ARCH_X86_64, flavour='saphana'))
     checksaphana.perform_check()
     assert reports
     # Expected 3 reports due to v1names + v2lownames + running
