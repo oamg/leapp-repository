@@ -4,7 +4,13 @@ from leapp.libraries.stdlib import api
 from leapp.models import SapHanaInfo
 
 # SAP HANA Compatibility
-# Requirement is SAP HANA 2.00 rev 54 which is the minimal supported revision for both RHEL 7.9 and RHEL 8.2
+# Supported architectures for upgrades with SAP HANA to RHEL 'X'
+SAP_HANA_SUPPORTER_ARCHS = {
+    '8': [architecture.ARCH_X86_64],
+    '9': [architecture.ARCH_X86_64, architecture.ARCH_PPC64LE]
+}
+
+# SAP HANA 2.00 rev 54 is the minimal supported revision for both RHEL 7.9 and RHEL 8.2
 
 SAP_HANA_MINIMAL_MAJOR_VERSION = 2
 # RHEL 8.2 target requirements
@@ -195,32 +201,59 @@ def version2_check(info):
 
 
 def platform_check():
-    """ Creates an inhibitor report in case the system is not running on x86_64 """
-    if not architecture.matches_architecture(architecture.ARCH_X86_64):
-        if version.get_target_major_version() == '8':
-            elink = reporting.ExternalLink(
-                url='https://access.redhat.com/solutions/5533441',
-                title='How do I upgrade from Red Hat Enterprise Linux 7 to Red Hat Enterprise Linux 8 with SAP HANA')
-        else:
-            elink = reporting.ExternalLink(
-                url='https://access.redhat.com/solutions/6980855',
-                title='How to in-place upgrade SAP environments from RHEL 8 to RHEL 9')
+    """
+    Inhibit the upgrade and return False if SAP HANA is running on an unsupported
+    architecture for the upgrade.
 
-        reporting.create_report([
-            reporting.Title('SAP HANA upgrades are only supported on X86_64 systems'),
-            reporting.Summary(
-                ('Upgrades for SAP HANA are only supported on X86_64 systems.'
-                 ' For more information please consult the documentation.')
-            ),
-            reporting.Severity(reporting.Severity.HIGH),
-            reporting.Groups([reporting.Groups.SANITY]),
-            reporting.Groups([reporting.Groups.INHIBITOR]),
-            reporting.Audience('sysadmin'),
-            elink,
-        ])
+    Supported architectures:
+    - IPU 7 -> 8: x86_64
+    - IPU 8 -> 9: x86_64, ppc64le
+
+    In case of the upgrade to a RHEL X version that is not supported for the
+    IPU yet, return False and do not report anything, as the upgrade to
+    an unsupported version is handled in general in another actor.
+    """
+    target_major_version = version.get_target_major_version()
+    arch = api.current_actor().configuration.architecture
+
+    if target_major_version not in SAP_HANA_SUPPORTER_ARCHS:
+        # Do nothing, the inhibitor will be raised by a different actor, but log it
+        api.current_logger().error('Upgrade with SAP HANA is not supported to the target OS.')
         return False
 
-    return True
+    if arch in SAP_HANA_SUPPORTER_ARCHS[target_major_version]:
+        return True
+
+    EXTERNAL_LINK = {
+        '8': reporting.ExternalLink(
+            url='https://access.redhat.com/solutions/5154031',
+            title='How to in-place upgrade SAP environments from RHEL 7 to RHEL 8'),
+        '9': reporting.ExternalLink(
+            url='https://red.ht/how-to-in-place-upgrade-sap-environments-from-rhel-8-to-rhel-9',
+            title='How to in-place upgrade SAP environments from RHEL 8 to RHEL 9')
+    }
+
+    reporting.create_report([
+        reporting.Title('The current architecture is not supported for SAP HANA on the target system'),
+        reporting.Summary(
+            'The {arch} architecture is not supported for the in-place upgrade'
+            ' to the RHEL {version} system with SAP HANA.'
+            ' The in-place upgrade with SAP HANA is now supported for the following'
+            ' architectures: {supp_archs}.'
+            ' For more information please consult the documentation.'
+            .format(
+                arch=arch,
+                supp_archs=', '.join(SAP_HANA_SUPPORTER_ARCHS[target_major_version]),
+                version=target_major_version
+            )
+        ),
+        reporting.Severity(reporting.Severity.HIGH),
+        reporting.Groups([reporting.Groups.SANITY]),
+        reporting.Groups([reporting.Groups.INHIBITOR]),
+        reporting.Audience('sysadmin'),
+        EXTERNAL_LINK[target_major_version],
+    ])
+    return False
 
 
 def perform_check():
