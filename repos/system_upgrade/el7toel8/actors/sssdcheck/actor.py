@@ -49,7 +49,7 @@ class SSSDCheck(Actor):
     def reportLocalProvider(self, domain):
         create_report([
             reporting.Title('SSSD Domain "%s": local provider is no longer '
-                            'supported and the domain will be ignored.' % domain),
+                            'supported and the domain will be ignored.' % domain.name),
             reporting.Summary('Local provider is no longer supported.'),
             reporting.Groups(COMMON_REPORT_TAGS),
             reporting.Severity(reporting.Severity.MEDIUM)
@@ -58,7 +58,7 @@ class SSSDCheck(Actor):
     def reportRemovedOption(self, domain, option):
         create_report([
             reporting.Title('SSSD Domain "%s": option %s has no longer '
-                            'any effect' % (domain, option)),
+                            'any effect' % (domain.name, option)),
             reporting.Summary('Option %s was removed and it will be ignored.' % option),
             reporting.Groups(COMMON_REPORT_TAGS),
             reporting.Severity(reporting.Severity.MEDIUM)
@@ -67,7 +67,7 @@ class SSSDCheck(Actor):
     def reportSudoRegexp(self, domain):
         create_report([
             reporting.Title('SSSD Domain "%s": sudo rules containing wildcards '
-                            'will stop working.' % domain),
+                            'will stop working.' % domain.name),
             reporting.Summary('Default value of ldap_sudo_include_regexp changed '
                               'from true to false for performance reason.'),
             reporting.Groups(COMMON_REPORT_TAGS),
