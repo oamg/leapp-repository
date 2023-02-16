@@ -40,15 +40,15 @@ def test_get_common_path(path1, path2, expected_output):
            set()
         ),
         (
-           ['/var/log', '/var'],
+           ['/var', '/'],
+           {'/var', '/'}
+        ),
+        (
+           ['/var/log', '/var', '/var'],
            {'/var/log', '/var'}
         ),
         (
-           ['/var/log', '/var', '/var/'],
-           {'/var/log', '/var'}
-        ),
-        (
-           ['/var/log', '/home', '/var/', '/var/lib/leapp'],
+           ['/var/log', '/home', '/var', '/var/lib/leapp'],
            {'/var/log', '/var'}
         ),
         (
@@ -66,15 +66,15 @@ def test_get_overshadowing_mount_points(fstab_entries, expected_output):
 
 
 @pytest.mark.parametrize(
-    ('storage_info', 'should_inhibit'),
+    ('storage_info', 'should_inhibit', 'duplicates'),
     [
-        (StorageInfo(fstab=[]), False),
-        (StorageInfo(fstab=[VAR_LOG_ENTRY, VAR_ENTRY]), True),
-        (StorageInfo(fstab=[VAR_LOG_ENTRY, VAR_ENTRY, VAR_DUPLICATE_ENTRY]), True),
-        (StorageInfo(fstab=[VAR_ENTRY, VAR_LOG_ENTRY]), False),
+        (StorageInfo(fstab=[]), False, False),
+        (StorageInfo(fstab=[VAR_LOG_ENTRY, VAR_ENTRY]), True, False),
+        (StorageInfo(fstab=[VAR_LOG_ENTRY, VAR_ENTRY, VAR_DUPLICATE_ENTRY]), True, True),
+        (StorageInfo(fstab=[VAR_ENTRY, VAR_LOG_ENTRY]), False, False),
     ]
 )
-def test_var_lib_leapp_non_persistent_is_detected(monkeypatch, storage_info, should_inhibit):
+def test_var_lib_leapp_non_persistent_is_detected(monkeypatch, storage_info, should_inhibit, duplicates):
 
     created_reports = create_report_mocked()
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[storage_info]))
@@ -85,6 +85,5 @@ def test_var_lib_leapp_non_persistent_is_detected(monkeypatch, storage_info, sho
     if should_inhibit:
         assert created_reports.called == 1
 
-        mount_points = [fstab_entry.fs_file.rstrip('/') for fstab_entry in storage_info.fstab]
-        if len(set(mount_points)) != len(mount_points):
+        if duplicates:
             assert 'Detected mount points with duplicates:' in created_reports.reports[-1]['summary']
