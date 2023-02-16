@@ -4,6 +4,8 @@ from leapp import reporting
 from leapp.libraries.stdlib import api
 from leapp.models import StorageInfo
 
+FMT_LIST_SEPARATOR = '\n    - '
+
 
 def _get_common_path(path1, path2):
     """
@@ -31,11 +33,10 @@ def _get_overshadowing_mount_points(mount_points):
     """
     Retrieve set of overshadowing and overshadowed mount points.
 
-    :param list[str] mount_points: absolute paths to mount points
+    :param list[str] mount_points: absolute paths to mount points without trailing /
     :returns: set of unique mount points without trailing /
     """
     overshadowing = set()
-    mount_points = [mp.rstrip('/') for mp in mount_points]
     for i, mount_point in enumerate(mount_points):
         for overshadowing_mount_point in mount_points[i+1:]:
             if _get_common_path(mount_point, overshadowing_mount_point) == overshadowing_mount_point:
@@ -50,7 +51,14 @@ def check_fstab_mount_order():
     if not storage_info:
         return
 
-    mount_points = [fstab_entry.fs_file.rstrip('/') for fstab_entry in storage_info.fstab]
+    mount_points = []
+    for fstab_entry in storage_info.fstab:
+        mount_point = fstab_entry.fs_file
+        if mount_point != '/':
+            mount_point = mount_point.rstrip('/')
+        if os.path.isabs(mount_point):
+            mount_points.append(mount_point)
+
     overshadowing = _get_overshadowing_mount_points(mount_points)
     duplicates = {mp for mp in mount_points if mount_points.count(mp) > 1}
 
@@ -63,15 +71,15 @@ def check_fstab_mount_order():
     hint = 'To prevent the overshadowing:'
 
     if duplicates:
-        summary += '\nDetected mount points with duplicates:\n{}'.format(', '.join(duplicates))
-        hint += '\nRemove detected duplicates by using unique mount points.'
+        summary += '\nDetected mount points with duplicates: {}'.format(', '.join(duplicates))
+        hint += ' Remove detected duplicates by using unique mount points.'
 
     if overshadowing:
-        summary += '\nDetected order of overshadowing mount points:\n{}'.format(', '.join(overshadowing_in_order))
+        summary += '\nDetected order of overshadowing mount points: {}'.format(', '.join(overshadowing_in_order))
         hint += (
-            '\nReorder the detected overshadowing entries.'
-            '\nPossible order of all mount points without overshadowing:\n{}'
-        ).format(', '.join(overshadowing_fixed))
+            ' Reorder the detected overshadowing entries. Possible order of all mount '
+            'points without overshadowing:{}{}'
+        ).format(FMT_LIST_SEPARATOR, FMT_LIST_SEPARATOR.join(overshadowing_fixed))
 
     reporting.create_report([
         reporting.Title(
