@@ -20,4 +20,8 @@ jobs:
           ignore_words_list: ro,fo,couldn,repositor
           skip: "./repos/system_upgrade/common/actors/storagescanner/tests/files/mounts,\
             ./repos/system_upgrade/el7toel8/actors/networkmanagerreadconfig/tests/files/nm_cfg_file_error,\
-            ./repos/system_upgrade/common/actors/scancpu/tests/files/lscpu_s390x"
+            ./repos/system_upgrade/common/actors/scancpu/tests/files/lscpu_s390x,\
+            ./etc/leapp/files/device_driver_deprecation_data.json,\
+            ./etc/leapp/files/pes-events.json,\
+            ./etc/leapp/files/repomap.json"
+
