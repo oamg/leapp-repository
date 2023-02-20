@@ -83,17 +83,17 @@ jobs:
       && ! startsWith(github.event.comment.body, '/rerun-sst')
       && contains(fromJson('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)
 
-  call_workflow_tests_87to90_integration:
+  call_workflow_tests_88to92_integration:
     needs: call_workflow_copr_build
     uses: oamg/leapp/.github/workflows/reuse-tests-8to9.yml@master
     secrets: inherit
     with:
       copr_artifacts: ${{ needs.call_workflow_copr_build.outputs.artifacts }}
       tmt_plan_regex: "^(?!.*upgrade_plugin)(?!.*tier[2-3].*)(?!.*rhsm)(?!.*c2r)(?!.*sap)(?!.*7to8)(?!.*max_sst)"
-      variables: 'SOURCE_RELEASE=8.7;TARGET_RELEASE=9.0;TARGET_KERNEL=el9;RHSM_REPOS=rhel-8-for-x86_64-appstream-rpms,rhel-8-for-x86_64-baseos-rpms;LEAPPDATA_BRANCH=upstream'
-      compose: "RHEL-8.7.0-Nightly"
-      pull_request_status_name: "8.7to9.0"
-      tmt_context: "distro=rhel-8.7"
+      variables: 'SOURCE_RELEASE=8.8;TARGET_RELEASE=9.2;TARGET_KERNEL=el9;RHSM_REPOS=rhel-8-for-x86_64-appstream-rpms,rhel-8-for-x86_64-baseos-rpms;LEAPPDATA_BRANCH=upstream'
+      compose: "RHEL-8.8.0-Nightly"
+      pull_request_status_name: "8.8to9.2"
+      tmt_context: "distro=rhel-8.8"
     if: |
       github.event.issue.pull_request
       && ! startsWith(github.event.comment.body, '/rerun-sst')
