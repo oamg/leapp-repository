@@ -85,8 +85,11 @@ def process():
 
     # Setup repomap handler
     repo_mappig_msg = next(api.consume(RepositoriesMapping), RepositoriesMapping())
-    rhui_info = next(api.consume(RHUIInfo), RHUIInfo(provider=''))
-    repomap = setuptargetrepos_repomap.RepoMapDataHandler(repo_mappig_msg, cloud_provider=rhui_info.provider)
+
+    rhui_info = next(api.consume(RHUIInfo), None)
+    cloud_provider = rhui_info.provider if rhui_info else ''
+
+    repomap = setuptargetrepos_repomap.RepoMapDataHandler(repo_mappig_msg, cloud_provider=cloud_provider)
 
     # Filter set of repoids from installed packages so that it contains only repoids with mapping
     repoids_from_installed_packages_with_mapping = _get_mapped_repoids(repomap, repoids_from_installed_packages)

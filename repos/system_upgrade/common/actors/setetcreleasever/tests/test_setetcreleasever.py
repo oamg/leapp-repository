@@ -3,13 +3,15 @@ import os
 import pytest
 
 from leapp.libraries.actor import setetcreleasever
-from leapp.libraries.common.testutils import (
-    create_report_mocked,
-    CurrentActorMocked,
-    logger_mocked
-)
+from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked, logger_mocked
 from leapp.libraries.stdlib import api
-from leapp.models import PkgManagerInfo, RHUIInfo
+from leapp.models import (
+    PkgManagerInfo,
+    RHUIInfo,
+    TargetRHUIPostInstallTasks,
+    TargetRHUIPreInstallTasks,
+    TargetRHUISetupInfo
+)
 
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -33,8 +35,15 @@ class mocked_set_releasever(object):
 
 
 def test_set_releasever(monkeypatch, current_actor_context):
+    preinstall_tasks = TargetRHUIPreInstallTasks()
+    postinstall_tasks = TargetRHUIPostInstallTasks()
+    setup_info = TargetRHUISetupInfo(preinstall_tasks=preinstall_tasks, postinstall_tasks=postinstall_tasks)
+    rhui_info = RHUIInfo(provider='aws',
+                         src_client_pkg_names=['rh-amazon-rhui-client'],
+                         target_client_pkg_names=['rh-amazon-rhui-client'],
+                         target_client_setup_info=setup_info)
 
-    msgs = [RHUIInfo(provider='aws'), PkgManagerInfo(etc_releasever='7.7')]
+    msgs = [rhui_info, PkgManagerInfo(etc_releasever='7.7')]
 
     expected_rel_ver = '8.0'
     monkeypatch.setattr(setetcreleasever, '_set_releasever', mocked_set_releasever())

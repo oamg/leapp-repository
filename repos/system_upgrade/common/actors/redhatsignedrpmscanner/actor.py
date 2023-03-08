@@ -54,26 +54,7 @@ class RedHatSignedRpmScanner(Actor):
             """Whitelist the katello package."""
             return pkg.name.startswith('katello-ca-consumer')
 
-        upg_path = rhui.get_upg_path()
-        # AWS RHUI packages do not have to be whitelisted because they are signed by RedHat
-        whitelisted_cloud_flavours = (
-            'azure',
-            'azure-eus',
-            'azure-sap-ha',
-            'azure-sap-apps',
-            'google',
-            'google-sap',
-            'alibaba'
-        )
-        whitelisted_cloud_pkgs = {
-            rhui.RHUI_CLOUD_MAP[upg_path].get(flavour, {}).get('src_pkg') for flavour in whitelisted_cloud_flavours
-        }
-        whitelisted_cloud_pkgs.update(
-            rhui.RHUI_CLOUD_MAP[upg_path].get(flavour, {}).get('target_pkg') for flavour in whitelisted_cloud_flavours
-        )
-        whitelisted_cloud_pkgs.update(
-            rhui.RHUI_CLOUD_MAP[upg_path].get(flavour, {}).get('leapp_pkg') for flavour in whitelisted_cloud_flavours
-        )
+        whitelisted_cloud_pkgs = rhui.get_all_known_rhui_pkgs_for_current_upg()
 
         for rpm_pkgs in self.consume(InstalledRPM):
             for pkg in rpm_pkgs.items:
