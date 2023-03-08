@@ -28,8 +28,16 @@ class RootScanner(Actor):
             return subdir_cls(name=name)
 
         for subdir in os.listdir('/'):
-            # Note(ivasilev) non-utf encoded string will appear as byte strings
+            # Note(ivasilev) in py3 env non-utf encoded string will appear as byte strings
+            # However in py2 env subdir will be always of str type, so verification if this is a valid utf-8 string
+            # should be done differently than formerly suggested plain six.binary_type check
+            decoded = True
             if isinstance(subdir, six.binary_type):
+                try:
+                    subdir.decode('utf-8')
+                except (AttributeError, UnicodeDecodeError):
+                    decoded = False
+            if not decoded:
                 invalid_subdirs.append(_create_a_subdir(InvalidRootSubdirectory, subdir, os.path.join(b'/', subdir)))
             else:
                 subdirs.append(_create_a_subdir(RootSubdirectory, subdir, os.path.join('/', subdir)))
