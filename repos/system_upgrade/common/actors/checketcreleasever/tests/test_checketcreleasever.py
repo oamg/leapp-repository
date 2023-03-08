@@ -4,13 +4,16 @@ import pytest
 
 from leapp import reporting
 from leapp.libraries.actor import checketcreleasever
-from leapp.libraries.common.testutils import (
-    create_report_mocked,
-    CurrentActorMocked,
-    logger_mocked
-)
+from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked, logger_mocked
 from leapp.libraries.stdlib import api
-from leapp.models import PkgManagerInfo, Report, RHUIInfo
+from leapp.models import (
+    PkgManagerInfo,
+    Report,
+    RHUIInfo,
+    TargetRHUIPostInstallTasks,
+    TargetRHUIPreInstallTasks,
+    TargetRHUISetupInfo
+)
 
 
 @pytest.mark.parametrize('exists', [True, False])
@@ -55,9 +58,24 @@ def test_etc_releasever_empty(monkeypatch):
     assert api.current_logger.dbgmsg
 
 
+def mk_rhui_info():
+    preinstall_tasks = TargetRHUIPreInstallTasks()
+    postinstall_tasks = TargetRHUIPostInstallTasks()
+    setup_info = TargetRHUISetupInfo(preinstall_tasks=preinstall_tasks, postinstall_tasks=postinstall_tasks)
+    rhui_info = RHUIInfo(provider='aws',
+                         src_client_pkg_names=['rh-amazon-rhui-client'],
+                         target_client_pkg_names=['rh-amazon-rhui-client'],
+                         target_client_setup_info=setup_info)
+    return rhui_info
+
+
 @pytest.mark.parametrize('is_rhui', [True, False])
 def test_etc_releasever_rhui(monkeypatch, is_rhui):
-    rhui_msg = [RHUIInfo(provider='aws')] if is_rhui else []
+    if is_rhui:
+        rhui_msg = [mk_rhui_info()]
+    else:
+        rhui_msg = []
+
     expected_rel_ver = '6.10'
 
     mocked_report = create_report_mocked()
@@ -92,7 +110,9 @@ def test_etc_releasever_neither(monkeypatch):
 
 
 def test_etc_releasever_both(monkeypatch):
-    msgs = [RHUIInfo(provider='aws'), PkgManagerInfo(etc_releasever='7.7')]
+    rhui_info = mk_rhui_info()
+
+    msgs = [rhui_info, PkgManagerInfo(etc_releasever='7.7')]
     expected_rel_ver = '6.10'
 
     mocked_report = create_report_mocked()

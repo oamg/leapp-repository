@@ -2,6 +2,7 @@ import os
 
 from leapp import reporting
 from leapp.libraries.common import rhui
+from leapp.libraries.common.config.version import get_source_major_version
 from leapp.libraries.common.rpms import has_package
 from leapp.libraries.stdlib import api
 from leapp.models import FirmwareFacts, HybridImage, InstalledRPM
@@ -20,8 +21,20 @@ def is_grubenv_symlink_to_efi():
 
 def is_azure_agent_installed():
     """Check whether 'WALinuxAgent' package is installed."""
-    upg_path = rhui.get_upg_path()
-    agent_pkg = rhui.RHUI_CLOUD_MAP[upg_path].get('azure', {}).get('agent_pkg', '')
+    src_ver_major = get_source_major_version()
+
+    family = rhui.RHUIFamily(rhui.RHUIProvider.AZURE)
+    azure_setups = rhui.RHUI_SETUPS.get(family, [])
+
+    agent_pkg = None
+    for setup in azure_setups:
+        if setup.os_version == src_ver_major:
+            agent_pkg = setup.extra_info.get('agent_pkg')
+            break
+
+    if not agent_pkg:
+        return False
+
     return has_package(InstalledRPM, agent_pkg)
 
 

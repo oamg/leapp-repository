@@ -85,7 +85,12 @@ def _gen_packages_msgs():
 
 _PACKAGES_MSGS = _gen_packages_msgs()
 _RHSMINFO_MSG = models.RHSMInfo(attached_skus=['testing-sku'])
-_RHUIINFO_MSG = models.RHUIInfo(provider='aws')
+_RHUIINFO_MSG = models.RHUIInfo(provider='aws',
+                                src_client_pkg_names=['rh-amazon-rhui-client'],
+                                target_client_pkg_names=['rh-amazon-rhui-client'],
+                                target_client_setup_info=models.TargetRHUISetupInfo(
+                                    preinstall_tasks=models.TargetRHUIPreInstallTasks(),
+                                    postinstall_tasks=models.TargetRHUIPostInstallTasks()))
 _XFS_MSG = models.XFSPresence()
 _STORAGEINFO_MSG = models.StorageInfo()
 _CTRF_MSGS = [
