@@ -1,5 +1,6 @@
 import pytest
 
+from leapp.libraries.common.config import version
 from leapp.models import KernelCmdline, KernelCmdlineArg, Report
 from leapp.snactor.fixture import current_actor_context
 
@@ -19,16 +20,22 @@ ballast2 = [KernelCmdlineArg(key=k, value=v) for k, v in [
     ('LANG', 'en_US.UTF-8')]]
 
 
-@pytest.mark.parametrize('parameters,expected_report', [
-    ([], False),
-    ([KernelCmdlineArg(key='fips', value='')], False),
-    ([KernelCmdlineArg(key='fips', value='0')], False),
-    ([KernelCmdlineArg(key='fips', value='1')], True),
-    ([KernelCmdlineArg(key='fips', value='11')], False),
-    ([KernelCmdlineArg(key='fips', value='yes')], False)
+@pytest.mark.parametrize('src_v,parameters,expected_report', [
+    ("8.7", [], False),
+    ("8.7", [KernelCmdlineArg(key='fips', value='')], False),
+    ("8.7", [KernelCmdlineArg(key='fips', value='0')], False),
+    ("8.7", [KernelCmdlineArg(key='fips', value='1')], True),
+    ("8.7", [KernelCmdlineArg(key='fips', value='11')], False),
+    ("8.7", [KernelCmdlineArg(key='fips', value='yes')], False),
+    ("8.8", [KernelCmdlineArg(key='fips', value='')], False),
+    ("8.8", [KernelCmdlineArg(key='fips', value='0')], False),
+    ("8.8", [KernelCmdlineArg(key='fips', value='1')], False),
+    ("8.8", [KernelCmdlineArg(key='fips', value='11')], False),
+    ("8.8", [KernelCmdlineArg(key='fips', value='yes')], False)
 ])
-def test_check_fips(current_actor_context, parameters, expected_report):
+def test_check_fips(monkeypatch, current_actor_context, src_v, parameters, expected_report):
     cmdline = KernelCmdline(parameters=ballast1+parameters+ballast2)
+    monkeypatch.setattr(version, 'get_source_version', lambda: src_v)
     current_actor_context.feed(cmdline)
     current_actor_context.run()
     if expected_report:

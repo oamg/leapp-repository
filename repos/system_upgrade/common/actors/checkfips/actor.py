@@ -1,6 +1,7 @@
 from leapp import reporting
 from leapp.actors import Actor
 from leapp.exceptions import StopActorExecutionError
+from leapp.libraries.common.config import version
 from leapp.models import KernelCmdline, Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
@@ -16,20 +17,23 @@ class CheckFips(Actor):
     tags = (IPUWorkflowTag, ChecksPhaseTag)
 
     def process(self):
-        cmdline = next(self.consume(KernelCmdline), None)
-        if not cmdline:
-            raise StopActorExecutionError('Cannot check FIPS state due to missing command line parameters',
-                                          details={'Problem': 'Did not receive a message with kernel command '
-                                                              'line parameters (KernelCmdline)'})
-        for parameter in cmdline.parameters:
-            if parameter.key == 'fips' and parameter.value == '1':
-                title = 'Cannot upgrade a system with FIPS mode enabled'
-                summary = 'Leapp has detected that FIPS is enabled on this system. ' \
-                          'In-place upgrade of systems in FIPS mode is currently unsupported.'
-                reporting.create_report([
-                    reporting.Title(title),
-                    reporting.Summary(summary),
-                    reporting.Severity(reporting.Severity.HIGH),
-                    reporting.Groups([reporting.Groups.SECURITY]),
-                    reporting.Groups([reporting.Groups.INHIBITOR])
-                ])
+        if version.matches_source_version("< 8.8"):
+            # Upgrades in FIPS mode are not supported before RHEL 8.8 (see rhbz#2176560)
+            cmdline = next(self.consume(KernelCmdline), None)
+            if not cmdline:
+                raise StopActorExecutionError('Cannot check FIPS state due to missing command line parameters',
+                                              details={'Problem': 'Did not receive a message with kernel command '
+                                                                  'line parameters (KernelCmdline)'})
+
+            for parameter in cmdline.parameters:
+                if parameter.key == 'fips' and parameter.value == '1':
+                    title = 'Cannot upgrade a system with FIPS mode enabled'
+                    summary = 'Leapp has detected that FIPS is enabled on this system. ' \
+                              'In-place upgrade of systems in FIPS mode is currently unsupported.'
+                    reporting.create_report([
+                        reporting.Title(title),
+                        reporting.Summary(summary),
+                        reporting.Severity(reporting.Severity.HIGH),
+                        reporting.Groups([reporting.Groups.SECURITY]),
+                        reporting.Groups([reporting.Groups.INHIBITOR])
+                    ])
