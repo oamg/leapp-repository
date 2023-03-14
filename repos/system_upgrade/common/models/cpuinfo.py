@@ -32,8 +32,8 @@ class CPUInfo(Model):
     # byte_order = fields.StringEnum(['Little Endian', 'Big Endian'])
     # """ Byte order of the CPU: 'Little Endian' or 'Big Endian' """
 
-    # flags = fields.List(fields.String(), default=[])
-    # """ Specifies flags/features of the CPU. """
+    flags = fields.List(fields.String(), default=[])
+    """ Specifies flags/features of the CPU. """
 
     # hypervisor = fields.Nullable(fields.String())
     # hypervisor_vendor = fields.Nullable(fields.String())
