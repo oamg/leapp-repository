@@ -177,17 +177,38 @@ def test_tasks_produced_reports_created(monkeypatch):
     assert api.produce.model_instances[0].to_disable == expected_tasks.to_disable
 
 
-def test_report_kept_enabled(monkeypatch):
+@pytest.mark.parametrize(
+    "tasks, expect_extended_summary",
+    (
+        (
+            SystemdServicesTasks(
+                to_enable=["test.service", "other.service"],
+                to_disable=["another.service"],
+            ),
+            True,
+        ),
+        (None, False),
+    ),
+)
+def test_report_kept_enabled(monkeypatch, tasks, expect_extended_summary):
     created_reports = create_report_mocked()
     monkeypatch.setattr(reporting, "create_report", created_reports)
 
-    tasks = SystemdServicesTasks(
-        to_enable=["test.service", "other.service"], to_disable=["another.service"]
-    )
     transitionsystemdservicesstates._report_kept_enabled(tasks)
 
+    extended_summary_str = (
+        "The following services were originally disabled by preset on the"
+        " upgraded system and Leapp attempted to enable them"
+    )
+
     assert created_reports.called
-    assert all([s in created_reports.report_fields["summary"] for s in tasks.to_enable])
+    if expect_extended_summary:
+        assert extended_summary_str in created_reports.report_fields["summary"]
+        assert all(
+            [s in created_reports.report_fields["summary"] for s in tasks.to_enable]
+        )
+    else:
+        assert extended_summary_str not in created_reports.report_fields["summary"]
 
 
 def test_get_newly_enabled():
@@ -205,7 +226,7 @@ def test_get_newly_enabled():
     newly_enabled = transitionsystemdservicesstates._get_newly_enabled(
         services_source, desired_states
     )
-    assert newly_enabled == ['test.service']
+    assert newly_enabled == ["test.service"]
 
 
 def test_report_newly_enabled(monkeypatch):
