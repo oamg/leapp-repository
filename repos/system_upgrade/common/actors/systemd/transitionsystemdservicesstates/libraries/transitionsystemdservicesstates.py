@@ -130,8 +130,8 @@ def _report_kept_enabled(tasks):
     )
     if tasks:
         summary += (
-            "The following services were originally disabled on the upgraded system"
-            " and Leapp attempted to enable them:{}{}"
+            "The following services were originally disabled by preset on the"
+            " upgraded system and Leapp attempted to enable them:{}{}"
         ).format(FMT_LIST_SEPARATOR, FMT_LIST_SEPARATOR.join(sorted(tasks.to_enable)))
         # TODO(mmatuska): When post-upgrade reports are implemented in
         # `setsystemdservicesstates actor, add a note here to check the reports
@@ -193,9 +193,9 @@ def process():
     presets_source = _expect_message(SystemdServicesPresetInfoSource).presets
     presets_target = _expect_message(SystemdServicesPresetInfoTarget).presets
 
-    services_source = dict((p.name, p.state) for p in services_source)
-    presets_source = dict((p.service, p.state) for p in presets_source)
-    presets_target = dict((p.service, p.state) for p in presets_target)
+    services_source = {p.name: p.state for p in services_source}
+    presets_source = {p.service: p.state for p in presets_source}
+    presets_target = {p.service: p.state for p in presets_target}
 
     services_target = _filter_services(services_source, services_target)
 
