@@ -7,6 +7,7 @@ disable=
  no-member,
  no-name-in-module,
  raising-bad-type,
+ redundant-keyword-arg,  # it's one or the other, this one is not so bad at all
 # "W" Warnings for stylistic problems or minor programming issues
  no-absolute-import,
  arguments-differ,

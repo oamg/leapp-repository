@@ -80,7 +80,8 @@ def preupgrade(args, breadcrumbs):
     report_inhibitors(context)
     report_files = util.get_cfg_files('report', cfg)
     log_files = util.get_cfg_files('logs', cfg)
-    report_info(report_files, log_files, answerfile_path, fail=workflow.failure)
+    report_info(context, report_files, log_files, answerfile_path, fail=workflow.failure)
+
     if workflow.failure:
         sys.exit(1)
 
