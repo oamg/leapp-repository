@@ -1,10 +1,8 @@
 from leapp import reporting
 from leapp.libraries.common.config.version import get_source_major_version
 
-MIGRATION_GUIDE_7 = (
-    "https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux"
-    "/8/html/installing_identity_management/migrate-7-to-8_migrating"
-    )
+MIGRATION_GUIDE_7 = "https://red.ht/IdM-upgrading-RHEL-7-to-RHEL-8"
+
 # TBD: update the doc url when migration guide 8->9 becomes available
 MIGRATION_GUIDE_8 = "https://red.ht/IdM-upgrading-RHEL-8-to-RHEL-9"
 MIGRATION_GUIDES = {
