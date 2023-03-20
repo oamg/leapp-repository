@@ -32,7 +32,7 @@ class CheckGrubCore(Actor):
             grub_info = next(self.consume(GrubInfo), None)
             if not grub_info:
                 raise StopActorExecutionError('Actor did not receive any GrubInfo message.')
-            if grub_info.orig_device_name:
+            if grub_info.orig_devices:
                 create_report([
                     reporting.Title(
                         'GRUB2 core will be automatically updated during the upgrade'
@@ -45,8 +45,9 @@ class CheckGrubCore(Actor):
                 create_report([
                     reporting.Title('Leapp could not identify where GRUB2 core is located'),
                     reporting.Summary(
-                        'We assumed GRUB2 core is located on the same device as /boot, however Leapp could not '
-                        'detect GRUB2 on the device. GRUB2 core needs to be updated maually on legacy (BIOS) systems. '
+                        'We assumed GRUB2 core is located on the same device(s) as /boot, '
+                        'however Leapp could not detect GRUB2 on the device(s). '
+                        'GRUB2 core needs to be updated maually on legacy (BIOS) systems. '
                     ),
                     reporting.Severity(reporting.Severity.HIGH),
                     reporting.Groups([reporting.Groups.BOOT]),
