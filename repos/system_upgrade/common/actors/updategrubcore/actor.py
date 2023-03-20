@@ -21,8 +21,8 @@ class UpdateGrubCore(Actor):
     def process(self):
         ff = next(self.consume(FirmwareFacts), None)
         if ff and ff.firmware == 'bios':
-            grub_dev = grub.get_grub_device()
-            if grub_dev:
-                update_grub_core(grub_dev)
+            grub_devs = grub.get_grub_devices()
+            if grub_devs:
+                update_grub_core(grub_devs)
             else:
-                api.current_logger().warning('Leapp could not detect GRUB on {}'.format(grub_dev))
+                api.current_logger().warning('Leapp could not detect GRUB devices')

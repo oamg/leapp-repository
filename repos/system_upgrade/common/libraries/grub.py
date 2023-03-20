@@ -1,7 +1,9 @@
 import os
 
 from leapp.exceptions import StopActorExecution
+from leapp.libraries.common import mdraid
 from leapp.libraries.stdlib import api, CalledProcessError, run
+from leapp.utils.deprecation import deprecated
 
 
 def has_grub(blk_dev):
@@ -59,6 +61,32 @@ def get_boot_partition():
     return boot_partition
 
 
+def get_grub_devices():
+    """
+    Get block devices where GRUB is located. We assume GRUB is on the same device
+    as /boot partition is. In case that device is an md (Multiple Device) device, all
+    of the component devices of such a device are considered.
+
+    :return: Devices where GRUB is located
+    :rtype: list
+    """
+    boot_device = get_boot_partition()
+    devices = []
+    if mdraid.is_mdraid_dev(boot_device):
+        component_devs = mdraid.get_component_devices(boot_device)
+        blk_devs = [blk_dev_from_partition(dev) for dev in component_devs]
+        # remove duplicates as there might be raid on partitions on the same drive
+        # even if that's very unusual
+        devices = sorted(list(set(blk_devs)))
+    else:
+        devices.append(blk_dev_from_partition(boot_device))
+
+    have_grub = [dev for dev in devices if has_grub(dev)]
+    api.current_logger().info('GRUB is installed on {}'.format(",".join(have_grub)))
+    return have_grub
+
+
+@deprecated(since='2023-06-23', message='This function has been replaced by get_grub_devices')
 def get_grub_device():
     """
     Get block device where GRUB is located. We assume GRUB is on the same device

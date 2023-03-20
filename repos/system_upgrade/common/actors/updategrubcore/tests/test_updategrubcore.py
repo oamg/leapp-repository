@@ -1,7 +1,6 @@
 import pytest
 
 from leapp import reporting
-from leapp.exceptions import StopActorExecution
 from leapp.libraries.actor import updategrubcore
 from leapp.libraries.common import testutils
 from leapp.libraries.stdlib import api, CalledProcessError
@@ -32,21 +31,45 @@ class run_mocked(object):
             raise_call_error(args)
 
 
-def test_update_grub(monkeypatch):
+@pytest.mark.parametrize('devices', [['/dev/vda'], ['/dev/vda', '/dev/vdb']])
+def test_update_grub(monkeypatch, devices):
     monkeypatch.setattr(reporting, "create_report", testutils.create_report_mocked())
     monkeypatch.setattr(updategrubcore, 'run', run_mocked())
-    updategrubcore.update_grub_core('/dev/vda')
+    updategrubcore.update_grub_core(devices)
     assert reporting.create_report.called
-    assert UPDATE_OK_TITLE == reporting.create_report.report_fields['title']
+    assert UPDATE_OK_TITLE == reporting.create_report.reports[1]['title']
+    assert all(dev in reporting.create_report.reports[1]['summary'] for dev in devices)
 
 
-def test_update_grub_failed(monkeypatch):
+@pytest.mark.parametrize('devices', [['/dev/vda'], ['/dev/vda', '/dev/vdb']])
+def test_update_grub_failed(monkeypatch, devices):
     monkeypatch.setattr(reporting, "create_report", testutils.create_report_mocked())
     monkeypatch.setattr(updategrubcore, 'run', run_mocked(raise_err=True))
-    with pytest.raises(StopActorExecution):
-        updategrubcore.update_grub_core('/dev/vda')
+    updategrubcore.update_grub_core(devices)
     assert reporting.create_report.called
-    assert UPDATE_FAILED_TITLE == reporting.create_report.report_fields['title']
+    assert UPDATE_FAILED_TITLE == reporting.create_report.reports[0]['title']
+    assert all(dev in reporting.create_report.reports[0]['summary'] for dev in devices)
+
+
+def test_update_grub_success_and_fail(monkeypatch):
+    monkeypatch.setattr(reporting, "create_report", testutils.create_report_mocked())
+
+    def run_mocked(args):
+        if args == ['grub2-install', '/dev/vdb']:
+            raise_call_error(args)
+        else:
+            assert args == ['grub2-install', '/dev/vda']
+
+    monkeypatch.setattr(updategrubcore, 'run', run_mocked)
+
+    devices = ['/dev/vda', '/dev/vdb']
+    updategrubcore.update_grub_core(devices)
+
+    assert reporting.create_report.called
+    assert UPDATE_FAILED_TITLE == reporting.create_report.reports[0]['title']
+    assert '/dev/vdb' in reporting.create_report.reports[0]['summary']
+    assert UPDATE_OK_TITLE == reporting.create_report.reports[1]['title']
+    assert '/dev/vda' in reporting.create_report.reports[1]['summary']
 
 
 def test_update_grub_negative(current_actor_context):
