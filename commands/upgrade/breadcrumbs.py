@@ -128,8 +128,6 @@ class _BreadCrumbs(object):
 
     def _verify_leapp_pkgs(self):
         if not os.environ.get('LEAPP_IPU_IN_PROGRESS'):
-            # NOTE(ivasilev) this can happen if LEAPP_DEVEL_TARGET_RELEASE is specified and pointing to an impossible
-            # version
             return []
         upg_path = os.environ.get('LEAPP_IPU_IN_PROGRESS').split('to')
         cmd = ['/bin/bash', '-c', 'rpm -V leapp leapp-upgrade-el{}toel{}'.format(upg_path[0], upg_path[1])]
