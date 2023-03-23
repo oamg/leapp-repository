@@ -52,7 +52,8 @@ disable=
  consider-using-with,  # on bunch spaces we cannot change that...
  duplicate-string-formatting-argument,  # TMP: will be fixed in close future
  consider-using-f-string,  # sorry, not gonna happen, still have to support py2
- use-dict-literal
+ use-dict-literal,
+ redundant-u-string-prefix  # still have py2 to support
 
 [FORMAT]
 # Maximum number of characters on a single line.
