@@ -17,6 +17,9 @@ def remove_boot_files():
     for filepath in boot_content.kernel_path, boot_content.initram_path:
         remove_file(filepath)
 
+    if boot_content.kernel_hmac_path:
+        remove_file(boot_content.kernel_hmac_path)
+
 
 def remove_file(filepath):
     try:
