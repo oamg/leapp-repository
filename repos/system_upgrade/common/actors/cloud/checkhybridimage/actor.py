@@ -1,6 +1,7 @@
 from leapp.actors import Actor
 from leapp.libraries.actor.checkhybridimage import check_hybrid_image
 from leapp.models import FirmwareFacts, HybridImage, InstalledRPM
+from leapp.reporting import Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
@@ -16,7 +17,7 @@ class CheckHybridImage(Actor):
 
     name = 'checkhybridimage'
     consumes = (InstalledRPM, FirmwareFacts)
-    produces = (HybridImage,)
+    produces = (HybridImage, Report)
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 
     def process(self):
