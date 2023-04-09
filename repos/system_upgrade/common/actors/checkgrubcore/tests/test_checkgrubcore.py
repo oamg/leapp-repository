@@ -5,7 +5,7 @@ from leapp.libraries.common.config import mock_configs
 from leapp.models import FirmwareFacts, GrubInfo
 from leapp.reporting import Report
 
-NO_GRUB = 'Leapp could not identify where GRUB core is located'
+NO_GRUB = 'Leapp could not identify where GRUB2 core is located'
 
 
 def test_actor_update_grub(current_actor_context):
