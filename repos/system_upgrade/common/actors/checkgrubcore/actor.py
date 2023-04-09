@@ -6,8 +6,10 @@ from leapp.models import FirmwareFacts, GrubInfo
 from leapp.reporting import create_report, Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
-GRUB_SUMMARY = ('On legacy (BIOS) systems, GRUB core (located in the gap between the MBR and the '
-                'first partition) does not get automatically updated when GRUB is upgraded.')
+GRUB_SUMMARY = ('On legacy (BIOS) systems, GRUB2 core (located in the gap between the MBR and the '
+                'first partition) cannot be updated during the rpm transaction and Leapp has to initiate '
+                'the update running "grub2-install" after the transaction. No action is needed before the '
+                'upgrade. After the upgrade, it is recommended to check the GRUB configuration.')
 
 
 class CheckGrubCore(Actor):
@@ -33,7 +35,7 @@ class CheckGrubCore(Actor):
             if grub_info.orig_device_name:
                 create_report([
                     reporting.Title(
-                        'GRUB core will be updated during upgrade'
+                        'GRUB2 core will be automatically updated during the upgrade'
                     ),
                     reporting.Summary(GRUB_SUMMARY),
                     reporting.Severity(reporting.Severity.HIGH),
@@ -41,13 +43,13 @@ class CheckGrubCore(Actor):
                 ])
             else:
                 create_report([
-                    reporting.Title('Leapp could not identify where GRUB core is located'),
+                    reporting.Title('Leapp could not identify where GRUB2 core is located'),
                     reporting.Summary(
-                        'We assume GRUB core is located on the same device as /boot. Leapp needs to '
-                        'update GRUB core as it is not done automatically on legacy (BIOS) systems. '
+                        'We assumed GRUB2 core is located on the same device as /boot, however Leapp could not '
+                        'detect GRUB2 on the device. GRUB2 core needs to be updated maually on legacy (BIOS) systems. '
                     ),
                     reporting.Severity(reporting.Severity.HIGH),
                     reporting.Groups([reporting.Groups.BOOT]),
                     reporting.Remediation(
-                        hint='Please run "grub2-install <GRUB_DEVICE> command manually after upgrade'),
+                        hint='Please run "grub2-install <GRUB_DEVICE> command manually after the upgrade'),
                 ])
