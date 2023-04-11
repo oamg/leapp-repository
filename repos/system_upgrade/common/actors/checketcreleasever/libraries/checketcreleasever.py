@@ -15,10 +15,7 @@ def handle_etc_releasever():
             'file and/or the system is using RHUI infrastructure. In order to avoid issues with repofile URLs '
             '(when --release option is not provided) in cases where there is the previous major.minor version value '
             'in the configuration, release version will be set to the target release version ({}). This will also '
-            'ensure the system stays on the target version after the upgrade. In order to enable latest minor version '
-            'updates, you can remove "/etc/dnf/vars/releasever" file.'.format(
-                target_version
-            )
+            'ensure the system stays on the expected target version after the upgrade'.format(target_version)
         ),
         reporting.Severity(reporting.Severity.INFO),
         reporting.Groups([reporting.Groups.UPGRADE_PROCESS]),
