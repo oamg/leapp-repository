@@ -57,18 +57,19 @@ jobs:
         env:
           COPR_CONFIG: "copr_fedora.conf"
           COPR_CHROOT: "epel-7-x86_64,epel-8-x86_64"
+          COPR_REPO: "@oamg/leapp"
         run: |
           cat << EOF > $COPR_CONFIG
           [copr-cli]
           login = ${{ secrets.FEDORA_COPR_LOGIN }}
-          username = @oamg
+          username = oamgbot
           token = ${{ secrets.FEDORA_COPR_TOKEN }}
           copr_url = https://copr.fedorainfracloud.org
           # expiration date: 2030-07-04
           EOF
 
           pip install copr-cli
-          PR=${{ steps.pr_nr.outputs.pr_nr }} COPR_CONFIG=$COPR_CONFIG COPR_CHROOT=$COPR_CHROOT make copr_build | tee copr.log
+          PR=${{ steps.pr_nr.outputs.pr_nr }} COPR_CONFIG=$COPR_CONFIG COPR_REPO="$COPR_REPO" COPR_CHROOT=$COPR_CHROOT make copr_build | tee copr.log
 
           COPR_URL=$(grep -Po 'https://copr.fedorainfracloud.org/coprs/build/\d+' copr.log)
           echo "::set-output name=copr_url::${COPR_URL}"
@@ -122,18 +123,19 @@ jobs:
         env:
           COPR_CONFIG: "copr_fedora.conf"
           COPR_CHROOT: "epel-7-x86_64,epel-8-x86_64"
+          COPR_REPO: "@oamg/leapp"
         run: |
           cat << EOF > $COPR_CONFIG
           [copr-cli]
           login = ${{ secrets.FEDORA_COPR_LOGIN }}
-          username = @oamg
+          username = oamgbot
           token = ${{ secrets.FEDORA_COPR_TOKEN }}
           copr_url = https://copr.fedorainfracloud.org
           # expiration date: 2030-07-04
           EOF
 
           pip install copr-cli
-          PR=${{ steps.leapp_pr.outputs.leapp_pr }} COPR_CONFIG=$COPR_CONFIG COPR_CHROOT=$COPR_CHROOT make copr_build | tee copr.log
+          PR=${{ steps.leapp_pr.outputs.leapp_pr }} COPR_CONFIG=$COPR_CONFIG COPR_REPO="$COPR_REPO" COPR_CHROOT=$COPR_CHROOT make copr_build | tee copr.log
 
           COPR_URL=$(grep -Po 'https://copr.fedorainfracloud.org/coprs/build/\d+' copr.log)
           echo "::set-output name=copr_url::${COPR_URL}"
