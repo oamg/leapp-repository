@@ -101,6 +101,11 @@ jobs:
       - tmt:
           context:
             distro: "rhel-7.9"
+      # tag resources as sst_upgrades to enable cost metrics collection
+      - settings:
+          provisioning:
+            tags:
+              BusinessUnit: sst_upgrades
   env:
     SOURCE_RELEASE: "7.9"
     TARGET_RELEASE: "8.6"
@@ -122,6 +127,11 @@ jobs:
       - tmt:
           context:
             distro: "rhel-7.9"
+      # tag resources as sst_upgrades to enable cost metrics collection
+      - settings:
+          provisioning:
+            tags:
+              BusinessUnit: sst_upgrades
   env:
     SOURCE_RELEASE: "7.9"
     TARGET_RELEASE: "8.8"
@@ -163,6 +173,11 @@ jobs:
       - tmt:
           context:
             distro: "rhel-7.9"
+      # tag resources as sst_upgrades to enable cost metrics collection
+      - settings:
+          provisioning:
+            tags:
+              BusinessUnit: sst_upgrades
   env:
     SOURCE_RELEASE: "7.9"
     TARGET_RELEASE: "8.6"
@@ -185,6 +200,11 @@ jobs:
       - tmt:
           context:
             distro: "rhel-8.6"
+      # tag resources as sst_upgrades to enable cost metrics collection
+      - settings:
+          provisioning:
+            tags:
+              BusinessUnit: sst_upgrades
   env:
     SOURCE_RELEASE: "8.6"
     TARGET_RELEASE: "9.0"
@@ -207,6 +227,11 @@ jobs:
       - tmt:
           context:
             distro: "rhel-8.8"
+      # tag resources as sst_upgrades to enable cost metrics collection
+      - settings:
+          provisioning:
+            tags:
+              BusinessUnit: sst_upgrades
   env:
     SOURCE_RELEASE: "8.8"
     TARGET_RELEASE: "9.2"
@@ -252,6 +277,11 @@ jobs:
       - tmt:
           context:
             distro: "rhel-8.6"
+      # tag resources as sst_upgrades to enable cost metrics collection
+      - settings:
+          provisioning:
+            tags:
+              BusinessUnit: sst_upgrades
   env:
     SOURCE_RELEASE: "8.6"
     TARGET_RELEASE: "9.0"
