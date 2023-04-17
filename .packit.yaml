@@ -95,15 +95,15 @@ jobs:
       distros: [RHEL-7.9-ZStream]
   identifier: tests-7.9to8.6
   tmt_plan: "^(?!.*upgrade_plugin)(?!.*tier[2-3].*)(?!.*rhsm)(?!.*c2r)(?!.*sap)(?!.*8to9)(?!.*max_sst)"
-  tf_post_install_script: "#!/bin/sh\nsudo sed -i s/.*ssh-rsa/ssh-rsa/ /root/.ssh/authorized_keys"
   tf_extra_params:
     environments:
       - tmt:
           context:
             distro: "rhel-7.9"
-      # tag resources as sst_upgrades to enable cost metrics collection
-      - settings:
+        # tag resources as sst_upgrades to enable cost metrics collection
+        settings:
           provisioning:
+            post_install_script: "#!/bin/sh\nsudo sed -i s/.*ssh-rsa/ssh-rsa/ /root/.ssh/authorized_keys"
             tags:
               BusinessUnit: sst_upgrades
   env:
@@ -121,15 +121,15 @@ jobs:
       distros: [RHEL-7.9-ZStream]
   identifier: tests-7.9to8.8
   tmt_plan: "^(?!.*upgrade_plugin)(?!.*tier[2-3].*)(?!.*rhsm)(?!.*c2r)(?!.*sap)(?!.*8to9)(?!.*max_sst)"
-  tf_post_install_script: "#!/bin/sh\nsudo sed -i s/.*ssh-rsa/ssh-rsa/ /root/.ssh/authorized_keys"
   tf_extra_params:
     environments:
       - tmt:
           context:
             distro: "rhel-7.9"
-      # tag resources as sst_upgrades to enable cost metrics collection
-      - settings:
+        # tag resources as sst_upgrades to enable cost metrics collection
+        settings:
           provisioning:
+            post_install_script: "#!/bin/sh\nsudo sed -i s/.*ssh-rsa/ssh-rsa/ /root/.ssh/authorized_keys"
             tags:
               BusinessUnit: sst_upgrades
   env:
@@ -167,15 +167,15 @@ jobs:
       distros: [RHEL-7.9-rhui]
   identifier: tests-7to8-aws-e2e
   tmt_plan: "^(?!.*upgrade_plugin)(?!.*tier[2-3].*)(?!.*rhsm)(?!.*c2r)(?!.*sap)(?!.*8to9)(.*e2e)"
-  tf_post_install_script: "#!/bin/sh\nsudo sed -i s/.*ssh-rsa/ssh-rsa/ /root/.ssh/authorized_keys; echo 42; yum-config-manager --enable rhel-7-server-rhui-optional-rpms"
   tf_extra_params:
     environments:
       - tmt:
           context:
             distro: "rhel-7.9"
-      # tag resources as sst_upgrades to enable cost metrics collection
-      - settings:
+        # tag resources as sst_upgrades to enable cost metrics collection
+        settings:
           provisioning:
+            post_install_script: "#!/bin/sh\nsudo sed -i s/.*ssh-rsa/ssh-rsa/ /root/.ssh/authorized_keys; yum-config-manager --enable rhel-7-server-rhui-optional-rpms"
             tags:
               BusinessUnit: sst_upgrades
   env:
@@ -194,15 +194,15 @@ jobs:
       distros: [RHEL-8.6.0-Nightly]
   identifier: tests-8.6to9.0
   tmt_plan: "^(?!.*upgrade_plugin)(?!.*tier[2-3].*)(?!.*rhsm)(?!.*c2r)(?!.*sap)(?!.*7to8)(?!.*max_sst)"
-  tf_post_install_script: "#!/bin/sh\nsudo sed -i s/.*ssh-rsa/ssh-rsa/ /root/.ssh/authorized_keys"
   tf_extra_params:
     environments:
       - tmt:
           context:
             distro: "rhel-8.6"
-      # tag resources as sst_upgrades to enable cost metrics collection
-      - settings:
+        # tag resources as sst_upgrades to enable cost metrics collection
+        settings:
           provisioning:
+            post_install_script: "#!/bin/sh\nsudo sed -i s/.*ssh-rsa/ssh-rsa/ /root/.ssh/authorized_keys"
             tags:
               BusinessUnit: sst_upgrades
   env:
@@ -221,15 +221,15 @@ jobs:
       distros: [RHEL-8.8.0-Nightly]
   identifier: tests-8.8to9.2
   tmt_plan: "^(?!.*upgrade_plugin)(?!.*tier[2-3].*)(?!.*rhsm)(?!.*c2r)(?!.*sap)(?!.*7to8)(?!.*max_sst)"
-  tf_post_install_script: "#!/bin/sh\nsudo sed -i s/.*ssh-rsa/ssh-rsa/ /root/.ssh/authorized_keys"
   tf_extra_params:
     environments:
       - tmt:
           context:
             distro: "rhel-8.8"
-      # tag resources as sst_upgrades to enable cost metrics collection
-      - settings:
+        # tag resources as sst_upgrades to enable cost metrics collection
+        settings:
           provisioning:
+            post_install_script: "#!/bin/sh\nsudo sed -i s/.*ssh-rsa/ssh-rsa/ /root/.ssh/authorized_keys"
             tags:
               BusinessUnit: sst_upgrades
   env:
@@ -271,15 +271,15 @@ jobs:
       distros: [RHEL-8.6-rhui]
   identifier: tests-8to9-aws-e2e
   tmt_plan: "^(?!.*upgrade_plugin)(?!.*tier[2-3].*)(?!.*rhsm)(?!.*c2r)(?!.*sap)(?!.*7to8)(.*e2e)"
-  tf_post_install_script: "#!/bin/sh\nsudo sed -i s/.*ssh-rsa/ssh-rsa/ /root/.ssh/authorized_keys"
   tf_extra_params:
     environments:
       - tmt:
           context:
             distro: "rhel-8.6"
-      # tag resources as sst_upgrades to enable cost metrics collection
-      - settings:
+        # tag resources as sst_upgrades to enable cost metrics collection
+        settings:
           provisioning:
+            post_install_script: "#!/bin/sh\nsudo sed -i s/.*ssh-rsa/ssh-rsa/ /root/.ssh/authorized_keys"
             tags:
               BusinessUnit: sst_upgrades
   env:
