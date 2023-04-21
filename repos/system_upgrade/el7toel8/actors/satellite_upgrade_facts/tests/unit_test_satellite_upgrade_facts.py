@@ -129,6 +129,16 @@ def test_detects_local_postgresql(monkeypatch, current_actor_context):
         return mocked_stat
     monkeypatch.setattr("os.stat", mock_stat())
 
+    def mock_path_exists():
+        orig_path_exists = os.path.exists
+
+        def mocked_path_exists(path):
+            if path == '/var/opt/rh/rh-postgresql12/lib/pgsql/data/':
+                return True
+            return orig_path_exists(path)
+        return mocked_path_exists
+    monkeypatch.setattr("os.path.exists", mock_path_exists())
+
     current_actor_context.feed(InstalledRPM(items=[FOREMAN_RPM, POSTGRESQL_RPM]))
     current_actor_context.run(config_model=mock_configs.CONFIG)
 
@@ -137,6 +147,31 @@ def test_detects_local_postgresql(monkeypatch, current_actor_context):
 
     satellitemsg = current_actor_context.consume(SatelliteFacts)[0]
     assert satellitemsg.postgresql.local_postgresql
+    assert satellitemsg.postgresql.scl_pgsql_data
+
+    assert current_actor_context.consume(DNFWorkaround)
+
+
+def test_detects_migrated_postgresql(monkeypatch, current_actor_context):
+    def mock_path_exists():
+        orig_path_exists = os.path.exists
+
+        def mocked_path_exists(path):
+            if path == '/var/opt/rh/rh-postgresql12/lib/pgsql/data/':
+                return False
+            return orig_path_exists(path)
+        return mocked_path_exists
+    monkeypatch.setattr("os.path.exists", mock_path_exists())
+
+    current_actor_context.feed(InstalledRPM(items=[FOREMAN_RPM, POSTGRESQL_RPM]))
+    current_actor_context.run(config_model=mock_configs.CONFIG)
+
+    rpmmessage = current_actor_context.consume(RpmTransactionTasks)[0]
+    assert Module(name='postgresql', stream='12') in rpmmessage.modules_to_enable
+
+    satellitemsg = current_actor_context.consume(SatelliteFacts)[0]
+    assert satellitemsg.postgresql.local_postgresql
+    assert not satellitemsg.postgresql.scl_pgsql_data
 
     assert current_actor_context.consume(DNFWorkaround)
 

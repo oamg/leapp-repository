@@ -28,8 +28,27 @@ def test_no_old_data(monkeypatch):
     assert reporting.create_report.called == 1
 
     expected_title = 'Satellite PostgreSQL data migration'
+    expected_intro = 'PostgreSQL on RHEL 8 expects its data in /var/lib/pgsql/data.'
 
     assert expected_title == reporting.create_report.report_fields['title']
+    assert expected_intro in reporting.create_report.report_fields['summary']
+
+
+def test_migrated_data(monkeypatch):
+    monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
+
+    satellite_upgrade_check(SatelliteFacts(has_foreman=True,
+                            postgresql=SatellitePostgresqlFacts(local_postgresql=True, scl_pgsql_data=False)))
+
+    assert reporting.create_report.called == 1
+
+    expected_title = 'Satellite PostgreSQL data migration'
+    expected_summary = 'Your PostgreSQL data seems to be already migrated to the new location.'
+    expected_reindex = 'PostgreSQL on RHEL 8 requires a rebuild of all database indexes'
+
+    assert expected_title == reporting.create_report.report_fields['title']
+    assert expected_summary in reporting.create_report.report_fields['summary']
+    assert expected_reindex in reporting.create_report.report_fields['summary']
 
 
 def test_same_disk(monkeypatch):
@@ -42,7 +61,7 @@ def test_same_disk(monkeypatch):
 
     expected_title = 'Satellite PostgreSQL data migration'
     expected_summary = 'Your PostgreSQL data will be automatically migrated.'
-    expected_reindex = 'all databases will require a REINDEX'
+    expected_reindex = 'PostgreSQL on RHEL 8 requires a rebuild of all database indexes'
 
     assert expected_title == reporting.create_report.report_fields['title']
     assert expected_summary in reporting.create_report.report_fields['summary']
@@ -60,7 +79,7 @@ def test_different_disk_sufficient_storage(monkeypatch):
 
     expected_title = 'Satellite PostgreSQL data migration'
     expected_summary = 'You currently have enough free storage to move the data'
-    expected_reindex = 'all databases will require a REINDEX'
+    expected_reindex = 'PostgreSQL on RHEL 8 requires a rebuild of all database indexes'
 
     assert expected_title == reporting.create_report.report_fields['title']
     assert expected_summary in reporting.create_report.report_fields['summary']

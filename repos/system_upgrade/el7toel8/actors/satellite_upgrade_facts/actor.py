@@ -80,6 +80,7 @@ class SatelliteUpgradeFacts(Actor):
         bytes_required = None
         bytes_available = None
         old_pgsql_data = False
+        scl_pgsql_data = True
 
         if local_postgresql:
             """
@@ -99,20 +100,23 @@ class SatelliteUpgradeFacts(Actor):
             old_pgsql_data = bool(os.path.exists('/var/lib/pgsql/data/') and os.listdir('/var/lib/pgsql/data/')
                                   and os.path.exists(POSTGRESQL_SCL_DATA_PATH)
                                   and os.listdir(POSTGRESQL_SCL_DATA_PATH))
-            scl_psql_stat = os.stat(POSTGRESQL_SCL_DATA_PATH)
-            for nonscl_path in ['/var/lib/pgsql/data/', '/var/lib/pgsql/', '/var/lib/', '/']:
-                if os.path.exists(nonscl_path):
-                    nonscl_psql_stat = os.stat(nonscl_path)
-                    break
+            if os.path.exists(POSTGRESQL_SCL_DATA_PATH):
+                scl_psql_stat = os.stat(POSTGRESQL_SCL_DATA_PATH)
+                for nonscl_path in ['/var/lib/pgsql/data/', '/var/lib/pgsql/', '/var/lib/', '/']:
+                    if os.path.exists(nonscl_path):
+                        nonscl_psql_stat = os.stat(nonscl_path)
+                        break
 
-            if scl_psql_stat.st_dev != nonscl_psql_stat.st_dev:
-                on_same_partition = False
-                # get the current disk usage of the PostgreSQL data
-                scl_du_call = run(['du', '--block-size=1', '--summarize', POSTGRESQL_SCL_DATA_PATH])
-                bytes_required = int(scl_du_call['stdout'].split()[0])
-                # get the current free space on the target partition
-                nonscl_stat = os.statvfs(nonscl_path)
-                bytes_available = nonscl_stat.f_bavail * nonscl_stat.f_frsize
+                if scl_psql_stat.st_dev != nonscl_psql_stat.st_dev:
+                    on_same_partition = False
+                    # get the current disk usage of the PostgreSQL data
+                    scl_du_call = run(['du', '--block-size=1', '--summarize', POSTGRESQL_SCL_DATA_PATH])
+                    bytes_required = int(scl_du_call['stdout'].split()[0])
+                    # get the current free space on the target partition
+                    nonscl_stat = os.statvfs(nonscl_path)
+                    bytes_available = nonscl_stat.f_bavail * nonscl_stat.f_frsize
+            else:
+                scl_pgsql_data = False
 
             modules_to_enable.append(Module(name='postgresql', stream='12'))
             to_remove.append('rh-postgresql12-runtime')
@@ -130,6 +134,7 @@ class SatelliteUpgradeFacts(Actor):
             postgresql=SatellitePostgresqlFacts(
                 local_postgresql=local_postgresql,
                 old_var_lib_pgsql_data=old_pgsql_data,
+                scl_pgsql_data=scl_pgsql_data,
                 same_partition=on_same_partition,
                 space_required=bytes_required,
                 space_available=bytes_available,

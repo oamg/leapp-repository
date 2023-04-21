@@ -23,12 +23,18 @@ def satellite_upgrade_check(facts):
         title = "Satellite PostgreSQL data migration"
         flags = []
         severity = reporting.Severity.MEDIUM
+        intro_msg = "PostgreSQL on RHEL 8 expects its data in /var/lib/pgsql/data."
         reindex_msg = textwrap.dedent("""
-        After the data has been moved to the new location, all databases will require a REINDEX.
-        This will happen automatically during the first boot of the system.
+        PostgreSQL on RHEL 8 requires a rebuild of all database indexes, when using data created on RHEL 7.
+        This REINDEX will happen automatically during the first boot of the system.
         """).strip()
 
-        if facts.postgresql.same_partition:
+        if not facts.postgresql.scl_pgsql_data:
+            migration_msg = """
+            Your PostgreSQL data seems to be already migrated to the new location.
+            No further movement will be performed.
+            """
+        elif facts.postgresql.same_partition:
             migration_msg = "Your PostgreSQL data will be automatically migrated."
         else:
             scl_psql_path = '/var/opt/rh/rh-postgresql12/lib/pgsql/data/'
@@ -48,7 +54,7 @@ def satellite_upgrade_check(facts):
             so that the contents of {} are available in /var/lib/pgsql/data.
             """.format(scl_psql_path, storage_message, scl_psql_path)
 
-        summary = "{}\n{}".format(textwrap.dedent(migration_msg).strip(), reindex_msg)
+        summary = "{}\n{}\n{}".format(intro_msg, textwrap.dedent(migration_msg).strip(), reindex_msg)
 
         reporting.create_report([
             reporting.Title(title),

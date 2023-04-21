@@ -9,6 +9,8 @@ class SatellitePostgresqlFacts(Model):
     """ Whether or not PostgreSQL is installed on the same system """
     old_var_lib_pgsql_data = fields.Boolean(default=False)
     """ Whether or not there is old PostgreSQL data in /var/lib/pgsql/data """
+    scl_pgsql_data = fields.Boolean(default=True)
+    """ Whether or not there is data in the SCL PostgreSQL path """
     same_partition = fields.Boolean(default=True)
     """ Whether or not target and source postgresql data will stay on the same partition """
     space_required = fields.Nullable(fields.Integer())

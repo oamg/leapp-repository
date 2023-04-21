@@ -40,7 +40,7 @@ class SatelliteUpgradeDataMigration(Actor):
                 except Exception as e:  # pylint: disable=broad-except
                     self.log.warning('Failed disabling service {}: {}'.format(service, e))
 
-        if facts.postgresql.local_postgresql and os.path.exists(POSTGRESQL_SCL_DATA_PATH):
+        if facts.postgresql.local_postgresql and facts.postgresql.scl_pgsql_data:
             # we can assume POSTGRESQL_DATA_PATH exists and is empty
             # move PostgreSQL data to the new home
             for item in glob.glob(os.path.join(POSTGRESQL_SCL_DATA_PATH, '*')):
