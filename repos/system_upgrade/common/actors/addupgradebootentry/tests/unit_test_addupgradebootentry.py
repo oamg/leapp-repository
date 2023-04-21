@@ -135,7 +135,7 @@ def test_add_boot_entry_configs(monkeypatch):
 def test_get_boot_file_paths(monkeypatch):
     # BootContent message available
     def consume_message_mocked(*models):
-        yield BootContent(kernel_path='/ghi', initram_path='/jkl')
+        yield BootContent(kernel_path='/ghi', initram_path='/jkl', kernel_hmac_path='/path')
 
     monkeypatch.setattr('leapp.libraries.stdlib.api.consume', consume_message_mocked)
 
