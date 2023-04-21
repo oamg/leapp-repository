@@ -9,7 +9,6 @@ from leapp.models import RequiredUpgradeInitramPackages  # deprecated
 from leapp.models import UpgradeDracutModule  # deprecated
 from leapp.models import (
     BootContent,
-    FIPSInfo,
     TargetOSInstallationImage,
     TargetUserSpaceInfo,
     TargetUserSpaceUpgradeTasks,
@@ -208,9 +207,8 @@ def copy_boot_files(context):
     kernel = 'vmlinuz-upgrade.{}'.format(curr_arch)
     initram = 'initramfs-upgrade.{}.img'.format(curr_arch)
 
-    fips_info = next(api.consume(FIPSInfo), None)
     kernel_hmac = '.{0}.hmac'.format(kernel)
-    kernel_hmac_path = os.path.join('/boot', kernel_hmac) if fips_info.is_enabled else None
+    kernel_hmac_path = os.path.join('/boot', kernel_hmac)
 
     content = BootContent(
         kernel_path=os.path.join('/boot', kernel),
@@ -221,9 +219,8 @@ def copy_boot_files(context):
     context.copy_from(os.path.join('/artifacts', kernel), content.kernel_path)
     context.copy_from(os.path.join('/artifacts', initram), content.initram_path)
 
-    if fips_info.is_enabled:
-        kernel_hmac_path = context.full_path(os.path.join('/artifacts', kernel_hmac))
-        create_upgrade_hmac_from_target_hmac(kernel_hmac_path, content.kernel_hmac_path, kernel)
+    kernel_hmac_path = context.full_path(os.path.join('/artifacts', kernel_hmac))
+    create_upgrade_hmac_from_target_hmac(kernel_hmac_path, content.kernel_hmac_path, kernel)
 
     api.produce(content)
 

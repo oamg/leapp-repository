@@ -78,10 +78,8 @@ build() {
     }
     \cp "/lib/modules/${KERNEL_VERSION}/vmlinuz" "vmlinuz-upgrade.$KERNEL_ARCH"
 
-    # Copy out kernel HMAC if running on a FIPS-enabled system so that integrity checks can be performed
-    if [[ "$LEAPP_ADD_DRACUT_MODULES" == *fips* ]]; then
-        \cp "/lib/modules/${KERNEL_VERSION}/.vmlinuz.hmac" ".vmlinuz-upgrade.$KERNEL_ARCH.hmac"
-    fi
+    # Copy out kernel HMAC so that integrity checks can be performed (performed only in FIPS mode)
+    \cp "/lib/modules/${KERNEL_VERSION}/.vmlinuz.hmac" ".vmlinuz-upgrade.$KERNEL_ARCH.hmac"
 
     stage "Building initram disk for kernel: $KERNEL_VERSION"
     \dracut \
