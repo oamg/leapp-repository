@@ -10,20 +10,36 @@ SAP_HANA_SUPPORTER_ARCHS = {
     '9': [architecture.ARCH_X86_64, architecture.ARCH_PPC64LE]
 }
 
-# SAP HANA 2.00 rev 54 is the minimal supported revision for both RHEL 7.9 and RHEL 8.2
-
 SAP_HANA_MINIMAL_MAJOR_VERSION = 2
-# RHEL 8.2 target requirements
-SAP_HANA_RHEL82_REQUIRED_PATCH_LEVELS = ((5, 54, 0),)
-SAP_HANA_RHEL82_MINIMAL_VERSION_STRING = 'HANA 2.0 SPS05 rev 54 or later'
 
 # RHEL 8.6 target requirements
 SAP_HANA_RHEL86_REQUIRED_PATCH_LEVELS = ((5, 59, 2),)
 SAP_HANA_RHEL86_MINIMAL_VERSION_STRING = 'HANA 2.0 SPS05 rev 59.02 or later'
 
-# RHEL 9 target requirements
-SAP_HANA_RHEL9_REQUIRED_PATCH_LEVELS = ((5, 59, 4), (6, 63, 0))
-SAP_HANA_RHEL9_MINIMAL_VERSION_STRING = 'HANA 2.0 SPS05 rev 59.04 or later, or SPS06 rev 63 or later'
+# RHEL 9.0 target requirements
+SAP_HANA_RHEL90_REQUIRED_PATCH_LEVELS = ((5, 59, 4), (6, 63, 0))
+SAP_HANA_RHEL90_MINIMAL_VERSION_STRING = 'HANA 2.0 SPS05 rev 59.04 or later, or SPS06 rev 63 or later'
+
+
+def _report_skip_check():
+    summary = (
+        'For the target RHEL releases >=8.8 and >=9.2 '
+        'the leapp utility does not check RHEL and SAP HANA 2.0 '
+        'versions compatibility. Please ensure your SAP HANA 2.0 '
+        'is supported on the target RHEL release and '
+        'proceed on your discretion. '
+        'SAP HANA: Supported Operating Systems '
+        'https://launchpad.support.sap.com/#/notes/2235581')
+    remedy_hint = 'Ensure your SAP HANA 2.0 is supported on the target release.'
+    reporting.create_report([
+        reporting.Title('SAP HANA 2.0 version should be checked prior the upgrade'),
+        reporting.Summary(summary),
+        reporting.Severity(reporting.Severity.MEDIUM),
+        reporting.Groups([reporting.Groups.SANITY]),
+        reporting.Remediation(hint=remedy_hint),
+        reporting.ExternalLink(url='https://launchpad.support.sap.com/#/notes/2235581',
+                               title='SAP HANA: Supported Operating Systems'),
+        ])
 
 
 def _manifest_get(manifest, key, default_value=None):
@@ -45,7 +61,6 @@ def running_check(info):
             reporting.Severity(reporting.Severity.HIGH),
             reporting.Groups([reporting.Groups.SANITY]),
             reporting.Groups([reporting.Groups.INHIBITOR]),
-            reporting.Audience('sysadmin')
         ])
 
 
@@ -72,12 +87,10 @@ def _create_detected_instances_list(details):
 
 
 def _min_ver_string():
-    if version.get_target_major_version() == '8':
+    if version.matches_target_version('8.6'):
         ver_str = SAP_HANA_RHEL86_MINIMAL_VERSION_STRING
-        if version.matches_target_version('8.2'):
-            ver_str = SAP_HANA_RHEL82_MINIMAL_VERSION_STRING
     else:
-        ver_str = SAP_HANA_RHEL9_MINIMAL_VERSION_STRING
+        ver_str = SAP_HANA_RHEL90_MINIMAL_VERSION_STRING
     return ver_str
 
 
@@ -89,10 +102,9 @@ def version1_check(info):
             _add_hana_details(found, instance)
 
     if found:
-        min_ver_string = _min_ver_string()
         detected = _create_detected_instances_list(found)
         reporting.create_report([
-            reporting.Title('Found SAP HANA 1 which is not supported with the target version of RHEL'),
+            reporting.Title('Found SAP HANA 1.0 which is not supported with the target version of RHEL'),
             reporting.Summary(
                 ('SAP HANA 1.00 is not supported with the version of RHEL you are upgrading to.\n\n'
                  'The following instances have been detected to be version 1.00:\n'
@@ -101,12 +113,11 @@ def version1_check(info):
             reporting.Severity(reporting.Severity.HIGH),
             reporting.RemediationHint((
                 'In order to upgrade RHEL, you will have to upgrade your SAP HANA 1.0 software to '
-                '{supported}.'.format(supported=min_ver_string))),
+                'SAP HANA 2.0 supported on the target RHEL release first.')),
             reporting.ExternalLink(url='https://launchpad.support.sap.com/#/notes/2235581',
                                    title='SAP HANA: Supported Operating Systems'),
             reporting.Groups([reporting.Groups.SANITY]),
             reporting.Groups([reporting.Groups.INHIBITOR]),
-            reporting.Audience('sysadmin')
         ])
 
 
@@ -160,12 +171,10 @@ def _sp_rev_patchlevel_check(instance, patchlevels):
 
 def _fullfills_hana_min_version(instance):
     """ Performs a check whether the version of SAP HANA fulfills the minimal requirements for the target RHEL """
-    if version.get_target_major_version() == '8':
+    if version.matches_target_version('8.6'):
         patchlevels = SAP_HANA_RHEL86_REQUIRED_PATCH_LEVELS
-        if version.matches_target_version('8.2'):
-            patchlevels = SAP_HANA_RHEL82_REQUIRED_PATCH_LEVELS
     else:
-        patchlevels = SAP_HANA_RHEL9_REQUIRED_PATCH_LEVELS
+        patchlevels = SAP_HANA_RHEL90_REQUIRED_PATCH_LEVELS
     return _major_version_check(instance) and _sp_rev_patchlevel_check(instance, patchlevels)
 
 
@@ -175,6 +184,11 @@ def version2_check(info):
     for instance in info.instances:
         if _manifest_get(instance.manifest, 'release', None) == '1.00':
             continue
+        if version.matches_target_version('> 8.6', '< 9.0') or version.matches_target_version('> 9.0'):
+            # if a target release is >=8.8 or >=9.2, the SAP HANA and RHEL versions compatibility is not checked
+            _report_skip_check()
+            return
+        # if a starget release is 8.6 or 9.0 we still check SAP HANA and RHEL versions compatibility
         if not _fullfills_hana_min_version(instance):
             _add_hana_details(found, instance)
 
@@ -196,7 +210,6 @@ def version2_check(info):
             reporting.Severity(reporting.Severity.HIGH),
             reporting.Groups([reporting.Groups.SANITY]),
             reporting.Groups([reporting.Groups.INHIBITOR]),
-            reporting.Audience('sysadmin')
         ])
 
 
