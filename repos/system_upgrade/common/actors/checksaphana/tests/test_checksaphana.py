@@ -180,33 +180,6 @@ class MockSAPHanaVersionInstance(object):
         (2, 49, 0, True),
     )
 )
-def test_checksaphana__fullfills_rhel82_hana_min_version(monkeypatch, major, rev, patchlevel, result):
-    monkeypatch.setattr(version, 'get_target_major_version', lambda: '8')
-    monkeypatch.setattr(version, 'get_target_version', lambda: '8.2')
-    monkeypatch.setattr(checksaphana, 'SAP_HANA_RHEL82_REQUIRED_PATCH_LEVELS', ((4, 48, 2), (5, 52, 0)))
-    assert checksaphana._fullfills_hana_min_version(
-        MockSAPHanaVersionInstance(
-            major=major,
-            rev=rev,
-            patchlevel=patchlevel,
-        )
-    ) == result
-
-
-@pytest.mark.parametrize(
-    'major,rev,patchlevel,result', (
-        (2, 52, 0, True),
-        (2, 52, 1, True),
-        (2, 52, 2, True),
-        (2, 53, 0, True),
-        (2, 60, 0, True),
-        (2, 48, 2, True),
-        (2, 48, 1, False),
-        (2, 48, 0, False),
-        (2, 38, 2, False),
-        (2, 49, 0, True),
-    )
-)
 def test_checksaphana__fullfills_rhel86_hana_min_version(monkeypatch, major, rev, patchlevel, result):
     monkeypatch.setattr(version, 'get_target_major_version', lambda: '8')
     monkeypatch.setattr(version, 'get_target_version', lambda: '8.6')
@@ -239,10 +212,10 @@ def test_checksaphana__fullfills_rhel86_hana_min_version(monkeypatch, major, rev
         (2, 64, 0, True),
     )
 )
-def test_checksaphana__fullfills_hana_rhel9_min_version(monkeypatch, major, rev, patchlevel, result):
+def test_checksaphana__fullfills_hana_rhel90_min_version(monkeypatch, major, rev, patchlevel, result):
     monkeypatch.setattr(version, 'get_target_major_version', lambda: '9')
     monkeypatch.setattr(version, 'get_target_version', lambda: '9.0')
-    monkeypatch.setattr(checksaphana, 'SAP_HANA_RHEL9_REQUIRED_PATCH_LEVELS', ((5, 59, 4), (6, 63, 0)))
+    monkeypatch.setattr(checksaphana, 'SAP_HANA_RHEL90_REQUIRED_PATCH_LEVELS', ((5, 59, 4), (6, 63, 0)))
     assert checksaphana._fullfills_hana_min_version(
         MockSAPHanaVersionInstance(
             major=major,
