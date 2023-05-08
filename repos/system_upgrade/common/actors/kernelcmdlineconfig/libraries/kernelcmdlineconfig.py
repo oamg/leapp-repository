@@ -46,7 +46,7 @@ def modify_kernel_args_in_boot_cfg(configs_to_modify_explicitly=None):
     if not kernelargs_msgs_to_add and not kernelargs_msgs_to_remove:
         return  # There is no work to do
 
-    grubby_modify_kernelargs_cmd = ['grubby', '--update-kernel=/boot/vmlinuz-{}'.format(kernel_version.version)]
+    grubby_modify_kernelargs_cmd = ['grubby', '--update-kernel=/boot/vmlinuz-{}+rt'.format(kernel_version.version)]
 
     if kernelargs_msgs_to_add:
         grubby_modify_kernelargs_cmd += [

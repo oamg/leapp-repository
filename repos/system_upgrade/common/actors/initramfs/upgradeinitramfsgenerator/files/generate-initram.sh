@@ -51,7 +51,7 @@ build() {
 
     KERNEL_VERSION=$LEAPP_KERNEL_VERSION
     if [[ -z "$KERNEL_VERSION" ]]; then
-        KERNEL_VERSION=$(get_kernel_version)
+        KERNEL_VERSION=$(get_kernel_version)+rt
     fi
 
     KERNEL_ARCH='x86_64'
