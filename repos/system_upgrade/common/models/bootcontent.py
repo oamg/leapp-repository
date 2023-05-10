@@ -11,3 +11,4 @@ class BootContent(Model):
 
     kernel_path = fields.String(help='Filepath of the kernel copied to /boot/ by Leapp.')
     initram_path = fields.String(help='Filepath of the initramfs copied to /boot/ by Leapp.')
+    kernel_hmac_path = fields.String(help='Filepath of the kernel hmac copied to /boot/ by Leapp.')

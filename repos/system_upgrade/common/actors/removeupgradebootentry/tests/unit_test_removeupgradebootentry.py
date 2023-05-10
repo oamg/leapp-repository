@@ -50,7 +50,7 @@ def test_remove_boot_entry(firmware, arch, monkeypatch):
 def test_get_upgrade_kernel_filepath(monkeypatch):
     # BootContent message available
     def consume_message_mocked(*models):
-        yield BootContent(kernel_path='/abc', initram_path='/def')
+        yield BootContent(kernel_path='/abc', initram_path='/def', kernel_hmac_path='/ghi')
 
     monkeypatch.setattr(api, 'consume', consume_message_mocked)
 

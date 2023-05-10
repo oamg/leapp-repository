@@ -88,6 +88,7 @@ def get_boot_file_paths():
         raise StopActorExecutionError('Could not create a GRUB boot entry for the upgrade initramfs',
                                       details={'details': 'Did not receive a message about the leapp-provided'
                                                           'kernel and initramfs'})
+    # Returning information about kernel hmac file path is needless as it is not used when adding boot entry
     return boot_content.kernel_path, boot_content.initram_path
 
 

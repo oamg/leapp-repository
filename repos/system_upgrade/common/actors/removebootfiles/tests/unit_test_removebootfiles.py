@@ -20,14 +20,14 @@ class remove_file_mocked(object):
 def test_remove_boot_files(monkeypatch):
     # BootContent message available
     def consume_message_mocked(*models):
-        yield BootContent(kernel_path='/abc', initram_path='/def')
+        yield BootContent(kernel_path='/abc', initram_path='/def', kernel_hmac_path='/ghi')
 
     monkeypatch.setattr('leapp.libraries.stdlib.api.consume', consume_message_mocked)
     monkeypatch.setattr(removebootfiles, 'remove_file', remove_file_mocked())
 
     removebootfiles.remove_boot_files()
 
-    assert removebootfiles.remove_file.files_to_remove == ['/abc', '/def']
+    assert removebootfiles.remove_file.files_to_remove == ['/abc', '/def', '/ghi']
 
     # No BootContent message available
     def consume_no_message_mocked(*models):

@@ -10,6 +10,7 @@ from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked, 
 from leapp.utils.deprecation import suppress_deprecation
 
 from leapp.models import (  # isort:skip
+    FIPSInfo,
     RequiredUpgradeInitramPackages,  # deprecated
     UpgradeDracutModule,  # deprecated
     BootContent,
@@ -133,19 +134,32 @@ class MockedLogger(logger_mocked):
 @pytest.mark.parametrize('arch', architecture.ARCH_SUPPORTED)
 def test_copy_boot_files(monkeypatch, arch):
     kernel = 'vmlinuz-upgrade.{}'.format(arch)
+    kernel_hmac = '.vmlinuz-upgrade.{}.hmac'.format(arch)
     initram = 'initramfs-upgrade.{}.img'.format(arch)
     bootc = BootContent(
         kernel_path=os.path.join('/boot', kernel),
+        kernel_hmac_path=os.path.join('/boot', kernel_hmac),
         initram_path=os.path.join('/boot', initram)
     )
 
+    context = MockedContext()
     monkeypatch.setattr(upgradeinitramfsgenerator.api, 'current_actor', CurrentActorMocked(arch=arch))
     monkeypatch.setattr(upgradeinitramfsgenerator.api, 'produce', produce_mocked())
-    context = MockedContext()
+
+    def create_upgrade_hmac_from_target_hmac_mock(original_hmac_path, upgrade_hmac_path, upgrade_kernel):
+        hmac_file = '.{}.hmac'.format(upgrade_kernel)
+        assert original_hmac_path == os.path.join(context.full_path('/artifacts'), hmac_file)
+        assert upgrade_hmac_path == bootc.kernel_hmac_path
+
+    monkeypatch.setattr(upgradeinitramfsgenerator,
+                        'create_upgrade_hmac_from_target_hmac',
+                        create_upgrade_hmac_from_target_hmac_mock)
+
     upgradeinitramfsgenerator.copy_boot_files(context)
     assert len(context.called_copy_from) == 2
     assert (os.path.join('/artifacts', kernel), bootc.kernel_path) in context.called_copy_from
     assert (os.path.join('/artifacts', initram), bootc.initram_path) in context.called_copy_from
+
     assert upgradeinitramfsgenerator.api.produce.called == 1
     assert upgradeinitramfsgenerator.api.produce.model_instances[0] == bootc
 

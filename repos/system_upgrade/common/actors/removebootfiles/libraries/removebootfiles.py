@@ -14,7 +14,7 @@ def remove_boot_files():
         api.current_logger().warning('Did not receive a message about the leapp-provided kernel and initramfs ->'
                                      ' Skipping removal of these files.')
         raise StopActorExecution
-    for filepath in boot_content.kernel_path, boot_content.initram_path:
+    for filepath in boot_content.kernel_path, boot_content.initram_path, boot_content.kernel_hmac_path:
         remove_file(filepath)
 
 

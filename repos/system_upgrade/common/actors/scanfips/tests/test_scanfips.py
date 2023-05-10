@@ -1,6 +1,6 @@
 import pytest
 
-from leapp.models import KernelCmdline, KernelCmdlineArg, Report
+from leapp.models import FIPSInfo, KernelCmdline, KernelCmdlineArg
 from leapp.snactor.fixture import current_actor_context
 
 ballast1 = [KernelCmdlineArg(key=k, value=v) for k, v in [
@@ -19,7 +19,7 @@ ballast2 = [KernelCmdlineArg(key=k, value=v) for k, v in [
     ('LANG', 'en_US.UTF-8')]]
 
 
-@pytest.mark.parametrize('parameters,expected_report', [
+@pytest.mark.parametrize(('parameters', 'should_detect_enabled_fips'), [
     ([], False),
     ([KernelCmdlineArg(key='fips', value='')], False),
     ([KernelCmdlineArg(key='fips', value='0')], False),
@@ -27,11 +27,10 @@ ballast2 = [KernelCmdlineArg(key=k, value=v) for k, v in [
     ([KernelCmdlineArg(key='fips', value='11')], False),
     ([KernelCmdlineArg(key='fips', value='yes')], False)
 ])
-def test_check_fips(current_actor_context, parameters, expected_report):
+def test_check_fips(current_actor_context, parameters, should_detect_enabled_fips):
     cmdline = KernelCmdline(parameters=ballast1+parameters+ballast2)
     current_actor_context.feed(cmdline)
     current_actor_context.run()
-    if expected_report:
-        assert current_actor_context.consume(Report)
-    else:
-        assert not current_actor_context.consume(Report)
+    produced_msgs = current_actor_context.consume(FIPSInfo)
+
+    assert (FIPSInfo(is_enabled=should_detect_enabled_fips),) == produced_msgs

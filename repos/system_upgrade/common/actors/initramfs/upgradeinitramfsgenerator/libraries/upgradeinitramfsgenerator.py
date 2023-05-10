@@ -180,6 +180,24 @@ def generate_initram_disk(context):
     copy_boot_files(context)
 
 
+def create_upgrade_hmac_from_target_hmac(original_hmac_path, upgrade_hmac_path, upgrade_kernel):
+    # Rename the kernel name stored in the HMAC file as the upgrade kernel is named differently and the HMAC file
+    # refers to the real target kernel
+    with open(original_hmac_path) as original_hmac_file:
+        hmac_file_lines = [line for line in original_hmac_file.read().split('\n') if line]
+        if len(hmac_file_lines) > 1:
+            details = ('Expected the target kernel HMAC file to containing only one HMAC line, '
+                       'found {0}'.format(len(hmac_file_lines)))
+            raise StopActorExecutionError('Failed to prepare HMAC file for upgrade kernel.',
+                                          details={'details': details})
+
+        # Keep only non-empty strings after splitting on space
+        hmac, dummy_target_kernel_name = [fragment for fragment in hmac_file_lines[0].split(' ') if fragment]
+
+    with open(upgrade_hmac_path, 'w') as upgrade_kernel_hmac_file:
+        upgrade_kernel_hmac_file.write('{hmac}  {kernel}\n'.format(hmac=hmac, kernel=upgrade_kernel))
+
+
 def copy_boot_files(context):
     """
     Function to copy the generated initram and corresponding kernel to /boot - Additionally produces a BootContent
@@ -188,13 +206,21 @@ def copy_boot_files(context):
     curr_arch = api.current_actor().configuration.architecture
     kernel = 'vmlinuz-upgrade.{}'.format(curr_arch)
     initram = 'initramfs-upgrade.{}.img'.format(curr_arch)
+
+    kernel_hmac = '.{0}.hmac'.format(kernel)
+    kernel_hmac_path = os.path.join('/boot', kernel_hmac)
+
     content = BootContent(
         kernel_path=os.path.join('/boot', kernel),
-        initram_path=os.path.join('/boot', initram)
+        initram_path=os.path.join('/boot', initram),
+        kernel_hmac_path=kernel_hmac_path
     )
 
     context.copy_from(os.path.join('/artifacts', kernel), content.kernel_path)
     context.copy_from(os.path.join('/artifacts', initram), content.initram_path)
+
+    kernel_hmac_path = context.full_path(os.path.join('/artifacts', kernel_hmac))
+    create_upgrade_hmac_from_target_hmac(kernel_hmac_path, content.kernel_hmac_path, kernel)
 
     api.produce(content)
 
