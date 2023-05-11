@@ -86,6 +86,7 @@ jobs:
     - bash -c "sed -i \"s/1%{?dist}/100%{?dist}/g\" packaging/leapp-repository.spec"
 
 - job: tests
+  merge_pr_in_ci: false
   fmf_url: "https://gitlab.cee.redhat.com/oamg/tmt-plans"
   fmf_ref: "master"
   use_internal_tf: True
@@ -112,6 +113,7 @@ jobs:
     LEAPPDATA_BRANCH: "upstream"
 
 - job: tests
+  merge_pr_in_ci: false
   fmf_url: "https://gitlab.cee.redhat.com/oamg/leapp-tests"
   fmf_ref: "master"
   use_internal_tf: True
@@ -158,6 +160,7 @@ jobs:
 #     TARGET_RELEASE: "8.8"
 
 - job: tests
+  merge_pr_in_ci: false
   fmf_url: "https://gitlab.cee.redhat.com/oamg/leapp-tests"
   fmf_ref: "master"
   use_internal_tf: True
@@ -185,6 +188,7 @@ jobs:
     LEAPPDATA_BRANCH: "upstream"
 
 - job: tests
+  merge_pr_in_ci: false
   fmf_url: "https://gitlab.cee.redhat.com/oamg/leapp-tests"
   fmf_ref: "master"
   use_internal_tf: True
@@ -212,6 +216,7 @@ jobs:
     LEAPPDATA_BRANCH: "upstream"
 
 - job: tests
+  merge_pr_in_ci: false
   fmf_url: "https://gitlab.cee.redhat.com/oamg/leapp-tests"
   fmf_ref: "master"
   use_internal_tf: True
@@ -262,6 +267,7 @@ jobs:
 #     LEAPPDATA_BRANCH: "upstream"
 
 - job: tests
+  merge_pr_in_ci: false
   fmf_url: "https://gitlab.cee.redhat.com/oamg/leapp-tests"
   fmf_ref: "master"
   use_internal_tf: True
