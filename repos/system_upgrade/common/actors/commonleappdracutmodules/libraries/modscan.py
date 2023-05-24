@@ -31,6 +31,7 @@ _REQUIRED_PACKAGES = [
     'kernel-core',
     'kernel-modules',
     'keyutils',
+    'kmod',
     'lldpad',
     'lvm2',
     'mdadm',

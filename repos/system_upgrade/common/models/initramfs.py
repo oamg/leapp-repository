@@ -40,6 +40,46 @@ class DracutModule(Model):
     """
 
 
+class KernelModule(Model):
+    """
+    Specify a kernel module that should be included into the initramfs
+
+    The specified kernel module has to be compatible with the target system.
+
+    See the description of UpgradeInitramfsTasks and TargetInitramfsTasks
+    for more information about the role of initramfs in the in-place upgrade
+    process.
+    """
+    topic = BootPrepTopic
+
+    name = fields.String()
+    """
+    The kernel module that should be added (--add-drivers option of dracut)
+    when a initramfs is built. The possible options are
+
+    1. ``=<kernel subdir>[/<kernel subdir>...]`` like ``=drivers/hid``
+    2. ``<module name>``
+    """
+
+    module_path = fields.Nullable(fields.String(default=None))
+    """
+    module_path specifies kernel modules that are supposed to be copied
+
+    If the path is not set, the given name will just be activated. IOW,
+    if the kernel module is stored outside the /usr/lib/modules/$(uname -r)/
+    directory, set the absolute path to it, so leapp will manage it during
+    the upgrade to ensure the module will be added into the initramfs.
+
+    The module has to be stored on the local storage mounted in a persistent
+    fashion (/etc/fstab entry). In such a case, it is recommended to store it
+    into the 'files' directory of an actor generating this object.
+
+    Note: It's expected to set the full path from the host POV. In case
+    of actions inside containers, the module is still copied from the HOST
+    into the container workspace.
+    """
+
+
 class UpgradeInitramfsTasks(Model):
     """
     Influence generating of the (leapp) upgrade initramfs
@@ -71,6 +111,13 @@ class UpgradeInitramfsTasks(Model):
     List of dracut modules that should be installed in the initramfs.
 
     See the DracutModule model for more information.
+    """
+
+    include_kernel_modules = fields.List(fields.Model(KernelModule), default=[])
+    """
+    List of kernel modules that should be installed in the initramfs.
+
+    See the KernelModule model for more information.
     """
 
 

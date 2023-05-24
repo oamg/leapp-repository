@@ -1,10 +1,11 @@
 import os
 import shutil
+from distutils.version import LooseVersion
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import dnfplugin, mounting
 from leapp.libraries.common.config.version import get_target_major_version
-from leapp.libraries.stdlib import api
+from leapp.libraries.stdlib import api, CalledProcessError
 from leapp.models import RequiredUpgradeInitramPackages  # deprecated
 from leapp.models import UpgradeDracutModule  # deprecated
 from leapp.models import (
@@ -21,6 +22,45 @@ INITRAM_GEN_SCRIPT_NAME = 'generate-initram.sh'
 DRACUT_DIR = '/dracut'
 
 
+def _get_target_kernel_version(context):
+    """
+    Get the version of the most recent kernel version within the container.
+    """
+
+    kernel_version = None
+    try:
+        results = context.call(['rpm', '-qa', 'kernel-core'], split=True)
+
+        versions = [ver.replace('kernel-core-', '') for ver in results['stdout']]
+        api.current_logger().debug(
+            'Versions detected {versions}.'
+            .format(versions=versions))
+        sorted_versions = sorted(versions, key=LooseVersion, reverse=True)
+        kernel_version = next(iter(sorted_versions), None)
+    except CalledProcessError:
+        raise StopActorExecutionError(
+            'Cannot get version of the installed kernel.',
+            details={'Problem': 'Could not query the currently installed kernel through rmp.'})
+
+    if not kernel_version:
+        raise StopActorExecutionError(
+            'Cannot get version of the installed kernel.',
+            details={'Problem': 'A rpm query for the available kernels did not produce any results.'})
+
+    return kernel_version
+
+
+def _get_target_kernel_modules_dir(context):
+    """
+    Return the path where the custom kernel modules should be copied.
+    """
+
+    kernel_version = _get_target_kernel_version(context)
+    modules_dir = os.path.join('/', 'lib', 'modules', kernel_version, 'extra', 'leapp')
+
+    return modules_dir
+
+
 def _reinstall_leapp_repository_hint():
     """
     Convenience function for creating a detail for StopActorExecutionError with a hint to reinstall the
@@ -31,37 +71,79 @@ def _reinstall_leapp_repository_hint():
     }
 
 
+def _copy_modules(context, modules, dst_dir, kind):
+    """
+    Copy modules of given kind to the specified destination directory.
+
+    Attempts to remove an cleanup by removing the existing destination
+    directory. If the directory does not exist, it is created anew. Then, for
+    each module message, it checks if the module has a module path specified. If
+    the module already exists in the destination directory, a debug message is
+    logged, and the operation is skipped. Otherwise, the module is copied to the
+    destination directory.
+
+    """
+
+    try:
+        context.remove_tree(dst_dir)
+    except EnvironmentError:
+        pass
+
+    context.makedirs(dst_dir)
+
+    for module in modules:
+        if not module.module_path:
+            continue
+
+        dst_path = os.path.join(dst_dir, os.path.basename(module.module_path))
+        if os.path.exists(context.full_path(dst_path)):
+            api.current_logger().debug(
+                'The {name} {kind} module has been already installed. Skipping.'
+                .format(name=module.name, kind=kind))
+            continue
+
+        copy_fn = context.copytree_to
+        if os.path.isfile(module.module_path):
+            copy_fn = context.copy_to
+
+        try:
+            api.current_logger().debug(
+                'Copying {kind} module "{name}" to "{path}".'
+                .format(kind=kind, name=module.name, path=dst_path))
+
+            copy_fn(module.module_path, dst_path)
+        except shutil.Error as e:
+            api.current_logger().error(
+                    'Failed to copy {kind} module "{name}" from "{source}" to "{target}"'.format(
+                        kind=kind, name=module.name, source=module.module_path, target=context.full_path(dst_dir)),
+                    exc_info=True)
+            raise StopActorExecutionError(
+                message='Failed to install {kind} modules required in the initram. Error: {error}'.format(
+                    kind=kind, error=str(e))
+            )
+
+
 def copy_dracut_modules(context, modules):
     """
     Copy dracut modules into the target userspace.
 
-    If duplicated requirements to copy a dracut module are detected,
-    log the debug msg and skip any try to copy a dracut module into the
-    target userspace that already exists inside DRACTUR_DIR.
+    If a module cannot be copied, an error message is logged, and a
+    StopActorExecutionError exception is raised.
     """
-    try:
-        context.remove_tree(DRACUT_DIR)
-    except EnvironmentError:
-        pass
-    for module in modules:
-        if not module.module_path:
-            continue
-        dst_path = os.path.join(DRACUT_DIR, os.path.basename(module.module_path))
-        if os.path.exists(context.full_path(dst_path)):
-            # we are safe to skip it as we now the module is from the same path
-            # regarding the actor checking all initramfs tasks
-            api.current_logger().debug(
-                'The {name} dracut module has been already installed. Skipping.'
-                .format(name=module.name))
-            continue
-        try:
-            context.copytree_to(module.module_path, dst_path)
-        except shutil.Error as e:
-            api.current_logger().error('Failed to copy dracut module "{name}" from "{source}" to "{target}"'.format(
-                name=module.name, source=module.module_path, target=context.full_path(DRACUT_DIR)), exc_info=True)
-            raise StopActorExecutionError(
-                message='Failed to install dracut modules required in the initram. Error: {}'.format(str(e))
-            )
+
+    _copy_modules(context, modules, DRACUT_DIR, 'dracut')
+
+
+def copy_kernel_modules(context, modules):
+    """
+    Copy kernel modules into the target userspace.
+
+    If a module cannot be copied, an error message is logged, and a
+    StopActorExecutionError exception is raised.
+    """
+
+    dst_dir = _get_target_kernel_modules_dir(context)
+    _copy_modules(context, modules, dst_dir, 'kernel')
 
 
 @suppress_deprecation(UpgradeDracutModule)
@@ -153,30 +235,43 @@ def generate_initram_disk(context):
     """
     Function to actually execute the init ramdisk creation.
 
-    Includes handling of specified dracut modules from the host when needed.
-    The check for the 'conflicting' dracut modules is in a separate actor.
+    Includes handling of specified dracut and kernel modules from the host when
+    needed. The check for the 'conflicting' modules is in a separate actor.
     """
     env = {}
     if get_target_major_version() == '9':
         env = {'SYSTEMD_SECCOMP': '0'}
+
     # TODO(pstodulk): Add possibility to add particular drivers
     # Issue #645
-    modules = _get_dracut_modules()  # deprecated
+    modules = {
+        'dracut': _get_dracut_modules(),  # deprecated
+        'kernel': [],
+    }
     files = set()
     for task in api.consume(UpgradeInitramfsTasks):
-        modules.extend(task.include_dracut_modules)
+        modules['dracut'].extend(task.include_dracut_modules)
+        modules['kernel'].extend(task.include_kernel_modules)
         files.update(task.include_files)
-    copy_dracut_modules(context, modules)
+
+    copy_dracut_modules(context, modules['dracut'])
+    copy_kernel_modules(context, modules['kernel'])
+
     # FIXME: issue #376
     context.call([
         '/bin/sh', '-c',
-        'LEAPP_ADD_DRACUT_MODULES="{modules}" LEAPP_KERNEL_ARCH={arch} '
+        'LEAPP_KERNEL_VERSION={kernel_version} '
+        'LEAPP_ADD_DRACUT_MODULES="{dracut_modules}" LEAPP_KERNEL_ARCH={arch} '
+        'LEAPP_ADD_KERNEL_MODULES="{kernel_modules}" '
         'LEAPP_DRACUT_INSTALL_FILES="{files}" {cmd}'.format(
-            modules=','.join([mod.name for mod in modules]),
+            kernel_version=_get_target_kernel_version(context),
+            dracut_modules=','.join([mod.name for mod in modules['dracut']]),
+            kernel_modules=','.join([mod.name for mod in modules['kernel']]),
             arch=api.current_actor().configuration.architecture,
             files=' '.join(files),
             cmd=os.path.join('/', INITRAM_GEN_SCRIPT_NAME))
     ], env=env)
+
     copy_boot_files(context)
 
 
