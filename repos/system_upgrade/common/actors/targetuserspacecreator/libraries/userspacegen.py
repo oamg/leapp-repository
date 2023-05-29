@@ -206,22 +206,6 @@ def prepare_target_userspace(context, userspace_dir, enabled_repos, packages):
             message = 'Unable to install RHEL {} userspace packages.'.format(target_major_version)
             details = {'details': str(exc), 'stderr': exc.stderr}
 
-            xfs_info = next(api.consume(XFSPresence), XFSPresence())
-            if 'more space needed on the' in exc.stderr:
-                # The stderr contains this error summary:
-                # Disk Requirements:
-                #   At least <size> more space needed on the <path> filesystem.
-
-                article_section = 'Generic case'
-                if xfs_info.present and xfs_info.without_ftype:
-                    article_section = 'XFS ftype=0 case'
-
-                message = ('There is not enough space on the file system hosting /var/lib/leapp directory '
-                           'to extract the packages.')
-                details = {'hint': "Please follow the instructions in the '{}' section of the article at: "
-                                   "link: https://access.redhat.com/solutions/5057391".format(article_section)}
-                raise StopActorExecutionError(message=message, details=details)
-
             # If a proxy was set in dnf config, it should be the reason why dnf
             # failed since leapp does not support updates behind proxy yet.
             for manager_info in api.consume(PkgManagerInfo):
