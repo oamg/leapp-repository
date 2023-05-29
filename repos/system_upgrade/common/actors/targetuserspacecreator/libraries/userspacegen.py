@@ -216,10 +216,16 @@ def prepare_target_userspace(context, userspace_dir, enabled_repos, packages):
                 if xfs_info.present and xfs_info.without_ftype:
                     article_section = 'XFS ftype=0 case'
 
-                message = ('There is not enough space on the file system hosting /var/lib/leapp directory '
-                           'to extract the packages.')
-                details = {'hint': "Please follow the instructions in the '{}' section of the article at: "
-                                   "link: https://access.redhat.com/solutions/5057391".format(article_section)}
+                message = 'There is not enough space to extract the packages.'
+                hint = (
+                    "Either the file system hosting /var/lib/leapp directory is not large"
+                    " enough or created temporary virtual disk images need to be bigger"
+                    " (the LEAPP_OVL_SIZE environment variable)."
+                    " Please follow the instructions in the '{}' section of the article at"
+                    " link: https://access.redhat.com/solutions/5057391"
+                    .format(article_section)
+                )
+                details = {'hint': hint}
                 raise StopActorExecutionError(message=message, details=details)
 
             # If a proxy was set in dnf config, it should be the reason why dnf

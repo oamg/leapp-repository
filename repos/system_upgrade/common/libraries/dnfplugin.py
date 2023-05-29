@@ -146,6 +146,40 @@ def backup_debug_data(context):
             api.current_logger().warning('Failed to copy debugdata. Message: {}'.format(str(e)), exc_info=True)
 
 
+def _handle_transaction_err_msg(stage, xfs_info, err):
+    message = 'DNF execution failed with non zero exit code.'
+    details = {'STDOUT': err.stdout, 'STDERR': err.stderr}
+
+    if 'more space needed on the' in err.stderr and stage != 'upgrade':
+        # The stderr contains this error summary and it's in pre-reboot phases:
+        # Disk Requirements:
+        #   At least <size> more space needed on the <path> filesystem.
+        #
+        # The original error msg is confusing in case of phases when the storage
+        # is emulated via overlayfs, as in such a case the reported problems
+        # refers to the created diskimg or the partition hosting
+        # the /var/lib/leapp directory. This is going to be resolved by
+        #    https://bugzilla.redhat.com/show_bug.cgi?id=2210300
+        # In the meanwhile, inform users about the correct nature of the problem.
+
+        article_section = 'Generic case'
+        if xfs_info.present and xfs_info.without_ftype:
+            article_section = 'XFS ftype=0 case'
+
+        message = 'There is not enough space to extract the packages.'
+        hint = (
+            "Either the file system hosting /var/lib/leapp directory is not large"
+            " enough or created temporary virtual disk images need to be bigger"
+            " (the LEAPP_OVL_SIZE environment variable)."
+            " Please follow the instructions in the '{}' section of the article at"
+            " link: https://access.redhat.com/solutions/5057391"
+            .format(article_section)
+        )
+        details = {'hint': hint}
+
+    raise StopActorExecutionError(message=message, details=details)
+
+
 def _transaction(context, stage, target_repoids, tasks, plugin_info, xfs_info,
                  test=False, cmd_prefix=None, on_aws=False):
     """
@@ -218,27 +252,11 @@ def _transaction(context, stage, target_repoids, tasks, plugin_info, xfs_info,
             raise StopActorExecutionError(
                 message='Failed to execute dnf. Reason: {}'.format(str(e))
             )
-        except CalledProcessError as e:
+        except CalledProcessError as err:
+            # raise the StopActorExecutionError with the proper msg
             api.current_logger().error('DNF execution failed: ')
+            _handle_transaction_err_msg(stage, xfs_info, err)
 
-            message = 'DNF execution failed with non zero exit code.'
-            details = {'STDOUT': e.stdout, 'STDERR': e.stderr}
-
-            if 'more space needed on the' in e.stderr:
-                # The stderr contains this error summary:
-                # Disk Requirements:
-                #   At least <size> more space needed on the <path> filesystem.
-
-                article_section = 'Generic case'
-                if xfs_info.present and xfs_info.without_ftype:
-                    article_section = 'XFS ftype=0 case'
-
-                message = ('There is not enough space on the file system hosting /var/lib/leapp directory '
-                           'to extract the packages.')
-                details = {'hint': "Please follow the instructions in the '{}' section of the article at: "
-                                   "link: https://access.redhat.com/solutions/5057391".format(article_section)}
-
-            raise StopActorExecutionError(message=message, details=details)
         finally:
             if stage == 'check':
                 backup_debug_data(context=context)
