@@ -32,7 +32,7 @@ def process():
     if target_major_version == '8':
         ipu_doc_url = (
             'https://access.redhat.com/documentation/en-us/'
-            'red_hat_enterprise_linux/8/html-single/upgrading_to_rhel_8/index'
+            'red_hat_enterprise_linux/8/html-single/upgrading_from_rhel_7_to_rhel_8/index'
         )
     elif target_major_version == '9':
         ipu_doc_url = 'TBA'
