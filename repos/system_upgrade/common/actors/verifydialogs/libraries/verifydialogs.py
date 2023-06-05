@@ -8,7 +8,7 @@ def check_dialogs(inhibit_if_no_userchoice=True):
     for dialog in results:
         sections = dialog.answerfile_sections
         summary = ('One or more sections in answerfile are missing user choices: {}\n'
-                   'For more information consult https://leapp.readthedocs.io/en/latest/dialogs.html')
+                   'For more information consult https://red.ht/leapp-dialogs.')
         dialog_resources = [reporting.RelatedResource('dialog', s) for s in sections]
         dialogs_remediation = ('Please register user choices with leapp answer cli command or by manually editing '
                                'the answerfile.')

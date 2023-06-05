@@ -26,7 +26,7 @@ def process(openssh_messages):
             ),
             reporting.ExternalLink(
                 title="OpenSSH SCP deprecation in RHEL 9: What you need to know ",
-                url="https://www.redhat.com/en/blog/openssh-scp-deprecation-rhel-9-what-you-need-know",
+                url="https://red.ht/rhel-9-blog-openssh-scp-deprecation",
             ),
         ]
         reporting.create_report([

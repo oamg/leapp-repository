@@ -17,8 +17,7 @@ def _inhibit_upgrade(missing_flags):
         reporting.Title(title),
         reporting.Summary(summary),
         reporting.ExternalLink(title='Building Red Hat Enterprise Linux 9 for the x86-64-v2 microarchitecture level',
-                               url=('https://developers.redhat.com/blog/2021/01/05/'
-                                    'building-red-hat-enterprise-linux-9-for-the-x86-64-v2-microarchitecture-level')),
+                               url='https://red.ht/rhel-9-intel-microarchitectures'),
         reporting.Severity(reporting.Severity.HIGH),
         reporting.Groups([reporting.Groups.INHIBITOR]),
         reporting.Groups([reporting.Groups.SANITY]),

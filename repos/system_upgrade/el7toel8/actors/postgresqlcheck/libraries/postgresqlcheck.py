@@ -18,7 +18,7 @@ report_server_inst_hint = (
 )
 
 # Link URL for postgresql-server report
-report_server_inst_link_url = 'https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html-single/deploying_different_types_of_servers/index#migrating-to-a-rhel-8-version-of-postgresql_using-postgresql'  # noqa: E501; pylint: disable=line-too-long
+report_server_inst_link_url = 'https://red.ht/rhel-8-migrate-postgresql-server'
 
 # List of dropped extensions from postgresql-contrib package
 report_contrib_inst_dropext = ['dummy_seclabel', 'test_parser', 'tsearch2']
