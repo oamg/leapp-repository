@@ -35,7 +35,7 @@ class CheckBtrfs(Actor):
                         ),
                         reporting.ExternalLink(
                             title='Considerations in adopting RHEL 8 - btrfs has been removed.',
-                            url='https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/considerations_in_adopting_rhel_8/file-systems-and-storage_considerations-in-adopting-rhel-8#btrfs-has-been-removed_file-systems-and-storage'  # noqa: E501; pylint: disable=line-too-long
+                            url='https://red.ht/file-systems-and-storage-removed-btrfs-rhel-8'
                         ),
                         reporting.ExternalLink(
                             title='How do I prevent a kernel module from loading automatically?',

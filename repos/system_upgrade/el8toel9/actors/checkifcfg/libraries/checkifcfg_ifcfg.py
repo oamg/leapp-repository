@@ -119,7 +119,7 @@ def process():
             reporting.RelatedResource('package', 'NetworkManager'),
             reporting.ExternalLink(
                 title='nm-settings-ifcfg-rh - Description of ifcfg-rh settings plugin',
-                url='https://networkmanager.dev/docs/api/latest/nm-settings-ifcfg-rh.html',
+                url='https://red.ht/nm-settings-ifcfg-rh',
             ),
         ] + [
             reporting.RelatedResource('file', fname)

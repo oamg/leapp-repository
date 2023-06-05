@@ -82,8 +82,7 @@ class LocalReposInhibit(Actor):
                             "in-place upgrade"
                         ),
                         url=(
-                            "https://access.redhat.com/articles/4977891/"
-                            "#repos-known-issues"
+                            "https://red.ht/ipu-customisation-repos-known-issues"
                         ),
                     ),
                 ]

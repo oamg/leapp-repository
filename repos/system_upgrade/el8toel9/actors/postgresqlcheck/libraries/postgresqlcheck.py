@@ -18,7 +18,7 @@ report_server_inst_hint = (
 )
 
 # Link URL for postgresql-server report
-report_server_inst_link_url = 'https://access.redhat.com/articles/6654721'  # noqa: E501; pylint: disable=line-too-long
+report_server_inst_link_url = 'https://access.redhat.com/articles/6654721'
 
 
 def _report_server_installed():
