@@ -28,8 +28,8 @@ def _report_registration_info(installing_client):
     summary = (
         "After the upgrade, this system will be automatically registered into Red Hat Insights."
         "{}"
-        " To skip the automatic registration, use the '--no-insights-autoregister' command line option or"
-        " set the NO_INSIGHTS_AUTOREGISTER environment variable."
+        " To skip the automatic registration, use the '--no-insights-register' command line option or"
+        " set the LEAPP_NO_INSIGHTS_REGISTER environment variable."
     ).format(pkg_msg.format(INSIGHTS_CLIENT_PKG) if installing_client else "")
 
     reporting.create_report(
