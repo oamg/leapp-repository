@@ -9,7 +9,7 @@ from leapp.libraries.common.config import get_env
 from leapp.libraries.common.config.version import get_target_major_version
 from leapp.libraries.stdlib import api, CalledProcessError, run
 
-OVERLAY_DO_NOT_MOUNT = ('tmpfs', 'devpts', 'sysfs', 'proc', 'cramfs', 'sysv', 'vfat')
+OVERLAY_DO_NOT_MOUNT = ('tmpfs', 'devtmpfs', 'devpts', 'sysfs', 'proc', 'cramfs', 'sysv', 'vfat')
 
 # NOTE(pstodulk): what about using more closer values and than just multiply
 # the final result by magical constant?... this number is most likely going to
