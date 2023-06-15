@@ -7,7 +7,7 @@ from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import mounting, utils
 from leapp.libraries.stdlib import api, CalledProcessError, run
 
-OVERLAY_DO_NOT_MOUNT = ('tmpfs', 'devpts', 'sysfs', 'proc', 'cramfs', 'sysv', 'vfat')
+OVERLAY_DO_NOT_MOUNT = ('tmpfs', 'devtmpfs', 'devpts', 'sysfs', 'proc', 'cramfs', 'sysv', 'vfat')
 
 
 MountPoints = namedtuple('MountPoints', ['fs_file', 'fs_vfstype'])
