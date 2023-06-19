@@ -1,6 +1,6 @@
 {
-    "datetime": "202306051542Z",
-    "version_format": "1.0.0",
+    "datetime": "202306191741Z",
+    "version_format": "1.1.0",
     "mapping": [
         {
             "source_major_version": "7",
@@ -1288,6 +1288,13 @@
                 },
                 {
                     "major_version": "8",
+                    "repoid": "rhel-8-for-aarch64-baseos-e4s-rpms",
+                    "arch": "aarch64",
+                    "channel": "e4s",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "8",
                     "repoid": "rhel-8-for-aarch64-baseos-eus-rpms",
                     "arch": "aarch64",
                     "channel": "eus",
@@ -1333,6 +1340,13 @@
                     "repoid": "rhel-8-for-s390x-baseos-beta-rpms",
                     "arch": "s390x",
                     "channel": "beta",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "8",
+                    "repoid": "rhel-8-for-s390x-baseos-e4s-rpms",
+                    "arch": "s390x",
+                    "channel": "e4s",
                     "repo_type": "rpm"
                 },
                 {
@@ -1494,6 +1508,13 @@
                 },
                 {
                     "major_version": "8",
+                    "repoid": "rhel-8-for-aarch64-appstream-e4s-rpms",
+                    "arch": "aarch64",
+                    "channel": "e4s",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "8",
                     "repoid": "rhel-8-for-aarch64-appstream-eus-rpms",
                     "arch": "aarch64",
                     "channel": "eus",
@@ -1539,6 +1560,13 @@
                     "repoid": "rhel-8-for-s390x-appstream-beta-rpms",
                     "arch": "s390x",
                     "channel": "beta",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "8",
+                    "repoid": "rhel-8-for-s390x-appstream-e4s-rpms",
+                    "arch": "s390x",
+                    "channel": "e4s",
                     "repo_type": "rpm"
                 },
                 {
@@ -1867,6 +1895,14 @@
                 },
                 {
                     "major_version": "8",
+                    "repoid": "rhel-8-for-x86_64-supplementary-rhui-rpms",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "rhui": "azure"
+                },
+                {
+                    "major_version": "8",
                     "repoid": "rhel-8-for-x86_64-supplementary-rpms",
                     "arch": "x86_64",
                     "channel": "ga",
@@ -1933,6 +1969,13 @@
                     "repoid": "rhel-8-for-x86_64-nfv-beta-rpms",
                     "arch": "x86_64",
                     "channel": "beta",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "8",
+                    "repoid": "rhel-8-for-x86_64-nfv-e4s-rpms",
+                    "arch": "x86_64",
+                    "channel": "e4s",
                     "repo_type": "rpm"
                 },
                 {
@@ -3652,6 +3695,7 @@
         }
     ],
     "provided_data_streams": [
-        "1.0"
+        "1.1",
+        "2.0"
     ]
 }
