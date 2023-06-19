@@ -3,7 +3,7 @@ from leapp.libraries.stdlib import api
 
 # The devel variable for target product channel can also contain 'beta'
 SUPPORTED_TARGET_CHANNELS = {'ga', 'tuv', 'e4s', 'eus', 'aus'}
-CONSUMED_DATA_STREAM_ID = '1.0'
+CONSUMED_DATA_STREAM_ID = '2.0'
 
 
 def get_env(name, default=None):

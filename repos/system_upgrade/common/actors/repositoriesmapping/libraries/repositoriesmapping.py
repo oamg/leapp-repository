@@ -16,7 +16,7 @@ REPOMAP_FILE = 'repomap.json'
 
 
 class RepoMapData(object):
-    VERSION_FORMAT = '1.0.0'
+    VERSION_FORMAT = '1.1.0'
 
     def __init__(self):
         self.repositories = []
