@@ -23,5 +23,5 @@ jobs:
             ./repos/system_upgrade/common/actors/scancpu/tests/files/lscpu_s390x,\
             ./etc/leapp/files/device_driver_deprecation_data.json,\
             ./etc/leapp/files/pes-events.json,\
-            ./etc/leapp/files/repomap.json"
-
+            ./etc/leapp/files/repomap.json,\
+            ./repos/system_upgrade/common/files/prod-certs"
