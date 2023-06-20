@@ -43,7 +43,13 @@ class DirToCopy(FileToCopy):
 
 # list of files and directories to copy into target userspace
 FILES_TO_COPY_IF_PRESENT = [
-    FileToCopy('/etc/hosts')
+    FileToCopy('/etc/hosts'),
+    # the fallback usually goes to /etc/mdadm/mdadm.conf, however the /etc/mdadm dir
+    # doesn't exist in the target userspace and the targetuserspacecreator expects
+    # the destination dir to exist, so let's copy to /etc/. dracut also copies it there
+    FileToCopy('/etc/mdadm.conf', fallback=FileToCopy('/etc/mdadm/mdadm.conf', '/etc/mdadm.conf')),
+    # copy to /etc/mdadm.conf.d/, dracut only copies this one into initramfs and doesn't check the alternate one
+    DirToCopy('/etc/mdadm.conf.d/', fallback=FileToCopy('/etc/mdadm/mdadm.conf.d/', '/etc/mdadm.conf.d/'))
 ]
 
 
