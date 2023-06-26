@@ -155,7 +155,7 @@ help:
 	@echo "  PR=7 SUFFIX='my_additional_suffix' make <target>"
 	@echo "  MR=6 COPR_CONFIG='path/to/the/config/copr/file' make <target>"
 	@echo "  ACTOR=<actor> TEST_LIBS=y make test"
-	@echo "  BUILD_CONTAINER=el7 make build_container"
+	@echo "  BUILD_CONTAINER=rhel7 make build_container"
 	@echo "  TEST_CONTAINER=f34 make test_container"
 	@echo "  CONTAINER_TOOL=docker TEST_CONTAINER=rhel7 make test_container_no_lint"
 	@echo ""

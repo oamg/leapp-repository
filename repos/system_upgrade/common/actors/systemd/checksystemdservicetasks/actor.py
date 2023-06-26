@@ -14,7 +14,7 @@ class CheckSystemdServicesTasks(Actor):
     - enabled and disabled. This actor inhibits upgrade in such cases.
 
     Note: We expect that SystemdServicesTasks could be produced even after the
-    TargetTransactionChecksPhase (e.g. during the ApplicationPhase). The
+    TargetTransactionChecksPhase (e.g. during the ApplicationsPhase). The
     purpose of this actor is to report collisions in case we can already detect
     them. In case of conflicts caused by messages produced later we just log
     the collisions and the services will end up disabled.

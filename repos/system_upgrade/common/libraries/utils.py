@@ -14,7 +14,7 @@ def parse_config(cfg=None, strict=True):
     """
     Applies a workaround to parse a config file using py3 AND py2
 
-    ConfigParser has a new def to read strings/iles in Py3, making
+    ConfigParser has a new def to read strings/files in Py3, making
     the old ones (Py2) obsoletes, these function was created to use the
     ConfigParser on Py2 and Py3
 
