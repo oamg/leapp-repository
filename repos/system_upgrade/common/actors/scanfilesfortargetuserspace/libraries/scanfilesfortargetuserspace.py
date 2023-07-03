@@ -3,10 +3,69 @@ import os
 from leapp.libraries.stdlib import api
 from leapp.models import CopyFile, TargetUserSpacePreupgradeTasks
 
-# Maps src location in the source system to the destination within the target system
-FILES_TO_COPY_IF_PRESENT = {
-    '/etc/hosts': '/etc/hosts'
-}
+
+class FileToCopy:
+    """
+    A file to be copied into target userspace
+
+    Also see DirToCopy
+    """
+    def __init__(self, src_path, dst_path=None, fallback=None):
+        """
+        Initialize a new FileToCopy
+
+        The file at src_path on the source system is to be copied to the
+        dst_path in the target userspace. The fallback argument allows creating
+        a chain of fallback files to try if the original file doesn't
+        exist(practically a linked list).
+
+        :param src_path: The path to the file on the source system
+        :param dst_path: The path in the target userspace, or src_path if not given
+        :param fallback: A file to try next if src_path doesn't exist
+        """
+        self.src_path = src_path
+        self.dst_path = dst_path if dst_path else src_path
+        self.fallback = fallback
+
+    def check_filetype(self):
+        return os.path.isfile(self.src_path)
+
+
+class DirToCopy(FileToCopy):
+    """
+    A directory to be copied into target userspace
+
+    Also see FileToCopy
+    """
+    def check_filetype(self):
+        return os.path.isdir(self.src_path)
+
+
+# list of files and directories to copy into target userspace
+FILES_TO_COPY_IF_PRESENT = [
+    FileToCopy('/etc/hosts')
+]
+
+
+def _scan_file_to_copy(file):
+    """
+    Scan the source system and identify file that should be copied into target userspace.
+
+    If the file doesn't exists or isn't of the right type it's fallbacks are searched, if set.
+
+    :return: The found file or None
+    :rtype: CopyFile | None
+    """
+    tmp = file
+    while tmp and not tmp.check_filetype():
+        tmp = tmp.fallback
+
+    if not tmp:
+        api.current_logger().warning(
+                "File {} and its fallbacks do not exist or are not a correct filetype".format(file.src_path))
+        return None
+
+    return CopyFile(src=tmp.src_path, dst=tmp.dst_path)
 
 
 def scan_files_to_copy():
@@ -16,10 +75,10 @@ def scan_files_to_copy():
     When an item to be copied is identified a message :class:`CopyFile` is produced.
     """
     files_to_copy = []
-    for src_path in FILES_TO_COPY_IF_PRESENT:
-        if os.path.isfile(src_path):
-            dst_path = FILES_TO_COPY_IF_PRESENT[src_path]
-            files_to_copy.append(CopyFile(src=src_path, dst=dst_path))
+    for file in FILES_TO_COPY_IF_PRESENT:
+        file_to_copy = _scan_file_to_copy(file)
+        if file_to_copy:
+            files_to_copy.append(file_to_copy)
 
     preupgrade_task = TargetUserSpacePreupgradeTasks(copy_files=files_to_copy)
 
