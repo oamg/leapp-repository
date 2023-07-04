@@ -3,12 +3,13 @@ from six.moves.urllib.error import URLError
 
 from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
-from leapp.libraries.actor.missinggpgkey import _pubkeys_from_rpms, process
+from leapp.libraries.actor.missinggpgkey import process
+from leapp.libraries.common.gpg import get_pubkeys_from_rpms
 from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked, logger_mocked, produce_mocked
 from leapp.libraries.stdlib import api
 from leapp.models import (
     DNFWorkaround,
-    InstalledRPM,
+    GpgKey,
     Report,
     RepositoriesFacts,
     RepositoryData,
@@ -16,6 +17,7 @@ from leapp.models import (
     RPM,
     TargetUserSpaceInfo,
     TMPTargetRepositoriesFacts,
+    TrustedGpgKeys,
     UsedTargetRepositories,
     UsedTargetRepository
 )
@@ -26,59 +28,21 @@ from leapp.utils.deprecation import suppress_deprecation
 # whole process as I was initially advised not to use these component tests.
 
 
-def _get_test_installedrpm_no_my_key():
+def _get_test_gpgkeys_missing():
     """
-    Valid RPM packages missing the key we are looking for (epel9)
+    Return list of Trusted GPG keys without the epel9 key we look for
     """
     return [
-        RPM(
-            name='rpm',
-            version='4.16.1.3',
-            release='17.el9',
-            epoch='0',
-            packager='Red Hat, Inc. <http://bugzilla.redhat.com/bugzilla>',
-            arch='x86_64',
-            pgpsig='RSA/SHA256, Mon 08 Aug 2022 09:10:15 AM UTC, Key ID 199e2f91fd431d51',
-            repository='BaseOS',
-        ),
-        RPM(
-            name='gpg-pubkey',
-            version='fd431d51',
-            release='4ae0493b',
-            epoch='0',
-            packager='Red Hat, Inc. (release key 2) <security@redhat.com>',
-            arch='noarch',
-            pgpsig=''
-        ),
-        RPM(
-            name='gpg-pubkey',
-            version='5a6340b3',
-            release='6229229e',
-            epoch='0',
-            packager='Red Hat, Inc. (auxiliary key 3) <security@redhat.com>',
-            arch='noarch',
-            pgpsig=''
-        ),
+        GpgKey(fingerprint='fd431d51', rpmdb=True),
+        GpgKey(fingerprint='5a6340b3', rpmdb=True),
     ]
 
 
-def _get_test_installedrpm():
+def _get_test_gpgkeys():
     """
-    All test RPMS packages
+    Return all the Trusted GPG keys for a test
     """
-    return InstalledRPM(
-        items=[
-            RPM(
-                name='gpg-pubkey',
-                version='3228467c',
-                release='613798eb',
-                epoch='0',
-                packager='Fedora (epel9) <epel@fedoraproject.org>',
-                arch='noarch',
-                pgpsig=''
-            ),
-        ] + _get_test_installedrpm_no_my_key(),
-    )
+    return TrustedGpgKeys(items=[GpgKey(fingerprint='3228467c', rpmdb=True)] + _get_test_gpgkeys_missing())
 
 
 def _get_test_targuserspaceinfo(path='/'):
@@ -189,7 +153,7 @@ def test_perform_nogpgcheck(monkeypatch):
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(
         envars={'LEAPP_NOGPGCHECK': '1'},
         msgs=[
-            _get_test_installedrpm(),
+            _get_test_gpgkeys(),
             _get_test_usedtargetrepositories(),
             _get_test_tmptargetrepositoriesfacts(),
         ],
@@ -206,13 +170,13 @@ def test_perform_nogpgcheck(monkeypatch):
 
 @pytest.mark.parametrize('msgs', [
     [],
-    [_get_test_installedrpm],
+    [_get_test_gpgkeys],
     [_get_test_usedtargetrepositories],
     [_get_test_tmptargetrepositoriesfacts],
     # These are just incomplete lists of required facts
-    [_get_test_installedrpm(), _get_test_usedtargetrepositories()],
+    [_get_test_gpgkeys(), _get_test_usedtargetrepositories()],
     [_get_test_usedtargetrepositories(), _get_test_tmptargetrepositoriesfacts()],
-    [_get_test_installedrpm(), _get_test_tmptargetrepositoriesfacts()],
+    [_get_test_gpgkeys(), _get_test_tmptargetrepositoriesfacts()],
 ])
 def test_perform_missing_facts(monkeypatch, msgs):
     """
@@ -238,7 +202,7 @@ def test_perform_missing_facts(monkeypatch, msgs):
 @suppress_deprecation(TMPTargetRepositoriesFacts)
 def _get_test_tmptargetrepositoriesfacts_partial():
     return [
-        _get_test_installedrpm(),
+        _get_test_gpgkeys(),
         _get_test_usedtargetrepositories(),
         TMPTargetRepositoriesFacts(
             repositories=[
@@ -298,7 +262,7 @@ def _get_pubkeys_mocked(installed_rpms):
     """
     This skips getting fps from files in container for simplification
     """
-    return _pubkeys_from_rpms(installed_rpms)
+    return get_pubkeys_from_rpms(installed_rpms)
 
 
 def test_perform_missing_some_repo_facts(monkeypatch):
@@ -314,7 +278,7 @@ def test_perform_missing_some_repo_facts(monkeypatch):
     monkeypatch.setattr(api, 'produce', produce_mocked())
     monkeypatch.setattr(api, 'current_logger', logger_mocked())
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
-    monkeypatch.setattr('leapp.libraries.actor.missinggpgkey._gpg_show_keys', _gpg_show_keys_mocked)
+    monkeypatch.setattr('leapp.libraries.common.gpg._gpg_show_keys', _gpg_show_keys_mocked)
 
     with pytest.raises(StopActorExecutionError):
         process()
@@ -326,7 +290,7 @@ def test_perform_missing_some_repo_facts(monkeypatch):
 def _get_test_tmptargetrepositoriesfacts_https_unused():
     return [
         _get_test_targuserspaceinfo(),
-        _get_test_installedrpm(),
+        _get_test_gpgkeys(),
         _get_test_usedtargetrepositories(),
         TMPTargetRepositoriesFacts(
             repositories=[
@@ -362,8 +326,7 @@ def test_perform_https_gpgkey_unused(monkeypatch):
     monkeypatch.setattr(api, 'produce', produce_mocked())
     monkeypatch.setattr(api, 'current_logger', logger_mocked())
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
-    monkeypatch.setattr('leapp.libraries.actor.missinggpgkey._gpg_show_keys', _gpg_show_keys_mocked)
-    monkeypatch.setattr('leapp.libraries.actor.missinggpgkey._get_pubkeys', _get_pubkeys_mocked)
+    monkeypatch.setattr('leapp.libraries.common.gpg._gpg_show_keys', _gpg_show_keys_mocked)
 
     process()
     assert not api.current_logger.warnmsg
@@ -376,7 +339,7 @@ def test_perform_https_gpgkey_unused(monkeypatch):
 def get_test_tmptargetrepositoriesfacts_https():
     return (
         _get_test_targuserspaceinfo(),
-        _get_test_installedrpm(),
+        _get_test_gpgkeys(),
         UsedTargetRepositories(
             repos=_get_test_usedtargetrepositories_list() + [
                 UsedTargetRepository(
@@ -409,7 +372,7 @@ def get_test_tmptargetrepositoriesfacts_https():
 def get_test_tmptargetrepositoriesfacts_ftp():
     return (
         _get_test_targuserspaceinfo(),
-        _get_test_installedrpm(),
+        _get_test_gpgkeys(),
         UsedTargetRepositories(
             repos=_get_test_usedtargetrepositories_list() + [
                 UsedTargetRepository(
@@ -454,8 +417,7 @@ def test_perform_https_gpgkey(monkeypatch):
     monkeypatch.setattr(api, 'produce', produce_mocked())
     monkeypatch.setattr(api, 'current_logger', logger_mocked())
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
-    monkeypatch.setattr('leapp.libraries.actor.missinggpgkey._gpg_show_keys', _gpg_show_keys_mocked)
-    monkeypatch.setattr('leapp.libraries.actor.missinggpgkey._get_pubkeys', _get_pubkeys_mocked)
+    monkeypatch.setattr('leapp.libraries.common.gpg._gpg_show_keys', _gpg_show_keys_mocked)
     monkeypatch.setattr('six.moves.urllib.request.urlretrieve', _urlretrive_mocked)
 
     process()
@@ -482,8 +444,7 @@ def test_perform_https_gpgkey_urlerror(monkeypatch):
     monkeypatch.setattr(api, 'produce', produce_mocked())
     monkeypatch.setattr(api, 'current_logger', logger_mocked())
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
-    monkeypatch.setattr('leapp.libraries.actor.missinggpgkey._gpg_show_keys', _gpg_show_keys_mocked)
-    monkeypatch.setattr('leapp.libraries.actor.missinggpgkey._get_pubkeys', _get_pubkeys_mocked)
+    monkeypatch.setattr('leapp.libraries.common.gpg._gpg_show_keys', _gpg_show_keys_mocked)
     monkeypatch.setattr('six.moves.urllib.request.urlretrieve', _urlretrive_mocked_urlerror)
 
     process()
@@ -508,8 +469,7 @@ def test_perform_ftp_gpgkey(monkeypatch):
     monkeypatch.setattr(api, 'produce', produce_mocked())
     monkeypatch.setattr(api, 'current_logger', logger_mocked())
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
-    monkeypatch.setattr('leapp.libraries.actor.missinggpgkey._gpg_show_keys', _gpg_show_keys_mocked)
-    monkeypatch.setattr('leapp.libraries.actor.missinggpgkey._get_pubkeys', _get_pubkeys_mocked)
+    monkeypatch.setattr('leapp.libraries.common.gpg._gpg_show_keys', _gpg_show_keys_mocked)
 
     process()
     assert len(api.current_logger.errmsg) == 1
@@ -525,7 +485,7 @@ def test_perform_ftp_gpgkey(monkeypatch):
 def get_test_data_missing_key():
     return [
         _get_test_targuserspaceinfo(),
-        InstalledRPM(items=_get_test_installedrpm_no_my_key()),
+        TrustedGpgKeys(items=_get_test_gpgkeys_missing()),
         _get_test_usedtargetrepositories(),
         _get_test_tmptargetrepositoriesfacts(),
     ]
@@ -543,8 +503,7 @@ def test_perform_report(monkeypatch):
     monkeypatch.setattr(api, 'produce', produce_mocked())
     monkeypatch.setattr(api, 'current_logger', logger_mocked())
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
-    monkeypatch.setattr('leapp.libraries.actor.missinggpgkey._gpg_show_keys', _gpg_show_keys_mocked)
-    monkeypatch.setattr('leapp.libraries.actor.missinggpgkey._get_pubkeys', _get_pubkeys_mocked)
+    monkeypatch.setattr('leapp.libraries.common.gpg._gpg_show_keys', _gpg_show_keys_mocked)
 
     process()
     assert not api.current_logger.warnmsg
@@ -559,7 +518,7 @@ def test_perform_report(monkeypatch):
 def get_test_data_no_gpg_data():
     return [
         _get_test_targuserspaceinfo(),
-        _get_test_installedrpm(),
+        _get_test_gpgkeys(),
         _get_test_usedtargetrepositories(),
         _get_test_tmptargetrepositoriesfacts(),
     ]
@@ -593,12 +552,11 @@ def test_perform_invalid_key(monkeypatch):
     monkeypatch.setattr(api, 'produce', produce_mocked())
     monkeypatch.setattr(api, 'current_logger', logger_mocked())
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
-    monkeypatch.setattr('leapp.libraries.actor.missinggpgkey._gpg_show_keys', _gpg_show_keys_mocked_my_empty)
-    monkeypatch.setattr('leapp.libraries.actor.missinggpgkey._get_pubkeys', _get_pubkeys_mocked)
+    monkeypatch.setattr('leapp.libraries.common.gpg._gpg_show_keys', _gpg_show_keys_mocked_my_empty)
 
     process()
-    assert len(api.current_logger.warnmsg) == 1
-    assert 'Cannot get any gpg key from the file' in api.current_logger.warnmsg[0]
+    assert len(api.current_logger.warnmsg) == 2, api.current_logger.warnmsg
+    assert 'Cannot get any gpg key from the file' in api.current_logger.warnmsg[1]
     assert api.produce.called == 1
     assert isinstance(api.produce.model_instances[0], DNFWorkaround)
     assert reporting.create_report.called == 1
@@ -610,7 +568,7 @@ def test_perform_invalid_key(monkeypatch):
 def get_test_data_gpgcheck_without_gpgkey():
     return [
         _get_test_targuserspaceinfo(),
-        _get_test_installedrpm(),
+        _get_test_gpgkeys(),
         UsedTargetRepositories(
             repos=_get_test_usedtargetrepositories_list() + [
                 UsedTargetRepository(
@@ -651,8 +609,7 @@ def test_perform_gpgcheck_without_gpgkey(monkeypatch):
     monkeypatch.setattr(api, 'produce', produce_mocked())
     monkeypatch.setattr(api, 'current_logger', logger_mocked())
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
-    monkeypatch.setattr('leapp.libraries.actor.missinggpgkey._gpg_show_keys', _gpg_show_keys_mocked)
-    monkeypatch.setattr('leapp.libraries.actor.missinggpgkey._get_pubkeys', _get_pubkeys_mocked)
+    monkeypatch.setattr('leapp.libraries.common.gpg._gpg_show_keys', _gpg_show_keys_mocked)
 
     process()
     assert len(api.current_logger.warnmsg) == 1
