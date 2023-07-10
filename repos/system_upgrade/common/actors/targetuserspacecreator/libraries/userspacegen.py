@@ -766,11 +766,13 @@ def perform():
 
     indata = _InputData()
     prod_cert_path = _get_product_certificate_path()
+    reserve_space = overlaygen.get_recommended_leapp_free_space(_get_target_userspace())
     with overlaygen.create_source_overlay(
             mounts_dir=constants.MOUNTS_DIR,
             scratch_dir=constants.SCRATCH_DIR,
             storage_info=indata.storage_info,
-            xfs_info=indata.xfs_info) as overlay:
+            xfs_info=indata.xfs_info,
+            scratch_reserve=reserve_space) as overlay:
         with overlay.nspawn() as context:
             # Mount the ISO into the scratch container
             target_iso = next(api.consume(TargetOSInstallationImage), None)
