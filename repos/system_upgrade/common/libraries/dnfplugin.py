@@ -334,8 +334,9 @@ def install_initramdisk_requirements(packages, target_userspace_info, used_repos
     """
     Performs the installation of packages into the initram disk
     """
-    with _prepare_transaction(used_repos=used_repos,
-                              target_userspace_info=target_userspace_info) as (context, target_repoids, _unused):
+    mount_binds = ['/:/installroot']
+    with _prepare_transaction(used_repos=used_repos, target_userspace_info=target_userspace_info,
+                              binds=mount_binds) as (context, target_repoids, _unused):
         if get_target_major_version() == '9':
             _rebuild_rpm_db(context)
         repos_opt = [['--enablerepo', repo] for repo in target_repoids]
