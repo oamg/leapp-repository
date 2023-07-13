@@ -1,5 +1,6 @@
 import itertools
 import os
+import shutil
 
 from leapp import reporting
 from leapp.exceptions import StopActorExecution, StopActorExecutionError
@@ -121,9 +122,12 @@ class _InputData(object):
 
 def _restore_persistent_package_cache(userspace_dir):
     if get_env('LEAPP_DEVEL_USE_PERSISTENT_PACKAGE_CACHE', None) == '1':
-        if os.path.exists(PERSISTENT_PACKAGE_CACHE_DIR):
-            with mounting.NspawnActions(base_dir=userspace_dir) as target_context:
-                target_context.copytree_to(PERSISTENT_PACKAGE_CACHE_DIR, '/var/cache/dnf')
+        if not os.path.exists(PERSISTENT_PACKAGE_CACHE_DIR):
+            return
+        dst_cache = os.path.join(userspace_dir, 'var', 'cache', 'dnf')
+        if os.path.exists(dst_cache):
+            run(['rm', '-rf', dst_cache])
+        shutil.move(PERSISTENT_PACKAGE_CACHE_DIR, dst_cache)
     # We always want to remove the persistent cache here to unclutter the system
     run(['rm', '-rf', PERSISTENT_PACKAGE_CACHE_DIR])
 
@@ -132,9 +136,9 @@ def _backup_to_persistent_package_cache(userspace_dir):
     if get_env('LEAPP_DEVEL_USE_PERSISTENT_PACKAGE_CACHE', None) == '1':
         # Clean up any dead bodies, just in case
         run(['rm', '-rf', PERSISTENT_PACKAGE_CACHE_DIR])
-        if os.path.exists(os.path.join(userspace_dir, 'var', 'cache', 'dnf')):
-            with mounting.NspawnActions(base_dir=userspace_dir) as target_context:
-                target_context.copytree_from('/var/cache/dnf', PERSISTENT_PACKAGE_CACHE_DIR)
+        src_cache = os.path.join(userspace_dir, 'var', 'cache', 'dnf')
+        if os.path.exists(src_cache):
+            shutil.move(src_cache, PERSISTENT_PACKAGE_CACHE_DIR)
 
 
 def _the_nogpgcheck_option_used():
