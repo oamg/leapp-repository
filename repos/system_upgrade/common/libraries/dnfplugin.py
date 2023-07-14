@@ -2,6 +2,7 @@ import contextlib
 import itertools
 import json
 import os
+import re
 import shutil
 
 from leapp.exceptions import StopActorExecutionError
@@ -12,6 +13,7 @@ from leapp.libraries.stdlib import api, CalledProcessError, config
 from leapp.models import DNFWorkaround
 
 DNF_PLUGIN_NAME = 'rhel_upgrade.py'
+_DEDICATED_URL = 'https://access.redhat.com/solutions/7011704'
 
 
 class _DnfPluginPathStr(str):
@@ -146,6 +148,75 @@ def backup_debug_data(context):
             api.current_logger().warning('Failed to copy debugdata. Message: {}'.format(str(e)), exc_info=True)
 
 
+def _handle_transaction_err_msg_old(stage, xfs_info, err):
+    # NOTE(pstodulk): This is going to be removed in future!
+    message = 'DNF execution failed with non zero exit code.'
+    details = {'STDOUT': err.stdout, 'STDERR': err.stderr}
+
+    if 'more space needed on the' in err.stderr and stage != 'upgrade':
+        # Disk Requirements:
+        #   At least <size> more space needed on the <path> filesystem.
+        #
+        article_section = 'Generic case'
+        if xfs_info.present and xfs_info.without_ftype:
+            article_section = 'XFS ftype=0 case'
+
+        message = ('There is not enough space on the file system hosting /var/lib/leapp directory '
+                   'to extract the packages.')
+        details = {'hint': "Please follow the instructions in the '{}' section of the article at: "
+                           "link: https://access.redhat.com/solutions/5057391".format(article_section)}
+
+    raise StopActorExecutionError(message=message, details=details)
+
+
+def _handle_transaction_err_msg(stage, xfs_info, err, is_container=False):
+    # ignore the fallback when the error is related to the container issue
+    # e.g. installation of packages inside the container; so it's unrelated
+    # to the upgrade transactions.
+    if get_env('LEAPP_OVL_LEGACY', '0') == '1' and not is_container:
+        _handle_transaction_err_msg_old(stage, xfs_info, err)
+        return  # not needed actually as the above function raises error, but for visibility
+    NO_SPACE_STR = 'more space needed on the'
+    message = 'DNF execution failed with non zero exit code.'
+    details = {'STDOUT': err.stdout, 'STDERR': err.stderr}
+    if NO_SPACE_STR not in err.stderr:
+        raise StopActorExecutionError(message=message, details=details)
+
+    # Disk Requirements:
+    #   At least <size> more space needed on the <path> filesystem.
+    #
+    missing_space = [line.strip() for line in err.stderr.split('\n') if NO_SPACE_STR in line]
+    if is_container:
+        size_str = re.match(r'At least (.*) more space needed', missing_space[0]).group(1)
+        message = 'There is not enough space on the file system hosting /var/lib/leapp.'
+        hint = (
+            'Increase the free space on the filesystem hosting'
+            ' /var/lib/leapp by {} at minimum. It is suggested to provide'
+            ' reasonably more space to be able to perform all planned actions'
+            ' (e.g. when 200MB is missing, add 1700MB or more).\n\n'
+            'It is also a good practice to create dedicated partition'
+            ' for /var/lib/leapp when more space is needed, which can be'
+            ' dropped after the system upgrade is fully completed'
+            ' For more info, see: {}'
+            .format(size_str, _DEDICATED_URL)
+        )
+        # we do not want to confuse customers by the orig msg speaking about
+        # missing space on '/'. Skip the Disk Requirements section.
+        # The information is part of the hint.
+        details = {'hint': hint}
+    else:
+        message = 'There is not enough space on some file systems to perform the upgrade transaction.'
+        hint = (
+            'Increase the free space on listed filesystems. Presented values'
+            ' are required minimum calculated by RPM and it is suggested to'
+            ' provide reasonably more free space (e.g. when 200 MB is missing'
+            ' on /usr, add 1200MB or more).'
+        )
+        details = {'hint': hint, 'Disk Requirements': '\n'.join(missing_space)}
+
+    raise StopActorExecutionError(message=message, details=details)
+
+
 def _transaction(context, stage, target_repoids, tasks, plugin_info, xfs_info,
                  test=False, cmd_prefix=None, on_aws=False):
     """
@@ -219,26 +290,8 @@ def _transaction(context, stage, target_repoids, tasks, plugin_info, xfs_info,
                 message='Failed to execute dnf. Reason: {}'.format(str(e))
             )
         except CalledProcessError as e:
-            api.current_logger().error('DNF execution failed: ')
-
-            message = 'DNF execution failed with non zero exit code.'
-            details = {'STDOUT': e.stdout, 'STDERR': e.stderr}
-
-            if 'more space needed on the' in e.stderr:
-                # The stderr contains this error summary:
-                # Disk Requirements:
-                #   At least <size> more space needed on the <path> filesystem.
-
-                article_section = 'Generic case'
-                if xfs_info.present and xfs_info.without_ftype:
-                    article_section = 'XFS ftype=0 case'
-
-                message = ('There is not enough space on the file system hosting /var/lib/leapp directory '
-                           'to extract the packages.')
-                details = {'hint': "Please follow the instructions in the '{}' section of the article at: "
-                                   "link: https://access.redhat.com/solutions/5057391".format(article_section)}
-
-            raise StopActorExecutionError(message=message, details=details)
+            api.current_logger().error('Cannot calculate, check, test, or perform the upgrade transaction.')
+            _handle_transaction_err_msg(stage, xfs_info, e, is_container=False)
         finally:
             if stage == 'check':
                 backup_debug_data(context=context)
@@ -307,7 +360,13 @@ def install_initramdisk_requirements(packages, target_userspace_info, used_repos
         if get_target_major_version() == '9':
             # allow handling new RHEL 9 syscalls by systemd-nspawn
             env = {'SYSTEMD_SECCOMP': '0'}
-        context.call(cmd, env=env)
+        try:
+            context.call(cmd, env=env)
+        except CalledProcessError as e:
+            api.current_logger().error(
+                'Cannot install packages in the target container required to build the upgrade initramfs.'
+            )
+            _handle_transaction_err_msg('', None, e, is_container=True)
 
 
 def perform_transaction_install(target_userspace_info, storage_info, used_repos, tasks, plugin_info, xfs_info):
