@@ -71,7 +71,7 @@ class PESIDRepositoryEntry(Model):
     purposes. The other channels indicate premium repositories.
     """
 
-    rhui = fields.StringEnum(['', 'aws', 'azure', 'google'])
+    rhui = fields.StringEnum(['', 'aws', 'azure', 'google', 'alibaba'])
     """
     Specifies what cloud provider (RHUI) is the repository specific to.
 
