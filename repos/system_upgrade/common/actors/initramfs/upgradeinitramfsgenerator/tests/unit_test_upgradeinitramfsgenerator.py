@@ -10,6 +10,7 @@ from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked, 
 from leapp.utils.deprecation import suppress_deprecation
 
 from leapp.models import (  # isort:skip
+    FIPSInfo,
     RequiredUpgradeInitramPackages,  # deprecated
     UpgradeDracutModule,  # deprecated
     BootContent,
@@ -250,6 +251,16 @@ def test_prepare_userspace_for_initram(monkeypatch, adjust_cwd, input_msgs, pkgs
     assert _sort_files(upgradeinitramfsgenerator._copy_files.args[1]) == _files
 
 
+class MockedGetFspace(object):
+    def __init__(self, space):
+        self.space = space
+
+    def __call__(self, dummy_path, convert_to_mibs=False):
+        if not convert_to_mibs:
+            return self.space
+        return int(self.space / 1024 / 1024)  # noqa: W1619; pylint: disable=old-division
+
+
 @pytest.mark.parametrize('input_msgs,dracut_modules,kernel_modules', [
     # test dracut modules with UpgradeDracutModule(s) - orig functionality
     (gen_UDM_list(MODULES[0]), MODULES[0], []),
@@ -275,7 +286,10 @@ def test_generate_initram_disk(monkeypatch, input_msgs, dracut_modules, kernel_m
     monkeypatch.setattr(upgradeinitramfsgenerator, '_get_target_kernel_version', lambda _: '')
     monkeypatch.setattr(upgradeinitramfsgenerator, 'copy_kernel_modules', MockedCopyArgs())
     monkeypatch.setattr(upgradeinitramfsgenerator, 'copy_boot_files', lambda dummy: None)
+    monkeypatch.setattr(upgradeinitramfsgenerator, '_get_fspace', MockedGetFspace(2*2**30))
     upgradeinitramfsgenerator.generate_initram_disk(context)
+
+    # TODO(pstodulk): add tests for the check of the free space (sep. from this func)
 
     # test now just that all modules have been passed for copying - so we know
     # all modules have been consumed
