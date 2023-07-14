@@ -112,6 +112,17 @@ RHUI_CLOUD_MAP = {
                 ('leapp-google-sap.repo', YUM_REPOS_PATH)
             ],
         },
+        'alibaba': {
+            'src_pkg': 'client-rhel7',
+            'target_pkg': 'aliyun_rhui_rhel8',
+            'leapp_pkg': 'leapp-rhui-alibaba',
+            'leapp_pkg_repo': 'leapp-alibaba.repo',
+            'files_map': [
+                ('content.crt', RHUI_PKI_PRODUCT_DIR),
+                ('key.pem', RHUI_PKI_DIR),
+                ('leapp-alibaba.repo', YUM_REPOS_PATH)
+            ],
+        }
     },
     '8to9': {
         'aws': {

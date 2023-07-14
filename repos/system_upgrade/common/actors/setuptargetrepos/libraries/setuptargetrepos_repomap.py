@@ -53,7 +53,7 @@ class RepoMapDataHandler(object):
         self.cloud_provider = cloud_provider
 
         # Cloud provider might have multiple variants, e.g, aws: (aws, aws-sap-es4) - normalize it
-        cloud_providers = ('aws', 'azure', 'google')
+        cloud_providers = ('aws', 'azure', 'google', 'alibaba')
         for provider in cloud_providers:
             if cloud_provider.startswith(provider):
                 self.cloud_provider = provider
