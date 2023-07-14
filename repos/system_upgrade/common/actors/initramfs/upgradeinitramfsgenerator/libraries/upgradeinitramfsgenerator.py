@@ -20,6 +20,7 @@ from leapp.utils.deprecation import suppress_deprecation
 
 INITRAM_GEN_SCRIPT_NAME = 'generate-initram.sh'
 DRACUT_DIR = '/dracut'
+DEDICATED_LEAPP_PART_URL = 'https://access.redhat.com/solutions/7011704'
 
 
 def _get_target_kernel_version(context):
@@ -231,6 +232,77 @@ def prepare_userspace_for_initram(context):
     _copy_files(context, files)
 
 
+def _get_fspace(path, convert_to_mibs=False, coefficient=1):
+    """
+    Return the free disk space on given path.
+
+    The default is in bytes, but if convert_to_mibs is True, return MiBs instead.
+
+    Raises OSError if nothing exists on the given `path`.
+
+    :param path: Path to an existing file or directory
+    :type path: str
+    :param convert_to_mibs: If True, convert the value to MiBs
+    :type convert_to_mibs: bool
+    :param coefficient: Coefficient to multiply the free space (e.g. 0.9 to have it 10% lower). Max: 1
+    :type coefficient: float
+    :rtype: int
+    """
+    # TODO(pstodulk): discuss the function params
+    # NOTE(pstodulk): This func is copied from the overlaygen.py lib
+    # probably it would make sense to make it public in the utils.py lib,
+    # but for now, let's keep it private
+    stat = os.statvfs(path)
+
+    coefficient = min(coefficient, 1)
+    fspace_bytes = int(stat.f_frsize * stat.f_bavail * coefficient)
+    if convert_to_mibs:
+        return int(fspace_bytes / 1024 / 1024)  # noqa: W1619; pylint: disable=old-division
+    return fspace_bytes
+
+
+def _check_free_space(context):
+    """
+    Raise StopActorExecutionError if there is less than 500MB of free space available.
+
+    If there is not enough free space in the context, the initramfs will not be
+    generated successfully and it's hard to discover what was the issue. Also
+    the missing space is able to kill the leapp itself - trying to write to the
+    leapp.db when the FS hosting /var/lib/leapp is full, kills the framework
+    and the actor execution too - so there is no gentle way to handle such
+    exceptions when it happens. From this point, let's rather check the available
+    space in advance and stop the execution when it happens.
+
+    It is not expected to hit this issue, but I was successful and I know
+    it's still possible even with all other changes (just it's much harder
+    now to hit it). So adding this seatbelt, that is not 100% bulletproof,
+    but I call it good enough.
+
+    Currently protecting last 500MB. In case of problems, we can increase
+    the value.
+    """
+    message = 'There is not enough space on the file system hosting /var/lib/leapp.'
+    hint = (
+        'Increase the free space on the filesystem hosting'
+        ' /var/lib/leapp by 500MB at minimum (suggested 1500MB).\n\n'
+        'It is also a good practice to create dedicated partition'
+        ' for /var/lib/leapp when more space is needed, which can be'
+        ' dropped after the system upgrade is fully completed.'
+        ' For more info, see: {}'
+        .format(DEDICATED_LEAPP_PART_URL)
+    )
+    detail = (
+        'Remaining free space is lower than 500MB which is not enough to'
+        ' be able to generate the upgrade initramfs. '
+    )
+
+    if _get_fspace(context.base_dir, convert_to_mibs=True) < 500:
+        raise StopActorExecutionError(
+            message=message,
+            details={'hint': hint, 'detail': detail}
+        )
+
+
 def generate_initram_disk(context):
     """
     Function to actually execute the init ramdisk creation.
@@ -238,6 +310,7 @@ def generate_initram_disk(context):
     Includes handling of specified dracut and kernel modules from the host when
     needed. The check for the 'conflicting' modules is in a separate actor.
     """
+    _check_free_space(context)
     env = {}
     if get_target_major_version() == '9':
         env = {'SYSTEMD_SECCOMP': '0'}
