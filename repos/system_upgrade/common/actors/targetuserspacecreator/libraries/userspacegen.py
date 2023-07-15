@@ -1,5 +1,6 @@
 import itertools
 import os
+import re
 import shutil
 
 from leapp import reporting
@@ -55,6 +56,7 @@ from leapp.utils.deprecation import suppress_deprecation
 PROD_CERTS_FOLDER = 'prod-certs'
 GPG_CERTS_FOLDER = 'rpm-gpg'
 PERSISTENT_PACKAGE_CACHE_DIR = '/var/lib/leapp/persistent_package_cache'
+DEDICATED_LEAPP_PART_URL = 'https://access.redhat.com/solutions/7011704'
 
 
 def _check_deprecated_rhsm_skip():
@@ -172,6 +174,53 @@ def _import_gpg_keys(context, install_root_dir, target_major_version):
         )
 
 
+def _handle_transaction_err_msg_size_old(err):
+    # NOTE(pstodulk): This is going to be removed in future!
+
+    article_section = 'Generic case'
+    xfs_info = next(api.consume(XFSPresence), XFSPresence())
+    if xfs_info.present and xfs_info.without_ftype:
+        article_section = 'XFS ftype=0 case'
+
+    message = ('There is not enough space on the file system hosting /var/lib/leapp directory '
+               'to extract the packages.')
+    details = {'hint': "Please follow the instructions in the '{}' section of the article at: "
+                       "link: https://access.redhat.com/solutions/5057391".format(article_section)}
+
+    raise StopActorExecutionError(message=message, details=details)
+
+
+def _handle_transaction_err_msg_size(err):
+    if get_env('LEAPP_OVL_LEGACY', '0') == '1':
+        _handle_transaction_err_msg_size_old(err)
+        return  # not needed actually as the above function raises error, but for visibility
+    NO_SPACE_STR = 'more space needed on the'
+
+    # Disk Requirements:
+    #   At least <size> more space needed on the <path> filesystem.
+    #
+    missing_space = [line.strip() for line in err.stderr.split('\n') if NO_SPACE_STR in line]
+    size_str = re.match(r'At least (.*) more space needed', missing_space[0]).group(1)
+    message = 'There is not enough space on the file system hosting /var/lib/leapp.'
+    hint = (
+        'Increase the free space on the filesystem hosting'
+        ' /var/lib/leapp by {} at minimum. It is suggested to provide'
+        ' reasonably more space to be able to perform all planned actions'
+        ' (e.g. when 200MB is missing, add 1700MB or more).\n\n'
+        'It is also a good practice to create dedicated partition'
+        ' for /var/lib/leapp when more space is needed, which can be'
+        ' dropped after the system upgrade is fully completed'
+        ' For more info, see: {}'
+        .format(size_str, DEDICATED_LEAPP_PART_URL)
+    )
+    # we do not want to confuse customers by the orig msg speaking about
+    # missing space on '/'. Skip the Disk Requirements section.
+    # The information is part of the hint.
+    details = {'hint': hint}
+
+    raise StopActorExecutionError(message=message, details=details)
+
+
 def prepare_target_userspace(context, userspace_dir, enabled_repos, packages):
     """
     Implement the creation of the target userspace.
@@ -210,21 +259,11 @@ def prepare_target_userspace(context, userspace_dir, enabled_repos, packages):
             message = 'Unable to install RHEL {} userspace packages.'.format(target_major_version)
             details = {'details': str(exc), 'stderr': exc.stderr}
 
-            xfs_info = next(api.consume(XFSPresence), XFSPresence())
             if 'more space needed on the' in exc.stderr:
                 # The stderr contains this error summary:
                 # Disk Requirements:
                 #   At least <size> more space needed on the <path> filesystem.
-
-                article_section = 'Generic case'
-                if xfs_info.present and xfs_info.without_ftype:
-                    article_section = 'XFS ftype=0 case'
-
-                message = ('There is not enough space on the file system hosting /var/lib/leapp directory '
-                           'to extract the packages.')
-                details = {'hint': "Please follow the instructions in the '{}' section of the article at: "
-                                   "link: https://access.redhat.com/solutions/5057391".format(article_section)}
-                raise StopActorExecutionError(message=message, details=details)
+                _handle_transaction_err_msg_size(exc)
 
             # If a proxy was set in dnf config, it should be the reason why dnf
             # failed since leapp does not support updates behind proxy yet.
