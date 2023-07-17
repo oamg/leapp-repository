@@ -1,3 +1,5 @@
+import os
+
 from leapp.libraries.stdlib import api, CalledProcessError, run
 
 
@@ -12,11 +14,13 @@ def is_mdraid_dev(dev):
     :raises CalledProcessError: If an error occurred
     """
     fail_msg = 'Could not check if device "{}" is an md device: {}'
+    if not os.path.exists('/usr/sbin/mdadm'):
+        api.current_logger().warning(fail_msg.format(
+            dev, '/usr/sbin/mdadm is not installed.'
+        ))
+        return False
     try:
         result = run(['mdadm', '--query', dev])
-    except OSError as err:
-        api.current_logger().warning(fail_msg.format(dev, err))
-        return False
     except CalledProcessError as err:
         err.message = fail_msg.format(dev, err)
         raise  # let the calling actor handle the exception

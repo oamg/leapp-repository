@@ -51,6 +51,7 @@ def test_is_mdraid_dev(monkeypatch, dev, expected):
     run_mocked = RunMocked()
     monkeypatch.setattr(mdraid, 'run', run_mocked)
     monkeypatch.setattr(api, 'current_logger', logger_mocked())
+    monkeypatch.setattr(os.path, 'exists', lambda dummy: True)
 
     result = mdraid.is_mdraid_dev(dev)
     assert mdraid.run.called == 1
@@ -62,6 +63,7 @@ def test_is_mdraid_dev_error(monkeypatch):
     run_mocked = RunMocked(raise_err=True)
     monkeypatch.setattr(mdraid, 'run', run_mocked)
     monkeypatch.setattr(api, 'current_logger', logger_mocked())
+    monkeypatch.setattr(os.path, 'exists', lambda dummy: True)
 
     with pytest.raises(CalledProcessError) as err:
         mdraid.is_mdraid_dev(MD_DEVICE)
@@ -69,6 +71,18 @@ def test_is_mdraid_dev_error(monkeypatch):
     assert mdraid.run.called == 1
     expect_msg = 'Could not check if device "{}" is an md device:'.format(MD_DEVICE)
     assert expect_msg in err.value.message
+
+
+def test_is_mdraid_dev_notool(monkeypatch):
+    run_mocked = RunMocked(raise_err=True)
+    monkeypatch.setattr(mdraid, 'run', run_mocked)
+    monkeypatch.setattr(api, 'current_logger', logger_mocked())
+    monkeypatch.setattr(os.path, 'exists', lambda dummy: False)
+
+    result = mdraid.is_mdraid_dev(MD_DEVICE)
+    assert not result
+    assert not mdraid.run.called
+    assert api.current_logger.warnmsg
 
 
 def test_get_component_devices_ok(monkeypatch):
