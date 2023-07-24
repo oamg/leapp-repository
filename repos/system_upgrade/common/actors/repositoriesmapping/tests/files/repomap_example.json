@@ -1,7 +1,6 @@
 {
   "datetime": "202107141655Z",
-  "version_format": "1.1.0",
-  "provided_data_streams": [ "2.0" ],
+  "version_format": "1.2.0",
   "mapping": [
     {
       "source_major_version": "7",
