@@ -367,9 +367,12 @@ def _format_disk_image_ext4(diskimage_path):
         utils.call_with_oserror_handled(cmd=cmd)
     except CalledProcessError as e:
         # FIXME(pstodulk): taken from original, but %s seems to me invalid here
-        api.current_logger().error('Failed to create ext4 filesystem %s', diskimage_path, exc_info=True)
+        api.current_logger().error('Failed to create ext4 filesystem in %s', diskimage_path, exc_info=True)
         raise StopActorExecutionError(
-            message=str(e)
+            message='Cannot create Ext4 filesystem in {}'.format(diskimage_path),
+            details={
+                'error message': str(e),
+            }
         )
 
 
@@ -388,7 +391,10 @@ def _format_disk_image_xfs(diskimage_path):
         # FIXME(pstodulk): taken from original, but %s seems to me invalid here
         api.current_logger().error('Failed to create XFS filesystem %s', diskimage_path, exc_info=True)
         raise StopActorExecutionError(
-            message=str(e)
+            message='Cannot create XFS filesystem in {}'.format(diskimage_path),
+            details={
+                'error message': str(e),
+            }
         )
 
 
@@ -405,15 +411,43 @@ def _create_mount_disk_image(disk_images_directory, path, disk_size):
     and it's supposed to be used for write directories of an overlayfs built
     above it.
 
+    If the disk_size is lower than 130 MiBs, the disk size is automatically
+    set to 130 MiBs to be able to format it correctly.
+
     The disk image is formatted with Ext4 if (envar) `LEAPP_OVL_IMG_FS_EXT4=1`.
 
     :param disk_images_directory: Path to the directory where disk images should be stored.
     :type disk_images_directory: str
     :param path: Path to the mountpoint of the original (host/source) partition/volume
     :type path: str
+    :param disk_size: Apparent size of the disk img in MiBs
+    :type disk_size: int
     :return: Path to the created disk image
     :rtype: str
     """
+    if disk_size < 130:
+        # NOTE(pstodulk): SEATBELT
+        # min. required size for current params to format a disk img with a FS:
+        #   XFS  -> 130 MiB
+        #   EXT4 -> 70  MiB
+        # so let's stick to 130 always. This is expected to happen when:
+        #  * the free space on a system mountpoint is really super small, but if
+        #    such a mounpoint contains a content installed by packages, most
+        #    likely the msg about not enough free space is raised
+        #  * the mountpoint is actually no important at all, could be possibly
+        #    read only (e.g. ISO), or it's an FS type that should be covered by
+        #    OVERLAY_DO_NOT_MOUNT
+        #  * most common case important for us here could be /boot, but that's
+        #    covered already in different actors/checks, so it should not be
+        #    problem either
+        # NOTE(pstodulk): In case the formatting params are modified,
+        # the minimal required size could be different
+        api.current_logger().warning(
+            'The apparent size for the disk image representing {path}'
+            ' is too small ({disk_size} MiBs) for a formatting. Setting 130 MiBs instead.'
+            .format(path=path, disk_size=disk_size)
+        )
+        disk_size = 130
     diskimage_path = os.path.join(disk_images_directory, _mount_name(path))
     cmd = [
         '/bin/dd',
@@ -636,7 +670,7 @@ def _create_mount_disk_image_old(disk_images_directory, path):
     try:
         utils.call_with_oserror_handled(cmd=['/sbin/mkfs.ext4', '-F', diskimage_path])
     except CalledProcessError as e:
-        api.current_logger().error('Failed to create ext4 filesystem %s', exc_info=True)
+        api.current_logger().error('Failed to create ext4 filesystem in %s', exc_info=True)
         raise StopActorExecutionError(
             message=str(e)
         )
