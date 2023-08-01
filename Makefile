@@ -16,9 +16,12 @@ REPOSITORIES ?= $(shell ls $(_SYSUPG_REPOS) | xargs echo | tr " " ",")
 SYSUPG_TEST_PATHS=$(shell echo $(REPOSITORIES) | sed -r "s|(,\\|^)| $(_SYSUPG_REPOS)/|g")
 TEST_PATHS:=commands repos/common $(SYSUPG_TEST_PATHS)
 
+# python version to run test with
+_PYTHON_VENV=$${PYTHON_VENV:-python2.7}
 
 ifdef ACTOR
-	TEST_PATHS=`python utils/actor_path.py $(ACTOR)`
+	TEST_PATHS=`$(_PYTHON_VENV) utils/actor_path.py $(ACTOR)`
+	APPROX_TEST_PATHS=$(shell $(_PYTHON_VENV) utils/find_actors.py -C repos $(ACTOR))  # Dev only
 endif
 
 ifeq ($(TEST_LIBS),y)
@@ -31,9 +34,6 @@ endif
 
 # needed only in case the Python2 should be used
 _USE_PYTHON_INTERPRETER=$${_PYTHON_INTERPRETER}
-
-# python version to run test with
-_PYTHON_VENV=$${PYTHON_VENV:-python2.7}
 
 # by default use values you can see below, but in case the COPR_* var is defined
 # use it instead of the default
@@ -127,6 +127,7 @@ help:
 	@echo "                              - can be changed by setting TEST_CONTAINER env"
 	@echo "  test_container_all          run lint and tests in all available containers"
 	@echo "  test_container_no_lint      run tests without linting in container, see test_container"
+	@echo "  dev_test_no_lint            (advanced users) run only tests of a single actor specified by the ACTOR variable"
 	@echo "  test_container_all_no_lint  run tests without linting in all available containers"
 	@echo "  clean_containers            clean all testing and building container images (to force a rebuild for example)"
 	@echo ""
@@ -486,6 +487,10 @@ fast_lint:
 		echo "No files to lint."; \
 	fi
 
+dev_test_no_lint:
+	. $(VENVNAME)/bin/activate; \
+	$(_PYTHON_VENV) -m pytest $(REPORT_ARG) $(APPROX_TEST_PATHS) $(LIBRARY_PATH)
+
 dashboard_data:
 	. $(VENVNAME)/bin/activate; \
 	snactor repo find --path repos/; \
@@ -494,4 +499,4 @@ dashboard_data:
 	popd
 
 .PHONY: help build clean prepare source srpm copr_build _build_local build_container print_release register install-deps install-deps-fedora  lint test_no_lint test dashboard_data fast_lint
-.PHONY: test_container test_container_no_lint test_container_all test_container_all_no_lint clean_containers _build_container_image _test_container_ipu
+.PHONY: test_container test_container_no_lint test_container_all test_container_all_no_lint clean_containers _build_container_image _test_container_ipu dev_test_no_lint
