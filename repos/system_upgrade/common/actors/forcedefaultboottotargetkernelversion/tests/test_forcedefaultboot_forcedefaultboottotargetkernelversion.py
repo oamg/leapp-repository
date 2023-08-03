@@ -8,7 +8,7 @@ from leapp.libraries.actor import forcedefaultboot
 from leapp.libraries.common.config import architecture
 from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked
 from leapp.libraries.stdlib import api
-from leapp.models import InstalledTargetKernelVersion
+from leapp.models import InstalledTargetKernelInfo
 
 Expected = namedtuple(
     'Expected', (
@@ -19,8 +19,7 @@ Expected = namedtuple(
 
 Case = namedtuple(
     'Case',
-    ('initrd_exists',
-     'kernel_exists',
+    ('kernel_exists',
      'entry_default',
      'entry_exists',
      'message_available',
@@ -28,6 +27,7 @@ Case = namedtuple(
      )
 )
 
+TARGET_KERNEL_NEVRA = 'kernel-core-1.2.3.4.el8.x86_64'
 TARGET_KERNEL_VERSION = '1.2.3.4.el8.x86_64'
 TARGET_KERNEL_TITLE = 'Red Hat Enterprise Linux ({}) 8.1 (Ootpa)'.format(TARGET_KERNEL_VERSION)
 TARGET_KERNEL_PATH = '/boot/vmlinuz-{}'.format(TARGET_KERNEL_VERSION)
@@ -37,48 +37,27 @@ OLD_KERNEL_VERSION = '0.1.2.3.el7.x86_64'
 OLD_KERNEL_TITLE = 'Red Hat Enterprise Linux ({}) 7.6 (Maipo)'.format(OLD_KERNEL_VERSION)
 OLD_KERNEL_PATH = '/boot/vmlinuz-{}'.format(OLD_KERNEL_VERSION)
 
+
 CASES = (
-    (Case(initrd_exists=True, kernel_exists=True, entry_default=True, entry_exists=True, message_available=True,
-          arch_s390x=False),
+    (Case(kernel_exists=True, entry_default=True, entry_exists=True, message_available=True, arch_s390x=False),
      Expected(grubby_setdefault=False, zipl_called=False)),
-    (Case(initrd_exists=False, kernel_exists=True, entry_default=False, entry_exists=True, message_available=True,
-          arch_s390x=False),
+    (Case(kernel_exists=False, entry_default=False, entry_exists=True, message_available=True, arch_s390x=False),
      Expected(grubby_setdefault=False, zipl_called=False)),
-    (Case(initrd_exists=True, kernel_exists=False, entry_default=False, entry_exists=True, message_available=True,
-          arch_s390x=False),
+    (Case(kernel_exists=True, entry_default=False, entry_exists=True, message_available=False, arch_s390x=False),
      Expected(grubby_setdefault=False, zipl_called=False)),
-    (Case(initrd_exists=False, kernel_exists=False, entry_default=False, entry_exists=True, message_available=True,
-          arch_s390x=False),
+    (Case(kernel_exists=True, entry_default=False, entry_exists=False, message_available=False, arch_s390x=False),
      Expected(grubby_setdefault=False, zipl_called=False)),
-    (Case(initrd_exists=True, kernel_exists=True, entry_default=False, entry_exists=True, message_available=False,
-          arch_s390x=False),
-     Expected(grubby_setdefault=False, zipl_called=False)),
-    (Case(initrd_exists=True, kernel_exists=True, entry_default=False, entry_exists=False, message_available=False,
-          arch_s390x=False),
-     Expected(grubby_setdefault=False, zipl_called=False)),
-    (Case(initrd_exists=True, kernel_exists=True, entry_default=False, entry_exists=True, message_available=True,
-          arch_s390x=False),
+    (Case(kernel_exists=True, entry_default=False, entry_exists=True, message_available=True, arch_s390x=False),
      Expected(grubby_setdefault=True, zipl_called=False)),
-    (Case(initrd_exists=True, kernel_exists=True, entry_default=True, entry_exists=True, message_available=True,
-          arch_s390x=True),
+    (Case(kernel_exists=True, entry_default=True, entry_exists=True, message_available=True, arch_s390x=True),
      Expected(grubby_setdefault=False, zipl_called=False)),
-    (Case(initrd_exists=False, kernel_exists=True, entry_default=False, entry_exists=True, message_available=True,
-          arch_s390x=True),
+    (Case(kernel_exists=False, entry_default=False, entry_exists=True, message_available=True, arch_s390x=True),
      Expected(grubby_setdefault=False, zipl_called=False)),
-    (Case(initrd_exists=True, kernel_exists=False, entry_default=False, entry_exists=True, message_available=True,
-          arch_s390x=True),
+    (Case(kernel_exists=True, entry_default=False, entry_exists=True, message_available=False, arch_s390x=True),
      Expected(grubby_setdefault=False, zipl_called=False)),
-    (Case(initrd_exists=False, kernel_exists=False, entry_default=False, entry_exists=True, message_available=True,
-          arch_s390x=True),
+    (Case(kernel_exists=True, entry_default=False, entry_exists=False, message_available=False, arch_s390x=True),
      Expected(grubby_setdefault=False, zipl_called=False)),
-    (Case(initrd_exists=True, kernel_exists=True, entry_default=False, entry_exists=True, message_available=False,
-          arch_s390x=True),
-     Expected(grubby_setdefault=False, zipl_called=False)),
-    (Case(initrd_exists=True, kernel_exists=True, entry_default=False, entry_exists=False, message_available=False,
-          arch_s390x=True),
-     Expected(grubby_setdefault=False, zipl_called=False)),
-    (Case(initrd_exists=True, kernel_exists=True, entry_default=False, entry_exists=True, message_available=True,
-          arch_s390x=True),
+    (Case(kernel_exists=True, entry_default=False, entry_exists=True, message_available=True, arch_s390x=True),
      Expected(grubby_setdefault=True, zipl_called=True))
 )
 
@@ -143,7 +122,12 @@ class MockedRun(object):
 def mocked_consume(case):
     def impl(*args):
         if case.message_available:
-            return iter((InstalledTargetKernelVersion(version=TARGET_KERNEL_VERSION),))
+            kernel_img_path = TARGET_KERNEL_PATH if case.kernel_exists else ''
+            msg = InstalledTargetKernelInfo(pkg_nevra=TARGET_KERNEL_NEVRA,
+                                            kernel_img_path=kernel_img_path,
+                                            uname_r='',
+                                            initramfs_path=TARGET_INITRD_PATH)
+            return iter((msg,))
         return iter(())
     return impl
 

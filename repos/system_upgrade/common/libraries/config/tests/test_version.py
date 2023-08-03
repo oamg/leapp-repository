@@ -3,6 +3,7 @@ import pytest
 from leapp.libraries.common.config import version
 from leapp.libraries.common.testutils import CurrentActorMocked
 from leapp.libraries.stdlib import api
+from leapp.utils.deprecation import suppress_deprecation
 
 
 def test_version_to_tuple():
@@ -115,6 +116,7 @@ def test_is_supported_version(monkeypatch, result, is_alt, src_ver, saphana):
     (False, '3.10.0-790.35.2.rt666.1133.el7.x86_64', 'fedora'),
     (True, '3.10.0-790.35.2.rt666.1133.el7.x86_64', 'rhel'),
 ])
+@suppress_deprecation(version.is_rhel_realtime)
 def test_is_rhel_realtime(monkeypatch, result, kernel, release_id):
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(src_ver='7.9', kernel=kernel,
                                                                  release_id=release_id))

@@ -1,6 +1,6 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import forcedefaultboot
-from leapp.models import InstalledTargetKernelVersion
+from leapp.models import InstalledTargetKernelInfo
 from leapp.tags import FinalizationPhaseTag, IPUWorkflowTag
 
 
@@ -14,7 +14,7 @@ class ForceDefaultBootToTargetKernelVersion(Actor):
     """
 
     name = 'force_default_boot_to_target_kernel_version'
-    consumes = (InstalledTargetKernelVersion,)
+    consumes = (InstalledTargetKernelInfo,)
     produces = ()
     tags = (FinalizationPhaseTag, IPUWorkflowTag)
 

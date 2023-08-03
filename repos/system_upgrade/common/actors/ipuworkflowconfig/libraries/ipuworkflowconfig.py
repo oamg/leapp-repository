@@ -68,6 +68,7 @@ def produce_ipu_config(actor):
     flavour = os.environ.get('LEAPP_UPGRADE_PATH_FLAVOUR')
     target_version = os.environ.get('LEAPP_UPGRADE_PATH_TARGET_RELEASE')
     os_release = get_os_release('/etc/os-release')
+
     actor.produce(IPUConfig(
         leapp_env_vars=get_env_vars(),
         os_release=os_release,
