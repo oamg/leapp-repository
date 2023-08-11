@@ -94,7 +94,7 @@ jobs:
     epel-7-x86_64:
       distros: [RHEL-7.9-ZStream]
   identifier: tests-7.9to8.6
-  tmt_plan: "((?!.*uefi_upgrade)(?!.*max_sst)(?!.*partitioning)(.*tier1)|(?!.*uefi_upgrade)(?!.*max_sst)(.*tier1)(.*partitioning_monolithic|.*separate_var_usr_varlog))"
+  tmt_plan: "((?!.*max_sst)(?!.*partitioning)(.*tier1)|(?!.*max_sst)(.*tier1)(.*partitioning_monolithic|.*separate_var_usr_varlog))"
   tf_extra_params:
     environments:
       - tmt:
@@ -120,7 +120,7 @@ jobs:
     epel-7-x86_64:
       distros: [RHEL-7.9-ZStream]
   identifier: tests-7.9to8.8
-  tmt_plan: "((?!.*uefi_upgrade)(?!.*max_sst)(?!.*partitioning)(.*tier1)|(?!.*uefi_upgrade)(?!.*max_sst)(.*tier1)(.*partitioning_monolithic|.*separate_var_usr_varlog))"
+  tmt_plan: "((?!.*max_sst)(?!.*partitioning)(.*tier1)|(?!.*max_sst)(.*tier1)(.*partitioning_monolithic|.*separate_var_usr_varlog))"
   tf_extra_params:
     environments:
       - tmt:
@@ -193,7 +193,7 @@ jobs:
     epel-8-x86_64:
       distros: [RHEL-8.6.0-Nightly]
   identifier: tests-8.6to9.0
-  tmt_plan: "((?!.*uefi_upgrade)(?!.*max_sst)(?!.*partitioning)(.*tier1)|(?!.*uefi_upgrade)(?!.*max_sst)(.*tier1)(.*partitioning_monolithic|.*separate_var_usr_varlog))"
+  tmt_plan: "((?!.*max_sst)(?!.*partitioning)(.*tier1)|(?!.*max_sst)(.*tier1)(.*partitioning_monolithic|.*separate_var_usr_varlog))"
   tf_extra_params:
     environments:
       - tmt:
@@ -220,7 +220,7 @@ jobs:
     epel-8-x86_64:
       distros: [RHEL-8.8.0-Nightly]
   identifier: tests-8.8to9.2
-  tmt_plan: "((?!.*uefi_upgrade)(?!.*max_sst)(?!.*partitioning)(.*tier1)|(?!.*uefi_upgrade)(?!.*max_sst)(.*tier1)(.*partitioning_monolithic|.*separate_var_usr_varlog))"
+  tmt_plan: "((?!.*max_sst)(?!.*partitioning)(.*tier1)|(?!.*max_sst)(.*tier1)(.*partitioning_monolithic|.*separate_var_usr_varlog))"
   tf_extra_params:
     environments:
       - tmt:
