@@ -144,8 +144,8 @@ def generate_report_files(context, report_schema):
                                             'leapp-report.{}'.format(f)) for f in ['txt', 'json']]
     # fetch all report messages as a list of dicts
     messages = fetch_upgrade_report_messages(context)
-    generate_report_file(messages, context, report_json, report_schema)
     generate_report_file(messages, context, report_txt, report_schema)
+    generate_report_file(messages, context, report_json, report_schema)
 
 
 def get_cfg_files(section, cfg, must_exist=True):

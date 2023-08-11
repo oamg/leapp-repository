@@ -9,7 +9,7 @@ from leapp.exceptions import CommandError, LeappError
 from leapp.logger import configure_logger
 from leapp.utils.audit import Execution
 from leapp.utils.clicmd import command, command_opt
-from leapp.utils.output import beautify_actor_exception, report_errors, report_info, report_inhibitors
+from leapp.utils.output import beautify_actor_exception, report_errors, report_info
 
 # NOTE:
 # If you are adding new parameters please ensure that they are set in the upgrade function invocation in `rerun`
@@ -106,11 +106,10 @@ def upgrade(args, breadcrumbs):
     logger.info("Answerfile will be created at %s", answerfile_path)
     workflow.save_answers(answerfile_path, userchoices_path)
     report_errors(workflow.errors)
-    report_inhibitors(context)
     util.generate_report_files(context, report_schema)
     report_files = util.get_cfg_files('report', cfg)
     log_files = util.get_cfg_files('logs', cfg)
-    report_info(context, report_files, log_files, answerfile_path, fail=workflow.failure)
+    report_info(context, report_files, log_files, answerfile_path, fail=workflow.failure, errors=workflow.errors)
 
     if workflow.failure:
         sys.exit(1)
