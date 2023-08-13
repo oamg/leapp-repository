@@ -358,11 +358,24 @@ def _copy_certificates(context, target_userspace):
         files_owned_by_rpms = _get_files_owned_by_rpms(target_context, '/etc/pki', recursive=True)
         api.current_logger().debug('Files owned by rpms: {}'.format(' '.join(files_owned_by_rpms)))
 
-    # TODO(dkubek): Delete dangling symlinks so copytree_from does not raise an
-    # error
-
     run(['mv', target_pki, backup_pki])
-    context.copytree_from('/etc/pki', target_pki)
+    # We don't use context.copytree_from here as it fails on broken symlinks.
+    # Instead we copy the directory manually.
+    for root, _, files in os.walk('/etc/pki'):
+        for filename in files:
+            source_filepath = os.path.join(root, filename)
+            target_filepath = os.path.join(target_pki, filename)
+
+            # Skip broken symlinks
+            if not os.path.exists(source_filepath):
+                continue
+
+            # Ensure parent directory exists
+            parent_dir = os.path.dirname(target_filepath)
+            if not os.path.exists(parent_dir):
+                os.makedirs(parent_dir)
+
+            run(['cp', '-a', source_filepath, target_filepath])
 
     for filepath in files_owned_by_rpms:
         src_path = os.path.join(backup_pki, filepath)
