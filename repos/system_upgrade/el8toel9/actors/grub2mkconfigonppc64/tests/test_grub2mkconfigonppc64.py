@@ -70,6 +70,6 @@ def test_run_grub2mkconfig(monkeypatch, cmd_issued):
     monkeypatch.setattr(grub2mkconfigonppc64, 'open', _mock_open, False)
     grub2mkconfigonppc64.process()
     if cmd_issued:
-        assert mocked_run.commands == [['grub2-mkconfig', '-o', '/boot/grub2/grub.cfg']]
+        assert mocked_run.commands == [['grub2-mkconfig', '-o', '/boot/grub2/grub.cfg', '--no-grubenv-update']]
     else:
         assert not mocked_run.commands

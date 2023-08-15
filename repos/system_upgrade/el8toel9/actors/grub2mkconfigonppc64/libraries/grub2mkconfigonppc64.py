@@ -29,7 +29,10 @@ def process():
         grub.is_blscfg_enabled_in_defaultgrub(default_grub_msg)
     ):
         try:
-            run(['grub2-mkconfig', '-o', GRUB_CFG_PATH])
+            # NOTE: added --no-grubenv-update to handle issues for upgrade to 9.3+
+            # The option is present on all RHEL 9 versions so it's safe to use
+            # it always.
+            run(['grub2-mkconfig', '-o', GRUB_CFG_PATH, '--no-grubenv-update'])
         except CalledProcessError as e:
             api.current_logger().error(
                 'Command grub2-mkconfig -o {} failed: {}'.format(GRUB_CFG_PATH, e)
