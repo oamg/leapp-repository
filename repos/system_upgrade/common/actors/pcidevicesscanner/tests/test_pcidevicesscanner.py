@@ -1,3 +1,7 @@
+import os
+
+import pytest
+
 from leapp.libraries.actor.pcidevicesscanner import parse_pci_devices, produce_pci_devices
 from leapp.models import PCIDevice, PCIDevices
 
@@ -202,6 +206,8 @@ def test_produce_no_devices():
     assert not output[0].devices
 
 
+# TODO(pstodulk): update the test - drop current_actor_context and use monkeypatch
+@pytest.mark.skipif(not os.path.exists('/usr/sbin/lspci'), reason='lspci not installed on the system')
 def test_actor_execution(current_actor_context):
     current_actor_context.run()
     assert current_actor_context.consume(PCIDevices)
