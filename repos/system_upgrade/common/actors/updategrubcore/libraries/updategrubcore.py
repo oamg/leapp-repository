@@ -25,19 +25,29 @@ def update_grub_core(grub_devs):
 
         successful.append(dev)
 
-    reporting.create_report([
-        reporting.Title('GRUB core update failed'),
-        reporting.Summary('Leapp failed to update GRUB on {}'.format(', '.join(failed))),
-        reporting.Groups([reporting.Groups.BOOT]),
-        reporting.Severity(reporting.Severity.HIGH),
-        reporting.Remediation(
-            hint='Please run "grub2-install <GRUB_DEVICE>" manually after upgrade'
-        )
-    ])
+    if failed:
+        if successful:
+            # partial failure
+            summary = (
+                'GRUB was successfully updated on the following devices: {},\n'
+                'however GRUB update failed on the following devices: {}'
+            ).format(', '.join(successful), ', '.join(failed))
+        else:
+            summary = 'Leapp failed to update GRUB on {}'.format(', '.join(failed))
 
-    reporting.create_report([
-        reporting.Title('GRUB core successfully updated'),
-        reporting.Summary('GRUB core on {} was successfully updated'.format(', '.join(successful))),
-        reporting.Groups([reporting.Groups.BOOT]),
-        reporting.Severity(reporting.Severity.INFO)
-    ])
+        reporting.create_report([
+            reporting.Title('GRUB core update failed'),
+            reporting.Summary(summary),
+            reporting.Groups([reporting.Groups.BOOT]),
+            reporting.Severity(reporting.Severity.HIGH),
+            reporting.Remediation(
+                hint='Please run "grub2-install <GRUB_DEVICE>" manually after upgrade'
+            )
+        ])
+    else:
+        reporting.create_report([
+            reporting.Title('GRUB core successfully updated'),
+            reporting.Summary('GRUB core on {} was successfully updated'.format(', '.join(successful))),
+            reporting.Groups([reporting.Groups.BOOT]),
+            reporting.Severity(reporting.Severity.INFO)
+        ])
