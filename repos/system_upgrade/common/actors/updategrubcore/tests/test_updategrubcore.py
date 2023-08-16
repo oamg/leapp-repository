@@ -37,8 +37,8 @@ def test_update_grub(monkeypatch, devices):
     monkeypatch.setattr(updategrubcore, 'run', run_mocked())
     updategrubcore.update_grub_core(devices)
     assert reporting.create_report.called
-    assert UPDATE_OK_TITLE == reporting.create_report.reports[1]['title']
-    assert all(dev in reporting.create_report.reports[1]['summary'] for dev in devices)
+    assert UPDATE_OK_TITLE == reporting.create_report.reports[0]['title']
+    assert all(dev in reporting.create_report.reports[0]['summary'] for dev in devices)
 
 
 @pytest.mark.parametrize('devices', [['/dev/vda'], ['/dev/vda', '/dev/vdb']])
@@ -49,9 +49,10 @@ def test_update_grub_failed(monkeypatch, devices):
     assert reporting.create_report.called
     assert UPDATE_FAILED_TITLE == reporting.create_report.reports[0]['title']
     assert all(dev in reporting.create_report.reports[0]['summary'] for dev in devices)
+    assert 'successfully updated on ' not in reporting.create_report.reports[0]['summary']
 
 
-def test_update_grub_success_and_fail(monkeypatch):
+def test_update_grub_partial_success(monkeypatch):
     monkeypatch.setattr(reporting, "create_report", testutils.create_report_mocked())
 
     def run_mocked(args):
@@ -67,9 +68,9 @@ def test_update_grub_success_and_fail(monkeypatch):
 
     assert reporting.create_report.called
     assert UPDATE_FAILED_TITLE == reporting.create_report.reports[0]['title']
-    assert '/dev/vdb' in reporting.create_report.reports[0]['summary']
-    assert UPDATE_OK_TITLE == reporting.create_report.reports[1]['title']
-    assert '/dev/vda' in reporting.create_report.reports[1]['summary']
+    summary = reporting.create_report.reports[0]['summary']
+    assert 'GRUB was successfully updated on the following devices: /dev/vda' in summary
+    assert 'however GRUB update failed on the following devices: /dev/vdb' in summary
 
 
 def test_update_grub_negative(current_actor_context):
