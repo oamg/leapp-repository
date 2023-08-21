@@ -7,6 +7,7 @@ from leapp.libraries.common import grub, mdraid
 from leapp.libraries.common.testutils import logger_mocked
 from leapp.libraries.stdlib import api, CalledProcessError
 from leapp.models import DefaultGrub, DefaultGrubInfo
+from leapp.utils.deprecation import suppress_deprecation
 
 BOOT_PARTITION = '/dev/vda1'
 BOOT_DEVICE = '/dev/vda'
@@ -73,6 +74,7 @@ def close_mocked(f):
     f.close()
 
 
+@suppress_deprecation(grub.get_grub_device)
 def test_get_grub_device_library(monkeypatch):
     run_mocked = RunMocked()
     monkeypatch.setattr(grub, 'run', run_mocked)
@@ -87,7 +89,10 @@ def test_get_grub_device_library(monkeypatch):
     assert 'GRUB is installed on {}'.format(result) in api.current_logger.infomsg
 
 
+@suppress_deprecation(grub.get_grub_device)
 def test_get_grub_device_fail_library(monkeypatch):
+    # TODO(pstodulk): cover here also case with OSError (covered now in actors,
+    # so keeping for the future when we have a time)
     run_mocked = RunMocked(raise_err=True)
     monkeypatch.setattr(grub, 'run', run_mocked)
     monkeypatch.setattr(os, 'open', open_mocked)
@@ -101,6 +106,7 @@ def test_get_grub_device_fail_library(monkeypatch):
     assert err in api.current_logger.warnmsg
 
 
+@suppress_deprecation(grub.get_grub_device)
 def test_device_no_grub_library(monkeypatch):
     run_mocked = RunMocked()
     monkeypatch.setattr(grub, 'run', run_mocked)

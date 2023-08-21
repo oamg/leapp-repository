@@ -1,5 +1,8 @@
 from leapp import reporting
+from leapp.libraries.common import grub
+from leapp.libraries.common.config import architecture
 from leapp.libraries.stdlib import api, CalledProcessError, config, run
+from leapp.models import FirmwareFacts
 
 
 def update_grub_core(grub_devs):
@@ -51,3 +54,15 @@ def update_grub_core(grub_devs):
             reporting.Groups([reporting.Groups.BOOT]),
             reporting.Severity(reporting.Severity.INFO)
         ])
+
+
+def process():
+    if architecture.matches_architecture(architecture.ARCH_S390X):
+        return
+    ff = next(api.consume(FirmwareFacts), None)
+    if ff and ff.firmware == 'bios':
+        grub_devs = grub.get_grub_devices()
+        if grub_devs:
+            update_grub_core(grub_devs)
+        else:
+            api.current_logger().warning('Leapp could not detect GRUB devices')
