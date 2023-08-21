@@ -46,7 +46,7 @@ def blk_dev_from_partition(partition):
 
 def get_boot_partition():
     """
-    Get /boot partition name
+    Get /boot partition name.
     """
     try:
         # call grub2-probe to identify /boot partition
@@ -54,6 +54,13 @@ def get_boot_partition():
     except CalledProcessError:
         api.current_logger().warning(
             'Could not get name of underlying /boot partition'
+        )
+        raise StopActorExecution()
+    except OSError:
+        api.current_logger().warning(
+            'Could not get name of underlying /boot partition:'
+            ' grub2-probe is missing.'
+            ' Possibly called on system that does not use GRUB2?'
         )
         raise StopActorExecution()
     boot_partition = result['stdout'].strip()
