@@ -5,7 +5,7 @@ import shutil
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.stdlib import api, CalledProcessError, run
 from leapp.models import InitrdIncludes  # deprecated
-from leapp.models import InstalledTargetKernelVersion, TargetInitramfsTasks
+from leapp.models import InstalledTargetKernelInfo, TargetInitramfsTasks
 from leapp.utils.deprecation import suppress_deprecation
 
 DRACUT_DIR = '/usr/lib/dracut/modules.d/'
@@ -105,21 +105,21 @@ def process():
             'No additional files or modules required to add into the target initramfs.')
         return
 
-    target_kernel = next(api.consume(InstalledTargetKernelVersion), None)
-    if not target_kernel:
+    target_kernel_info = next(api.consume(InstalledTargetKernelInfo), None)
+    if not target_kernel_info:
         raise StopActorExecutionError(
             'Cannot get version of the installed RHEL-8 kernel',
             details={'Problem': 'Did not receive a message with installed RHEL-8 kernel version'
                                 ' (InstalledTargetKernelVersion)'})
 
     _copy_modules(modules['dracut'], DRACUT_DIR, 'dracut')
-    _copy_modules(modules['kernel'], _get_target_kernel_modules_dir(target_kernel.version), 'kernel')
+    _copy_modules(modules['kernel'], _get_target_kernel_modules_dir(target_kernel_info.uname_r), 'kernel')
 
     # Discover any new modules and regenerate modules.dep
     should_regenerate = any(module.module_path is not None for module in modules['kernel'])
     if should_regenerate:
         try:
-            run(['depmod', target_kernel.version, '-a'])
+            run(['depmod', target_kernel_info.uname_r, '-a'])
         except CalledProcessError as e:
             raise StopActorExecutionError('Failed to generate modules.dep and map files.', details={'details': str(e)})
 
@@ -127,7 +127,7 @@ def process():
         # multiple files|modules need to be quoted, see --install | --add in dracut(8)
         dracut_module_names = list({module.name for module in modules['dracut']})
         kernel_module_names = list({module.name for module in modules['kernel']})
-        cmd = ['dracut', '-f', '--kver', target_kernel.version]
+        cmd = ['dracut', '-f', '--kver', target_kernel_info.uname_r]
         if files:
             cmd += ['--install', '{}'.format(' '.join(files))]
         if modules['dracut']:

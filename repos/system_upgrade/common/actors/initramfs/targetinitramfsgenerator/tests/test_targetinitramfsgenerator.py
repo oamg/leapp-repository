@@ -8,7 +8,7 @@ from leapp.utils.deprecation import suppress_deprecation
 
 from leapp.models import (    # isort:skip
     InitrdIncludes,    # deprecated
-    DracutModule, KernelModule, InstalledTargetKernelVersion, TargetInitramfsTasks)
+    DracutModule, KernelModule, InstalledTargetKernelInfo, TargetInitramfsTasks)
 
 FILES = ['/file1', '/file2', '/dir/subdir/subsubdir/file3', '/file4', '/file5']
 MODULES = [
@@ -110,12 +110,20 @@ def test_no_kernel_version(monkeypatch, msgs):
     assert not run_mocked.called
 
 
+def mk_kernel_info(kernel_ver):
+    kernel_info = InstalledTargetKernelInfo(pkg_nevra='nevra',
+                                            kernel_img_path='vmlinuz',
+                                            uname_r=kernel_ver,
+                                            initramfs_path='initramfs')
+    return kernel_info
+
+
 @pytest.mark.parametrize('msgs', TEST_CASES)
 def test_dracut_fail(monkeypatch, msgs):
     run_mocked = RunMocked(raise_err=True)
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=msgs))
     monkeypatch.setattr(api, 'current_actor',
-                        CurrentActorMocked(msgs=msgs + [InstalledTargetKernelVersion(version=KERNEL_VERSION)]))
+                        CurrentActorMocked(msgs=msgs + [mk_kernel_info(KERNEL_VERSION)]))
     monkeypatch.setattr(targetinitramfsgenerator, 'run', run_mocked)
     # FIXME
     monkeypatch.setattr(targetinitramfsgenerator, '_copy_modules', lambda *_: None)
@@ -185,7 +193,7 @@ def test_dracut_fail(monkeypatch, msgs):
         ([gen_TIT([], MODULES, FILES[0:3]), gen_InitrdIncludes(FILES[3:])], FILES, [], MODULES),
     ])
 def test_flawless(monkeypatch, msgs, files, dracut_modules, kernel_modules):
-    _msgs = msgs + [InstalledTargetKernelVersion(version=KERNEL_VERSION)]
+    _msgs = msgs + [mk_kernel_info(KERNEL_VERSION)]
     run_mocked = RunMocked()
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=_msgs))
     monkeypatch.setattr(targetinitramfsgenerator, 'run', run_mocked)

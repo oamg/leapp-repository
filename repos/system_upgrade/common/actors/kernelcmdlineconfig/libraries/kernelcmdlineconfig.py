@@ -2,7 +2,7 @@ from leapp.exceptions import StopActorExecutionError
 from leapp.libraries import stdlib
 from leapp.libraries.common.config import architecture
 from leapp.libraries.stdlib import api
-from leapp.models import InstalledTargetKernelVersion, KernelCmdlineArg, TargetKernelCmdlineArgTasks
+from leapp.models import InstalledTargetKernelInfo, KernelCmdlineArg, TargetKernelCmdlineArgTasks
 
 
 def run_grubby_cmd(cmd):
@@ -32,8 +32,8 @@ def format_kernelarg_msgs_for_grubby_cmd(kernelarg_msgs):
 
 
 def modify_kernel_args_in_boot_cfg(configs_to_modify_explicitly=None):
-    kernel_version = next(api.consume(InstalledTargetKernelVersion), None)
-    if not kernel_version:
+    kernel_info = next(api.consume(InstalledTargetKernelInfo), None)
+    if not kernel_info:
         return
 
     # Collect desired kernelopt modifications
@@ -46,7 +46,7 @@ def modify_kernel_args_in_boot_cfg(configs_to_modify_explicitly=None):
     if not kernelargs_msgs_to_add and not kernelargs_msgs_to_remove:
         return  # There is no work to do
 
-    grubby_modify_kernelargs_cmd = ['grubby', '--update-kernel=/boot/vmlinuz-{}'.format(kernel_version.version)]
+    grubby_modify_kernelargs_cmd = ['grubby', '--update-kernel={0}'.format(kernel_info.kernel_img_path)]
 
     if kernelargs_msgs_to_add:
         grubby_modify_kernelargs_cmd += [
