@@ -303,7 +303,7 @@ def _get_all_rhui_pkgs():
     return pkgs
 
 
-def _get_files_owned_by_rpms(context, dirpath, pkgs=None):
+def _get_files_owned_by_rpms(context, dirpath, pkgs=None, recursive=False):
     """
     Return the list of file names inside dirpath owned by RPMs.
 
@@ -312,9 +312,25 @@ def _get_files_owned_by_rpms(context, dirpath, pkgs=None):
 
     In case the pkgs param is None or empty, do not filter any specific rpms.
     Otherwise return filenames that are owned by any pkg in the given list.
+
+    If the recursive param is set to True, all files owned by a package in the
+    directory tree starting at dirpath are returned. Otherwise, only the
+    files within dirpath are checked.
     """
+
     files_owned_by_rpms = []
-    for fname in os.listdir(context.full_path(dirpath)):
+
+    file_list = []
+    searchdir = context.full_path(dirpath)
+    if recursive:
+        for root, _, files in os.walk(searchdir):
+            for filename in files:
+                relpath = os.path.relpath(os.path.join(root, filename), searchdir)
+                file_list.append(relpath)
+    else:
+        file_list = os.listdir(searchdir)
+
+    for fname in file_list:
         try:
             result = context.call(['rpm', '-qf', os.path.join(dirpath, fname)])
         except CalledProcessError:
@@ -325,6 +341,7 @@ def _get_files_owned_by_rpms(context, dirpath, pkgs=None):
             continue
         api.current_logger().debug('Found the file owned by an rpm: {}.'.format(fname))
         files_owned_by_rpms.append(fname)
+
     return files_owned_by_rpms
 
 
@@ -333,25 +350,45 @@ def _copy_certificates(context, target_userspace):
     Copy the needed cetificates into the container, but preserve original ones
 
     Some certificates are already installed in the container and those are
-    default certificates for the target OS. We know we should preserve at
-    least certificates located at rpm-gpg directory. So preserve these for
-    now at least.
+    default certificates for the target OS, so we preserve these.
     """
+
     target_pki = os.path.join(target_userspace, 'etc', 'pki')
     backup_pki = os.path.join(target_userspace, 'etc', 'pki.backup')
 
-    # FIXME(pstodulk): search for all files owned by RPMs inside the container
-    # before the mv, and all such files restore
-    # - this is requirement to not break IPU with RHUI when making the copy
-    # of certificates unconditional
+    with mounting.NspawnActions(base_dir=target_userspace) as target_context:
+        files_owned_by_rpms = _get_files_owned_by_rpms(target_context, '/etc/pki', recursive=True)
+        api.current_logger().debug('Files owned by rpms: {}'.format(' '.join(files_owned_by_rpms)))
+
     run(['mv', target_pki, backup_pki])
     context.copytree_from('/etc/pki', target_pki)
 
-    # TODO(pstodulk): restore the files owned by rpms instead of the code below
-    for fname in os.listdir(os.path.join(backup_pki, 'rpm-gpg')):
-        src_path = os.path.join(backup_pki, 'rpm-gpg', fname)
-        dst_path = os.path.join(target_pki, 'rpm-gpg', fname)
+    for filepath in files_owned_by_rpms:
+        src_path = os.path.join(backup_pki, filepath)
+        dst_path = os.path.join(target_pki, filepath)
+
+        # Resolve and skip any broken symlinks
+        is_broken_symlink = False
+        while os.path.islink(src_path):
+            # The symlink points to a path relative to the target userspace so
+            # we need to readjust it
+            next_path = os.path.join(target_userspace, os.readlink(src_path)[1:])
+            if not os.path.exists(next_path):
+                is_broken_symlink = True
+
+                # The path original path of the broken symlink in the container
+                report_path = os.path.join(target_pki, os.path.relpath(src_path, backup_pki))
+                api.current_logger().warn('File {} is a broken symlink!'.format(report_path))
+                break
+
+            src_path = next_path
+
+        if is_broken_symlink:
+            continue
+
         run(['rm', '-rf', dst_path])
+        parent_dir = os.path.dirname(dst_path)
+        run(['mkdir', '-p', parent_dir])
         run(['cp', '-a', src_path, dst_path])
 
 
@@ -362,10 +399,10 @@ def _prep_repository_access(context, target_userspace):
     target_etc = os.path.join(target_userspace, 'etc')
     target_yum_repos_d = os.path.join(target_etc, 'yum.repos.d')
     backup_yum_repos_d = os.path.join(target_etc, 'yum.repos.d.backup')
+
+    _copy_certificates(context, target_userspace)
+
     if not rhsm.skip_rhsm():
-        # TODO: make the _copy_certificates unconditional. keeping it conditional
-        # due to issues causing on RHUI
-        _copy_certificates(context, target_userspace)
         run(['rm', '-rf', os.path.join(target_etc, 'rhsm')])
         context.copytree_from('/etc/rhsm', os.path.join(target_etc, 'rhsm'))
     # NOTE: we cannot just remove the original target yum.repos.d dir
