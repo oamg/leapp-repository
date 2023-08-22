@@ -85,6 +85,7 @@ jobs:
     # builds from master branch should start with 100 release, to have high priority
     - bash -c "sed -i \"s/1%{?dist}/100%{?dist}/g\" packaging/leapp-repository.spec"
 
+
 - job: tests
   fmf_url: "https://gitlab.cee.redhat.com/oamg/tmt-plans"
   fmf_ref: "master"
@@ -94,7 +95,37 @@ jobs:
     epel-7-x86_64:
       distros: [RHEL-7.9-ZStream]
   identifier: tests-7.9to8.6
-  tmt_plan: "((?!.*max_sst)(?!.*partitioning)(.*tier1)|(?!.*max_sst)(.*tier1)(.*partitioning_monolithic|.*separate_var_usr_varlog))"
+  tmt_plan: "(?!.*uefi)(?!.*max_sst)(?!.*partitioning)(.*tier1)"
+  tf_extra_params:
+    environments:
+      - tmt:
+          context:
+            distro: "rhel-7.9"
+        # tag resources as sst_upgrades to enable cost metrics collection
+        settings:
+          provisioning:
+            post_install_script: "#!/bin/sh\nsudo sed -i s/.*ssh-rsa/ssh-rsa/ /root/.ssh/authorized_keys"
+            tags:
+              BusinessUnit: sst_upgrades
+  env:
+    SOURCE_RELEASE: "7.9"
+    TARGET_RELEASE: "8.6"
+    LEAPPDATA_BRANCH: "upstream"
+
+# On-demand minimal beaker tests
+- job: tests
+  fmf_url: "https://gitlab.cee.redhat.com/oamg/tmt-plans"
+  fmf_ref: "master"
+  use_internal_tf: True
+  trigger: pull_request
+  manual_trigger: True
+  labels:
+    - minimal-beaker
+  targets:
+    epel-7-x86_64:
+      distros: [RHEL-7.9-ZStream]
+  identifier: tests-7.9to8.6-minimal-beaker
+  tmt_plan: "(?!.*max_sst)(.*tier1)(.*partitioning_monolithic|.*separate_var_usr_varlog|.*uefi)"
   tf_extra_params:
     environments:
       - tmt:
@@ -120,7 +151,37 @@ jobs:
     epel-7-x86_64:
       distros: [RHEL-7.9-ZStream]
   identifier: tests-7.9to8.8
-  tmt_plan: "((?!.*max_sst)(?!.*partitioning)(.*tier1)|(?!.*max_sst)(.*tier1)(.*partitioning_monolithic|.*separate_var_usr_varlog))"
+  tmt_plan: "(?!.*uefi)(?!.*max_sst)(?!.*partitioning)(.*tier1)"
+  tf_extra_params:
+    environments:
+      - tmt:
+          context:
+            distro: "rhel-7.9"
+        # tag resources as sst_upgrades to enable cost metrics collection
+        settings:
+          provisioning:
+            post_install_script: "#!/bin/sh\nsudo sed -i s/.*ssh-rsa/ssh-rsa/ /root/.ssh/authorized_keys"
+            tags:
+              BusinessUnit: sst_upgrades
+  env:
+    SOURCE_RELEASE: "7.9"
+    TARGET_RELEASE: "8.8"
+    LEAPPDATA_BRANCH: "upstream"
+
+# On-demand minimal beaker tests
+- job: tests
+  fmf_url: "https://gitlab.cee.redhat.com/oamg/leapp-tests"
+  fmf_ref: "master"
+  use_internal_tf: True
+  trigger: pull_request
+  manual_trigger: True
+  labels:
+    - minimal-beaker
+  targets:
+    epel-7-x86_64:
+      distros: [RHEL-7.9-ZStream]
+  identifier: tests-7.9to8.8-minimal-beaker
+  tmt_plan: "(?!.*max_sst)(.*tier1)(.*partitioning_monolithic|.*separate_var_usr_varlog|.*uefi)"
   tf_extra_params:
     environments:
       - tmt:
@@ -146,7 +207,37 @@ jobs:
     epel-7-x86_64:
       distros: [RHEL-7.9-ZStream]
   identifier: tests-7.9to8.9
-  tmt_plan: "((?!.*max_sst)(?!.*partitioning)(.*tier1)|(?!.*max_sst)(.*tier1)(.*partitioning_monolithic|.*separate_var_usr_varlog))"
+  tmt_plan: "(?!.*uefi)(?!.*max_sst)(?!.*partitioning)(.*tier1)"
+  tf_extra_params:
+    environments:
+      - tmt:
+          context:
+            distro: "rhel-7.9"
+        # tag resources as sst_upgrades to enable cost metrics collection
+        settings:
+          provisioning:
+            post_install_script: "#!/bin/sh\nsudo sed -i s/.*ssh-rsa/ssh-rsa/ /root/.ssh/authorized_keys"
+            tags:
+              BusinessUnit: sst_upgrades
+  env:
+    SOURCE_RELEASE: "7.9"
+    TARGET_RELEASE: "8.9"
+    LEAPPDATA_BRANCH: "upstream"
+
+# On-demand minimal beaker tests
+- job: tests
+  fmf_url: "https://gitlab.cee.redhat.com/oamg/leapp-tests"
+  fmf_ref: "master"
+  use_internal_tf: True
+  trigger: pull_request
+  manual_trigger: True
+  labels:
+    - minimal-beaker
+  targets:
+    epel-7-x86_64:
+      distros: [RHEL-7.9-ZStream]
+  identifier: tests-7.9to8.9-minimal-beaker
+  tmt_plan: "(?!.*max_sst)(.*tier1)(.*partitioning_monolithic|.*separate_var_usr_varlog|.*uefi)"
   tf_extra_params:
     environments:
       - tmt:
@@ -199,7 +290,38 @@ jobs:
     epel-8-x86_64:
       distros: [RHEL-8.6.0-Nightly]
   identifier: tests-8.6to9.0
-  tmt_plan: "((?!.*max_sst)(?!.*partitioning)(.*tier1)|(?!.*max_sst)(.*tier1)(.*partitioning_monolithic|.*separate_var_usr_varlog))"
+  tmt_plan: "(?!.*uefi)(?!.*max_sst)(?!.*partitioning)(.*tier1)"
+  tf_extra_params:
+    environments:
+      - tmt:
+          context:
+            distro: "rhel-8.6"
+        # tag resources as sst_upgrades to enable cost metrics collection
+        settings:
+          provisioning:
+            post_install_script: "#!/bin/sh\nsudo sed -i s/.*ssh-rsa/ssh-rsa/ /root/.ssh/authorized_keys"
+            tags:
+              BusinessUnit: sst_upgrades
+  env:
+    SOURCE_RELEASE: "8.6"
+    TARGET_RELEASE: "9.0"
+    RHSM_REPOS: "rhel-8-for-x86_64-appstream-eus-rpms,rhel-8-for-x86_64-baseos-eus-rpms"
+    LEAPPDATA_BRANCH: "upstream"
+
+# On-demand minimal beaker tests
+- job: tests
+  fmf_url: "https://gitlab.cee.redhat.com/oamg/leapp-tests"
+  fmf_ref: "master"
+  use_internal_tf: True
+  trigger: pull_request
+  manual_trigger: True
+  labels:
+    - minimal-beaker
+  targets:
+    epel-8-x86_64:
+      distros: [RHEL-8.6.0-Nightly]
+  identifier: tests-8.6to9.0-minimal-beaker
+  tmt_plan: "(?!.*max_sst)(.*tier1)(.*partitioning_monolithic|.*separate_var_usr_varlog|.*uefi)"
   tf_extra_params:
     environments:
       - tmt:
@@ -226,7 +348,39 @@ jobs:
     epel-8-x86_64:
       distros: [RHEL-8.8.0-Nightly]
   identifier: tests-8.8to9.2
-  tmt_plan: "((?!.*max_sst)(?!.*partitioning)(.*tier1)|(?!.*max_sst)(.*tier1)(.*partitioning_monolithic|.*separate_var_usr_varlog))"
+  tmt_plan: "(?!.*uefi)(?!.*max_sst)(?!.*partitioning)(.*tier1)"
+  tf_extra_params:
+    environments:
+      - tmt:
+          context:
+            distro: "rhel-8.8"
+        # tag resources as sst_upgrades to enable cost metrics collection
+        settings:
+          provisioning:
+            post_install_script: "#!/bin/sh\nsudo sed -i s/.*ssh-rsa/ssh-rsa/ /root/.ssh/authorized_keys"
+            tags:
+              BusinessUnit: sst_upgrades
+  env:
+    SOURCE_RELEASE: "8.8"
+    TARGET_RELEASE: "9.2"
+    RHSM_REPOS: "rhel-8-for-x86_64-appstream-beta-rpms,rhel-8-for-x86_64-baseos-beta-rpms"
+    LEAPPDATA_BRANCH: "upstream"
+    LEAPP_DEVEL_TARGET_RELEASE: "9.2"
+
+# On-demand minimal beaker tests
+- job: tests
+  fmf_url: "https://gitlab.cee.redhat.com/oamg/leapp-tests"
+  fmf_ref: "master"
+  use_internal_tf: True
+  trigger: pull_request
+  manual_trigger: True
+  labels:
+    - minimal-beaker
+  targets:
+    epel-8-x86_64:
+      distros: [RHEL-8.8.0-Nightly]
+  identifier: tests-8.8to9.2-minimal-beaker
+  tmt_plan: "(?!.*max_sst)(.*tier1)(.*partitioning_monolithic|.*separate_var_usr_varlog|.*uefi)"
   tf_extra_params:
     environments:
       - tmt:
@@ -254,7 +408,39 @@ jobs:
     epel-8-x86_64:
       distros: [RHEL-8.9.0-Nightly]
   identifier: tests-8.9to9.3
-  tmt_plan: "((?!.*max_sst)(?!.*partitioning)(.*tier1)|(?!.*max_sst)(.*tier1)(.*partitioning_monolithic|.*separate_var_usr_varlog))"
+  tmt_plan: "(?!.*uefi)(?!.*max_sst)(?!.*partitioning)(.*tier1)"
+  tf_extra_params:
+    environments:
+      - tmt:
+          context:
+            distro: "rhel-8.9"
+        # tag resources as sst_upgrades to enable cost metrics collection
+        settings:
+          provisioning:
+            post_install_script: "#!/bin/sh\nsudo sed -i s/.*ssh-rsa/ssh-rsa/ /root/.ssh/authorized_keys"
+            tags:
+              BusinessUnit: sst_upgrades
+  env:
+    SOURCE_RELEASE: "8.9"
+    TARGET_RELEASE: "9.3"
+    RHSM_REPOS: "rhel-8-for-x86_64-appstream-beta-rpms,rhel-8-for-x86_64-baseos-beta-rpms"
+    LEAPPDATA_BRANCH: "upstream"
+    LEAPP_DEVEL_TARGET_RELEASE: "9.3"
+
+# On-demand minimal beaker tests
+- job: tests
+  fmf_url: "https://gitlab.cee.redhat.com/oamg/leapp-tests"
+  fmf_ref: "master"
+  use_internal_tf: True
+  trigger: pull_request
+  manual_trigger: True
+  labels:
+    - minimal-beaker
+  targets:
+    epel-8-x86_64:
+      distros: [RHEL-8.9.0-Nightly]
+  identifier: tests-8.9to9.3-minimal-beaker
+  tmt_plan: "(?!.*max_sst)(.*tier1)(.*partitioning_monolithic|.*separate_var_usr_varlog|.*uefi)"
   tf_extra_params:
     environments:
       - tmt:
