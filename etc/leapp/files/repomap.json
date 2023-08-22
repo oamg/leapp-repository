@@ -3791,7 +3791,6 @@
         }
     ],
     "provided_data_streams": [
-        "1.1",
         "2.0"
     ]
 }

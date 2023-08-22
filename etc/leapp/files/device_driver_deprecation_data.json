@@ -1,4 +1,7 @@
 {
+  "provided_data_streams": [
+    "2.0"
+  ],
   "data": [
     {
       "available_in_rhel": [
@@ -249,7 +252,8 @@
       "device_type": "cpu",
       "driver_name": "",
       "maintained_in_rhel": [
-        8
+        8,
+        9
       ]
     },
     {
@@ -534,7 +538,7 @@
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:amd:21:*",
-      "device_name": "AMD Family 15h",
+      "device_name": "All Family 15h",
       "device_type": "cpu",
       "driver_name": "",
       "maintained_in_rhel": [
@@ -549,8 +553,8 @@
         9
       ],
       "deprecation_announced": "",
-      "device_id": "x86_64:amd:23:*",
-      "device_name": "AMD Family 17h",
+      "device_id": "x86_64:amd:23:{1,17,49}",
+      "device_name": "Supported Family 17h",
       "device_type": "cpu",
       "driver_name": "",
       "maintained_in_rhel": [
@@ -560,19 +564,34 @@
       ]
     },
     {
+      "available_in_rhel": [],
+      "deprecation_announced": "",
+      "device_id": "x86_64:amd:23:{[2-16],[18-48],[50-255]}",
+      "device_name": "Unsupported Family 17h",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
       "available_in_rhel": [
         8,
         9
       ],
       "deprecation_announced": "",
-      "device_id": "x86_64:amd:25:*",
-      "device_name": "AMD Family 19h",
+      "device_id": "x86_64:amd:25:1",
+      "device_name": "Supported Family 19h",
       "device_type": "cpu",
       "driver_name": "",
-      "maintained_in_rhel": [
-        8,
-        9
-      ]
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [],
+      "deprecation_announced": "",
+      "device_id": "x86_64:amd:25:[2-255]",
+      "device_name": "Unsupported Family 19h",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
     },
     {
       "available_in_rhel": [
@@ -583,6 +602,276 @@
       "deprecation_announced": "",
       "device_id": "x86_64:intel:5:*",
       "device_name": "All Family 5 Intel Processors",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:[1-13]",
+      "device_name": "Unknown Intel Cpu Models",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:[16-21]",
+      "device_name": "Unknown Intel Cpu Models",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:[24-25]",
+      "device_name": "Unknown Intel Cpu Models",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:27",
+      "device_name": "Unknown Intel Cpu Models",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:[32-36]",
+      "device_name": "Unknown Intel Cpu Models",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:[40-41]",
+      "device_name": "Unknown Intel Cpu Models",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:43",
+      "device_name": "Unknown Intel Cpu Models",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:[48-52]",
+      "device_name": "Unknown Intel Cpu Models",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:[56-57]",
+      "device_name": "Unknown Intel Cpu Models",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:59",
+      "device_name": "Unknown Intel Cpu Models",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:[64-68]",
+      "device_name": "Unknown Intel Cpu Models",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:[72-73]",
+      "device_name": "Unknown Intel Cpu Models",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:75",
+      "device_name": "Unknown Intel Cpu Models",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:[80-84]",
+      "device_name": "Unknown Intel Cpu Models",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:[88-89]",
+      "device_name": "Unknown Intel Cpu Models",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:91",
+      "device_name": "Unknown Intel Cpu Models",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:93",
+      "device_name": "Unknown Intel Cpu Models",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:[96-101]",
+      "device_name": "Unknown Intel Cpu Models",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:[103-105]",
+      "device_name": "Unknown Intel Cpu Models",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:107",
+      "device_name": "Unknown Intel Cpu Models",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:[109-116]",
+      "device_name": "Unknown Intel Cpu Models",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:[118-121]",
+      "device_name": "Unknown Intel Cpu Models",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:[123-124]",
+      "device_name": "Unknown Intel Cpu Models",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:[127-132]",
+      "device_name": "Unknown Intel Cpu Models",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:[135-137]",
+      "device_name": "Unknown Intel Cpu Models",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:139",
+      "device_name": "Unknown Intel Cpu Models",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:[144-149]",
+      "device_name": "Unknown Intel Cpu Models",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:[152-155]",
+      "device_name": "Unknown Intel Cpu Models",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:[159-164]",
+      "device_name": "Unknown Intel Cpu Models",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:[168-255]",
+      "device_name": "Unknown Intel Cpu Models",
       "device_type": "cpu",
       "driver_name": "",
       "maintained_in_rhel": []
@@ -4767,9 +5056,5 @@
         8
       ]
     }
-  ],
-  "provided_data_streams": [
-    "1.0",
-    "2.0"
   ]
 }
