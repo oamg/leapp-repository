@@ -8,6 +8,7 @@ from leapp import reporting
 from leapp.exceptions import StopActorExecution
 from leapp.libraries.common import fetch
 from leapp.libraries.common.config import architecture
+from leapp.libraries.common.config.version import get_source_major_version, get_target_major_version
 from leapp.libraries.stdlib import api
 
 # NOTE(mhecko): The modulestream field contains a set of modulestreams until the very end when we generate a Package
@@ -69,9 +70,8 @@ def get_pes_events(pes_json_directory, pes_json_filename):
         events_data = fetch.load_data_asset(api.current_actor(),
                                             pes_json_filename,
                                             asset_fulltext_name='PES events file',
-                                            docs_url='https://access.redhat.com/articles/3664871',
-                                            docs_title=('Leapp utility metadata in-place upgrades of RHEL '
-                                                        'for disconnected upgrades (including Satellite)'))
+                                            docs_url='',
+                                            docs_title='')
         if not events_data:
             return None
 
@@ -83,9 +83,16 @@ def get_pes_events(pes_json_directory, pes_json_filename):
         events_matching_arch = [e for e in all_events if not e.architectures or arch in e.architectures]
         return events_matching_arch
     except (ValueError, KeyError):
+        rpmname = 'leapp-upgrade-el{}toel{}'.format(get_source_major_version(), get_target_major_version())
         title = 'Missing/Invalid PES data file ({}/{})'.format(pes_json_directory, pes_json_filename)
-        summary = ('Read documentation at: https://access.redhat.com/articles/3664871 for more information '
-                   'about how to retrieve the files')
+        summary = (
+            'All official data files are nowadays part of the installed rpms.'
+            ' This issue is usually encountered when the data files are incorrectly customized, replaced, or removed'
+            ' (e.g. by custom scripts).'
+            ' In case you want to recover the original file, remove it (if still exists)'
+            ' and reinstall the {} rpm.'
+            .format(rpmname)
+        )
         reporting.create_report([
             reporting.Title(title),
             reporting.Summary(summary),
