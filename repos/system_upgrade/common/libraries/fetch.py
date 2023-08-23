@@ -7,6 +7,7 @@ import requests
 from leapp import models
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common.config import get_consumed_data_stream_id, get_env
+from leapp.libraries.common.config.version import get_source_major_version, get_target_major_version
 from leapp.libraries.stdlib import api
 
 SERVICE_HOST_DEFAULT = "https://cert.cloud.redhat.com"
@@ -15,15 +16,25 @@ MAX_ATTEMPTS = 3
 ASSET_PROVIDED_DATA_STREAMS_FIELD = 'provided_data_streams'
 
 
+def _get_hint():
+    rpmname = 'leapp-upgrade-el{}toel{}'.format(get_source_major_version(), get_target_major_version())
+    hint = (
+        'All official data files are nowadays part of the installed rpms.'
+        ' This issue is usually encountered when the data files are incorrectly customized, replaced, or removed'
+        ' (e.g. by custom scripts).'
+        ' In case you want to recover the original file, remove it (if still exists)'
+        ' and reinstall the {} rpm.'
+        .format(rpmname)
+    )
+    return hint
+
+
 def _raise_error(local_path, details):
     """
     If the file acquisition fails in any way, throw an informative error to stop the actor.
     """
-    summary = "Data file {lp} is invalid or could not be retrieved.".format(lp=local_path)
-    hint = ("Read documentation at: https://access.redhat.com/articles/3664871"
-            " for more information about how to retrieve the file.")
-
-    raise StopActorExecutionError(summary, details={'details': details, 'hint': hint})
+    summary = 'Data file {lp} is missing or invalid.'.format(lp=local_path)
+    raise StopActorExecutionError(summary, details={'details': details, 'hint': _get_hint()})
 
 
 def _request_data(service_path, cert, proxies, timeout=REQUEST_TIMEOUT):
@@ -57,7 +68,8 @@ def read_or_fetch(filename,
                   service=None,
                   allow_empty=False,
                   encoding='utf-8',
-                  data_stream=None):
+                  data_stream=None,
+                  allow_download=True):
     """
     Return the contents of a text file or fetch them from an online service if the file does not exist.
 
@@ -67,6 +79,7 @@ def read_or_fetch(filename,
     :param Optional[str] with_leapp_version: Inject the given leapp version when fetching from a service.
     :param bool allow_empty: Raise an error if the resulting data are empty.
     :param str encoding: Encoding to use when decoding the raw binary data.
+    :param bool allow_download: Allow the fallback to download the data file if not present.
     :returns: Text contents of the file. Text is decoded using the provided encoding.
     :rtype: str
     """
@@ -75,7 +88,9 @@ def read_or_fetch(filename,
 
     # try to get the data locally
     if not os.path.exists(local_path):
-        logger.warning("File {lp} does not exist, falling back to online service".format(lp=local_path))
+        if not allow_download:
+            _raise_error(local_path, "File {lp} does not exist.".format(lp=local_path))
+        logger.warning("File {lp} does not exist, falling back to online service)".format(lp=local_path))
     else:
         try:
             with io.open(local_path, encoding=encoding) as f:
@@ -149,7 +164,7 @@ def load_data_asset(actor_requesting_asset,
         error_hint = {'hint': ('Read documentation at the following link for more information about how to retrieve '
                                'the valid file: {0}'.format(docs_url))}
     else:
-        error_hint = {}
+        error_hint = {'hint': _get_hint()}
 
     data_stream_id = get_consumed_data_stream_id()
     data_stream_major = data_stream_id.split('.', 1)[0]

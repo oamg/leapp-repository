@@ -130,11 +130,16 @@ class RepoMapData(object):
 
 
 def _inhibit_upgrade(msg):
-    raise StopActorExecutionError(
-        msg,
-        details={'hint': ('Read documentation at the following link for more'
-                          ' information about how to retrieve the valid file:'
-                          ' https://access.redhat.com/articles/3664871')})
+    rpmname = 'leapp-upgrade-el{}toel{}'.format(get_source_major_version(), get_target_major_version())
+    hint = (
+        'All official data files are nowadays part of the installed rpms.'
+        ' This issue is usually encountered when the data files are incorrectly customized, replaced, or removed'
+        ' (e.g. by custom scripts).'
+        ' In case you want to recover the original file, remove it (if still exists)'
+        ' and reinstall the {} rpm.'
+        .format(rpmname)
+    )
+    raise StopActorExecutionError(msg, details={'hint': hint})
 
 
 def _read_repofile(repofile):
@@ -145,9 +150,8 @@ def _read_repofile(repofile):
     repofile_data = load_data_asset(api.current_actor(),
                                     repofile,
                                     asset_fulltext_name='Repositories mapping',
-                                    docs_url='https://access.redhat.com/articles/3664871',
-                                    docs_title=('Leapp utility metadata in-place upgrades of RHEL '
-                                                'for disconnected upgrades (including Satellite)'))
+                                    docs_url='',
+                                    docs_title='')
     return repofile_data  # If the file does not contain a valid json then load_asset will do a stop actor execution
 
 

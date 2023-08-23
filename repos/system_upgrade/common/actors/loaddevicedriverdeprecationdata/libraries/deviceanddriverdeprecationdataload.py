@@ -16,9 +16,8 @@ def process():
     deprecation_data = fetch.load_data_asset(api.current_actor(),
                                              data_file_name,
                                              asset_fulltext_name='Device driver deprecation data',
-                                             docs_url='https://access.redhat.com/articles/3664871',
-                                             docs_title=('Leapp utility metadata in-place upgrades of RHEL '
-                                                         'for disconnected upgrades (including Satellite)'))
+                                             docs_url='',
+                                             docs_title='')
 
     api.produce(
         DeviceDriverDeprecationData(
