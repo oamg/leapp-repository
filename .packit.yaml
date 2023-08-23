@@ -97,7 +97,7 @@ jobs:
     epel-7-x86_64:
       distros: [RHEL-7.9-ZStream]
   identifier: tests-7.9to8.6
-  tmt_plan: "(?!.*uefi)(?!.*max_sst)(?!.*partitioning)(?!.*oamg4250_lvm_var_xfs_ftype0)(?!.*kernel-rt)(.*tier1)"
+  tmt_plan: "sanity_plan"
   tf_extra_params:
     environments:
       - tmt:
@@ -151,6 +151,14 @@ jobs:
   identifier: tests-7.9to8.6-minimal-beaker
   tmt_plan: "(?!.*max_sst)(.*tier1)(.*partitioning_monolithic|.*separate_var_usr_varlog|.*uefi|.*oamg4250_lvm_var_xfs_ftype0)"
 
+# On-demand kernel-rt tests
+- &kernel-rt-79to86
+  <<: *beaker-minimal-79to86
+  labels:
+    - kernel-rt
+  identifier: tests-7.9to8.6-kernel-rt
+  tmt_plan: "(?!.*max_sst)(.*tier1)(.*kernel-rt)"
+
 - &default-79to88
   <<: *default-79to86
   identifier: tests-7.9to8.8
@@ -171,6 +179,14 @@ jobs:
     TARGET_RELEASE: "8.8"
     LEAPPDATA_BRANCH: "upstream"
 
+# On-demand kernel-rt tests
+- &kernel-rt-79to88
+  <<: *beaker-minimal-79to88
+  labels:
+    - kernel-rt
+  identifier: tests-7.9to8.8-kernel-rt
+  tmt_plan: "(?!.*max_sst)(.*tier1)(.*kernel-rt)"
+
 - &default-79to89
   <<: *default-79to86
   identifier: tests-7.9to8.9
@@ -190,6 +206,14 @@ jobs:
     SOURCE_RELEASE: "7.9"
     TARGET_RELEASE: "8.9"
     LEAPPDATA_BRANCH: "upstream"
+
+# On-demand kernel-rt tests
+- &kernel-rt-79to89
+  <<: *beaker-minimal-79to89
+  labels:
+    - kernel-rt
+  identifier: tests-7.9to8.9-kernel-rt
+  tmt_plan: "(?!.*max_sst)(.*tier1)(.*kernel-rt)"
 
 - &default-86to90
   <<: *default-79to86
@@ -240,6 +264,14 @@ jobs:
     TARGET_RELEASE: "9.0"
     RHSM_REPOS: "rhel-8-for-x86_64-appstream-eus-rpms,rhel-8-for-x86_64-baseos-eus-rpms"
     LEAPPDATA_BRANCH: "upstream"
+
+# On-demand kernel-rt tests
+- &kernel-rt-86to90
+  <<: *beaker-minimal-86to90
+  labels:
+    - kernel-rt
+  identifier: tests-8.6to9.0-kernel-rt
+  tmt_plan: "(?!.*max_sst)(.*tier1)(.*kernel-rt)"
 
 - &default-88to92
   <<: *default-86to90
@@ -293,6 +325,14 @@ jobs:
     LEAPPDATA_BRANCH: "upstream"
     LEAPP_DEVEL_TARGET_RELEASE: "9.2"
 
+# On-demand kernel-rt tests
+- &kernel-rt-88to92
+  <<: *beaker-minimal-88to92
+  labels:
+    - kernel-rt
+  identifier: tests-8.8to9.2-kernel-rt
+  tmt_plan: "(?!.*max_sst)(.*tier1)(.*kernel-rt)"
+
 - &default-89to93
   <<: *default-88to92
   targets:
@@ -344,6 +384,14 @@ jobs:
     RHSM_REPOS: "rhel-8-for-x86_64-appstream-beta-rpms,rhel-8-for-x86_64-baseos-beta-rpms"
     LEAPPDATA_BRANCH: "upstream"
     LEAPP_DEVEL_TARGET_RELEASE: "9.3"
+
+# On-demand kernel-rt tests
+- &kernel-rt-89to93
+  <<: *beaker-minimal-89to93
+  labels:
+    - kernel-rt
+  identifier: tests-8.9to9.3-kernel-rt
+  tmt_plan: "(?!.*max_sst)(.*tier1)(.*kernel-rt)"
 
 - &default-86to90-aws
   <<: *default-79to86-aws
