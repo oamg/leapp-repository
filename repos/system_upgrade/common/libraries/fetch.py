@@ -20,6 +20,7 @@ def _get_hint():
     rpmname = 'leapp-upgrade-el{}toel{}'.format(get_source_major_version(), get_target_major_version())
     hint = (
         'All official data files are nowadays part of the installed rpms.'
+        ' That is the only official resource of actual official data files for in-place upgrades.'
         ' This issue is usually encountered when the data files are incorrectly customized, replaced, or removed'
         ' (e.g. by custom scripts).'
         ' In case you want to recover the original file, remove it (if still exists)'
@@ -33,7 +34,9 @@ def _raise_error(local_path, details):
     """
     If the file acquisition fails in any way, throw an informative error to stop the actor.
     """
+    rpmname = 'leapp-upgrade-el{}toel{}'.format(get_source_major_version(), get_target_major_version())
     summary = 'Data file {lp} is missing or invalid.'.format(lp=local_path)
+
     raise StopActorExecutionError(summary, details={'details': details, 'hint': _get_hint()})
 
 
@@ -174,7 +177,7 @@ def load_data_asset(actor_requesting_asset,
 
     try:
         # The asset family ID has the form (major, minor), include only `major` in the URL
-        raw_asset_contents = read_or_fetch(asset_filename, data_stream=data_stream_major)
+        raw_asset_contents = read_or_fetch(asset_filename, data_stream=data_stream_major, allow_download=False)
         asset_contents = json.loads(raw_asset_contents)
     except ValueError:
         msg = 'The {0} file (at {1}) does not contain a valid JSON object.'.format(asset_fulltext_name, asset_filename)
