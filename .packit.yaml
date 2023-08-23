@@ -85,8 +85,8 @@ jobs:
     # builds from master branch should start with 100 release, to have high priority
     - bash -c "sed -i \"s/1%{?dist}/100%{?dist}/g\" packaging/leapp-repository.spec"
 
-
-- job: tests
+- &default-79to86
+  job: tests
   fmf_url: "https://gitlab.cee.redhat.com/oamg/tmt-plans"
   fmf_ref: "master"
   use_internal_tf: True
@@ -97,7 +97,7 @@ jobs:
     epel-7-x86_64:
       distros: [RHEL-7.9-ZStream]
   identifier: tests-7.9to8.6
-  tmt_plan: "(?!.*uefi)(?!.*max_sst)(?!.*partitioning)(.*tier1)"
+  tmt_plan: "(?!.*uefi)(?!.*max_sst)(?!.*partitioning)(?!.*oamg4250_lvm_var_xfs_ftype0)(?!.*kernel-rt)(.*tier1)"
   tf_extra_params:
     environments:
       - tmt:
@@ -114,160 +114,8 @@ jobs:
     TARGET_RELEASE: "8.6"
     LEAPPDATA_BRANCH: "upstream"
 
-# On-demand minimal beaker tests
-- job: tests
-  fmf_url: "https://gitlab.cee.redhat.com/oamg/tmt-plans"
-  fmf_ref: "master"
-  use_internal_tf: True
-  trigger: pull_request
-  manual_trigger: True
-  labels:
-    - minimal-beaker
-    - minimal-beaker-7.9to8.6
-  targets:
-    epel-7-x86_64:
-      distros: [RHEL-7.9-ZStream]
-  identifier: tests-7.9to8.6-minimal-beaker
-  tmt_plan: "(?!.*max_sst)(.*tier1)(.*partitioning_monolithic|.*separate_var_usr_varlog|.*uefi)"
-  tf_extra_params:
-    environments:
-      - tmt:
-          context:
-            distro: "rhel-7.9"
-        # tag resources as sst_upgrades to enable cost metrics collection
-        settings:
-          provisioning:
-            post_install_script: "#!/bin/sh\nsudo sed -i s/.*ssh-rsa/ssh-rsa/ /root/.ssh/authorized_keys"
-            tags:
-              BusinessUnit: sst_upgrades
-  env:
-    SOURCE_RELEASE: "7.9"
-    TARGET_RELEASE: "8.6"
-    LEAPPDATA_BRANCH: "upstream"
-
-- job: tests
-  fmf_url: "https://gitlab.cee.redhat.com/oamg/leapp-tests"
-  fmf_ref: "master"
-  use_internal_tf: True
-  trigger: pull_request
-  labels:
-    - default
-  targets:
-    epel-7-x86_64:
-      distros: [RHEL-7.9-ZStream]
-  identifier: tests-7.9to8.8
-  tmt_plan: "(?!.*uefi)(?!.*max_sst)(?!.*partitioning)(.*tier1)"
-  tf_extra_params:
-    environments:
-      - tmt:
-          context:
-            distro: "rhel-7.9"
-        # tag resources as sst_upgrades to enable cost metrics collection
-        settings:
-          provisioning:
-            post_install_script: "#!/bin/sh\nsudo sed -i s/.*ssh-rsa/ssh-rsa/ /root/.ssh/authorized_keys"
-            tags:
-              BusinessUnit: sst_upgrades
-  env:
-    SOURCE_RELEASE: "7.9"
-    TARGET_RELEASE: "8.8"
-    LEAPPDATA_BRANCH: "upstream"
-
-# On-demand minimal beaker tests
-- job: tests
-  fmf_url: "https://gitlab.cee.redhat.com/oamg/leapp-tests"
-  fmf_ref: "master"
-  use_internal_tf: True
-  trigger: pull_request
-  manual_trigger: True
-  labels:
-    - minimal-beaker
-    - minimal-beaker-7.9to8.8
-  targets:
-    epel-7-x86_64:
-      distros: [RHEL-7.9-ZStream]
-  identifier: tests-7.9to8.8-minimal-beaker
-  tmt_plan: "(?!.*max_sst)(.*tier1)(.*partitioning_monolithic|.*separate_var_usr_varlog|.*uefi)"
-  tf_extra_params:
-    environments:
-      - tmt:
-          context:
-            distro: "rhel-7.9"
-        # tag resources as sst_upgrades to enable cost metrics collection
-        settings:
-          provisioning:
-            post_install_script: "#!/bin/sh\nsudo sed -i s/.*ssh-rsa/ssh-rsa/ /root/.ssh/authorized_keys"
-            tags:
-              BusinessUnit: sst_upgrades
-  env:
-    SOURCE_RELEASE: "7.9"
-    TARGET_RELEASE: "8.8"
-    LEAPPDATA_BRANCH: "upstream"
-
-- job: tests
-  fmf_url: "https://gitlab.cee.redhat.com/oamg/leapp-tests"
-  fmf_ref: "master"
-  use_internal_tf: True
-  trigger: pull_request
-  labels:
-    - default
-  targets:
-    epel-7-x86_64:
-      distros: [RHEL-7.9-ZStream]
-  identifier: tests-7.9to8.9
-  tmt_plan: "(?!.*uefi)(?!.*max_sst)(?!.*partitioning)(.*tier1)"
-  tf_extra_params:
-    environments:
-      - tmt:
-          context:
-            distro: "rhel-7.9"
-        # tag resources as sst_upgrades to enable cost metrics collection
-        settings:
-          provisioning:
-            post_install_script: "#!/bin/sh\nsudo sed -i s/.*ssh-rsa/ssh-rsa/ /root/.ssh/authorized_keys"
-            tags:
-              BusinessUnit: sst_upgrades
-  env:
-    SOURCE_RELEASE: "7.9"
-    TARGET_RELEASE: "8.9"
-    LEAPPDATA_BRANCH: "upstream"
-
-# On-demand minimal beaker tests
-- job: tests
-  fmf_url: "https://gitlab.cee.redhat.com/oamg/leapp-tests"
-  fmf_ref: "master"
-  use_internal_tf: True
-  trigger: pull_request
-  manual_trigger: True
-  labels:
-    - minimal-beaker
-    - minimal-beaker-7.9to8.9
-  targets:
-    epel-7-x86_64:
-      distros: [RHEL-7.9-ZStream]
-  identifier: tests-7.9to8.9-minimal-beaker
-  tmt_plan: "(?!.*max_sst)(.*tier1)(.*partitioning_monolithic|.*separate_var_usr_varlog|.*uefi)"
-  tf_extra_params:
-    environments:
-      - tmt:
-          context:
-            distro: "rhel-7.9"
-        # tag resources as sst_upgrades to enable cost metrics collection
-        settings:
-          provisioning:
-            post_install_script: "#!/bin/sh\nsudo sed -i s/.*ssh-rsa/ssh-rsa/ /root/.ssh/authorized_keys"
-            tags:
-              BusinessUnit: sst_upgrades
-  env:
-    SOURCE_RELEASE: "7.9"
-    TARGET_RELEASE: "8.9"
-    LEAPPDATA_BRANCH: "upstream"
-
-- job: tests
-  fmf_url: "https://gitlab.cee.redhat.com/oamg/leapp-tests"
-  fmf_ref: "master"
-  use_internal_tf: True
-  trigger: pull_request
+- &default-79to86-aws
+  <<: *default-79to86
   labels:
     - default
     - aws
@@ -275,7 +123,7 @@ jobs:
     epel-7-x86_64:
       distros: [RHEL-7.9-rhui]
   identifier: tests-7to8-aws-e2e
-  tmt_plan: "^(?!.*upgrade_plugin)(?!.*tier[2-3].*)(?!.*rhsm)(?!.*c2r)(?!.*sap)(?!.*8to9)(.*e2e)"
+  tmt_plan: "(?!.*sap)(.*e2e)"
   tf_extra_params:
     environments:
       - tmt:
@@ -293,18 +141,62 @@ jobs:
     RHUI: "aws"
     LEAPPDATA_BRANCH: "upstream"
 
-- job: tests
-  fmf_url: "https://gitlab.cee.redhat.com/oamg/leapp-tests"
-  fmf_ref: "master"
-  use_internal_tf: True
-  trigger: pull_request
+# On-demand minimal beaker tests
+- &beaker-minimal-79to86
+  <<: *default-79to86
+  manual_trigger: True
   labels:
-    - default
+    - minimal-beaker
+    - minimal-beaker-7.9to8.6
+  identifier: tests-7.9to8.6-minimal-beaker
+  tmt_plan: "(?!.*max_sst)(.*tier1)(.*partitioning_monolithic|.*separate_var_usr_varlog|.*uefi|.*oamg4250_lvm_var_xfs_ftype0)"
+
+- &default-79to88
+  <<: *default-79to86
+  identifier: tests-7.9to8.8
+  env:
+    SOURCE_RELEASE: "7.9"
+    TARGET_RELEASE: "8.8"
+    LEAPPDATA_BRANCH: "upstream"
+
+# On-demand minimal beaker tests
+- &beaker-minimal-79to88
+  <<: *beaker-minimal-79to86
+  labels:
+    - minimal-beaker
+    - minimal-beaker-7.9to8.8
+  identifier: tests-7.9to8.8-minimal-beaker
+  env:
+    SOURCE_RELEASE: "7.9"
+    TARGET_RELEASE: "8.8"
+    LEAPPDATA_BRANCH: "upstream"
+
+- &default-79to89
+  <<: *default-79to86
+  identifier: tests-7.9to8.9
+  env:
+    SOURCE_RELEASE: "7.9"
+    TARGET_RELEASE: "8.9"
+    LEAPPDATA_BRANCH: "upstream"
+
+# On-demand minimal beaker tests
+- &beaker-minimal-79to89
+  <<: *beaker-minimal-79to86
+  labels:
+    - minimal-beaker
+    - minimal-beaker-7.9to8.9
+  identifier: tests-7.9to8.9-minimal-beaker
+  env:
+    SOURCE_RELEASE: "7.9"
+    TARGET_RELEASE: "8.9"
+    LEAPPDATA_BRANCH: "upstream"
+
+- &default-86to90
+  <<: *default-79to86
   targets:
     epel-8-x86_64:
       distros: [RHEL-8.6.0-Nightly]
   identifier: tests-8.6to9.0
-  tmt_plan: "(?!.*uefi)(?!.*max_sst)(?!.*partitioning)(.*tier1)"
   tf_extra_params:
     environments:
       - tmt:
@@ -323,12 +215,8 @@ jobs:
     LEAPPDATA_BRANCH: "upstream"
 
 # On-demand minimal beaker tests
-- job: tests
-  fmf_url: "https://gitlab.cee.redhat.com/oamg/leapp-tests"
-  fmf_ref: "master"
-  use_internal_tf: True
-  trigger: pull_request
-  manual_trigger: True
+- &beaker-minimal-86to90
+  <<: *beaker-minimal-79to86
   labels:
     - minimal-beaker
     - minimal-beaker-8.6to9.0
@@ -336,7 +224,6 @@ jobs:
     epel-8-x86_64:
       distros: [RHEL-8.6.0-Nightly]
   identifier: tests-8.6to9.0-minimal-beaker
-  tmt_plan: "(?!.*max_sst)(.*tier1)(.*partitioning_monolithic|.*separate_var_usr_varlog|.*uefi)"
   tf_extra_params:
     environments:
       - tmt:
@@ -354,18 +241,12 @@ jobs:
     RHSM_REPOS: "rhel-8-for-x86_64-appstream-eus-rpms,rhel-8-for-x86_64-baseos-eus-rpms"
     LEAPPDATA_BRANCH: "upstream"
 
-- job: tests
-  fmf_url: "https://gitlab.cee.redhat.com/oamg/leapp-tests"
-  fmf_ref: "master"
-  use_internal_tf: True
-  trigger: pull_request
-  labels:
-    - default
+- &default-88to92
+  <<: *default-86to90
   targets:
     epel-8-x86_64:
       distros: [RHEL-8.8.0-Nightly]
   identifier: tests-8.8to9.2
-  tmt_plan: "(?!.*uefi)(?!.*max_sst)(?!.*partitioning)(.*tier1)"
   tf_extra_params:
     environments:
       - tmt:
@@ -385,12 +266,8 @@ jobs:
     LEAPP_DEVEL_TARGET_RELEASE: "9.2"
 
 # On-demand minimal beaker tests
-- job: tests
-  fmf_url: "https://gitlab.cee.redhat.com/oamg/leapp-tests"
-  fmf_ref: "master"
-  use_internal_tf: True
-  trigger: pull_request
-  manual_trigger: True
+- &beaker-minimal-88to92
+  <<: *beaker-minimal-86to90
   labels:
     - minimal-beaker
     - minimal-beaker-8.8to9.2
@@ -398,7 +275,6 @@ jobs:
     epel-8-x86_64:
       distros: [RHEL-8.8.0-Nightly]
   identifier: tests-8.8to9.2-minimal-beaker
-  tmt_plan: "(?!.*max_sst)(.*tier1)(.*partitioning_monolithic|.*separate_var_usr_varlog|.*uefi)"
   tf_extra_params:
     environments:
       - tmt:
@@ -417,18 +293,12 @@ jobs:
     LEAPPDATA_BRANCH: "upstream"
     LEAPP_DEVEL_TARGET_RELEASE: "9.2"
 
-- job: tests
-  fmf_url: "https://gitlab.cee.redhat.com/oamg/leapp-tests"
-  fmf_ref: "master"
-  use_internal_tf: True
-  trigger: pull_request
-  labels:
-    - default
+- &default-89to93
+  <<: *default-88to92
   targets:
     epel-8-x86_64:
       distros: [RHEL-8.9.0-Nightly]
   identifier: tests-8.9to9.3
-  tmt_plan: "(?!.*uefi)(?!.*max_sst)(?!.*partitioning)(.*tier1)"
   tf_extra_params:
     environments:
       - tmt:
@@ -448,12 +318,8 @@ jobs:
     LEAPP_DEVEL_TARGET_RELEASE: "9.3"
 
 # On-demand minimal beaker tests
-- job: tests
-  fmf_url: "https://gitlab.cee.redhat.com/oamg/leapp-tests"
-  fmf_ref: "master"
-  use_internal_tf: True
-  trigger: pull_request
-  manual_trigger: True
+- &beaker-minimal-89to93
+  <<: *beaker-minimal-88to92
   labels:
     - minimal-beaker
     - minimal-beaker-8.9to9.3
@@ -461,7 +327,6 @@ jobs:
     epel-8-x86_64:
       distros: [RHEL-8.9.0-Nightly]
   identifier: tests-8.9to9.3-minimal-beaker
-  tmt_plan: "(?!.*max_sst)(.*tier1)(.*partitioning_monolithic|.*separate_var_usr_varlog|.*uefi)"
   tf_extra_params:
     environments:
       - tmt:
@@ -480,19 +345,12 @@ jobs:
     LEAPPDATA_BRANCH: "upstream"
     LEAPP_DEVEL_TARGET_RELEASE: "9.3"
 
-- job: tests
-  fmf_url: "https://gitlab.cee.redhat.com/oamg/leapp-tests"
-  fmf_ref: "master"
-  use_internal_tf: True
-  trigger: pull_request
-  labels:
-    - default
-    - aws
+- &default-86to90-aws
+  <<: *default-79to86-aws
   targets:
     epel-8-x86_64:
       distros: [RHEL-8.6-rhui]
   identifier: tests-8to9-aws-e2e
-  tmt_plan: "^(?!.*upgrade_plugin)(?!.*tier[2-3].*)(?!.*rhsm)(?!.*c2r)(?!.*sap)(?!.*7to8)(.*e2e)"
   tf_extra_params:
     environments:
       - tmt:
