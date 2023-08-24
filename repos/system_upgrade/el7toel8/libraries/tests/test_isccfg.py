@@ -116,6 +116,10 @@ view "v2" {
 };
 """)
 
+config_empty = isccfg.MockConfig('')
+
+config_empty_include = isccfg.MockConfig('options { include "/dev/null"; };')
+
 
 def check_in_section(parser, section, key, value):
     """ Helper to check some section was found
@@ -341,6 +345,34 @@ def test_walk():
     assert 'options' in state
     assert 'dnssec-lookaside' in state
     assert 'dnssec-validation' not in state
+
+
+def test_empty_config():
+    """ Test empty configuration """
+
+    callbacks = {}
+
+    parser = isccfg.IscConfigParser(config_empty)
+    assert len(parser.FILES_TO_CHECK) == 1
+    cfg = parser.FILES_TO_CHECK[0]
+    parser.walk(cfg.root_section(), callbacks)
+    assert cfg.buffer == ''
+
+
+def test_empty_include_config():
+    """ Test empty configuration """
+
+    callbacks = {}
+
+    parser = isccfg.IscConfigParser(config_empty_include)
+    assert len(parser.FILES_TO_CHECK) == 2
+    cfg = parser.FILES_TO_CHECK[0]
+    parser.walk(cfg.root_section(), callbacks)
+    assert cfg.buffer == 'options { include "/dev/null"; };'
+
+    null_cfg = parser.FILES_TO_CHECK[1]
+    parser.walk(null_cfg.root_section(), callbacks)
+    assert null_cfg.buffer == ''
 
 
 if __name__ == '__main__':

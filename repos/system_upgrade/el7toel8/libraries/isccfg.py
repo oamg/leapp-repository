@@ -688,8 +688,11 @@ class IscConfigParser(object):
 
         while index != -1:
             keystart = index
-            while istr[index] in self.CHAR_KEYWORD and index < end_index:
+            while index < end_index and istr[index] in self.CHAR_KEYWORD:
                 index += 1
+
+            if index >= end_index:
+                break
 
             if keystart < index <= end_index and istr[index] not in self.CHAR_KEYWORD:
                 # key has been found
