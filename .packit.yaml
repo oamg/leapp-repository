@@ -146,9 +146,9 @@ jobs:
   <<: *default-79to86
   manual_trigger: True
   labels:
-    - minimal-beaker
-    - minimal-beaker-7.9to8.6
-  identifier: tests-7.9to8.6-minimal-beaker
+    - beaker-minimal
+    - beaker-minimal-7.9to8.6
+  identifier: tests-7.9to8.6-beaker-minimal
   tmt_plan: "(?!.*max_sst)(.*tier1)(.*partitioning_monolithic|.*separate_var_usr_varlog|.*uefi|.*oamg4250_lvm_var_xfs_ftype0)"
 
 # On-demand kernel-rt tests
@@ -156,6 +156,7 @@ jobs:
   <<: *beaker-minimal-79to86
   labels:
     - kernel-rt
+    - kernel-rt-7.9to8.6
   identifier: tests-7.9to8.6-kernel-rt
   tmt_plan: "(?!.*max_sst)(.*tier1)(.*kernel-rt)"
 
@@ -171,9 +172,9 @@ jobs:
 - &beaker-minimal-79to88
   <<: *beaker-minimal-79to86
   labels:
-    - minimal-beaker
-    - minimal-beaker-7.9to8.8
-  identifier: tests-7.9to8.8-minimal-beaker
+    - beaker-minimal
+    - beaker-minimal-7.9to8.8
+  identifier: tests-7.9to8.8-beaker-minimal
   env:
     SOURCE_RELEASE: "7.9"
     TARGET_RELEASE: "8.8"
@@ -184,6 +185,7 @@ jobs:
   <<: *beaker-minimal-79to88
   labels:
     - kernel-rt
+    - kernel-rt-7.9to8.8
   identifier: tests-7.9to8.8-kernel-rt
   tmt_plan: "(?!.*max_sst)(.*tier1)(.*kernel-rt)"
 
@@ -199,9 +201,9 @@ jobs:
 - &beaker-minimal-79to89
   <<: *beaker-minimal-79to86
   labels:
-    - minimal-beaker
-    - minimal-beaker-7.9to8.9
-  identifier: tests-7.9to8.9-minimal-beaker
+    - beaker-minimal
+    - beaker-minimal-7.9to8.9
+  identifier: tests-7.9to8.9-beaker-minimal
   env:
     SOURCE_RELEASE: "7.9"
     TARGET_RELEASE: "8.9"
@@ -212,6 +214,7 @@ jobs:
   <<: *beaker-minimal-79to89
   labels:
     - kernel-rt
+    - kernel-rt-7.9to8.9
   identifier: tests-7.9to8.9-kernel-rt
   tmt_plan: "(?!.*max_sst)(.*tier1)(.*kernel-rt)"
 
@@ -242,12 +245,12 @@ jobs:
 - &beaker-minimal-86to90
   <<: *beaker-minimal-79to86
   labels:
-    - minimal-beaker
-    - minimal-beaker-8.6to9.0
+    - beaker-minimal
+    - beaker-minimal-8.6to9.0
   targets:
     epel-8-x86_64:
       distros: [RHEL-8.6.0-Nightly]
-  identifier: tests-8.6to9.0-minimal-beaker
+  identifier: tests-8.6to9.0-beaker-minimal
   tf_extra_params:
     environments:
       - tmt:
@@ -270,6 +273,7 @@ jobs:
   <<: *beaker-minimal-86to90
   labels:
     - kernel-rt
+    - kernel-rt-8.6to9.0
   identifier: tests-8.6to9.0-kernel-rt
   tmt_plan: "(?!.*max_sst)(.*tier1)(.*kernel-rt)"
 
@@ -301,12 +305,12 @@ jobs:
 - &beaker-minimal-88to92
   <<: *beaker-minimal-86to90
   labels:
-    - minimal-beaker
-    - minimal-beaker-8.8to9.2
+    - beaker-minimal
+    - beaker-minimal-8.8to9.2
   targets:
     epel-8-x86_64:
       distros: [RHEL-8.8.0-Nightly]
-  identifier: tests-8.8to9.2-minimal-beaker
+  identifier: tests-8.8to9.2-beaker-minimal
   tf_extra_params:
     environments:
       - tmt:
@@ -330,6 +334,7 @@ jobs:
   <<: *beaker-minimal-88to92
   labels:
     - kernel-rt
+    - kernel-rt-8.8to9.2
   identifier: tests-8.8to9.2-kernel-rt
   tmt_plan: "(?!.*max_sst)(.*tier1)(.*kernel-rt)"
 
@@ -361,12 +366,12 @@ jobs:
 - &beaker-minimal-89to93
   <<: *beaker-minimal-88to92
   labels:
-    - minimal-beaker
-    - minimal-beaker-8.9to9.3
+    - beaker-minimal
+    - beaker-minimal-8.9to9.3
   targets:
     epel-8-x86_64:
       distros: [RHEL-8.9.0-Nightly]
-  identifier: tests-8.9to9.3-minimal-beaker
+  identifier: tests-8.9to9.3-beaker-minimal
   tf_extra_params:
     environments:
       - tmt:
@@ -390,6 +395,7 @@ jobs:
   <<: *beaker-minimal-89to93
   labels:
     - kernel-rt
+    - kernel-rt-8.9to9.3
   identifier: tests-8.9to9.3-kernel-rt
   tmt_plan: "(?!.*max_sst)(.*tier1)(.*kernel-rt)"
 
