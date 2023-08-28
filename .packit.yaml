@@ -85,18 +85,18 @@ jobs:
     # builds from master branch should start with 100 release, to have high priority
     - bash -c "sed -i \"s/1%{?dist}/100%{?dist}/g\" packaging/leapp-repository.spec"
 
-- &default-79to86
+- &sanity-79to86
   job: tests
   fmf_url: "https://gitlab.cee.redhat.com/oamg/tmt-plans"
   fmf_ref: "master"
   use_internal_tf: True
   trigger: pull_request
   labels:
-    - default
+    - sanity
   targets:
     epel-7-x86_64:
       distros: [RHEL-7.9-ZStream]
-  identifier: tests-7.9to8.6
+  identifier: sanity-7.9to8.6
   tmt_plan: "sanity_plan"
   tf_extra_params:
     environments:
@@ -114,15 +114,15 @@ jobs:
     TARGET_RELEASE: "8.6"
     LEAPPDATA_BRANCH: "upstream"
 
-- &default-79to86-aws
-  <<: *default-79to86
+- &sanity-79to86-aws
+  <<: *sanity-79to86
   labels:
-    - default
+    - sanity
     - aws
   targets:
     epel-7-x86_64:
       distros: [RHEL-7.9-rhui]
-  identifier: tests-7to8-aws-e2e
+  identifier: sanity-7to8-aws-e2e
   tmt_plan: "(?!.*sap)(.*e2e)"
   tf_extra_params:
     environments:
@@ -143,12 +143,13 @@ jobs:
 
 # On-demand minimal beaker tests
 - &beaker-minimal-79to86
-  <<: *default-79to86
+  <<: *sanity-79to86
   manual_trigger: True
   labels:
     - beaker-minimal
     - beaker-minimal-7.9to8.6
-  identifier: tests-7.9to8.6-beaker-minimal
+    - 7.9to8.6
+  identifier: sanity-7.9to8.6-beaker-minimal
   tmt_plan: "(?!.*max_sst)(.*tier1)(.*partitioning_monolithic|.*separate_var_usr_varlog|.*uefi|.*oamg4250_lvm_var_xfs_ftype0)"
 
 # On-demand kernel-rt tests
@@ -157,12 +158,13 @@ jobs:
   labels:
     - kernel-rt
     - kernel-rt-7.9to8.6
-  identifier: tests-7.9to8.6-kernel-rt
+    - 7.9to8.6
+  identifier: sanity-7.9to8.6-kernel-rt
   tmt_plan: "(?!.*max_sst)(.*tier1)(.*kernel-rt)"
 
-- &default-79to88
-  <<: *default-79to86
-  identifier: tests-7.9to8.8
+- &sanity-79to88
+  <<: *sanity-79to86
+  identifier: sanity-7.9to8.8
   env:
     SOURCE_RELEASE: "7.9"
     TARGET_RELEASE: "8.8"
@@ -174,7 +176,8 @@ jobs:
   labels:
     - beaker-minimal
     - beaker-minimal-7.9to8.8
-  identifier: tests-7.9to8.8-beaker-minimal
+    - 7.9to8.8
+  identifier: sanity-7.9to8.8-beaker-minimal
   env:
     SOURCE_RELEASE: "7.9"
     TARGET_RELEASE: "8.8"
@@ -186,12 +189,13 @@ jobs:
   labels:
     - kernel-rt
     - kernel-rt-7.9to8.8
-  identifier: tests-7.9to8.8-kernel-rt
+    - 7.9to8.8
+  identifier: sanity-7.9to8.8-kernel-rt
   tmt_plan: "(?!.*max_sst)(.*tier1)(.*kernel-rt)"
 
-- &default-79to89
-  <<: *default-79to86
-  identifier: tests-7.9to8.9
+- &sanity-79to89
+  <<: *sanity-79to86
+  identifier: sanity-7.9to8.9
   env:
     SOURCE_RELEASE: "7.9"
     TARGET_RELEASE: "8.9"
@@ -203,7 +207,8 @@ jobs:
   labels:
     - beaker-minimal
     - beaker-minimal-7.9to8.9
-  identifier: tests-7.9to8.9-beaker-minimal
+    - 7.9to8.9
+  identifier: sanity-7.9to8.9-beaker-minimal
   env:
     SOURCE_RELEASE: "7.9"
     TARGET_RELEASE: "8.9"
@@ -215,15 +220,16 @@ jobs:
   labels:
     - kernel-rt
     - kernel-rt-7.9to8.9
-  identifier: tests-7.9to8.9-kernel-rt
+    - 7.9to8.9
+  identifier: sanity-7.9to8.9-kernel-rt
   tmt_plan: "(?!.*max_sst)(.*tier1)(.*kernel-rt)"
 
-- &default-86to90
-  <<: *default-79to86
+- &sanity-86to90
+  <<: *sanity-79to86
   targets:
     epel-8-x86_64:
       distros: [RHEL-8.6.0-Nightly]
-  identifier: tests-8.6to9.0
+  identifier: sanity-8.6to9.0
   tf_extra_params:
     environments:
       - tmt:
@@ -247,10 +253,11 @@ jobs:
   labels:
     - beaker-minimal
     - beaker-minimal-8.6to9.0
+    - 8.6to9.0
   targets:
     epel-8-x86_64:
       distros: [RHEL-8.6.0-Nightly]
-  identifier: tests-8.6to9.0-beaker-minimal
+  identifier: sanity-8.6to9.0-beaker-minimal
   tf_extra_params:
     environments:
       - tmt:
@@ -274,15 +281,16 @@ jobs:
   labels:
     - kernel-rt
     - kernel-rt-8.6to9.0
-  identifier: tests-8.6to9.0-kernel-rt
+    - 8.6to9.0
+  identifier: sanity-8.6to9.0-kernel-rt
   tmt_plan: "(?!.*max_sst)(.*tier1)(.*kernel-rt)"
 
-- &default-88to92
-  <<: *default-86to90
+- &sanity-88to92
+  <<: *sanity-86to90
   targets:
     epel-8-x86_64:
       distros: [RHEL-8.8.0-Nightly]
-  identifier: tests-8.8to9.2
+  identifier: sanity-8.8to9.2
   tf_extra_params:
     environments:
       - tmt:
@@ -307,10 +315,11 @@ jobs:
   labels:
     - beaker-minimal
     - beaker-minimal-8.8to9.2
+    - 8.6to9.2
   targets:
     epel-8-x86_64:
       distros: [RHEL-8.8.0-Nightly]
-  identifier: tests-8.8to9.2-beaker-minimal
+  identifier: sanity-8.8to9.2-beaker-minimal
   tf_extra_params:
     environments:
       - tmt:
@@ -335,15 +344,16 @@ jobs:
   labels:
     - kernel-rt
     - kernel-rt-8.8to9.2
-  identifier: tests-8.8to9.2-kernel-rt
+    - 8.8to9.2
+  identifier: sanity-8.8to9.2-kernel-rt
   tmt_plan: "(?!.*max_sst)(.*tier1)(.*kernel-rt)"
 
-- &default-89to93
-  <<: *default-88to92
+- &sanity-89to93
+  <<: *sanity-88to92
   targets:
     epel-8-x86_64:
       distros: [RHEL-8.9.0-Nightly]
-  identifier: tests-8.9to9.3
+  identifier: sanity-8.9to9.3
   tf_extra_params:
     environments:
       - tmt:
@@ -368,10 +378,11 @@ jobs:
   labels:
     - beaker-minimal
     - beaker-minimal-8.9to9.3
+    - 8.9to9.3
   targets:
     epel-8-x86_64:
       distros: [RHEL-8.9.0-Nightly]
-  identifier: tests-8.9to9.3-beaker-minimal
+  identifier: sanity-8.9to9.3-beaker-minimal
   tf_extra_params:
     environments:
       - tmt:
@@ -396,15 +407,16 @@ jobs:
   labels:
     - kernel-rt
     - kernel-rt-8.9to9.3
-  identifier: tests-8.9to9.3-kernel-rt
+    - 8.9to9.3
+  identifier: sanity-8.9to9.3-kernel-rt
   tmt_plan: "(?!.*max_sst)(.*tier1)(.*kernel-rt)"
 
-- &default-86to90-aws
-  <<: *default-79to86-aws
+- &sanity-86to90-aws
+  <<: *sanity-79to86-aws
   targets:
     epel-8-x86_64:
       distros: [RHEL-8.6-rhui]
-  identifier: tests-8to9-aws-e2e
+  identifier: sanity-8to9-aws-e2e
   tf_extra_params:
     environments:
       - tmt:
