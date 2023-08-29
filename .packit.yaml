@@ -103,12 +103,12 @@ jobs:
       - tmt:
           context:
             distro: "rhel-7.9"
-        # tag resources as sst_upgrades to enable cost metrics collection
+        # tag resources as sst_upgrades@leapp_upstream_test to enable cost metrics collection
         settings:
           provisioning:
             post_install_script: "#!/bin/sh\nsudo sed -i s/.*ssh-rsa/ssh-rsa/ /root/.ssh/authorized_keys"
             tags:
-              BusinessUnit: sst_upgrades
+              BusinessUnit: sst_upgrades@leapp_upstream_test
   env:
     SOURCE_RELEASE: "7.9"
     TARGET_RELEASE: "8.6"
@@ -129,12 +129,12 @@ jobs:
       - tmt:
           context:
             distro: "rhel-7.9"
-        # tag resources as sst_upgrades to enable cost metrics collection
+        # tag resources as sst_upgrades@leapp_upstream_test to enable cost metrics collection
         settings:
           provisioning:
             post_install_script: "#!/bin/sh\nsudo sed -i s/.*ssh-rsa/ssh-rsa/ /root/.ssh/authorized_keys; yum-config-manager --enable rhel-7-server-rhui-optional-rpms"
             tags:
-              BusinessUnit: sst_upgrades
+              BusinessUnit: sst_upgrades@leapp_upstream_test
   env:
     SOURCE_RELEASE: "7.9"
     TARGET_RELEASE: "8.6"
@@ -235,16 +235,16 @@ jobs:
       - tmt:
           context:
             distro: "rhel-8.6"
-        # tag resources as sst_upgrades to enable cost metrics collection
+        # tag resources as sst_upgrades@leapp_upstream_test to enable cost metrics collection
         settings:
           provisioning:
             post_install_script: "#!/bin/sh\nsudo sed -i s/.*ssh-rsa/ssh-rsa/ /root/.ssh/authorized_keys"
             tags:
-              BusinessUnit: sst_upgrades
+              BusinessUnit: sst_upgrades@leapp_upstream_test
   env:
     SOURCE_RELEASE: "8.6"
     TARGET_RELEASE: "9.0"
-    RHSM_REPOS: "rhel-8-for-x86_64-appstream-eus-rpms,rhel-8-for-x86_64-baseos-eus-rpms"
+    RHSM_REPOS_EUS: "eus"
     LEAPPDATA_BRANCH: "upstream"
 
 # On-demand minimal beaker tests
@@ -263,16 +263,16 @@ jobs:
       - tmt:
           context:
             distro: "rhel-8.6"
-        # tag resources as sst_upgrades to enable cost metrics collection
+        # tag resources as sst_upgrades@leapp_upstream_test to enable cost metrics collection
         settings:
           provisioning:
             post_install_script: "#!/bin/sh\nsudo sed -i s/.*ssh-rsa/ssh-rsa/ /root/.ssh/authorized_keys"
             tags:
-              BusinessUnit: sst_upgrades
+              BusinessUnit: sst_upgrades@leapp_upstream_test
   env:
     SOURCE_RELEASE: "8.6"
     TARGET_RELEASE: "9.0"
-    RHSM_REPOS: "rhel-8-for-x86_64-appstream-eus-rpms,rhel-8-for-x86_64-baseos-eus-rpms"
+    RHSM_REPOS_EUS: "eus"
     LEAPPDATA_BRANCH: "upstream"
 
 # On-demand kernel-rt tests
@@ -296,16 +296,16 @@ jobs:
       - tmt:
           context:
             distro: "rhel-8.8"
-        # tag resources as sst_upgrades to enable cost metrics collection
+        # tag resources as sst_upgrades@leapp_upstream_test to enable cost metrics collection
         settings:
           provisioning:
             post_install_script: "#!/bin/sh\nsudo sed -i s/.*ssh-rsa/ssh-rsa/ /root/.ssh/authorized_keys"
             tags:
-              BusinessUnit: sst_upgrades
+              BusinessUnit: sst_upgrades@leapp_upstream_test
   env:
     SOURCE_RELEASE: "8.8"
     TARGET_RELEASE: "9.2"
-    RHSM_REPOS: "rhel-8-for-x86_64-appstream-beta-rpms,rhel-8-for-x86_64-baseos-beta-rpms"
+    RHSM_REPOS_EUS: "eus"
     LEAPPDATA_BRANCH: "upstream"
     LEAPP_DEVEL_TARGET_RELEASE: "9.2"
 
@@ -325,16 +325,15 @@ jobs:
       - tmt:
           context:
             distro: "rhel-8.8"
-        # tag resources as sst_upgrades to enable cost metrics collection
+        # tag resources as sst_upgrades@leapp_upstream_test to enable cost metrics collection
         settings:
           provisioning:
             post_install_script: "#!/bin/sh\nsudo sed -i s/.*ssh-rsa/ssh-rsa/ /root/.ssh/authorized_keys"
             tags:
-              BusinessUnit: sst_upgrades
+              BusinessUnit: sst_upgrades@leapp_upstream_test
   env:
     SOURCE_RELEASE: "8.8"
     TARGET_RELEASE: "9.2"
-    RHSM_REPOS: "rhel-8-for-x86_64-appstream-beta-rpms,rhel-8-for-x86_64-baseos-beta-rpms"
     LEAPPDATA_BRANCH: "upstream"
     LEAPP_DEVEL_TARGET_RELEASE: "9.2"
 
@@ -359,12 +358,12 @@ jobs:
       - tmt:
           context:
             distro: "rhel-8.9"
-        # tag resources as sst_upgrades to enable cost metrics collection
+        # tag resources as sst_upgrades@leapp_upstream_test to enable cost metrics collection
         settings:
           provisioning:
             post_install_script: "#!/bin/sh\nsudo sed -i s/.*ssh-rsa/ssh-rsa/ /root/.ssh/authorized_keys"
             tags:
-              BusinessUnit: sst_upgrades
+              BusinessUnit: sst_upgrades@leapp_upstream_test
   env:
     SOURCE_RELEASE: "8.9"
     TARGET_RELEASE: "9.3"
@@ -388,12 +387,12 @@ jobs:
       - tmt:
           context:
             distro: "rhel-8.9"
-        # tag resources as sst_upgrades to enable cost metrics collection
+        # tag resources as sst_upgrades@leapp_upstream_test to enable cost metrics collection
         settings:
           provisioning:
             post_install_script: "#!/bin/sh\nsudo sed -i s/.*ssh-rsa/ssh-rsa/ /root/.ssh/authorized_keys"
             tags:
-              BusinessUnit: sst_upgrades
+              BusinessUnit: sst_upgrades@leapp_upstream_test
   env:
     SOURCE_RELEASE: "8.9"
     TARGET_RELEASE: "9.3"
@@ -422,12 +421,12 @@ jobs:
       - tmt:
           context:
             distro: "rhel-8.6"
-        # tag resources as sst_upgrades to enable cost metrics collection
+        # tag resources as sst_upgrades@leapp_upstream_test to enable cost metrics collection
         settings:
           provisioning:
             post_install_script: "#!/bin/sh\nsudo sed -i s/.*ssh-rsa/ssh-rsa/ /root/.ssh/authorized_keys"
             tags:
-              BusinessUnit: sst_upgrades
+              BusinessUnit: sst_upgrades@leapp_upstream_test
   env:
     SOURCE_RELEASE: "8.6"
     TARGET_RELEASE: "9.0"
