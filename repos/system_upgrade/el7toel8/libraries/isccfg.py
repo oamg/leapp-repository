@@ -948,3 +948,31 @@ class IscConfigParser(object):
         self.load_main_config()
         self.load_included_files()
     pass
+
+
+if __name__ == '__main__':
+    """Run parser to default path or path in the first argument.
+
+    Additional parameters are statements or blocks to print.
+    Defaults to options and zone.
+    """
+
+    from sys import argv
+
+    def print_cb(section, state):
+        print(section)
+
+    cfgpath = IscConfigParser.CONFIG_FILE
+    if len(argv) > 1:
+        cfgpath = argv[1]
+    if len(argv) > 2:
+        cb = {}
+        for key in argv[2:]:
+            cb[key] = print_cb
+    else:
+        cb = {'options': print_cb, 'zone': print_cb}
+
+    parser = IscConfigParser(cfgpath)
+    for section in parser.FILES_TO_CHECK:
+        print("# Walking file '{}'".format(section.path))
+        parser.walk(section.root_section(), cb)
