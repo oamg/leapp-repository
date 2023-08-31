@@ -2,6 +2,8 @@
 #
 # Simplified parsing of bind configuration, with include support and nested sections.
 
+from __future__ import print_function
+
 import re
 import string
 
