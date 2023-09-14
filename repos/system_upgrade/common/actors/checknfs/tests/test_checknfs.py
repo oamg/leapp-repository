@@ -1,35 +1,10 @@
 import pytest
 
 from leapp.libraries.common import config
-from leapp.models import FstabEntry, MountEntry, StorageInfo, SystemdMountEntry
+from leapp.models import FstabEntry, MountEntry, StorageInfo
 from leapp.reporting import Report
 from leapp.snactor.fixture import current_actor_context
 from leapp.utils.report import is_inhibitor
-
-
-@pytest.mark.parametrize('nfs_fstype', ('nfs', 'nfs4'))
-def test_actor_with_systemdmount_entry(current_actor_context, nfs_fstype, monkeypatch):
-    monkeypatch.setattr(config, 'get_env', lambda x, y: y)
-    with_systemdmount_entry = [SystemdMountEntry(node="nfs", path="n/a", model="n/a",
-                                                 wwn="n/a", fs_type=nfs_fstype, label="n/a",
-                                                 uuid="n/a")]
-    current_actor_context.feed(StorageInfo(systemdmount=with_systemdmount_entry))
-    current_actor_context.run()
-    report_fields = current_actor_context.consume(Report)[0].report
-    assert is_inhibitor(report_fields)
-
-
-def test_actor_without_systemdmount_entry(current_actor_context, monkeypatch):
-    monkeypatch.setattr(config, 'get_env', lambda x, y: y)
-    without_systemdmount_entry = [SystemdMountEntry(node="/dev/sda1",
-                                                    path="pci-0000:00:17.0-ata-2",
-                                                    model="TOSHIBA_THNSNJ512GDNU_A",
-                                                    wwn="0x500080d9108e8753",
-                                                    fs_type="ext4", label="n/a",
-                                                    uuid="5675d309-eff7-4eb1-9c27-58bc5880ec72")]
-    current_actor_context.feed(StorageInfo(systemdmount=without_systemdmount_entry))
-    current_actor_context.run()
-    assert not current_actor_context.consume(Report)
 
 
 @pytest.mark.parametrize('nfs_fstype', ('nfs', 'nfs4'))
@@ -89,15 +64,12 @@ def test_actor_skipped_if_initram_network_enabled(current_actor_context, monkeyp
     monkeypatch.setattr(config, 'get_env', lambda x, y: 'network-manager' if x == 'LEAPP_DEVEL_INITRAM_NETWORK' else y)
     with_mount_share = [MountEntry(name="nfs", mount="/mnt/data", tp='nfs',
                                    options="rw,nosuid,nodev,relatime,user_id=1000,group_id=1000")]
-    with_systemdmount_entry = [SystemdMountEntry(node="nfs", path="n/a", model="n/a",
-                                                 wwn="n/a", fs_type='nfs', label="n/a",
-                                                 uuid="n/a")]
     with_fstab_entry = [FstabEntry(fs_spec="lithium:/mnt/data", fs_file="/mnt/data",
                                    fs_vfstype='nfs',
                                    fs_mntops="noauto,noatime,rsize=32768,wsize=32768",
                                    fs_freq="0", fs_passno="0")]
     current_actor_context.feed(StorageInfo(mount=with_mount_share,
-                                           systemdmount=with_systemdmount_entry,
+                                           systemdmount=[],
                                            fstab=with_fstab_entry))
     current_actor_context.run()
     assert not current_actor_context.consume(Report)
@@ -108,15 +80,12 @@ def test_actor_not_skipped_if_initram_network_empty(current_actor_context, monke
     monkeypatch.setattr(config, 'get_env', lambda x, y: '' if x == 'LEAPP_DEVEL_INITRAM_NETWORK' else y)
     with_mount_share = [MountEntry(name="nfs", mount="/mnt/data", tp='nfs',
                                    options="rw,nosuid,nodev,relatime,user_id=1000,group_id=1000")]
-    with_systemdmount_entry = [SystemdMountEntry(node="nfs", path="n/a", model="n/a",
-                                                 wwn="n/a", fs_type='nfs', label="n/a",
-                                                 uuid="n/a")]
     with_fstab_entry = [FstabEntry(fs_spec="lithium:/mnt/data", fs_file="/mnt/data",
                                    fs_vfstype='nfs',
                                    fs_mntops="noauto,noatime,rsize=32768,wsize=32768",
                                    fs_freq="0", fs_passno="0")]
     current_actor_context.feed(StorageInfo(mount=with_mount_share,
-                                           systemdmount=with_systemdmount_entry,
+                                           systemdmount=[],
                                            fstab=with_fstab_entry))
     current_actor_context.run()
     report_fields = current_actor_context.consume(Report)[0].report
