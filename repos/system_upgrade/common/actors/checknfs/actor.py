@@ -10,7 +10,7 @@ class CheckNfs(Actor):
     """
     Check if NFS filesystem is in use. If yes, inhibit the upgrade process.
 
-    Actor looks for NFS in the following sources: /ets/fstab, mount and systemd-mount.
+    Actor looks for NFS in the following sources: /ets/fstab and mount.
     If there is NFS in any of the mentioned sources, actors inhibits the upgrade.
     """
     name = "check_nfs"
@@ -41,14 +41,7 @@ class CheckNfs(Actor):
                 if _is_nfs(mount.tp):
                     nfs_mounts.append(" - {} {}\n".format(mount.name, mount.mount))
 
-            # Check systemd-mount
-            systemd_nfs_mounts = []
-            for systemdmount in storage.systemdmount:
-                if _is_nfs(systemdmount.fs_type):
-                    # mountpoint is not available in the model
-                    systemd_nfs_mounts.append(" - {}\n".format(systemdmount.node))
-
-        if any((fstab_nfs_mounts, nfs_mounts, systemd_nfs_mounts)):
+        if any((fstab_nfs_mounts, nfs_mounts)):
             if fstab_nfs_mounts:
                 details += "- NFS shares found in /etc/fstab:\n"
                 details += ''.join(fstab_nfs_mounts)
@@ -56,10 +49,6 @@ class CheckNfs(Actor):
             if nfs_mounts:
                 details += "- NFS shares currently mounted:\n"
                 details += ''.join(nfs_mounts)
-
-            if systemd_nfs_mounts:
-                details += "- NFS mounts configured with systemd-mount:\n"
-                details += ''.join(systemd_nfs_mounts)
 
             fstab_related_resource = [reporting.RelatedResource('file', '/etc/fstab')] if fstab_nfs_mounts else []
 
