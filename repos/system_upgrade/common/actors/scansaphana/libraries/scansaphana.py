@@ -37,7 +37,7 @@ def parse_manifest(path):
                     # Most likely an empty line, but we're being permissive here and ignore failures.
                     # In the end it's all about having the right values available.
                     if line:
-                        api.current_logger().warn(
+                        api.current_logger().warning(
                             'Failed to parse line in manifest: {file}. Line was: `{line}`'.format(file=path,
                                                                                                   line=line),
                             exc_info=True)
@@ -128,6 +128,6 @@ def get_instance_status(instance_number, sapcontrol_path, admin_name):
         # In that case there are always more than 7 lines.
         return len(output['stdout'].split('\n')) > 7
     except CalledProcessError:
-        api.current_logger().warn(
+        api.current_logger().warning(
             'Failed to retrieve SAP HANA instance status from sapcontrol - Considering it as not running.')
         return False

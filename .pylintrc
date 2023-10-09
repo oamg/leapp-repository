@@ -54,7 +54,9 @@ disable=
  duplicate-string-formatting-argument,  # TMP: will be fixed in close future
  consider-using-f-string,  # sorry, not gonna happen, still have to support py2
  use-dict-literal,
- redundant-u-string-prefix  # still have py2 to support
+ redundant-u-string-prefix,  # still have py2 to support
+ logging-format-interpolation,
+ logging-not-lazy
 
 [FORMAT]
 # Maximum number of characters on a single line.

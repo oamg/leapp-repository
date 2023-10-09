@@ -145,7 +145,7 @@ def _inhibit_upgrade(msg):
 def _read_repofile(repofile):
     # NOTE: what about catch StopActorExecution error when the file cannot be
     # obtained -> then check whether old_repomap file exists and in such a case
-    # inform user they have to provde the new repomap.json file (we have the
+    # inform user they have to provide the new repomap.json file (we have the
     # warning now only which could be potentially overlooked)
     repofile_data = load_data_asset(api.current_actor(),
                                     repofile,

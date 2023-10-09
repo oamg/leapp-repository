@@ -170,7 +170,7 @@ def perform_target_iso_checks():
         return
 
     if next(requested_target_iso_msg_iter, None):
-        api.current_logger().warn('Received multiple msgs with target ISO to use.')
+        api.current_logger().warning('Received multiple msgs with target ISO to use.')
 
     # Cascade the inhibiting conditions so that we do not spam the user with inhibitors
     is_iso_invalid = inhibit_if_not_valid_iso_file(target_iso)

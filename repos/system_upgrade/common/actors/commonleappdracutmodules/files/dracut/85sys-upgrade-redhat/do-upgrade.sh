@@ -130,7 +130,7 @@ ibdmp() {
     #
     #   1. encode tarball using base64
     #
-    #   2. pre-pend line `chunks=CHUNKS,md5=MD5` where
+    #   2. prepend line `chunks=CHUNKS,md5=MD5` where
     #      MD5 is the MD5 digest of original tarball and
     #      CHUNKS is number of upcoming Base64 chunks
     #

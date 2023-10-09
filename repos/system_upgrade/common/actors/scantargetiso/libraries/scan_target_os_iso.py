@@ -18,8 +18,8 @@ def determine_rhel_version_from_iso_mountpoint(iso_mountpoint):
             return ''  # We did not determine anything
 
         if len(redhat_release_pkgs) > 1:
-            api.current_logger().warn('Multiple packages with name redhat-release* found when '
-                                      'determining RHEL version of the supplied installation ISO.')
+            api.current_logger().warning('Multiple packages with name redhat-release* found when '
+                                         'determining RHEL version of the supplied installation ISO.')
 
         redhat_release_pkg = redhat_release_pkgs[0]
 

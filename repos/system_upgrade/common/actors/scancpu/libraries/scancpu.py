@@ -133,7 +133,7 @@ def _find_deprecation_data_entries(lscpu):
             if is_detected(lscpu, entry)
         ]
 
-    api.current_logger().warn('Unsupported platform could not detect relevant CPU information')
+    api.current_logger().warning('Unsupported platform could not detect relevant CPU information')
     return []
 
 

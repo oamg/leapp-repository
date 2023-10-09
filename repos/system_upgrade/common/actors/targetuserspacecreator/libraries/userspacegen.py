@@ -347,7 +347,7 @@ def _get_files_owned_by_rpms(context, dirpath, pkgs=None, recursive=False):
 
 def _copy_certificates(context, target_userspace):
     """
-    Copy the needed cetificates into the container, but preserve original ones
+    Copy the needed certificates into the container, but preserve original ones
 
     Some certificates are already installed in the container and those are
     default certificates for the target OS, so we preserve these.
@@ -378,7 +378,7 @@ def _copy_certificates(context, target_userspace):
 
                 # The path original path of the broken symlink in the container
                 report_path = os.path.join(target_pki, os.path.relpath(src_path, backup_pki))
-                api.current_logger().warn('File {} is a broken symlink!'.format(report_path))
+                api.current_logger().warning('File {} is a broken symlink!'.format(report_path))
                 break
 
             src_path = next_path
