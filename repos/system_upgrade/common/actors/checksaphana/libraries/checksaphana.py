@@ -132,7 +132,7 @@ def _major_version_check(instance):
             return False
         return True
     except (ValueError, IndexError):
-        api.current_logger().warn(
+        api.current_logger().warning(
             'Failed to parse manifest release field for instance {}'.format(instance.name), exc_info=True)
         return False
 
@@ -164,7 +164,7 @@ def _sp_rev_patchlevel_check(instance, patchlevels):
                 return True
         return False
     # if not 'len(number) > 2 and number.isdigit()'
-    api.current_logger().warn(
+    api.current_logger().warning(
         'Invalid rev-number field value `{}` in manifest for instance {}'.format(number, instance.name))
     return False
 

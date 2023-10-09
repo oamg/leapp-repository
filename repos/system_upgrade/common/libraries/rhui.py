@@ -258,7 +258,7 @@ def gen_rhui_files_map():
 
 def copy_rhui_data(context, provider):
     """
-    Copy relevant RHUI cerificates and key into the target userspace container
+    Copy relevant RHUI certificates and key into the target userspace container
     """
     rhui_dir = api.get_common_folder_path('rhui')
     data_dir = os.path.join(rhui_dir, provider)

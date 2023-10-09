@@ -13,7 +13,7 @@ def produce_repofile_if_iso_used():
         return
 
     if next(target_iso_msgs_iter, None):
-        api.current_logger().warn('Received multiple TargetISInstallationImage messages, using the first one')
+        api.current_logger().warning('Received multiple TargetISInstallationImage messages, using the first one')
 
     # Mounting was successful, create a repofile to copy into target userspace
     repofile_entry_template = ('[{repoid}]\n'

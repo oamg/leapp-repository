@@ -249,7 +249,7 @@ def test_get_release_with_release_not_set(monkeypatch, actor_mocked, context_moc
 
     release = rhsm.get_release(context_mocked)
 
-    fail_description = 'The release information was obtained, even if "No release set" was repored by rhsm.'
+    fail_description = 'The release information was obtained, even if "No release set" was reported by rhsm.'
     assert not release, fail_description
 
 
