@@ -61,7 +61,7 @@ class PESIDRepositoryEntry(Model):
     too.
     """
 
-    channel = fields.StringEnum(['ga', 'tuv', 'e4s', 'eus', 'aus', 'beta'])
+    channel = fields.StringEnum(['ga', 'e4s', 'eus', 'aus', 'beta'])
     """
     The 'channel' of the repository.
 

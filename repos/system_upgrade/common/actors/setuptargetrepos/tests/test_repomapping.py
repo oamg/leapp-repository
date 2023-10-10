@@ -614,14 +614,14 @@ def test_get_expected_target_pesid_repos_with_priority_channel_set(monkeypatch):
             make_pesid_repo('pesid1', '7', 'pesid1-repoid-ga'),
             make_pesid_repo('pesid2', '8', 'pesid2-repoid-ga'),
             make_pesid_repo('pesid2', '8', 'pesid2-repoid-eus', channel='eus'),
-            make_pesid_repo('pesid2', '8', 'pesid2-repoid-tuv', channel='tuv'),
+            make_pesid_repo('pesid2', '8', 'pesid2-repoid-aus', channel='aus'),
             make_pesid_repo('pesid3', '8', 'pesid3-repoid-ga')
         ]
     )
 
     handler = RepoMapDataHandler(repositories_mapping)
     # Set defaults to verify that the priority channel is not overwritten by defaults
-    handler.set_default_channels(['tuv', 'ga'])
+    handler.set_default_channels(['aus', 'ga'])
     target_repoids = handler.get_expected_target_pesid_repos(['pesid1-repoid-ga'])
 
     fail_description = 'get_expected_target_peid_repos does not correctly respect preferred channel.'
