@@ -9,6 +9,7 @@ from leapp.models import FileInfo, TrackedFilesInfoSource
 # '8' (etc..) -> files supposed to be scanned when particular major version of OS is used
 TRACKED_FILES = {
     'common': [
+        '/etc/pki/tls/openssl.cnf',
     ],
     '8': [
     ],
