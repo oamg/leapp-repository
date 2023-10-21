@@ -191,6 +191,8 @@ def prepare_configuration(args):
     os.environ['LEAPP_UNSUPPORTED'] = '0' if os.getenv('LEAPP_UNSUPPORTED', '0') == '0' else '1'
     if args.no_rhsm:
         os.environ['LEAPP_NO_RHSM'] = '1'
+    elif not os.path.exists('/usr/sbin/subscription-manager'):
+        os.environ['LEAPP_NO_RHSM'] = '1'
     elif os.getenv('LEAPP_NO_RHSM') != '1':
         os.environ['LEAPP_NO_RHSM'] = os.getenv('LEAPP_DEVEL_SKIP_RHSM', '0')
 
