@@ -345,12 +345,80 @@ def _get_files_owned_by_rpms(context, dirpath, pkgs=None, recursive=False):
     return files_owned_by_rpms
 
 
+def _copy_decouple(srcdir, dstdir):
+    """
+    Copy `srcdir` to `dstdir` while decoupling symlinks.
+
+    What we mean by decoupling the `srcdir` is that any symlinks pointing
+    outside the directory will be copied as regular files. This means that the
+    directory will become independent from its surroundings with respect to
+    symlinks. Any symlink (or symlink chains) within the directory will be
+    preserved.
+
+    """
+
+    for root, dummy_dirs, files in os.walk(srcdir):
+        for filename in files:
+            relpath = os.path.relpath(root, srcdir)
+            source_filepath = os.path.join(root, filename)
+            target_filepath = os.path.join(dstdir, relpath, filename)
+
+            # Skip and report broken symlinks
+            if not os.path.exists(source_filepath):
+                api.current_logger().warning(
+                        'File {} is a broken symlink! Will not copy the file.'.format(source_filepath))
+                continue
+
+            # Copy symlinks to the target userspace
+            source_is_symlink = os.path.islink(source_filepath)
+            pointee = None
+            if source_is_symlink:
+                pointee = os.readlink(source_filepath)
+
+                # If source file is a symlink within `srcdir` then preserve it,
+                # otherwise resolve and copy it as a file it points to
+                if pointee is not None and not pointee.startswith(srcdir):
+                    # Follow the path until we hit a file or get back to /etc/pki
+                    while not pointee.startswith(srcdir) and os.path.islink(pointee):
+                        pointee = os.readlink(pointee)
+
+                    # Pointee points to a _regular file_ outside /etc/pki so we
+                    # copy it instead
+                    if not pointee.startswith(srcdir) and not os.path.islink(pointee):
+                        source_is_symlink = False
+                        source_filepath = pointee
+                    else:
+                        # pointee points back to /etc/pki
+                        pass
+
+            # Ensure parent directory exists
+            parent_dir = os.path.dirname(target_filepath)
+            # Note: This is secure because we know that parent_dir is located
+            # inside of `$target_userspace/etc/pki` which is a directory that
+            # is not writable by unprivileged users.  If this function is used
+            # elsewhere we may need to be more careful before running `mkdir -p`.
+            run(['mkdir', '-p', parent_dir])
+
+            if source_is_symlink:
+                # Preserve the owner and permissions of the original symlink
+                run(['ln', '-s', pointee, target_filepath])
+                run(['chmod', '--reference={}'.format(source_filepath), target_filepath])
+                continue
+
+            run(['cp', '-a', source_filepath, target_filepath])
+
+
 def _copy_certificates(context, target_userspace):
     """
-    Copy the needed certificates into the container, but preserve original ones
+    Copy certificates from source system into the container, but preserve
+    original ones
 
     Some certificates are already installed in the container and those are
     default certificates for the target OS, so we preserve these.
+
+    We respect the symlink hierarchy of the source system within the /etc/pki
+    folder. Dangling symlinks will be ignored.
+
     """
 
     target_pki = os.path.join(target_userspace, 'etc', 'pki')
@@ -360,36 +428,56 @@ def _copy_certificates(context, target_userspace):
         files_owned_by_rpms = _get_files_owned_by_rpms(target_context, '/etc/pki', recursive=True)
         api.current_logger().debug('Files owned by rpms: {}'.format(' '.join(files_owned_by_rpms)))
 
+    # Backup container /etc/pki
     run(['mv', target_pki, backup_pki])
-    context.copytree_from('/etc/pki', target_pki)
 
+    # Copy source /etc/pki to the container
+    _copy_decouple('/etc/pki', target_pki)
+
+    # Assertion: after running _copy_decouple(), no broken symlinks exist in /etc/pki in the container
+    # So any broken symlinks created will be by the installed packages.
+
+    # Recover installed packages as they always get precedence
     for filepath in files_owned_by_rpms:
         src_path = os.path.join(backup_pki, filepath)
         dst_path = os.path.join(target_pki, filepath)
 
         # Resolve and skip any broken symlinks
         is_broken_symlink = False
-        while os.path.islink(src_path):
-            # The symlink points to a path relative to the target userspace so
-            # we need to readjust it
-            next_path = os.path.join(target_userspace, os.readlink(src_path)[1:])
-            if not os.path.exists(next_path):
-                is_broken_symlink = True
+        pointee = None
+        if os.path.islink(src_path):
+            pointee = os.path.join(target_userspace, os.readlink(src_path)[1:])
 
-                # The path original path of the broken symlink in the container
-                report_path = os.path.join(target_pki, os.path.relpath(src_path, backup_pki))
-                api.current_logger().warning('File {} is a broken symlink!'.format(report_path))
-                break
+            seen = set()
+            while os.path.islink(pointee):
+                # The symlink points to a path relative to the target userspace so
+                # we need to readjust it
+                pointee = os.path.join(target_userspace, os.readlink(src_path)[1:])
+                if not os.path.exists(pointee) or pointee in seen:
+                    is_broken_symlink = True
 
-            src_path = next_path
+                    # The path original path of the broken symlink in the container
+                    report_path = os.path.join(target_pki, os.path.relpath(src_path, backup_pki))
+                    api.current_logger().warning(
+                            'File {} is a broken symlink! Will not copy!'.format(report_path))
+                    break
+
+                seen.add(pointee)
 
         if is_broken_symlink:
             continue
 
+        # Cleanup conflicting files
         run(['rm', '-rf', dst_path])
+
+        # Ensure destination exists
         parent_dir = os.path.dirname(dst_path)
         run(['mkdir', '-p', parent_dir])
-        run(['cp', '-a', src_path, dst_path])
+
+        # Copy the new file
+        run(['cp', '-R', '--preserve=all', src_path, dst_path])
+
+    run(['rm', '-rf', backup_pki])
 
 
 def _prep_repository_access(context, target_userspace):
@@ -401,6 +489,10 @@ def _prep_repository_access(context, target_userspace):
     backup_yum_repos_d = os.path.join(target_etc, 'yum.repos.d.backup')
 
     _copy_certificates(context, target_userspace)
+    # NOTE(dkubek): context.call(['update-ca-trust']) seems to not be working.
+    #               I am not really sure why. The changes to files are not
+    #               being written to disk.
+    run(["chroot", target_userspace, "/bin/bash", "-c", "su - -c update-ca-trust"])
 
     if not rhsm.skip_rhsm():
         run(['rm', '-rf', os.path.join(target_etc, 'rhsm')])
