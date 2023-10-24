@@ -1,4 +1,8 @@
+from __future__ import division
+
 import os
+import subprocess
+import sys
 from collections import namedtuple
 
 import pytest
@@ -10,6 +14,12 @@ from leapp.libraries.common import overlaygen, repofileutils, rhsm
 from leapp.libraries.common.config import architecture
 from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked, produce_mocked
 from leapp.utils.deprecation import suppress_deprecation
+
+if sys.version_info < (2, 8):
+    from pathlib2 import Path
+else:
+    from pathlib import Path
+
 
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 _CERTS_PATH = os.path.join(CUR_DIR, '../../../files', userspacegen.PROD_CERTS_FOLDER)
@@ -46,6 +56,220 @@ class MockedMountingBase(object):
 
     def __exit__(self, exception_type, exception_value, traceback):
         pass
+
+
+def traverse_structure(structure, root=Path('/')):
+    for filename, links_to in structure.items():
+        filepath = root / filename
+
+        if isinstance(links_to, dict):
+            for pair in traverse_structure(links_to, filepath):
+                yield pair
+        else:
+            yield (filepath, links_to)
+
+
+def assert_directory_structure_matches(root, initial, expected):
+    # Assert every file that is supposed to be present is present
+    for filepath, links_to in traverse_structure(expected, root=root / 'expected'):
+        assert filepath.exists()
+
+        if links_to is None:
+            assert filepath.is_file()
+            continue
+
+        assert filepath.is_symlink()
+        assert os.readlink(str(filepath)) == str(root / 'initial' / links_to.lstrip('/'))
+
+    # Assert there are no extra files
+    result_dir = str(root / 'expected')
+    for fileroot, dummy_dirs, files in os.walk(result_dir):
+        for filename in files:
+            dir_path = os.path.relpath(fileroot, result_dir).split('/')
+
+            cwd = expected
+            for directory in dir_path:
+                cwd = cwd[directory]
+
+            assert filename in cwd
+
+            filepath = os.path.join(fileroot, filename)
+            if os.path.islink(filepath):
+                links_to = '/' + os.path.relpath(os.readlink(filepath), str(root / 'initial'))
+                assert cwd[filename] == links_to
+
+
+@pytest.fixture
+def temp_directory_layout(tmp_path, initial_structure):
+    for filepath, links_to in traverse_structure(initial_structure, root=tmp_path / 'initial'):
+        file_path = tmp_path / filepath
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+
+        if links_to is None:
+            file_path.touch()
+            continue
+
+        file_path.symlink_to(tmp_path / 'initial' / links_to.lstrip('/'))
+
+    (tmp_path / 'expected').mkdir()
+    assert (tmp_path / 'expected').exists()
+
+    return tmp_path
+
+
+# The semantics of initial_structure and expected_structure are as follows:
+#
+# 1. The outermost dictionary encodes the root of a directory structure
+#
+# 2. Depending on the value for a key in a dict, each key in the dictionary
+#    denotes the name of either a:
+#        a) directory -- if value is dict
+#        b) regular file -- if value is None
+#        c) symlink -- if a value is str
+#
+# 3. The value of a symlink entry is a absolute path to a file in the context of
+#    the structure.
+#
+@pytest.mark.parametrize('initial_structure,expected_structure', [
+    ({  # Copy a regular file
+        'dir': {
+            'fileA': None
+        }
+    }, {
+        'dir': {
+            'fileA': None
+        }
+    }),
+    ({  # Do not copy a broken symlink
+        'dir': {
+            'fileA': 'nonexistent'
+        }
+    }, {
+        'dir': {}
+    }),
+    ({  # Copy a regular symlink
+        'dir': {
+            'fileA': '/dir/fileB',
+            'fileB': None
+        }
+    }, {
+        'dir': {
+            'fileA': '/dir/fileB',
+            'fileB': None
+        }
+    }),
+    ({  # Do not copy a chain of broken symlinks
+        'dir': {
+            'fileA': '/dir/fileB',
+            'fileB': 'nonexistent'
+        }
+    }, {
+        'dir': {}
+    }),
+    ({  # Copy a chain of symlinks
+        'dir': {
+            'fileA': '/dir/fileB',
+            'fileB': '/dir/fileC',
+            'fileC': None
+        }
+    }, {
+        'dir': {
+            'fileA': '/dir/fileB',
+            'fileB': '/dir/fileC',
+            'fileC': None
+        }
+    }),
+    ({  # Circular symlinks
+        'dir': {
+            'fileA': '/dir/fileB',
+            'fileB': '/dir/fileC',
+            'fileC': '/dir/fileC',
+        }
+    }, {
+        'dir': {}
+    }),
+    ({  # Copy a link to a file outside the considered directory as file
+        'dir': {
+            'fileA': '/dir/fileB',
+            'fileB': '/dir/fileC',
+            'fileC': '/outside/fileOut',
+            'fileE': None
+        },
+        'outside': {
+            'fileOut': '/outside/fileD',
+            'fileD': '/dir/fileE'
+        }
+    }, {
+        'dir': {
+            'fileA': '/dir/fileB',
+            'fileB': '/dir/fileC',
+            'fileC': '/dir/fileE',
+            'fileE': None,
+        }
+    }),
+    ({  # Same test with a nested structure within the source dir
+        'dir': {
+            'nested': {
+                'fileA': '/dir/nested/fileB',
+                'fileB': '/dir/nested/fileC',
+                'fileC': '/outside/fileOut',
+                'fileE': None
+            }
+        },
+        'outside': {
+            'fileOut': '/outside/fileD',
+            'fileD': '/dir/nested/fileE'
+        }
+    }, {
+        'dir': {
+            'nested': {
+                'fileA': '/dir/nested/fileB',
+                'fileB': '/dir/nested/fileC',
+                'fileC': '/dir/nested/fileE',
+                'fileE': None
+            }
+        }
+    }),
+    ({  # Same test with a nested structure in the outside dir
+        'dir': {
+            'fileA': '/dir/fileB',
+            'fileB': '/dir/fileC',
+            'fileC': '/outside/nested/fileOut',
+            'fileE': None
+        },
+        'outside': {
+            'nested': {
+                'fileOut': '/outside/nested/fileD',
+                'fileD': '/dir/fileE'
+            }
+        }
+    }, {
+        'dir': {
+            'fileA': '/dir/fileB',
+            'fileB': '/dir/fileC',
+            'fileC': '/dir/fileE',
+            'fileE': None,
+        }
+    }),
+]
+)
+def test_copy_decouple(monkeypatch, temp_directory_layout, initial_structure, expected_structure):
+
+    def run_mocked(command):
+        subprocess.Popen(
+            ' '.join(command),
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        ).wait()
+
+    monkeypatch.setattr(userspacegen, 'run', run_mocked)
+    userspacegen._copy_decouple(
+            str(temp_directory_layout / 'initial' / 'dir'),
+            str(temp_directory_layout / 'expected' / 'dir'),
+            )
+
+    assert_directory_structure_matches(temp_directory_layout, initial_structure, expected_structure)
 
 
 @pytest.mark.parametrize('result,dst_ver,arch,prod_type', [
