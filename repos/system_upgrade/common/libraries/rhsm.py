@@ -334,6 +334,7 @@ def set_container_mode(context):
         return
     try:
         context.call(['ln', '-s', '/etc/rhsm', '/etc/rhsm-host'])
+        context.call(['ln', '-s', '/etc/pki/entitlement', '/etc/pki/entitlement-host'])
     except CalledProcessError:
         raise StopActorExecutionError(
                 message='Cannot set the container mode for the subscription-manager.')
