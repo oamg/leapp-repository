@@ -61,7 +61,12 @@ class _BreadCrumbs(object):
             if not os.path.exists('/etc/rhsm'):
                 # If there's no /etc/rhsm folder just skip it
                 return
-            os.path.mkdir('/etc/rhsm/facts')
+            try:
+                os.mkdir('/etc/rhsm/facts')
+            except OSError as e:
+                if e.errno == 17:
+                    # The directory already exists which is all we need.
+                    pass
         try:
             with open('/etc/rhsm/facts/leapp.facts', 'w') as f:
                 json.dump(_flattened({
