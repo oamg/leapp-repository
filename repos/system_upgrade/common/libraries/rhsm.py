@@ -325,6 +325,11 @@ def set_container_mode(context):
     could be affected and the generated repo file in the container could be
     affected as well (e.g. when the release is set, using rhsm, on the host).
 
+    We want to put RHSM into the container mode always when /etc/rhsm and
+    /etc/pki/entitlement directories exists, even when leapp is executed with
+    --no-rhsm option. If any of these directories are missing, skip other
+    actions - most likely RHSM is not installed in such a case.
+
     :param context: An instance of a mounting.IsolatedActions class
     :type context: mounting.IsolatedActions class
     """
@@ -332,6 +337,17 @@ def set_container_mode(context):
         api.current_logger().error('Trying to set RHSM into the container mode'
                                    'on host. Skipping the action.')
         return
+    # TODO(pstodulk): check "rhsm identity" whether system is registered
+    # and the container mode should be required
+    if (not os.path.exists(context.full_path('/etc/rhsm'))
+            or not os.path.exists(context.full_path('/etc/pki/entitlement'))):
+        api.current_logger().warning(
+            'Cannot set the container mode for the subscription-manager as'
+            ' one of required directories is missing. Most likely RHSM is not'
+            ' installed. Skipping other actions.'
+        )
+        return
+
     try:
         context.call(['ln', '-s', '/etc/rhsm', '/etc/rhsm-host'])
         context.call(['ln', '-s', '/etc/pki/entitlement', '/etc/pki/entitlement-host'])
