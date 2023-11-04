@@ -9,7 +9,7 @@ type getarg >/dev/null 2>&1 || . /lib/dracut-lib.sh
 
 get_rhel_major_release() {
     local os_version
-    os_version=$(grep -o '^VERSION="[0-9][0-9]*\.' /etc/initrd-release | grep -o '[0-9]*')
+    os_version=$(grep -o '^VERSION="[0-9][0-9]*' /etc/initrd-release | grep -o '[0-9]*')
     [ -z "$os_version" ] && {
         # This should not happen as /etc/initrd-release is supposed to have API
         # stability, but check is better than broken system.
