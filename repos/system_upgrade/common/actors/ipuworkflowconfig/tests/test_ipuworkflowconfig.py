@@ -63,6 +63,17 @@ def test_get_os_release_info(monkeypatch):
         ipuworkflowconfig.get_os_release(os.path.join(CUR_DIR, 'files/non-existent-file'))
 
 
+def test_get_os_release_info_centos_stream(monkeypatch):
+    expected = OSRelease(
+        release_id='centos',
+        name='CentOS Stream',
+        pretty_name='CentOS Stream 8',
+        version='8',
+        version_id='8.999'
+    )
+    assert expected == ipuworkflowconfig.get_os_release(os.path.join(CUR_DIR, 'files/os-release-stream8'))
+
+
 def test_get_booted_kernel(monkeypatch):
     monkeypatch.setattr(ipuworkflowconfig, 'run', lambda x: {'stdout': '4.14.0-100.8.2.el7a.x86_64\n'})
     assert ipuworkflowconfig.get_booted_kernel() == '4.14.0-100.8.2.el7a.x86_64'
