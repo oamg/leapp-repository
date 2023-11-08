@@ -19,15 +19,14 @@ class Transaction_ToInstall(Config):
 
 class Transaction_ToKeep(Config):
     section = "transaction"
-    name = "to_keep"
-    type_ = fields.List(fields.String(), default=[
+    to_keep = fields.List(fields.String(), default=[
         "leapp",
         "python2-leapp",
         "python3-leapp",
         "leapp-repository",
         "snactor",
     ])
-    description = """
+    """
         List of packages to be kept in the upgrade transaction.
     """
 
