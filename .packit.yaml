@@ -87,8 +87,8 @@ jobs:
 
 - &sanity-79to86
   job: tests
-  fmf_url: "https://gitlab.cee.redhat.com/oamg/tmt-plans"
-  fmf_ref: "master"
+  fmf_url: "https://gitlab.cee.redhat.com/ivasilev/tmt-plans"
+  fmf_ref: "pocgenerator"
   use_internal_tf: True
   trigger: pull_request
   labels:
@@ -97,16 +97,17 @@ jobs:
     epel-7-x86_64:
       distros: [RHEL-7.9-ZStream]
   identifier: sanity-7.9to8.6
-  tmt_plan: "sanity_plan"
+  tmt_plan: ""
   tf_extra_params:
+    test:
+      tmt:
+        plan_filter: 'tag:sanity'
     environments:
       - tmt:
           context:
             distro: "rhel-7.9"
-        # tag resources as sst_upgrades@leapp_upstream_test to enable cost metrics collection
         settings:
           provisioning:
-            post_install_script: "#!/bin/sh\nsudo sed -i s/.*ssh-rsa/ssh-rsa/ /root/.ssh/authorized_keys"
             tags:
               BusinessUnit: sst_upgrades@leapp_upstream_test
   env:
@@ -123,13 +124,16 @@ jobs:
     epel-7-x86_64:
       distros: [RHEL-7.9-rhui]
   identifier: sanity-7to8-aws-e2e
-  tmt_plan: "(?!.*sap)(.*e2e)"
+  # NOTE(ivasilev) Unfortunately to use yaml templates we need to rewrite the whole tf_extra_params dict
+  # to use plan_filter (can't just specify one section test.tmt.plan_filter, need to specify environments.* as well)
   tf_extra_params:
+    test:
+      tmt:
+        plan_filter: 'tag:e2e'
     environments:
       - tmt:
           context:
             distro: "rhel-7.9"
-        # tag resources as sst_upgrades@leapp_upstream_test to enable cost metrics collection
         settings:
           provisioning:
             post_install_script: "#!/bin/sh\nsudo sed -i s/.*ssh-rsa/ssh-rsa/ /root/.ssh/authorized_keys; yum-config-manager --enable rhel-7-server-rhui-optional-rpms"
@@ -150,7 +154,18 @@ jobs:
     - beaker-minimal-7.9to8.6
     - 7.9to8.6
   identifier: sanity-7.9to8.6-beaker-minimal
-  tmt_plan: "(?!.*max_sst)(.*tier1)(.*partitioning_monolithic|.*separate_var_usr_varlog|.*uefi|.*oamg4250_lvm_var_xfs_ftype0)"
+  tf_extra_params:
+    test:
+      tmt:
+        plan_filter: 'tag:partitioning & tag:7to8'
+    environments:
+      - tmt:
+          context:
+            distro: "rhel-7.9"
+        settings:
+          provisioning:
+            tags:
+              BusinessUnit: sst_upgrades@leapp_upstream_test
 
 # On-demand kernel-rt tests
 - &kernel-rt-79to86
@@ -160,7 +175,18 @@ jobs:
     - kernel-rt-7.9to8.6
     - 7.9to8.6
   identifier: sanity-7.9to8.6-kernel-rt
-  tmt_plan: "(?!.*max_sst)(.*tier1)(.*kernel-rt)"
+  tf_extra_params:
+    test:
+      tmt:
+        plan_filter: 'tag:kernel-rt & tag:7to8'
+    environments:
+      - tmt:
+          context:
+            distro: "rhel-7.9"
+        settings:
+          provisioning:
+            tags:
+              BusinessUnit: sst_upgrades@leapp_upstream_test
 
 - &sanity-79to88
   <<: *sanity-79to86
@@ -185,13 +211,16 @@ jobs:
 
 # On-demand kernel-rt tests
 - &kernel-rt-79to88
-  <<: *beaker-minimal-79to88
+  <<: *kernel-rt-79to86
   labels:
     - kernel-rt
     - kernel-rt-7.9to8.8
     - 7.9to8.8
   identifier: sanity-7.9to8.8-kernel-rt
-  tmt_plan: "(?!.*max_sst)(.*tier1)(.*kernel-rt)"
+  env:
+    SOURCE_RELEASE: "7.9"
+    TARGET_RELEASE: "8.8"
+    LEAPPDATA_BRANCH: "upstream"
 
 - &sanity-79to89
   <<: *sanity-79to86
@@ -216,13 +245,16 @@ jobs:
 
 # On-demand kernel-rt tests
 - &kernel-rt-79to89
-  <<: *beaker-minimal-79to89
+  <<: *kernel-rt-79to88
   labels:
     - kernel-rt
     - kernel-rt-7.9to8.9
     - 7.9to8.9
   identifier: sanity-7.9to8.9-kernel-rt
-  tmt_plan: "(?!.*max_sst)(.*tier1)(.*kernel-rt)"
+  env:
+    SOURCE_RELEASE: "7.9"
+    TARGET_RELEASE: "8.9"
+    LEAPPDATA_BRANCH: "upstream"
 
 - &sanity-86to90
   <<: *sanity-79to86
@@ -231,14 +263,15 @@ jobs:
       distros: [RHEL-8.6.0-Nightly]
   identifier: sanity-8.6to9.0
   tf_extra_params:
+    test:
+      tmt:
+        plan_filter: 'tag:sanity & tag:8to9'
     environments:
       - tmt:
           context:
             distro: "rhel-8.6"
-        # tag resources as sst_upgrades@leapp_upstream_test to enable cost metrics collection
         settings:
           provisioning:
-            post_install_script: "#!/bin/sh\nsudo sed -i s/.*ssh-rsa/ssh-rsa/ /root/.ssh/authorized_keys"
             tags:
               BusinessUnit: sst_upgrades@leapp_upstream_test
   env:
@@ -259,14 +292,15 @@ jobs:
       distros: [RHEL-8.6.0-Nightly]
   identifier: sanity-8.6to9.0-beaker-minimal
   tf_extra_params:
+    test:
+      tmt:
+        plan_filter: 'tag:partitioning & tag:8to9'
     environments:
       - tmt:
           context:
             distro: "rhel-8.6"
-        # tag resources as sst_upgrades@leapp_upstream_test to enable cost metrics collection
         settings:
           provisioning:
-            post_install_script: "#!/bin/sh\nsudo sed -i s/.*ssh-rsa/ssh-rsa/ /root/.ssh/authorized_keys"
             tags:
               BusinessUnit: sst_upgrades@leapp_upstream_test
   env:
@@ -283,7 +317,18 @@ jobs:
     - kernel-rt-8.6to9.0
     - 8.6to9.0
   identifier: sanity-8.6to9.0-kernel-rt
-  tmt_plan: "(?!.*max_sst)(.*tier1)(.*kernel-rt)"
+  tf_extra_params:
+    test:
+      tmt:
+        plan_filter: 'tag:kernel-rt & tag:8to9'
+    environments:
+      - tmt:
+          context:
+            distro: "rhel-8.6"
+        settings:
+          provisioning:
+            tags:
+              BusinessUnit: sst_upgrades@leapp_upstream_test
 
 - &sanity-88to92
   <<: *sanity-86to90
@@ -292,14 +337,15 @@ jobs:
       distros: [RHEL-8.8.0-Nightly]
   identifier: sanity-8.8to9.2
   tf_extra_params:
+    test:
+      tmt:
+        plan_filter: 'tag:sanity & tag:8to9'
     environments:
       - tmt:
           context:
             distro: "rhel-8.8"
-        # tag resources as sst_upgrades@leapp_upstream_test to enable cost metrics collection
         settings:
           provisioning:
-            post_install_script: "#!/bin/sh\nsudo sed -i s/.*ssh-rsa/ssh-rsa/ /root/.ssh/authorized_keys"
             tags:
               BusinessUnit: sst_upgrades@leapp_upstream_test
   env:
@@ -321,11 +367,13 @@ jobs:
       distros: [RHEL-8.8.0-Nightly]
   identifier: sanity-8.8to9.2-beaker-minimal
   tf_extra_params:
+    test:
+      tmt:
+        plan_filter: 'tag:partitioning & tag:8to9'
     environments:
       - tmt:
           context:
             distro: "rhel-8.8"
-        # tag resources as sst_upgrades@leapp_upstream_test to enable cost metrics collection
         settings:
           provisioning:
             post_install_script: "#!/bin/sh\nsudo sed -i s/.*ssh-rsa/ssh-rsa/ /root/.ssh/authorized_keys"
@@ -345,7 +393,18 @@ jobs:
     - kernel-rt-8.8to9.2
     - 8.8to9.2
   identifier: sanity-8.8to9.2-kernel-rt
-  tmt_plan: "(?!.*max_sst)(.*tier1)(.*kernel-rt)"
+  tf_extra_params:
+    test:
+      tmt:
+        plan_filter: 'tag:kernel-rt & tag:8to9'
+    environments:
+      - tmt:
+          context:
+            distro: "rhel-8.8"
+        settings:
+          provisioning:
+            tags:
+              BusinessUnit: sst_upgrades@leapp_upstream_test
 
 - &sanity-89to93
   <<: *sanity-88to92
@@ -354,14 +413,15 @@ jobs:
       distros: [RHEL-8.9.0-Nightly]
   identifier: sanity-8.9to9.3
   tf_extra_params:
+    test:
+      tmt:
+        plan_filter: 'tag:sanity & tag:8to9'
     environments:
       - tmt:
           context:
             distro: "rhel-8.9"
-        # tag resources as sst_upgrades@leapp_upstream_test to enable cost metrics collection
         settings:
           provisioning:
-            post_install_script: "#!/bin/sh\nsudo sed -i s/.*ssh-rsa/ssh-rsa/ /root/.ssh/authorized_keys"
             tags:
               BusinessUnit: sst_upgrades@leapp_upstream_test
   env:
@@ -383,14 +443,15 @@ jobs:
       distros: [RHEL-8.9.0-Nightly]
   identifier: sanity-8.9to9.3-beaker-minimal
   tf_extra_params:
+    test:
+      tmt:
+        plan_filter: 'tag:partitioning & tag:8to9'
     environments:
       - tmt:
           context:
             distro: "rhel-8.9"
-        # tag resources as sst_upgrades@leapp_upstream_test to enable cost metrics collection
         settings:
           provisioning:
-            post_install_script: "#!/bin/sh\nsudo sed -i s/.*ssh-rsa/ssh-rsa/ /root/.ssh/authorized_keys"
             tags:
               BusinessUnit: sst_upgrades@leapp_upstream_test
   env:
@@ -408,7 +469,18 @@ jobs:
     - kernel-rt-8.9to9.3
     - 8.9to9.3
   identifier: sanity-8.9to9.3-kernel-rt
-  tmt_plan: "(?!.*max_sst)(.*tier1)(.*kernel-rt)"
+  tf_extra_params:
+    test:
+      tmt:
+        plan_filter: 'tag:kernel-rt & tag:8to9'
+    environments:
+      - tmt:
+          context:
+            distro: "rhel-8.9"
+        settings:
+          provisioning:
+            tags:
+              BusinessUnit: sst_upgrades@leapp_upstream_test
 
 - &sanity-86to90-aws
   <<: *sanity-79to86-aws
@@ -417,11 +489,13 @@ jobs:
       distros: [RHEL-8.6-rhui]
   identifier: sanity-8to9-aws-e2e
   tf_extra_params:
+    test:
+      tmt:
+        plan_filter: 'tag:e2e'
     environments:
       - tmt:
           context:
             distro: "rhel-8.6"
-        # tag resources as sst_upgrades@leapp_upstream_test to enable cost metrics collection
         settings:
           provisioning:
             post_install_script: "#!/bin/sh\nsudo sed -i s/.*ssh-rsa/ssh-rsa/ /root/.ssh/authorized_keys"
