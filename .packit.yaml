@@ -87,8 +87,8 @@ jobs:
 
 - &sanity-79to86
   job: tests
-  fmf_url: "https://gitlab.cee.redhat.com/ivasilev/tmt-plans"
-  fmf_ref: "pocgenerator"
+  fmf_url: "https://gitlab.cee.redhat.com/oamg/leapp-tests"
+  fmf_ref: "master"
   use_internal_tf: True
   trigger: pull_request
   labels:
