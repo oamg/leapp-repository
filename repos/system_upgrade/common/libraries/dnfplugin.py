@@ -178,8 +178,30 @@ def _handle_transaction_err_msg(stage, xfs_info, err, is_container=False):
         return  # not needed actually as the above function raises error, but for visibility
     NO_SPACE_STR = 'more space needed on the'
     message = 'DNF execution failed with non zero exit code.'
-    details = {'STDOUT': err.stdout, 'STDERR': err.stderr}
     if NO_SPACE_STR not in err.stderr:
+        # if there was a problem reaching repos and proxy is configured in DNF/YUM configs, the
+        # proxy is likely the problem.
+        # NOTE(mmatuska): We can't consistently detect there was a problem reaching some repos,
+        # because it isn't clear what are all the possible DNF error messages we can encounter,
+        # such as: "Failed to synchronize cache for repo ..." or "Errors during downloading
+        # metadata for # repository" or "No more mirrors to try - All mirrors were already tried
+        # without success"
+        # NOTE(mmatuska): We could check PkgManagerInfo to detect if proxy is indeed configured,
+        # however it would be pretty ugly to pass it all the way down here
+        proxy_hint = (
+            "If there was a problem reaching remote content (see stderr output) and proxy is "
+            "configured in the YUM/DNF configuration file, the proxy configuration is likely "
+            "causing this error. "
+            "Make sure the proxy is properly configured in /etc/dnf/dnf.conf. "
+            "It's also possible the proxy settings in the DNF configuration file are "
+            "incompatible with the target system. A compatible configuration can be "
+            "placed in /etc/leapp/files/dnf.conf which, if present, it will be used during "
+            "some parts of the upgrade instead of original /etc/dnf/dnf.conf. "
+            "In such case the configuration will also be applied to the target system. "
+            "Note that /etc/dnf/dnf.conf needs to be still configured correctly "
+            "for your current system to pass the early phases of the upgrade process."
+        )
+        details = {'STDOUT': err.stdout, 'STDERR': err.stderr, 'hint': proxy_hint}
         raise StopActorExecutionError(message=message, details=details)
 
     # Disk Requirements:
