@@ -269,15 +269,25 @@ def prepare_target_userspace(context, userspace_dir, enabled_repos, packages):
             # failed since leapp does not support updates behind proxy yet.
             for manager_info in api.consume(PkgManagerInfo):
                 if manager_info.configured_proxies:
-                    details['details'] = ("DNF failed to install userspace packages, likely due to the proxy "
-                                          "configuration detected in the YUM/DNF configuration file.")
+                    details['details'] = (
+                        "DNF failed to install userspace packages, likely due to the proxy "
+                        "configuration detected in the YUM/DNF configuration file. "
+                        "Make sure the proxy is properly configured in /etc/dnf/dnf.conf. "
+                        "It's also possible the proxy settings in the DNF configuration file are "
+                        "incompatible with the target system. A compatible configuration can be "
+                        "placed in /etc/leapp/files/dnf.conf which, if present, will be used during "
+                        "the upgrade instead of /etc/dnf/dnf.conf. "
+                        "In such case the configuration will also be applied to the target system."
+                    )
 
             # Similarly if a proxy was set specifically for one of the repositories.
             for repo_facts in api.consume(RepositoriesFacts):
                 for repo_file in repo_facts.repositories:
                     if any(repo_data.proxy and repo_data.enabled for repo_data in repo_file.data):
-                        details['details'] = ("DNF failed to install userspace packages, likely due to the proxy "
-                                              "configuration detected in a repository configuration file.")
+                        details['details'] = (
+                            "DNF failed to install userspace packages, likely due to the proxy "
+                            "configuration detected in a repository configuration file."
+                        )
 
             raise StopActorExecutionError(message=message, details=details)
 
