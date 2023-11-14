@@ -123,7 +123,7 @@ jobs:
   targets:
     epel-7-x86_64:
       distros: [RHEL-7.9-rhui]
-  identifier: sanity-7to8-aws-e2e
+  identifier: sanity-7.9to8.6-aws-e2e
   # NOTE(ivasilev) Unfortunately to use yaml templates we need to rewrite the whole tf_extra_params dict
   # to use plan_filter (can't just specify one section test.tmt.plan_filter, need to specify environments.* as well)
   tf_extra_params:
@@ -142,6 +142,24 @@ jobs:
   env:
     SOURCE_RELEASE: "7.9"
     TARGET_RELEASE: "8.6"
+    RHUI: "aws"
+    LEAPPDATA_BRANCH: "upstream"
+
+- &sanity-79to88-aws
+  <<: *sanity-79to86-aws
+  identifier: sanity-7.9to8.8-aws-e2e
+  env:
+    SOURCE_RELEASE: "7.9"
+    TARGET_RELEASE: "8.8"
+    RHUI: "aws"
+    LEAPPDATA_BRANCH: "upstream"
+
+- &sanity-79to89-aws
+  <<: *sanity-79to86-aws
+  identifier: sanity-7.9to8.9-aws-e2e
+  env:
+    SOURCE_RELEASE: "7.9"
+    TARGET_RELEASE: "8.9"
     RHUI: "aws"
     LEAPPDATA_BRANCH: "upstream"
 
@@ -487,7 +505,7 @@ jobs:
   targets:
     epel-8-x86_64:
       distros: [RHEL-8.6-rhui]
-  identifier: sanity-8to9-aws-e2e
+  identifier: sanity-8.6to9.0-aws-e2e
   tf_extra_params:
     test:
       tmt:
