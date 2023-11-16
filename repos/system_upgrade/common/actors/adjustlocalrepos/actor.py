@@ -9,8 +9,10 @@ from leapp.models import (
     UsedTargetRepositories
 )
 from leapp.tags import IPUWorkflowTag, TargetTransactionChecksPhaseTag
+from leapp.utils.deprecation import suppress_deprecation
 
 
+@suppress_deprecation(TMPTargetRepositoriesFacts)
 class AdjustLocalRepos(Actor):
     """
     Adjust local repositories to the target user-space container.
@@ -25,7 +27,7 @@ class AdjustLocalRepos(Actor):
     name = 'adjust_local_repos'
     consumes = (TargetOSInstallationImage,
                 TargetUserSpaceInfo,
-                TMPTargetRepositoriesFacts,
+                TMPTargetRepositoriesFacts,  # deprecated
                 UsedTargetRepositories)
     produces = ()
     tags = (IPUWorkflowTag, TargetTransactionChecksPhaseTag)
