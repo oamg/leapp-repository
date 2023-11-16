@@ -56,7 +56,8 @@ disable=
  use-dict-literal,
  redundant-u-string-prefix,  # still have py2 to support
  logging-format-interpolation,
- logging-not-lazy
+ logging-not-lazy,
+ too-many-lines  # we do not want to take care about that one
 
 [FORMAT]
 # Maximum number of characters on a single line.
