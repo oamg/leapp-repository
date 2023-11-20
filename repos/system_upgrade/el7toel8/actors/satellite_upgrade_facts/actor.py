@@ -42,6 +42,7 @@ class SatelliteUpgradeFacts(Actor):
         postgresql_contrib = has_package(InstalledRPM, 'rh-postgresql12-postgresql-contrib')
         postgresql_evr = has_package(InstalledRPM, 'rh-postgresql12-postgresql-evr')
 
+        # SCL-related packages
         to_remove = ['tfm-runtime', 'tfm-pulpcore-runtime', 'rh-redis5-runtime', 'rh-ruby27-runtime',
                      'rh-python38-runtime']
         to_install = ['rubygem-foreman_maintain']
@@ -54,6 +55,11 @@ class SatelliteUpgradeFacts(Actor):
             # enable modules that are needed for Pulpcore
             modules_to_enable.append(Module(name='python38', stream='3.8'))
             to_install.append('katello')
+            # Force removal of tomcat
+            # PES data indicates tomcat.el7 can be upgraded to tomcat.el8 since EL 8.8,
+            # but we need pki-servlet-engine from the module instead which will be pulled in via normal
+            # package dependencies
+            to_remove.extend(['tomcat', 'tomcat-lib'])
 
         if has_package(InstalledRPM, 'rh-redis5-redis'):
             modules_to_enable.append(Module(name='redis', stream='5'))
