@@ -163,6 +163,15 @@ jobs:
     RHUI: "aws"
     LEAPPDATA_BRANCH: "upstream"
 
+- &sanity-79to810-aws
+  <<: *sanity-79to86-aws
+  identifier: sanity-7.9to8.10-aws-e2e
+  env:
+    SOURCE_RELEASE: "7.9"
+    TARGET_RELEASE: "8.10"
+    RHUI: "aws"
+    LEAPPDATA_BRANCH: "upstream"
+
 # On-demand minimal beaker tests
 - &beaker-minimal-79to86
   <<: *sanity-79to86
@@ -272,6 +281,40 @@ jobs:
   env:
     SOURCE_RELEASE: "7.9"
     TARGET_RELEASE: "8.9"
+    LEAPPDATA_BRANCH: "upstream"
+
+- &sanity-79to810
+  <<: *sanity-79to86
+  identifier: sanity-7.9to8.10
+  env:
+    SOURCE_RELEASE: "7.9"
+    TARGET_RELEASE: "8.10"
+    LEAPPDATA_BRANCH: "upstream"
+
+# On-demand minimal beaker tests
+- &beaker-minimal-79to810
+  <<: *beaker-minimal-79to86
+  labels:
+    - beaker-minimal
+    - beaker-minimal-7.9to8.10
+    - 7.9to8.10
+  identifier: sanity-7.9to8.10-beaker-minimal
+  env:
+    SOURCE_RELEASE: "7.9"
+    TARGET_RELEASE: "8.10"
+    LEAPPDATA_BRANCH: "upstream"
+
+# On-demand kernel-rt tests
+- &kernel-rt-79to810
+  <<: *kernel-rt-79to88
+  labels:
+    - kernel-rt
+    - kernel-rt-7.9to8.10
+    - 7.9to8.10
+  identifier: sanity-7.9to8.10-kernel-rt
+  env:
+    SOURCE_RELEASE: "7.9"
+    TARGET_RELEASE: "8.10"
     LEAPPDATA_BRANCH: "upstream"
 
 - &sanity-86to90
@@ -445,7 +488,6 @@ jobs:
   env:
     SOURCE_RELEASE: "8.9"
     TARGET_RELEASE: "9.3"
-    RHSM_REPOS: "rhel-8-for-x86_64-appstream-beta-rpms,rhel-8-for-x86_64-baseos-beta-rpms"
     LEAPPDATA_BRANCH: "upstream"
     LEAPP_DEVEL_TARGET_RELEASE: "9.3"
 
@@ -475,7 +517,6 @@ jobs:
   env:
     SOURCE_RELEASE: "8.9"
     TARGET_RELEASE: "9.3"
-    RHSM_REPOS: "rhel-8-for-x86_64-appstream-beta-rpms,rhel-8-for-x86_64-baseos-beta-rpms"
     LEAPPDATA_BRANCH: "upstream"
     LEAPP_DEVEL_TARGET_RELEASE: "9.3"
 
@@ -495,6 +536,79 @@ jobs:
       - tmt:
           context:
             distro: "rhel-8.9"
+        settings:
+          provisioning:
+            tags:
+              BusinessUnit: sst_upgrades@leapp_upstream_test
+
+- &sanity-810to94
+  <<: *sanity-88to92
+  targets:
+    epel-8-x86_64:
+      distros: [RHEL-8.10.0-Nightly]
+  identifier: sanity-8.10to9.4
+  tf_extra_params:
+    test:
+      tmt:
+        plan_filter: 'tag:sanity & tag:8to9'
+    environments:
+      - tmt:
+          context:
+            distro: "rhel-8.10"
+        settings:
+          provisioning:
+            tags:
+              BusinessUnit: sst_upgrades@leapp_upstream_test
+  env:
+    SOURCE_RELEASE: "8.10"
+    TARGET_RELEASE: "9.4"
+    RHSM_REPOS: "rhel-8-for-x86_64-appstream-beta-rpms,rhel-8-for-x86_64-baseos-beta-rpms"
+    LEAPPDATA_BRANCH: "upstream"
+
+# On-demand minimal beaker tests
+- &beaker-minimal-810to94
+  <<: *beaker-minimal-88to92
+  labels:
+    - beaker-minimal
+    - beaker-minimal-8.10to9.4
+    - 8.10to9.4
+  targets:
+    epel-8-x86_64:
+      distros: [RHEL-8.10.0-Nightly]
+  identifier: sanity-8.10to9.4-beaker-minimal
+  tf_extra_params:
+    test:
+      tmt:
+        plan_filter: 'tag:partitioning & tag:8to9'
+    environments:
+      - tmt:
+          context:
+            distro: "rhel-8.10"
+        settings:
+          provisioning:
+            tags:
+              BusinessUnit: sst_upgrades@leapp_upstream_test
+  env:
+    SOURCE_RELEASE: "8.10"
+    TARGET_RELEASE: "9.4"
+    LEAPPDATA_BRANCH: "upstream"
+
+# On-demand kernel-rt tests
+- &kernel-rt-810to94
+  <<: *beaker-minimal-810to94
+  labels:
+    - kernel-rt
+    - kernel-rt-8.10to9.4
+    - 8.10to9.4
+  identifier: sanity-8.10to9.4-kernel-rt
+  tf_extra_params:
+    test:
+      tmt:
+        plan_filter: 'tag:kernel-rt & tag:8to9'
+    environments:
+      - tmt:
+          context:
+            distro: "rhel-8.10"
         settings:
           provisioning:
             tags:
