@@ -3,6 +3,7 @@ import itertools
 import json
 import os
 import shutil
+import sys
 import tarfile
 from datetime import datetime
 
@@ -235,6 +236,8 @@ def prepare_configuration(args):
         'debug': os.getenv('LEAPP_DEBUG', '0'),
         'verbose': os.getenv('LEAPP_VERBOSE', '0'),
         'whitelist_experimental': args.whitelist_experimental or (),
+        'environment': {env: os.getenv(env) for env in os.environ if env.startswith('LEAPP_')},
+        'cmd': sys.argv,
     }
     return configuration
 
