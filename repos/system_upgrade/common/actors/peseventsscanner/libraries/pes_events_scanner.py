@@ -480,6 +480,21 @@ def apply_transaction_configuration(source_pkgs):
     return source_pkgs_with_conf_applied
 
 
+def remove_leapp_related_events(events):
+    leapp_pkgs = [
+        'leapp', 'leapp-deps', 'leapp-upgrade-el7toel8', 'leapp-upgrade-el8toel9',
+        'leapp-upgrade-el7toel8-deps', 'leapp-upgrade-el8toel9-deps', 'python2-leapp',
+        'python3-leapp', 'snactor'
+    ]
+    res = []
+    for event in events:
+        if not any(pkg.name in leapp_pkgs for pkg in event.in_pkgs):
+            res.append(event)
+        else:
+            api.current_logger().debug('Filtered out leapp related event, event id: {}'.format(event.id))
+    return res
+
+
 def process():
     # Retrieve data - installed_pkgs, transaction configuration, pes events
     events = get_pes_events('/etc/leapp/files', 'pes-events.json')
@@ -494,6 +509,7 @@ def process():
     # packages of the target system, so we can distinguish what needs to be repomapped
     repoids_of_source_pkgs = {pkg.repository for pkg in source_pkgs}
 
+    events = remove_leapp_related_events(events)
     events = remove_undesired_events(events, releases)
 
     # Apply events - compute what packages should the target system have
