@@ -678,6 +678,9 @@ def _get_rhsm_available_repoids(context):
 
             ).format(target_major_version)),
             reporting.ExternalLink(
+                # https://red.ht/preparing-for-upgrade-to-rhel8
+                # https://red.ht/preparing-for-upgrade-to-rhel9
+                # https://red.ht/preparing-for-upgrade-to-rhel10
                 url='https://red.ht/preparing-for-upgrade-to-rhel{}'.format(target_major_version),
                 title='Preparing for the upgrade')
             ])
@@ -833,6 +836,9 @@ def gather_target_repositories(context, indata):
                 ' Finally, verify that the "/etc/leapp/files/repomap.json" file is up-to-date.'
             ).format(version=api.current_actor().configuration.version.target)),
             reporting.ExternalLink(
+                # https://red.ht/preparing-for-upgrade-to-rhel8
+                # https://red.ht/preparing-for-upgrade-to-rhel9
+                # https://red.ht/preparing-for-upgrade-to-rhel10
                 url='https://red.ht/preparing-for-upgrade-to-rhel{}'.format(target_major_version),
                 title='Preparing for the upgrade'),
             reporting.RelatedResource("file", "/etc/leapp/files/repomap.json"),
