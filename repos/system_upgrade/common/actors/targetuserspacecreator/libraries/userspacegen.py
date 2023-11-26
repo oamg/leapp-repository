@@ -678,8 +678,10 @@ def _get_rhsm_available_repoids(context):
 
             ).format(target_major_version)),
             reporting.ExternalLink(
-                # TODO: How to handle different documentation links for each version?
-                url='https://red.ht/preparing-for-upgrade-to-rhel8',
+                # https://red.ht/preparing-for-upgrade-to-rhel8
+                # https://red.ht/preparing-for-upgrade-to-rhel9
+                # https://red.ht/preparing-for-upgrade-to-rhel10
+                url='https://red.ht/preparing-for-upgrade-to-rhel{}'.format(target_major_version),
                 title='Preparing for the upgrade')
             ])
         raise StopActorExecution()
@@ -812,6 +814,7 @@ def gather_target_repositories(context, indata):
                 missing_custom_repoids.append(custom_repo.repoid)
     api.current_logger().debug("Gathered target repositories: {}".format(', '.join(target_repoids)))
     if not target_repoids:
+        target_major_version = get_target_major_version()
         reporting.create_report([
             reporting.Title('There are no enabled target repositories'),
             reporting.Summary(
@@ -833,8 +836,10 @@ def gather_target_repositories(context, indata):
                 ' Finally, verify that the "/etc/leapp/files/repomap.json" file is up-to-date.'
             ).format(version=api.current_actor().configuration.version.target)),
             reporting.ExternalLink(
-                # TODO: How to handle different documentation links for each version?
-                url='https://red.ht/preparing-for-upgrade-to-rhel8',
+                # https://red.ht/preparing-for-upgrade-to-rhel8
+                # https://red.ht/preparing-for-upgrade-to-rhel9
+                # https://red.ht/preparing-for-upgrade-to-rhel10
+                url='https://red.ht/preparing-for-upgrade-to-rhel{}'.format(target_major_version),
                 title='Preparing for the upgrade'),
             reporting.RelatedResource("file", "/etc/leapp/files/repomap.json"),
             reporting.RelatedResource("file", "/etc/yum.repos.d/")
@@ -854,7 +859,7 @@ def gather_target_repositories(context, indata):
             reporting.Groups([reporting.Groups.INHIBITOR]),
             reporting.Severity(reporting.Severity.HIGH),
             reporting.ExternalLink(
-                # TODO: How to handle different documentation links for each version?
+                # NOTE: Article covers both RHEL 7 to RHEL 8 and RHEL 8 to RHEL 9
                 url='https://access.redhat.com/articles/4977891',
                 title='Customizing your Red Hat Enterprise Linux in-place upgrade'),
             reporting.Remediation(hint=(
