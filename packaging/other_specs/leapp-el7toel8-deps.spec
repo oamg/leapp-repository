@@ -9,7 +9,7 @@
 %endif
 
 
-%define leapp_repo_deps  9
+%define leapp_repo_deps  10
 %define leapp_framework_deps 5
 
 # NOTE: the Version contains the %{rhel} macro just for the convenience to
@@ -67,6 +67,19 @@ Requires:   cpio
 
 # just to be sure that /etc/modprobe.d is present
 Requires:   kmod
+
+# required to be able to format disk images with XFS file systems (default)
+# NOTE: this is really needed on the source system, but keep it for the target
+# one too
+Requires:   xfsprogs
+
+# required to be able to format disk images with Ext4 file systems
+# NOTE: this is not happening by default, but we can expact that many customers
+# will want to / need to do this - especially on RHEL 7 now. Adding this deps
+# as the best trade-off to resolve this problem.
+# NOTE: this is really needed on the source system, but keep it for the target
+# one too
+Requires:   e2fsprogs
 
 
 %description -n %{lrdname}
