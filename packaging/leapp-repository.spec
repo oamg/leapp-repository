@@ -2,7 +2,7 @@
 %global repositorydir %{leapp_datadir}/repositories
 %global custom_repositorydir %{leapp_datadir}/custom-repositories
 
-%define leapp_repo_deps  9
+%define leapp_repo_deps  10
 
 %if 0%{?rhel} == 7
     %define leapp_python_sitelib %{python2_sitelib}
@@ -149,6 +149,16 @@ Provides:  leapp-repository-dependencies = %{leapp_repo_deps}
 ##################################################
 Requires:   dnf >= 4
 Requires:   pciutils
+
+# required to be able to format disk images with XFS file systems (default)
+Requires:   xfsprogs
+
+# required to be able to format disk images with Ext4 file systems
+# NOTE: this is not happening by default, but we can expact that many customers
+# will want to / need to do this - especially on RHEL 7 now. Adding this deps
+# as the best trade-off to resolve this problem.
+Requires:   e2fsprogs
+
 %if 0%{?rhel} && 0%{?rhel} == 7
 # Required to gather system facts about SELinux
 Requires:   libselinux-python
