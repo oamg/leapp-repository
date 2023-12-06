@@ -26,7 +26,7 @@ def process():
         title = 'Multiple debug kernels installed'
         summary = ('DNF cannot produce a valid upgrade transaction when'
                    ' multiple kernel-debug packages are installed.')
-        hint = ('Remove all but one kernel-debug packages before running Leapp again.')
+        hint = 'Remove all but one kernel-debug packages before running Leapp again.'
         all_but_latest_kernel_debug = pkgs[:-1]
         packages = ['{n}-{v}-{r}'.format(n=pkg.name, v=pkg.version, r=pkg.release)
                     for pkg in all_but_latest_kernel_debug]
