@@ -7,7 +7,7 @@ from leapp.libraries.actor import checkinstalledkernels
 from leapp.libraries.common.config import architecture
 from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked, logger_mocked
 from leapp.libraries.stdlib import api
-from leapp.models import InstalledRedHatSignedRPM, KernelInfo, RPM
+from leapp.models import DistributionSignedRPM, KernelInfo, RPM
 
 RH_PACKAGER = 'Red Hat, Inc. <http://bugzilla.redhat.com/bugzilla>'
 
@@ -26,7 +26,7 @@ def create_rpm(rpm_desc, packager=RH_PACKAGER, pgpsig='SOME_OTHER_SIG_X', epoch=
 
 def create_rpms(rpm_descriptions):
     rpms = [create_rpm(rpm_desc) for rpm_desc in rpm_descriptions]
-    installed_rpms = InstalledRedHatSignedRPM(items=rpms)
+    installed_rpms = DistributionSignedRPM(items=rpms)
     return installed_rpms
 
 

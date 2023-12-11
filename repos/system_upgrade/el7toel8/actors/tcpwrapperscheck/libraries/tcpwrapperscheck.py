@@ -7,7 +7,7 @@ def config_affects_daemons(tcp_wrappers_facts, packages_list, daemons):
     configuration of tcp_wrappers based on the.
 
     :param tcp_wrappers_facts: Facts provided by the TcpWrappersFacts
-    :param packages_list: List of packages provided by InstalledRedHatSignedRPM
+    :param packages_list: List of packages provided by DistributionSignedRPM
     :param daemons: List of packages and keywords affecting daemons in this format:
                     [{"package-name", ["daemon1", "daemon2", ...], ...}]
     """

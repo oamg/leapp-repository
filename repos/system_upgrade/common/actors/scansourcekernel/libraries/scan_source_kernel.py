@@ -4,12 +4,12 @@ from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import kernel as kernel_lib
 from leapp.libraries.common.config.version import get_source_version
 from leapp.libraries.stdlib import api
-from leapp.models import InstalledRedHatSignedRPM, KernelInfo
+from leapp.models import DistributionSignedRPM, KernelInfo
 
 
 def scan_source_kernel():
     uname_r = api.current_actor().configuration.kernel
-    installed_rpms = [msg.items for msg in api.consume(InstalledRedHatSignedRPM)]
+    installed_rpms = [msg.items for msg in api.consume(DistributionSignedRPM)]
     installed_rpms = list(itertools.chain(*installed_rpms))
 
     kernel_type = kernel_lib.determine_kernel_type_from_uname(get_source_version(), uname_r)

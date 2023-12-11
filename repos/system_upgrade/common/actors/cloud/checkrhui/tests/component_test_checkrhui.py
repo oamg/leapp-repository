@@ -13,7 +13,6 @@ from leapp.libraries.common.testutils import create_report_mocked, CurrentActorM
 from leapp.libraries.stdlib import api
 from leapp.models import (
     CopyFile,
-    InstalledRedHatSignedRPM,
     InstalledRPM,
     RequiredTargetUserspacePackages,
     RHUIInfo,

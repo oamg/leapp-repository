@@ -2,7 +2,7 @@ from leapp import reporting
 from leapp.actors import Actor
 from leapp.libraries.actor import checkbrltty
 from leapp.libraries.common.rpms import has_package
-from leapp.models import BrlttyMigrationDecision, InstalledRedHatSignedRPM
+from leapp.models import BrlttyMigrationDecision, DistributionSignedRPM
 from leapp.reporting import create_report, Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
@@ -15,12 +15,12 @@ class CheckBrltty(Actor):
     """
 
     name = 'check_brltty'
-    consumes = (InstalledRedHatSignedRPM,)
+    consumes = (DistributionSignedRPM,)
     produces = (Report, BrlttyMigrationDecision,)
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 
     def process(self):
-        if has_package(InstalledRedHatSignedRPM, 'brltty'):
+        if has_package(DistributionSignedRPM, 'brltty'):
             create_report([
                 reporting.Title('Brltty has incompatible changes in the next major version'),
                 reporting.Summary(

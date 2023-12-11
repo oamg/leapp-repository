@@ -3,7 +3,7 @@ import os
 
 from leapp.libraries.common.rpms import has_package
 from leapp.libraries.stdlib import api, CalledProcessError, run
-from leapp.models import DynamicLinkerConfiguration, InstalledRedHatSignedRPM, LDConfigFile, MainLDConfigFile
+from leapp.models import DistributionSignedRPM, DynamicLinkerConfiguration, LDConfigFile, MainLDConfigFile
 
 LD_SO_CONF_DIR = '/etc/ld.so.conf.d'
 LD_SO_CONF_MAIN = '/etc/ld.so.conf'
@@ -46,7 +46,7 @@ def _is_included_config_custom(config_path):
     is_custom = False
     try:
         package_name = run(['rpm', '-qf', '--queryformat', '%{NAME}', config_path])['stdout']
-        is_custom = not has_package(InstalledRedHatSignedRPM, package_name) or _is_modified(config_path)
+        is_custom = not has_package(DistributionSignedRPM, package_name) or _is_modified(config_path)
     except CalledProcessError:
         is_custom = True
 

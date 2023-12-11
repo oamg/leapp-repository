@@ -1,7 +1,7 @@
 from leapp.actors import Actor
 from leapp.libraries.common.rpms import has_package
 from leapp.libraries.stdlib import api
-from leapp.models import CopyFile, InstalledRedHatSignedRPM, TargetUserSpacePreupgradeTasks
+from leapp.models import CopyFile, DistributionSignedRPM, TargetUserSpacePreupgradeTasks
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 PLUGIN_PKGNAME = "kpatch-dnf"
@@ -18,12 +18,12 @@ class CheckKpatch(Actor):
     """
 
     name = 'check_kpatch'
-    consumes = (InstalledRedHatSignedRPM,)
+    consumes = (DistributionSignedRPM,)
     produces = (TargetUserSpacePreupgradeTasks,)
     tags = (IPUWorkflowTag, ChecksPhaseTag)
 
     def process(self):
-        if has_package(InstalledRedHatSignedRPM, PLUGIN_PKGNAME):
+        if has_package(DistributionSignedRPM, PLUGIN_PKGNAME):
             api.produce(TargetUserSpacePreupgradeTasks(
                 install_rpms=[PLUGIN_PKGNAME],
                 copy_files=[CopyFile(src=CONFIG_PATH)]))

@@ -1,6 +1,6 @@
 from leapp.actors import Actor
 from leapp.libraries.actor.nischeck import report_nis
-from leapp.models import InstalledRedHatSignedRPM, NISConfig, Report
+from leapp.models import DistributionSignedRPM, NISConfig, Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
@@ -11,7 +11,7 @@ class NISCheck(Actor):
     """
 
     name = 'nis_check'
-    consumes = (InstalledRedHatSignedRPM, NISConfig)
+    consumes = (DistributionSignedRPM, NISConfig)
     produces = (Report,)
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 

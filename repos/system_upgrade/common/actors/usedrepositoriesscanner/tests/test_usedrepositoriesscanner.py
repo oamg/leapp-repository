@@ -1,5 +1,5 @@
 from leapp.models import (
-    InstalledRedHatSignedRPM,
+    DistributionSignedRPM,
     RepositoriesFacts,
     RepositoryData,
     RepositoryFile,
@@ -22,7 +22,7 @@ def get_sample_rpm(name, repository):
 
 
 def get_sample_installed_pkgs(pkgs):
-    return InstalledRedHatSignedRPM(items=[get_sample_rpm(*p) for p in pkgs])
+    return DistributionSignedRPM(items=[get_sample_rpm(*p) for p in pkgs])
 
 
 def get_sample_repository(repoid, name):

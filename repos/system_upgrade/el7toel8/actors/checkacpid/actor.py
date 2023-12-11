@@ -1,7 +1,7 @@
 from leapp import reporting
 from leapp.actors import Actor
 from leapp.libraries.common.rpms import has_package
-from leapp.models import InstalledRedHatSignedRPM
+from leapp.models import DistributionSignedRPM
 from leapp.reporting import create_report, Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
@@ -12,12 +12,12 @@ class CheckAcpid(Actor):
     """
 
     name = 'checkacpid'
-    consumes = (InstalledRedHatSignedRPM,)
+    consumes = (DistributionSignedRPM,)
     produces = (Report,)
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 
     def process(self):
-        if has_package(InstalledRedHatSignedRPM, 'acpid'):
+        if has_package(DistributionSignedRPM, 'acpid'):
             create_report([
                 reporting.Title('Acpid incompatible changes in the next major version'),
                 reporting.Summary('The option -d (debug) no longer implies -f (foreground).'),

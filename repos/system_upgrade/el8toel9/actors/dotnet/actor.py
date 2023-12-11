@@ -1,7 +1,7 @@
 from leapp import reporting
 from leapp.actors import Actor
 from leapp.libraries.common.rpms import has_package
-from leapp.models import InstalledRedHatSignedRPM, Report
+from leapp.models import DistributionSignedRPM, Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 UNSUPPORTED_VERSIONS = ['2.1', '3.0', '3.1', '5.0']
@@ -13,7 +13,7 @@ class DotnetUnsupportedVersionsCheck(Actor):
     """
 
     name = 'dotnet_unsupported_versions_check'
-    consumes = (InstalledRedHatSignedRPM,)
+    consumes = (DistributionSignedRPM,)
     produces = (Report,)
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 
@@ -22,7 +22,7 @@ class DotnetUnsupportedVersionsCheck(Actor):
 
         for unsupported_version in UNSUPPORTED_VERSIONS:
             runtime_package = f'dotnet-runtime-{unsupported_version}'
-            if has_package(InstalledRedHatSignedRPM, runtime_package):
+            if has_package(DistributionSignedRPM, runtime_package):
                 unsupported_versions_report_text += '{0}{1}'.format('\n    - ', unsupported_version)
 
         if unsupported_versions_report_text:

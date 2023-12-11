@@ -1,6 +1,6 @@
 from leapp import reporting
 from leapp.actors import Actor
-from leapp.models import InstalledRedHatSignedRPM
+from leapp.models import DistributionSignedRPM
 from leapp.reporting import create_report, Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
@@ -11,12 +11,12 @@ class CheckPostfix(Actor):
     """
 
     name = 'check_postfix'
-    consumes = (InstalledRedHatSignedRPM,)
+    consumes = (DistributionSignedRPM,)
     produces = (Report,)
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 
     def process(self):
-        for fact in self.consume(InstalledRedHatSignedRPM):
+        for fact in self.consume(DistributionSignedRPM):
             for rpm in fact.items:
                 if rpm.name == 'postfix':
                     create_report([

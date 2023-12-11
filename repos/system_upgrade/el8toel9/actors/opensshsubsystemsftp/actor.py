@@ -1,6 +1,6 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import opensshsubsystemsftp
-from leapp.models import InstalledRedHatSignedRPM, OpenSshConfig
+from leapp.models import DistributionSignedRPM, OpenSshConfig
 from leapp.reporting import Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
@@ -14,7 +14,7 @@ class OpenSshSubsystemSftp(Actor):
     """
 
     name = 'open_ssh_subsystem_sftp'
-    consumes = (OpenSshConfig, InstalledRedHatSignedRPM,)
+    consumes = (OpenSshConfig, DistributionSignedRPM,)
     produces = (Report,)
     tags = (IPUWorkflowTag, ChecksPhaseTag)
 

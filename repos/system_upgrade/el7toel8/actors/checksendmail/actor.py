@@ -3,7 +3,7 @@ from leapp.actors import Actor
 from leapp.libraries.actor import checksendmail
 from leapp.libraries.common.rpms import has_package
 from leapp.libraries.common.tcpwrappersutils import config_applies_to_daemon
-from leapp.models import InstalledRedHatSignedRPM, SendmailMigrationDecision, TcpWrappersFacts
+from leapp.models import DistributionSignedRPM, SendmailMigrationDecision, TcpWrappersFacts
 from leapp.reporting import create_report, Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
@@ -21,12 +21,12 @@ class CheckSendmail(Actor):
     """
 
     name = 'check_sendmail'
-    consumes = (InstalledRedHatSignedRPM, TcpWrappersFacts,)
+    consumes = (DistributionSignedRPM, TcpWrappersFacts,)
     produces = (Report, SendmailMigrationDecision,)
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 
     def process(self):
-        if not has_package(InstalledRedHatSignedRPM, 'sendmail'):
+        if not has_package(DistributionSignedRPM, 'sendmail'):
             return
 
         if config_applies_to_daemon(next(self.consume(TcpWrappersFacts)), 'sendmail'):

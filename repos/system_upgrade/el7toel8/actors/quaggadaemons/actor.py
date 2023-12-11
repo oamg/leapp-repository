@@ -1,7 +1,7 @@
 from leapp.actors import Actor
 from leapp.libraries.actor.quaggadaemons import process_daemons
 from leapp.libraries.common.rpms import has_package
-from leapp.models import InstalledRedHatSignedRPM, QuaggaToFrrFacts
+from leapp.models import DistributionSignedRPM, QuaggaToFrrFacts
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 
@@ -15,10 +15,10 @@ class QuaggaDaemons(Actor):
     """
 
     name = 'quagga_daemons'
-    consumes = (InstalledRedHatSignedRPM,)
+    consumes = (DistributionSignedRPM,)
     produces = (QuaggaToFrrFacts,)
     tags = (FactsPhaseTag, IPUWorkflowTag)
 
     def process(self):
-        if has_package(InstalledRedHatSignedRPM, 'quagga'):
+        if has_package(DistributionSignedRPM, 'quagga'):
             self.produce(process_daemons())

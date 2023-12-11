@@ -1,7 +1,7 @@
 from leapp import reporting
 from leapp.actors import Actor
 from leapp.libraries.common.rpms import has_package
-from leapp.models import InstalledRedHatSignedRPM
+from leapp.models import DistributionSignedRPM
 from leapp.reporting import create_report, Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
@@ -12,12 +12,12 @@ class CheckDosfstools(Actor):
     """
 
     name = 'checkdosfstools'
-    consumes = (InstalledRedHatSignedRPM,)
+    consumes = (DistributionSignedRPM,)
     produces = (Report,)
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 
     def process(self):
-        if has_package(InstalledRedHatSignedRPM, 'dosfstools'):
+        if has_package(DistributionSignedRPM, 'dosfstools'):
             create_report([
                 reporting.Title('Dosfstools incompatible changes in the next major version'),
                 reporting.Summary(

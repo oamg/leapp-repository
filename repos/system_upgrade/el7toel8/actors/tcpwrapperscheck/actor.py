@@ -4,7 +4,7 @@ from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor.tcpwrapperscheck import config_affects_daemons
 from leapp.libraries.common.rpms import create_lookup
 from leapp.libraries.stdlib import api
-from leapp.models import InstalledRedHatSignedRPM, Report, TcpWrappersFacts
+from leapp.models import DistributionSignedRPM, Report, TcpWrappersFacts
 from leapp.reporting import create_report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
@@ -38,7 +38,7 @@ class TcpWrappersCheck(Actor):
     """
 
     name = 'tcp_wrappers_check'
-    consumes = (TcpWrappersFacts, InstalledRedHatSignedRPM,)
+    consumes = (TcpWrappersFacts, DistributionSignedRPM,)
     produces = (Report,)
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 
@@ -54,7 +54,7 @@ class TcpWrappersCheck(Actor):
             )
 
         # Convert installed packages message to list
-        packages = create_lookup(InstalledRedHatSignedRPM, field='items', keys=('name',))
+        packages = create_lookup(DistributionSignedRPM, field='items', keys=('name',))
 
         found_packages = config_affects_daemons(tcp_wrappers_facts, packages, DAEMONS)
 

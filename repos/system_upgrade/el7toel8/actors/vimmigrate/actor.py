@@ -1,6 +1,6 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import vimmigrate
-from leapp.models import InstalledRedHatSignedRPM
+from leapp.models import DistributionSignedRPM
 from leapp.tags import ApplicationsPhaseTag, IPUWorkflowTag
 
 
@@ -11,7 +11,7 @@ class VimMigrate(Actor):
     """
 
     name = 'vim_migrate'
-    consumes = (InstalledRedHatSignedRPM,)
+    consumes = (DistributionSignedRPM,)
     produces = ()
     tags = (ApplicationsPhaseTag, IPUWorkflowTag)
 

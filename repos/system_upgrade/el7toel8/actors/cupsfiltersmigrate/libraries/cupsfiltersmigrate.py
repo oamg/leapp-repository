@@ -1,6 +1,6 @@
 from leapp.libraries.common.rpms import has_package
 from leapp.libraries.stdlib import api
-from leapp.models import InstalledRedHatSignedRPM
+from leapp.models import DistributionSignedRPM
 
 # rpm : the default config file
 BROWSED_CONFIG = '/etc/cups/cups-browsed.conf'
@@ -76,7 +76,7 @@ def _check_package(pkg):
 
     :param str pkg: name of package
     """
-    return has_package(InstalledRedHatSignedRPM, pkg)
+    return has_package(DistributionSignedRPM, pkg)
 
 
 def update_cups_browsed(debug_log=api.current_logger().debug,

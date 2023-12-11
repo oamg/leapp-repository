@@ -4,7 +4,7 @@ from leapp import reporting
 from leapp.libraries.actor.postgresqlcheck import report_installed_packages
 from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked
 from leapp.libraries.stdlib import api
-from leapp.models import InstalledRedHatSignedRPM, RPM
+from leapp.models import DistributionSignedRPM, RPM
 
 
 def _generate_rpm_with_name(name):
@@ -55,7 +55,7 @@ def test_actor_execution(monkeypatch, has_server, has_contrib):
             # Add postgresql-contrib
             rpms += [_generate_rpm_with_name('postgresql-contrib')]
 
-    curr_actor_mocked = CurrentActorMocked(msgs=[InstalledRedHatSignedRPM(items=rpms)])
+    curr_actor_mocked = CurrentActorMocked(msgs=[DistributionSignedRPM(items=rpms)])
     monkeypatch.setattr(api, 'current_actor', curr_actor_mocked)
     monkeypatch.setattr(reporting, "create_report", create_report_mocked())
 

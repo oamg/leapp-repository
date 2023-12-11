@@ -1,6 +1,6 @@
 import pytest
 
-from leapp.models import InstalledRedHatSignedRPM, Report, RPM
+from leapp.models import DistributionSignedRPM, Report, RPM
 
 
 def _generate_rpm_with_name(name):
@@ -34,7 +34,7 @@ def test_actor_execution(monkeypatch, current_actor_context, unsupported_version
         rpms += [_generate_rpm_with_name(f'dotnet-runtime-{version}')]
 
     # Executed actor fed with fake RPMs
-    current_actor_context.feed(InstalledRedHatSignedRPM(items=rpms))
+    current_actor_context.feed(DistributionSignedRPM(items=rpms))
     current_actor_context.run()
 
     if unsupported_versions:

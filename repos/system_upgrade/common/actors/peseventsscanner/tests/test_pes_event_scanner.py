@@ -17,8 +17,8 @@ from leapp.libraries.actor.pes_events_scanner import (
 )
 from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked, produce_mocked
 from leapp.models import (
+    DistributionSignedRPM,
     EnabledModules,
-    InstalledRedHatSignedRPM,
     PESIDRepositoryEntry,
     PESRpmTransactionTasks,
     RepoMapEntry,
@@ -229,7 +229,7 @@ def test_actor_performs(monkeypatch):
 
     _RPM = partial(RPM, epoch='', packager='', version='', release='', arch='', pgpsig='')
 
-    installed_pkgs = InstalledRedHatSignedRPM(items=[
+    installed_pkgs = DistributionSignedRPM(items=[
         _RPM(name='split-in'), _RPM(name='moved-in'), _RPM(name='removed')
     ])
 

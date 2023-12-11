@@ -1,6 +1,6 @@
 from leapp.actors import Actor
 from leapp.libraries.actor.rpmtransactionconfigtaskscollector import load_tasks
-from leapp.models import InstalledRedHatSignedRPM, RpmTransactionTasks
+from leapp.models import DistributionSignedRPM, RpmTransactionTasks
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 CONFIGURATION_BASE_PATH = '/etc/leapp/transaction'
@@ -15,7 +15,7 @@ class RpmTransactionConfigTasksCollector(Actor):
     """
 
     name = 'rpm_transaction_config_tasks_collector'
-    consumes = (InstalledRedHatSignedRPM,)
+    consumes = (DistributionSignedRPM,)
     produces = (RpmTransactionTasks,)
     tags = (FactsPhaseTag, IPUWorkflowTag)
 

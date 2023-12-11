@@ -1,6 +1,6 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import multipathconfread
-from leapp.models import InstalledRedHatSignedRPM, MultipathConfFacts8to9, TargetUserSpaceUpgradeTasks
+from leapp.models import DistributionSignedRPM, MultipathConfFacts8to9, TargetUserSpaceUpgradeTasks
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 
@@ -19,7 +19,7 @@ class MultipathConfRead8to9(Actor):
     """
 
     name = 'multipath_conf_read_8to9'
-    consumes = (InstalledRedHatSignedRPM,)
+    consumes = (DistributionSignedRPM,)
     produces = (MultipathConfFacts8to9, TargetUserSpaceUpgradeTasks)
     tags = (FactsPhaseTag, IPUWorkflowTag)
 

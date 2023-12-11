@@ -1,6 +1,6 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import sanebackendsmigrate
-from leapp.models import InstalledRedHatSignedRPM
+from leapp.models import DistributionSignedRPM
 from leapp.tags import ApplicationsPhaseTag, IPUWorkflowTag
 
 
@@ -13,7 +13,7 @@ class SanebackendsMigrate(Actor):
     """
 
     name = 'sanebackends_migrate'
-    consumes = (InstalledRedHatSignedRPM,)
+    consumes = (DistributionSignedRPM,)
     produces = ()
     tags = (ApplicationsPhaseTag, IPUWorkflowTag)
 

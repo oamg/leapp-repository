@@ -1,6 +1,6 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import cupsfiltersmigrate
-from leapp.models import InstalledRedHatSignedRPM
+from leapp.models import DistributionSignedRPM
 from leapp.tags import ApplicationsPhaseTag, IPUWorkflowTag
 
 
@@ -21,7 +21,7 @@ class CupsfiltersMigrate(Actor):
     """
 
     name = 'cupsfilters_migrate'
-    consumes = (InstalledRedHatSignedRPM,)
+    consumes = (DistributionSignedRPM,)
     produces = ()
     tags = (ApplicationsPhaseTag, IPUWorkflowTag)
 

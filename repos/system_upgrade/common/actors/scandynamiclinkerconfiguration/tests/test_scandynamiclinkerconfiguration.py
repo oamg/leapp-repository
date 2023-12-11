@@ -7,7 +7,7 @@ from leapp import reporting
 from leapp.libraries.actor import scandynamiclinkerconfiguration
 from leapp.libraries.common.testutils import produce_mocked
 from leapp.libraries.stdlib import api, CalledProcessError
-from leapp.models import InstalledRedHatSignedRPM
+from leapp.models import DistributionSignedRPM
 
 INCLUDED_CONFIGS_GLOB_DICT_1 = {'/etc/ld.so.conf.d/*.conf': ['/etc/ld.so.conf.d/dyninst-x86_64.conf',
                                                              '/etc/ld.so.conf.d/mariadb-x86_64.conf',
@@ -161,7 +161,7 @@ def test_is_included_config_custom(monkeypatch, config_path, config_contents, ru
         return {'stdout': run_result}
 
     def mocked_has_package(model, package_name):
-        assert model is InstalledRedHatSignedRPM
+        assert model is DistributionSignedRPM
         assert package_name == run_result
         return is_installed_rh_signed_package
 
