@@ -1,5 +1,6 @@
 from leapp.models import fields, Model
 from leapp.topics import SystemInfoTopic
+from leapp.utils.deprecation import deprecated
 
 
 class RPM(Model):
@@ -21,6 +22,11 @@ class InstalledRPM(Model):
     items = fields.List(fields.Model(RPM), default=[])
 
 
+class DistributionSignedRPM(InstalledRPM):
+    pass
+
+
+@deprecated(since='2024-01-31', message='Replaced by DistributionSignedRPM')
 class InstalledRedHatSignedRPM(InstalledRPM):
     pass
 

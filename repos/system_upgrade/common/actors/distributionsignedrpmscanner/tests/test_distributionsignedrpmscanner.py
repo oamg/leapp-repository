@@ -3,12 +3,14 @@ import mock
 from leapp.libraries.common import rpms
 from leapp.libraries.common.config import mock_configs
 from leapp.models import (
+    DistributionSignedRPM,
     fields,
     InstalledRedHatSignedRPM,
     InstalledRPM,
     InstalledUnsignedRPM,
     IPUConfig,
     Model,
+    OSRelease,
     RPM
 )
 
@@ -30,6 +32,7 @@ class MockModel(Model):
 
 def test_no_installed_rpms(current_actor_context):
     current_actor_context.run(config_model=mock_configs.CONFIG)
+    assert current_actor_context.consume(DistributionSignedRPM)
     assert current_actor_context.consume(InstalledRedHatSignedRPM)
     assert current_actor_context.consume(InstalledUnsignedRPM)
 
@@ -57,10 +60,72 @@ def test_actor_execution_with_signed_unsigned_data(current_actor_context):
 
     current_actor_context.feed(InstalledRPM(items=installed_rpm))
     current_actor_context.run(config_model=mock_configs.CONFIG)
+    assert current_actor_context.consume(DistributionSignedRPM)
+    assert len(current_actor_context.consume(DistributionSignedRPM)[0].items) == 5
     assert current_actor_context.consume(InstalledRedHatSignedRPM)
     assert len(current_actor_context.consume(InstalledRedHatSignedRPM)[0].items) == 5
     assert current_actor_context.consume(InstalledUnsignedRPM)
     assert len(current_actor_context.consume(InstalledUnsignedRPM)[0].items) == 4
+
+
+def test_actor_execution_with_signed_unsigned_data_centos(current_actor_context):
+    CENTOS_PACKAGER = 'CentOS BuildSystem <http://bugs.centos.org>'
+    config = mock_configs.CONFIG
+
+    config.os_release = OSRelease(
+        release_id='centos',
+        name='CentOS Linux',
+        pretty_name='CentOS Linux 7 (Core)',
+        version='7 (Core)',
+        version_id='7'
+    )
+
+    installed_rpm = [
+        RPM(name='sample01', version='0.1', release='1.sm01', epoch='1', packager=CENTOS_PACKAGER, arch='noarch',
+            pgpsig='RSA/SHA256, Mon 01 Jan 1970 00:00:00 AM -03, Key ID 24c6a8a7f4a80eb5'),
+        RPM(name='sample02', version='0.1', release='1.sm01', epoch='1', packager=CENTOS_PACKAGER, arch='noarch',
+            pgpsig='SOME_OTHER_SIG_X'),
+        RPM(name='sample03', version='0.1', release='1.sm01', epoch='1', packager=CENTOS_PACKAGER, arch='noarch',
+            pgpsig='RSA/SHA256, Mon 01 Jan 1970 00:00:00 AM -03, Key ID 05b555b38483c65d'),
+        RPM(name='sample04', version='0.1', release='1.sm01', epoch='1', packager=CENTOS_PACKAGER, arch='noarch',
+            pgpsig='SOME_OTHER_SIG_X'),
+        RPM(name='sample05', version='0.1', release='1.sm01', epoch='1', packager=CENTOS_PACKAGER, arch='noarch',
+            pgpsig='RSA/SHA256, Mon 01 Jan 1970 00:00:00 AM -03, Key ID 4eb84e71f2ee9d55'),
+        RPM(name='sample06', version='0.1', release='1.sm01', epoch='1', packager=CENTOS_PACKAGER, arch='noarch',
+            pgpsig='SOME_OTHER_SIG_X'),
+        RPM(name='sample07', version='0.1', release='1.sm01', epoch='1', packager=CENTOS_PACKAGER, arch='noarch',
+            pgpsig='RSA/SHA256, Mon 01 Jan 1970 00:00:00 AM -03, Key ID fd372689897da07a'),
+        RPM(name='sample08', version='0.1', release='1.sm01', epoch='1', packager=CENTOS_PACKAGER, arch='noarch',
+            pgpsig='SOME_OTHER_SIG_X'),
+        RPM(name='sample09', version='0.1', release='1.sm01', epoch='1', packager=CENTOS_PACKAGER, arch='noarch',
+            pgpsig='RSA/SHA256, Mon 01 Jan 1970 00:00:00 AM -03, Key ID 45689c882fa658e0')]
+
+    current_actor_context.feed(InstalledRPM(items=installed_rpm))
+    current_actor_context.run(config_model=config)
+    assert current_actor_context.consume(DistributionSignedRPM)
+    assert len(current_actor_context.consume(DistributionSignedRPM)[0].items) == 3
+    assert current_actor_context.consume(InstalledRedHatSignedRPM)
+    assert not current_actor_context.consume(InstalledRedHatSignedRPM)[0].items
+    assert current_actor_context.consume(InstalledUnsignedRPM)
+    assert len(current_actor_context.consume(InstalledUnsignedRPM)[0].items) == 6
+
+
+def test_actor_execution_with_unknown_distro(current_actor_context):
+    config = mock_configs.CONFIG
+
+    config.os_release = OSRelease(
+        release_id='myos',
+        name='MyOS Linux',
+        pretty_name='MyOS Linux 7 (Core)',
+        version='7 (Core)',
+        version_id='7'
+    )
+
+    current_actor_context.feed(InstalledRPM(items=[]))
+    current_actor_context.run(config_model=config)
+    assert not current_actor_context.consume(DistributionSignedRPM)
+    assert not current_actor_context.consume(InstalledRedHatSignedRPM)
+    assert not current_actor_context.consume(InstalledUnsignedRPM)
 
 
 def test_all_rpms_signed(current_actor_context):
@@ -77,6 +142,8 @@ def test_all_rpms_signed(current_actor_context):
 
     current_actor_context.feed(InstalledRPM(items=installed_rpm))
     current_actor_context.run(config_model=mock_configs.CONFIG_ALL_SIGNED)
+    assert current_actor_context.consume(DistributionSignedRPM)
+    assert len(current_actor_context.consume(DistributionSignedRPM)[0].items) == 4
     assert current_actor_context.consume(InstalledRedHatSignedRPM)
     assert len(current_actor_context.consume(InstalledRedHatSignedRPM)[0].items) == 4
     assert not current_actor_context.consume(InstalledUnsignedRPM)[0].items
@@ -95,6 +162,8 @@ def test_katello_pkg_goes_to_signed(current_actor_context):
 
     current_actor_context.feed(InstalledRPM(items=installed_rpm))
     current_actor_context.run(config_model=mock_configs.CONFIG_ALL_SIGNED)
+    assert current_actor_context.consume(DistributionSignedRPM)
+    assert len(current_actor_context.consume(DistributionSignedRPM)[0].items) == 1
     assert current_actor_context.consume(InstalledRedHatSignedRPM)
     assert len(current_actor_context.consume(InstalledRedHatSignedRPM)[0].items) == 1
     assert not current_actor_context.consume(InstalledUnsignedRPM)[0].items
@@ -110,6 +179,8 @@ def test_gpg_pubkey_pkg(current_actor_context):
 
     current_actor_context.feed(InstalledRPM(items=installed_rpm))
     current_actor_context.run(config_model=mock_configs.CONFIG)
+    assert current_actor_context.consume(DistributionSignedRPM)
+    assert len(current_actor_context.consume(DistributionSignedRPM)[0].items) == 1
     assert current_actor_context.consume(InstalledRedHatSignedRPM)
     assert len(current_actor_context.consume(InstalledRedHatSignedRPM)[0].items) == 1
     assert current_actor_context.consume(InstalledUnsignedRPM)
@@ -165,6 +236,8 @@ def test_has_package(current_actor_context):
 
     current_actor_context.feed(InstalledRPM(items=installed_rpm))
     current_actor_context.run(config_model=mock_configs.CONFIG)
+    assert rpms.has_package(DistributionSignedRPM, 'sample01', context=current_actor_context)
+    assert not rpms.has_package(DistributionSignedRPM, 'nosuchpackage', context=current_actor_context)
     assert rpms.has_package(InstalledRedHatSignedRPM, 'sample01', context=current_actor_context)
     assert not rpms.has_package(InstalledRedHatSignedRPM, 'nosuchpackage', context=current_actor_context)
     assert rpms.has_package(InstalledUnsignedRPM, 'sample02', context=current_actor_context)
