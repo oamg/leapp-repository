@@ -1,4 +1,4 @@
-from leapp.models import BrlttyMigrationDecision, InstalledRedHatSignedRPM, RPM
+from leapp.models import BrlttyMigrationDecision, DistributionSignedRPM, RPM
 from leapp.reporting import Report
 
 RH_PACKAGER = 'Red Hat, Inc. <http://bugzilla.redhat.com/bugzilla>'
@@ -17,7 +17,7 @@ without_brltty = [
 
 
 def create_modulesfacts(installed_rpm):
-    return InstalledRedHatSignedRPM(items=installed_rpm)
+    return DistributionSignedRPM(items=installed_rpm)
 
 
 def test_actor_without_brltty_package(current_actor_context):

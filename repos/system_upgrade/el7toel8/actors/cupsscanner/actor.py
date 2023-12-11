@@ -1,6 +1,6 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import cupsscanner
-from leapp.models import CupsChangedFeatures, InstalledRedHatSignedRPM, Report
+from leapp.models import CupsChangedFeatures, DistributionSignedRPM, Report
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 
@@ -21,7 +21,7 @@ class CupsScanner(Actor):
     """
 
     name = 'cups_scanner'
-    consumes = (InstalledRedHatSignedRPM,)
+    consumes = (DistributionSignedRPM,)
     produces = (Report, CupsChangedFeatures)
     tags = (FactsPhaseTag, IPUWorkflowTag)
 

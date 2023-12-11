@@ -1,4 +1,4 @@
-from leapp.models import DaemonList, InstalledRedHatSignedRPM, RPM, SendmailMigrationDecision, TcpWrappersFacts
+from leapp.models import DaemonList, DistributionSignedRPM, RPM, SendmailMigrationDecision, TcpWrappersFacts
 from leapp.reporting import Report
 from leapp.utils.report import is_inhibitor
 
@@ -18,7 +18,7 @@ without_sendmail = [
 
 
 def create_modulesfacts(installed_rpm):
-    return InstalledRedHatSignedRPM(items=installed_rpm)
+    return DistributionSignedRPM(items=installed_rpm)
 
 
 def test_actor_without_sendmail_package(current_actor_context):

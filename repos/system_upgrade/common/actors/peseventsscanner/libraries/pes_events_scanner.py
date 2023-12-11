@@ -9,8 +9,8 @@ from leapp.libraries.common.config import version
 from leapp.libraries.stdlib import api
 from leapp.libraries.stdlib.config import is_verbose
 from leapp.models import (
+    DistributionSignedRPM,
     EnabledModules,
-    InstalledRedHatSignedRPM,
     Module,
     PESIDRepositoryEntry,
     PESRpmTransactionTasks,
@@ -57,14 +57,14 @@ def get_best_pesid_candidate(candidate_a, candidate_b, cloud_provider):
 def get_installed_pkgs():
     installed_pkgs = set()
 
-    installed_rh_signed_rpm_msgs = api.consume(InstalledRedHatSignedRPM)
+    installed_rh_signed_rpm_msgs = api.consume(DistributionSignedRPM)
     installed_rh_signed_rpm_msg = next(installed_rh_signed_rpm_msgs, None)
     if list(installed_rh_signed_rpm_msgs):
-        api.current_logger().warning('Unexpectedly received more than one InstalledRedHatSignedRPM message.')
+        api.current_logger().warning('Unexpectedly received more than one DistributionSignedRPM message.')
     if not installed_rh_signed_rpm_msg:
         raise StopActorExecutionError('Cannot parse PES data properly due to missing list of installed packages',
                                       details={'Problem': 'Did not receive a message with installed Red Hat-signed '
-                                                          'packages (InstalledRedHatSignedRPM)'})
+                                                          'packages (DistributionSignedRPM)'})
 
     for pkg in installed_rh_signed_rpm_msg.items:
         modulestream = None

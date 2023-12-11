@@ -2,7 +2,7 @@ from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common.rpms import has_package
 from leapp.libraries.stdlib import api
-from leapp.models import InstalledRedHatSignedRPM, NISConfig
+from leapp.models import DistributionSignedRPM, NISConfig
 
 report_summary = (
     'The NIS components (ypserv, ypbind, and yp-tools) are no longer available in RHEL-9.'
@@ -47,7 +47,7 @@ def report_nis():
     configured_rpms = nis_conf.nis_not_default_conf
 
     installed_packages = [package for package in (
-        'ypserv', 'ypbind') if has_package(InstalledRedHatSignedRPM, package)]
+        'ypserv', 'ypbind') if has_package(DistributionSignedRPM, package)]
 
     # Final list of NIS packages (configured and installed)
     rpms_configured_installed = [x for x in installed_packages if x in configured_rpms]

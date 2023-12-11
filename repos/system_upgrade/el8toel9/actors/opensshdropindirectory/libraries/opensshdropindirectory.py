@@ -1,7 +1,7 @@
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common.rpms import has_package
 from leapp.libraries.stdlib import api
-from leapp.models import InstalledRedHatSignedRPM
+from leapp.models import DistributionSignedRPM
 
 # The main SSHD configuration file
 SSHD_CONFIG = '/etc/ssh/sshd_config'
@@ -49,7 +49,7 @@ def process(openssh_messages):
         )
 
     # If the package is not installed, there is no need to do anything
-    if not has_package(InstalledRedHatSignedRPM, 'openssh-server'):
+    if not has_package(DistributionSignedRPM, 'openssh-server'):
         return
 
     # If the configuration file was not modified, the rpm update will bring the new

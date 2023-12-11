@@ -1,10 +1,5 @@
 from leapp.actors import Actor
-from leapp.models import (
-    InstalledRedHatSignedRPM,
-    RepositoriesFacts,
-    UsedRepositories,
-    UsedRepository
-)
+from leapp.models import DistributionSignedRPM, RepositoriesFacts, UsedRepositories, UsedRepository
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 
@@ -17,7 +12,7 @@ class UsedRepositoriesScanner(Actor):
     """
 
     name = 'used_repository_scanner'
-    consumes = (InstalledRedHatSignedRPM, RepositoriesFacts)
+    consumes = (DistributionSignedRPM, RepositoriesFacts)
     produces = (UsedRepositories,)
     tags = (IPUWorkflowTag, FactsPhaseTag)
 
@@ -30,7 +25,7 @@ class UsedRepositoriesScanner(Actor):
                         enabled_repos.append(repo.repoid)
 
         installed_pkgs = []
-        for rpm_pkgs in self.consume(InstalledRedHatSignedRPM):
+        for rpm_pkgs in self.consume(DistributionSignedRPM):
             installed_pkgs.extend(rpm_pkgs.items)
 
         used_repos = {}

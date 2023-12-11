@@ -1,6 +1,6 @@
 import os
 
-from leapp.models import InstalledRedHatSignedRPM, IpaInfo, RPM
+from leapp.models import DistributionSignedRPM, IpaInfo, RPM
 from leapp.snactor.fixture import current_actor_context
 
 DEFAULT_CONF = "/etc/ipa/default.conf"
@@ -21,7 +21,7 @@ def mock_rpm(name):
 
 
 def mock_rpms(*names):
-    return InstalledRedHatSignedRPM(items=[mock_rpm(name) for name in names])
+    return DistributionSignedRPM(items=[mock_rpm(name) for name in names])
 
 
 def mock_os_path_isfile(overrides):

@@ -1,7 +1,7 @@
 from leapp import reporting
 from leapp.actors import Actor
 from leapp.libraries.common.rpms import has_package
-from leapp.models import InstalledRedHatSignedRPM, Report
+from leapp.models import DistributionSignedRPM, Report
 from leapp.reporting import create_report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
@@ -12,12 +12,12 @@ class CheckWireshark(Actor):
     """
 
     name = 'check_wireshark'
-    consumes = (InstalledRedHatSignedRPM, )
+    consumes = (DistributionSignedRPM, )
     produces = (Report, )
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 
     def process(self):
-        if has_package(InstalledRedHatSignedRPM, 'wireshark'):
+        if has_package(DistributionSignedRPM, 'wireshark'):
             create_report([
                 reporting.Title('tshark: CLI options and output changes'),
                 reporting.Summary(

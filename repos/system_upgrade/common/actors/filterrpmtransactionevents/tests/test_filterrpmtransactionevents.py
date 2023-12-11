@@ -1,4 +1,4 @@
-from leapp.models import FilteredRpmTransactionTasks, InstalledRedHatSignedRPM, Module, RPM, RpmTransactionTasks
+from leapp.models import DistributionSignedRPM, FilteredRpmTransactionTasks, Module, RPM, RpmTransactionTasks
 from leapp.snactor.fixture import current_actor_context
 
 RH_PACKAGER = 'Red Hat, Inc. <http://bugzilla.redhat.com/bugzilla>'
@@ -17,7 +17,7 @@ def test_actor_execution_with_sample_data(current_actor_context):
             pgpsig='SOME_PGP_SIG')]
     modules_to_enable = [Module(name='enable', stream='1'), Module(name='enable', stream='2')]
     modules_to_reset = [Module(name='reset', stream='1'), Module(name='reset', stream='2')]
-    current_actor_context.feed(InstalledRedHatSignedRPM(items=installed_rpm))
+    current_actor_context.feed(DistributionSignedRPM(items=installed_rpm))
     current_actor_context.feed(RpmTransactionTasks(
         to_remove=[rpm.name for rpm in installed_rpm],
         to_keep=[installed_rpm[0].name],

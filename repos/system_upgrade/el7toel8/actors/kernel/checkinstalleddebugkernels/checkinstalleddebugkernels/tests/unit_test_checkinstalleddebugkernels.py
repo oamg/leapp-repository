@@ -1,6 +1,6 @@
 import pytest
 
-from leapp.models import InstalledRedHatSignedRPM, Report, RPM
+from leapp.models import DistributionSignedRPM, Report, RPM
 from leapp.snactor.fixture import current_actor_context
 
 RH_PACKAGER = 'Red Hat, Inc. <http://bugzilla.redhat.com/bugzilla>'
@@ -27,7 +27,7 @@ debug_kernels = [
 
 @pytest.mark.parametrize('n', [0, 1, 2, 3])
 def test_process_debug_kernels(current_actor_context, n):
-    current_actor_context.feed(InstalledRedHatSignedRPM(items=ballast1+debug_kernels[:n]+ballast2))
+    current_actor_context.feed(DistributionSignedRPM(items=ballast1+debug_kernels[:n]+ballast2))
     current_actor_context.run()
     if n < 2:
         assert not current_actor_context.consume(Report)

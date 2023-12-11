@@ -37,11 +37,11 @@ def _check_vdo_pre_conversion(device):
 
 
 def _lvm_package_installed():
-    return rpms.has_package(models.InstalledRedHatSignedRPM, 'lvm2')
+    return rpms.has_package(models.DistributionSignedRPM, 'lvm2')
 
 
 def _vdo_package_installed():
-    return rpms.has_package(models.InstalledRedHatSignedRPM, 'vdo')
+    return rpms.has_package(models.DistributionSignedRPM, 'vdo')
 
 
 def get_info(storage_info):

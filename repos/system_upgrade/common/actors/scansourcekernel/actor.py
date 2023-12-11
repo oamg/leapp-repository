@@ -1,6 +1,6 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import scan_source_kernel as scan_source_kernel_lib
-from leapp.models import InstalledRedHatSignedRPM, KernelInfo
+from leapp.models import DistributionSignedRPM, KernelInfo
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 
@@ -10,7 +10,7 @@ class ScanSourceKernel(Actor):
     """
 
     name = 'scan_source_kernel'
-    consumes = (InstalledRedHatSignedRPM,)
+    consumes = (DistributionSignedRPM,)
     produces = (KernelInfo,)
     tags = (IPUWorkflowTag, FactsPhaseTag)
 

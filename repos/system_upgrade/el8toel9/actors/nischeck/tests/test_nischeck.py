@@ -6,7 +6,7 @@ from leapp import reporting
 from leapp.libraries.actor import nischeck
 from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked
 from leapp.libraries.stdlib import api
-from leapp.models import InstalledRedHatSignedRPM, NISConfig, RPM
+from leapp.models import DistributionSignedRPM, NISConfig, RPM
 
 _generate_rpm = functools.partial(RPM,
                                   pgpsig='RSA/SHA256, Mon 01 Jan 1970 00:00:00 AM -03, Key ID 199e2f91fd431d51',
@@ -51,7 +51,7 @@ def test_actor_nis(monkeypatch, pkgs_installed, pkgs_configured):
     # Generate NIS facts
     nis_facts = NISConfig(nis_not_default_conf=pkgs_configured)
 
-    curr_actor_mocked = CurrentActorMocked(msgs=[InstalledRedHatSignedRPM(items=rpms), nis_facts])
+    curr_actor_mocked = CurrentActorMocked(msgs=[DistributionSignedRPM(items=rpms), nis_facts])
     monkeypatch.setattr(api, 'current_actor', curr_actor_mocked)
     monkeypatch.setattr(reporting, "create_report", create_report_mocked())
 

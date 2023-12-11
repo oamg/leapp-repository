@@ -1,6 +1,6 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import vdoconversionscanner
-from leapp.models import InstalledRedHatSignedRPM, StorageInfo, VdoConversionInfo
+from leapp.models import DistributionSignedRPM, StorageInfo, VdoConversionInfo
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 
@@ -59,7 +59,7 @@ class VdoConversionScanner(Actor):
     """
 
     name = 'vdo_conversion_scanner'
-    consumes = (InstalledRedHatSignedRPM, StorageInfo)
+    consumes = (DistributionSignedRPM, StorageInfo)
     produces = (VdoConversionInfo,)
     tags = (IPUWorkflowTag, FactsPhaseTag)
 

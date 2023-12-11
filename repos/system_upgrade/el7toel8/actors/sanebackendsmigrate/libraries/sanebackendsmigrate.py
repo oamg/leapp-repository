@@ -1,6 +1,6 @@
 from leapp.libraries.common.rpms import has_package
 from leapp.libraries.stdlib import api
-from leapp.models import InstalledRedHatSignedRPM
+from leapp.models import DistributionSignedRPM
 
 # Database of changes in configuration files of sane-backends
 # between RHELs
@@ -278,7 +278,7 @@ def _check_package(pkg_name):
     :param str pkg_name: name of package
     """
 
-    return has_package(InstalledRedHatSignedRPM, pkg_name)
+    return has_package(DistributionSignedRPM, pkg_name)
 
 
 def update_sane(debug_log=api.current_logger().debug,

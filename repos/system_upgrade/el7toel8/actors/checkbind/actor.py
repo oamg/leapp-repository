@@ -2,7 +2,7 @@ from leapp import reporting
 from leapp.actors import Actor
 from leapp.libraries.actor import iscmodel
 from leapp.libraries.stdlib import api
-from leapp.models import BindFacts, InstalledRedHatSignedRPM
+from leapp.models import BindFacts, DistributionSignedRPM
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
@@ -10,7 +10,7 @@ class CheckBind(Actor):
     """Actor parsing BIND configuration and checking for known issues in it."""
 
     name = 'check_bind'
-    consumes = (InstalledRedHatSignedRPM,)
+    consumes = (DistributionSignedRPM,)
     produces = (BindFacts, reporting.Report)
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 
@@ -25,7 +25,7 @@ class CheckBind(Actor):
         return False
 
     def process(self):
-        if not self.has_package(InstalledRedHatSignedRPM):
+        if not self.has_package(DistributionSignedRPM):
             self.log.debug('bind is not installed')
             return
 

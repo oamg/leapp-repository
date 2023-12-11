@@ -1,7 +1,7 @@
 from leapp import reporting
 from leapp.libraries.common.rpms import has_package
 from leapp.libraries.stdlib import api
-from leapp.models import InstalledRedHatSignedRPM
+from leapp.models import DistributionSignedRPM
 
 # Summary for mariadb-server report
 report_server_inst_summary = (
@@ -47,7 +47,7 @@ def report_installed_packages(_context=api):
 
     Create the report if the mariadb-server rpm (RH signed) is installed.
     """
-    has_server = has_package(InstalledRedHatSignedRPM, 'mariadb-server', context=_context)
+    has_server = has_package(DistributionSignedRPM, 'mariadb-server', context=_context)
 
     if has_server:
         _report_server_installed()

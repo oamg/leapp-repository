@@ -1,7 +1,7 @@
 from leapp.actors import Actor
 from leapp.models import (
+    DistributionSignedRPM,
     FilteredRpmTransactionTasks,
-    InstalledRedHatSignedRPM,
     PESRpmTransactionTasks,
     RpmTransactionTasks
 )
@@ -18,13 +18,13 @@ class FilterRpmTransactionTasks(Actor):
     """
 
     name = 'check_rpm_transaction_events'
-    consumes = (PESRpmTransactionTasks, RpmTransactionTasks, InstalledRedHatSignedRPM,)
+    consumes = (PESRpmTransactionTasks, RpmTransactionTasks, DistributionSignedRPM,)
     produces = (FilteredRpmTransactionTasks,)
     tags = (IPUWorkflowTag, ChecksPhaseTag)
 
     def process(self):
         installed_pkgs = set()
-        for rpm_pkgs in self.consume(InstalledRedHatSignedRPM):
+        for rpm_pkgs in self.consume(DistributionSignedRPM):
             installed_pkgs.update([pkg.name for pkg in rpm_pkgs.items])
 
         local_rpms = set()

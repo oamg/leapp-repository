@@ -1,4 +1,4 @@
-from leapp.models import InstalledRedHatSignedRPM, RPM
+from leapp.models import DistributionSignedRPM, RPM
 from leapp.reporting import Report
 from leapp.snactor.fixture import current_actor_context
 
@@ -6,7 +6,7 @@ RH_PACKAGER = 'Red Hat, Inc. <http://bugzilla.redhat.com/bugzilla>'
 
 
 def create_modulesfacts(installed_rpm):
-    return InstalledRedHatSignedRPM(items=installed_rpm)
+    return DistributionSignedRPM(items=installed_rpm)
 
 
 def test_actor_with_acpid_package(current_actor_context):

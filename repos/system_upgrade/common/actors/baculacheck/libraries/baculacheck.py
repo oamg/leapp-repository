@@ -1,7 +1,7 @@
 from leapp import reporting
 from leapp.libraries.common.rpms import has_package
 from leapp.libraries.stdlib import api
-from leapp.models import InstalledRedHatSignedRPM
+from leapp.models import DistributionSignedRPM
 
 # Summary for bacula-director report
 report_director_inst_summary = (
@@ -43,7 +43,7 @@ def report_installed_packages(_context=api):
 
     Create the report if the bacula-director rpm (RH signed) is installed.
     """
-    has_director = has_package(InstalledRedHatSignedRPM, 'bacula-director', context=_context)
+    has_director = has_package(DistributionSignedRPM, 'bacula-director', context=_context)
 
     if has_director:
         # bacula-director

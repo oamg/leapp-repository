@@ -2,8 +2,8 @@ from leapp.actors import Actor
 from leapp.libraries.actor.pes_events_scanner import process
 from leapp.models import (
     ConsumedDataAsset,
+    DistributionSignedRPM,
     EnabledModules,
-    InstalledRedHatSignedRPM,
     PESRpmTransactionTasks,
     RepositoriesBlacklisted,
     RepositoriesFacts,
@@ -27,7 +27,7 @@ class PesEventsScanner(Actor):
     name = 'pes_events_scanner'
     consumes = (
         EnabledModules,
-        InstalledRedHatSignedRPM,
+        DistributionSignedRPM,
         RepositoriesBlacklisted,
         RepositoriesFacts,
         RepositoriesMapping,

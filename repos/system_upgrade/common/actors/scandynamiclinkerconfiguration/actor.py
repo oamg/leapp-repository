@@ -1,6 +1,6 @@
 from leapp.actors import Actor
 from leapp.libraries.actor.scandynamiclinkerconfiguration import scan_dynamic_linker_configuration
-from leapp.models import DynamicLinkerConfiguration, InstalledRedHatSignedRPM
+from leapp.models import DistributionSignedRPM, DynamicLinkerConfiguration
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 
@@ -15,7 +15,7 @@ class ScanDynamicLinkerConfiguration(Actor):
     """
 
     name = 'scan_dynamic_linker_configuration'
-    consumes = (InstalledRedHatSignedRPM,)
+    consumes = (DistributionSignedRPM,)
     produces = (DynamicLinkerConfiguration,)
     tags = (FactsPhaseTag, IPUWorkflowTag)
 

@@ -1,6 +1,6 @@
 from leapp.actors import Actor
 from leapp.libraries.actor.checkntp import check_ntp
-from leapp.models import InstalledRedHatSignedRPM, NtpMigrationDecision, Report
+from leapp.models import DistributionSignedRPM, NtpMigrationDecision, Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
@@ -10,14 +10,14 @@ class CheckNtp(Actor):
     """
 
     name = 'check_ntp'
-    consumes = (InstalledRedHatSignedRPM,)
+    consumes = (DistributionSignedRPM,)
     produces = (Report, NtpMigrationDecision)
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 
     def process(self):
         installed_packages = set()
 
-        signed_rpms = self.consume(InstalledRedHatSignedRPM)
+        signed_rpms = self.consume(DistributionSignedRPM)
         for rpm_pkgs in signed_rpms:
             for pkg in rpm_pkgs.items:
                 installed_packages.add(pkg.name)

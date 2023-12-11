@@ -6,7 +6,7 @@ from leapp.libraries.common.rpms import has_package
 from leapp.libraries.stdlib import api
 from leapp.models import (
     CopyFile,
-    InstalledRedHatSignedRPM,
+    DistributionSignedRPM,
     MultipathConfFacts,
     MultipathConfig,
     MultipathConfigOption,
@@ -191,7 +191,7 @@ def _parse_config_dir(config_dir):
 
 
 def is_processable():
-    res = has_package(InstalledRedHatSignedRPM, 'device-mapper-multipath')
+    res = has_package(DistributionSignedRPM, 'device-mapper-multipath')
     if not res:
         api.current_logger().debug('device-mapper-multipath is not installed.')
     return res

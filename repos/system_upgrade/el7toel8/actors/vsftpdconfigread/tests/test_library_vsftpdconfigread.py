@@ -3,7 +3,7 @@ import os
 
 from leapp.libraries.actor import vsftpdconfigread
 from leapp.libraries.common.testutils import make_IOError, make_OSError
-from leapp.models import InstalledRedHatSignedRPM, RPM
+from leapp.models import DistributionSignedRPM, RPM
 
 
 class MockFileOperations(object):
@@ -194,7 +194,7 @@ def test_is_processable_vsftpd_installed():
             packager='foo', arch='x86_64', pgpsig='bar'),
         RPM(name='postfix', version='2.10.1', release='7.el7', epoch='0',
             packager='foo', arch='x86_64', pgpsig='bar')]
-    installed_rpm_facts = InstalledRedHatSignedRPM(items=installed_rpms)
+    installed_rpm_facts = DistributionSignedRPM(items=installed_rpms)
 
     res = vsftpdconfigread.is_processable(installed_rpm_facts)
 
@@ -207,7 +207,7 @@ def test_is_processable_vsftpd_not_installed():
             packager='foo', arch='x86_64', pgpsig='bar'),
         RPM(name='postfix', version='2.10.1', release='7.el7', epoch='0',
             packager='foo', arch='x86_64', pgpsig='bar')]
-    installed_rpm_facts = InstalledRedHatSignedRPM(items=installed_rpms)
+    installed_rpm_facts = DistributionSignedRPM(items=installed_rpms)
 
     res = vsftpdconfigread.is_processable(installed_rpm_facts)
 

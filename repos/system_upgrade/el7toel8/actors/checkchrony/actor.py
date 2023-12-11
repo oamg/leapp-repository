@@ -1,7 +1,7 @@
 from leapp.actors import Actor
 from leapp.libraries.actor.checkchrony import check_chrony
 from leapp.libraries.common.rpms import has_package
-from leapp.models import InstalledRedHatSignedRPM
+from leapp.models import DistributionSignedRPM
 from leapp.reporting import Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
@@ -15,9 +15,9 @@ class CheckChrony(Actor):
     """
 
     name = 'check_chrony'
-    consumes = (InstalledRedHatSignedRPM,)
+    consumes = (DistributionSignedRPM,)
     produces = (Report,)
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 
     def process(self):
-        check_chrony(has_package(InstalledRedHatSignedRPM, 'chrony'))
+        check_chrony(has_package(DistributionSignedRPM, 'chrony'))

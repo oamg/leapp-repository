@@ -15,14 +15,14 @@ from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common.config import architecture, utils
 from leapp.libraries.stdlib import api
-from leapp.models import InstalledRedHatSignedRPM, KernelInfo
+from leapp.models import DistributionSignedRPM, KernelInfo
 
 
 def get_all_pkgs_with_name(pkg_name):
     """
     Get all installed packages of the given name signed by Red Hat.
     """
-    rpms = next(api.consume(InstalledRedHatSignedRPM), InstalledRedHatSignedRPM()).items
+    rpms = next(api.consume(DistributionSignedRPM), DistributionSignedRPM()).items
     return [pkg for pkg in rpms if pkg.name == pkg_name]
 
 

@@ -3,7 +3,7 @@ import os
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common.rpms import has_package
 from leapp.libraries.stdlib import api
-from leapp.models import CupsChangedFeatures, InstalledRedHatSignedRPM
+from leapp.models import CupsChangedFeatures, DistributionSignedRPM
 
 
 def _list_dir(path):
@@ -40,7 +40,7 @@ def _check_package(pkg):
 
     :param str pkg: name of package
     """
-    return has_package(InstalledRedHatSignedRPM, pkg)
+    return has_package(DistributionSignedRPM, pkg)
 
 
 def directive_exists(name, line):

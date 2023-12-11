@@ -1,6 +1,6 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import opensshdropindirectory
-from leapp.models import InstalledRedHatSignedRPM, OpenSshConfig
+from leapp.models import DistributionSignedRPM, OpenSshConfig
 from leapp.tags import ApplicationsPhaseTag, IPUWorkflowTag
 
 
@@ -21,7 +21,7 @@ class OpenSshDropInDirectory(Actor):
     """
 
     name = 'open_ssh_drop_in_directory'
-    consumes = (OpenSshConfig, InstalledRedHatSignedRPM,)
+    consumes = (OpenSshConfig, DistributionSignedRPM,)
     produces = ()
     tags = (IPUWorkflowTag, ApplicationsPhaseTag,)
 
