@@ -180,11 +180,11 @@ def test_gpg_pubkey_pkg(current_actor_context):
     current_actor_context.feed(InstalledRPM(items=installed_rpm))
     current_actor_context.run(config_model=mock_configs.CONFIG)
     assert current_actor_context.consume(DistributionSignedRPM)
-    assert len(current_actor_context.consume(DistributionSignedRPM)[0].items) == 1
+    assert len(current_actor_context.consume(DistributionSignedRPM)[0].items) == 2
     assert current_actor_context.consume(InstalledRedHatSignedRPM)
-    assert len(current_actor_context.consume(InstalledRedHatSignedRPM)[0].items) == 1
+    assert len(current_actor_context.consume(InstalledRedHatSignedRPM)[0].items) == 2
     assert current_actor_context.consume(InstalledUnsignedRPM)
-    assert len(current_actor_context.consume(InstalledUnsignedRPM)[0].items) == 1
+    assert not current_actor_context.consume(InstalledUnsignedRPM)[0].items
 
 
 def test_create_lookup():
