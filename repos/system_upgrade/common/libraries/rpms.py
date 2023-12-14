@@ -1,5 +1,45 @@
 from leapp.libraries import stdlib
+from leapp.libraries.common.config.version import get_source_major_version
 from leapp.models import InstalledRPM
+
+
+class LeappComponents(object):
+    """
+    Supported component values to be used with get_packages_function:
+    * FRAMEWORK - the core of the leapp project: the leapp executable and
+      associated leapp libraries
+    * REPOSITORY - the leapp-repository project
+    * COCKPIT - the cockpit-leapp project
+    * TOOLS - miscellaneous tooling like snactor
+    """
+    FRAMEWORK = 'framework'
+    REPOSITORY = 'repository'
+    COCKPIT = 'cockpit'
+    TOOLS = 'tools'
+
+
+_LEAPP_PACKAGES_MAP = {
+        LeappComponents.FRAMEWORK: {'7': {'pkgs': ['leapp', 'python2-leapp'],
+                                          'deps': ['leapp-deps']},
+                                    '8': {'pkgs': ['leapp', 'python3-leapp'],
+                                          'deps': ['leapp-deps']}
+                                    },
+        LeappComponents.REPOSITORY: {'7': {'pkgs': ['leapp-upgrade-el7toel8'],
+                                           'deps': ['leapp-upgrade-el7toel8-deps']},
+                                     '8': {'pkgs': ['leapp-upgrade-el8toel9'],
+                                           'deps': ['leapp-upgrade-el8toel9-deps']}
+                                     },
+        LeappComponents.COCKPIT: {'7': {'pkgs': ['cockpit-leapp']},
+                                  '8': {'pkgs': ['cockpit-leapp']}
+                                  },
+        LeappComponents.TOOLS: {'7': {'pkgs': ['snactor']},
+                                '8': {'pkgs': ['snactor']}
+                                }
+        }
+
+GET_LEAPP_PACKAGES_DEFAULT_COMPONENTS = frozenset((LeappComponents.FRAMEWORK,
+                                                   LeappComponents.REPOSITORY,
+                                                   LeappComponents.TOOLS))
 
 
 def get_installed_rpms():
@@ -114,3 +154,102 @@ def check_file_modification(config):
     """
     output = _read_rpm_modifications(config)
     return _parse_config_modification(output, config)
+
+
+def _get_leapp_packages_of_type(major_version, component, type_='pkgs'):
+    """
+    Private implementation of get_leapp_packages() and get_leapp_deps_packages().
+
+    :param major_version: Same as for :func:`get_leapp_packages` and
+        :func:`get_leapp_deps_packages`
+    :param component: Same as for :func:`get_leapp_packages` and :func:`get_leapp_deps_packages`
+    :param type_: Either "pkgs" or "deps".  Determines which set of packages we're looking for.
+        Corresponds to the keys in the `_LEAPP_PACKAGES_MAP`.
+
+    Retrieving the set of leapp and leapp-deps packages only differs in which key is used to
+    retrieve the packages from _LEAPP_PACKAGES_MAP.  This function abstracts that difference.
+    """
+    res = set()
+
+    major_versions = [major_version] if isinstance(major_version, str) else major_version
+    if not major_versions:
+        # No major_version of interest specified -> treat as if only current source system version
+        # requested
+        major_versions = [get_source_major_version()]
+
+    components = [component] if isinstance(component, str) else component
+    if not components:
+        error_msg = ("At least one component must be specified when calling this"
+                     " function, available choices are {choices}".format(
+                         choices=sorted(_LEAPP_PACKAGES_MAP.keys()))
+                     )
+        raise ValueError(error_msg)
+
+    for comp in components:
+        for a_major_version in major_versions:
+            if comp not in _LEAPP_PACKAGES_MAP:
+                error_msg = "The requested component {comp} is unknown, available choices are {choices}".format(
+                        comp=component, choices=sorted(_LEAPP_PACKAGES_MAP.keys()))
+                raise ValueError(error_msg)
+
+            if a_major_version not in _LEAPP_PACKAGES_MAP[comp]:
+                error_msg = "The requested major_version {ver} is unknown, available choices are {choices}".format(
+                        ver=a_major_version, choices=sorted(_LEAPP_PACKAGES_MAP[comp].keys()))
+                raise ValueError(error_msg)
+
+            # All went well otherwise, get the data
+            res.update(_LEAPP_PACKAGES_MAP[comp][a_major_version].get(type_, []))
+
+    return sorted(res)
+
+
+def get_leapp_packages(major_version=None, component=GET_LEAPP_PACKAGES_DEFAULT_COMPONENTS):
+    """
+    Get list of leapp packages.
+
+    :param major_version: a list or string specifying major_versions. If not defined then current
+        system_version will be used.
+    :param component: a list or a single enum value specifying leapp components
+        (use enum :class: LeappComponents) If defined then only packages related to the specific
+        component(s) will be returned.
+        The default set of components is in `GET_LEAPP_PACKAGES_DEFAULT_COMPONENTS` and
+        simple modifications of the default can be achieved with code like:
+
+        .. code-block:: python
+            get_leapp_packages(
+                component=GET_LEAPP_PACKAGES_DEFAULT_COMPONENTS.difference(
+                    [LeappComponents.TOOLS]
+            ))
+
+    :raises ValueError: if a requested component or major_version doesn't exist.
+
+    .. note::
+        Call :func:`get_leapp_dep_packages` as well if you also need the deps metapackages.
+        Those packages determine which RPMs need to be installed for leapp to function.
+        They aren't just Requires on the base leapp and leapp-repository RPMs because they
+        need to be switched from the old system_version's to the new ones at a different
+        point in the upgrade than the base RPMs.
+    """
+    return _get_leapp_packages_of_type(major_version, component, type_="pkgs")
+
+
+def get_leapp_dep_packages(major_version=None, component=GET_LEAPP_PACKAGES_DEFAULT_COMPONENTS):
+    """
+    Get list of leapp dep metapackages.
+
+    :param major_version: a list or string specifying major_versions. If not defined then current
+        system_version will be used.
+    :param component: a list or a single enum value specifying leapp components
+        (use enum :class: LeappComponents) If defined then only packages related to the specific
+        component(s) will be returned.
+        The default set of components is in `GET_LEAPP_PACKAGES_DEFAULT_COMPONENTS` and
+        simple modifications of the default can be achieved with code like:
+
+        .. code-block:: python
+            get_leapp_packages(
+                component=GET_LEAPP_PACKAGES_DEFAULT_COMPONENTS.difference(
+                    [LeappComponents.TOOLS]
+            ))
+    :raises ValueError: if a requested component or major_version doesn't exist.
+    """
+    return _get_leapp_packages_of_type(major_version, component, type_="deps")
