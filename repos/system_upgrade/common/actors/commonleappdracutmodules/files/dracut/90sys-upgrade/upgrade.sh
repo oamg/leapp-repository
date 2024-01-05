@@ -11,8 +11,9 @@ type getarg >/dev/null 2>&1 || . /lib/dracut-lib.sh
 
 source_conf /etc/conf.d
 
-getarg 'rd.upgrade.break=upgrade' 'rd.break=upgrade' && \
-    emergency_shell -n upgrade "Break before upgrade"
+# NOTE: For debugging purposis. It's possible it will be changed in future.
+getarg 'rd.upgrade.break=upgrade' 'rd.break=upgrade' 'rd.upgrade.break=leapp-initram' && \
+    emergency_shell -n upgrade "Break right after getting to leapp dracut modules"
 
 setstate() {
     export UPGRADE_STATE="$*"
