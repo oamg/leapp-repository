@@ -227,6 +227,11 @@ do_upgrade() {
         getargbool 0 enforcing || echo 0 > /sys/fs/selinux/enforce
     fi
 
+    # NOTE: For debugging purposis. It's possible it will be changed in future.
+    getarg 'rd.upgrade.break=leapp-pre-upgrade' && {
+        emergency_shell -n upgrade "Break right before running leapp in initramfs"
+    }
+
     # and off we go...
     # NOTE: in case we would need to run leapp before pivot, we would need to
     #       specify where the root is, e.g. --root=/sysroot
@@ -237,9 +242,10 @@ do_upgrade() {
     # NOTE: flush the cached content to disk to ensure everything is written
     sync
 
-    #FIXME: for debugging purposes; this will be removed or redefined in future
-    getarg 'rd.upgrade.break=leapp-upgrade' 'rd.break=leapp-upgrade' && \
-        emergency_shell -n upgrade "Break after LEAPP upgrade stop"
+    # NOTE: For debugging purposes. It's possible it will be changed in future.
+    getarg 'rd.upgrade.break=leapp-post-upgrade' 'rd.upgrade.break=leapp-upgrade' 'rd.break=leapp-upgrade' && {
+        emergency_shell -n upgrade "Break right after LEAPP upgrade, before post-upgrade leapp run"
+    }
 
     if [ "$rv" -eq 0 ]; then
         # run leapp to proceed phases after the upgrade with Python3
@@ -370,8 +376,10 @@ result=$?
 ##### safe the data and remount $NEWROOT as it was previously mounted #####
 save_journal
 
-#FIXME: for debugging purposes; this will be removed or redefined in future
-getarg 'rd.break=leapp-logs' && emergency_shell -n upgrade "Break after LEAPP save_journal"
+# NOTE: For debugging purposis. It's possible it will be changed in future.
+getarg 'rd.break=leapp-logs' 'rd.upgrade.break=leapp-finish' && {
+    emergency_shell -n upgrade "Break after LEAPP save_journal (upgrade initramfs end)"
+}
 
 # NOTE: flush the cached content to disk to ensure everything is written
 sync
