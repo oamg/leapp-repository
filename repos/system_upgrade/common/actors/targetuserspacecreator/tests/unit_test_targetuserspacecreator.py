@@ -1,4 +1,4 @@
-from __future__ import division
+from __future__ import division, print_function
 
 import os
 import subprocess
@@ -59,6 +59,33 @@ class MockedMountingBase(object):
 
 
 def traverse_structure(structure, root=Path('/')):
+    """
+    Given a description of a directory structure, return fullpaths to the
+    files and what they link to.
+
+    :param structure: A dict which defined the directory structure.  See below
+        for what it looks like.
+    :param root: A path to prefix to the files.  On an actual run in production.
+        this would be `/` but since we're doing this in a unittest, it needs to
+        be a temporary directory.
+    :returns: This is a generator, so pairs of (filepath, what it links to) will
+        be returned one at a time, each time through the iterable.
+
+    The semantics of `structure` are as follows:
+
+    1. The outermost dictionary encodes the root of a directory structure
+
+    2. Depending on the value for a key in a dict, each key in the dictionary
+       denotes the name of either a:
+         a) directory -- if value is dict
+         b) regular file -- if value is None
+         c) symlink -- if a value is str
+
+     3. The value of a symlink entry is a absolute path to a file in the context of
+        the structure.
+
+    .. warning:: Empty directories are not returned.
+    """
     for filename, links_to in structure.items():
         filepath = root / filename
 
@@ -72,14 +99,30 @@ def traverse_structure(structure, root=Path('/')):
 def assert_directory_structure_matches(root, initial, expected):
     # Assert every file that is supposed to be present is present
     for filepath, links_to in traverse_structure(expected, root=root / 'expected'):
-        assert filepath.exists()
+        assert filepath.exists(), "{} was supposed to exist and does not".format(filepath)
 
         if links_to is None:
-            assert filepath.is_file()
+            assert filepath.is_file(), "{} was supposed to be a file but is not".format(filepath)
             continue
 
-        assert filepath.is_symlink()
-        assert os.readlink(str(filepath)) == str(root / 'initial' / links_to.lstrip('/'))
+        assert filepath.is_symlink(), '{} was supposed to be a symlink but is not'.format(filepath)
+
+        # We need to rewrite absolute paths because:
+        # * links_to contains an absolute path to the resource where the root
+        #   directory is `/`.
+        # * In our test case, the source resource is rooted in a temporary
+        #   directory rather than '/'.
+        # * The temporary directory name is root / 'initial'.
+        # So we rewrite the initial `/` to be `root/{initial}` to account for
+        # that.  In production, the root directory will be `/` so no rewriting
+        # will happen there.
+        #
+        if links_to.startswith('/'):
+            links_to = str(root / 'initial' / links_to.lstrip('/'))
+
+        actual_links_to = os.readlink(str(filepath))
+        assert actual_links_to == str(links_to), (
+            '{} linked to {} instead of {}'.format(filepath, actual_links_to, links_to))
 
     # Assert there are no extra files
     result_dir = str(root / 'expected')
@@ -95,21 +138,36 @@ def assert_directory_structure_matches(root, initial, expected):
 
             filepath = os.path.join(fileroot, filename)
             if os.path.islink(filepath):
-                links_to = '/' + os.path.relpath(os.readlink(filepath), str(root / 'initial'))
+                links_to = os.readlink(filepath)
+                # We rewrite absolute paths because the root directory is in
+                # a temp dir instead of `/` in the unittest.  See the comment
+                # where we rewrite `links_to` for the previous loop in this
+                # function for complete details.
+                if links_to.startswith('/'):
+                    links_to = '/' + os.path.relpath(links_to, str(root / 'initial'))
                 assert cwd[filename] == links_to
 
 
 @pytest.fixture
 def temp_directory_layout(tmp_path, initial_structure):
     for filepath, links_to in traverse_structure(initial_structure, root=tmp_path / 'initial'):
+        # Directories are inlined by traverse_structure so we need to create
+        # them here
         file_path = tmp_path / filepath
         file_path.parent.mkdir(parents=True, exist_ok=True)
 
+        # Real file
         if links_to is None:
             file_path.touch()
             continue
 
-        file_path.symlink_to(tmp_path / 'initial' / links_to.lstrip('/'))
+        # Symlinks
+        if links_to.startswith('/'):
+            # Absolute symlink
+            file_path.symlink_to(tmp_path / 'initial' / links_to.lstrip('/'))
+        else:
+            # Relative symlink
+            file_path.symlink_to(links_to)
 
     (tmp_path / 'expected').mkdir()
     assert (tmp_path / 'expected').exists()
@@ -117,159 +175,560 @@ def temp_directory_layout(tmp_path, initial_structure):
     return tmp_path
 
 
-# The semantics of initial_structure and expected_structure are as follows:
-#
-# 1. The outermost dictionary encodes the root of a directory structure
-#
-# 2. Depending on the value for a key in a dict, each key in the dictionary
-#    denotes the name of either a:
-#        a) directory -- if value is dict
-#        b) regular file -- if value is None
-#        c) symlink -- if a value is str
-#
-# 3. The value of a symlink entry is a absolute path to a file in the context of
-#    the structure.
-#
+# The semantics of initial_structure and expected_structure are defined in the
+# traverse_structure() docstring.
 @pytest.mark.parametrize('initial_structure,expected_structure', [
-    ({  # Copy a regular file
-        'dir': {
-            'fileA': None
-        }
-    }, {
-        'dir': {
-            'fileA': None
-        }
-    }),
-    ({  # Do not copy a broken symlink
-        'dir': {
-            'fileA': 'nonexistent'
-        }
-    }, {
-        'dir': {}
-    }),
-    ({  # Copy a regular symlink
-        'dir': {
-            'fileA': '/dir/fileB',
-            'fileB': None
-        }
-    }, {
-        'dir': {
-            'fileA': '/dir/fileB',
-            'fileB': None
-        }
-    }),
-    ({  # Do not copy a chain of broken symlinks
-        'dir': {
-            'fileA': '/dir/fileB',
-            'fileB': 'nonexistent'
-        }
-    }, {
-        'dir': {}
-    }),
-    ({  # Copy a chain of symlinks
-        'dir': {
-            'fileA': '/dir/fileB',
-            'fileB': '/dir/fileC',
-            'fileC': None
-        }
-    }, {
-        'dir': {
-            'fileA': '/dir/fileB',
-            'fileB': '/dir/fileC',
-            'fileC': None
-        }
-    }),
-    ({  # Circular symlinks
-        'dir': {
-            'fileA': '/dir/fileB',
-            'fileB': '/dir/fileC',
-            'fileC': '/dir/fileC',
-        }
-    }, {
-        'dir': {}
-    }),
-    ({  # Copy a link to a file outside the considered directory as file
-        'dir': {
-            'fileA': '/dir/fileB',
-            'fileB': '/dir/fileC',
-            'fileC': '/outside/fileOut',
-            'fileE': None
+    (pytest.param(
+        {
+            'dir': {
+                'fileA': None
+            }
         },
-        'outside': {
-            'fileOut': '/outside/fileD',
-            'fileD': '/dir/fileE'
-        }
-    }, {
-        'dir': {
-            'fileA': '/dir/fileB',
-            'fileB': '/dir/fileC',
-            'fileC': '/dir/fileE',
-            'fileE': None,
-        }
-    }),
-    ({  # Same test with a nested structure within the source dir
-        'dir': {
-            'nested': {
-                'fileA': '/dir/nested/fileB',
-                'fileB': '/dir/nested/fileC',
+        {
+            'dir': {
+                'fileA': None
+            },
+        },
+        id="Copy_a_regular_file"
+    )),
+    # Absolute symlink tests
+    (pytest.param(
+        {
+            'dir': {
+                'fileA': '/nonexistent'
+            }
+        },
+        {
+            'dir': {},
+        },
+        id="Absolute_do_not_copy_a_broken_symlink"
+    )),
+    (pytest.param(
+        {
+            'dir': {
+                'fileA': '/dir/fileB',
+                'fileB': '/nonexistent'
+            }
+        },
+        {
+            'dir': {}
+        },
+        id="Absolute_do_not_copy_a_chain_of_broken_symlinks"
+    )),
+    (pytest.param(
+        {
+            'dir': {
+                'fileA': '/nonexistent-dir/nonexistent'
+            },
+        },
+        {
+            'dir': {},
+        },
+        id="Absolute_do_not_copy_a_broken_symlink_to_a_nonexistent_directory"
+    )),
+    (pytest.param(
+        {
+            'dir': {
+                'fileA': '/dir/fileB',
+                'fileB': '/dir/fileC',
+                'fileC': '/dir/fileA',
+                'fileD': '/dir/fileD',
+            }
+        },
+        {
+            'dir': {}
+        },
+        id="Absolute_do_not_copy_circular_symlinks"
+    )),
+    (pytest.param(
+        {
+            'dir': {
+                'fileA': '/dir/fileB',
+                'fileB': None
+            }
+        },
+        {
+            'dir': {
+                'fileA': '/dir/fileB',
+                'fileB': None
+            }
+        },
+        id="Absolute_copy_a_regular_symlink"
+    )),
+    (pytest.param(
+        {
+            'dir': {
+                'fileA': '/dir/fileB',
+                'fileB': '/dir/fileC',
+                'fileC': None
+            }
+        },
+        {
+            'dir': {
+                'fileA': '/dir/fileB',
+                'fileB': '/dir/fileC',
+                'fileC': None
+            }
+        },
+        id="Absolute_copy_a_chain_of_symlinks"
+    )),
+    (pytest.param(
+        {
+            'dir': {
+                'fileA': '/dir/fileB',
+                'fileB': '/dir/fileC',
                 'fileC': '/outside/fileOut',
                 'fileE': None
-            }
-        },
-        'outside': {
-            'fileOut': '/outside/fileD',
-            'fileD': '/dir/nested/fileE'
-        }
-    }, {
-        'dir': {
-            'nested': {
-                'fileA': '/dir/nested/fileB',
-                'fileB': '/dir/nested/fileC',
-                'fileC': '/dir/nested/fileE',
-                'fileE': None
-            }
-        }
-    }),
-    ({  # Same test with a nested structure in the outside dir
-        'dir': {
-            'fileA': '/dir/fileB',
-            'fileB': '/dir/fileC',
-            'fileC': '/outside/nested/fileOut',
-            'fileE': None
-        },
-        'outside': {
-            'nested': {
-                'fileOut': '/outside/nested/fileD',
+            },
+            'outside': {
+                'fileOut': '/outside/fileD',
                 'fileD': '/dir/fileE'
             }
-        }
-    }, {
-        'dir': {
-            'fileA': '/dir/fileB',
-            'fileB': '/dir/fileC',
-            'fileC': '/dir/fileE',
-            'fileE': None,
-        }
-    }),
+        },
+        {
+            'dir': {
+                'fileA': '/dir/fileB',
+                'fileB': '/dir/fileC',
+                'fileC': '/dir/fileE',
+                'fileE': None,
+            }
+        },
+        id="Absolute_copy_a_link_to_a_file_outside_the_considered_directory_as_file"
+    )),
+    (pytest.param(
+        {
+            'dir': {
+                'nested': {
+                    'fileA': '/dir/nested/fileB',
+                    'fileB': '/dir/nested/fileC',
+                    'fileC': '/outside/fileOut',
+                    'fileE': None
+                }
+            },
+            'outside': {
+                'fileOut': '/outside/fileD',
+                'fileD': '/dir/nested/fileE'
+            }
+        },
+        {
+            'dir': {
+                'nested': {
+                    'fileA': '/dir/nested/fileB',
+                    'fileB': '/dir/nested/fileC',
+                    'fileC': '/dir/nested/fileE',
+                    'fileE': None
+                }
+            }
+        },
+        id="Absolute_copy_a_link_to_a_file_outside_with_a_nested_structure_within_the_source_dir"
+    )),
+    (pytest.param(
+        {
+            'dir': {
+                'fileA': '/dir/fileB',
+                'fileB': '/dir/fileC',
+                'fileC': '/outside/nested/fileOut',
+                'fileE': None
+            },
+            'outside': {
+                'nested': {
+                    'fileOut': '/outside/nested/fileD',
+                    'fileD': '/dir/fileE'
+                }
+            }
+        },
+        {
+            'dir': {
+                'fileA': '/dir/fileB',
+                'fileB': '/dir/fileC',
+                'fileC': '/dir/fileE',
+                'fileE': None,
+            }
+        },
+        id="Absolute_copy_a_link_to_a_file_outside_with_a_nested_structure_in_the_outside_dir"
+    )),
+    (pytest.param(
+        {
+            'dir': {
+                'fileA': '/outside/fileOut',
+                'fileB': None,
+            },
+            'outside': {
+                'fileOut': '../dir/fileB',
+            },
+        },
+        {
+            'dir': {
+                'fileA': '/dir/fileB',
+                'fileB': None,
+            },
+        },
+        id="Absolute_symlink_that_leaves_the_directory_but_returns_with_relative_outside"
+    )),
+    (pytest.param(
+        {
+            'dir': {
+                'fileA': '/outside/fileB',
+                'fileB': None,
+            },
+            'outside': '/dir',
+        },
+        {
+            'dir': {
+                'fileA': '/dir/fileB',
+                'fileB': None,
+            },
+        },
+        id="Absolute_symlink_to_a_file_inside_via_a_symlink_to_the_rootdir"
+    )),
+    (pytest.param(
+        # This one is very tricky:
+        # * The user has made /etc/pki a symlink to some other directory that
+        #   they keep certificates.
+        # * In the target system, we are going to make /etc/pki an actual
+        #   directory with the contents that the actual directory on the host
+        #   system had.
+        {
+            'dir': '/funkydir',
+            'funkydir': {
+                'fileA': '/funkydir/fileB',
+                'fileB': None,
+            },
+        },
+        {
+            'dir': {
+                'fileA': '/dir/fileB',
+                'fileB': None,
+            },
+        },
+        id="Absolute_symlink_where_srcdir_is_a_symlink_on_the_host_system"
+    )),
+    # Relative symlink tests
+    (pytest.param(
+        {
+            'dir': {
+                'fileA': 'nonexistent'
+            },
+        },
+        {
+            'dir': {},
+        },
+        id="Relative_do_not_copy_a_broken_symlink"
+    )),
+    (pytest.param(
+        {
+            'dir': {
+                'fileA': 'fileB',
+                'fileB': 'nonexistent'
+            }
+        },
+        {
+            'dir': {}
+        },
+        id="Relative_do_not_copy_a_chain_of_broken_symlinks"
+    )),
+    (pytest.param(
+        {
+            'dir': {
+                'fileA': 'nonexistent-dir/nonexistent'
+            },
+        },
+        {
+            'dir': {},
+        },
+        id="Relative_do_not_copy_a_broken_symlink_to_a_nonexistent_directory"
+    )),
+    (pytest.param(
+        {
+            'dir': {
+                'fileA': 'fileB',
+                'fileB': 'fileC',
+                'fileC': 'fileA',
+                'fileD': 'fileD',
+            }
+        },
+        {
+            'dir': {}
+        },
+        id="Relative_do_not_copy_circular_symlinks"
+    )),
+    (pytest.param(
+        {
+            'dir': {
+                'fileA': 'fileB',
+                'fileB': None,
+            },
+        },
+        {
+            'dir': {
+                'fileA': 'fileB',
+                'fileB': None,
+            },
+        },
+        id="Relative_copy_a_regular_symlink_to_a_file_in_the_same_directory"
+    )),
+    (pytest.param(
+        {
+            'dir': {
+                'fileA': 'dir2/../fileB',
+                'fileB': None,
+                'dir2': {
+                    'fileC': None
+                },
+            },
+        },
+        {
+            'dir': {
+                'fileA': 'fileB',
+                'fileB': None,
+                'dir2': {
+                    'fileC': None
+                },
+            },
+        },
+        id="Relative_symlink_with_parent_dir_but_still_in_same_directory"
+    )),
+    (pytest.param(
+        {
+            'dir': {
+                'fileA': 'fileB',
+                'fileB': 'fileC',
+                'fileC': None
+            }
+        },
+        {
+            'dir': {
+                'fileA': 'fileB',
+                'fileB': 'fileC',
+                'fileC': None
+            }
+        },
+        id="Relative_copy_a_chain_of_symlinks"
+    )),
+    (pytest.param(
+        {
+            'dir': {
+                'fileA': 'fileB',
+                'fileB': 'fileC',
+                'fileC': '../outside/fileOut',
+                'fileE': None
+            },
+            'outside': {
+                'fileOut': 'fileD',
+                'fileD': '../dir/fileE'
+            }
+        },
+        {
+            'dir': {
+                'fileA': 'fileB',
+                'fileB': 'fileC',
+                'fileC': 'fileE',
+                'fileE': None,
+            }
+        },
+        id="Relative_copy_a_link_to_a_file_outside_the_considered_directory_as_file"
+    )),
+    (pytest.param(
+        {
+            'dir': {
+                'fileA': '../outside/fileOut',
+                'fileB': None,
+            },
+            'outside': {
+                'fileOut': None,
+            },
+        },
+        {
+            'dir': {
+                'fileA': None,
+                'fileB': None,
+            },
+        },
+        id="Relative_symlink_to_outside"
+    )),
+    (pytest.param(
+        {
+            'dir': {
+                'fileA': 'nested/fileB',
+                'nested': {
+                    'fileB': None,
+                },
+            },
+        },
+        {
+            'dir': {
+                'fileA': 'nested/fileB',
+                'nested': {
+                    'fileB': None,
+                },
+            },
+        },
+        id="Relative_copy_a_symlink_to_a_file_in_a_subdir"
+    )),
+    (pytest.param(
+        {
+            'dir': {
+                'fileF': 'nested/fileC',
+                'nested': {
+                    'fileA': 'fileB',
+                    'fileB': 'fileC',
+                    'fileC': '../../outside/fileOut',
+                    'fileE': None,
+                }
+            },
+            'outside': {
+                'fileOut': 'fileD',
+                'fileD': '../dir/nested/fileE',
+            }
+        },
+        {
+            'dir': {
+                'fileF': 'nested/fileC',
+                'nested': {
+                    'fileA': 'fileB',
+                    'fileB': 'fileC',
+                    'fileC': 'fileE',
+                    'fileE': None,
+                }
+            }
+        },
+        id="Relative_copy_a_link_to_a_file_outside_with_a_nested_structure_within_the_source_dir"
+    )),
+    (pytest.param(
+        {
+            'dir': {
+                'fileA': 'fileB',
+                'fileB': 'fileC',
+                'fileC': '../outside/nested/fileOut',
+                'fileE': None
+            },
+            'outside': {
+                'nested': {
+                    'fileOut': 'fileD',
+                    'fileD': '../../dir/fileE'
+                }
+            }
+        },
+        {
+            'dir': {
+                'fileA': 'fileB',
+                'fileB': 'fileC',
+                'fileC': 'fileE',
+                'fileE': None,
+            }
+        },
+        id="Relative_copy_a_link_to_a_file_outside_with_a_nested_structure_in_the_outside_dir"
+    )),
+    (pytest.param(
+        {
+            'dir': {
+                'fileA': '../outside/fileOut',
+                'fileB': None,
+            },
+            'outside': {
+                'fileOut': '../dir/fileB',
+            },
+        },
+        {
+            'dir': {
+                'fileA': 'fileB',
+                'fileB': None,
+            },
+        },
+        id="Relative_symlink_that_leaves_the_directory_but_returns"
+    )),
+    (pytest.param(
+        {
+            'dir': {
+                'fileA': '../outside/fileOut',
+                'fileB': None,
+            },
+            'outside': {
+                'fileOut': '/dir/fileB',
+            },
+        },
+        {
+            'dir': {
+                'fileA': 'fileB',
+                'fileB': None,
+            },
+        },
+        id="Relative_symlink_that_leaves_the_directory_but_returns_with_absolute_outside"
+    )),
+    (pytest.param(
+        {
+            'dir': {
+                'fileA': '../outside/fileB',
+                'fileB': None,
+            },
+            'outside': '/dir',
+        },
+        {
+            'dir': {
+                'fileA': 'fileB',
+                'fileB': None,
+            },
+        },
+        id="Relative_symlink_to_a_file_inside_via_a_symlink_to_the_rootdir"
+    )),
+    (pytest.param(
+        # This one is very tricky:
+        # * The user has made /etc/pki a symlink to some other directory that
+        #   they keep certificates.
+        # * In the target system, we are going to make /etc/pki an actual
+        #   directory with the contents that the actual directory on the host
+        #   system had.
+        {
+            'dir': 'funkydir',
+            'funkydir': {
+                'fileA': 'fileB',
+                'fileB': None,
+            },
+        },
+        {
+            'dir': {
+                'fileA': 'fileB',
+                'fileB': None,
+            },
+        },
+        id="Relative_symlink_where_srcdir_is_a_symlink_on_the_host_system"
+    )),
 ]
 )
 def test_copy_decouple(monkeypatch, temp_directory_layout, initial_structure, expected_structure):
 
     def run_mocked(command):
-        subprocess.Popen(
+        subprocess.check_call(
             ' '.join(command),
             shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-        ).wait()
+        )
 
     monkeypatch.setattr(userspacegen, 'run', run_mocked)
+    expected_dir = temp_directory_layout / 'expected' / 'dir'
+    expected_dir.mkdir()
     userspacegen._copy_decouple(
             str(temp_directory_layout / 'initial' / 'dir'),
-            str(temp_directory_layout / 'expected' / 'dir'),
+            str(expected_dir),
             )
 
-    assert_directory_structure_matches(temp_directory_layout, initial_structure, expected_structure)
+    try:
+        assert_directory_structure_matches(temp_directory_layout, initial_structure, expected_structure)
+    except AssertionError:
+        # For debugging purposes, print out the entire directory structure if an
+        # assertion failed.
+        for rootdir, dirs, files in os.walk(temp_directory_layout):
+            for d in dirs:
+                print(os.path.join(rootdir, d))
+            for f in files:
+                filename = os.path.join(rootdir, f)
+                print("  {}".format(filename))
+                if os.path.islink(filename):
+                    print("    => Links to: {}".format(os.readlink(filename)))
+
+        # Then re-raise the assertion
+        raise
 
 
 @pytest.mark.parametrize('result,dst_ver,arch,prod_type', [
