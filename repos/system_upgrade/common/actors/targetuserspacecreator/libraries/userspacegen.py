@@ -73,6 +73,10 @@ def _check_deprecated_rhsm_skip():
         )
 
 
+class BrokenSymlinkError(Exception):
+    """Raised when we encounter a broken symlink where we weren't expecting it."""
+
+
 class _InputData(object):
     def __init__(self):
         self._consume_data()
@@ -328,9 +332,131 @@ def _get_files_owned_by_rpms(context, dirpath, pkgs=None, recursive=False):
     return files_owned_by_rpms
 
 
+def _mkdir_with_copied_mode(path, mode_from):
+    """
+    Create directories with a file to copy the mode from.
+
+    :param path: The directory path to create.
+    :param mode_from: A file or directory whose mode we will copy to the
+        newly created directory.
+    :raises subprocess.CalledProcessError: mkdir or chmod fails. For instance,
+        the directory already exists, the file to get permissions from does
+        not exist, a parent directory does not exist.
+    """
+    # Create with maximally restrictive permissions
+    run(['mkdir', '-m', '0', '-p', path])
+    run(['chmod', '--reference={}'.format(mode_from), path])
+
+
+def _choose_copy_or_link(symlink, srcdir):
+    """
+    Copy file contents or create a symlink depending on where the pointee resides.
+
+    :param symlink: The source symlink to follow.  This must be an absolute path.
+    :param srcdir: The root directory that every piece of content must be present in.
+    :returns: A tuple of action and sourcefile.  Action is one of 'copy' or 'link' and means that
+        the caller should either copy the sourcefile to the target location or create a symlink from
+        the sourcefile to the target location.  sourcefile is the path to the file that should be
+        the source of the operation.  It is either a real file outside of the srcdir hierarchy or
+        a file (real, directory, symlink or otherwise) inside of the srcdir hierarchy.
+    :raises ValueError: if the arguments are not correct
+    :raises BrokenSymlinkError: if the symlink is invalid
+
+    Determine whether the file pointed to by the symlink chain is within srcdir.  If it is within,
+    then create a synlink that points from symlink to it.
+
+    If it is not within, then walk the symlink chain until we find something that is within srcdir
+    and return that. This means we will omit any symlinks that are outside of srcdir from
+    the symlink chain.
+
+    If we reach a real file and it is outside of srcdir, then copy the file instead.
+    """
+    if not symlink.startswith('/'):
+        raise ValueError('File{} must be an absolute path!'.format(symlink))
+
+    # os.path.exists follows symlinks
+    if not os.path.exists(symlink):
+        raise BrokenSymlinkError('File {} is a broken symlink!'.format(symlink))
+
+    # If srcdir is a symlink, then we need a name for it that we can compare
+    # with other paths.
+    canonical_srcdir = os.path.realpath(srcdir)
+
+    pointee_as_abspath = symlink
+    seen = set([pointee_as_abspath])
+
+    # The goal of this while loop is to find the next link in a possible
+    # symlink chain that either points to a symlink inside of srcdir or to
+    # a file or directory that we can copy.
+    while os.path.islink(pointee_as_abspath):
+        # Advance pointee to the target of the previous link
+        pointee = os.readlink(pointee_as_abspath)
+
+        # Note: os.path.join()'s behaviour if the pointee is an absolute path
+        # essentially ignores the first argument (which is what we want).
+        pointee_as_abspath = os.path.normpath(os.path.join(os.path.dirname(pointee_as_abspath), pointee))
+
+        # Make sure we aren't in a circular set of references.
+        # On Linux, this should not happen as the os.path.exists() call
+        # before the loop should catch it but we don't want to enter an
+        # infinite loop if that code changes later.
+        if pointee_as_abspath in seen:
+            if symlink == pointee_as_abspath:
+                error_msg = ('File {} is a broken symlink that references'
+                             ' itself!'.format(pointee_as_abspath))
+            else:
+                error_msg = ('File {} references {} which is a broken symlink'
+                             ' that references itself!'.format(symlink, pointee_as_abspath))
+
+            raise BrokenSymlinkError(error_msg)
+
+        seen.add(pointee_as_abspath)
+
+        # To make comparisons, we need to resolve all symlinks in the directory
+        # structure leading up to pointee.  However, we can't include pointee
+        # itself otherwise it will resolve to the file that it points to in the
+        # end.
+        canonical_pointee_dir, pointee_filename = os.path.split(pointee_as_abspath)
+        canonical_pointee_dir = os.path.realpath(canonical_pointee_dir)
+
+        if canonical_pointee_dir.startswith(canonical_srcdir):
+            # Absolute path inside of the correct dir so we need to link to it
+            # But we need to determine what the link path should be before
+            # returning.
+
+            # Construct a relative path that points from the symlinks directory
+            # to the pointee.
+            link_to = os.readlink(symlink)
+            canonical_symlink_dir = os.path.realpath(os.path.dirname(symlink))
+            relative_path = os.path.relpath(canonical_pointee_dir, canonical_symlink_dir)
+
+            if link_to.startswith('/'):
+                # The original symlink was an absolute path so we will set this
+                # one to absolute too
+                # Note: Because absolute paths are constructed inside of
+                # srcdir, the relative path that we need to join here has to be
+                # relative to srcdir, not the directory that the symlink is
+                # being created in.
+                relative_to_srcdir = os.path.relpath(canonical_pointee_dir, canonical_srcdir)
+                corrected_path = os.path.normpath(os.path.join(srcdir, relative_to_srcdir, pointee_filename))
+
+            else:
+                # If the original link is a relative link, then we want the new
+                # link to be relative as well
+                corrected_path = os.path.normpath(os.path.join(relative_path, pointee_filename))
+
+            return ("link", corrected_path)
+
+        # pointee is a symlink that points outside of the srcdir so continue to
+        # the next symlink in the chain.
+
+    # The file is not a link so copy it
+    return ('copy', pointee_as_abspath)
+
+
 def _copy_decouple(srcdir, dstdir):
     """
-    Copy `srcdir` to `dstdir` while decoupling symlinks.
+    Copy files inside of `srcdir` to `dstdir` while decoupling symlinks.
 
     What we mean by decoupling the `srcdir` is that any symlinks pointing
     outside the directory will be copied as regular files. This means that the
@@ -338,57 +464,54 @@ def _copy_decouple(srcdir, dstdir):
     symlinks. Any symlink (or symlink chains) within the directory will be
     preserved.
 
+    .. warning::
+        `dstdir` must already exist.
     """
+    symlinks_to_process = []
+    for root, directories, files in os.walk(srcdir):
+        # relative path from srcdir because srcdir is replaced with dstdir for
+        # the copy.
+        relpath = os.path.relpath(root, srcdir)
 
-    for root, dummy_dirs, files in os.walk(srcdir):
+        # Create all directories with proper permissions for security
+        # reasons (Putting private data into directories that haven't had their
+        # permissions set appropriately may leak the private information.)
+        for directory in directories:
+            source_dirpath = os.path.join(root, directory)
+            target_dirpath = os.path.join(dstdir, relpath, directory)
+            _mkdir_with_copied_mode(target_dirpath, source_dirpath)
+
         for filename in files:
-            relpath = os.path.relpath(root, srcdir)
             source_filepath = os.path.join(root, filename)
             target_filepath = os.path.join(dstdir, relpath, filename)
 
-            # Skip and report broken symlinks
-            if not os.path.exists(source_filepath):
-                api.current_logger().warning(
-                        'File {} is a broken symlink! Will not copy the file.'.format(source_filepath))
+            # Defer symlinks until later because we may end up having to copy
+            # the file contents and the directory may not exist yet.
+            if os.path.islink(source_filepath):
+                symlinks_to_process.append((source_filepath, target_filepath))
                 continue
 
-            # Copy symlinks to the target userspace
-            source_is_symlink = os.path.islink(source_filepath)
-            pointee = None
-            if source_is_symlink:
-                pointee = os.readlink(source_filepath)
-
-                # If source file is a symlink within `srcdir` then preserve it,
-                # otherwise resolve and copy it as a file it points to
-                if pointee is not None and not pointee.startswith(srcdir):
-                    # Follow the path until we hit a file or get back to /etc/pki
-                    while not pointee.startswith(srcdir) and os.path.islink(pointee):
-                        pointee = os.readlink(pointee)
-
-                    # Pointee points to a _regular file_ outside /etc/pki so we
-                    # copy it instead
-                    if not pointee.startswith(srcdir) and not os.path.islink(pointee):
-                        source_is_symlink = False
-                        source_filepath = pointee
-                    else:
-                        # pointee points back to /etc/pki
-                        pass
-
-            # Ensure parent directory exists
-            parent_dir = os.path.dirname(target_filepath)
-            # Note: This is secure because we know that parent_dir is located
-            # inside of `$target_userspace/etc/pki` which is a directory that
-            # is not writable by unprivileged users.  If this function is used
-            # elsewhere we may need to be more careful before running `mkdir -p`.
-            run(['mkdir', '-p', parent_dir])
-
-            if source_is_symlink:
-                # Preserve the owner and permissions of the original symlink
-                run(['ln', '-s', pointee, target_filepath])
-                run(['chmod', '--reference={}'.format(source_filepath), target_filepath])
-                continue
-
+            # Not a symlink so we can copy it now too
             run(['cp', '-a', source_filepath, target_filepath])
+
+    # Now process all symlinks
+    for source_linkpath, target_linkpath in symlinks_to_process:
+        try:
+            action, source_path = _choose_copy_or_link(source_linkpath, srcdir)
+        except BrokenSymlinkError as e:
+            # Skip and report broken symlinks
+            api.current_logger().warning('{} Will not copy the file!'.format(str(e)))
+            continue
+
+        if action == "copy":
+            # Note: source_path could be a directory, so '-a' or '-r' must be
+            # given to cp.
+            run(['cp', '-a', source_path, target_linkpath])
+        elif action == 'link':
+            run(["ln", "-s", source_path, target_linkpath])
+        else:
+            # This will not happen unless _copy_or_link() has a bug.
+            raise RuntimeError("Programming error: _copy_or_link() returned an unknown action:{}".format(action))
 
 
 def _copy_certificates(context, target_userspace):
@@ -413,6 +536,10 @@ def _copy_certificates(context, target_userspace):
 
     # Backup container /etc/pki
     run(['mv', target_pki, backup_pki])
+
+    # _copy_decouple() requires we create the target_pki directory here because we don't know
+    # the mode inside of _copy_decouple().
+    _mkdir_with_copied_mode(target_pki, backup_pki)
 
     # Copy source /etc/pki to the container
     _copy_decouple('/etc/pki', target_pki)
