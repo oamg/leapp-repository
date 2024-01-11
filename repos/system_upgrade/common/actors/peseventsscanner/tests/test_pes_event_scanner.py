@@ -404,7 +404,10 @@ def test_pkgs_are_demodularized_when_crossing_major_version(monkeypatch):
     assert target_pkgs == expected_target_pkgs
 
 
-def test_remove_leapp_related_events():
+def test_remove_leapp_related_events(monkeypatch):
+    # NOTE(ivasilev) That's required to use leapp library functions that rely on calls to
+    # get_source/target_system_version functions
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(arch='x86_64', src_ver='7.9', dst_ver='8.8'))
     # these are just hypothetical and not necessarily correct
     package_set_two_leapp = {Package('leapp-upgrade-el7toel8', 'repoid-rhel7', None),
                              Package('leapp-upgrade-el7toel8-deps', 'repoid-rhel7', None)}

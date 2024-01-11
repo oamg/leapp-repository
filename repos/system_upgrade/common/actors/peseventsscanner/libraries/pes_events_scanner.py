@@ -5,6 +5,7 @@ from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import peseventsscanner_repomap
 from leapp.libraries.actor.pes_event_parsing import Action, get_pes_events, Package
+from leapp.libraries.common import rpms
 from leapp.libraries.common.config import version
 from leapp.libraries.stdlib import api
 from leapp.libraries.stdlib.config import is_verbose
@@ -481,11 +482,9 @@ def apply_transaction_configuration(source_pkgs):
 
 
 def remove_leapp_related_events(events):
-    leapp_pkgs = [
-        'leapp', 'leapp-deps', 'leapp-upgrade-el7toel8', 'leapp-upgrade-el8toel9',
-        'leapp-upgrade-el7toel8-deps', 'leapp-upgrade-el8toel9-deps', 'python2-leapp',
-        'python3-leapp', 'snactor'
-    ]
+    # NOTE(ivasilev) Need to revisit this once rhel9->rhel10 upgrades become a thing
+    leapp_pkgs = rpms.get_leapp_dep_packages(
+            major_version=['7', '8']) + rpms.get_leapp_packages(major_version=['7', '8'])
     res = []
     for event in events:
         if not any(pkg.name in leapp_pkgs for pkg in event.in_pkgs):
