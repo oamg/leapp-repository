@@ -123,13 +123,13 @@ jobs:
   targets:
     epel-7-x86_64:
       distros: [RHEL-7.9-rhui]
-  identifier: sanity-7.9to8.6-aws-e2e
+  identifier: sanity-7.9to8.6-aws
   # NOTE(ivasilev) Unfortunately to use yaml templates we need to rewrite the whole tf_extra_params dict
   # to use plan_filter (can't just specify one section test.tmt.plan_filter, need to specify environments.* as well)
   tf_extra_params:
     test:
       tmt:
-        plan_filter: 'tag:e2e & enabled:true'
+        plan_filter: 'tag:upgrade_happy_path & enabled:true'
     environments:
       - tmt:
           context:
@@ -144,33 +144,42 @@ jobs:
     TARGET_RELEASE: "8.6"
     RHUI: "aws"
     LEAPPDATA_BRANCH: "upstream"
+    LEAPP_NO_RHSM: "1"
+    USE_CUSTOM_REPOS: rhui
 
 - &sanity-79to88-aws
   <<: *sanity-79to86-aws
-  identifier: sanity-7.9to8.8-aws-e2e
+  identifier: sanity-7.9to8.8-aws
   env:
     SOURCE_RELEASE: "7.9"
     TARGET_RELEASE: "8.8"
     RHUI: "aws"
     LEAPPDATA_BRANCH: "upstream"
+    LEAPP_NO_RHSM: "1"
+    USE_CUSTOM_REPOS: rhui
 
 - &sanity-79to89-aws
   <<: *sanity-79to86-aws
-  identifier: sanity-7.9to8.9-aws-e2e
+  identifier: sanity-7.9to8.9-aws
   env:
     SOURCE_RELEASE: "7.9"
     TARGET_RELEASE: "8.9"
     RHUI: "aws"
     LEAPPDATA_BRANCH: "upstream"
+    LEAPP_NO_RHSM: "1"
+    USE_CUSTOM_REPOS: rhui
 
-- &sanity-79to810-aws
-  <<: *sanity-79to86-aws
-  identifier: sanity-7.9to8.10-aws-e2e
-  env:
-    SOURCE_RELEASE: "7.9"
-    TARGET_RELEASE: "8.10"
-    RHUI: "aws"
-    LEAPPDATA_BRANCH: "upstream"
+# NOTE(mkluson) RHEL 8.10 content is not publicly available (via RHUI)
+#- &sanity-79to810-aws
+#  <<: *sanity-79to86-aws
+#  identifier: sanity-7.9to8.10-aws
+#  env:
+#    SOURCE_RELEASE: "7.9"
+#    TARGET_RELEASE: "8.10"
+#    RHUI: "aws"
+#    LEAPPDATA_BRANCH: "upstream"
+#    LEAPP_NO_RHSM: "1"
+#    USE_CUSTOM_REPOS: rhui
 
 # On-demand minimal beaker tests
 - &beaker-minimal-79to86
@@ -619,11 +628,11 @@ jobs:
   targets:
     epel-8-x86_64:
       distros: [RHEL-8.6-rhui]
-  identifier: sanity-8.6to9.0-aws-e2e
+  identifier: sanity-8.6to9.0-aws
   tf_extra_params:
     test:
       tmt:
-        plan_filter: 'tag:e2e & enabled:true'
+        plan_filter: 'tag:upgrade_happy_path & enabled:true'
     environments:
       - tmt:
           context:
@@ -639,3 +648,5 @@ jobs:
     RHSM_REPOS: "rhel-8-for-x86_64-appstream-eus-rpms,rhel-8-for-x86_64-baseos-eus-rpms"
     RHUI: "aws"
     LEAPPDATA_BRANCH: "upstream"
+    LEAPP_NO_RHSM: "1"
+    USE_CUSTOM_REPOS: rhui
