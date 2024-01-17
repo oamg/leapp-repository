@@ -4,6 +4,7 @@ from collections import defaultdict
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common.config.version import get_source_major_version, get_target_major_version
 from leapp.libraries.common.fetch import load_data_asset
+from leapp.libraries.common.rpms import get_leapp_packages, LeappComponents
 from leapp.libraries.stdlib import api
 from leapp.models import PESIDRepositoryEntry, RepoMapEntry, RepositoriesMapping
 from leapp.models.fields import ModelViolationError
@@ -130,29 +131,31 @@ class RepoMapData(object):
 
 
 def _inhibit_upgrade(msg):
-    rpmname = 'leapp-upgrade-el{}toel{}'.format(get_source_major_version(), get_target_major_version())
+    local_path = os.path.join('/etc/leapp/file', REPOMAP_FILE)
     hint = (
         'All official data files are nowadays part of the installed rpms.'
         ' This issue is usually encountered when the data files are incorrectly customized, replaced, or removed'
         ' (e.g. by custom scripts).'
-        ' In case you want to recover the original file, remove it (if still exists)'
-        ' and reinstall the {} rpm.'
-        .format(rpmname)
+        ' In case you want to recover the original {lp} file, remove the current one (if it still exists)'
+        ' and reinstall the following packages: {rpms}.'
+        .format(
+            lp=local_path,
+            rpms=', '.join(get_leapp_packages(component=LeappComponents.REPOSITORY))
+        )
     )
     raise StopActorExecutionError(msg, details={'hint': hint})
 
 
 def _read_repofile(repofile):
-    # NOTE: what about catch StopActorExecution error when the file cannot be
-    # obtained -> then check whether old_repomap file exists and in such a case
-    # inform user they have to provide the new repomap.json file (we have the
-    # warning now only which could be potentially overlooked)
+    # NOTE(pstodulk): load_data_assert raises StopActorExecutionError, see
+    # the code for more info. Keeping the handling on the framework in such
+    # a case as we have no work to do in such a case here.
     repofile_data = load_data_asset(api.current_actor(),
                                     repofile,
                                     asset_fulltext_name='Repositories mapping',
                                     docs_url='',
                                     docs_title='')
-    return repofile_data  # If the file does not contain a valid json then load_asset will do a stop actor execution
+    return repofile_data
 
 
 def scan_repositories(read_repofile_func=_read_repofile):

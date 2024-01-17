@@ -13,6 +13,9 @@ def process():
     supported_device_types = set(DeviceDriverDeprecationEntry.device_type.serialize()['choices'])
 
     data_file_name = 'device_driver_deprecation_data.json'
+    # NOTE(pstodulk): load_data_assert raises StopActorExecutionError, see
+    # the code for more info. Keeping the handling on the framework in such
+    # a case as we have no work to do in such a case here.
     deprecation_data = fetch.load_data_asset(api.current_actor(),
                                              data_file_name,
                                              asset_fulltext_name='Device driver deprecation data',
