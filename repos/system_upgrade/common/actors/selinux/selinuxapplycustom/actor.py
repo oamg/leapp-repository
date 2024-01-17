@@ -141,7 +141,16 @@ class SELinuxApplyCustom(Actor):
                         run(['semanage', 'import'], stdin='{}\n'.format(cmd))
                     except CalledProcessError as e:
                         self.log.warning('Error applying "semanage {}": {}'.format(cmd, e.stderr))
-                        failed_custom.append(cmd)
+                        # retry with "-m" instead of -a
+                        cmd_m = selinuxapplycustom.modify_instead_of_add(cmd)
+                        if cmd_m:
+                            try:
+                                run(['semanage', 'import'], stdin='{}\n'.format(cmd_m))
+                            except CalledProcessError as e:
+                                self.log.warning('Error applying "semanage {}": {}'.format(cmd_m, e.stderr))
+                                failed_custom.append(cmd)
+                        else:
+                            failed_custom.append(cmd)
                 continue
 
         # clean-up

@@ -5,6 +5,7 @@ import shutil
 from leapp.libraries.stdlib import api, CalledProcessError, run
 
 BACKUP_DIRECTORY = '/var/lib/selinux/leapp-backup'
+SEMANAGE_MODIFY_BUG = ["port", "user", "login", "fcontext", "ibpkey", "ibendport", "node", "interface"]
 
 
 def list_selinux_modules():
@@ -70,3 +71,15 @@ def back_up_failed(module_path):
     except OSError:
         api.current_logger().warning('Failed to back-up: {}!'.format(module_path))
         return
+
+
+# Work around a "semanage import bug" by replacing "-a" (add) with -m (modify)
+def modify_instead_of_add(command):
+    com = command.split()
+    if len(com) < 2:
+        return None
+    if com[0] in SEMANAGE_MODIFY_BUG and com[1] == "-a":
+        com[1] = "-m"
+        return " ".join(com)
+
+    return None

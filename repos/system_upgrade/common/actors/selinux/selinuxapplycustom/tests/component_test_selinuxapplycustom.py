@@ -22,12 +22,18 @@ TEST_TEMPLATES = [
 
 # [0] will be passed to the actor as "removed"
 # [1] will not be passed to the actor and should not be removed
-# rest are valid and should be applied by the actor
+# the rest will be passed as valid and should be applied by the actor
+# [4]-[7] cannot be added without tweaking the commands (testing the fix for
+# "semanage export" bug where "-a" is exported instead of "-m")
 SEMANAGE_COMMANDS = [
     ['fcontext', '-t', 'cgdcbxd_var_run_t', "'/ganesha(/.*)?'"],
     ['user', 'yolo', '-R', 'user_r'],
     ['fcontext', '-t', 'httpd_sys_content_t', "'/web(/.*)?'"],
-    ['port', '-t', 'http_port_t', '-p', 'udp', '81']
+    ['port', '-t', 'http_port_t', '-p', 'udp', '81'],
+    ['port', '-t', 'ssh_port_t', '-p', 'tcp', '8021'],
+    ['user', 'user_u', '-R', 'user_r', '-R', 'staff_r'],
+    ['login', '-s', 'guest_u', '__default__', '-r', 's0'],
+    ['fcontext', '-t', 'httpd_sys_content_t', "'/vmlinuz.*'", '-f', 'l']
 ]
 
 
