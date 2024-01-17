@@ -4,8 +4,25 @@ from collections import defaultdict, namedtuple
 from leapp import reporting
 from leapp.libraries.common.config import get_consumed_data_stream_id
 from leapp.libraries.common.fetch import ASSET_PROVIDED_DATA_STREAMS_FIELD
+from leapp.libraries.common.rpms import get_leapp_packages, LeappComponents
 from leapp.libraries.stdlib import api
 from leapp.models import ConsumedDataAsset
+
+
+def _get_hint():
+    hint = (
+        'All official assets (data files) are part of the installed rpms these days.'
+        ' This issue is usually encountered when the data files are incorrectly'
+        ' customized, replaced, or removed. '
+        ' In case you want to recover the original files, remove them (if they still exist)'
+        ' and reinstall the following rpms: {rpms}.\n'
+        'The listed assets (data files) are usually inside the /etc/leapp/files/'
+        ' directory.'
+        .format(
+            rpms=', '.join(get_leapp_packages(component=LeappComponents.REPOSITORY))
+        )
+    )
+    return hint
 
 
 def compose_summary_for_incompatible_assets(assets, incompatibility_reason):
@@ -69,13 +86,16 @@ def report_incompatible_assets(assets):
         summary_lines += compose_summary_for_incompatible_assets(incompatible_assets, reason)
 
         for asset in incompatible_assets:
-            doc_url_to_title[asset.docs_url].append(asset.docs_title)
+            if asset.docs_url:
+                # Add URLs only when they are specified. docs_url could be empty string
+                doc_url_to_title[asset.docs_url].append(asset.docs_title)
 
     report_parts = [
         reporting.Title(title),
         reporting.Summary('\n'.join(summary_lines)),
         reporting.Severity(reporting.Severity.HIGH),
-        reporting.Groups([reporting.Groups.INHIBITOR, reporting.Groups.REPOSITORY]),
+        reporting.Remediation(hint=_get_hint()),
+        reporting.Groups([reporting.Groups.INHIBITOR, reporting.Groups.SANITY]),
     ]
 
     report_parts += make_report_entries_with_unique_urls(docs_url_to_title_map)
@@ -101,13 +121,16 @@ def report_malformed_assets(malformed_assets):
             details = ' - The asset file {filename} contains invalid value in its "{data_streams_field}"'
             details = details.format(filename=asset.filename, data_streams_field=ASSET_PROVIDED_DATA_STREAMS_FIELD)
         summary_lines.append(details)
-        docs_url_to_title_map[asset.docs_url].append(asset.docs_title)
+        if asset.docs_url:
+            # Add URLs only when they are specified. docs_url could be empty string
+            docs_url_to_title_map[asset.docs_url].append(asset.docs_title)
 
     report_parts = [
         reporting.Title(title),
         reporting.Summary('\n'.join(summary_lines)),
+        reporting.Remediation(hint=_get_hint()),
         reporting.Severity(reporting.Severity.HIGH),
-        reporting.Groups([reporting.Groups.INHIBITOR, reporting.Groups.REPOSITORY]),
+        reporting.Groups([reporting.Groups.INHIBITOR, reporting.Groups.SANITY]),
     ]
 
     report_parts += make_report_entries_with_unique_urls(docs_url_to_title_map)
