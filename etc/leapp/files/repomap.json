@@ -1,5 +1,5 @@
 {
-    "datetime": "202307241553Z",
+    "datetime": "202401171742Z",
     "version_format": "1.2.0",
     "mapping": [
         {
@@ -224,6 +224,12 @@
                     "source": "rhel8-rhui-google-compute-engine",
                     "target": [
                         "rhel9-rhui-google-compute-engine-leapp"
+                    ]
+                },
+                {
+                    "source": "rhel8-rhui-custom-client-at-alibaba",
+                    "target": [
+                        "rhel9-rhui-custom-client-at-alibaba"
                     ]
                 }
             ]
@@ -2857,6 +2863,14 @@
                 },
                 {
                     "major_version": "9",
+                    "repoid": "rhui-rhel-9-for-aarch64-baseos-rhui-rpms",
+                    "arch": "aarch64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "rhui": "alibaba"
+                },
+                {
+                    "major_version": "9",
                     "repoid": "rhui-rhel-9-for-x86_64-baseos-e4s-rhui-rpms",
                     "arch": "x86_64",
                     "channel": "e4s",
@@ -2870,6 +2884,14 @@
                     "channel": "ga",
                     "repo_type": "rpm",
                     "rhui": "google"
+                },
+                {
+                    "major_version": "9",
+                    "repoid": "rhui-rhel-9-for-x86_64-baseos-rhui-rpms",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "rhui": "alibaba"
                 }
             ]
         },
@@ -3061,6 +3083,14 @@
                 },
                 {
                     "major_version": "9",
+                    "repoid": "rhui-rhel-9-for-aarch64-appstream-rhui-rpms",
+                    "arch": "aarch64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "rhui": "alibaba"
+                },
+                {
+                    "major_version": "9",
                     "repoid": "rhui-rhel-9-for-x86_64-appstream-e4s-rhui-rpms",
                     "arch": "x86_64",
                     "channel": "e4s",
@@ -3074,6 +3104,14 @@
                     "channel": "ga",
                     "repo_type": "rpm",
                     "rhui": "google"
+                },
+                {
+                    "major_version": "9",
+                    "repoid": "rhui-rhel-9-for-x86_64-appstream-rhui-rpms",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "rhui": "alibaba"
                 }
             ]
         },
@@ -3190,11 +3228,27 @@
                 },
                 {
                     "major_version": "9",
+                    "repoid": "rhui-codeready-builder-for-rhel-9-aarch64-rhui-rpms",
+                    "arch": "aarch64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "rhui": "alibaba"
+                },
+                {
+                    "major_version": "9",
                     "repoid": "rhui-codeready-builder-for-rhel-9-x86_64-rhui-rpms",
                     "arch": "x86_64",
                     "channel": "ga",
                     "repo_type": "rpm",
                     "rhui": "google"
+                },
+                {
+                    "major_version": "9",
+                    "repoid": "rhui-codeready-builder-for-rhel-9-x86_64-rhui-rpms",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "rhui": "alibaba"
                 }
             ]
         },
@@ -3303,11 +3357,27 @@
                 },
                 {
                     "major_version": "9",
+                    "repoid": "rhui-rhel-9-for-aarch64-supplementary-rhui-rpms",
+                    "arch": "aarch64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "rhui": "alibaba"
+                },
+                {
+                    "major_version": "9",
                     "repoid": "rhui-rhel-9-for-x86_64-supplementary-rhui-rpms",
                     "arch": "x86_64",
                     "channel": "ga",
                     "repo_type": "rpm",
                     "rhui": "google"
+                },
+                {
+                    "major_version": "9",
+                    "repoid": "rhui-rhel-9-for-x86_64-supplementary-rhui-rpms",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "rhui": "alibaba"
                 }
             ]
         },
@@ -3687,6 +3757,14 @@
                     "channel": "ga",
                     "repo_type": "rpm",
                     "rhui": "google"
+                },
+                {
+                    "major_version": "9",
+                    "repoid": "rhui-rhel-9-for-x86_64-highavailability-rhui-rpms",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "rhui": "alibaba"
                 }
             ]
         },
@@ -3788,10 +3866,30 @@
                     "rhui": "google"
                 }
             ]
+        },
+        {
+            "pesid": "rhel9-rhui-custom-client-at-alibaba",
+            "entries": [
+                {
+                    "major_version": "9",
+                    "repoid": "rhui-custom-rhui_client_at_alibaba-rhel-9",
+                    "arch": "aarch64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "rhui": "alibaba"
+                },
+                {
+                    "major_version": "9",
+                    "repoid": "rhui-custom-rhui_client_at_alibaba-rhel-9",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "rhui": "alibaba"
+                }
+            ]
         }
     ],
     "provided_data_streams": [
-        "2.0",
         "3.0"
     ]
 }
