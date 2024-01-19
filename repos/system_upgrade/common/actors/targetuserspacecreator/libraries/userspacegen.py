@@ -350,7 +350,7 @@ def _mkdir_with_copied_mode(path, mode_from):
 
 def _choose_copy_or_link(symlink, srcdir):
     """
-    Copy file contents or create a symlink depending on where the pointee resides.
+    Determine whether to copy file contents or create a symlink depending on where the pointee resides.
 
     :param symlink: The source symlink to follow.  This must be an absolute path.
     :param srcdir: The root directory that every piece of content must be present in.
@@ -415,7 +415,7 @@ def _choose_copy_or_link(symlink, srcdir):
         # To make comparisons, we need to resolve all symlinks in the directory
         # structure leading up to pointee.  However, we can't include pointee
         # itself otherwise it will resolve to the file that it points to in the
-        # end.
+        # end (which would be wrong if pointee_filename is a symlink).
         canonical_pointee_dir, pointee_filename = os.path.split(pointee_as_abspath)
         canonical_pointee_dir = os.path.realpath(canonical_pointee_dir)
 
@@ -454,47 +454,16 @@ def _choose_copy_or_link(symlink, srcdir):
     return ('copy', pointee_as_abspath)
 
 
-def _copy_decouple(srcdir, dstdir):
+def _copy_symlinks(symlinks_to_process, srcdir):
     """
-    Copy files inside of `srcdir` to `dstdir` while decoupling symlinks.
+    Copy file contents or create a symlink depending on where the pointee resides.
 
-    What we mean by decoupling the `srcdir` is that any symlinks pointing
-    outside the directory will be copied as regular files. This means that the
-    directory will become independent from its surroundings with respect to
-    symlinks. Any symlink (or symlink chains) within the directory will be
-    preserved.
-
-    .. warning::
-        `dstdir` must already exist.
+    :param symlinks_to_process: List of 2-tuples of (src_path, target_path).  Each src_path
+        should be an absolute path to the symlink.  target_path is the path to where we
+        need to create either a link or a copy.
+    :param srcdir: The root directory that every piece of content must be present in.
+    :raises ValueError: if the arguments are not correct
     """
-    symlinks_to_process = []
-    for root, directories, files in os.walk(srcdir):
-        # relative path from srcdir because srcdir is replaced with dstdir for
-        # the copy.
-        relpath = os.path.relpath(root, srcdir)
-
-        # Create all directories with proper permissions for security
-        # reasons (Putting private data into directories that haven't had their
-        # permissions set appropriately may leak the private information.)
-        for directory in directories:
-            source_dirpath = os.path.join(root, directory)
-            target_dirpath = os.path.join(dstdir, relpath, directory)
-            _mkdir_with_copied_mode(target_dirpath, source_dirpath)
-
-        for filename in files:
-            source_filepath = os.path.join(root, filename)
-            target_filepath = os.path.join(dstdir, relpath, filename)
-
-            # Defer symlinks until later because we may end up having to copy
-            # the file contents and the directory may not exist yet.
-            if os.path.islink(source_filepath):
-                symlinks_to_process.append((source_filepath, target_filepath))
-                continue
-
-            # Not a symlink so we can copy it now too
-            run(['cp', '-a', source_filepath, target_filepath])
-
-    # Now process all symlinks
     for source_linkpath, target_linkpath in symlinks_to_process:
         try:
             action, source_path = _choose_copy_or_link(source_linkpath, srcdir)
@@ -512,6 +481,61 @@ def _copy_decouple(srcdir, dstdir):
         else:
             # This will not happen unless _copy_or_link() has a bug.
             raise RuntimeError("Programming error: _copy_or_link() returned an unknown action:{}".format(action))
+
+
+def _copy_decouple(srcdir, dstdir):
+    """
+    Copy files inside of `srcdir` to `dstdir` while decoupling symlinks.
+
+    What we mean by decoupling the `srcdir` is that any symlinks pointing
+    outside the directory will be copied as regular files. This means that the
+    directory will become independent from its surroundings with respect to
+    symlinks. Any symlink (or symlink chains) within the directory will be
+    preserved.
+
+    .. warning::
+        `dstdir` must already exist.
+    """
+    for root, directories, files in os.walk(srcdir):
+        # relative path from srcdir because srcdir is replaced with dstdir for
+        # the copy.
+        relpath = os.path.relpath(root, srcdir)
+
+        # Create all directories with proper permissions for security
+        # reasons (Putting private data into directories that haven't had their
+        # permissions set appropriately may leak the private information.)
+        symlinks_to_process = []
+        for directory in directories:
+            source_dirpath = os.path.join(root, directory)
+            target_dirpath = os.path.join(dstdir, relpath, directory)
+
+            # Defer symlinks until later because we may end up having to copy
+            # the file contents and the directory may not exist yet.
+            if os.path.islink(source_dirpath):
+                symlinks_to_process.append((source_dirpath, target_dirpath))
+                continue
+
+            _mkdir_with_copied_mode(target_dirpath, source_dirpath)
+
+        # Link or create all directories that were pointed to by symlinks and
+        # then reset symlinks_to_process for use by files.
+        _copy_symlinks(symlinks_to_process, srcdir)
+        symlinks_to_process = []
+
+        for filename in files:
+            source_filepath = os.path.join(root, filename)
+            target_filepath = os.path.join(dstdir, relpath, filename)
+
+            # Defer symlinks until later because we may end up having to copy
+            # the file contents and the directory may not exist yet.
+            if os.path.islink(source_filepath):
+                symlinks_to_process.append((source_filepath, target_filepath))
+                continue
+
+            # Not a symlink so we can copy it now too
+            run(['cp', '-a', source_filepath, target_filepath])
+
+        _copy_symlinks(symlinks_to_process, srcdir)
 
 
 def _copy_certificates(context, target_userspace):
