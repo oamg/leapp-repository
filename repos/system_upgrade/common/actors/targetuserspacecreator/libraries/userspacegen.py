@@ -348,6 +348,62 @@ def _mkdir_with_copied_mode(path, mode_from):
     run(['chmod', '--reference={}'.format(mode_from), path])
 
 
+def _canonize(pointee_as_abspath, srcdir):
+    """
+    Helper function to return canonical forms of directory paths.
+
+    This is an ugly function that just avoids having to duplicate this code in two places.
+    """
+    # If srcdir is a symlink, then we need a name for it that we can compare
+    # with other paths.
+    canonical_srcdir = os.path.realpath(srcdir)
+
+    # To make comparisons, we need to resolve all symlinks in the directory
+    # structure leading up to pointee.  However, we can't include pointee
+    # itself otherwise it will resolve to the file that it points to in the
+    # end (which would be wrong if pointee_filename is a symlink).
+    canonical_pointee_dir, pointee_filename = os.path.split(pointee_as_abspath)
+    canonical_pointee_dir = os.path.realpath(canonical_pointee_dir)
+
+    return (pointee_filename, canonical_pointee_dir, canonical_srcdir)
+
+
+def _format_source_link(pointee_as_abspath, symlink, srcdir):
+    """
+    Format the source for a symlink as either an absolute path or a path relative to srcdir.
+
+    :param pointee_as_abspath: Sbsolute path to the source of the symlink.
+    :param symlink: Absolute path to the symlink that started us looking
+        through the chain of links. If the symlink points to a relative path, this function will
+        return a relative path.  If it is an absolute path, it will return an absolute path.
+    :param srcdir: The directory in the source tree that we want everything to live within.
+    """
+    pointee_filename, canonical_pointee_dir, canonical_srcdir = _canonize(pointee_as_abspath, srcdir)
+    link_to = os.readlink(symlink)
+
+    if link_to.startswith('/'):
+        # The original symlink was an absolute path so we will set this
+        # one to absolute too
+        # Note: Because absolute paths are constructed inside of
+        # srcdir, the relative path that we need to join with has to be
+        # relative to srcdir, not the directory that the symlink is
+        # being created in.
+        relative_to_srcdir = os.path.relpath(canonical_pointee_dir, canonical_srcdir)
+        corrected_path = os.path.normpath(os.path.join(srcdir,
+                                                       relative_to_srcdir,
+                                                       pointee_filename)
+                                          )
+    else:
+        # If the original link is a relative link, then we want the new
+        # link to be relative (to the path that we will place the symlink in) as well
+        canonical_symlink_dir = os.path.realpath(os.path.dirname(symlink))
+        relative_to_symlink_location = os.path.relpath(canonical_pointee_dir, canonical_symlink_dir)
+        corrected_path = os.path.normpath(os.path.join(relative_to_symlink_location,
+                                                       pointee_filename)
+                                          )
+    return corrected_path
+
+
 def _choose_copy_or_link(symlink, srcdir):
     """
     Determine whether to copy file contents or create a symlink depending on where the pointee resides.
@@ -377,10 +433,6 @@ def _choose_copy_or_link(symlink, srcdir):
     # os.path.exists follows symlinks
     if not os.path.exists(symlink):
         raise BrokenSymlinkError('File {} is a broken symlink!'.format(symlink))
-
-    # If srcdir is a symlink, then we need a name for it that we can compare
-    # with other paths.
-    canonical_srcdir = os.path.realpath(srcdir)
 
     pointee_as_abspath = symlink
     seen = set([pointee_as_abspath])
@@ -412,43 +464,17 @@ def _choose_copy_or_link(symlink, srcdir):
 
         seen.add(pointee_as_abspath)
 
-        # To make comparisons, we need to resolve all symlinks in the directory
-        # structure leading up to pointee.  However, we can't include pointee
-        # itself otherwise it will resolve to the file that it points to in the
-        # end (which would be wrong if pointee_filename is a symlink).
-        canonical_pointee_dir, pointee_filename = os.path.split(pointee_as_abspath)
-        canonical_pointee_dir = os.path.realpath(canonical_pointee_dir)
+        dummy_pointee_filename, canonical_pointee_dir, canonical_srcdir = _canonize(pointee_as_abspath, srcdir)
+        if not canonical_pointee_dir.startswith(canonical_srcdir):
+            # pointee is a symlink that points outside of the srcdir so continue to
+            # the next symlink in the chain.
+            continue
 
-        if canonical_pointee_dir.startswith(canonical_srcdir):
-            # Absolute path inside of the correct dir so we need to link to it
-            # But we need to determine what the link path should be before
-            # returning.
-
-            # Construct a relative path that points from the symlinks directory
-            # to the pointee.
-            link_to = os.readlink(symlink)
-            canonical_symlink_dir = os.path.realpath(os.path.dirname(symlink))
-            relative_path = os.path.relpath(canonical_pointee_dir, canonical_symlink_dir)
-
-            if link_to.startswith('/'):
-                # The original symlink was an absolute path so we will set this
-                # one to absolute too
-                # Note: Because absolute paths are constructed inside of
-                # srcdir, the relative path that we need to join here has to be
-                # relative to srcdir, not the directory that the symlink is
-                # being created in.
-                relative_to_srcdir = os.path.relpath(canonical_pointee_dir, canonical_srcdir)
-                corrected_path = os.path.normpath(os.path.join(srcdir, relative_to_srcdir, pointee_filename))
-
-            else:
-                # If the original link is a relative link, then we want the new
-                # link to be relative as well
-                corrected_path = os.path.normpath(os.path.join(relative_path, pointee_filename))
-
-            return ("link", corrected_path)
-
-        # pointee is a symlink that points outside of the srcdir so continue to
-        # the next symlink in the chain.
+        # Absolute path inside of the correct dir so we need to link to it
+        # Note: We have to make the source of the link relative or absolute
+        # depending on what the original link was
+        corrected_path = _format_source_link(pointee_as_abspath, symlink, srcdir)
+        return ("link", corrected_path)
 
     # The file is not a link so copy it
     return ('copy', pointee_as_abspath)
@@ -464,6 +490,7 @@ def _copy_symlinks(symlinks_to_process, srcdir):
     :param srcdir: The root directory that every piece of content must be present in.
     :raises ValueError: if the arguments are not correct
     """
+    copied_links = {}
     for source_linkpath, target_linkpath in symlinks_to_process:
         try:
             action, source_path = _choose_copy_or_link(source_linkpath, srcdir)
@@ -473,14 +500,32 @@ def _copy_symlinks(symlinks_to_process, srcdir):
             continue
 
         if action == "copy":
-            # Note: source_path could be a directory, so '-a' or '-r' must be
-            # given to cp.
-            run(['cp', '-a', source_path, target_linkpath])
-        elif action == 'link':
+            # Need the canonical path so that we can check if the pointed to
+            # file has been copied before
+            canonical_source_path = os.path.realpath(source_path)
+            if canonical_source_path in copied_links:
+                # The link was copied before so we need to change this to a link action
+                # with the previous copied link location as the source for this link
+                action = "link"
+                source_abspath = os.path.abspath(os.path.normpath(copied_links[canonical_source_path]))
+                source_path = _format_source_link(source_abspath, source_linkpath, srcdir)
+            else:
+                # All other links to the same target will need to link to the path
+                # that we're processing now since they all pointed to the same
+                # target before.
+                copied_links[canonical_source_path] = source_linkpath
+
+                # Note: source_path could be a directory, so '-a' or '-r' must be
+                # given to cp.
+                run(['cp', '-a', source_path, target_linkpath])
+                continue
+
+        if action == 'link':
             run(["ln", "-s", source_path, target_linkpath])
-        else:
-            # This will not happen unless _copy_or_link() has a bug.
-            raise RuntimeError("Programming error: _copy_or_link() returned an unknown action:{}".format(action))
+            continue
+
+        # This will not happen unless _copy_or_link() has a bug.
+        raise RuntimeError("Programming error: _copy_or_link() returned an unknown action:{}".format(action))
 
 
 def _copy_decouple(srcdir, dstdir):

@@ -381,29 +381,24 @@ def temp_directory_layout(tmp_path, initial_structure):
         },
         id="Absolute_symlink_to_a_file_inside_via_a_symlink_to_the_rootdir"
     )),
-    # This should be fixed but not necessarily for this release.
-    # It makes sure that when we have two separate links to the
-    # same file outside of /etc/pki, one of the links is copied
-    # as a real file and the other is made a link to the copy.
-    # (Right now, the real file is copied in place of both links.)
-    # (pytest.param(
-    #     {
-    #         'dir': {
-    #             'fileA': '/outside/fileC',
-    #             'fileB': '/outside/fileC',
-    #         },
-    #         'outside': {
-    #             'fileC': None,
-    #         },
-    #     },
-    #     {
-    #         'dir': {
-    #             'fileA': None,
-    #             'fileB': '/dir/fileA',
-    #         },
-    #     },
-    #     id="Absolute_two_symlinks_to_the_same_copied_file"
-    # )),
+    (pytest.param(
+        {
+            'dir': {
+                'fileA': '/outside/fileC',
+                'fileB': '/outside/fileC',
+            },
+            'outside': {
+                'fileC': None,
+            },
+        },
+        {
+            'dir': {
+                'fileA': None,
+                'fileB': '/dir/fileA',
+            },
+        },
+        id="Absolute_two_symlinks_to_the_same_copied_file"
+    )),
     (pytest.param(
         {
             'dir': {
@@ -735,29 +730,24 @@ def temp_directory_layout(tmp_path, initial_structure):
         },
         id="Relative_symlink_to_a_file_inside_via_a_symlink_to_the_rootdir"
     )),
-    # This should be fixed but not necessarily for this release.
-    # It makes sure that when we have two separate links to the
-    # same file outside of /etc/pki, one of the links is copied
-    # as a real file and the other is made a link to the copy.
-    # (Right now, the real file is copied in place of both links.)
-    # (pytest.param(
-    #     {
-    #         'dir': {
-    #             'fileA': '../outside/fileC',
-    #             'fileB': '../outside/fileC',
-    #         },
-    #         'outside': {
-    #             'fileC': None,
-    #         },
-    #     },
-    #     {
-    #         'dir': {
-    #             'fileA': None,
-    #             'fileB': 'fileA',
-    #         },
-    #     },
-    #     id="Relative_two_symlinks_to_the_same_copied_file"
-    # )),
+    (pytest.param(
+        {
+            'dir': {
+                'fileA': '../outside/fileC',
+                'fileB': '../outside/fileC',
+            },
+            'outside': {
+                'fileC': None,
+            },
+        },
+        {
+            'dir': {
+                'fileA': None,
+                'fileB': 'fileA',
+            },
+        },
+        id="Relative_two_symlinks_to_the_same_copied_file"
+    )),
     (pytest.param(
         {
             'dir': {
