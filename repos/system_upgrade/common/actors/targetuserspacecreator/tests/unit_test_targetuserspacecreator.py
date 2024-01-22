@@ -382,6 +382,65 @@ def temp_directory_layout(tmp_path, initial_structure):
         id="Absolute_symlink_to_a_file_inside_via_a_symlink_to_the_rootdir"
     )),
     (pytest.param(
+        {
+            'dir': {
+                'fileA': '/outside/fileC',
+                'fileB': '/outside/fileC',
+            },
+            'outside': {
+                'fileC': None,
+            },
+        },
+        {
+            'dir': {
+                'fileA': None,
+                'fileB': '/dir/fileA',
+            },
+        },
+        id="Absolute_two_symlinks_to_the_same_copied_file"
+    )),
+    (pytest.param(
+        {
+            'dir': {
+                'fileA': None,
+                'link_to_dir': '/dir/inside',
+                'inside': {
+                    'fileB': None,
+                },
+            },
+        },
+        {
+            'dir': {
+                'fileA': None,
+                'link_to_dir': '/dir/inside',
+                'inside': {
+                    'fileB': None,
+                },
+            },
+        },
+        id="Absolute_symlink_to_a_dir_inside"
+    )),
+    (pytest.param(
+        {
+            'dir': {
+                'fileA': None,
+                'link_to_dir': '/outside',
+            },
+            'outside': {
+                'fileB': None,
+            },
+        },
+        {
+            'dir': {
+                'fileA': None,
+                'link_to_dir': {
+                    'fileB': None,
+                },
+            },
+        },
+        id="Absolute_symlink_to_a_dir_outside"
+    )),
+    (pytest.param(
         # This one is very tricky:
         # * The user has made /etc/pki a symlink to some other directory that
         #   they keep certificates.
@@ -670,6 +729,65 @@ def temp_directory_layout(tmp_path, initial_structure):
             },
         },
         id="Relative_symlink_to_a_file_inside_via_a_symlink_to_the_rootdir"
+    )),
+    (pytest.param(
+        {
+            'dir': {
+                'fileA': '../outside/fileC',
+                'fileB': '../outside/fileC',
+            },
+            'outside': {
+                'fileC': None,
+            },
+        },
+        {
+            'dir': {
+                'fileA': None,
+                'fileB': 'fileA',
+            },
+        },
+        id="Relative_two_symlinks_to_the_same_copied_file"
+    )),
+    (pytest.param(
+        {
+            'dir': {
+                'fileA': None,
+                'link_to_dir': '../outside',
+            },
+            'outside': {
+                'fileB': None,
+            },
+        },
+        {
+            'dir': {
+                'fileA': None,
+                'link_to_dir': {
+                    'fileB': None,
+                },
+            },
+        },
+        id="Relative_symlink_to_a_dir_outside"
+    )),
+    (pytest.param(
+        {
+            'dir': {
+                'fileA': None,
+                'link_to_dir': 'inside',
+                'inside': {
+                    'fileB': None,
+                },
+            },
+        },
+        {
+            'dir': {
+                'fileA': None,
+                'link_to_dir': 'inside',
+                'inside': {
+                    'fileB': None,
+                },
+            },
+        },
+        id="Relative_symlink_to_a_dir_inside"
     )),
     (pytest.param(
         # This one is very tricky:
