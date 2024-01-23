@@ -21,6 +21,7 @@ class _DnfPluginPathStr(str):
     _PATHS = {
         "8": os.path.join('/lib/python3.6/site-packages/dnf-plugins', DNF_PLUGIN_NAME),
         "9": os.path.join('/lib/python3.9/site-packages/dnf-plugins', DNF_PLUGIN_NAME),
+        "10": os.path.join('/lib/python3.12/site-packages/dnf-plugins', DNF_PLUGIN_NAME),
     }
 
     def __init__(self):  # noqa: W0231; pylint: disable=super-init-not-called
