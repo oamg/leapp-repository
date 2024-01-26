@@ -1,5 +1,5 @@
 {
-    "datetime": "202401171742Z",
+    "datetime": "202401261328Z",
     "version_format": "1.2.0",
     "mapping": [
         {
@@ -1489,6 +1489,14 @@
                 },
                 {
                     "major_version": "8",
+                    "repoid": "rhui-rhel-8-for-aarch64-baseos-rhui-rpms",
+                    "arch": "aarch64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "rhui": "alibaba"
+                },
+                {
+                    "major_version": "8",
                     "repoid": "rhui-rhel-8-for-x86_64-baseos-e4s-rhui-rpms",
                     "arch": "x86_64",
                     "channel": "e4s",
@@ -1717,6 +1725,14 @@
                 },
                 {
                     "major_version": "8",
+                    "repoid": "rhui-rhel-8-for-aarch64-appstream-rhui-rpms",
+                    "arch": "aarch64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "rhui": "alibaba"
+                },
+                {
+                    "major_version": "8",
                     "repoid": "rhui-rhel-8-for-x86_64-appstream-e4s-rhui-rpms",
                     "arch": "x86_64",
                     "channel": "e4s",
@@ -1870,6 +1886,14 @@
                 },
                 {
                     "major_version": "8",
+                    "repoid": "rhui-codeready-builder-for-rhel-8-aarch64-rhui-rpms",
+                    "arch": "aarch64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "rhui": "alibaba"
+                },
+                {
+                    "major_version": "8",
                     "repoid": "rhui-codeready-builder-for-rhel-8-x86_64-rhui-rpms",
                     "arch": "x86_64",
                     "channel": "ga",
@@ -1996,6 +2020,14 @@
                     "channel": "ga",
                     "repo_type": "rpm",
                     "rhui": "aws"
+                },
+                {
+                    "major_version": "8",
+                    "repoid": "rhui-rhel-8-for-aarch64-supplementary-rhui-rpms",
+                    "arch": "aarch64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "rhui": "alibaba"
                 },
                 {
                     "major_version": "8",
@@ -2665,6 +2697,14 @@
         {
             "pesid": "rhel8-rhui-custom-client-at-alibaba",
             "entries": [
+                {
+                    "major_version": "8",
+                    "repoid": "rhui-custom-rhui_client_at_alibaba-rhel-8",
+                    "arch": "aarch64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "rhui": "alibaba"
+                },
                 {
                     "major_version": "8",
                     "repoid": "rhui-custom-rhui_client_at_alibaba-rhel-8",
