@@ -2,6 +2,7 @@ import pytest
 
 from leapp import reporting
 from leapp.libraries.actor import transitionsystemdservicesstates
+from leapp.libraries.common.config import version
 from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked, produce_mocked
 from leapp.libraries.stdlib import api
 from leapp.models import (
@@ -68,7 +69,7 @@ def test_get_service_task(monkeypatch, desired_state, state_target, expected):
     assert tasks == expected
 
 
-def test_filter_services_services_filtered():
+def test_filter_irrelevant_services_services_filtered():
     services_source = {
         "test2.service": "static",
         "test3.service": "masked",
@@ -85,14 +86,14 @@ def test_filter_services_services_filtered():
         SystemdServiceFile(name="test6.service", state="masked-runtime"),
     ]
 
-    filtered = transitionsystemdservicesstates._filter_services(
+    filtered = transitionsystemdservicesstates._filter_irrelevant_services(
         services_source, services_target
     )
 
     assert not filtered
 
 
-def test_filter_services_services_not_filtered():
+def test_filter_irrelevant_services_services_not_filtered():
     services_source = {
         "test1.service": "enabled",
         "test2.service": "disabled",
@@ -106,7 +107,7 @@ def test_filter_services_services_not_filtered():
         SystemdServiceFile(name="test4.service", state="enabled"),
     ]
 
-    filtered = transitionsystemdservicesstates._filter_services(
+    filtered = transitionsystemdservicesstates._filter_irrelevant_services(
         services_source, services_target
     )
 
@@ -238,3 +239,34 @@ def test_report_newly_enabled(monkeypatch):
 
     assert created_reports.called
     assert all([s in created_reports.report_fields["summary"] for s in newly_enabled])
+
+
+@pytest.mark.parametrize(
+    "source_major_ver,expected", (
+        (
+            7,
+            {
+                'abc.service': 'enabled',
+                'virtqemud.service': 'enabled',
+                'virtlogd.service': 'disabled',
+                'virtproxyd.service': 'masked',
+            }
+        ),
+        (8, {'abc.service': 'enabled'}),
+        (9, {'abc.service': 'enabled'}),
+    )
+)
+def test_filter_ignored_services(monkeypatch, source_major_ver, expected):
+    services = {
+        'abc.service': 'enabled',
+        'virtqemud.service': 'enabled',
+        'virtlogd.service': 'disabled',
+        'virtproxyd.service': 'masked',
+    }
+    monkeypatch.setattr(
+        version,
+        "get_source_major_version",
+        lambda: source_major_ver,
+    )
+    transitionsystemdservicesstates._filter_ignored_services(services)
+    assert services == expected

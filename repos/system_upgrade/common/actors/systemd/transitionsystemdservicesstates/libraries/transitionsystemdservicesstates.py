@@ -1,5 +1,6 @@
 from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
+from leapp.libraries.common.config import version
 from leapp.libraries.stdlib import api
 from leapp.models import (
     SystemdServicesInfoSource,
@@ -78,9 +79,43 @@ def _get_service_preset(service_name, presets):
     return preset
 
 
-def _filter_services(services_source, services_target):
+def _filter_ignored_services(services_source):
+    """
+    Filter out services that should be ignored i.e. not handled
+    """
+    to_ignore = []
+    if int(version.get_source_major_version()) >= 8:
+        to_ignore.extend([
+            "libvirtd.service",
+            "virtqemud.service",
+            "virtinterfaced.service",
+            "virtnetworkd.service",
+            "virtnodedevd.service",
+            "virtnwfilterd.service",
+            "virtsecretd.service",
+            "virtstoraged.service",
+            "virtproxyd.service",
+            "virtlockd.service",
+            "virtlogd.service",
+            "libvirt-guests.service",
+        ])
+
+    for s in to_ignore:
+        # It's sufficient to remove just from the source system services,
+        # because if a service is not present on the source system it's not handled either way
+        if services_source.pop(s, None):
+            api.current_logger().debug("Ignored service {} found on the source system".format(s))
+
+
+def _filter_irrelevant_services(services_source, services_target):
     """
     Filter out irrelevant services
+
+    Irrelevant services are those that cannot be enabled/disabled,
+    those that do not exist on the source system and those in masked-runtime state.
+
+    :return: Target system services without the irrelevant ones.
+    :rtype: list
     """
     filtered = []
     for service in services_target:
@@ -197,7 +232,8 @@ def process():
     presets_source = {p.service: p.state for p in presets_source}
     presets_target = {p.service: p.state for p in presets_target}
 
-    services_target = _filter_services(services_source, services_target)
+    _filter_ignored_services(services_source)
+    services_target = _filter_irrelevant_services(services_source, services_target)
 
     desired_states = _get_desired_states(
         services_source, presets_source, services_target, presets_target
