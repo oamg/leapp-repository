@@ -41,7 +41,7 @@ py2_byte_compile "%1" "%2"}
 # RHEL 8+ packages to be consistent with other leapp projects in future.
 
 Name:           leapp-repository
-Version:        0.19.0
+Version:        0.20.0
 Release:        1%{?dist}
 Summary:        Repositories for leapp
 
