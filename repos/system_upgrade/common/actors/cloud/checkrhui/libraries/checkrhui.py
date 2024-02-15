@@ -142,7 +142,11 @@ def customize_rhui_setup_for_aws(rhui_family, setup_info):
 
     target_version = version.get_target_major_version()
     if target_version == '8':
-        return  # The rhel8 plugin is packed into leapp-rhui-aws as we need python2 compatible client
+        # RHEL8 rh-amazon-rhui-client depends on amazon-libdnf-plugin that depends
+        # essentially on the entire RHEL8 RPM stack, so we cannot just swap the clients
+        # The leapp-rhui-aws will provide all necessary files to access entire RHEL8 content
+        setup_info.bootstrap_target_client = False
+        return
 
     amazon_plugin_copy_task = CopyFile(src='/usr/lib/python3.9/site-packages/dnf-plugins/amazon-id.py',
                                        dst='/usr/lib/python3.6/site-packages/dnf-plugins/')
