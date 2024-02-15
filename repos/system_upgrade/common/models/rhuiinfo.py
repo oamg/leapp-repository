@@ -36,6 +36,13 @@ class TargetRHUISetupInfo(Model):
     files_supporting_client_operation = fields.List(fields.String(), default=[])
     """A subset of files copied in preinstall tasks that should not be cleaned up."""
 
+    bootstrap_target_client = fields.Boolean(default=True)
+    """
+    Swap the current RHUI client for the target one to facilitate access to the target content.
+
+    When False, only files from the leapp-rhui-<provider> will be used to access target content.
+    """
+
 
 class RHUIInfo(Model):
     """

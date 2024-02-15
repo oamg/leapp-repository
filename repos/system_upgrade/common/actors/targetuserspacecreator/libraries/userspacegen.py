@@ -853,9 +853,9 @@ def _get_rhui_available_repoids(context, cloud_repo):
     return set(repoids)
 
 
-def get_copy_location_from_copy_in_task(context, copy_task):
+def get_copy_location_from_copy_in_task(context_basepath, copy_task):
     basename = os.path.basename(copy_task.src)
-    dest_in_container = context.full_path(copy_task.dst)
+    dest_in_container = os.path.join(context_basepath, copy_task.dst)
     if os.path.isdir(dest_in_container):
         return os.path.join(copy_task.dst, basename)
     return copy_task.dst
@@ -871,7 +871,10 @@ def _get_rh_available_repoids(context, indata):
 
     # If we are upgrading a RHUI system, check what repositories are provided by the (already installed) target clients
     if indata and indata.rhui_info:
-        files_provided_by_clients = _query_rpm_for_pkg_files(context, indata.rhui_info.target_client_pkg_names)
+        setup_info = indata.rhui_info.target_client_setup_info
+        target_content_access_files = set()
+        if setup_info.bootstrap_target_client:
+            target_content_access_files = _query_rpm_for_pkg_files(context, indata.rhui_info.target_client_pkg_names)
 
         def is_repofile(path):
             return os.path.dirname(path) == '/etc/yum.repos.d' and os.path.basename(path).endswith('.repo')
@@ -884,24 +887,33 @@ def _get_rh_available_repoids(context, indata):
 
         yum_repos_d = context.full_path('/etc/yum.repos.d')
         all_repofiles = {os.path.join(yum_repos_d, path) for path in os.listdir(yum_repos_d) if path.endswith('.repo')}
-        client_repofiles = {context.full_path(path) for path in files_provided_by_clients if is_repofile(path)}
+        api.current_logger().debug('(RHUI Setup) All available repofiles: {0}'.format(' '.join(all_repofiles)))
+
+        target_access_repofiles = {
+            context.full_path(path) for path in target_content_access_files if is_repofile(path)
+        }
 
         # Exclude repofiles used to setup the target rhui access as on some platforms the repos provided by
         # the client are not sufficient to install the client into target userspace (GCP)
         rhui_setup_repofile_tasks = [task for task in setup_tasks if task.src.endswith('repo')]
         rhui_setup_repofiles = (
-            get_copy_location_from_copy_in_task(context, copy_task) for copy_task in rhui_setup_repofile_tasks
+            get_copy_location_from_copy_in_task(context.base_dir, copy) for copy in rhui_setup_repofile_tasks
         )
         rhui_setup_repofiles = {context.full_path(repofile) for repofile in rhui_setup_repofiles}
 
-        foreign_repofiles = all_repofiles - client_repofiles - rhui_setup_repofiles
+        foreign_repofiles = all_repofiles - target_access_repofiles - rhui_setup_repofiles
+
+        api.current_logger().debug(
+            'The following repofiles are considered as unknown to'
+            ' the target RHUI content setup and will be ignored: {0}'.format(' '.join(foreign_repofiles))
+        )
 
         # Rename non-client repofiles so they will not be recognized when running dnf repolist
         for foreign_repofile in foreign_repofiles:
             os.rename(foreign_repofile, '{0}.back'.format(foreign_repofile))
 
         try:
-            dnf_cmd = ['dnf', 'repolist', '--releasever', target_ver, '-v']
+            dnf_cmd = ['dnf', 'repolist', '--releasever', target_ver, '-v', '--enablerepo', '*']
             repolist_result = context.call(dnf_cmd)['stdout']
             repoid_lines = [line for line in repolist_result.split('\n') if line.startswith('Repo-id')]
             rhui_repoids = {extract_repoid_from_line(line) for line in repoid_lines}
@@ -919,6 +931,9 @@ def _get_rh_available_repoids(context, indata):
             for foreign_repofile in foreign_repofiles:
                 os.rename('{0}.back'.format(foreign_repofile), foreign_repofile)
 
+    api.current_logger().debug(
+        'The following repofiles are considered as provided by RedHat: {0}'.format(' '.join(rh_repoids))
+    )
     return rh_repoids
 
 
@@ -1086,7 +1101,7 @@ def _get_target_userspace():
     return constants.TARGET_USERSPACE.format(get_target_major_version())
 
 
-def _create_target_userspace(context, packages, files, target_repoids):
+def _create_target_userspace(context, indata, packages, files, target_repoids):
     """Create the target userspace."""
     target_path = _get_target_userspace()
     prepare_target_userspace(context, target_path, target_repoids, list(packages))
@@ -1096,12 +1111,57 @@ def _create_target_userspace(context, packages, files, target_repoids):
         _copy_files(target_context, files)
     dnfplugin.install(_get_target_userspace())
 
+    # If we used only repofiles from leapp-rhui-<provider> then remove these as they provide
+    # duplicit definitions as the target clients already installed in the target container
+    if indata.rhui_info:
+        api.current_logger().debug(
+            'Target container should have access to content. '
+            'Removing repofiles from leapp-rhui-<provider> from the target..'
+        )
+        setup_info = indata.rhui_info.target_client_setup_info
+        if not setup_info.bootstrap_target_client:
+            target_userspace_path = _get_target_userspace()
+            for copy in setup_info.preinstall_tasks.files_to_copy_into_overlay:
+                dst_in_container = get_copy_location_from_copy_in_task(target_userspace_path, copy)
+                dst_in_container = dst_in_container.strip('/')
+                dst_in_host = os.path.join(target_userspace_path, dst_in_container)
+                if os.path.isfile(dst_in_host) and dst_in_host.endswith('.repo'):
+                    api.current_logger().debug('Removing repofile: {0}'.format(dst_in_host))
+                    os.remove(dst_in_host)
+
     # and do not forget to set the rhsm into the container mode again
     with mounting.NspawnActions(_get_target_userspace()) as target_context:
         rhsm.set_container_mode(target_context)
 
 
-def install_target_rhui_client_if_needed(context, indata):
+def _apply_rhui_access_preinstall_tasks(context, rhui_setup_info):
+    if rhui_setup_info.preinstall_tasks:
+        api.current_logger().debug('Applying RHUI preinstall tasks.')
+        preinstall_tasks = rhui_setup_info.preinstall_tasks
+
+        for file_to_remove in preinstall_tasks.files_to_remove:
+            api.current_logger().debug('Removing {0} from the scratch container.'.format(file_to_remove))
+            context.remove(file_to_remove)
+
+        for copy_info in preinstall_tasks.files_to_copy_into_overlay:
+            api.current_logger().debug(
+                'Copying {0} in {1} into the scratch container.'.format(copy_info.src, copy_info.dst)
+            )
+            context.makedirs(os.path.dirname(copy_info.dst), exists_ok=True)
+            context.copy_to(copy_info.src, copy_info.dst)
+
+
+def _apply_rhui_access_postinstall_tasks(context, rhui_setup_info):
+    if rhui_setup_info.postinstall_tasks:
+        api.current_logger().debug('Applying RHUI postinstall tasks.')
+        for copy_info in rhui_setup_info.postinstall_tasks.files_to_copy:
+            context.makedirs(os.path.dirname(copy_info.dst), exists_ok=True)
+            debug_msg = 'Copying {0} to {1} (inside the scratch container).'
+            api.current_logger().debug(debug_msg.format(copy_info.src, copy_info.dst))
+            context.call(['cp', copy_info.src, copy_info.dst])
+
+
+def setup_target_rhui_access_if_needed(context, indata):
     if not indata.rhui_info:
         return
 
@@ -1110,15 +1170,14 @@ def install_target_rhui_client_if_needed(context, indata):
     _create_target_userspace_directories(userspace_dir)
 
     setup_info = indata.rhui_info.target_client_setup_info
-    if setup_info.preinstall_tasks:
-        preinstall_tasks = setup_info.preinstall_tasks
+    _apply_rhui_access_preinstall_tasks(context, setup_info)
 
-        for file_to_remove in preinstall_tasks.files_to_remove:
-            context.remove(file_to_remove)
-
-        for copy_info in preinstall_tasks.files_to_copy_into_overlay:
-            context.makedirs(os.path.dirname(copy_info.dst), exists_ok=True)
-            context.copy_to(copy_info.src, copy_info.dst)
+    if not setup_info.bootstrap_target_client:
+        # Installation of the target RHUI client is not possible and we bundle all necessary
+        # files into the leapp-rhui-<provider> packages.
+        api.current_logger().debug('Bootstrapping target RHUI client is disabled, leapp will rely '
+                                   'only on files budled in leapp-rhui-<provider> package.')
+        return
 
     cmd = ['dnf', '-y']
 
@@ -1149,16 +1208,13 @@ def install_target_rhui_client_if_needed(context, indata):
 
     context.call(cmd, callback_raw=utils.logging_handler, stdin='\n'.join(dnf_transaction_steps))
 
-    if setup_info.postinstall_tasks:
-        for copy_info in setup_info.postinstall_tasks.files_to_copy:
-            context.makedirs(os.path.dirname(copy_info.dst), exists_ok=True)
-            context.call(['cp', copy_info.src, copy_info.dst])
+    _apply_rhui_access_postinstall_tasks(context, setup_info)
 
     # Do a cleanup so there are not duplicit repoids
     files_owned_by_clients = _query_rpm_for_pkg_files(context, indata.rhui_info.target_client_pkg_names)
 
     for copy_task in setup_info.preinstall_tasks.files_to_copy_into_overlay:
-        dest = get_copy_location_from_copy_in_task(context, copy_task)
+        dest = get_copy_location_from_copy_in_task(context.base_dir, copy_task)
         can_be_cleaned_up = copy_task.src not in setup_info.files_supporting_client_operation
         if dest not in files_owned_by_clients and can_be_cleaned_up:
             context.remove(dest)
@@ -1184,10 +1240,10 @@ def perform():
             target_iso = next(api.consume(TargetOSInstallationImage), None)
             with mounting.mount_upgrade_iso_to_root_dir(overlay.target, target_iso):
 
-                install_target_rhui_client_if_needed(context, indata)
+                setup_target_rhui_access_if_needed(context, indata)
 
                 target_repoids = _gather_target_repositories(context, indata, prod_cert_path)
-                _create_target_userspace(context, indata.packages, indata.files, target_repoids)
+                _create_target_userspace(context, indata, indata.packages, indata.files, target_repoids)
                 # TODO: this is tmp solution as proper one needs significant refactoring
                 target_repo_facts = repofileutils.get_parsed_repofiles(context)
                 api.produce(TMPTargetRepositoriesFacts(repositories=target_repo_facts))
