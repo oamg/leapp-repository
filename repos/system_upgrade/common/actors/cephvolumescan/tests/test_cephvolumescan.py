@@ -8,6 +8,8 @@ from leapp.reporting import Report
 CONT_PS_COMMAND_OUTPUT = {
     "stdout":
     """CONTAINER ID IMAGE COMMAND CREATED STATUS PORTS NAMES
+    b5a3d8ef25b9 undercloud-0.ctlplane.redhat.local:8787/rh-osbs/rhceph:5 "-n osd.8 -f --set..." \
+        2 hours ago Up 2 hours ago ceph-bea1a933-0846-4aaa-8223-62cb8cb2873c-osd-8
     50d96fe72019 registry.redhat.io/rhceph/rhceph-4-rhel8:latest "/opt/ceph-contain..." \
         2 weeks ago Up 2 weeks ceph-osd-0
     f93c17b49c40 registry.redhat.io/rhceph/rhceph-4-rhel8:latest "/opt/ceph-contain..." \
@@ -41,7 +43,33 @@ CEPH_VOLUME_OUTPUT = {
                 "type":"block",
                 "vg_name":"ceph-a696c40d-6b1d-448d-a40e-fadca22b64bc"
             }
-        ]
+        ],
+        "8":[
+            {
+                "devices": [
+                    "/dev/nvme0n1"
+                ],
+                "lv_name": "osd-db-b04857a0-a2a2-40c3-a490-cbe1f892a76c",
+                "lv_uuid": "zcvGix-drzz-JwzP-6ktU-Od6W-N5jL-kxRFa3",
+                "tags":{
+                    "ceph.encrypted":"1"
+                },
+                "type": "db",
+                "vg_name": "ceph-b78309b3-bd80-4399-87a3-ac647b216b63"
+            },
+            {
+                "devices": [
+                    "/dev/sdb"
+                ],
+                "lv_name": "osd-block-477c303f-5eaf-4be8-b5cc-f6073eb345bf",
+                "lv_uuid": "Mz1dep-D715-Wxh1-zUuS-0cOA-mKXE-UxaEM3",
+                "tags":{
+                    "ceph.encrypted":"1"
+                },
+                "type": "block",
+                "vg_name": "ceph-e3e0345b-8be1-40a7-955a-378ba967f954"
+            }
+        ],
     }"""
 }
 
@@ -51,7 +79,19 @@ CEPH_LVM_LIST = {
            'lv_uuid': 'Tyc0TH-RDxr-ebAF-9mWF-Kh5R-YnvJ-cEcGVn',
            'tags': {'ceph.encrypted': '1'},
            'type': 'block',
-           'vg_name': 'ceph-a696c40d-6b1d-448d-a40e-fadca22b64bc'}]
+           'vg_name': 'ceph-a696c40d-6b1d-448d-a40e-fadca22b64bc'}],
+    '1': [{'devices': ['/dev/nvme0n1'],
+           'lv_name': 'osd-db-b04857a0-a2a2-40c3-a490-cbe1f892a76c',
+           'lv_uuid': 'zcvGix-drzz-JwzP-6ktU-Od6W-N5jL-kxRFa3',
+           'tags': {'ceph.encrypted': '1'},
+           'type': 'block',
+           'vg_name': 'ceph-b78309b3-bd80-4399-87a3-ac647b216b63'},
+          {'devices': ['/dev/sdb'],
+           'lv_name': 'osd-block-477c303f-5eaf-4be8-b5cc-f6073eb345bf',
+           'lv_uuid': 'Mz1dep-D715-Wxh1-zUuS-0cOA-mKXE-UxaEM3',
+           'tags': {'ceph.encrypted': '1'},
+           'type': 'block',
+           'vg_name': 'ceph-e3e0345b-8be1-40a7-955a-378ba967f954'}]
     }
 
 
@@ -60,7 +100,7 @@ def test_select_osd_container(m_run):
 
     m_run.return_value = CONT_PS_COMMAND_OUTPUT
 
-    assert cephvolumescan.select_osd_container('docker') == "ceph-osd-0"
+    assert cephvolumescan.select_osd_container('docker') == "ceph-bea1a933-0846-4aaa-8223-62cb8cb2873c-osd-8"
 
 
 @patch('leapp.libraries.actor.cephvolumescan.has_package')
@@ -82,4 +122,8 @@ def test_encrypted_osds_list(m_get_ceph_lvm_list, m_isfile):
     m_get_ceph_lvm_list.return_value = CEPH_LVM_LIST
     m_isfile.return_value = True
 
-    assert cephvolumescan.encrypted_osds_list() == ['Tyc0TH-RDxr-ebAF-9mWF-Kh5R-YnvJ-cEcGVn']
+    assert cephvolumescan.encrypted_osds_list() == [
+        'Tyc0TH-RDxr-ebAF-9mWF-Kh5R-YnvJ-cEcGVn',
+        'zcvGix-drzz-JwzP-6ktU-Od6W-N5jL-kxRFa3',
+        'Mz1dep-D715-Wxh1-zUuS-0cOA-mKXE-UxaEM3'
+    ]
