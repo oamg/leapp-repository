@@ -1,0 +1,19 @@
+{
+   "lscpu": [
+      {"field": "Architecture:", "data": "ppc64le"},
+      {"field": "Byte Order:", "data": "Little Endian"},
+      {"field": "CPU(s):", "data": "8"},
+      {"field": "On-line CPU(s) list:", "data": "0-7"},
+      {"field": "Thread(s) per core:", "data": "1"},
+      {"field": "Core(s) per socket:", "data": "1"},
+      {"field": "Socket(s):", "data": "8"},
+      {"field": "NUMA node(s):", "data": "1"},
+      {"field": "Model:", "data": "2.1 (pvr 004b 0201)"},
+      {"field": "Model name:", "data": "POWER8E (raw), altivec supported"},
+      {"field": "Hypervisor vendor:", "data": "KVM"},
+      {"field": "Virtualization type:", "data": "para"},
+      {"field": "L1d cache:", "data": "64K"},
+      {"field": "L1i cache:", "data": "32K"},
+      {"field": "NUMA node0 CPU(s):", "data": "0-7"}
+   ]
+}

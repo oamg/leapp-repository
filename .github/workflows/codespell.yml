@@ -23,7 +23,7 @@ jobs:
             ./repos/system_upgrade/el8toel9/actors/xorgdrvfact/tests/files/journalctl-xorg-intel,\
             ./repos/system_upgrade/el8toel9/actors/xorgdrvfact/tests/files/journalctl-xorg-qxl,\
             ./repos/system_upgrade/el8toel9/actors/xorgdrvfact/tests/files/journalctl-xorg-without-qxl,\
-            ./repos/system_upgrade/common/actors/scancpu/tests/files/lscpu_s390x,\
+            ./repos/system_upgrade/common/actors/scancpu/tests/files,\
             ./etc/leapp/files/device_driver_deprecation_data.json,\
             ./etc/leapp/files/pes-events.json,\
             ./etc/leapp/files/repomap.json,\

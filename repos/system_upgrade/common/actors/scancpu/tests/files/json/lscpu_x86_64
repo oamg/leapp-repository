@@ -1,0 +1,31 @@
+{
+   "lscpu": [
+      {"field": "Architecture:", "data": "x86_64"},
+      {"field": "CPU op-mode(s):", "data": "32-bit, 64-bit"},
+      {"field": "Byte Order:", "data": "Little Endian"},
+      {"field": "CPU(s):", "data": "2"},
+      {"field": "On-line CPU(s) list:", "data": "0,1"},
+      {"field": "Thread(s) per core:", "data": "1"},
+      {"field": "Core(s) per socket:", "data": "1"},
+      {"field": "Socket(s):", "data": "2"},
+      {"field": "NUMA node(s):", "data": "1"},
+      {"field": "Vendor ID:", "data": "GenuineIntel"},
+      {"field": "BIOS Vendor ID:", "data": "QEMU"},
+      {"field": "CPU family:", "data": "6"},
+      {"field": "Model:", "data": "165"},
+      {"field": "Model name:", "data": "Intel(R) Core(TM) i7-10850H CPU @ 2.70GHz"},
+      {"field": "BIOS Model name:", "data": "pc-i440fx-7.2"},
+      {"field": "Stepping:", "data": "2"},
+      {"field": "CPU MHz:", "data": "2712.006"},
+      {"field": "BogoMIPS:", "data": "5424.01"},
+      {"field": "Virtualization:", "data": "VT-x"},
+      {"field": "Hypervisor vendor:", "data": "KVM"},
+      {"field": "Virtualization type:", "data": "full"},
+      {"field": "L1d cache:", "data": "32K"},
+      {"field": "L1i cache:", "data": "32K"},
+      {"field": "L2 cache:", "data": "4096K"},
+      {"field": "L3 cache:", "data": "16384K"},
+      {"field": "NUMA node0 CPU(s):", "data": "0,1"},
+      {"field": "Flags:", "data": "fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf pni pclmulqdq dtes64 monitor ds_cpl vmx smx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid dca sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm cpuid_fault epb invpcid_single pti ssbd ibrs ibpb stibp tpr_shadow vnmi flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid cqm xsaveopt cqm_llc cqm_occup_llc dtherm ida arat pln pts md_clear flush_l1d"}
+   ]
+}

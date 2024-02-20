@@ -1,0 +1,30 @@
+{
+   "lscpu": [
+      {"field": "Architecture:", "data": "s390x"},
+      {"field": "CPU op-mode(s):", "data": "32-bit, 64-bit"},
+      {"field": "Byte Order:", "data": "Big Endian"},
+      {"field": "CPU(s):", "data": "4"},
+      {"field": "On-line CPU(s) list:", "data": "0-3"},
+      {"field": "Thread(s) per core:", "data": "1"},
+      {"field": "Core(s) per socket:", "data": "1"},
+      {"field": "Socket(s) per book:", "data": "1"},
+      {"field": "Book(s) per drawer:", "data": "1"},
+      {"field": "Drawer(s):", "data": "4"},
+      {"field": "NUMA node(s):", "data": "1"},
+      {"field": "Vendor ID:", "data": "IBM/S390"},
+      {"field": "Machine type:", "data": "3931"},
+      {"field": "CPU dynamic MHz:", "data": "5200"},
+      {"field": "CPU static MHz:", "data": "5200"},
+      {"field": "BogoMIPS:", "data": "3331.00"},
+      {"field": "Hypervisor:", "data": "KVM/Linux"},
+      {"field": "Hypervisor vendor:", "data": "KVM"},
+      {"field": "Virtualization type:", "data": "full"},
+      {"field": "Dispatching mode:", "data": "horizontal"},
+      {"field": "L1d cache:", "data": "128K"},
+      {"field": "L1i cache:", "data": "128K"},
+      {"field": "L2 cache:", "data": "32768K"},
+      {"field": "L3 cache:", "data": "262144K"},
+      {"field": "NUMA node0 CPU(s):", "data": "0-3"},
+      {"field": "Flags:", "data": "esan3 zarch stfle msa ldisp eimm dfp edat etf3eh highgprs te vx vxd vxe gs vxe2 vxp sort dflt vxp2 nnpa sie"}
+   ]
+}

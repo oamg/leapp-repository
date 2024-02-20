@@ -1,0 +1,29 @@
+{
+   "lscpu": [
+      {"field": "Architecture:", "data": "aarch64"},
+      {"field": "Byte Order:", "data": "Little Endian"},
+      {"field": "CPU(s):", "data": "160"},
+      {"field": "On-line CPU(s) list:", "data": "0-159"},
+      {"field": "Thread(s) per core:", "data": "1"},
+      {"field": "Core(s) per socket:", "data": "80"},
+      {"field": "Socket(s):", "data": "2"},
+      {"field": "NUMA node(s):", "data": "4"},
+      {"field": "Vendor ID:", "data": "ARM"},
+      {"field": "BIOS Vendor ID:", "data": "Ampere(R)"},
+      {"field": "Model:", "data": "1"},
+      {"field": "Model name:", "data": "Neoverse-N1"},
+      {"field": "BIOS Model name:", "data": "Ampere(R) Altra(R) Processor"},
+      {"field": "Stepping:", "data": "r3p1"},
+      {"field": "CPU max MHz:", "data": "3000.0000"},
+      {"field": "CPU min MHz:", "data": "1000.0000"},
+      {"field": "BogoMIPS:", "data": "50.00"},
+      {"field": "L1d cache:", "data": "64K"},
+      {"field": "L1i cache:", "data": "64K"},
+      {"field": "L2 cache:", "data": "1024K"},
+      {"field": "NUMA node0 CPU(s):", "data": "0-79"},
+      {"field": "NUMA node1 CPU(s):", "data": "80-159"},
+      {"field": "NUMA node2 CPU(s):", "data": null},
+      {"field": "NUMA node3 CPU(s):", "data": null},
+      {"field": "Flags:", "data": "fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp ssbs"}
+   ]
+}
