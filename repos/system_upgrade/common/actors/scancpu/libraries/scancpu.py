@@ -1,20 +1,39 @@
+import json
 import re
 
 from leapp.libraries.common.config import architecture
+from leapp.libraries.common.config.version import get_source_major_version
 from leapp.libraries.stdlib import api, CalledProcessError, run
 from leapp.models import CPUInfo, DetectedDeviceOrDriver, DeviceDriverDeprecationData
 
-LSCPU_NAME_VALUE = re.compile(r'(?P<name>[^:]+):\s+(?P<value>.+)\n?')
+LSCPU_NAME_VALUE = re.compile(r'^(?P<name>[^:]+):[^\S\n]+(?P<value>.+)\n?', flags=re.MULTILINE)
 PPC64LE_MODEL = re.compile(r'\d+\.\d+ \(pvr (?P<family>[0-9a-fA-F]+) 0*[0-9a-fA-F]+\)')
 
 
-def _get_lscpu_output():
+def _get_lscpu_output(output_json=False):
     try:
-        result = run(['lscpu'])
+        result = run(['lscpu', '-J' if output_json else ''])
         return result.get('stdout', '')
     except (OSError, CalledProcessError):
         api.current_logger().debug('Executing `lscpu` failed', exc_info=True)
     return ''
+
+
+def _parse_lscpu_output():
+    if get_source_major_version() == '7':
+        return dict(LSCPU_NAME_VALUE.findall(_get_lscpu_output()))
+
+    lscpu = _get_lscpu_output(output_json=True)
+    try:
+        parsed_json = json.loads(lscpu)
+        # The json contains one entry "lscpu" which is a list of dictionaries
+        # with 2 keys "field" (name of the field from lscpu) and "data" (value
+        # of the field).
+        return dict((entry['field'].rstrip(':'), entry['data']) for entry in parsed_json['lscpu'])
+    except ValueError:
+        api.current_logger().debug('Failed to parse json output from `lscpu`. Got:\n{}'.format(lscpu))
+
+    return dict()
 
 
 def _get_cpu_flags(lscpu):
@@ -128,24 +147,16 @@ def _find_deprecation_data_entries(lscpu):
         arch_prefix, is_detected = architecture.ARCH_ARM64, _is_detected_aarch64
 
     if arch_prefix and is_detected:
-        return [
-            _to_detected_device(entry) for entry in _get_cpu_entries_for(arch_prefix)
-            if is_detected(lscpu, entry)
-        ]
+        return [_to_detected_device(entry) for entry in _get_cpu_entries_for(arch_prefix) if is_detected(lscpu, entry)]
 
     api.current_logger().warning('Unsupported platform could not detect relevant CPU information')
     return []
 
 
 def process():
-    lscpu = dict(LSCPU_NAME_VALUE.findall(_get_lscpu_output()))
+    lscpu = _parse_lscpu_output()
     api.produce(*_find_deprecation_data_entries(lscpu))
     # Backwards compatibility
     machine_type = lscpu.get('Machine type')
     flags = _get_cpu_flags(lscpu)
-    api.produce(
-            CPUInfo(
-                machine_type=int(machine_type) if machine_type else None,
-                flags=flags
-                )
-            )
+    api.produce(CPUInfo(machine_type=int(machine_type) if machine_type else None, flags=flags))
