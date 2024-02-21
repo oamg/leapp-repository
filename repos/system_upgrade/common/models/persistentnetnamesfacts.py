@@ -24,7 +24,7 @@ class Interface(Model):
     devpath = fields.String()
     driver = fields.String()
     vendor = fields.String()
-    pci_info = fields.Model(PCIAddress)
+    pci_info = fields.Nullable(fields.Model(PCIAddress))
     mac = fields.String()
 
 

@@ -42,9 +42,13 @@ def interfaces():
             attrs['name'] = dev.sys_name
             attrs['devpath'] = dev.device_path
             attrs['driver'] = dev['ID_NET_DRIVER']
-            attrs['vendor'] = dev['ID_VENDOR_ID']
-            attrs['pci_info'] = PCIAddress(**pci_info(dev['ID_PATH']))
             attrs['mac'] = dev.attributes.get('address')
+            attrs['vendor'] = dev.get('ID_VENDOR_ID', '')
+            if not attrs['vendor']:
+                attrs['pci_info'] = PCIAddress(**pci_info(dev['ID_PATH']))
+            else:
+                # non-PCI
+                attrs['pci_info'] = None
             if isinstance(attrs['mac'], bytes):
                 attrs['mac'] = attrs['mac'].decode()
         except Exception as e:  # pylint: disable=broad-except
