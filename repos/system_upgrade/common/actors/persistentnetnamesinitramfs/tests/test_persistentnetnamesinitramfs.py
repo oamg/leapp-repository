@@ -32,6 +32,12 @@ class interfaces_mocked:
 
 @pytest.mark.parametrize('count', [0, 1, 8, 256])
 def test_run(monkeypatch, current_actor_context, count):
+    """
+    Basic functionality test.
+
+    The full testing of the underlying scanner function is covered by the common
+    library.
+    """
     monkeypatch.setattr(persistentnetnames, 'interfaces', interfaces_mocked(count))
     current_actor_context.run()
     assert len(current_actor_context.consume(PersistentNetNamesFactsInitramfs)[0].interfaces) == count
