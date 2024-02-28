@@ -44,7 +44,7 @@ def interfaces():
             attrs['driver'] = dev['ID_NET_DRIVER']
             attrs['mac'] = dev.attributes.get('address')
             attrs['vendor'] = dev.get('ID_VENDOR_ID', '')
-            if not attrs['vendor']:
+            if attrs['vendor']:
                 attrs['pci_info'] = PCIAddress(**pci_info(dev['ID_PATH']))
             else:
                 # non-PCI
