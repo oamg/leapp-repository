@@ -6,13 +6,12 @@ from leapp.models import (
     RepositoriesSetupTasks,
     RpmTransactionTasks,
     SatelliteFacts,
-    SatellitePostgresqlFacts
+    SatellitePostgresqlFacts,
+    UsedRepositories
 )
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
-SATELLITE_VERSION = '6.99'
-
-RELATED_PACKAGES = ('foreman', 'foreman-proxy', 'katello', 'candlepin')
+RELATED_PACKAGES = ('foreman', 'foreman-proxy', 'katello', 'candlepin', 'satellite', 'satellite-capsule')
 RELATED_PACKAGE_PREFIXES = ('rubygem-hammer', 'rubygem-foreman', 'rubygem-katello',
                             'rubygem-smart_proxy', 'python3.11-pulp', 'foreman-installer',
                             'satellite-installer')
@@ -24,7 +23,7 @@ class SatelliteUpgradeFacts(Actor):
     """
 
     name = 'satellite_upgrade_facts'
-    consumes = (InstalledRPM, )
+    consumes = (InstalledRPM, UsedRepositories)
     produces = (RepositoriesSetupTasks, RpmTransactionTasks, SatelliteFacts)
     tags = (IPUWorkflowTag, FactsPhaseTag)
 
@@ -60,16 +59,12 @@ class SatelliteUpgradeFacts(Actor):
             ),
         ))
 
-        satellite = has_package(InstalledRPM, 'satellite')
-        capsule = has_package(InstalledRPM, 'satellite-capsule')
-        if satellite or capsule:
-            repositories_to_enable = [f'satellite-maintenance-{SATELLITE_VERSION}-for-rhel-9-x86_64-rpms']
-            if satellite:
-                repositories_to_enable.append(f'satellite-{SATELLITE_VERSION}-for-rhel-9-x86_64-rpms')
-                to_install.append('satellite')
-            elif capsule:
-                repositories_to_enable.append(f'satellite-capsule-{SATELLITE_VERSION}-for-rhel-9-x86_64-rpms')
-                to_install.append('satellite-capsule')
+        repositories_to_enable = []
+        for used_repos in self.consume(UsedRepositories):
+            for used_repo in used_repos.repositories:
+                if used_repo.repository.startswith(('satellite-6', 'satellite-capsule-6', 'satellite-maintenance-6')):
+                    repositories_to_enable.append(used_repo.repository.replace('for-rhel-8', 'for-rhel-9'))
+        if repositories_to_enable:
             self.produce(RepositoriesSetupTasks(to_enable=repositories_to_enable))
 
         self.produce(RpmTransactionTasks(to_install=to_install))

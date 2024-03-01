@@ -1,5 +1,13 @@
 from leapp.libraries.common.config import mock_configs
-from leapp.models import InstalledRPM, RepositoriesSetupTasks, RPM, RpmTransactionTasks, SatelliteFacts
+from leapp.models import (
+    InstalledRPM,
+    RepositoriesSetupTasks,
+    RPM,
+    RpmTransactionTasks,
+    SatelliteFacts,
+    UsedRepositories,
+    UsedRepository
+)
 
 RH_PACKAGER = 'Red Hat, Inc. <http://bugzilla.redhat.com/bugzilla>'
 
@@ -19,7 +27,9 @@ POSTGRESQL_RPM = fake_package('postgresql-server')
 SATELLITE_RPM = fake_package('satellite')
 SATELLITE_CAPSULE_RPM = fake_package('satellite-capsule')
 
-SATELLITE_VERSION = '6.99'
+SATELLITE_REPOSITORY = UsedRepository(repository='satellite-6.99-for-rhel-8-x86_64-rpms')
+CAPSULE_REPOSITORY = UsedRepository(repository='satellite-capsule-6.99-for-rhel-8-x86_64-rpms')
+MAINTENANCE_REPOSITORY = UsedRepository(repository='satellite-maintenance-6.99-for-rhel-8-x86_64-rpms')
 
 
 def test_no_satellite_present(current_actor_context):
@@ -110,24 +120,26 @@ def test_detects_remote_postgresql(current_actor_context):
 
 def test_enables_right_repositories_on_satellite(current_actor_context):
     current_actor_context.feed(InstalledRPM(items=[FOREMAN_RPM, SATELLITE_RPM]))
+    current_actor_context.feed(UsedRepositories(repositories=[SATELLITE_REPOSITORY, MAINTENANCE_REPOSITORY]))
     current_actor_context.run(config_model=mock_configs.CONFIG)
 
     rpmmessage = current_actor_context.consume(RepositoriesSetupTasks)[0]
 
-    assert f'satellite-maintenance-{SATELLITE_VERSION}-for-rhel-9-x86_64-rpms' in rpmmessage.to_enable
-    assert f'satellite-{SATELLITE_VERSION}-for-rhel-9-x86_64-rpms' in rpmmessage.to_enable
-    assert f'satellite-capsule-{SATELLITE_VERSION}-for-rhel-9-x86_64-rpms' not in rpmmessage.to_enable
+    assert 'satellite-maintenance-6.99-for-rhel-9-x86_64-rpms' in rpmmessage.to_enable
+    assert 'satellite-6.99-for-rhel-9-x86_64-rpms' in rpmmessage.to_enable
+    assert 'satellite-capsule-6.99-for-rhel-9-x86_64-rpms' not in rpmmessage.to_enable
 
 
 def test_enables_right_repositories_on_capsule(current_actor_context):
     current_actor_context.feed(InstalledRPM(items=[FOREMAN_PROXY_RPM, SATELLITE_CAPSULE_RPM]))
+    current_actor_context.feed(UsedRepositories(repositories=[CAPSULE_REPOSITORY, MAINTENANCE_REPOSITORY]))
     current_actor_context.run(config_model=mock_configs.CONFIG)
 
     rpmmessage = current_actor_context.consume(RepositoriesSetupTasks)[0]
 
-    assert f'satellite-maintenance-{SATELLITE_VERSION}-for-rhel-9-x86_64-rpms' in rpmmessage.to_enable
-    assert f'satellite-{SATELLITE_VERSION}-for-rhel-9-x86_64-rpms' not in rpmmessage.to_enable
-    assert f'satellite-capsule-{SATELLITE_VERSION}-for-rhel-9-x86_64-rpms' in rpmmessage.to_enable
+    assert 'satellite-maintenance-6.99-for-rhel-9-x86_64-rpms' in rpmmessage.to_enable
+    assert 'satellite-6.99-for-rhel-9-x86_64-rpms' not in rpmmessage.to_enable
+    assert 'satellite-capsule-6.99-for-rhel-9-x86_64-rpms' in rpmmessage.to_enable
 
 
 def test_enables_right_repositories_on_upstream(current_actor_context):
