@@ -31,5 +31,5 @@ class SatelliteUpgradeServices(Actor):
             for service in glob.glob(os.path.join(SYSTEMD_WANTS_BASE, '{}.service'.format(service_name))):
                 try:
                     os.unlink(service)
-                except Exception as e:  # pylint: disable=broad-except
+                except OSError as e:
                     self.log.warning('Failed disabling service {}: {}'.format(service, e))
