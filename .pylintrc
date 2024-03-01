@@ -57,6 +57,7 @@ disable=
  redundant-u-string-prefix,  # still have py2 to support
  logging-format-interpolation,
  logging-not-lazy,
+ use-yield-from,  # yield from cannot be used until we require python 3.3 or greater
  too-many-lines  # we do not want to take care about that one
 
 [FORMAT]
