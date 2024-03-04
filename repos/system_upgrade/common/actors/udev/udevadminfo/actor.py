@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.libraries.stdlib import run
+from leapp.libraries.actor import udevadminfo
 from leapp.models import UdevAdmInfoData
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
@@ -15,5 +15,4 @@ class UdevAdmInfo(Actor):
     tags = (IPUWorkflowTag, FactsPhaseTag,)
 
     def process(self):
-        out = run(['udevadm', 'info', '-e'])['stdout']
-        self.produce(UdevAdmInfoData(db=out))
+        udevadminfo.process()
