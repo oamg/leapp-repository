@@ -8,7 +8,7 @@ from leapp.libraries.stdlib import api, CalledProcessError, run
 from leapp.models import InstalledRPM
 
 CEPH_CONF = "/etc/ceph/ceph.conf"
-CONTAINER = "ceph-osd"
+CONTAINER = r"ceph-(\S*-)?osd-"
 
 
 def select_osd_container(engine):
