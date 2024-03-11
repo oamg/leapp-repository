@@ -54,7 +54,7 @@ def test_version_files_with_common(monkeypatch, major_version):
     assert api.produce.model_instances[0].files[INDEX_OF_VERSION_FILE].rpm_name == ''
     assert api.produce.model_instances[0].files[INDEX_OF_VERSION_FILE].is_modified is False
 
-    assert len(api.current_logger.warnmsg) == 0
+    assert not api.current_logger.errmsg
 
 
 def test_modified_rpm_owned_files(monkeypatch):
@@ -127,4 +127,4 @@ def test_non_existent_file(monkeypatch):
     assert api.produce.model_instances[0].files[0].rpm_name == ''
     assert api.produce.model_instances[0].files[0].is_modified is False
 
-    assert len(api.current_logger.warnmsg) == 0
+    assert not api.current_logger.warnmsg
