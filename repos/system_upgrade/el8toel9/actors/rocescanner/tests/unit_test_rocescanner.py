@@ -151,4 +151,5 @@ def test_roce_noibmz(monkeypatch, arch):
     monkeypatch.setattr(rocescanner.api, 'current_actor', CurrentActorMocked(arch=arch))
     monkeypatch.setattr(rocescanner.api.current_actor(), 'produce', mocked_produce)
     monkeypatch.setattr(rocescanner, 'get_roce_nics_lines', lambda: mocked_roce_lines)
+    rocescanner.process()
     assert not mocked_produce.called
