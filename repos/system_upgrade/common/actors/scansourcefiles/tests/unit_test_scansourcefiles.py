@@ -21,9 +21,10 @@ TRACKED_FILES_BY_VERSIONS = {
 VERSION_FILES_MOCKED = {
     'common': [
         '{}/file_not_rpm_owned'.format(FILES_DIR),
-    ],
-    **TRACKED_FILES_BY_VERSIONS
+    ]
 }
+
+VERSION_FILES_MOCKED.update(TRACKED_FILES_BY_VERSIONS)
 
 
 @pytest.mark.parametrize('major_version', RHEL_MAJOR_VERSIONS_LIST)
