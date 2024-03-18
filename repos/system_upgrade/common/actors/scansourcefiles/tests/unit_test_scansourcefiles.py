@@ -77,21 +77,20 @@ def test_get_rpm_name(monkeypatch, run_output, expected_output):
         assert not api.current_logger.warnmsg
 
 
-@pytest.mark.parametrize('input_file,rpm_name,modified', (
-    (os.path.join(FILES_DIR, 'file_not_existant'), 'rpm', True),
-    (os.path.join(FILES_DIR, 'file_not_rpm_owned'), '', False)
+@pytest.mark.parametrize('input_file,rpm_name,modified,expected_output', (
+    (os.path.join(FILES_DIR, 'file_not_existant'), 'rpm', True,
+     FileInfo(path=os.path.join(FILES_DIR, 'file_not_existant'), exists=False, rpm_name='rpm', is_modified=True)),
+    (os.path.join(FILES_DIR, 'file_not_rpm_owned'), '', False,
+     FileInfo(path=os.path.join(FILES_DIR, 'file_not_rpm_owned'), exists=True, rpm_name='', is_modified=False))
 ))
-def test_scan_file(monkeypatch, input_file, rpm_name, modified):
+def test_scan_file(monkeypatch, input_file, rpm_name, modified, expected_output):
     monkeypatch.setattr(scansourcefiles, 'is_modified', lambda _: modified)
     monkeypatch.setattr(scansourcefiles, '_get_rpm_name', lambda _: rpm_name)
 
     file_info = scansourcefiles.scan_file(input_file)
 
     assert isinstance(file_info, FileInfo)
-    assert file_info.path == input_file
-    assert file_info.exists == os.path.exists(input_file)
-    assert file_info.rpm_name == rpm_name
-    assert file_info.is_modified == modified
+    assert file_info == expected_output
 
 
 @pytest.mark.parametrize('input_files,expected_output', (
@@ -122,12 +121,14 @@ def test_rpm_owned_files(monkeypatch, input_file, rpm_name, expected_output):
 
     scansourcefiles.process()
 
-    instance = api.produce.model_instances[0]
-    file = instance.files[0]
+    tracked_files = api.produce.model_instances[0]
+    assert isinstance(tracked_files, TrackedFilesInfoSource)
+    file_info = tracked_files.files[0]
+    assert isinstance(file_info, FileInfo)
 
     assert api.produce.called == 1
-    assert len(instance.files) == 1
-    assert file == expected_output
+    assert len(tracked_files.files) == 1
+    assert file_info == expected_output
 
 
 param_list = [(major_version,
@@ -149,15 +150,14 @@ def test_version_file_with_existant_common_file(monkeypatch, major_version, expe
 
     scansourcefiles.process()
 
-    instance = api.produce.model_instances[0]
-
+    tracked_files = api.produce.model_instances[0]
     assert api.produce.called == 1
-    assert isinstance(instance, TrackedFilesInfoSource)
+    assert isinstance(tracked_files, TrackedFilesInfoSource)
     # assert only 1 common and 1 version file were scanned
-    assert len(instance.files) == 2
+    assert len(tracked_files.files) == 2
 
-    file1 = instance.files[0]
+    file1 = tracked_files.files[0]
     assert file1 == common_expected_output
 
-    file2 = instance.files[1]
+    file2 = tracked_files.files[1]
     assert file2 == expected_output
