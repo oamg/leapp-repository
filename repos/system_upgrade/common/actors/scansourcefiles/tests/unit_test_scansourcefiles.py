@@ -154,7 +154,7 @@ def test_version_file_with_common_file(monkeypatch, major_version,
                                        version_file_expected_output, common_file_expected_output):
     def scan_files_mocked(*args, **kwargs):
         files = TRACKED_FILES_MOCKED['common'] + TRACKED_FILES_MOCKED.get(major_version, [])
-        return [FileInfo(path=file, exists=False, rpm_name='', is_modified=False) for file in files]
+        return [FileInfo(path=file_, exists=False, rpm_name='', is_modified=False) for file_ in files]
 
     monkeypatch.setattr(api, 'produce', testutils.produce_mocked())
     monkeypatch.setattr(api, 'current_logger', testutils.logger_mocked())
