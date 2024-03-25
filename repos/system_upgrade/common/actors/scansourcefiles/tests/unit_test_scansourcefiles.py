@@ -7,40 +7,36 @@ from leapp.libraries.common import testutils
 from leapp.libraries.stdlib import api, CalledProcessError
 from leapp.models import FileInfo, TrackedFilesInfoSource
 
-CUR_DIR = os.path.dirname(os.path.abspath(__file__))
-FILES_DIR = os.path.join(CUR_DIR, 'files')
-
 # values in list should correspond with the return values of get_source_major_version()
 RHEL_MAJOR_VERSIONS_LIST = list(range(8, 9+1))
 
 TRACKED_FILES_BY_VERSIONS = {
-    version: [os.path.join(FILES_DIR, 'file_major_version_{}'.format(version))]
+    version: ['/file_major_version_{}'.format(version)]
     for version in RHEL_MAJOR_VERSIONS_LIST
     }
 
-VERSION_FILES_MOCKED = {
+TRACKED_FILES_MOCKED = {
     'common': [
-        os.path.join(FILES_DIR, 'file_not_rpm_owned')
+        '/file'
     ]
 }
 
-VERSION_FILES_MOCKED.update(TRACKED_FILES_BY_VERSIONS)
+TRACKED_FILES_MOCKED.update(TRACKED_FILES_BY_VERSIONS)
 
 
 @pytest.mark.parametrize('run_output,expected_output', (
     ({'exit_code': 0}, False),
-    ({'exit_code': 1, 'stdout': 'missing'}, True),
-    ({'exit_code': 1, 'stdout': '5'}, True),
-    ({'exit_code': 1, 'stdout': '5 missing'}, True),
-    ({'exit_code': 1, 'stdout': 'fi5ve'}, True),
-    ({'exit_code': 1, 'stdout': 'NoFiveNoMissing'}, False),
+    ({'exit_code': 1, 'stdout': 'missing     /boot/efi/EFI (Permission denied)'}, True),
+    ({'exit_code': 1, 'stdout': 'S.5......  c /etc/openldap/ldap.conf'}, True),
+    ({'exit_code': 1, 'stdout': '..?......  c /etc/libaudit.conf'}, False),
+    ({'exit_code': 1, 'stdout': '.....UG..  g /var/run/avahi-daemon'}, False),
 ))
 def test_is_modified(monkeypatch, run_output, expected_output):
     def mocked_run(cmd, *args, **kwargs):
         assert cmd == ['rpm', '-Vf', '--nomtime', input_file]
         return run_output
 
-    input_file = os.path.join(FILES_DIR, 'mocked_file')
+    input_file = '/file'
     monkeypatch.setattr(scansourcefiles, 'run', mocked_run)
 
     assert scansourcefiles.is_modified(input_file) == expected_output
@@ -59,7 +55,7 @@ def test_get_rpm_name(monkeypatch, run_output, expected_output):
         return run_output
 
     raise_error = run_output and not isinstance(run_output, dict)
-    input_file = os.path.join(FILES_DIR, 'mocked_file')
+    input_file = '/file'
 
     monkeypatch.setattr(scansourcefiles, 'run', mocked_run)
     monkeypatch.setattr(api, 'current_logger', testutils.logger_mocked())
@@ -77,15 +73,17 @@ def test_get_rpm_name(monkeypatch, run_output, expected_output):
         assert not api.current_logger.warnmsg
 
 
-@pytest.mark.parametrize('input_file,rpm_name,modified,expected_output', (
-    (os.path.join(FILES_DIR, 'file_not_existant'), 'rpm', True,
-     FileInfo(path=os.path.join(FILES_DIR, 'file_not_existant'), exists=False, rpm_name='rpm', is_modified=True)),
-    (os.path.join(FILES_DIR, 'file_not_rpm_owned'), '', False,
-     FileInfo(path=os.path.join(FILES_DIR, 'file_not_rpm_owned'), exists=True, rpm_name='', is_modified=False))
+@pytest.mark.parametrize('input_file,rpm_name,exists,modified,expected_output', (
+    ('/file1', 'rpm', False, True,
+     FileInfo(path='/file1', exists=False, rpm_name='rpm', is_modified=True)),
+
+    ('/file2', '', True, False,
+     FileInfo(path='/file2', exists=True, rpm_name='', is_modified=False))
 ))
-def test_scan_file(monkeypatch, input_file, rpm_name, modified, expected_output):
+def test_scan_file(monkeypatch, input_file, rpm_name, modified, exists, expected_output):
     monkeypatch.setattr(scansourcefiles, 'is_modified', lambda _: modified)
     monkeypatch.setattr(scansourcefiles, '_get_rpm_name', lambda _: rpm_name)
+    monkeypatch.setattr(os.path, 'exists', lambda _: exists)
 
     file_info = scansourcefiles.scan_file(input_file)
 
@@ -93,31 +91,45 @@ def test_scan_file(monkeypatch, input_file, rpm_name, modified, expected_output)
     assert file_info == expected_output
 
 
-@pytest.mark.parametrize('input_files,expected_output', (
-    ([], []),
-    (['file1'], [FileInfo(path='file1', exists=False, rpm_name='', is_modified=False)]),
-    (['file1', 'file2'], [FileInfo(path='file1', exists=False, rpm_name='', is_modified=False),
-                          FileInfo(path='file2', exists=False, rpm_name='', is_modified=False)]),
-))
-def test_scan_files(monkeypatch, input_files, expected_output):
-    def mocked_scan_file(input_file):
-        return FileInfo(path=input_file, exists=False, rpm_name='', is_modified=False)
+@pytest.mark.parametrize('input_files,rpm_name,exists,modified,expected_output', (
+    ([], '', False, False, []),
 
-    monkeypatch.setattr(scansourcefiles, 'scan_file', mocked_scan_file)
+    (['/file1'], '', False, False,
+     [FileInfo(path='/file1', exists=False, rpm_name='', is_modified=False)]),
+
+    (['/file1', '/file2'], '', False, False,
+     [FileInfo(path='/file1', exists=False, rpm_name='', is_modified=False),
+      FileInfo(path='/file2', exists=False, rpm_name='', is_modified=False)]),
+
+    (['/file_rpm_modified'], 'rpm', False, True,
+     [FileInfo(path='/file_rpm_modified', exists=False, rpm_name='rpm', is_modified=True)]),
+
+    (['/file_rpm_not_modified'], 'rpm', False, False,
+     [FileInfo(path='/file_rpm_not_modified', exists=False, rpm_name='rpm', is_modified=False)]),
+))
+def test_scan_files(monkeypatch, input_files, rpm_name, exists, modified, expected_output):
+    def scan_file_mocked(input_file):
+        return FileInfo(path=input_file, exists=exists, rpm_name=rpm_name, is_modified=modified)
+
+    monkeypatch.setattr(scansourcefiles, 'scan_file', scan_file_mocked)
 
     assert scansourcefiles.scan_files(input_files) == expected_output
 
 
-@pytest.mark.parametrize('input_file,rpm_name,expected_output', (
-    (os.path.join(FILES_DIR, 'file_rpm_owned'), 'rpm',
-     FileInfo(path=os.path.join(FILES_DIR, 'file_rpm_owned'), exists=True, rpm_name='rpm', is_modified=False)),
+@pytest.mark.parametrize('input_file,rpm_name,exists,modified,expected_output', (
+    ('/file_rpm_not_modified', 'rpm', False, False,
+     FileInfo(path='/file_rpm_not_modified', exists=False, rpm_name='rpm', is_modified=False)),
+
+    ('/file_rpm_modified', 'rpm', False, True,
+     FileInfo(path='/file_rpm_modified', exists=False, rpm_name='rpm', is_modified=True)),
 ))
-def test_rpm_owned_files(monkeypatch, input_file, rpm_name, expected_output):
+def test_rpm_owned_files(monkeypatch, input_file, rpm_name, exists, modified, expected_output):
+    def scan_files_mocked(*args, **kwargs):
+        return [FileInfo(path=input_file, exists=exists, rpm_name=rpm_name, is_modified=modified)]
+
     monkeypatch.setattr(api, 'produce', testutils.produce_mocked())
     monkeypatch.setattr(scansourcefiles, 'get_source_major_version', lambda: 9)
-    monkeypatch.setattr(scansourcefiles, '_get_rpm_name', lambda _: rpm_name)
-    monkeypatch.setattr(scansourcefiles, 'is_modified', lambda _: False)
-    monkeypatch.setattr(scansourcefiles, 'TRACKED_FILES', {'common': [input_file]})
+    monkeypatch.setattr(scansourcefiles, 'scan_files', scan_files_mocked)
 
     scansourcefiles.process()
 
@@ -131,22 +143,23 @@ def test_rpm_owned_files(monkeypatch, input_file, rpm_name, expected_output):
     assert file_info == expected_output
 
 
-param_list = [(major_version,
-               FileInfo(path=os.path.join(FILES_DIR, 'file_major_version_{}'.format(major_version)),
-                        exists=False, rpm_name='', is_modified=False),
-               FileInfo(path=os.path.join(FILES_DIR, 'file_not_rpm_owned'),
-                        exists=True, rpm_name='', is_modified=False))
-              for major_version in RHEL_MAJOR_VERSIONS_LIST]
+@pytest.mark.parametrize(
+    'major_version,version_file_expected_output,common_file_expected_output',
+    [(major_version,
+      FileInfo(path='/file_major_version_{}'.format(major_version), exists=False, rpm_name='', is_modified=False),
+      FileInfo(path='/file', exists=False, rpm_name='', is_modified=False))
+     for major_version in RHEL_MAJOR_VERSIONS_LIST]
+)
+def test_version_file_with_common_file(monkeypatch, major_version,
+                                       version_file_expected_output, common_file_expected_output):
+    def scan_files_mocked(*args, **kwargs):
+        files = TRACKED_FILES_MOCKED['common'] + TRACKED_FILES_MOCKED.get(major_version, [])
+        return [FileInfo(path=file, exists=False, rpm_name='', is_modified=False) for file in files]
 
-
-@pytest.mark.parametrize('major_version,expected_output,common_expected_output', param_list)
-def test_version_file_with_existant_common_file(monkeypatch, major_version, expected_output, common_expected_output):
     monkeypatch.setattr(api, 'produce', testutils.produce_mocked())
     monkeypatch.setattr(api, 'current_logger', testutils.logger_mocked())
     monkeypatch.setattr(scansourcefiles, 'get_source_major_version', lambda: major_version)
-    monkeypatch.setattr(scansourcefiles, '_get_rpm_name', lambda _: '')
-    monkeypatch.setattr(scansourcefiles, 'is_modified', lambda _: False)
-    monkeypatch.setattr(scansourcefiles, 'TRACKED_FILES', VERSION_FILES_MOCKED)
+    monkeypatch.setattr(scansourcefiles, 'scan_files', scan_files_mocked)
 
     scansourcefiles.process()
 
@@ -157,7 +170,6 @@ def test_version_file_with_existant_common_file(monkeypatch, major_version, expe
     assert len(tracked_files.files) == 2
 
     file1 = tracked_files.files[0]
-    assert file1 == common_expected_output
-
+    assert file1 == common_file_expected_output
     file2 = tracked_files.files[1]
-    assert file2 == expected_output
+    assert file2 == version_file_expected_output
