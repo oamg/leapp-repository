@@ -12,10 +12,10 @@ from leapp.models import FileInfo, TrackedFilesInfoSource
     ('run_output', 'expected_output_is_modified'),
     (
         ({'exit_code': 0}, False),
-        ({'exit_code': 1, 'stdout': 'missing     /boot/efi/EFI (Permission denied)'},   True),
-        ({'exit_code': 1, 'stdout': 'S.5......  c /etc/openldap/ldap.conf'},            True),
-        ({'exit_code': 1, 'stdout': '..?......  c /etc/libaudit.conf'},                 False),
-        ({'exit_code': 1, 'stdout': '.....UG..  g /var/run/avahi-daemon'},              False),
+        ({'exit_code': 1, 'stdout': 'missing     /boot/efi/EFI (Permission denied)'}, True),
+        ({'exit_code': 1, 'stdout': 'S.5......  c /etc/openldap/ldap.conf'}, True),
+        ({'exit_code': 1, 'stdout': '..?......  c /etc/libaudit.conf'}, False),
+        ({'exit_code': 1, 'stdout': '.....UG..  g /var/run/avahi-daemon'}, False),
     )
 )
 def test_is_modified(monkeypatch, run_output, expected_output_is_modified):
@@ -63,13 +63,13 @@ def test_get_rpm_name_error(monkeypatch):
 @pytest.mark.parametrize(
         ('input_file', 'exists', 'rpm_name', 'is_modified'),
         (
-            ('/not_existing_file',                          False, '', False),
-            ('/not_existing_file_rpm_owned',                False, 'rpm', False),
-            ('/not_existing_file_rpm_owned_modified',       False, 'rpm', True),
-            ('/existing_file_not_modified',                 True, '', False),
-            ('/existing_file_owned_by_rpm_not_modified',    True, 'rpm', False),
-            ('/existing_file_owned_by_rpm_modified',        True, 'rpm', True),
-            ('/existing_file_owned_by_rpm_not_modified',    True, 'rpm', False),
+            ('/not_existing_file', False, '', False),
+            ('/not_existing_file_rpm_owned', False, 'rpm', False),
+            ('/not_existing_file_rpm_owned_modified', False, 'rpm', True),
+            ('/existing_file_not_modified', True, '', False),
+            ('/existing_file_owned_by_rpm_not_modified', True, 'rpm', False),
+            ('/existing_file_owned_by_rpm_modified', True, 'rpm', True),
+            ('/existing_file_owned_by_rpm_not_modified', True, 'rpm', False),
         )
 )
 def test_scan_file(monkeypatch, input_file, exists, rpm_name, is_modified):
