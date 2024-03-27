@@ -69,7 +69,6 @@ def test_get_rpm_name_error(monkeypatch):
             ('/existing_file_not_modified', True, '', False),
             ('/existing_file_owned_by_rpm_not_modified', True, 'rpm', False),
             ('/existing_file_owned_by_rpm_modified', True, 'rpm', True),
-            ('/existing_file_owned_by_rpm_not_modified', True, 'rpm', False),
         )
 )
 def test_scan_file(monkeypatch, input_file, exists, rpm_name, is_modified):
