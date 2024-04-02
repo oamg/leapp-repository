@@ -5,7 +5,11 @@
 %if 0%{?rhel} == 8
     %define lpr_name_src leapp-upgrade-el7toel8-deps
 %else
-    %define lpr_name_src leapp-upgrade-el8toel9-deps
+    %if 0%{?rhel} == 9
+        %define lpr_name_src leapp-upgrade-el8toel9-deps
+    %else
+        %define lpr_name_src leapp-upgrade-el9toel10-deps
+    %endif
 %endif
 
 
