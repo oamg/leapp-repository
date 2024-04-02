@@ -123,6 +123,15 @@ def pkgs_into_tuples(pkgs):
             [(8, 0)],
             {Package('renamed-out', 'rhel8-repo', None)}
         ),
+        (
+            {Package('A', 'rhel7-repo', None), Package('B', 'rhel7-repo', None)},
+            [
+                Event(1, Action.SPLIT, {Package('A', 'rhel7-repo', None)},
+                      {Package('A', 'rhel8-repo', None), Package('B', 'rhel8-repo', None)}, (7, 6), (8, 0), [])
+            ],
+            [(8, 0)],
+            {Package('A', 'rhel8-repo', None), Package('B', 'rhel8-repo', None)}
+        ),
     )
 )
 def test_event_application_fundamentals(monkeypatch, installed_pkgs, events, releases, expected_target_pkgs):
