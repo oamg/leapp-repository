@@ -139,8 +139,11 @@ def compute_pkg_changes_between_consequent_releases(source_installed_pkgs,
         if event.action == Action.PRESENT:
             for pkg in event.in_pkgs:
                 if pkg in seen_pkgs:
+                    # First remove the package with the old repository and add it back, but now with the new
+                    # repository. As the Package class has a custom __hash__ and __eq__ comparing only name
+                    # and modulestream, the pkg.repository field is ignore and therefore the add() call
+                    # does not update the entry.
                     if pkg in target_pkgs:
-                        # Remove the package with the old repository, add the one with the new one
                         target_pkgs.remove(pkg)
                     target_pkgs.add(pkg)
         elif event.action == Action.DEPRECATED:
@@ -163,7 +166,11 @@ def compute_pkg_changes_between_consequent_releases(source_installed_pkgs,
                              event.id, event.action, removed_pkgs_str, added_pkgs_str)
 
                 # In pkgs are present, event can be applied
+                # Note: We do a .difference(event.out_packages) followed by an .union(event.out_packages) to overwrite
+                # #     repositories of the packages (Package has overwritten __hash__ and __eq__, ignoring
+                # #     the repository field)
                 target_pkgs = target_pkgs.difference(event.in_pkgs)
+                target_pkgs = target_pkgs.difference(event.out_pkgs)
                 target_pkgs = target_pkgs.union(event.out_pkgs)
 
         pkgs_to_demodularize = pkgs_to_demodularize.difference(event.in_pkgs)
