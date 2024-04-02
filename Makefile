@@ -189,8 +189,9 @@ source: prepare
 	@git archive --prefix "$(PKGNAME)-$(VERSION)/" -o "packaging/sources/$(PKGNAME)-$(VERSION).tar.gz" HEAD
 	@echo "--- PREPARE DEPS PKGS ---"
 	mkdir -p packaging/tmp/
-	@__TIMESTAMP=$(TIMESTAMP) $(MAKE) _build_subpkg
-	@__TIMESTAMP=$(TIMESTAMP) $(MAKE) DIST_VERSION=$$(($(DIST_VERSION) + 1)) _build_subpkg
+	@__TIMESTAMP=$(TIMESTAMP) $(MAKE) DIST_VERSION=7 _build_subpkg
+	@__TIMESTAMP=$(TIMESTAMP) $(MAKE) DIST_VERSION=8 _build_subpkg
+	@__TIMESTAMP=$(TIMESTAMP) $(MAKE) DIST_VERSION=9 _build_subpkg
 	@tar -czf packaging/sources/deps-pkgs.tar.gz -C packaging/RPMS/noarch `ls -1 packaging/RPMS/noarch | grep -o "[^/]*rpm$$"`
 	@rm -f packaging/RPMS/noarch/*.rpm
 
@@ -389,11 +390,14 @@ _test_container_ipu:
 	el8toel9) \
 		export REPOSITORIES="common,el8toel9"; \
 		;; \
+	el9toel10) \
+		export REPOSITORIES="common,el9toel10"; \
+		;; \
 	"") \
 		echo "TEST_CONT_IPU must be set"; exit 1; \
 		;; \
 	*) \
-		echo "Only supported TEST_CONT_IPUs are el7toel8, el8toel9"; exit 1; \
+		echo "Only supported TEST_CONT_IPUs are el7toel8, el8toel9, el9toel10"; exit 1; \
 		;; \
 	esac && \
 	$(_CONTAINER_TOOL) exec -w /repocopy $$_CONT_NAME make clean && \
@@ -449,6 +453,10 @@ test_container:
 		;; \
 	python3.9) \
 		TEST_CONT_IPU=el8toel9 $(MAKE) _test_container_ipu; \
+		TEST_CONT_IPU=el9toel10 $(MAKE) _test_container_ipu; \
+		;; \
+	python3.12) \
+		TEST_CONT_IPU=el9toel10 $(MAKE) _test_container_ipu; \
 		;; \
 	*) \
 		TEST_CONT_IPU=el8toel9 $(MAKE) _test_container_ipu; \
