@@ -24,26 +24,17 @@ class InhibitWhenLuks(Actor):
             ceph_info = next(self.consume(CephInfo))
             if ceph_info:
                 ceph_vol = ceph_info.encrypted_volumes[:]
-                for storage_info in self.consume(StorageInfo):
-                    for blk in storage_info.lsblk:
-                        if blk.tp == 'crypt' and blk.name not in ceph_vol:
-                            create_report([
-                                reporting.Title('LUKS encrypted partition detected'),
-                                reporting.Summary('Upgrading system with encrypted partitions is not supported'),
-                                reporting.Severity(reporting.Severity.HIGH),
-                                reporting.Groups([reporting.Groups.BOOT, reporting.Groups.ENCRYPTION]),
-                                reporting.Groups([reporting.Groups.INHIBITOR]),
-                            ])
-                            break
         except StopIteration:
-            for storage_info in self.consume(StorageInfo):
-                for blk in storage_info.lsblk:
-                    if blk.tp == 'crypt':
-                        create_report([
-                            reporting.Title('LUKS encrypted partition detected'),
-                            reporting.Summary('Upgrading system with encrypted partitions is not supported'),
-                            reporting.Severity(reporting.Severity.HIGH),
-                            reporting.Groups([reporting.Groups.BOOT, reporting.Groups.ENCRYPTION]),
-                            reporting.Groups([reporting.Groups.INHIBITOR]),
-                        ])
-                        break
+            pass
+
+        for storage_info in self.consume(StorageInfo):
+            for blk in storage_info.lsblk:
+                if blk.tp == 'crypt' and blk.name not in ceph_vol:
+                    create_report([
+                        reporting.Title('LUKS encrypted partition detected'),
+                        reporting.Summary('Upgrading system with encrypted partitions is not supported'),
+                        reporting.Severity(reporting.Severity.HIGH),
+                        reporting.Groups([reporting.Groups.BOOT, reporting.Groups.ENCRYPTION]),
+                        reporting.Groups([reporting.Groups.INHIBITOR]),
+                    ])
+                    break
