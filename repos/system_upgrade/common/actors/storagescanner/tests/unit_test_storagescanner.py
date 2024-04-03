@@ -255,13 +255,18 @@ def test_get_lsblk_info(monkeypatch):
     bytes_per_gb = 1 << 30
 
     def get_cmd_output_mocked(cmd, delim, expected_len):
-        if cmd == ['lsblk', '-pbnr', '--output', 'NAME,MAJ:MIN,RM,SIZE,RO,TYPE,MOUNTPOINT']:
+        if cmd == ['lsblk', '-pbnr', '--output', 'NAME,MAJ:MIN,RM,SIZE,RO,TYPE,MOUNTPOINT,PKNAME']:
             output_lines_split_on_whitespace = [
-                ['vda', '252:0', '0', str(40 * bytes_per_gb), '0', 'disk', ''],
-                ['vda1', '252:1', '0', str(1 * bytes_per_gb), '0', 'part', '/boot'],
-                ['vda2', '252:2', '0', str(39 * bytes_per_gb), '0', 'part', ''],
-                ['rhel_ibm--p8--kvm--03--guest--02-root', '253:0', '0', str(38 * bytes_per_gb), '0', 'lvm', '/'],
-                ['rhel_ibm--p8--kvm--03--guest--02-swap', '253:1', '0', str(1 * bytes_per_gb), '0', 'lvm', '[SWAP]']
+                ['/dev/vda', '252:0', '0', str(40 * bytes_per_gb), '0', 'disk', '', ''],
+                ['/dev/vda1', '252:1', '0', str(1 * bytes_per_gb), '0', 'part', '/boot', ''],
+                ['/dev/vda2', '252:2', '0', str(39 * bytes_per_gb), '0', 'part', '', ''],
+                ['/dev/mapper/rhel_ibm--p8--kvm--03--guest--02-root', '253:0', '0', str(38 * bytes_per_gb), '0', 'lvm',
+                    '/', ''],
+                ['/dev/mapper/rhel_ibm--p8--kvm--03--guest--02-swap', '253:1', '0', str(1 * bytes_per_gb), '0', 'lvm',
+                    '[SWAP]', ''],
+                ['/dev/mapper/luks-01b60fff-a2a8-4c03-893f-056bfc3f06f6', '254:0', '0', str(38 * bytes_per_gb), '0',
+                    'crypt', '', '/dev/nvme0n1p1'],
+                ['/dev/nvme0n1p1', '259:1', '0', str(39 * bytes_per_gb), '0', 'part', '', '/dev/nvme0n1'],
             ]
             for output_line_parts in output_lines_split_on_whitespace:
                 yield output_line_parts
@@ -269,11 +274,17 @@ def test_get_lsblk_info(monkeypatch):
             # We cannot have the output in a list, since the command is called per device. Therefore, we have to map
             # each device path to its output.
             output_lines_split_on_whitespace_per_device = {
-                'vda': ['vda', 'vda', '40G'],
-                'vda1': ['vda1', 'vda1', '1G'],
-                'vda2': ['vda2', 'vda2', '39G'],
-                'rhel_ibm--p8--kvm--03--guest--02-root': ['rhel_ibm--p8--kvm--03--guest--02-root', 'kname1', '38G'],
-                'rhel_ibm--p8--kvm--03--guest--02-swap': ['rhel_ibm--p8--kvm--03--guest--02-swap', 'kname2', '1G']
+                '/dev/vda': ['vda', 'vda', '40G'],
+                '/dev/vda1': ['vda1', 'vda1', '1G'],
+                '/dev/vda2': ['vda2', 'vda2', '39G'],
+                '/dev/mapper/rhel_ibm--p8--kvm--03--guest--02-root':
+                    ['rhel_ibm--p8--kvm--03--guest--02-root', 'kname1', '38G'],
+                '/dev/mapper/rhel_ibm--p8--kvm--03--guest--02-swap':
+                    ['rhel_ibm--p8--kvm--03--guest--02-swap', 'kname2', '1G'],
+                '/dev/mapper/luks-01b60fff-a2a8-4c03-893f-056bfc3f06f6':
+                    ['luks-01b60fff-a2a8-4c03-893f-056bfc3f06f6', 'dm-0', '38G'],
+                '/dev/nvme0n1p1': ['nvme0n1p1', 'nvme0n1p1', '39G'],
+                '/dev/nvme0n1': ['nvme0n1', 'nvme0n1', '40G'],
             }
             dev_path = cmd[4]
             if dev_path not in output_lines_split_on_whitespace_per_device:
@@ -294,7 +305,9 @@ def test_get_lsblk_info(monkeypatch):
             bsize=40 * bytes_per_gb,
             ro='0',
             tp='disk',
-            mountpoint=''),
+            mountpoint='',
+            parent_name='',
+            parent_path=''),
         LsblkEntry(
             name='vda1',
             kname='vda1',
@@ -304,7 +317,9 @@ def test_get_lsblk_info(monkeypatch):
             bsize=1 * bytes_per_gb,
             ro='0',
             tp='part',
-            mountpoint='/boot'),
+            mountpoint='/boot',
+            parent_name='',
+            parent_path=''),
         LsblkEntry(
             name='vda2',
             kname='vda2',
@@ -314,7 +329,9 @@ def test_get_lsblk_info(monkeypatch):
             bsize=39 * bytes_per_gb,
             ro='0',
             tp='part',
-            mountpoint=''),
+            mountpoint='',
+            parent_name='',
+            parent_path=''),
         LsblkEntry(
             name='rhel_ibm--p8--kvm--03--guest--02-root',
             kname='kname1',
@@ -324,7 +341,9 @@ def test_get_lsblk_info(monkeypatch):
             bsize=38 * bytes_per_gb,
             ro='0',
             tp='lvm',
-            mountpoint='/'),
+            mountpoint='/',
+            parent_name='',
+            parent_path=''),
         LsblkEntry(
             name='rhel_ibm--p8--kvm--03--guest--02-swap',
             kname='kname2',
@@ -334,7 +353,34 @@ def test_get_lsblk_info(monkeypatch):
             bsize=1 * bytes_per_gb,
             ro='0',
             tp='lvm',
-            mountpoint='[SWAP]')]
+            mountpoint='[SWAP]',
+            parent_name='',
+            parent_path=''),
+        LsblkEntry(
+            name='luks-01b60fff-a2a8-4c03-893f-056bfc3f06f6',
+            kname='dm-0',
+            maj_min='254:0',
+            rm='0',
+            size='38G',
+            bsize=38 * bytes_per_gb,
+            ro='0',
+            tp='crypt',
+            mountpoint='',
+            parent_name='nvme0n1p1',
+            parent_path='/dev/nvme0n1p1'),
+        LsblkEntry(
+            name='nvme0n1p1',
+            kname='nvme0n1p1',
+            maj_min='259:1',
+            rm='0',
+            size='39G',
+            bsize=39 * bytes_per_gb,
+            ro='0',
+            tp='part',
+            mountpoint='',
+            parent_name='nvme0n1',
+            parent_path='/dev/nvme0n1'),
+        ]
 
     actual = storagescanner._get_lsblk_info()
     assert expected == actual
