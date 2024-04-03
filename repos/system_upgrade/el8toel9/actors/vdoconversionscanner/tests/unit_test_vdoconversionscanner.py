@@ -26,7 +26,9 @@ def _lsblk_entry(prefix, number, types, size='128G', bsize=2 ** 37):
         bsize=bsize,
         ro='0',
         tp=types[random.randint(0, len(types) - 1)],
-        mountpoint='')
+        mountpoint='',
+        parent_name='',
+        parent_path='')
 
 
 @aslist
