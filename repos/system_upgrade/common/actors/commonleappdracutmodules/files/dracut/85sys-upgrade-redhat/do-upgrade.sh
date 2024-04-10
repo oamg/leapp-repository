@@ -282,6 +282,11 @@ do_upgrade() {
         local dirname
         dirname="$("$NEWROOT/bin/dirname" "$NEWROOT$LEAPP_FAILED_FLAG_FILE")"
         [ -d "$dirname" ] || mkdir "$dirname"
+        
+        echo >&2 "Creating file $NEWROOT$LEAPP_FAILED_FLAG_FILE"
+        echo >&2 "Warning: Leapp upgrade failed and there is an issue blocking the upgrade."
+        echo >&2 "Please file a support case with /var/log/leapp/leapp-upgrade.log attached"
+
         "$NEWROOT/bin/touch" "$NEWROOT$LEAPP_FAILED_FLAG_FILE"
     fi
 
@@ -358,10 +363,10 @@ mount -o "remount,rw" "$NEWROOT"
     # check if leapp previously failed in the initramfs, if it did return to the emergency shell
     [ -f "$NEWROOT$LEAPP_FAILED_FLAG_FILE" ] && {
         echo >&2 "Found file $NEWROOT$LEAPP_FAILED_FLAG_FILE"
-        echo >&2 "Error: Leapp previously failed and cannot continue, returning back to emergency shell"
-        echo >&2 "Please file a support case with $NEWROOT/var/log/leapp/leapp-upgrade.log attached"
-        echo >&2 "To rerun the upgrade upon exiting the dracut shell remove the $NEWROOT$LEAPP_FAILED_FLAG_FILE file"
-        exit 1
+        echo >&2 "Warning: Leapp failed on a previous execution and something might be blocking the upgrade."
+        echo >&2 "Continuing with the upgrade anyway. Note that any subsequent error might be potentially misleading due to a previous failure."
+        echo >&2 "A log file will be generated at $NEWROOT/var/log/leapp/leapp-upgrade.log."
+        echo >&2 "In case of persisting failure, if possible, try to boot to the original system and file a support case with /var/log/leapp/leapp-upgrade.log attached."
     }
 
     [ ! -x "$NEWROOT$LEAPPBIN" ] && {
