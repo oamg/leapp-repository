@@ -1,6 +1,6 @@
 {
-    "datetime": "202401261328Z",
-    "version_format": "1.2.0",
+    "datetime": "202404091246Z",
+    "version_format": "1.2.1",
     "mapping": [
         {
             "source_major_version": "7",
@@ -305,6 +305,13 @@
                 },
                 {
                     "major_version": "7",
+                    "repoid": "rhel-7-for-system-z-els-rpms",
+                    "arch": "s390x",
+                    "channel": "els",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "7",
                     "repoid": "rhel-7-for-system-z-eus-rpms",
                     "arch": "s390x",
                     "channel": "eus",
@@ -344,6 +351,13 @@
                     "repoid": "rhel-7-server-e4s-rpms",
                     "arch": "x86_64",
                     "channel": "e4s",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "7",
+                    "repoid": "rhel-7-server-els-rpms",
+                    "arch": "x86_64",
+                    "channel": "els",
                     "repo_type": "rpm"
                 },
                 {
@@ -488,6 +502,13 @@
                 },
                 {
                     "major_version": "7",
+                    "repoid": "rhel-7-for-system-z-els-optional-rpms",
+                    "arch": "s390x",
+                    "channel": "els",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "7",
                     "repoid": "rhel-7-for-system-z-eus-optional-rpms",
                     "arch": "s390x",
                     "channel": "eus",
@@ -527,6 +548,13 @@
                     "repoid": "rhel-7-server-e4s-optional-rpms",
                     "arch": "x86_64",
                     "channel": "e4s",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "7",
+                    "repoid": "rhel-7-server-els-optional-rpms",
+                    "arch": "x86_64",
+                    "channel": "els",
                     "repo_type": "rpm"
                 },
                 {
@@ -894,6 +922,13 @@
                 },
                 {
                     "major_version": "7",
+                    "repoid": "rhel-sap-for-rhel-7-for-system-z-els-rpms",
+                    "arch": "s390x",
+                    "channel": "els",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "7",
                     "repoid": "rhel-sap-for-rhel-7-for-system-z-eus-rpms",
                     "arch": "s390x",
                     "channel": "eus",
@@ -918,6 +953,13 @@
                     "repoid": "rhel-sap-for-rhel-7-server-e4s-rpms",
                     "arch": "x86_64",
                     "channel": "e4s",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "7",
+                    "repoid": "rhel-sap-for-rhel-7-server-els-rpms",
+                    "arch": "x86_64",
+                    "channel": "els",
                     "repo_type": "rpm"
                 },
                 {
@@ -1024,6 +1066,13 @@
                 },
                 {
                     "major_version": "7",
+                    "repoid": "rhel-sap-hana-for-rhel-7-server-els-rpms",
+                    "arch": "x86_64",
+                    "channel": "els",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "7",
                     "repoid": "rhel-sap-hana-for-rhel-7-server-eus-rhui-rpms",
                     "arch": "x86_64",
                     "channel": "eus",
@@ -1123,6 +1172,13 @@
                     "repoid": "rhel-ha-for-rhel-7-server-e4s-rpms",
                     "arch": "x86_64",
                     "channel": "e4s",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "7",
+                    "repoid": "rhel-ha-for-rhel-7-server-els-rpms",
+                    "arch": "x86_64",
+                    "channel": "els",
                     "repo_type": "rpm"
                 },
                 {
