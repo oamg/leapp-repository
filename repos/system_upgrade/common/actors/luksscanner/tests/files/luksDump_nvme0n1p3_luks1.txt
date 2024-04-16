@@ -1,0 +1,27 @@
+LUKS header information for /dev/loop10
+
+Version:       	1
+Cipher name:   	aes
+Cipher mode:   	xts-plain64
+Hash spec:     	sha256
+Payload offset:	4096
+MK bits:       	512
+MK digest:     	fb ec 6b 31 ae e4 49 03 3e ad 43 22 02 cf a8 78 ad 3c d2 a8 
+MK salt:       	17 57 4e 2f ed 0b 5c 62 d5 de 54 f5 7f ab 60 68 
+               	71 d8 72 06 64 6c 81 05 39 55 3f 55 32 56 d9 da 
+MK iterations: 	114573
+UUID:          	90242257-d00a-4019-aba6-03083f89404b
+
+Key Slot 0: ENABLED
+	Iterations:         	1879168
+	Salt:               	fc 77 48 72 bd 31 ca 83 23 80 5a 5e b9 5b de bb 
+	                      	55 ac d5 a9 3b 96 ad a5 82 bc 11 68 ba f8 87 56 
+	Key material offset:	8
+	AF stripes:            	4000
+Key Slot 1: DISABLED
+Key Slot 2: DISABLED
+Key Slot 3: DISABLED
+Key Slot 4: DISABLED
+Key Slot 5: DISABLED
+Key Slot 6: DISABLED
+Key Slot 7: DISABLED
