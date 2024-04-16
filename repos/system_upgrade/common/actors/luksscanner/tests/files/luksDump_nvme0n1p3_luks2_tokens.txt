@@ -1,0 +1,119 @@
+LUKS header information
+Version:       	2
+Epoch:         	9
+Metadata area: 	16384 [bytes]
+Keyslots area: 	16744448 [bytes]
+UUID:          	6b929b85-b01e-4aa3-8ad2-a05decae6e3d
+Label:         	(no label)
+Subsystem:     	(no subsystem)
+Flags:       	(no flags)
+
+Data segments:
+  0: crypt
+	offset: 16777216 [bytes]
+	length: (whole device)
+	cipher: aes-xts-plain64
+	sector: 512 [bytes]
+
+Keyslots:
+  0: luks2
+	Key:        512 bits
+	Priority:   normal
+	Cipher:     aes-xts-plain64
+	Cipher key: 512 bits
+	PBKDF:      argon2id
+	Time cost:  7
+	Memory:     1048576
+	Threads:    4
+	Salt:       de a1 b9 7f 03 cb b4 89 e2 52 20 fc e4 24 65 cd 
+	            de a1 b9 7f 03 cb b4 89 e2 52 20 fc e4 24 65 cd
+	AF stripes: 4000
+	AF hash:    sha256
+	Area offset:32768 [bytes]
+	Area length:258048 [bytes]
+	Digest ID:  0
+  1: luks2
+	Key:        512 bits
+	Priority:   normal
+	Cipher:     aes-xts-plain64
+	Cipher key: 512 bits
+	PBKDF:      pbkdf2
+	Hash:       sha256
+	Iterations: 1000
+	Salt:       de a1 b9 7f 03 cb b4 89 e2 52 20 fc e4 24 65 cd 
+	            de a1 b9 7f 03 cb b4 89 e2 52 20 fc e4 24 65 cd
+	AF stripes: 4000
+	AF hash:    sha256
+	Area offset:290816 [bytes]
+	Area length:258048 [bytes]
+	Digest ID:  0
+  2: luks2
+	Key:        512 bits
+	Priority:   normal
+	Cipher:     aes-xts-plain64
+	Cipher key: 512 bits
+	PBKDF:      pbkdf2
+	Hash:       sha256
+	Iterations: 1000
+	Salt:       de a1 b9 7f 03 cb b4 89 e2 52 20 fc e4 24 65 cd 
+	            de a1 b9 7f 03 cb b4 89 e2 52 20 fc e4 24 65 cd
+	AF stripes: 4000
+	AF hash:    sha256
+	Area offset:548864 [bytes]
+	Area length:258048 [bytes]
+	Digest ID:  0
+  3: luks2
+	Key:        512 bits
+	Priority:   normal
+	Cipher:     aes-xts-plain64
+	Cipher key: 512 bits
+	PBKDF:      pbkdf2
+	Hash:       sha512
+	Iterations: 1000
+	Salt:       de a1 b9 7f 03 cb b4 89 e2 52 20 fc e4 24 65 cd 
+	            de a1 b9 7f 03 cb b4 89 e2 52 20 fc e4 24 65 cd
+	AF stripes: 4000
+	AF hash:    sha512
+	Area offset:806912 [bytes]
+	Area length:258048 [bytes]
+	Digest ID:  0
+Tokens:
+  0: clevis
+	Keyslot:    1
+  1: clevis
+	Keyslot:    2
+  2: systemd-tpm2
+	tpm2-hash-pcrs:   7
+	tpm2-pcr-bank:    sha256
+	tpm2-pubkey:
+	            (null)
+	tpm2-pubkey-pcrs: n/a
+	tpm2-primary-alg: ecc
+	tpm2-blob:        de a1 b9 7f 03 cb b4 89 e2 52 20 fc e4 24 65 cd
+	            de a1 b9 7f 03 cb b4 89 e2 52 20 fc e4 24 65 cd
+	            de a1 b9 7f 03 cb b4 89 e2 52 20 fc e4 24 65 cd
+	            de a1 b9 7f 03 cb b4 89 e2 52 20 fc e4 24 65 cd
+	            de a1 b9 7f 03 cb b4 89 e2 52 20 fc e4 24 65 cd
+	            de a1 b9 7f 03 cb b4 89 e2 52 20 fc e4 24 65 cd
+	            de a1 b9 7f 03 cb b4 89 e2 52 20 fc e4 24 65 cd
+	            de a1 b9 7f 03 cb b4 89 e2 52 20 fc e4 24 65 cd
+	            de a1 b9 7f 03 cb b4 89 e2 52 20 fc e4 24 65 cd
+	            de a1 b9 7f 03 cb b4 89 e2 52 20 fc e4 24 65 cd
+	            de a1 b9 7f 03 cb b4 89 e2 52 20 fc e4 24 65 cd
+	            de a1 b9 7f 03 cb b4 89 e2 52 20 fc e4 24 65 cd
+	            de a1 b9 7f 03 cb b4 89 e2 52 20 fc e4 24 65 cd
+	            de a1 b9 7f 03 cb b4 89 e2 52 20 fc e4 24 65 cd
+	tpm2-policy-hash:
+	            de a1 b9 7f 03 cb b4 89 e2 52 20 fc e4 24 65 cd
+	            de a1 b9 7f 03 cb b4 89 e2 52 20 fc e4 24 65 cd
+	tpm2-pin:         false
+	tpm2-salt:        false
+	Keyslot:    3
+Digests:
+  0: pbkdf2
+	Hash:       sha256
+	Iterations: 117448
+	Salt:       de a1 b9 7f 03 cb b4 89 e2 52 20 fc e4 24 65 cd 
+	            de a1 b9 7f 03 cb b4 89 e2 52 20 fc e4 24 65 cd
+	Digest:     de a1 b9 7f 03 cb b4 89 e2 52 20 fc e4 24 65 cd 
+	            de a1 b9 7f 03 cb b4 89 e2 52 20 fc e4 24 65 cd
