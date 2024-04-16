@@ -1,6 +1,6 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import luksscanner
-from leapp.models import LuksDump, StorageInfo
+from leapp.models import LuksDumps, StorageInfo
 from leapp.reporting import Report
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
@@ -16,8 +16,8 @@ class LuksScanner(Actor):
 
     name = 'luks_scanner'
     consumes = (StorageInfo,)
-    produces = (Report, LuksDump)
+    produces = (Report, LuksDumps)
     tags = (IPUWorkflowTag, FactsPhaseTag)
 
     def process(self):
-        self.produce(*luksscanner.get_luks_dumps())
+        self.produce(luksscanner.get_luks_dumps_model())

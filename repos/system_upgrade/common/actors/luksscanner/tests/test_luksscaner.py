@@ -3,10 +3,8 @@ import os
 import pytest
 
 from leapp.libraries.stdlib import api
-from leapp.models import CephInfo, LsblkEntry, LuksDump, StorageInfo
-from leapp.reporting import Report
+from leapp.models import LsblkEntry, LuksDumps, StorageInfo
 from leapp.snactor.fixture import current_actor_context
-from leapp.utils.report import is_inhibitor
 
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -127,9 +125,10 @@ def test_actor_with_luks(monkeypatch, current_actor_context, variant, luks_versi
     current_actor_context.feed(StorageInfo(lsblk=with_luks))
     current_actor_context.run()
 
-    luks_dumps = current_actor_context.consume(LuksDump)
+    luks_dumps = current_actor_context.consume(LuksDumps)
     assert len(luks_dumps) == 1
-    luks_dump = luks_dumps[0]
+    assert len(luks_dumps[0].dumps) == 1
+    luks_dump = luks_dumps[0].dumps[0]
 
     assert luks_dump.version == luks_version
     assert luks_dump.uuid == uuid

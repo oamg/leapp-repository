@@ -1,7 +1,7 @@
-from leapp import reporting
 from leapp.actors import Actor
-from leapp.models import CephInfo, StorageInfo
-from leapp.reporting import create_report, Report
+from leapp.libraries.actor.inhibitwhenluks import check_invalid_luks_devices
+from leapp.models import CephInfo, LuksDumps, TargetUserSpaceUpgradeTasks
+from leapp.reporting import Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
@@ -13,28 +13,9 @@ class InhibitWhenLuks(Actor):
     """
 
     name = 'check_luks_and_inhibit'
-    consumes = (StorageInfo, CephInfo)
-    produces = (Report,)
+    consumes = (LuksDumps, CephInfo)
+    produces = (Report, TargetUserSpaceUpgradeTasks)
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 
     def process(self):
-        # If encrypted Ceph volumes present, check if there are more encrypted disk in lsblk than Ceph vol
-        ceph_vol = []
-        try:
-            ceph_info = next(self.consume(CephInfo))
-            if ceph_info:
-                ceph_vol = ceph_info.encrypted_volumes[:]
-        except StopIteration:
-            pass
-
-        for storage_info in self.consume(StorageInfo):
-            for blk in storage_info.lsblk:
-                if blk.tp == 'crypt' and blk.name not in ceph_vol:
-                    create_report([
-                        reporting.Title('LUKS encrypted partition detected'),
-                        reporting.Summary('Upgrading system with encrypted partitions is not supported'),
-                        reporting.Severity(reporting.Severity.HIGH),
-                        reporting.Groups([reporting.Groups.BOOT, reporting.Groups.ENCRYPTION]),
-                        reporting.Groups([reporting.Groups.INHIBITOR]),
-                    ])
-                    break
+        check_invalid_luks_devices()

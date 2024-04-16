@@ -29,7 +29,9 @@ class LuksToken(Model):
 
 class LuksDump(Model):
     """
-    Information about LUKS-encrypted device.
+    Information about a single LUKS-encrypted device.
+
+    Note this model is supposed to be used as a part of LuksDumps msg.
     """
     topic = SystemInfoTopic
 
@@ -56,4 +58,16 @@ class LuksDump(Model):
     tokens = fields.List(fields.Model(LuksToken), default=[])
     """
     List of LUKS2 tokens
+    """
+
+
+class LuksDumps(Model):
+    """
+    Information about a all LUKS-encrypted devices on the system.
+    """
+    topic = SystemInfoTopic
+
+    dumps = fields.List(fields.Model(LuksDump))
+    """
+    List of LuksDump representing all the encrypted devices on the system.
     """

@@ -4,7 +4,7 @@ from leapp.exceptions import StopActorExecutionError
 from leapp.libraries import stdlib
 from leapp.libraries.actor.luksdump_parser import LuksDumpParser
 from leapp.libraries.stdlib import api
-from leapp.models import LuksDump, LuksToken, StorageInfo
+from leapp.models import LuksDump, LuksDumps, LuksToken, StorageInfo
 
 
 def aslist(f):
@@ -118,3 +118,7 @@ def get_luks_dumps():
         for blk in storage_info.lsblk:
             if blk.tp == 'crypt' and blk.parent_path:
                 yield get_luks_dump_by_device(blk.parent_path, blk.parent_name)
+
+
+def get_luks_dumps_model():
+    return LuksDumps(dumps=get_luks_dumps())
