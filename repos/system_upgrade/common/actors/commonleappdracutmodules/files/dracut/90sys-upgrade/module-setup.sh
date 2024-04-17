@@ -54,6 +54,17 @@ install() {
         ln -sf "../${s}.service" "$upgrade_wantsdir"
     done
 
+    # Setup modified initrd-cleanup.service in the upgrade initramfs to enable
+    # storage initialisation using systemd-fstab-generator. We want to run the
+    # initrd-parse-etc.service but this one triggers also the initrd-cleanup.service
+    # which triggers the switch-root and isolated actions that basically kills
+    # the original upgrade service when used.
+    # The initrd-parse-etc.service has different content across RHEL systems,
+    # so we override rather initrd-cleanup.service instead as we do not need
+    # that one for the upgrade process.
+    mkdir -p "${unitdir}/initrd-cleanup.service.d"
+    inst_simple "${_moddir}/initrd-cleanup-override.conf" "${unitdir}/initrd-cleanup.service.d/initrd-cleanup-override.conf"
+
     # just try : set another services into the wantsdir
     #        sysroot.mount    \
     #        dracut-mount     \
