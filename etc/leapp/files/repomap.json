@@ -233,6 +233,66 @@
                     ]
                 }
             ]
+        },
+        {
+            "source_major_version": "9",
+            "target_major_version": "10",
+            "entries": [
+                {
+                    "source": "rhel9-BaseOS",
+                    "target": [
+                        "rhel10-BaseOS"
+                    ]
+                },
+                {
+                    "source": "rhel9-AppStream",
+                    "target": [
+                        "rhel10-AppStream"
+                    ]
+                },
+                {
+                    "source": "rhel9-CRB",
+                    "target": [
+                        "rhel10-CRB"
+                    ]
+                },
+                {
+                    "source": "rhel9-Supplementary",
+                    "target": [
+                        "rhel10-Supplementary"
+                    ]
+                },
+                {
+                    "source": "rhel9-RT",
+                    "target": [
+                        "rhel10-RT"
+                    ]
+                },
+                {
+                    "source": "rhel9-NFV",
+                    "target": [
+                        "rhel10-NFV"
+                    ]
+                },
+                {
+                    "source": "rhel9-SAP-NetWeaver",
+                    "target": [
+                        "rhel10-SAP-NetWeaver"
+                    ]
+                },
+                {
+                    "source": "rhel9-SAP-Solutions",
+                    "target": [
+                        "rhel10-SAP-Solutions"
+                    ]
+                },
+                {
+                    "source": "rhel9-HighAvailability",
+                    "target": [
+                        "rhel10-HighAvailability"
+                    ]
+                }
+            ]
         }
     ],
     "repositories": [
@@ -3997,6 +4057,415 @@
                     "channel": "ga",
                     "repo_type": "rpm",
                     "rhui": "alibaba"
+                }
+            ]
+        },
+        {
+            "pesid": "rhel10-BaseOS",
+            "entries": [
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-for-aarch64-baseos-beta-rpms",
+                    "arch": "aarch64",
+                    "channel": "beta",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-for-aarch64-baseos-rpms",
+                    "arch": "aarch64",
+                    "channel": "ga",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-for-ppc64le-baseos-beta-rpms",
+                    "arch": "ppc64le",
+                    "channel": "beta",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-for-ppc64le-baseos-rpms",
+                    "arch": "ppc64le",
+                    "channel": "ga",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-for-s390x-baseos-beta-rpms",
+                    "arch": "s390x",
+                    "channel": "beta",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-for-s390x-baseos-rpms",
+                    "arch": "s390x",
+                    "channel": "ga",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-for-x86_64-baseos-beta-rpms",
+                    "arch": "x86_64",
+                    "channel": "beta",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-for-x86_64-baseos-rpms",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm"
+                }
+            ]
+        },
+        {
+            "pesid": "rhel10-AppStream",
+            "entries": [
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-for-aarch64-appstream-beta-rpms",
+                    "arch": "aarch64",
+                    "channel": "beta",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-for-aarch64-appstream-rpms",
+                    "arch": "aarch64",
+                    "channel": "ga",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-for-ppc64le-appstream-beta-rpms",
+                    "arch": "ppc64le",
+                    "channel": "beta",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-for-ppc64le-appstream-rpms",
+                    "arch": "ppc64le",
+                    "channel": "ga",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-for-s390x-appstream-beta-rpms",
+                    "arch": "s390x",
+                    "channel": "beta",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-for-s390x-appstream-rpms",
+                    "arch": "s390x",
+                    "channel": "ga",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-for-x86_64-appstream-beta-rpms",
+                    "arch": "x86_64",
+                    "channel": "beta",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-for-x86_64-appstream-rpms",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm"
+                }
+            ]
+        },
+        {
+            "pesid": "rhel10-CRB",
+            "entries": [
+                {
+                    "major_version": "10",
+                    "repoid": "codeready-builder-beta-for-rhel-10-aarch64-rpms",
+                    "arch": "aarch64",
+                    "channel": "beta",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "codeready-builder-beta-for-rhel-10-ppc64le-rpms",
+                    "arch": "ppc64le",
+                    "channel": "beta",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "codeready-builder-beta-for-rhel-10-s390x-rpms",
+                    "arch": "s390x",
+                    "channel": "beta",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "codeready-builder-beta-for-rhel-10-x86_64-rpms",
+                    "arch": "x86_64",
+                    "channel": "beta",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "codeready-builder-for-rhel-10-aarch64-rpms",
+                    "arch": "aarch64",
+                    "channel": "ga",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "codeready-builder-for-rhel-10-ppc64le-rpms",
+                    "arch": "ppc64le",
+                    "channel": "ga",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "codeready-builder-for-rhel-10-s390x-rpms",
+                    "arch": "s390x",
+                    "channel": "ga",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "codeready-builder-for-rhel-10-x86_64-rpms",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm"
+                }
+            ]
+        },
+        {
+            "pesid": "rhel10-Supplementary",
+            "entries": [
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-for-aarch64-supplementary-beta-rpms",
+                    "arch": "aarch64",
+                    "channel": "beta",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-for-aarch64-supplementary-rpms",
+                    "arch": "aarch64",
+                    "channel": "ga",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-for-ppc64le-supplementary-beta-rpms",
+                    "arch": "ppc64le",
+                    "channel": "beta",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-for-ppc64le-supplementary-rpms",
+                    "arch": "ppc64le",
+                    "channel": "ga",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-for-s390x-supplementary-beta-rpms",
+                    "arch": "s390x",
+                    "channel": "beta",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-for-s390x-supplementary-rpms",
+                    "arch": "s390x",
+                    "channel": "ga",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-for-x86_64-supplementary-beta-rpms",
+                    "arch": "x86_64",
+                    "channel": "beta",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-for-x86_64-supplementary-rpms",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm"
+                }
+            ]
+        },
+        {
+            "pesid": "rhel10-RT",
+            "entries": [
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-for-x86_64-rt-beta-rpms",
+                    "arch": "x86_64",
+                    "channel": "beta",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-for-x86_64-rt-rpms",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm"
+                }
+            ]
+        },
+        {
+            "pesid": "rhel10-NFV",
+            "entries": [
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-for-x86_64-nfv-beta-rpms",
+                    "arch": "x86_64",
+                    "channel": "beta",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-for-x86_64-nfv-rpms",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm"
+                }
+            ]
+        },
+        {
+            "pesid": "rhel10-SAP-NetWeaver",
+            "entries": [
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-for-ppc64le-sap-netweaver-beta-rpms",
+                    "arch": "ppc64le",
+                    "channel": "beta",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-for-ppc64le-sap-netweaver-rpms",
+                    "arch": "ppc64le",
+                    "channel": "ga",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-for-s390x-sap-netweaver-beta-rpms",
+                    "arch": "s390x",
+                    "channel": "beta",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-for-s390x-sap-netweaver-rpms",
+                    "arch": "s390x",
+                    "channel": "ga",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-for-x86_64-sap-netweaver-beta-rpms",
+                    "arch": "x86_64",
+                    "channel": "beta",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-for-x86_64-sap-netweaver-rpms",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm"
+                }
+            ]
+        },
+        {
+            "pesid": "rhel10-SAP-Solutions",
+            "entries": [
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-for-ppc64le-sap-solutions-rpms",
+                    "arch": "ppc64le",
+                    "channel": "ga",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-for-x86_64-sap-solutions-rpms",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm"
+                }
+            ]
+        },
+        {
+            "pesid": "rhel10-HighAvailability",
+            "entries": [
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-for-aarch64-highavailability-beta-rpms",
+                    "arch": "aarch64",
+                    "channel": "beta",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-for-aarch64-highavailability-rpms",
+                    "arch": "aarch64",
+                    "channel": "ga",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-for-ppc64le-highavailability-beta-rpms",
+                    "arch": "ppc64le",
+                    "channel": "beta",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-for-ppc64le-highavailability-rpms",
+                    "arch": "ppc64le",
+                    "channel": "ga",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-for-s390x-highavailability-beta-rpms",
+                    "arch": "s390x",
+                    "channel": "beta",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-for-s390x-highavailability-rpms",
+                    "arch": "s390x",
+                    "channel": "ga",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-for-x86_64-highavailability-beta-rpms",
+                    "arch": "x86_64",
+                    "channel": "beta",
+                    "repo_type": "rpm"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-for-x86_64-highavailability-rpms",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm"
                 }
             ]
         }
