@@ -357,7 +357,7 @@ def install_initramdisk_requirements(packages, target_userspace_info, used_repos
     mount_binds = ['/:/installroot']
     with _prepare_transaction(used_repos=used_repos, target_userspace_info=target_userspace_info,
                               binds=mount_binds) as (context, target_repoids, _unused):
-        if get_target_major_version() == '9':
+        if int(get_target_major_version()) >= 9:
             _rebuild_rpm_db(context)
         repos_opt = [['--enablerepo', repo] for repo in target_repoids]
         repos_opt = list(itertools.chain(*repos_opt))
@@ -446,7 +446,7 @@ def perform_transaction_install(target_userspace_info, storage_info, used_repos,
         # set like that, however seatbelt is a good thing.
         dnfconfig.exclude_leapp_rpms(context, disable_plugins)
 
-        if get_target_major_version() == '9':
+        if int(get_target_major_version()) >= 9:
             _rebuild_rpm_db(context, root='/installroot')
         _transaction(
             context=context, stage='upgrade', target_repoids=target_repoids, plugin_info=plugin_info,
