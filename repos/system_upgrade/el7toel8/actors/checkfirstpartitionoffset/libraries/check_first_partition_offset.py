@@ -16,6 +16,13 @@ def check_first_partition_offset():
 
     problematic_devices = []
     for grub_dev in api.consume(GRUBDevicePartitionLayout):
+        if not grub_dev.partitions:
+            # NOTE(pstodulk): In case of empty partition list we have nothing to do.
+            # This can could happen when the fdisk output is different then expected.
+            # E.g. when GPT partition table is used on the disk. We are right now
+            # interested strictly about MBR only, so ignoring these cases.
+            # This is seatbelt, as the msg should not be produced for GPT at all.
+            continue
         first_partition = min(grub_dev.partitions, key=lambda partition: partition.start_offset)
         if first_partition.start_offset < SAFE_OFFSET_BYTES:
             problematic_devices.append(grub_dev.device)

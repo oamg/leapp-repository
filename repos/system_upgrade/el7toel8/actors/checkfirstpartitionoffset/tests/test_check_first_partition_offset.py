@@ -23,6 +23,16 @@ from leapp.utils.report import is_inhibitor
         (
             [
                 GRUBDevicePartitionLayout(device='/dev/vda',
+                                          partitions=[
+                                            PartitionInfo(part_device='/dev/vda2', start_offset=1024*1025),
+                                            PartitionInfo(part_device='/dev/vda1', start_offset=32256)
+                                          ])
+            ],
+            True
+        ),
+        (
+            [
+                GRUBDevicePartitionLayout(device='/dev/vda',
                                           partitions=[PartitionInfo(part_device='/dev/vda1', start_offset=1024*1025)])
             ],
             False
@@ -31,6 +41,12 @@ from leapp.utils.report import is_inhibitor
             [
                 GRUBDevicePartitionLayout(device='/dev/vda',
                                           partitions=[PartitionInfo(part_device='/dev/vda1', start_offset=1024*1024)])
+            ],
+            False
+        ),
+        (
+            [
+                GRUBDevicePartitionLayout(device='/dev/vda', partitions=[])
             ],
             False
         )

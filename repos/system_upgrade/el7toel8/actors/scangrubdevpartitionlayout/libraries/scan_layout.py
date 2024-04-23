@@ -31,6 +31,34 @@ def get_partition_layout(device):
         unit = int(unit.split(' ')[0].strip())
         break  # First line of the partition table header
 
+    # Discover disk label type: dos | gpt
+    for line in table_iter:
+        line = line.strip()
+        if not line.startswith('Disk label type'):
+            continue
+        disk_type = line.split(':')[1].strip()
+        break
+
+    if disk_type == 'gpt':
+        api.current_logger().info(
+            'Detected GPT partition table. Skipping produce of GRUBDevicePartitionLayout message.'
+        )
+        # NOTE(pstodulk): The GPT table has a different output format than
+        # expected below, example (ignore start/end lines):
+        # --------------------------- start ----------------------------------
+        # #         Start          End    Size  Type            Name
+        # 1         2048         4095      1M  BIOS boot
+        # 2         4096      2101247      1G  Microsoft basic
+        # 3      2101248     41940991     19G  Linux LVM
+        # ---------------------------- end -----------------------------------
+        # But mainly, in case of GPT, we have nothing to actually check as
+        # we are gathering this data now mainly to get information about the
+        # actual size of embedding area (MBR gap). In case of GPT, there is
+        # bios boot / prep boot partition, which has always 1 MiB and fulfill
+        # our expectations. So skip in this case another processing and generation
+        # of the msg. Let's improve it in future if we find a reason for it.
+        return None
+
     for line in table_iter:
         line = line.strip()
         if not line.startswith('Device'):
