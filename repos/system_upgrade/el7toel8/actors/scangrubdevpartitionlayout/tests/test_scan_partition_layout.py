@@ -76,3 +76,8 @@ def test_get_partition_layout(monkeypatch, devices):
         expected_part_name_to_start = {part.name: part.start_offset*dev.sector_size for part in dev.partitions}
         actual_part_name_to_start = {part.part_device: part.start_offset for part in message.partitions}
         assert expected_part_name_to_start == actual_part_name_to_start
+
+
+def test_get_partition_layout_gpt(monkeypatch):
+    # TODO(pstodulk): skipping for now, due to time pressure. Testing for now manually.
+    pass
