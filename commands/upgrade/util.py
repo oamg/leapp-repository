@@ -207,6 +207,8 @@ def prepare_configuration(args):
 
     if args.channel:
         os.environ['LEAPP_TARGET_PRODUCT_CHANNEL'] = args.channel
+    elif 'LEAPP_TARGET_PRODUCT_CHANNEL' not in os.environ:
+        os.environ['LEAPP_TARGET_PRODUCT_CHANNEL'] = 'ga'
 
     if args.iso:
         os.environ['LEAPP_TARGET_ISO'] = args.iso
