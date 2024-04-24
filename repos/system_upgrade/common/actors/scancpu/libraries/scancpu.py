@@ -12,7 +12,7 @@ PPC64LE_MODEL = re.compile(r'\d+\.\d+ \(pvr (?P<family>[0-9a-fA-F]+) 0*[0-9a-fA-
 
 def _get_lscpu_output(output_json=False):
     try:
-        result = run(['lscpu', '-J' if output_json else ''])
+        result = run(['lscpu'] + (['-J'] if output_json else []))
         return result.get('stdout', '')
     except (OSError, CalledProcessError):
         api.current_logger().debug('Executing `lscpu` failed', exc_info=True)
