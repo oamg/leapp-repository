@@ -48,3 +48,21 @@ def test_run_reindexdb(monkeypatch, current_actor_context):
     assert mocked_run.commands[1] == ['systemctl', 'start', 'postgresql']
     assert mocked_run.commands[2] == ['runuser', '-u', 'postgres', '--', 'reindexdb', '-a']
     assert mocked_run.commands[3] == ['foreman-installer', '--disable-system-checks']
+
+
+def test_run_reindexdb_with_pulp_ansible(monkeypatch, current_actor_context):
+    mocked_run = MockedRun()
+    monkeypatch.setattr('leapp.libraries.stdlib.run', mocked_run)
+    current_actor_context.feed(SatelliteFacts(has_foreman=True,
+                                              postgresql=SatellitePostgresqlFacts(local_postgresql=True,
+                                                                                  has_pulp_ansible_semver=True)))
+    current_actor_context.run()
+    assert mocked_run.commands
+    assert len(mocked_run.commands) == 5
+    assert mocked_run.commands[0] == ['sed', '-i', '/data_directory/d', '/var/lib/pgsql/data/postgresql.conf']
+    assert mocked_run.commands[1] == ['systemctl', 'start', 'postgresql']
+    assert mocked_run.commands[2] == ['runuser', '-u', 'postgres', '--', 'reindexdb', '-a']
+    assert mocked_run.commands[3] == ['runuser', '-c',
+                                      'echo "ALTER COLLATION pulp_ansible_semver REFRESH VERSION;" | psql pulpcore',
+                                      'postgres']
+    assert mocked_run.commands[4] == ['foreman-installer', '--disable-system-checks']

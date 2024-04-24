@@ -57,6 +57,7 @@ class SatelliteUpgradeFacts(Actor):
             has_katello_installer=False,
             postgresql=SatellitePostgresqlFacts(
                 local_postgresql=local_postgresql,
+                has_pulp_ansible_semver=has_package(InstalledRPM, 'python3.11-pulp-ansible'),
             ),
         ))
 

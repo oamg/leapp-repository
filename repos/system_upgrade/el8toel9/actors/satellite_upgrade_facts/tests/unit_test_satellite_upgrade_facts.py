@@ -26,6 +26,7 @@ RUBYGEM_FOREMAN_PUPPET_RPM = fake_package('rubygem-foreman_puppet')
 POSTGRESQL_RPM = fake_package('postgresql-server')
 SATELLITE_RPM = fake_package('satellite')
 SATELLITE_CAPSULE_RPM = fake_package('satellite-capsule')
+PULP_ANSIBLE_RPM = fake_package('python3.11-pulp-ansible')
 
 SATELLITE_REPOSITORY = UsedRepository(repository='satellite-6.99-for-rhel-8-x86_64-rpms')
 CAPSULE_REPOSITORY = UsedRepository(repository='satellite-capsule-6.99-for-rhel-8-x86_64-rpms')
@@ -116,6 +117,14 @@ def test_detects_remote_postgresql(current_actor_context):
 
     satellitemsg = current_actor_context.consume(SatelliteFacts)[0]
     assert not satellitemsg.postgresql.local_postgresql
+
+
+def test_detects_pulp_ansible(current_actor_context):
+    current_actor_context.feed(InstalledRPM(items=[FOREMAN_RPM, POSTGRESQL_RPM, PULP_ANSIBLE_RPM]))
+    current_actor_context.run(config_model=mock_configs.CONFIG)
+
+    satellitemsg = current_actor_context.consume(SatelliteFacts)[0]
+    assert satellitemsg.postgresql.has_pulp_ansible_semver
 
 
 def test_enables_right_repositories_on_satellite(current_actor_context):
