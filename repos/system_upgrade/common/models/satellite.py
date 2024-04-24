@@ -15,6 +15,8 @@ class SatellitePostgresqlFacts(Model):
     """ How many bytes are required on the target partition """
     space_available = fields.Nullable(fields.Integer())
     """ How many bytes are available on the target partition """
+    has_pulp_ansible_semver = fields.Boolean(default=False)
+    """ Whether the DB has the pulp_ansible_semver collation """
 
 
 class SatelliteFacts(Model):

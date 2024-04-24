@@ -25,6 +25,10 @@ class SatelliteUpgrader(Actor):
                 run(['sed', '-i', '/data_directory/d', '/var/lib/pgsql/data/postgresql.conf'])
                 run(['systemctl', 'start', 'postgresql'])
                 run(['runuser', '-u', 'postgres', '--', 'reindexdb', '-a'])
+                if facts.postgresql.has_pulp_ansible_semver:
+                    run(['runuser', '-c',
+                         'echo "ALTER COLLATION pulp_ansible_semver REFRESH VERSION;" | psql pulpcore',
+                         'postgres'])
             except CalledProcessError as e:
                 api.current_logger().error('Failed to reindex the database: {}'.format(str(e)))
 
