@@ -1,5 +1,8 @@
 import errno
+import glob
+import os
 
+from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common.rpms import check_file_modification
 from leapp.libraries.stdlib import api
 from leapp.models import OpenSshConfig, OpenSshPermitRootLogin
@@ -12,14 +15,23 @@ def line_empty(line):
     return len(line) == 0 or line.startswith('\n') or line.startswith('#')
 
 
-def parse_config(config):
+def parse_config(config, ret=None, depth=0):
     """Parse OpenSSH server configuration or the output of sshd test option."""
 
-    # RHEL7 defaults
-    ret = OpenSshConfig(
-        permit_root_login=[],
-        deprecated_directives=[]
-    )
+    if depth > 16:
+        # This should really never happen as it would mean the SSH server won't
+        # start anyway on the old system.
+        error = 'Too many recursive includes while parsing sshd_config'
+        api.current_logger().error(error)
+        return None
+
+    if ret is None:
+        # RHEL7 defaults
+        ret = OpenSshConfig(
+            permit_root_login=[],
+            deprecated_directives=[]
+        )
+        # TODO(Jakuje): Do we need different defaults for RHEL8?
 
     in_match = None
     for line in config:
@@ -68,6 +80,22 @@ def parse_config(config):
                 # here we need to record all remaining items as command and arguments
                 ret.subsystem_sftp = ' '.join(el[2:])
 
+        elif el[0].lower() == 'include':
+            # recursively parse the given file or files referenced by this option
+            pattern = el[1]
+            if pattern[0] != '/' and pattern[0] != '~':
+                pattern = os.path.join('/etc/ssh/', pattern)
+            # NOTE that OpenSSH sorts the files lexicographically
+            files = glob.glob(pattern)
+            files.sort()
+            for f in files:
+                output = read_sshd_config(f)
+                if parse_config(output, ret, depth + 1) is None:
+                    raise StopActorExecutionError(
+                        'Failed to parse sshd configuration file: ',
+                        details={'details': 'Too many recursive includes while parsing {}.'.format(f)}
+                    )
+
         elif el[0].lower() in DEPRECATED_DIRECTIVES:
             # Filter out duplicit occurrences of the same deprecated directive
             if el[0].lower() not in ret.deprecated_directives:
@@ -82,10 +110,10 @@ def produce_config(producer, config):
     producer(config)
 
 
-def read_sshd_config():
+def read_sshd_config(config):
     """Read the actual sshd configuration file."""
     try:
-        with open(CONFIG, 'r') as fd:
+        with open(config, 'r') as fd:
             return fd.readlines()
     except IOError as err:
         if err.errno != errno.ENOENT:
@@ -98,7 +126,7 @@ def scan_sshd(producer):
     """Parse sshd_config configuration file to create OpenSshConfig message."""
 
     # direct access to configuration file
-    output = read_sshd_config()
+    output = read_sshd_config(CONFIG)
     config = parse_config(output)
 
     # find out whether the file was modified from the one shipped in rpm

@@ -1,3 +1,10 @@
+import os
+import shutil
+import tempfile
+
+import pytest
+
+from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor.readopensshconfig import line_empty, parse_config, produce_config
 from leapp.models import OpenSshConfig, OpenSshPermitRootLogin
 
@@ -143,10 +150,64 @@ def test_parse_config_deprecated():
 def test_parse_config_empty():
     output = parse_config([])
     assert isinstance(output, OpenSshConfig)
-    assert isinstance(output, OpenSshConfig)
     assert not output.permit_root_login
     assert output.use_privilege_separation is None
     assert output.protocol is None
+
+
+def test_parse_config_include():
+    """ This already require some files to touch """
+
+    # python2 compatibility :/
+    dirpath = tempfile.mkdtemp()
+
+    config = [
+        "Include {}/*.conf".format(dirpath)
+    ]
+
+    try:
+        # Prepare tmp directory with some included configuration snippets
+        my_path = os.path.join(dirpath, "my.conf")
+        with open(my_path, "w") as f:
+            f.write('Subsystem sftp internal-sftp')
+        other_path = os.path.join(dirpath, "another.conf")
+        with open(other_path, "w") as f:
+            f.write('permitrootlogin no')
+
+        output = parse_config(config)
+    finally:
+        shutil.rmtree(dirpath)
+
+    assert isinstance(output, OpenSshConfig)
+    assert len(output.permit_root_login) == 1
+    assert output.permit_root_login[0].value == 'no'
+    assert output.permit_root_login[0].in_match is None
+    assert output.use_privilege_separation is None
+    assert output.protocol is None
+    assert output.subsystem_sftp == 'internal-sftp'
+
+
+def test_parse_config_include_recursive():
+    """ The recursive include should gracefully fail """
+
+    # python2 compatibility :/
+    dirpath = tempfile.mkdtemp()
+
+    config = [
+        "Include {}/*.conf".format(dirpath)
+    ]
+
+    try:
+        # this includes recursively the same file
+        my_path = os.path.join(dirpath, "recursive.conf")
+        with open(my_path, "w") as f:
+            f.write(config[0])
+
+        with pytest.raises(StopActorExecutionError) as recursive_error:
+            parse_config(config)
+        assert 'Failed to parse sshd configuration file' in str(recursive_error)
+    finally:
+        shutil.rmtree(dirpath)
 
 
 def test_produce_config():
