@@ -5,187 +5,23 @@
   "data": [
     {
       "available_in_rhel": [
-        7
-      ],
-      "deprecation_announced": "",
-      "device_id": "0x15B3:0x1002",
-      "device_name": "Mellanox Technologies: MT25400 Family [ConnectX-2 Virtual Function]",
-      "device_type": "pci",
-      "driver_name": "mlx4_core",
-      "maintained_in_rhel": [
-        7
-      ]
-    },
-    {
-      "available_in_rhel": [
-        7
-      ],
-      "deprecation_announced": "",
-      "device_id": "0x15B3:0x6340",
-      "device_name": "Mellanox Technologies: MT25408A0-FCC-SI ConnectX, Dual Port 10Gb/s InfiniBand / 10GigE Adapter IC with PCIe 2.0 x8 2.5GT/s Interface",
-      "device_type": "pci",
-      "driver_name": "mlx4_core",
-      "maintained_in_rhel": [
-        7
-      ]
-    },
-    {
-      "available_in_rhel": [
-        7
-      ],
-      "deprecation_announced": "",
-      "device_id": "0x15B3:0x634A",
-      "device_name": "Mellanox Technologies: MT25408A0-FCC-DI ConnectX, Dual Port 20Gb/s InfiniBand / 10GigE Adapter IC with PCIe 2.0 x8 2.5GT/s Interface",
-      "device_type": "pci",
-      "driver_name": "mlx4_core",
-      "maintained_in_rhel": [
-        7
-      ]
-    },
-    {
-      "available_in_rhel": [
-        7
-      ],
-      "deprecation_announced": "",
-      "device_id": "0x15B3:0x6354",
-      "device_name": "",
-      "device_type": "pci",
-      "driver_name": "mlx4_core",
-      "maintained_in_rhel": [
-        7
-      ]
-    },
-    {
-      "available_in_rhel": [
-        7
-      ],
-      "deprecation_announced": "",
-      "device_id": "0x15B3:0x6368",
-      "device_name": "Mellanox Technologies: MT25448 [ConnectX EN 10GigE, PCIe 2.0 2.5GT/s]",
-      "device_type": "pci",
-      "driver_name": "mlx4_core",
-      "maintained_in_rhel": [
-        7
-      ]
-    },
-    {
-      "available_in_rhel": [
-        7
-      ],
-      "deprecation_announced": "",
-      "device_id": "0x15B3:0x6372",
-      "device_name": "Mellanox Technologies: MT25458 ConnectX EN 10GBASE-T PCIe 2.5 GT/s",
-      "device_type": "pci",
-      "driver_name": "mlx4_core",
-      "maintained_in_rhel": [
-        7
-      ]
-    },
-    {
-      "available_in_rhel": [
-        7
-      ],
-      "deprecation_announced": "",
-      "device_id": "0x15B3:0x6732",
-      "device_name": "Mellanox Technologies: MT25408A0-FCC-GI ConnectX, Dual Port 20Gb/s InfiniBand / 10GigE Adapter IC with PCIe 2.0 x8 5.0GT/s Interface",
-      "device_type": "pci",
-      "driver_name": "mlx4_core",
-      "maintained_in_rhel": [
-        7
-      ]
-    },
-    {
-      "available_in_rhel": [
-        7
-      ],
-      "deprecation_announced": "",
-      "device_id": "0x15B3:0x673C",
-      "device_name": "Mellanox Technologies: MT25408A0-FCC-QI ConnectX, Dual Port 40Gb/s InfiniBand / 10GigE Adapter IC with PCIe 2.0 x8 5.0GT/s Interface",
-      "device_type": "pci",
-      "driver_name": "mlx4_core",
-      "maintained_in_rhel": [
-        7
-      ]
-    },
-    {
-      "available_in_rhel": [
-        7
-      ],
-      "deprecation_announced": "",
-      "device_id": "0x15B3:0x6746",
-      "device_name": "Mellanox Technologies: MT26438 [ConnectX VPI PCIe 2.0 5GT/s - IB QDR / 10GigE Virtualization+]",
-      "device_type": "pci",
-      "driver_name": "mlx4_core",
-      "maintained_in_rhel": [
-        7
-      ]
-    },
-    {
-      "available_in_rhel": [
-        7
-      ],
-      "deprecation_announced": "",
-      "device_id": "0x15B3:0x6750",
-      "device_name": "Mellanox Technologies: MT26448 [ConnectX EN 10GigE, PCIe 2.0 5GT/s]",
-      "device_type": "pci",
-      "driver_name": "mlx4_core",
-      "maintained_in_rhel": [
-        7
-      ]
-    },
-    {
-      "available_in_rhel": [
-        7
-      ],
-      "deprecation_announced": "",
-      "device_id": "0x15B3:0x675A",
-      "device_name": "Mellanox Technologies: MT26458 ConnectX EN 10GBASE-T PCIe Gen2 5.0 GT/s",
-      "device_type": "pci",
-      "driver_name": "mlx4_core",
-      "maintained_in_rhel": [
-        7
-      ]
-    },
-    {
-      "available_in_rhel": [
-        7
-      ],
-      "deprecation_announced": "",
-      "device_id": "0x15B3:0x6764",
-      "device_name": "Mellanox Technologies: MT26468 [ConnectX EN 10GigE, PCIe 2.0 5GT/s Virtualization+]",
-      "device_type": "pci",
-      "driver_name": "mlx4_core",
-      "maintained_in_rhel": [
-        7
-      ]
-    },
-    {
-      "available_in_rhel": [
-        7
-      ],
-      "deprecation_announced": "",
-      "device_id": "0x15B3:0x676E",
-      "device_name": "Mellanox Technologies: MT26478 [ConnectX EN 40GigE, PCIe 2.0 5GT/s]",
-      "device_type": "pci",
-      "driver_name": "mlx4_core",
-      "maintained_in_rhel": [
-        7
-      ]
-    },
-    {
-      "available_in_rhel": [
+        7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "aarch64:Ampere:NeoverseN1",
       "device_name": "Ampere Altra",
       "device_type": "cpu",
       "driver_name": "",
-      "maintained_in_rhel": []
+      "maintained_in_rhel": [
+        7
+      ]
     },
     {
       "available_in_rhel": [
+        7,
         8
       ],
       "deprecation_announced": "",
@@ -193,7 +29,9 @@
       "device_name": "Ampere eMAG",
       "device_type": "cpu",
       "driver_name": "",
-      "maintained_in_rhel": []
+      "maintained_in_rhel": [
+        7
+      ]
     },
     {
       "available_in_rhel": [
@@ -213,7 +51,8 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "aarch64:AWS:A72",
@@ -223,13 +62,16 @@
       "maintained_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ]
     },
     {
       "available_in_rhel": [
+        7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "aarch64:AWS:NeoverseN1",
@@ -237,14 +79,18 @@
       "device_type": "cpu",
       "driver_name": "",
       "maintained_in_rhel": [
+        7,
         8,
-        9
+        9,
+        10
       ]
     },
     {
       "available_in_rhel": [
+        7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "aarch64:Fujitsu:A64FX",
@@ -252,14 +98,16 @@
       "device_type": "cpu",
       "driver_name": "",
       "maintained_in_rhel": [
-        8,
-        9
+        7,
+        8
       ]
     },
     {
       "available_in_rhel": [
+        7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "aarch64:Fujitsu:NSP",
@@ -267,15 +115,18 @@
       "device_type": "cpu",
       "driver_name": "",
       "maintained_in_rhel": [
+        7,
         8,
-        9
+        9,
+        10
       ]
     },
     {
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "aarch64:Marvell:ThunderX",
@@ -288,7 +139,8 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "aarch64:Marvell:ThunderX2",
@@ -302,8 +154,10 @@
     },
     {
       "available_in_rhel": [
+        7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "aarch64:Mellanox:A72",
@@ -311,14 +165,18 @@
       "device_type": "cpu",
       "driver_name": "",
       "maintained_in_rhel": [
+        7,
         8,
-        9
+        9,
+        10
       ]
     },
     {
       "available_in_rhel": [
+        7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "aarch64:Nvidia:Carmel",
@@ -326,15 +184,18 @@
       "device_type": "cpu",
       "driver_name": "",
       "maintained_in_rhel": [
+        7,
         8,
-        9
+        9,
+        10
       ]
     },
     {
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "aarch64:Qualcomm:Falkor",
@@ -392,8 +253,10 @@
     },
     {
       "available_in_rhel": [
+        7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "ppc64le:ibm:4e:*",
@@ -401,26 +264,34 @@
       "device_type": "cpu",
       "driver_name": "",
       "maintained_in_rhel": [
+        7,
         8,
-        9
+        9,
+        10
       ]
     },
     {
       "available_in_rhel": [
+        7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "ppc64le:ibm:4f:*",
       "device_name": "Power9P",
       "device_type": "cpu",
       "driver_name": "",
-      "maintained_in_rhel": []
+      "maintained_in_rhel": [
+        7
+      ]
     },
     {
       "available_in_rhel": [
+        7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "ppc64le:ibm:80:*",
@@ -428,8 +299,10 @@
       "device_type": "cpu",
       "driver_name": "",
       "maintained_in_rhel": [
+        7,
         8,
-        9
+        9,
+        10
       ]
     },
     {
@@ -466,7 +339,8 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "s390x:ibm:3907:*",
@@ -476,14 +350,16 @@
       "maintained_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ]
     },
     {
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "s390x:ibm:3906:*",
@@ -493,14 +369,16 @@
       "maintained_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ]
     },
     {
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "s390x:ibm:8561:*",
@@ -510,14 +388,16 @@
       "maintained_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ]
     },
     {
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "s390x:ibm:8562:*",
@@ -527,18 +407,58 @@
       "maintained_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ]
     },
     {
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "s390x:ibm:3931:*",
+      "device_name": "z16",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "s390x:ibm:3932:*",
+      "device_name": "z16",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:amd:21:*",
-      "device_name": "All Family 15h",
+      "device_name": "AMD Family 15h",
       "device_type": "cpu",
       "driver_name": "",
       "maintained_in_rhel": [
@@ -550,54 +470,46 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
-      "device_id": "x86_64:amd:23:{1,17,49}",
-      "device_name": "Supported Family 17h",
+      "device_id": "x86_64:amd:23:*",
+      "device_name": "AMD Family 17h",
       "device_type": "cpu",
       "driver_name": "",
       "maintained_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ]
-    },
-    {
-      "available_in_rhel": [],
-      "deprecation_announced": "",
-      "device_id": "x86_64:amd:23:{[2-16],[18-48],[50-255]}",
-      "device_name": "Unsupported Family 17h",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        8,
-        9
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:amd:25:1",
-      "device_name": "Supported Family 19h",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [],
-      "deprecation_announced": "",
-      "device_id": "x86_64:amd:25:[2-255]",
-      "device_name": "Unsupported Family 19h",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
     },
     {
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:amd:25:*",
+      "device_name": "AMD Family 19h",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:5:*",
@@ -607,280 +519,11 @@
       "maintained_in_rhel": []
     },
     {
-      "available_in_rhel": [],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:[1-13]",
-      "device_name": "Unknown Intel Cpu Models",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:[16-21]",
-      "device_name": "Unknown Intel Cpu Models",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:[24-25]",
-      "device_name": "Unknown Intel Cpu Models",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:27",
-      "device_name": "Unknown Intel Cpu Models",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:[32-36]",
-      "device_name": "Unknown Intel Cpu Models",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:[40-41]",
-      "device_name": "Unknown Intel Cpu Models",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:43",
-      "device_name": "Unknown Intel Cpu Models",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:[48-52]",
-      "device_name": "Unknown Intel Cpu Models",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:[56-57]",
-      "device_name": "Unknown Intel Cpu Models",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:59",
-      "device_name": "Unknown Intel Cpu Models",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:[64-68]",
-      "device_name": "Unknown Intel Cpu Models",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:[72-73]",
-      "device_name": "Unknown Intel Cpu Models",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:75",
-      "device_name": "Unknown Intel Cpu Models",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:[80-84]",
-      "device_name": "Unknown Intel Cpu Models",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:[88-89]",
-      "device_name": "Unknown Intel Cpu Models",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:91",
-      "device_name": "Unknown Intel Cpu Models",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:93",
-      "device_name": "Unknown Intel Cpu Models",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:[96-101]",
-      "device_name": "Unknown Intel Cpu Models",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:[103-105]",
-      "device_name": "Unknown Intel Cpu Models",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:107",
-      "device_name": "Unknown Intel Cpu Models",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:[109-116]",
-      "device_name": "Unknown Intel Cpu Models",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:[118-121]",
-      "device_name": "Unknown Intel Cpu Models",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:[123-124]",
-      "device_name": "Unknown Intel Cpu Models",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:[127-132]",
-      "device_name": "Unknown Intel Cpu Models",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:[135-137]",
-      "device_name": "Unknown Intel Cpu Models",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:139",
-      "device_name": "Unknown Intel Cpu Models",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:[144-149]",
-      "device_name": "Unknown Intel Cpu Models",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:[152-155]",
-      "device_name": "Unknown Intel Cpu Models",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:[159-164]",
-      "device_name": "Unknown Intel Cpu Models",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:[168-255]",
-      "device_name": "Unknown Intel Cpu Models",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:102",
@@ -893,7 +536,8 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:106",
@@ -903,13 +547,16 @@
       "maintained_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ]
     },
     {
       "available_in_rhel": [
+        7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:108",
@@ -917,14 +564,18 @@
       "device_type": "cpu",
       "driver_name": "",
       "maintained_in_rhel": [
-        9
+        7,
+        8,
+        9,
+        10
       ]
     },
     {
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:117",
@@ -937,7 +588,8 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:122",
@@ -953,19 +605,25 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:125",
       "device_name": "ICELAKE",
       "device_type": "cpu",
       "driver_name": "",
-      "maintained_in_rhel": []
+      "maintained_in_rhel": [
+        7,
+        8
+      ]
     },
     {
       "available_in_rhel": [
+        7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:126",
@@ -973,15 +631,18 @@
       "device_type": "cpu",
       "driver_name": "",
       "maintained_in_rhel": [
+        7,
         8,
-        9
+        9,
+        10
       ]
     },
     {
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:133",
@@ -995,8 +656,10 @@
     },
     {
       "available_in_rhel": [
+        7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:134",
@@ -1004,27 +667,34 @@
       "device_type": "cpu",
       "driver_name": "",
       "maintained_in_rhel": [
+        7,
         8,
-        9
+        9,
+        10
       ]
     },
     {
       "available_in_rhel": [
+        7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:138",
       "device_name": "LAKEFIELD",
       "device_type": "cpu",
       "driver_name": "",
-      "maintained_in_rhel": []
+      "maintained_in_rhel": [
+        7
+      ]
     },
     {
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:14",
@@ -1035,8 +705,10 @@
     },
     {
       "available_in_rhel": [
+        7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:140",
@@ -1044,14 +716,18 @@
       "device_type": "cpu",
       "driver_name": "",
       "maintained_in_rhel": [
+        7,
         8,
-        9
+        9,
+        10
       ]
     },
     {
       "available_in_rhel": [
+        7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:141",
@@ -1059,15 +735,18 @@
       "device_type": "cpu",
       "driver_name": "",
       "maintained_in_rhel": [
+        7,
         8,
-        9
+        9,
+        10
       ]
     },
     {
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:142",
@@ -1077,13 +756,16 @@
       "maintained_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ]
     },
     {
       "available_in_rhel": [
+        7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:143",
@@ -1091,14 +773,18 @@
       "device_type": "cpu",
       "driver_name": "",
       "maintained_in_rhel": [
-        9
+        7,
+        8,
+        9,
+        10
       ]
     },
     {
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:15",
@@ -1109,8 +795,10 @@
     },
     {
       "available_in_rhel": [
+        7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:150",
@@ -1118,13 +806,17 @@
       "device_type": "cpu",
       "driver_name": "",
       "maintained_in_rhel": [
-        9
+        7,
+        9,
+        10
       ]
     },
     {
       "available_in_rhel": [
+        7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:151",
@@ -1132,37 +824,50 @@
       "device_type": "cpu",
       "driver_name": "",
       "maintained_in_rhel": [
-        9
+        7,
+        9,
+        10
       ]
     },
     {
       "available_in_rhel": [
-        9
+        7,
+        8,
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:156",
       "device_name": "ATOM_TREMONT_L",
       "device_type": "cpu",
       "driver_name": "",
-      "maintained_in_rhel": []
+      "maintained_in_rhel": [
+        7,
+        8
+      ]
     },
     {
       "available_in_rhel": [
+        7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:157",
       "device_name": "ICELAKE_NNPI",
       "device_type": "cpu",
       "driver_name": "",
-      "maintained_in_rhel": []
+      "maintained_in_rhel": [
+        7
+      ]
     },
     {
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:158",
@@ -1172,13 +877,16 @@
       "maintained_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ]
     },
     {
       "available_in_rhel": [
+        7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:165",
@@ -1186,14 +894,18 @@
       "device_type": "cpu",
       "driver_name": "",
       "maintained_in_rhel": [
+        7,
         8,
-        9
+        9,
+        10
       ]
     },
     {
       "available_in_rhel": [
+        7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:166",
@@ -1201,14 +913,18 @@
       "device_type": "cpu",
       "driver_name": "",
       "maintained_in_rhel": [
+        7,
         8,
-        9
+        9,
+        10
       ]
     },
     {
       "available_in_rhel": [
+        7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:167",
@@ -1216,15 +932,18 @@
       "device_type": "cpu",
       "driver_name": "",
       "maintained_in_rhel": [
+        7,
         8,
-        9
+        9,
+        10
       ]
     },
     {
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:22",
@@ -1237,7 +956,8 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:23",
@@ -1252,7 +972,8 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:26",
@@ -1267,7 +988,8 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:28",
@@ -1280,7 +1002,8 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:29",
@@ -1295,7 +1018,8 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:30",
@@ -1310,7 +1034,8 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:31",
@@ -1325,7 +1050,8 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:37",
@@ -1340,7 +1066,8 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:38",
@@ -1353,7 +1080,8 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:39",
@@ -1366,7 +1094,8 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:42",
@@ -1381,7 +1110,8 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:44",
@@ -1396,7 +1126,8 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:45",
@@ -1411,7 +1142,8 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:46",
@@ -1426,7 +1158,8 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:47",
@@ -1441,7 +1174,8 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:53",
@@ -1454,7 +1188,8 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:54",
@@ -1467,7 +1202,8 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:55",
@@ -1480,7 +1216,8 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:58",
@@ -1495,7 +1232,8 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:60",
@@ -1511,7 +1249,8 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:61",
@@ -1527,7 +1266,8 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:62",
@@ -1542,7 +1282,8 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:63",
@@ -1552,14 +1293,16 @@
       "maintained_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ]
     },
     {
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:69",
@@ -1575,7 +1318,8 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:70",
@@ -1591,7 +1335,8 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:71",
@@ -1607,7 +1352,8 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:74",
@@ -1620,7 +1366,8 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:76",
@@ -1633,7 +1380,8 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:77",
@@ -1648,7 +1396,8 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:78",
@@ -1664,7 +1413,8 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:79",
@@ -1674,14 +1424,16 @@
       "maintained_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ]
     },
     {
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:85",
@@ -1691,14 +1443,16 @@
       "maintained_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ]
     },
     {
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:86",
@@ -1714,7 +1468,8 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:87",
@@ -1729,7 +1484,8 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:90",
@@ -1742,7 +1498,8 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:92",
@@ -1752,14 +1509,16 @@
       "maintained_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ]
     },
     {
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:94",
@@ -1775,7 +1534,8 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:95",
@@ -1808,6 +1568,24 @@
       "device_type": "pci",
       "driver_name": "3w-sas",
       "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "",
+      "device_name": "Dell PERC2, 2/Si, 3/Si, 3/Di, Adaptec Advanced Raid Products, HP NetRAID-4M, IBM ServeRAID & ICP SCSI driver",
+      "device_type": "pci",
+      "driver_name": "aacraid",
+      "maintained_in_rhel": [
+        7,
+        8,
+        9
+      ]
     },
     {
       "available_in_rhel": [
@@ -2654,6 +2432,24 @@
     },
     {
       "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "",
+      "device_name": "PF_KEY sockets",
+      "device_type": "pci",
+      "driver_name": "af_key",
+      "maintained_in_rhel": [
+        7,
+        8,
+        9
+      ]
+    },
+    {
+      "available_in_rhel": [
         7
       ],
       "deprecation_announced": "",
@@ -2684,6 +2480,23 @@
       "device_type": "pci",
       "driver_name": "arcmsr",
       "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "",
+      "device_name": "ARP tables support",
+      "device_type": "pci",
+      "driver_name": "arp_tables",
+      "maintained_in_rhel": [
+        7,
+        8
+      ]
     },
     {
       "available_in_rhel": [
@@ -2807,6 +2620,36 @@
         7
       ],
       "deprecation_announced": "",
+      "device_id": "0x19a2:0xe220",
+      "device_name": "",
+      "device_type": "pci",
+      "driver_name": "be2net",
+      "maintained_in_rhel": [
+        7
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "0x10df:0xe220",
+      "device_name": "Emulex Corporation: OneConnect NIC (Lancer)",
+      "device_type": "pci",
+      "driver_name": "be2net",
+      "maintained_in_rhel": [
+        7,
+        8
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7
+      ],
+      "deprecation_announced": "",
       "device_id": "",
       "device_name": "",
       "device_type": "pci",
@@ -2815,11 +2658,25 @@
     },
     {
       "available_in_rhel": [
+        7
+      ],
+      "deprecation_announced": "",
+      "device_id": "",
+      "device_name": "QLogic BR-series 1010/1020/1860 10Gb Ethernet",
+      "device_type": "pci",
+      "driver_name": "bna",
+      "maintained_in_rhel": [
+        7
+      ]
+    },
+    {
+      "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
-      "deprecation_announced": "8.4",
+      "deprecation_announced": "",
       "device_id": "",
       "device_name": "QLogic BCM5706/5708/5709/5716 Driver",
       "device_type": "pci",
@@ -2866,18 +2723,8 @@
       "available_in_rhel": [
         7,
         8,
-        9
-      ],
-      "deprecation_announced": "",
-      "device_id": "",
-      "device_name": "Intel(R) PRO/1000 Network Driver",
-      "device_type": "pci",
-      "driver_name": "e1000",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "",
@@ -2890,7 +2737,8 @@
     },
     {
       "available_in_rhel": [
-        7
+        7,
+        8
       ],
       "deprecation_announced": "",
       "device_id": "",
@@ -2903,7 +2751,8 @@
     },
     {
       "available_in_rhel": [
-        7
+        7,
+        8
       ],
       "deprecation_announced": "",
       "device_id": "",
@@ -2912,6 +2761,37 @@
       "driver_name": "dnet",
       "maintained_in_rhel": [
         7
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "",
+      "device_name": "Intel(R) PRO/1000 Network Driver",
+      "device_type": "pci",
+      "driver_name": "e1000",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "",
+      "device_name": "Ethernet Bridge tables (ebtables) support",
+      "device_type": "pci",
+      "driver_name": "ebtables",
+      "maintained_in_rhel": [
+        7,
+        8
       ]
     },
     {
@@ -2929,6 +2809,34 @@
     },
     {
       "available_in_rhel": [
+        7,
+        8,
+        9
+      ],
+      "deprecation_announced": "",
+      "device_id": "",
+      "device_name": "",
+      "device_type": "pci",
+      "driver_name": "firewire-core",
+      "maintained_in_rhel": [
+        7,
+        8,
+        9
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7
+      ],
+      "deprecation_announced": "",
+      "device_id": "",
+      "device_name": "",
+      "device_type": "pci",
+      "driver_name": "floppy",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [
         7
       ],
       "deprecation_announced": "",
@@ -2942,9 +2850,72 @@
       "available_in_rhel": [
         7,
         8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "",
+      "device_name": "",
+      "device_type": "pci",
+      "driver_name": "hdlc_fr",
+      "maintained_in_rhel": [
+        7
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
         9
       ],
-      "deprecation_announced": "8.5",
+      "deprecation_announced": "",
+      "device_id": "",
+      "device_name": "Cornelis Omni-Path Express driver",
+      "device_type": "pci",
+      "driver_name": "hfi1",
+      "maintained_in_rhel": [
+        7,
+        8
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8
+      ],
+      "deprecation_announced": "",
+      "device_id": "",
+      "device_name": "HNS GE/10GE/25GE/50GE/100GE RDMA Network Controller",
+      "device_type": "pci",
+      "driver_name": "hns_roce",
+      "maintained_in_rhel": [
+        7,
+        8
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8
+      ],
+      "deprecation_announced": "",
+      "device_id": "",
+      "device_name": "HNS GE/10GE/25GE/50GE/100GE RDMA Network Controller",
+      "device_type": "pci",
+      "driver_name": "hns_roce",
+      "maintained_in_rhel": [
+        7,
+        8
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
       "device_id": "",
       "device_name": "Driver for HP Smart Array Controller",
       "device_type": "pci",
@@ -2975,6 +2946,57 @@
       "device_type": "pci",
       "driver_name": "initio",
       "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "",
+      "device_name": "IP6 tables support (required for filtering)",
+      "device_type": "pci",
+      "driver_name": "ip6_tables",
+      "maintained_in_rhel": [
+        7,
+        8
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "",
+      "device_name": "IP set support",
+      "device_type": "pci",
+      "driver_name": "ip_set",
+      "maintained_in_rhel": [
+        7,
+        8
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "",
+      "device_name": "IP tables support (required for filtering/masq/NAT)",
+      "device_type": "pci",
+      "driver_name": "ip_tables",
+      "maintained_in_rhel": [
+        7,
+        8
+      ]
     },
     {
       "available_in_rhel": [
@@ -3533,9 +3555,10 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
-      "deprecation_announced": "8.4",
+      "deprecation_announced": "",
       "device_id": "0x10df:0x0724",
       "device_name": "Emulex Corporation: OneConnect FCoE Initiator (Skyhawk)",
       "device_type": "pci",
@@ -3549,9 +3572,10 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
-      "deprecation_announced": "8.4",
+      "deprecation_announced": "",
       "device_id": "0x10df:0xe200",
       "device_name": "Emulex Corporation: LPe15000/LPe16000 Series 8Gb/16Gb Fibre Channel Adapter",
       "device_type": "pci",
@@ -3565,25 +3589,10 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
-      "deprecation_announced": "8.4",
-      "device_id": "0x10df:0xe220",
-      "device_name": "Emulex Corporation: OneConnect NIC (Lancer)",
-      "device_type": "pci",
-      "driver_name": "be2net",
-      "maintained_in_rhel": [
-        7,
-        8
-      ]
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9
-      ],
-      "deprecation_announced": "8.4",
+      "deprecation_announced": "",
       "device_id": "0x10df:0xf011",
       "device_name": "Emulex Corporation: Saturn: LightPulse Fibre Channel Host Adapter",
       "device_type": "pci",
@@ -3597,9 +3606,10 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
-      "deprecation_announced": "8.4",
+      "deprecation_announced": "",
       "device_id": "0x10df:0xf015",
       "device_name": "Emulex Corporation: Saturn: LightPulse Fibre Channel Host Adapter",
       "device_type": "pci",
@@ -3613,9 +3623,10 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
-      "deprecation_announced": "8.4",
+      "deprecation_announced": "",
       "device_id": "0x10df:0xf100",
       "device_name": "Emulex Corporation: LPe12000 Series 8Gb Fibre Channel Adapter",
       "device_type": "pci",
@@ -3629,9 +3640,10 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
-      "deprecation_announced": "8.4",
+      "deprecation_announced": "",
       "device_id": "0x10df:0xfc40",
       "device_name": "Emulex Corporation: Saturn-X: LightPulse Fibre Channel Host Adapter",
       "device_type": "pci",
@@ -3645,9 +3657,10 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
-      "deprecation_announced": "8.4",
+      "deprecation_announced": "",
       "device_id": "0x1000:0x005b",
       "device_name": "Broadcom / LSI: MegaRAID SAS 2208 [Thunderbolt]",
       "device_type": "pci",
@@ -3674,7 +3687,8 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "0x1000:0x0071",
@@ -3689,7 +3703,8 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "0x1000:0x0073",
@@ -3717,7 +3732,8 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "0x1000:0x0079",
@@ -3776,6 +3792,189 @@
       "device_name": "Dell: PowerEdge Expandable RAID controller 5",
       "device_type": "pci",
       "driver_name": "megaraid_sas",
+      "maintained_in_rhel": [
+        7
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7
+      ],
+      "deprecation_announced": "",
+      "device_id": "0x15B3:0x1002",
+      "device_name": "Mellanox Technologies: MT25400 Family [ConnectX-2 Virtual Function]",
+      "device_type": "pci",
+      "driver_name": "mlx4_core",
+      "maintained_in_rhel": [
+        7
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7
+      ],
+      "deprecation_announced": "",
+      "device_id": "0x15B3:0x6340",
+      "device_name": "Mellanox Technologies: MT25408A0-FCC-SI ConnectX: Dual Port 10Gb/s InfiniBand / 10GigE Adapter IC with PCIe 2.0 x8 2.5GT/s Interface",
+      "device_type": "pci",
+      "driver_name": "mlx4_core",
+      "maintained_in_rhel": [
+        7
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7
+      ],
+      "deprecation_announced": "",
+      "device_id": "0x15B3:0x634A",
+      "device_name": "Mellanox Technologies: MT25408A0-FCC-DI ConnectX: Dual Port 20Gb/s InfiniBand / 10GigE Adapter IC with PCIe 2.0 x8 2.5GT/s Interface",
+      "device_type": "pci",
+      "driver_name": "mlx4_core",
+      "maintained_in_rhel": [
+        7
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7
+      ],
+      "deprecation_announced": "",
+      "device_id": "0x15B3:0x6354",
+      "device_name": "",
+      "device_type": "pci",
+      "driver_name": "mlx4_core",
+      "maintained_in_rhel": [
+        7
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7
+      ],
+      "deprecation_announced": "",
+      "device_id": "0x15B3:0x6368",
+      "device_name": "Mellanox Technologies: MT25448 [ConnectX EN 10GigE: PCIe 2.0 2.5GT/s]",
+      "device_type": "pci",
+      "driver_name": "mlx4_core",
+      "maintained_in_rhel": [
+        7
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7
+      ],
+      "deprecation_announced": "",
+      "device_id": "0x15B3:0x6372",
+      "device_name": "Mellanox Technologies: MT25458 ConnectX EN 10GBASE-T PCIe 2.5 GT/s",
+      "device_type": "pci",
+      "driver_name": "mlx4_core",
+      "maintained_in_rhel": [
+        7
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7
+      ],
+      "deprecation_announced": "",
+      "device_id": "0x15B3:0x6732",
+      "device_name": "Mellanox Technologies: MT25408A0-FCC-GI ConnectX: Dual Port 20Gb/s InfiniBand / 10GigE Adapter IC with PCIe 2.0 x8 5.0GT/s Interface",
+      "device_type": "pci",
+      "driver_name": "mlx4_core",
+      "maintained_in_rhel": [
+        7
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7
+      ],
+      "deprecation_announced": "",
+      "device_id": "0x15B3:0x673C",
+      "device_name": "Mellanox Technologies: MT25408A0-FCC-QI ConnectX: Dual Port 40Gb/s InfiniBand / 10GigE Adapter IC with PCIe 2.0 x8 5.0GT/s Interface",
+      "device_type": "pci",
+      "driver_name": "mlx4_core",
+      "maintained_in_rhel": [
+        7
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7
+      ],
+      "deprecation_announced": "",
+      "device_id": "0x15B3:0x6746",
+      "device_name": "Mellanox Technologies: MT26438 [ConnectX VPI PCIe 2.0 5GT/s - IB QDR / 10GigE Virtualization+]",
+      "device_type": "pci",
+      "driver_name": "mlx4_core",
+      "maintained_in_rhel": [
+        7
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7
+      ],
+      "deprecation_announced": "",
+      "device_id": "0x15B3:0x6750",
+      "device_name": "Mellanox Technologies: MT26448 [ConnectX EN 10GigE: PCIe 2.0 5GT/s]",
+      "device_type": "pci",
+      "driver_name": "mlx4_core",
+      "maintained_in_rhel": [
+        7
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7
+      ],
+      "deprecation_announced": "",
+      "device_id": "0x15B3:0x675A",
+      "device_name": "Mellanox Technologies: MT26458 ConnectX EN 10GBASE-T PCIe Gen2 5.0 GT/s",
+      "device_type": "pci",
+      "driver_name": "mlx4_core",
+      "maintained_in_rhel": [
+        7
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7
+      ],
+      "deprecation_announced": "",
+      "device_id": "0x15B3:0x6764",
+      "device_name": "Mellanox Technologies: MT26468 [ConnectX EN 10GigE: PCIe 2.0 5GT/s Virtualization+]",
+      "device_type": "pci",
+      "driver_name": "mlx4_core",
+      "maintained_in_rhel": [
+        7
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7
+      ],
+      "deprecation_announced": "",
+      "device_id": "0x15B3:0x676E",
+      "device_name": "Mellanox Technologies: MT26478 [ConnectX EN 40GigE: PCIe 2.0 5GT/s]",
+      "device_type": "pci",
+      "driver_name": "mlx4_core",
+      "maintained_in_rhel": [
+        7
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8
+      ],
+      "deprecation_announced": "",
+      "device_id": "0x15B3:0xA2DC",
+      "device_name": "",
+      "device_type": "pci",
+      "driver_name": "mlx5",
       "maintained_in_rhel": [
         7
       ]
@@ -3888,9 +4087,10 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
-      "deprecation_announced": "8.4",
+      "deprecation_announced": "",
       "device_id": "0x1000:0x006E",
       "device_name": "Broadcom / LSI: SAS2308 PCI-Express Fusion-MPT SAS-2",
       "device_type": "pci",
@@ -3904,9 +4104,10 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
-      "deprecation_announced": "8.4",
+      "deprecation_announced": "",
       "device_id": "0x1000:0x0080",
       "device_name": "Broadcom / LSI: SAS2208 PCI-Express Fusion-MPT SAS-2",
       "device_type": "pci",
@@ -3920,9 +4121,10 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
-      "deprecation_announced": "8.4",
+      "deprecation_announced": "",
       "device_id": "0x1000:0x0081",
       "device_name": "Broadcom / LSI: SAS2208 PCI-Express Fusion-MPT SAS-2",
       "device_type": "pci",
@@ -3936,9 +4138,10 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
-      "deprecation_announced": "8.4",
+      "deprecation_announced": "",
       "device_id": "0x1000:0x0082",
       "device_name": "Broadcom / LSI: SAS2208 PCI-Express Fusion-MPT SAS-2",
       "device_type": "pci",
@@ -3952,9 +4155,10 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
-      "deprecation_announced": "8.4",
+      "deprecation_announced": "",
       "device_id": "0x1000:0x0083",
       "device_name": "Broadcom / LSI: SAS2208 PCI-Express Fusion-MPT SAS-2",
       "device_type": "pci",
@@ -3968,9 +4172,10 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
-      "deprecation_announced": "8.4",
+      "deprecation_announced": "",
       "device_id": "0x1000:0x0084",
       "device_name": "Broadcom / LSI: SAS2208 PCI-Express Fusion-MPT SAS-2",
       "device_type": "pci",
@@ -3984,9 +4189,10 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
-      "deprecation_announced": "8.4",
+      "deprecation_announced": "",
       "device_id": "0x1000:0x0085",
       "device_name": "Broadcom / LSI: SAS2208 PCI-Express Fusion-MPT SAS-2",
       "device_type": "pci",
@@ -4000,9 +4206,10 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
-      "deprecation_announced": "8.4",
+      "deprecation_announced": "",
       "device_id": "0x1000:0x0086",
       "device_name": "Broadcom / LSI: SAS2308 PCI-Express Fusion-MPT SAS-2",
       "device_type": "pci",
@@ -4016,9 +4223,10 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
-      "deprecation_announced": "8.4",
+      "deprecation_announced": "",
       "device_id": "0x1000:0x0087",
       "device_name": "Broadcom / LSI: SAS2308 PCI-Express Fusion-MPT SAS-2",
       "device_type": "pci",
@@ -4032,7 +4240,8 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "",
@@ -4056,7 +4265,8 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "",
@@ -4069,7 +4279,8 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "",
@@ -4082,7 +4293,8 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "",
@@ -4150,9 +4362,10 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
-      "deprecation_announced": "8.4",
+      "deprecation_announced": "",
       "device_id": "",
       "device_name": "Myricom 10G driver (10GbE)",
       "device_type": "pci",
@@ -4166,9 +4379,10 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
-      "deprecation_announced": "8.4",
+      "deprecation_announced": "",
       "device_id": "",
       "device_name": "QLogic/NetXen (1/10) GbE Intelligent Ethernet Driver",
       "device_type": "pci",
@@ -4176,6 +4390,138 @@
       "maintained_in_rhel": [
         7,
         8
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "",
+      "device_name": "Netfilter x_tables over nf_tables module",
+      "device_type": "pci",
+      "driver_name": "nft_compat",
+      "maintained_in_rhel": [
+        7,
+        8
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "",
+      "device_name": "",
+      "device_type": "pci",
+      "driver_name": "nicpf",
+      "maintained_in_rhel": [
+        7
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "0x177d:0xa01e",
+      "device_name": "Cavium ThunderX NIC PF driver",
+      "device_type": "pci",
+      "driver_name": "nicpf",
+      "maintained_in_rhel": [
+        7,
+        8
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "",
+      "device_name": "",
+      "device_type": "pci",
+      "driver_name": "nicvf",
+      "maintained_in_rhel": [
+        7
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "0x177d:0xa034",
+      "device_name": "Cavium ThunderX NIC VF driver",
+      "device_type": "pci",
+      "driver_name": "nicvf",
+      "maintained_in_rhel": [
+        7,
+        8
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "0x177d:0x0011",
+      "device_name": "Cavium ThunderX NIC VF driver",
+      "device_type": "pci",
+      "driver_name": "nicvf",
+      "maintained_in_rhel": [
+        7,
+        8
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "",
+      "device_name": "",
+      "device_type": "pci",
+      "driver_name": "nvmet-fc",
+      "maintained_in_rhel": [
+        7
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "",
+      "device_name": "",
+      "device_type": "pci",
+      "driver_name": "nvmet-tcp",
+      "maintained_in_rhel": [
+        7
       ]
     },
     {
@@ -4538,7 +4884,7 @@
       "device_id": "",
       "device_name": "",
       "device_type": "pci",
-      "driver_name": "pm80xx(pm8001)",
+      "driver_name": "pm80xx",
       "maintained_in_rhel": []
     },
     {
@@ -4556,9 +4902,10 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
-      "deprecation_announced": "8.4",
+      "deprecation_announced": "",
       "device_id": "0x1077:0x2031",
       "device_name": "QLogic Corp.: ISP8324-based 16Gb Fibre Channel to PCI Express Adapter",
       "device_type": "pci",
@@ -4598,9 +4945,10 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
-      "deprecation_announced": "8.4",
+      "deprecation_announced": "",
       "device_id": "0x1077:0x2532",
       "device_name": "QLogic Corp.: ISP2532-based 8Gb Fibre Channel to PCI Express HBA",
       "device_type": "pci",
@@ -4666,9 +5014,10 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
-      "deprecation_announced": "8.4",
+      "deprecation_announced": "",
       "device_id": "0x1077:0x8031",
       "device_name": "QLogic Corp.: 8300 Series 10GbE Converged Network Adapter (FCoE)",
       "device_type": "pci",
@@ -4721,7 +5070,8 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "",
@@ -4729,6 +5079,23 @@
       "device_type": "pci",
       "driver_name": "qla3xxx",
       "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9
+      ],
+      "deprecation_announced": "",
+      "device_id": "",
+      "device_name": "QLogic ISP4XXX and ISP82XX iSCSI Host Adapter",
+      "device_type": "pci",
+      "driver_name": "qla4xxx",
+      "maintained_in_rhel": [
+        7,
+        8,
+        9
+      ]
     },
     {
       "available_in_rhel": [
@@ -4790,6 +5157,21 @@
       "device_type": "pci",
       "driver_name": "qlge",
       "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9
+      ],
+      "deprecation_announced": "",
+      "device_id": "",
+      "device_name": "",
+      "device_type": "pci",
+      "driver_name": "rdma_rxe",
+      "maintained_in_rhel": [
+        7
+      ]
     },
     {
       "available_in_rhel": [
@@ -4960,9 +5342,10 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
-      "deprecation_announced": "8.4",
+      "deprecation_announced": "",
       "device_id": "0x1924:0x0803",
       "device_name": "Solarflare Communications: SFC9020 10G Ethernet Controller",
       "device_type": "pci",
@@ -4976,9 +5359,10 @@
       "available_in_rhel": [
         7,
         8,
-        9
+        9,
+        10
       ],
-      "deprecation_announced": "8.4",
+      "deprecation_announced": "",
       "device_id": "0x1924:0x0813",
       "device_name": "Solarflare Communications: SFL9021 10GBASE-T Ethernet Controller",
       "device_type": "pci",
@@ -4987,6 +5371,18 @@
         7,
         8
       ]
+    },
+    {
+      "available_in_rhel": [
+        8,
+        9
+      ],
+      "deprecation_announced": "",
+      "device_id": "",
+      "device_name": "Software iWARP Driver",
+      "device_type": "pci",
+      "driver_name": "siw",
+      "maintained_in_rhel": []
     },
     {
       "available_in_rhel": [
@@ -5012,6 +5408,24 @@
     },
     {
       "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "",
+      "device_name": "Ethernet team driver support",
+      "device_type": "pci",
+      "driver_name": "team",
+      "maintained_in_rhel": [
+        7,
+        8,
+        9
+      ]
+    },
+    {
+      "available_in_rhel": [
         7
       ],
       "deprecation_announced": "",
@@ -5034,6 +5448,38 @@
     },
     {
       "available_in_rhel": [
+        7,
+        8,
+        9
+      ],
+      "deprecation_announced": "",
+      "device_id": "",
+      "device_name": "Cisco VIC (usNIC) Verbs Driver",
+      "device_type": "pci",
+      "driver_name": "usnic_verbs",
+      "maintained_in_rhel": [
+        7,
+        8
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9
+      ],
+      "deprecation_announced": "",
+      "device_id": "",
+      "device_name": "VMware Paravirtual RDMA driver",
+      "device_type": "pci",
+      "driver_name": "vmw_pvrdma",
+      "maintained_in_rhel": [
+        7,
+        8
+      ]
+    },
+    {
+      "available_in_rhel": [
         7
       ],
       "deprecation_announced": "",
@@ -5042,19 +5488,6 @@
       "device_type": "pci",
       "driver_name": "wil6210",
       "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        8
-      ],
-      "deprecation_announced": "",
-      "device_id": "",
-      "device_name": "HNS GE/10GE/25GE/50GE/100GE RDMA Network Controller",
-      "device_type": "pci",
-      "driver_name": "hns_roce",
-      "maintained_in_rhel": [
-        8
-      ]
     }
   ]
 }
