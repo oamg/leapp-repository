@@ -7,6 +7,7 @@ from leapp.models import (
     SystemdServicesPresetInfoTarget,
     SystemdServicesTasks
 )
+from leapp.reporting import Report
 from leapp.tags import ApplicationsPhaseTag, IPUWorkflowTag
 
 
@@ -46,7 +47,7 @@ class TransitionSystemdServicesStates(Actor):
         SystemdServicesPresetInfoSource,
         SystemdServicesPresetInfoTarget
     )
-    produces = (SystemdServicesTasks,)
+    produces = (Report, SystemdServicesTasks)
     tags = (ApplicationsPhaseTag, IPUWorkflowTag)
 
     def process(self):
