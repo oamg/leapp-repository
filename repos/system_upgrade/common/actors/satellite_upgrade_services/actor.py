@@ -2,8 +2,8 @@ import glob
 import os
 
 from leapp.actors import Actor
-from leapp.models import SatelliteFacts
-from leapp.tags import ApplicationsPhaseTag, IPUWorkflowTag
+from leapp.models import SatelliteFacts, SystemdServicesTasks
+from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 SYSTEMD_WANTS_BASE = '/etc/systemd/system/multi-user.target.wants/'
 SERVICES_TO_DISABLE = ['dynflow-sidekiq@*', 'foreman', 'foreman-proxy',
@@ -18,8 +18,8 @@ class SatelliteUpgradeServices(Actor):
 
     name = 'satellite_upgrade_services'
     consumes = (SatelliteFacts,)
-    produces = ()
-    tags = (IPUWorkflowTag, ApplicationsPhaseTag)
+    produces = (SystemdServicesTasks,)
+    tags = (IPUWorkflowTag, FactsPhaseTag)
 
     def process(self):
         facts = next(self.consume(SatelliteFacts), None)
@@ -27,9 +27,8 @@ class SatelliteUpgradeServices(Actor):
             return
 
         # disable services, will be re-enabled by the installer
+        services_to_disable = []
         for service_name in SERVICES_TO_DISABLE:
             for service in glob.glob(os.path.join(SYSTEMD_WANTS_BASE, '{}.service'.format(service_name))):
-                try:
-                    os.unlink(service)
-                except OSError as e:
-                    self.log.warning('Failed disabling service {}: {}'.format(service, e))
+                services_to_disable.append(os.path.basename(service))
+        self.produce(SystemdServicesTasks(to_disable=services_to_disable))
