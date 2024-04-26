@@ -94,4 +94,4 @@ def test_enable_disable_conflict_logged(monkeypatch):
 
     expect_msg = ('Attempted to both enable and disable systemd service "hello.service",'
                   ' service will be disabled.')
-    assert expect_msg in api.current_logger.errmsg
+    assert expect_msg in api.current_logger.warnmsg
