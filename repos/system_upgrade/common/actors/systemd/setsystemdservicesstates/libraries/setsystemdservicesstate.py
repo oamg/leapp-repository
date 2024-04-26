@@ -15,7 +15,7 @@ def process():
         msg = 'Attempted to both enable and disable systemd service "{}", service will be disabled.'.format(service)
         api.current_logger().warning(msg)
 
-    for service in services_to_enable:
+    for service in services_to_enable - intersection:
         try:
             systemd.enable_unit(service)
         except CalledProcessError:
