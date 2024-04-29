@@ -12,6 +12,7 @@ from leapp.models import (
     BootContent,
     KernelCmdline,
     KernelCmdlineArg,
+    LateTargetKernelCmdlineArgTasks,
     LiveModeArtifacts,
     LiveModeConfig,
     TargetKernelCmdlineArgTasks
@@ -82,8 +83,10 @@ def test_add_boot_entry(monkeypatch, run_args, arch):
     assert addupgradebootentry.run.args[0] == run_args.args_remove
     assert addupgradebootentry.run.args[1] == run_args.args_add
     assert api.produce.model_instances == [
-        TargetKernelCmdlineArgTasks(to_remove=[KernelCmdlineArg(key='debug')]),
-        TargetKernelCmdlineArgTasks(to_remove=[KernelCmdlineArg(key='enforcing', value='0')])
+        LateTargetKernelCmdlineArgTasks(to_remove=[KernelCmdlineArg(key='debug'),
+                                                   KernelCmdlineArg(key='enforcing', value='0'),
+                                                   KernelCmdlineArg(key='plymouth.enable', value='0'),
+                                                   KernelCmdlineArg(key='rd.plymouth', value='0')])
     ]
 
     if run_args.args_zipl:
@@ -103,16 +106,16 @@ def test_debug_kernelopt_removal_task_production(monkeypatch, is_leapp_invoked_w
                         CurrentActorMocked(envars={'LEAPP_DEBUG': str(int(is_leapp_invoked_with_debug))}))
 
     addupgradebootentry.add_boot_entry()
+    assert len(api.produce.model_instances) == 1
 
-    expected_produced_messages = []
+    produced_msg = api.produce.model_instances[0]
+    assert isinstance(produced_msg, LateTargetKernelCmdlineArgTasks)
+
+    debug_kernel_cmline_arg = KernelCmdlineArg(key='debug')
     if is_leapp_invoked_with_debug:
-        expected_produced_messages = [TargetKernelCmdlineArgTasks(to_remove=[KernelCmdlineArg(key='debug')])]
-
-    expected_produced_messages.append(
-        TargetKernelCmdlineArgTasks(to_remove=[KernelCmdlineArg(key='enforcing', value='0')])
-    )
-
-    assert api.produce.model_instances == expected_produced_messages
+        assert debug_kernel_cmline_arg in produced_msg.to_remove
+    else:
+        assert debug_kernel_cmline_arg not in produced_msg.to_remove
 
 
 def test_add_boot_entry_configs(monkeypatch):
@@ -132,8 +135,10 @@ def test_add_boot_entry_configs(monkeypatch):
     assert addupgradebootentry.run.args[2] == run_args_add + ['-c', CONFIGS[0]]
     assert addupgradebootentry.run.args[3] == run_args_add + ['-c', CONFIGS[1]]
     assert api.produce.model_instances == [
-        TargetKernelCmdlineArgTasks(to_remove=[KernelCmdlineArg(key='debug')]),
-        TargetKernelCmdlineArgTasks(to_remove=[KernelCmdlineArg(key='enforcing', value='0')]),
+        LateTargetKernelCmdlineArgTasks(to_remove=[KernelCmdlineArg(key='debug'),
+                                                   KernelCmdlineArg(key='enforcing', value='0'),
+                                                   KernelCmdlineArg(key='plymouth.enable', value='0'),
+                                                   KernelCmdlineArg(key='rd.plymouth', value='0')])
     ]
 
 
@@ -183,7 +188,7 @@ def test_fix_grub_config_error(monkeypatch, error_type, test_file_name):
         (False, False),
     )
 )
-def test_collect_boot_args(monkeypatch, is_debug_enabled, network_enablement_type):
+def test_collect_upgrade_kernel_args(monkeypatch, is_debug_enabled, network_enablement_type):
     env_vars = {'LEAPP_DEBUG': str(int(is_debug_enabled))}
     if network_enablement_type:
         env_vars['LEAPP_DEVEL_INITRAM_NETWORK'] = network_enablement_type
@@ -192,7 +197,8 @@ def test_collect_boot_args(monkeypatch, is_debug_enabled, network_enablement_typ
     monkeypatch.setattr(addupgradebootentry, 'construct_cmdline_args_for_livemode',
                         lambda *args: {'livemodearg': 'value'})
 
-    args = addupgradebootentry.collect_boot_args(livemode_enabled=True)
+    arg_set = addupgradebootentry.collect_upgrade_kernel_args(livemode_enabled=True)
+    args = dict(arg_set)
 
     assert args['enforcing'] == '0'
     assert args['rd.plymouth'] == '0'
@@ -320,16 +326,3 @@ def test_get_device_uuid(monkeypatch):
     uuid = addupgradebootentry._get_device_uuid(path)
 
     assert uuid == 'MY_UUID1'
-
-
-@pytest.mark.parametrize(
-    ('args', 'expected_result'),
-    (
-        ([('argA', 'val'), ('argB', 'valB'), ('argC', None), ], 'argA=val argB=valB argC'),
-        ([('argA', ('val1', 'val2'))], 'argA=val1 argA=val2')
-    )
-)
-def test_format_grubby_args_from_args_dict(args, expected_result):
-    actual_result = addupgradebootentry.format_grubby_args_from_args_dict(dict(args))
-
-    assert actual_result == expected_result
