@@ -1,3 +1,4 @@
+import itertools
 import re
 
 from leapp import reporting
@@ -5,7 +6,12 @@ from leapp.exceptions import StopActorExecutionError
 from leapp.libraries import stdlib
 from leapp.libraries.common.config import architecture, version
 from leapp.libraries.stdlib import api
-from leapp.models import InstalledTargetKernelInfo, KernelCmdlineArg, TargetKernelCmdlineArgTasks
+from leapp.models import (
+    InstalledTargetKernelInfo,
+    KernelCmdlineArg,
+    LateTargetKernelCmdlineArgTasks,
+    TargetKernelCmdlineArgTasks
+)
 
 KERNEL_CMDLINE_FILE = "/etc/kernel/cmdline"
 
@@ -71,7 +77,9 @@ def retrieve_arguments_to_modify():
     kernelargs_msgs_to_add = list(api.consume(KernelCmdlineArg))
     kernelargs_msgs_to_remove = []
 
-    for target_kernel_arg_task in api.consume(TargetKernelCmdlineArgTasks):
+    modification_msgs = itertools.chain(api.consume(TargetKernelCmdlineArgTasks),
+                                        api.consume(LateTargetKernelCmdlineArgTasks))
+    for target_kernel_arg_task in modification_msgs:
         kernelargs_msgs_to_add.extend(target_kernel_arg_task.to_add)
         kernelargs_msgs_to_remove.extend(target_kernel_arg_task.to_remove)
 

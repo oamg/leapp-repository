@@ -3,7 +3,13 @@ import os
 from leapp.actors import Actor
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import kernelcmdlineconfig
-from leapp.models import FirmwareFacts, InstalledTargetKernelInfo, KernelCmdlineArg, TargetKernelCmdlineArgTasks
+from leapp.models import (
+    FirmwareFacts,
+    InstalledTargetKernelInfo,
+    KernelCmdlineArg,
+    LateTargetKernelCmdlineArgTasks,
+    TargetKernelCmdlineArgTasks
+)
 from leapp.reporting import Report
 from leapp.tags import FinalizationPhaseTag, IPUWorkflowTag
 
@@ -14,7 +20,13 @@ class KernelCmdlineConfig(Actor):
     """
 
     name = 'kernelcmdlineconfig'
-    consumes = (KernelCmdlineArg, InstalledTargetKernelInfo, FirmwareFacts, TargetKernelCmdlineArgTasks)
+    consumes = (
+        KernelCmdlineArg,
+        InstalledTargetKernelInfo,
+        FirmwareFacts,
+        LateTargetKernelCmdlineArgTasks,
+        TargetKernelCmdlineArgTasks
+    )
     produces = (Report,)
     tags = (FinalizationPhaseTag, IPUWorkflowTag)
 
