@@ -24,6 +24,15 @@ class TargetKernelCmdlineArgTasks(Model):
     to_remove = fields.List(fields.Model(KernelCmdlineArg), default=[])
 
 
+class UpgradeKernelCmdlineArgTasks(Model):
+    """
+    Modifications of the upgrade kernel cmdline.
+    """
+    topic = SystemInfoTopic
+
+    to_add = fields.List(fields.Model(KernelCmdlineArg), default=[])
+
+
 class KernelCmdline(Model):
     """
     Kernel command line parameters the system was booted with
