@@ -12,7 +12,8 @@ from leapp.models import (
     LiveModeArtifacts,
     LiveModeConfig,
     TargetKernelCmdlineArgTasks,
-    TransactionDryRun
+    TransactionDryRun,
+    UpgradeKernelCmdlineArgTasks,
 )
 from leapp.tags import InterimPreparationPhaseTag, IPUWorkflowTag
 
@@ -33,7 +34,8 @@ class AddUpgradeBootEntry(Actor):
         LiveModeArtifacts,
         LiveModeConfig,
         KernelCmdline,
-        TransactionDryRun
+        TransactionDryRun,
+        UpgradeKernelCmdlineArgTasks
     )
     produces = (TargetKernelCmdlineArgTasks,)
     tags = (IPUWorkflowTag, InterimPreparationPhaseTag)
