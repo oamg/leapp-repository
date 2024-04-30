@@ -29,4 +29,5 @@ class KernelCmdlineConfig(Actor):
 
         if ff.firmware == 'bios' and os.path.ismount('/boot/efi'):
             configs = ['/boot/grub2/grub.cfg', '/boot/efi/EFI/redhat/grub.cfg']
-        kernelcmdlineconfig.modify_kernel_args_in_boot_cfg(configs)
+
+        kernelcmdlineconfig.entrypoint(configs)
