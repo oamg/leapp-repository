@@ -15,20 +15,21 @@ from leapp.models import InstalledTargetKernelInfo, KernelCmdlineArg, TargetKern
 TARGET_KERNEL_NEVRA = 'kernel-core-1.2.3-4.x86_64.el8.x64_64'
 
 # pylint: disable=E501
-SAMPLE_KERNEL_ARGS = ("ro rootflags=subvol=root"
-                      " resume=/dev/mapper/luks-2c0df999-81ec-4a35-a1f9-b93afee8c6ad"
-                      " rd.luks.uuid=luks-90a6412f-c588-46ca-9118-5aca35943d25"
-                      " rd.luks.uuid=luks-2c0df999-81ec-4a35-a1f9-b93afee8c6ad rhgb quiet"
+SAMPLE_KERNEL_ARGS = ('ro rootflags=subvol=root'
+                      ' resume=/dev/mapper/luks-2c0df999-81ec-4a35-a1f9-b93afee8c6ad'
+                      ' rd.luks.uuid=luks-90a6412f-c588-46ca-9118-5aca35943d25'
+                      ' rd.luks.uuid=luks-2c0df999-81ec-4a35-a1f9-b93afee8c6ad rhgb quiet'
                       )
+SAMPLE_KERNEL_ROOT = 'UUID=1aa15850-2685-418d-95a6-f7266a2de83a'
 TEMPLATE_GRUBBY_INFO_OUTPUT = """index=0
 kernel="/boot/vmlinuz-6.5.13-100.fc37.x86_64"
 args="{0}"
-root="UUID=1aa15850-2685-418d-95a6-f7266a2de83a"
+root="{1}"
 initrd="/boot/initramfs-6.5.13-100.fc37.x86_64.img"
 title="Fedora Linux (6.5.13-100.fc37.x86_64) 37 (Thirty Seven)"
 id="a3018267cdd8451db7c77bb3e5b1403d-6.5.13-100.fc37.x86_64"
 """  # noqa: E501
-SAMPLE_GRUBBY_INFO_OUTPUT = TEMPLATE_GRUBBY_INFO_OUTPUT.format(SAMPLE_KERNEL_ARGS)
+SAMPLE_GRUBBY_INFO_OUTPUT = TEMPLATE_GRUBBY_INFO_OUTPUT.format(SAMPLE_KERNEL_ARGS, SAMPLE_KERNEL_ROOT)
 # pylint: enable=E501
 
 
@@ -149,7 +150,8 @@ def test_kernelcmdline_explicit_configs(monkeypatch):
         grubby_cmd_without_config + ['-c', '/boot/grub2/grub.cfg'],
         grubby_cmd_without_config + ['-c', '/boot/efi/EFI/redhat/grub.cfg'],
         grubby_cmd_info,
-        ["grub2-editenv", "-", "set", "kernelopts={0}".format(SAMPLE_KERNEL_ARGS)],
+        ["grub2-editenv", "-", "set", "kernelopts=root={} {}".format(
+            SAMPLE_KERNEL_ROOT, SAMPLE_KERNEL_ARGS)],
     ]
 
     assert mocked_run.commands == expected_cmds
@@ -164,7 +166,7 @@ def test_kernelcmdline_config_no_args(monkeypatch):
 
     mocked_run = MockedRun(
         outputs={" ".join(("grubby", "--info", kernel_img_path)):
-                 TEMPLATE_GRUBBY_INFO_OUTPUT.format("")
+                 TEMPLATE_GRUBBY_INFO_OUTPUT.format("", "")
                  }
     )
     monkeypatch.setattr(stdlib, 'run', mocked_run)
