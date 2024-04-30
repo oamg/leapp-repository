@@ -57,6 +57,8 @@ def set_default_kernel_args(kernel_args):
         # Put kernel_args into /etc/kernel/cmdline
         with open(KERNEL_CMDLINE_FILE, 'w') as f:
             f.write(kernel_args)
+            # new line is expected in the EOF (POSIX).
+            f.write('\n')
     else:
         # Use grub2-editenv to put the kernel args into /boot/grub2/grubenv
         stdlib.run(['grub2-editenv', '-', 'set', 'kernelopts={}'.format(kernel_args)])
