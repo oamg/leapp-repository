@@ -12,6 +12,7 @@ from leapp.models import (
     LiveImagePreparationInfo,
     LiveModeArtifacts,
     LiveModeConfig,
+    LateTargetKernelCmdlineArgTasks,
     TargetKernelCmdlineArgTasks,
     UpgradeKernelCmdlineArgTasks
 )
@@ -157,7 +158,7 @@ def emit_removal_of_args_meant_only_for_upgrade_kernel(added_upgrade_kernel_args
                'on target cmdline: `%s`, requesting removal.')
         api.current_logger().info(msg, args_not_present_on_target_kernel)
         args_sorted = sorted(args_to_remove, key=lambda arg: arg.key)
-        api.produce(TargetKernelCmdlineArgTasks(to_remove=args_sorted))
+        api.produce(LateTargetKernelCmdlineArgTasks(to_remove=args_sorted))
 
 
 def add_boot_entry(configs=None):

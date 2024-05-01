@@ -14,6 +14,7 @@ from leapp.models import (
     KernelCmdlineArg,
     LiveModeArtifacts,
     LiveModeConfig,
+    LateTargetKernelCmdlineArgTasks,
     TargetKernelCmdlineArgTasks
 )
 
@@ -82,8 +83,8 @@ def test_add_boot_entry(monkeypatch, run_args, arch):
     assert addupgradebootentry.run.args[0] == run_args.args_remove
     assert addupgradebootentry.run.args[1] == run_args.args_add
     assert api.produce.model_instances == [
-        TargetKernelCmdlineArgTasks(to_remove=[KernelCmdlineArg(key='debug'),
-                                               KernelCmdlineArg(key='enforcing', value='0')])
+        LateTargetKernelCmdlineArgTasks(to_remove=[KernelCmdlineArg(key='debug'),
+                                                   KernelCmdlineArg(key='enforcing', value='0')])
     ]
 
     if run_args.args_zipl:
@@ -109,7 +110,7 @@ def test_debug_kernelopt_removal_task_production(monkeypatch, is_leapp_invoked_w
     else:
         expected_args_to_remove = [KernelCmdlineArg(key='enforcing', value='0')]
 
-    expected_produced_messages = [TargetKernelCmdlineArgTasks(to_remove=expected_args_to_remove)]
+    expected_produced_messages = [LateTargetKernelCmdlineArgTasks(to_remove=expected_args_to_remove)]
 
     assert api.produce.model_instances == expected_produced_messages
 
@@ -131,8 +132,13 @@ def test_add_boot_entry_configs(monkeypatch):
     assert addupgradebootentry.run.args[2] == run_args_add + ['-c', CONFIGS[0]]
     assert addupgradebootentry.run.args[3] == run_args_add + ['-c', CONFIGS[1]]
     assert api.produce.model_instances == [
+<<<<<<< HEAD
         TargetKernelCmdlineArgTasks(to_remove=[KernelCmdlineArg(key='debug')]),
         TargetKernelCmdlineArgTasks(to_remove=[KernelCmdlineArg(key='enforcing', value='0')]),
+=======
+        LateTargetKernelCmdlineArgTasks(to_remove=[KernelCmdlineArg(key='debug'),
+                                                   KernelCmdlineArg(key='enforcing', value='0')])
+>>>>>>> afb7fe51 (late_kernel_cmdline: break dependency loop)
     ]
 
 

@@ -11,6 +11,7 @@ from leapp.models import (
     LiveImagePreparationInfo,
     LiveModeArtifacts,
     LiveModeConfig,
+    LateTargetKernelCmdlineArgTasks,
     TargetKernelCmdlineArgTasks,
     TransactionDryRun,
     UpgradeKernelCmdlineArgTasks,
@@ -35,9 +36,10 @@ class AddUpgradeBootEntry(Actor):
         LiveModeConfig,
         KernelCmdline,
         TransactionDryRun,
+        TargetKernelCmdlineArgTasks,
         UpgradeKernelCmdlineArgTasks
     )
-    produces = (TargetKernelCmdlineArgTasks,)
+    produces = (LateTargetKernelCmdlineArgTasks,)
     tags = (IPUWorkflowTag, InterimPreparationPhaseTag)
 
     def process(self):
