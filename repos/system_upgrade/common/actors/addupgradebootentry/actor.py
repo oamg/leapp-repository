@@ -8,6 +8,7 @@ from leapp.models import (
     FirmwareFacts,
     GrubConfigError,
     KernelCmdline,
+    LateTargetKernelCmdlineArgTasks,
     TargetKernelCmdlineArgTasks,
     TransactionDryRun,
     UpgradeKernelCmdlineArgTasks
@@ -29,9 +30,10 @@ class AddUpgradeBootEntry(Actor):
         FirmwareFacts,
         KernelCmdline,
         TransactionDryRun,
+        TargetKernelCmdlineArgTasks,
         UpgradeKernelCmdlineArgTasks
     )
-    produces = (TargetKernelCmdlineArgTasks,)
+    produces = (LateTargetKernelCmdlineArgTasks,)
     tags = (IPUWorkflowTag, InterimPreparationPhaseTag)
 
     def process(self):
