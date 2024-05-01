@@ -8,7 +8,7 @@ from leapp.models import (
     InstalledTargetKernelInfo,
     KernelCmdlineArg,
     LateTargetKernelCmdlineArgTasks,
-    TargetKernelCmdlineArgTasks,
+    TargetKernelCmdlineArgTasks
 )
 from leapp.tags import FinalizationPhaseTag, IPUWorkflowTag
 

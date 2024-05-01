@@ -22,7 +22,7 @@ def is_net_scheme_compatible_with_current_cmdline():
     allows_predictable_names = True
     already_has_a_net_naming_scheme = False
     for param in kernel_cmdline.parameters:
-        if param.key == 'net.ifname':
+        if param.key == 'net.ifnames':
             if param.value == '0':
                 allows_predictable_names = False
             elif param.value == '1':

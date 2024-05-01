@@ -17,8 +17,8 @@ from leapp.models import (
     ('kernel_args', 'should_be_compatible'),
     [
         ([KernelCmdlineArg(key='net.naming-scheme', value='rhel-8.10')], False),
-        ([KernelCmdlineArg(key='net.ifname', value='1')], True),
-        ([KernelCmdlineArg(key='net.ifname', value='0')], False),
+        ([KernelCmdlineArg(key='net.ifnames', value='1')], True),
+        ([KernelCmdlineArg(key='net.ifnames', value='0')], False),
         (
             [
                 KernelCmdlineArg(key='net.naming-scheme', value='rhel-8.10'),
