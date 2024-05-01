@@ -1,5 +1,5 @@
-import re
 import itertools
+import re
 
 from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
@@ -10,7 +10,7 @@ from leapp.models import (
     InstalledTargetKernelInfo,
     KernelCmdlineArg,
     LateTargetKernelCmdlineArgTasks,
-    TargetKernelCmdlineArgTasks,
+    TargetKernelCmdlineArgTasks
 )
 
 KERNEL_CMDLINE_FILE = "/etc/kernel/cmdline"
