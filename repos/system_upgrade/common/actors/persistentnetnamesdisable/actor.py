@@ -50,6 +50,11 @@ class PersistentNetNamesDisable(Actor):
                     title='How to perform an in-place upgrade to RHEL 8 when using kernel NIC names on RHEL 7',
                     url='https://access.redhat.com/solutions/4067471'
                 ),
+                reporting.ExternalLink(
+                    title='RHEL 8 to RHEL 9: inplace upgrade fails at '
+                          '"Network configuration for unsupported device types detected"',
+                    url='https://access.redhat.com/solutions/7009239'
+                ),
                 reporting.Remediation(
                     hint='Rename all ethX network interfaces following the attached KB solution article.'
                 ),

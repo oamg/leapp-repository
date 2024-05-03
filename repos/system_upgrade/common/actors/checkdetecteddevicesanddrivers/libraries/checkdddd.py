@@ -35,6 +35,16 @@ def create_inhibitors(inhibiting_entries):
                     source=get_source_major_version(),
                 )
             ),
+            reporting.ExternalLink(
+                url='https://access.redhat.com/solutions/6971716',
+                title='Leapp preupgrade getting "Inhibitor: Detected loaded kernel drivers which have been '
+                      'removed in RHEL 8. Upgrade cannot proceed." '
+            ),
+            reporting.ExternalLink(
+                url='https://access.redhat.com/solutions/5436131',
+                title='Leapp upgrade fail with error "Inhibitor: Detected loaded kernel drivers which '
+                      'have been removed in RHEL 8. Upgrade cannot proceed."'
+            ),
             reporting.Audience('sysadmin'),
             reporting.Groups([reporting.Groups.KERNEL, reporting.Groups.DRIVERS]),
             reporting.Severity(reporting.Severity.HIGH),

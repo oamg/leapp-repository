@@ -53,6 +53,11 @@ def satellite_upgrade_check(facts):
         reporting.create_report([
             reporting.Title(title),
             reporting.Summary(summary),
+            reporting.ExternalLink(
+                url='https://access.redhat.com/solutions/6794671',
+                title='Leapp preupgrade of Red Hat Satellite 6 fails on '
+                      'Old PostgreSQL data found in /var/lib/pgsql/data'
+            ),
             reporting.Severity(severity),
             reporting.Groups([]),
             reporting.Groups(flags)

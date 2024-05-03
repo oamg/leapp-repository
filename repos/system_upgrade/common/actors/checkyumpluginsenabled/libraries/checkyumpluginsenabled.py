@@ -63,6 +63,10 @@ def check_required_yum_plugins_enabled(pkg_manager_info):
                 # Provide all commands as one due to problems with satellites
                 commands=[['bash', '-c', '"{0}"'.format('; '.join(remediation_commands))]]
             ),
+            reporting.ExternalLink(
+                url='https://access.redhat.com/solutions/7028063',
+                title='Why is Leapp preupgrade generating "Inhibitor: Required YUM plugins are not being loaded."'
+            ),
             reporting.RelatedResource('file', pkg_manager_config_path),
             reporting.RelatedResource('file', subscription_manager_plugin_conf),
             reporting.RelatedResource('file', product_id_plugin_conf),

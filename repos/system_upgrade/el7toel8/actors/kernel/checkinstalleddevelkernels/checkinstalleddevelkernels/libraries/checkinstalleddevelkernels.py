@@ -38,5 +38,9 @@ def process():
             reporting.Groups([reporting.Groups.KERNEL]),
             reporting.Groups([reporting.Groups.INHIBITOR]),
             reporting.Remediation(hint=hint, commands=commands),
+            reporting.ExternalLink(
+                url='https://access.redhat.com/solutions/4723671',
+                title='leapp upgrade fails on kernel-devel packages'
+            ),
             reporting.RelatedResource('package', 'kernel-devel')
         ])

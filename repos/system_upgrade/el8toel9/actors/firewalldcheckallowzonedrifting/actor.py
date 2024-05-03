@@ -44,6 +44,11 @@ class FirewalldCheckAllowZoneDrifting(Actor):
             reporting.ExternalLink(
                 url='https://access.redhat.com/articles/4855631',
                 title='Changes in firewalld related to Zone Drifting'),
+            reporting.ExternalLink(
+                url='https://access.redhat.com/solutions/6969130',
+                title='Leapp Preupgrade check fails with error - '
+                      '"Inhibitor: Firewalld Configuration AllowZoneDrifting Is Unsupported".'
+            ),
             reporting.Remediation(
                 hint='Set AllowZoneDrifting=no in /etc/firewalld/firewalld.conf',
                 commands=[['sed', '-i', 's/^AllowZoneDrifting=.*/AllowZoneDrifting=no/',

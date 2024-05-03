@@ -20,5 +20,10 @@ def check_dialogs(inhibit_if_no_userchoice=True):
                        reporting.Summary(summary.format('\n'.join(sections))),
                        reporting.Groups([reporting.Groups.INHIBITOR] if inhibit_if_no_userchoice else []),
                        reporting.Remediation(hint=dialogs_remediation, commands=cmd_remediation),
+                       reporting.ExternalLink(
+                           url='https://access.redhat.com/solutions/7035321',
+                           title='Leapp upgrade fail with error "Inhibitor: Missing required answers '
+                                 'in the answer file."'
+                       ),
                        reporting.Key(dialog.key)]
         reporting.create_report(report_data + dialog_resources)

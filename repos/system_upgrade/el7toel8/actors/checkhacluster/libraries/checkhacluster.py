@@ -25,6 +25,10 @@ def inhibit(node_type):
                 " to a RHEL High Availability or Resilient Storage Cluster"
             ),
         ),
+        reporting.ExternalLink(
+            url='https://access.redhat.com/solutions/7049940',
+            title='Leapp upgrade from RHEL 7 to RHEL 8 fails for pacemaker cluster'
+        ),
         reporting.Remediation(
             hint=(
                 "Destroy the existing HA cluster"

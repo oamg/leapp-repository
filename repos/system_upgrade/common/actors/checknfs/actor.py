@@ -61,6 +61,10 @@ class CheckNfs(Actor):
                         reporting.Groups.NETWORK
                 ]),
                 reporting.Remediation(hint='Disable NFS temporarily for the upgrade if possible.'),
+                reporting.ExternalLink(
+                    url='https://access.redhat.com/solutions/6964006',
+                    title='Why does leapp upgrade fail on detecting NFS during upgrade?'
+                ),
                 reporting.Groups([reporting.Groups.INHIBITOR]),
                 ] + fstab_related_resource
             )

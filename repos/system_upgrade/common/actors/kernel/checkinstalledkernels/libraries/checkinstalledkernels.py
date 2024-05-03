@@ -103,5 +103,10 @@ def process():
             reporting.Groups([reporting.Groups.KERNEL, reporting.Groups.BOOT]),
             reporting.Groups([reporting.Groups.INHIBITOR]),
             reporting.Remediation(hint=remediation),
+            reporting.ExternalLink(
+                url='https://access.redhat.com/solutions/7014134',
+                title='Leapp upgrade fail with error "Inhibitor:Newest installed kernel '
+                      'not in use" Upgrade cannot proceed'
+            ),
             reporting.RelatedResource('package', 'kernel')
         ])

@@ -18,6 +18,11 @@ def checkcifs(storage_info):
                         reporting.Groups.NETWORK
                 ]),
                 reporting.Remediation(hint='Comment out CIFS entries to proceed with the upgrade.'),
+                reporting.ExternalLink(
+                    url='https://access.redhat.com/solutions/6964304',
+                    title='Leapp upgrade failed with error '
+                          '"Inhibitor: Use of CIFS detected. Upgrade cannot proceed"'
+                ),
                 reporting.Groups([reporting.Groups.INHIBITOR]),
                 reporting.RelatedResource('file', '/etc/fstab')
             ])
