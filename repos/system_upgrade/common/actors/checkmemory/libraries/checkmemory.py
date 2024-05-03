@@ -43,6 +43,11 @@ def process():
                           reporting.Severity(reporting.Severity.HIGH),
                           reporting.Groups([reporting.Groups.SANITY, reporting.Groups.INHIBITOR]),
                           reporting.ExternalLink(
+                              url='https://access.redhat.com/solutions/7014179',
+                              title='Leapp upgrade fail with error"Minimum memory requirements '
+                                    'for RHEL 8 are not met"Upgrade cannot proceed'
+                          ),
+                          reporting.ExternalLink(
                             url='https://access.redhat.com/articles/rhel-limits',
                             title='Red Hat Enterprise Linux Technology Capabilities and Limits'
                           ),

@@ -85,7 +85,8 @@ def _handle_rhsm_exceptions(hint=None):
             details={
                 'details': str(e),
                 'stderr': e.stderr,
-                'hint': hint or _def_hint
+                'hint': hint or _def_hint,
+                'link': 'https://access.redhat.com/solutions/6138372'
             }
         )
 

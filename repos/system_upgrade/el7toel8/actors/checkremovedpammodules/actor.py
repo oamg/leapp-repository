@@ -59,6 +59,10 @@ class CheckRemovedPamModules(Actor):
                          'please remove the pam module(s) from all the files '
                          'under /etc/pam.d/.'.format(', '.join(replacements))
                 ),
+                reporting.ExternalLink(
+                    url='https://access.redhat.com/solutions/7004774',
+                    title='Leapp preupgrade fails with: The pam_tally2 pam module(s) no longer available'
+                ),
                 reporting.Severity(reporting.Severity.HIGH),
                 reporting.Groups([reporting.Groups.INHIBITOR]),
             ] + [reporting.RelatedResource('pam', r) for r in replacements | found_modules])

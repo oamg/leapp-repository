@@ -32,6 +32,10 @@ def inhibit_upgrade(avail_bytes):
             '/boot needs additional {0} MiB to be able to accommodate the upgrade initramfs and new kernel.'.format(
              additional_mib_needed)
         ),
+        reporting.ExternalLink(
+            url='https://access.redhat.com/solutions/298263',
+            title='Why does kernel cannot be upgraded due to insufficient space in /boot ?'
+        ),
         reporting.Severity(reporting.Severity.HIGH),
         reporting.Groups([reporting.Groups.FILESYSTEM]),
         reporting.Groups([reporting.Groups.INHIBITOR]),

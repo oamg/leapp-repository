@@ -41,6 +41,10 @@ class CheckBtrfs(Actor):
                             title='How do I prevent a kernel module from loading automatically?',
                             url='https://access.redhat.com/solutions/41278'
                         ),
+                        reporting.ExternalLink(
+                            title='Leapp upgrade fail with error "Inhibitor: Btrfs has been removed from RHEL8"',
+                            url='https://access.redhat.com/solutions/7020130'
+                        ),
                         reporting.Severity(reporting.Severity.HIGH),
                         reporting.Groups([reporting.Groups.INHIBITOR]),
                         reporting.Groups([reporting.Groups.FILESYSTEM]),

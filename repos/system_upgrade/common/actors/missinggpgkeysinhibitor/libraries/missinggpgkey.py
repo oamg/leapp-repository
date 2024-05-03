@@ -65,7 +65,10 @@ def _consume_data():
         used_target_repos = next(api.consume(UsedTargetRepositories)).repos
     except StopIteration:
         raise StopActorExecutionError(
-            'Could not check for valid GPG keys', details={'details': 'No UsedTargetRepositories facts'}
+            'Could not check for valid GPG keys', details={
+                'details': 'No UsedTargetRepositories facts',
+                'link': 'https://access.redhat.com/solutions/7061850'
+            }
         )
 
     try:

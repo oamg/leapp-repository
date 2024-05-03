@@ -135,6 +135,11 @@ class OpenSshPermitRootLoginCheck(Actor):
                          'sshd_config next to the "PermitRootLogin yes" directive '
                          'to prevent rpm replacing it during the upgrade.'
                 ),
+                reporting.ExternalLink(
+                    url='https://access.redhat.com/solutions/7003083',
+                    title='Why Leapp Preupgrade for RHEL 8 to 9 getting '
+                          '"Possible problems with remote login using root account" ?'
+                ),
                 reporting.Groups([reporting.Groups.INHIBITOR])
             ] + COMMON_RESOURCES)
         # If the configuration is modified and contains any directive allowing

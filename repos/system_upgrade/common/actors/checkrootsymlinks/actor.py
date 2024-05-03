@@ -37,6 +37,11 @@ class CheckRootSymlinks(Actor):
                     'point to absolute paths.\n'
                     'Please change these links to relative ones.'
                     ),
+                reporting.ExternalLink(
+                    url='https://access.redhat.com/solutions/6989732',
+                    title='leapp upgrade stops with Inhibitor "Upgrade requires links in root '
+                          'directory to be relative"'
+                ),
                 reporting.Severity(reporting.Severity.HIGH),
                 reporting.Groups([reporting.Groups.INHIBITOR])]
 

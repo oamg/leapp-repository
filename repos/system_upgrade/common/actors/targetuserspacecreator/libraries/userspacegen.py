@@ -829,6 +829,10 @@ def _get_rhsm_available_repoids(context):
 
             ).format(target_major_version)),
             reporting.ExternalLink(
+                url='https://access.redhat.com/solutions/5392811',
+                title='RHEL 7 to RHEL 8 LEAPP Upgrade Failing When Using Red Hat Satellite'
+            ),
+            reporting.ExternalLink(
                 # https://red.ht/preparing-for-upgrade-to-rhel8
                 # https://red.ht/preparing-for-upgrade-to-rhel9
                 # https://red.ht/preparing-for-upgrade-to-rhel10
@@ -1007,6 +1011,11 @@ def gather_target_repositories(context, indata):
                 # https://red.ht/preparing-for-upgrade-to-rhel10
                 url='https://red.ht/preparing-for-upgrade-to-rhel{}'.format(target_major_version),
                 title='Preparing for the upgrade'),
+            reporting.ExternalLink(
+                url='https://access.redhat.com/solutions/7001181',
+                title='LEAPP Upgrade Failing from RHEL 7 to RHEL 8 when system is '
+                      'registered to custromer portal'
+            ),
             reporting.RelatedResource("file", "/etc/leapp/files/repomap.json"),
             reporting.RelatedResource("file", "/etc/yum.repos.d/")
         ])

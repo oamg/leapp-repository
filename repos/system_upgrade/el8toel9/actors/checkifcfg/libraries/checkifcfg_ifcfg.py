@@ -88,6 +88,11 @@ def process():
             reporting.Title(title),
             reporting.Summary(summary),
             reporting.Remediation(hint=remediation),
+            reporting.ExternalLink(
+                url='https://access.redhat.com/solutions/7009239',
+                title='RHEL 8 to RHEL 9: inplace upgrade fails at '
+                      '"Network configuration for unsupported device types detected"'
+            ),
             reporting.Severity(reporting.Severity.HIGH),
             reporting.Groups([reporting.Groups.NETWORK, reporting.Groups.SERVICES]),
             reporting.Groups([reporting.Groups.INHIBITOR]),
