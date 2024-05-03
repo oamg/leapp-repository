@@ -22,6 +22,18 @@ filtersubvol() {
 
 mount_usr()
 {
+    #
+    # mount_usr [true | false]
+    # Expected a "true" value for the last attempt to mount /usr. On the last
+    # attempt, in case of failure drop to shell.
+    #
+    # Return 0 when everything is all right
+    # In case of failure and /usr has been detected:
+    #   return 2 when $1 is "true" (drop to shell invoked)
+    #            (note: possibly it's nonsense, but to be sure..)
+    #   return 1 otherwise
+    #
+    _last_attempt="$1"
     # check, if we have to mount the /usr filesystem
     while read -r _dev _mp _fs _opts _freq _passno; do
         [ "${_dev%%#*}" != "$_dev" ] && continue
@@ -60,25 +72,76 @@ mount_usr()
         fi
     done < "${NEWROOT}/etc/fstab" >> /etc/fstab
 
-    if [ "$_usr_found" != "" ]; then
-        info "Mounting /usr with -o $_opts"
-        mount "${NEWROOT}/usr" 2>&1 | vinfo
-        mount -o remount,rw "${NEWROOT}/usr"
-
-        if ! ismounted "${NEWROOT}/usr"; then
-            warn "Mounting /usr to ${NEWROOT}/usr failed"
-            warn "*** Dropping you to a shell; the system will continue"
-            warn "*** when you leave the shell."
-            action_on_fail
-        fi
+    if [ "$_usr_found" = "" ]; then
+        # nothing to do
+        return 0
     fi
+
+    info "Mounting /usr with -o $_opts"
+    mount "${NEWROOT}/usr" 2>&1 | vinfo
+    mount -o remount,rw "${NEWROOT}/usr"
+
+    if ismounted "${NEWROOT}/usr"; then
+        # success!!
+        return 0
+    fi
+
+    if [ "$_last_attempt" = "true" ]; then
+        warn "Mounting /usr to ${NEWROOT}/usr failed"
+        warn "*** Dropping you to a shell; the system will continue"
+        warn "*** when you leave the shell."
+        action_on_fail
+        return 2
+    fi
+
+    return 1
 }
 
-if [ -f "${NEWROOT}/etc/fstab" ]; then
-    # In case we have the LVM command available try make it activate all partitions
-    if command -v lvm 2>/dev/null 1>/dev/null; then
-        lvm vgchange -a y
+
+try_to_mount_usr() {
+  _last_attempt="$1"
+  if [ ! -f "${NEWROOT}/etc/fstab" ]; then
+      warn "File ${NEWROOT}/etc/fstab doesn't exist."
+      return 1
+  fi
+
+  # In case we have the LVM command available try make it activate all partitions
+  if command -v lvm 2>/dev/null 1>/dev/null; then
+      lvm vgchange -a y || {
+          warn "Detected problem when tried to activate LVM VG."
+          if [ "$_last_attempt" != "true" ]; then
+              # this is not last execution, retry
+              return 1
+          fi
+          # NOTE(pstodulk):
+          # last execution, so call mount_usr anyway
+          # I am not 100% about lvm vgchange exit codes and I am aware of
+          # possible warnings, in this last run, let's keep it on mount_usr
+          # anyway..
+      }
+  fi
+
+  mount_usr "$1"
+}
+
+_sleep_timeout=15
+_last_attempt="false"
+for i in 0 1 2 3 4 5 6 7 8 9 10 11; do
+    if [ $i -eq 11 ]; then
+        _last_attempt="true"
+    fi
+    try_to_mount_usr "$_last_attempt" && break
+
+    # something is wrong. In some cases, storage needs more time for the
+    # initialisation - especially in case of SAN.
+
+    if [ "$_last_attempt" = "true" ]; then
+        warn "The last attempt to initialize storage has not been successful."
+        warn "Unknown state of the storage. It is possible that upgrade will be stopped."
+        break
     fi
 
-    mount_usr
-fi
+    warn "Failed attempt to initialize the storage. Retry in $_sleep_timeout seconds. Attempt: $i of 10"
+    sleep $_sleep_timeout
+done
+
