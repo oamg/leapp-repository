@@ -127,6 +127,8 @@ try_to_mount_usr() {
 _sleep_timeout=15
 _last_attempt="false"
 for i in 0 1 2 3 4 5 6 7 8 9 10 11; do
+    info "Storage initialisation: Attempt $i of 11. Wait $_sleep_timeout seconds."
+    sleep $_sleep_timeout
     if [ $i -eq 11 ]; then
         _last_attempt="true"
     fi
@@ -141,7 +143,6 @@ for i in 0 1 2 3 4 5 6 7 8 9 10 11; do
         break
     fi
 
-    warn "Failed attempt to initialize the storage. Retry in $_sleep_timeout seconds. Attempt: $i of 10"
-    sleep $_sleep_timeout
+    warn "Failed attempt to initialize the storage. Retry..."
 done
 
