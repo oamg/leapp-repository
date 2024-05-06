@@ -21,16 +21,21 @@ jobs:
             ## **Thank you for contributing to the Leapp project!**
             Please note that every PR needs to comply with the [Leapp Guidelines](https://leapp.readthedocs.io/en/latest/contributing.html#) and must pass all tests in order to be mergeable.
             If you want to request a review or rebuild a package in copr, you can use following commands as a comment:
-            - **review please @oamg/developers** to notify leapp developers of the review request
-            - **/packit copr-build** to submit a public copr build using packit
+            - **`review please @oamg/developers`** to notify leapp developers of the review request
+            - **`/packit copr-build`** to submit a public copr build using packit
 
-            Packit will automatically schedule regression tests for this PR's build and latest upstream leapp build. If you need a different version of leapp, e.g. from PR#42, use `/packit test oamg/leapp#42`
-            Note that first time contributors cannot run tests automatically - they will be started by a reviewer.
+            Packit will automatically schedule regression tests for this PR's build and latest upstream leapp build.
+            However, here are additional useful commands for packit:
+            - **`/packit test`** to re-run manually the default tests
+            - **`/packit retest-failed`** to re-run failed tests manually
+            - **`/packit test oamg/leapp#42`** to run tests with leapp builds for the leapp PR#42 (default is latest upstream - master - build)
+
+            Note that first time contributors cannot run tests automatically - they need to be started by a reviewer.
 
             It is possible to schedule specific on-demand tests as well. Currently 2 test sets are supported, `beaker-minimal` and `kernel-rt`, both can be used to be run on all upgrade paths or just a couple of specific ones.
             To launch on-demand tests with packit:
-            - **/packit test --labels kernel-rt** to schedule `kernel-rt` tests set for all upgrade paths
-            - **/packit test --labels beaker-minimal-8.10to9.4,kernel-rt-8.10to9.4** to schedule `kernel-rt` and `beaker-minimal` test sets for 8.10->9.4 upgrade path
+            - **`/packit test --labels kernel-rt`** to schedule `kernel-rt` tests set for all upgrade paths
+            - **`/packit test --labels beaker-minimal-8.10to9.4,kernel-rt-8.10to9.4`** to schedule `kernel-rt` and `beaker-minimal` test sets for 8.10->9.4 upgrade path
 
             See other labels for particular jobs defined in the `.packit.yaml` file.
 
