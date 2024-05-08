@@ -34,7 +34,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           # NOTE(ivasilev) fetch-depth 0 is critical here as leapp deps discovery depends on specific substring in
           # commit message and default 1 option will get us just merge commit which has an unrelevant message.
