@@ -80,7 +80,7 @@ CEPH_LVM_LIST = {
            'tags': {'ceph.encrypted': '1'},
            'type': 'block',
            'vg_name': 'ceph-a696c40d-6b1d-448d-a40e-fadca22b64bc'}],
-    '1': [{'devices': ['/dev/nvme0n1'],
+    '8': [{'devices': ['/dev/nvme0n1'],
            'lv_name': 'osd-db-b04857a0-a2a2-40c3-a490-cbe1f892a76c',
            'lv_uuid': 'zcvGix-drzz-JwzP-6ktU-Od6W-N5jL-kxRFa3',
            'tags': {'ceph.encrypted': '1'},
