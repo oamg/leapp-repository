@@ -111,8 +111,11 @@ def test_get_ceph_lvm_list(m_run, m_osd_container, m_has_package):
     m_has_package.return_value = True
     m_osd_container.return_value = 'podman'
     m_run.return_value = CEPH_VOLUME_OUTPUT
+    from pprint import pprint as pp
+    result = cephvolumescan.get_ceph_lvm_list()
+    pp(result)
 
-    assert cephvolumescan.get_ceph_lvm_list() == CEPH_LVM_LIST
+    assert result == CEPH_LVM_LIST
 
 
 @patch('leapp.libraries.actor.cephvolumescan.os.path.isfile')
