@@ -69,7 +69,7 @@ CEPH_VOLUME_OUTPUT = {
                 "type": "block",
                 "vg_name": "ceph-e3e0345b-8be1-40a7-955a-378ba967f954"
             }
-        ],
+        ]
     }"""
 }
 
