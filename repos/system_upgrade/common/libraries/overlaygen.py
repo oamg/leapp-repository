@@ -296,6 +296,9 @@ def _prepare_required_mounts(scratch_dir, mounts_dir, storage_info, scratch_rese
 
 @contextlib.contextmanager
 def _build_overlay_mount(root_mount, mounts):
+    # noqa: W0135; pylint: disable=contextmanager-generator-missing-cleanup
+    # NOTE(pstodulk): the pylint check is not valid in this case - finally is covered
+    # implicitly
     if not root_mount:
         raise StopActorExecutionError('Root mount point has not been prepared for overlayfs.')
     if not mounts:
@@ -519,6 +522,9 @@ def _mount_dnf_cache(overlay_target):
     """
     Convenience context manager to ensure bind mounted /var/cache/dnf and removal of the mount.
     """
+    # noqa: W0135; pylint: disable=contextmanager-generator-missing-cleanup
+    # NOTE(pstodulk): the pylint check is not valid in this case - finally is covered
+    # implicitly
     with mounting.BindMount(
             source='/var/cache/dnf',
             target=os.path.join(overlay_target, 'var', 'cache', 'dnf')) as cache_mount:
@@ -570,6 +576,9 @@ def create_source_overlay(mounts_dir, scratch_dir, xfs_info, storage_info, mount
     :type scratch_reserve: Optional[int]
     :rtype: mounting.BindMount or mounting.NullMount
     """
+    # noqa: W0135; pylint: disable=contextmanager-generator-missing-cleanup
+    # NOTE(pstodulk): the pylint check is not valid in this case - finally is covered
+    # implicitly
     api.current_logger().debug('Creating source overlay in {scratch_dir} with mounts in {mounts_dir}'.format(
         scratch_dir=scratch_dir, mounts_dir=mounts_dir))
     try:
@@ -589,11 +598,8 @@ def create_source_overlay(mounts_dir, scratch_dir, xfs_info, storage_info, mount
                     with _build_overlay_mount(root_overlay, mounts) as overlay:
                         with _mount_dnf_cache(overlay.target):
                             yield overlay
-    except Exception:
+    finally:
         cleanup_scratch(scratch_dir, mounts_dir)
-        raise
-    # cleanup always now
-    cleanup_scratch(scratch_dir, mounts_dir)
 
 
 # #############################################################################
