@@ -201,6 +201,7 @@ def test_iso_repository_detection(monkeypatch, repodirs_in_iso, expected_repoids
 
     produced_custom_repo_msgs = []
     target_iso_msg = None
+    target_iso = None
     for produced_msg in produced_msgs:
         if isinstance(produced_msg, CustomTargetRepository):
             produced_custom_repo_msgs.append(produced_msg)

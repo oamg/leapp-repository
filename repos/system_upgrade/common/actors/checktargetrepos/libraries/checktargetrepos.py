@@ -33,6 +33,8 @@ def process():
         ipu_doc_url = 'https://red.ht/upgrading-rhel7-to-rhel8-main-official-doc'
     elif target_major_version == '9':
         ipu_doc_url = 'https://red.ht/upgrading-rhel8-to-rhel9-main-official-doc'
+    else:
+        ipu_doc_url = 'https://red.ht/upgrading-rhel9-to-rhel10-main-official-doc'
 
     rhui_info = next(api.consume(RHUIInfo), None)
 

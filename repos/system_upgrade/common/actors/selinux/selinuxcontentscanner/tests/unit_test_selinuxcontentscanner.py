@@ -33,6 +33,8 @@ class run_mocked(object):
                       "port -a -t http_port_t -p udp 81",
                       "fcontext -a -f a -t httpd_sys_content_t '/web(/.*)?'",
                       "fcontext -a -f a -t cgdcbxd_exec_t '/ganesha(/.*)?'"]
+        else:
+            assert False, 'run_mocked: Called unexpected cmd not covered by test: {}'.format(self.args)
 
         return {'stdout': stdout}
 

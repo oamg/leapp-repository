@@ -24,6 +24,7 @@ class run_mocked(object):
                     self.removed_modules.add(self.args[idx + 1])
         else:
             self.non_semodule_calls += 1
+            stdout = []
 
         return {'stdout': stdout}
 

@@ -40,6 +40,7 @@ class RunMocked(object):
     def __call__(self, args, encoding=None):
         self.called += 1
         self.args = args
+        stdout = ''
         if self.raise_err:
             raise_call_error(args)
 
@@ -50,6 +51,8 @@ class RunMocked(object):
             stdout = BOOT_DEVICE
         elif self.args[:-1] == ['lsblk', '-spnlo', 'name']:
             stdout = self.args[-1][:-1]
+        else:
+            assert False, 'RunMockedError: Called unexpected cmd not covered by test: {}'.format(self.args)
 
         return {'stdout': stdout}
 
