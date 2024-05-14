@@ -354,6 +354,7 @@ def test_copy_modules_fail(monkeypatch, kind):
 
     module_class = None
     copy_fn = None
+    dst_path = None
     if kind == 'dracut':
         module_class = DracutModule
         copy_fn = upgradeinitramfsgenerator.copy_dracut_modules
