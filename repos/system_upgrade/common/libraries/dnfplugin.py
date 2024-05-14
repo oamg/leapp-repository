@@ -85,11 +85,11 @@ def build_plugin_data(target_repoids, debug, test, tasks, on_aws):
     # get list of repo IDs of target repositories that should be used for upgrade
     data = {
         'pkgs_info': {
-            'local_rpms': [os.path.join('/installroot', pkg.lstrip('/')) for pkg in tasks.local_rpms],
-            'to_install': tasks.to_install,
-            'to_remove': tasks.to_remove,
-            'to_upgrade': tasks.to_upgrade,
-            'modules_to_enable': ['{}:{}'.format(m.name, m.stream) for m in tasks.modules_to_enable],
+            'local_rpms': sorted(os.path.join('/installroot', pkg.lstrip('/')) for pkg in tasks.local_rpms),
+            'to_install': sorted(tasks.to_install),
+            'to_remove': sorted(tasks.to_remove),
+            'to_upgrade': sorted(tasks.to_upgrade),
+            'modules_to_enable': sorted(['{}:{}'.format(m.name, m.stream) for m in tasks.modules_to_enable]),
         },
         'dnf_conf': {
             'allow_erasing': True,
