@@ -16,7 +16,6 @@ def get_distribution_data(distribution):
         with open(distribution_config) as distro_config_file:
             distro_config_json = json.load(distro_config_file)
             distro_keys = distro_config_json.get('keys', [])
-            # distro_packager = distro_config_json.get('packager', 'not-available')
     else:
         raise StopActorExecutionError(
             'Cannot find distribution signature configuration.',
