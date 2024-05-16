@@ -4,6 +4,7 @@ from leapp import reporting
 from leapp.libraries.common.config import version
 
 COMMON_REPORT_TAGS = [reporting.Groups.SANITY]
+FMT_LIST_SEPARATOR = '\n    - '
 
 related = [reporting.RelatedResource('file', '/etc/os-release')]
 
@@ -34,8 +35,8 @@ def check_os_version():
                 'The installed OS version is not supported for the in-place upgrade to the target RHEL version'
             ),
             reporting.Summary(
-                'The supported OS releases for the upgrade process:\n'
-                ' {}'.format('\n'.join(supported_releases))
+                'The supported OS releases for the upgrade process:'
+                '{}{}'.format(FMT_LIST_SEPARATOR, FMT_LIST_SEPARATOR.join(supported_releases))
             ),
             reporting.Severity(reporting.Severity.HIGH),
             reporting.Groups(COMMON_REPORT_TAGS),
