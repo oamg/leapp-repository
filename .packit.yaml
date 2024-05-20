@@ -145,7 +145,7 @@ jobs:
             distro: "rhel-7.9"
         settings:
           provisioning:
-            post_install_script: "#!/bin/sh\nsudo sed -i s/.*ssh-rsa/ssh-rsa/ /root/.ssh/authorized_keys; yum-config-manager --enable rhel-7-server-rhui-optional-rpms"
+            post_install_script: "#!/bin/sh\nsudo sed -i s/.*ssh-rsa/ssh-rsa/ /root/.ssh/authorized_keys"
             tags:
               BusinessUnit: sst_upgrades@leapp_upstream_test
 
