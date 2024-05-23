@@ -28,7 +28,8 @@ def is_azure_agent_installed():
 
     agent_pkg = None
     for setup in azure_setups:
-        if setup.os_version == src_ver_major:
+        setup_major_ver = str(setup.os_version[0])
+        if setup_major_ver == src_ver_major:
             agent_pkg = setup.extra_info.get('agent_pkg')
             break
 

@@ -326,3 +326,51 @@ def test_unknown_target_rhui_setup(monkeypatch, is_target_setup_known):
     else:
         with pytest.raises(StopActorExecutionError):
             checkrhui_lib.process()
+
+
+@pytest.mark.parametrize(
+    ('setups', 'desired_minor', 'expected_setup'),
+    [
+        (
+            [
+                mk_rhui_setup(clients={'A'}, os_version='8.4', leapp_pkg='leapp-A'),
+                mk_rhui_setup(clients={'A'}, os_version='8.6', leapp_pkg='leapp-B'),
+            ],
+            8,
+            mk_rhui_setup(clients={'A'}, os_version='8.6', leapp_pkg='leapp-B'),
+        ),
+        (
+            [
+                mk_rhui_setup(clients={'A'}, os_version='8.4', leapp_pkg='leapp-A'),
+                mk_rhui_setup(clients={'A'}, os_version='8.6', leapp_pkg='leapp-B'),
+            ],
+            6,
+            mk_rhui_setup(clients={'A'}, os_version='8.6', leapp_pkg='leapp-B'),
+        ),
+        (
+            [
+                mk_rhui_setup(clients={'A'}, os_version='8.4', leapp_pkg='leapp-A'),
+                mk_rhui_setup(clients={'A'}, os_version='8.6', leapp_pkg='leapp-B'),
+            ],
+            5,
+            mk_rhui_setup(clients={'A'}, os_version='8.4', leapp_pkg='leapp-A'),
+        ),
+        (
+            [
+                mk_rhui_setup(clients={'A'}, os_version='8.4', leapp_pkg='leapp-A'),
+                mk_rhui_setup(clients={'A'}, os_version='8.6', leapp_pkg='leapp-B'),
+            ],
+            3,
+            mk_rhui_setup(clients={'A'}, os_version='8.6', leapp_pkg='leapp-B'),
+        )
+    ]
+)
+def test_select_chronologically_closest(monkeypatch, setups, desired_minor, expected_setup):
+    setups = checkrhui_lib.select_chronologically_closest_setups(setups,
+                                                                 desired_minor,
+                                                                 lambda setup: setup.os_version[1],
+                                                                 'source')
+    assert len(setups) == 1
+    setup = setups[0]
+
+    assert setup == expected_setup
