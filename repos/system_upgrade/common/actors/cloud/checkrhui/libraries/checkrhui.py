@@ -30,8 +30,98 @@ def into_set(pkgs):
     return set(pkgs)
 
 
+def fmt_matching_rhui_setups(setups):
+    def fmt_matching_rhui_setup(matching_setup):
+        if isinstance(matching_setup, MatchingSetup):
+            return '(ver={os_ver}, variant={variant}, clients={clients})'.format(
+                os_ver=matching_setup.description.os_version,
+                variant=matching_setup.family,
+                clients=matching_setup.description.clients
+            )
+        # Just a RHUISetup
+        return '(ver={os_ver}, clients={clients})'.format(
+            os_ver=matching_setup.os_version,
+            clients=matching_setup.clients
+        )
+
+    return ', '.join(fmt_matching_rhui_setup(setup) for setup in setups)
+
+
+def select_chronologically_closest_setups(matching_setups, optimal_minor_ver, minor_ver_extractor, system_role):
+    if not matching_setups:
+        return None
+
+    # Select only setups that are chronologically closest
+    highest_minor_less_than_optimal = 0
+    for setup in matching_setups:
+        setup_minor = minor_ver_extractor(setup)
+
+        less_than_src_minor = (setup_minor <= optimal_minor_ver) if optimal_minor_ver else True
+        higher_than_previous = setup_minor > highest_minor_less_than_optimal
+        if less_than_src_minor and higher_than_previous:
+            highest_minor_less_than_optimal = setup_minor
+
+    msg = 'RHUI setups matching installed clients and %s major version: %s'
+    api.current_logger().debug(msg, system_role, fmt_matching_rhui_setups(matching_setups))
+
+    chronologically_closest_setups = [
+        setup for setup in matching_setups if minor_ver_extractor(setup) == highest_minor_less_than_optimal
+    ]
+    if chronologically_closest_setups:
+        matching_setups = chronologically_closest_setups
+        msg = 'Further narrowed matching setups based on their %s minor version: %s'
+        api.current_logger().debug(msg, system_role, fmt_matching_rhui_setups(matching_setups))
+    else:
+        newest_minor = max(matching_setups, key=minor_ver_extractor).os_version[1]
+        matching_setups = [setup for setup in matching_setups if minor_ver_extractor(setup) == newest_minor]
+        api.current_logger().warning(
+            'The %s predates any of the setups that match the installed clients. Using newest matching: %s',
+            system_role,
+            fmt_matching_rhui_setups(matching_setups)
+        )
+    return matching_setups
+
+
+def error_due_to_ambiguous_source_setups(match0, match1):
+    msg = 'Could not identify the source RHUI setup (ambiguous setup)'
+
+    variant_detail_table = {
+       rhui.RHUIVariant.ORDINARY: '',
+       rhui.RHUIVariant.SAP: ' for SAP',
+       rhui.RHUIVariant.SAP_APPS: ' for SAP Applications',
+       rhui.RHUIVariant.SAP_HA: ' for SAP HA',
+    }
+
+    variant0_detail = variant_detail_table[match0.family.variant]
+    clients0 = ' '.join(match0.description.clients)
+
+    variant1_detail = variant_detail_table[match1.family.variant]
+    clients1 = ' '.join(match1.description.clients)
+
+    details = ('Leapp uses client-based identification of the used RHUI setup in order to determine what the '
+               'target RHEL content should be. According to the installed RHUI clients the system should be '
+               'RHEL {os_major}{variant0_detail} ({provider0}) (identified by clients {clients0}) but also '
+               'RHEL {os_major}{variant1_detail} ({provider1}) (identified by clients {clients1}).')
+    details = details.format(os_major=version.get_source_major_version(),
+                             variant0_detail=variant0_detail, clients0=clients0, provider0=match0.family.provider,
+                             variant1_detail=variant1_detail, clients1=clients1, provider1=match1.family.provider)
+
+    raise StopActorExecutionError(message=msg, details={'details': details})
+
+
+def _get_canonical_version_tuple(version):
+    ver_fragments = version.split('.')
+    major = int(ver_fragments[0])
+    try:
+        minor = int(ver_fragments[1]) if len(ver_fragments) > 1 else None
+    except ValueError as error:
+        api.current_logger().debug('Failed to convert minor version into integer: %s', error)
+        minor = None  # Unlikely, the code using this can handle None as minor
+    return (major, minor)
+
+
 def find_rhui_setup_matching_src_system(installed_pkgs, rhui_map):
-    src_ver = version.get_source_major_version()
+    src_major_ver, src_minor_ver = _get_canonical_version_tuple(version.get_source_version())
     arch = api.current_actor().configuration.architecture
 
     matching_setups = []
@@ -40,8 +130,9 @@ def find_rhui_setup_matching_src_system(installed_pkgs, rhui_map):
             continue
 
         for setup in family_setups:
-            if setup.os_version != src_ver:
+            if setup.os_version[0] != src_major_ver:
                 continue
+
             if setup.clients.issubset(installed_pkgs):
                 matching_setups.append(MatchingSetup(family=rhui_family, description=setup))
 
@@ -50,50 +141,54 @@ def find_rhui_setup_matching_src_system(installed_pkgs, rhui_map):
 
     # In case that a RHUI variant uses a combination of clients identify the maximal client set
     matching_setups_by_size = sorted(matching_setups, key=lambda match: -len(match.description.clients))
+    max_client_cnt = len(matching_setups_by_size[0].description.clients)
+    matching_setups = tuple(
+        setup for setup in matching_setups if len(setup.description.clients) == max_client_cnt
+    )
+    msg = 'Identified RHUI setups with the largest installed client sets: %s'
+    api.current_logger().debug(msg, fmt_matching_rhui_setups(matching_setups))
 
-    match = matching_setups_by_size[0]  # Matching setup with the highest number of clients
+    if not matching_setups:
+        return None
+
+    # Since we allow minor versions in RHUI table, we might have multiple entries that are identified by the
+    # same clients. E.g.:
+    # RHEL8.4 with client X
+    # RHEL8.9 with client X (but with some modified setup info)
+    # If upgrading from 8.6, select 8.4. If upgrading from 8.10, select 8.9
+    matching_setups = select_chronologically_closest_setups(matching_setups,
+                                                            src_minor_ver,
+                                                            lambda setup: setup.description.os_version[1],
+                                                            'source')
+
+    # If we fail to identify chronologically proper setup, we always return a nonempty list
+
+    match = matching_setups[0]  # Matching setup with the highest number of clients
     if len(matching_setups) == 1:
         return match
 
-    if len(matching_setups_by_size[0].description.clients) == len(matching_setups_by_size[1].description.clients):
-        # Should not happen as no cloud providers use multi-client setups (at the moment)
-        msg = 'Could not identify the source RHUI setup (ambiguous setup)'
-
-        variant_detail_table = {
-           rhui.RHUIVariant.ORDINARY: '',
-           rhui.RHUIVariant.SAP: ' for SAP',
-           rhui.RHUIVariant.SAP_APPS: ' for SAP Applications',
-           rhui.RHUIVariant.SAP_HA: ' for SAP HA',
-        }
-
-        match0 = matching_setups_by_size[0]
-        variant0_detail = variant_detail_table[match0.family.variant]
-        clients0 = ' '.join(match0.description.clients)
-
-        match1 = matching_setups_by_size[1]
-        variant1_detail = variant_detail_table[match1.family.variant]
-        clients1 = ' '.join(match1.description.clients)
-
-        details = ('Leapp uses client-based identification of the used RHUI setup in order to determine what the '
-                   'target RHEL content should be. According to the installed RHUI clients the system should be '
-                   'RHEL {os_major}{variant0_detail} ({provider0}) (identified by clients {clients0}) but also '
-                   'RHEL {os_major}{variant1_detail} ({provider1}) (identified by clients {clients1}).')
-        details = details.format(os_major=version.get_source_major_version(),
-                                 variant0_detail=variant0_detail, clients0=clients0, provider0=match0.family.provider,
-                                 variant1_detail=variant1_detail, clients1=clients1, provider1=match1.family.provider)
-
-        raise StopActorExecutionError(message=msg, details={'details': details})
-
-    return match
+    other_match = matching_setups[1]
+    error_due_to_ambiguous_source_setups(match, other_match)
+    return None  # Unreachable
 
 
 def determine_target_setup_desc(cloud_map, rhui_family):
     variant_setups = cloud_map[rhui_family]
-    target_major = version.get_target_major_version()
 
-    for setup in variant_setups:
-        if setup.os_version == target_major:
-            return setup
+    target_major, target_minor = _get_canonical_version_tuple(version.get_target_version())
+
+    matching_setups = [setup for setup in variant_setups if setup.os_version[0] == target_major]
+    msg = 'Identified target RHUI setups matching target major: %s'
+    api.current_logger().debug(msg, fmt_matching_rhui_setups(matching_setups))
+
+    matching_setups = select_chronologically_closest_setups(matching_setups,
+                                                            target_minor,
+                                                            lambda setup: setup.os_version[1],
+                                                            'target')
+
+    if matching_setups:
+        return next(iter(matching_setups))
+
     return None
 
 
