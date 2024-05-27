@@ -26,7 +26,7 @@ class SELinuxApplyCustom(Actor):
     tags = (ApplicationsPhaseTag, IPUWorkflowTag)
 
     def process(self):
-        # save progress for repoting purposes
+        # save progress for reporting purposes
         failed_modules = []
         failed_custom = []
 
