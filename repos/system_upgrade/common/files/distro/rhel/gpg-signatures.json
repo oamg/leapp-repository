@@ -5,5 +5,14 @@
         "938a80caf21541eb",
         "fd372689897da07a",
         "45689c882fa658e0"
-    ]
+    ],
+    "obsoleted-keys": {
+        "7": [],
+        "8": [
+            "gpg-pubkey-2fa658e0-45700c69",
+            "gpg-pubkey-37017186-45761324",
+            "gpg-pubkey-db42a60e-37ea5438"
+          ],
+        "9": ["gpg-pubkey-d4082792-5b32db75"]
+    }
 }
