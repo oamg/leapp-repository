@@ -28,7 +28,7 @@ def generate_report(existing_custom_network_scripts):
             reporting.Remediation(
                 hint=(
                     "Migrate the custom network-scripts to NetworkManager dispatcher"
-                    " scripts manually before the ugprade. Follow instructions in the"
+                    " scripts manually before the upgrade. Follow instructions in the"
                     " official documentation."
                 )
             ),

@@ -274,7 +274,7 @@ def _prepare_required_mounts(scratch_dir, mounts_dir, storage_info, scratch_rese
     space_needed = scratch_reserve + _MAGICAL_CONSTANT_OVL_SIZE * len(mount_points)
     _ensure_enough_diskimage_space(space_needed, scratch_dir)
 
-    # free space required on this partition should not be affected by durin the
+    # free space required on this partition should not be affected by during the
     # upgrade transaction execution by space consumed on creation of disk images
     # as disk images are cleaned in the end of this functions,
     # but we want to reserve some space in advance.
