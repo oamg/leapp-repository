@@ -1,27 +1,19 @@
 from leapp.libraries.common.config.version import get_target_major_version
+from leapp.libraries.common.distro import get_distribution_data
 from leapp.libraries.common.rpms import has_package
 from leapp.libraries.stdlib import api
 from leapp.models import DNFWorkaround, InstalledRPM
-
-# maps target version to keys obsoleted in that version
-OBSOLETED_KEYS_MAP = {
-    7: [],
-    8: [
-        "gpg-pubkey-2fa658e0-45700c69",
-        "gpg-pubkey-37017186-45761324",
-        "gpg-pubkey-db42a60e-37ea5438",
-    ],
-    9: ["gpg-pubkey-d4082792-5b32db75"],
-}
 
 
 def _get_obsolete_keys():
     """
     Return keys obsoleted in target and previous versions
     """
+    distribution = api.current_actor().configuration.os_release.release_id
+    obsoleted_keys_map = get_distribution_data(distribution).get('obsoleted-keys', {})
     keys = []
     for version in range(7, int(get_target_major_version()) + 1):
-        for key in OBSOLETED_KEYS_MAP[version]:
+        for key in obsoleted_keys_map[str(version)]:
             name, version, release = key.rsplit("-", 2)
             if has_package(InstalledRPM, name, version=version, release=release):
                 keys.append(key)
