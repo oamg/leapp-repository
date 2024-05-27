@@ -1,26 +1,8 @@
-import json
-import os
-
-from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import rhui
 from leapp.libraries.common.config import get_env
+from leapp.libraries.common.distro import get_distribution_data
 from leapp.libraries.stdlib import api
 from leapp.models import DistributionSignedRPM, InstalledRedHatSignedRPM, InstalledRPM, InstalledUnsignedRPM
-
-
-def get_distribution_data(distribution):
-    distributions_path = api.get_common_folder_path('distro')
-
-    distribution_config = os.path.join(distributions_path, distribution, 'gpg-signatures.json')
-    if os.path.exists(distribution_config):
-        with open(distribution_config) as distro_config_file:
-            distro_config_json = json.load(distro_config_file)
-            distro_keys = distro_config_json.get('keys', [])
-    else:
-        raise StopActorExecutionError(
-            'Cannot find distribution signature configuration.',
-            details={'Problem': 'Distribution {} was not found in {}.'.format(distribution, distributions_path)})
-    return distro_keys
 
 
 def is_distro_signed(pkg, distro_keys):
@@ -49,7 +31,7 @@ def is_exceptional(pkg, allowlist):
 
 def process():
     distribution = api.current_actor().configuration.os_release.release_id
-    distro_keys = get_distribution_data(distribution)
+    distro_keys = get_distribution_data(distribution).get('keys', [])
     all_signed = get_env('LEAPP_DEVEL_RPMS_ALL_SIGNED', '0') == '1'
     rhui_pkgs = rhui.get_all_known_rhui_pkgs_for_current_upg()
 
