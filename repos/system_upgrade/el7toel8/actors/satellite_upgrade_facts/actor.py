@@ -1,7 +1,7 @@
 import os
 
 from leapp.actors import Actor
-from leapp.libraries.common.config import architecture
+from leapp.libraries.common.config import architecture, version
 from leapp.libraries.common.rpms import has_package
 from leapp.libraries.stdlib import run
 from leapp.models import (
@@ -55,11 +55,12 @@ class SatelliteUpgradeFacts(Actor):
             # enable modules that are needed for Pulpcore
             modules_to_enable.append(Module(name='python38', stream='3.8'))
             to_install.append('katello')
-            # Force removal of tomcat
-            # PES data indicates tomcat.el7 can be upgraded to tomcat.el8 since EL 8.8,
-            # but we need pki-servlet-engine from the module instead which will be pulled in via normal
-            # package dependencies
-            to_remove.extend(['tomcat', 'tomcat-lib'])
+            if version.matches_target_version('8.8', '8.9'):
+                # Force removal of tomcat
+                # PES data indicates tomcat.el7 can be upgraded to tomcat.el8 since EL 8.8,
+                # but we need pki-servlet-engine from the module instead which will be pulled in via normal
+                # package dependencies
+                to_remove.extend(['tomcat', 'tomcat-lib'])
 
         if has_package(InstalledRPM, 'rh-redis5-redis'):
             modules_to_enable.append(Module(name='redis', stream='5'))
