@@ -1,5 +1,5 @@
 {
-    "datetime": "202404091246Z",
+    "datetime": "202405281033Z",
     "version_format": "1.2.1",
     "mapping": [
         {
@@ -416,6 +416,14 @@
                 },
                 {
                     "major_version": "7",
+                    "repoid": "rhui-rhel-7-server-els-rhui-rpms",
+                    "arch": "x86_64",
+                    "channel": "els",
+                    "repo_type": "rpm",
+                    "rhui": "google"
+                },
+                {
+                    "major_version": "7",
                     "repoid": "rhui-rhel-7-server-rhui-eus-rpms",
                     "arch": "x86_64",
                     "channel": "eus",
@@ -615,6 +623,14 @@
                     "repoid": "rhui-rhel-7-server-e4s-optional-rhui-rpms",
                     "arch": "x86_64",
                     "channel": "e4s",
+                    "repo_type": "rpm",
+                    "rhui": "google"
+                },
+                {
+                    "major_version": "7",
+                    "repoid": "rhui-rhel-7-server-els-optional-rhui-rpms",
+                    "arch": "x86_64",
+                    "channel": "els",
                     "repo_type": "rpm",
                     "rhui": "google"
                 },

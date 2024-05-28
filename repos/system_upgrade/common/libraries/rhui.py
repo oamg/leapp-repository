@@ -307,6 +307,7 @@ RHUI_SETUPS = {
     ],
     RHUIFamily(RHUIProvider.GOOGLE, client_files_folder='google'): [
         mk_rhui_setup(clients={'google-rhui-client-rhel7'}, os_version='7'),
+        mk_rhui_setup(clients={'google-rhui-client-rhel7-els'}, os_version='7'),
         mk_rhui_setup(clients={'google-rhui-client-rhel8'}, leapp_pkg='leapp-rhui-google',
                       mandatory_files=[('leapp-google.repo', YUM_REPOS_PATH)],
                       files_supporting_client_operation=['leapp-google.repo'],
