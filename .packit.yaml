@@ -552,3 +552,44 @@ jobs:
     TARGET_RELEASE: "9.4"
     RHSM_REPOS: "rhel-8-for-x86_64-appstream-beta-rpms,rhel-8-for-x86_64-baseos-beta-rpms"
     LEAPPDATA_BRANCH: "upstream"
+
+
+# Tests: 8.10 -> 9.5
+- &sanity-810to95
+  <<: *sanity-abstract-8to9
+  trigger: pull_request
+  identifier: sanity-8.10to9.5
+  env:
+    SOURCE_RELEASE: "8.10"
+    TARGET_RELEASE: "9.5"
+    RHSM_REPOS: "rhel-8-for-x86_64-appstream-beta-rpms,rhel-8-for-x86_64-baseos-beta-rpms"
+    LEAPPDATA_BRANCH: "upstream"
+
+# On-demand minimal beaker tests
+- &beaker-minimal-810to95
+  <<: *beaker-minimal-8to9-abstract-ondemand
+  trigger: pull_request
+  labels:
+    - beaker-minimal
+    - beaker-minimal-8.10to9.5
+    - 8.10to9.5
+  identifier: sanity-8.10to9.5-beaker-minimal-ondemand
+  env:
+    SOURCE_RELEASE: "8.10"
+    TARGET_RELEASE: "9.5"
+    LEAPPDATA_BRANCH: "upstream"
+
+# On-demand kernel-rt tests
+- &kernel-rt-810to95
+  <<: *kernel-rt-abstract-8to9-ondemand
+  trigger: pull_request
+  labels:
+    - kernel-rt
+    - kernel-rt-8.10to9.5
+    - 8.10to9.5
+  identifier: sanity-8.10to9.5-kernel-rt-ondemand
+  env:
+    SOURCE_RELEASE: "8.10"
+    TARGET_RELEASE: "9.5"
+    RHSM_REPOS: "rhel-8-for-x86_64-appstream-beta-rpms,rhel-8-for-x86_64-baseos-beta-rpms"
+    LEAPPDATA_BRANCH: "upstream"
