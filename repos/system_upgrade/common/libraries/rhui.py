@@ -161,7 +161,7 @@ RHUI_SETUPS = {
     ],
     RHUIFamily(RHUIProvider.AWS, arch=arch.ARCH_ARM64, client_files_folder='aws'): [
         mk_rhui_setup(clients={'rh-amazon-rhui-client-arm'}, optional_files=[], os_version='7', arch=arch.ARCH_ARM64),
-        mk_rhui_setup(clients={'rh-amazon-rhui-client-arm'}, leapp_pkg='leapp-rhui-aws',
+        mk_rhui_setup(clients={'rh-amazon-rhui-client'}, leapp_pkg='leapp-rhui-aws',
                       mandatory_files=[
                         ('rhui-client-config-server-8.crt', RHUI_PKI_PRODUCT_DIR),
                         ('rhui-client-config-server-8.key', RHUI_PKI_DIR),
@@ -174,7 +174,7 @@ RHUI_SETUPS = {
                         ('cdn.redhat.com-chain.crt', RHUI_PKI_DIR),
                         ('content-rhel8.crt', RHUI_PKI_PRODUCT_DIR)
                       ], os_version='8', arch=arch.ARCH_ARM64),
-        mk_rhui_setup(clients={'rh-amazon-rhui-client-arm'}, leapp_pkg='leapp-rhui-aws',
+        mk_rhui_setup(clients={'rh-amazon-rhui-client'}, leapp_pkg='leapp-rhui-aws',
                       mandatory_files=[
                         ('rhui-client-config-server-9.crt', RHUI_PKI_PRODUCT_DIR),
                         ('rhui-client-config-server-9.key', RHUI_PKI_DIR),
