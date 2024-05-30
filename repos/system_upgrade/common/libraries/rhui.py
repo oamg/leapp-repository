@@ -262,7 +262,7 @@ RHUI_SETUPS = {
                       extra_info={'agent_pkg': 'WALinuxAgent'},
                       os_version='8', content_channel=ContentChannel.EUS),
         mk_rhui_setup(clients={'rhui-azure-rhel8-base-sap-apps'}, leapp_pkg='leapp-rhui-azure-sap',
-                      mandatory_files=[('leapp-azure-sap-apps.repo', YUM_REPOS_PATH)],
+                      mandatory_files=[('leapp-azure-base-sap-apps.repo', YUM_REPOS_PATH)],
                       optional_files=[
                         ('key-sapapps.pem', RHUI_PKI_DIR),
                         ('content-sapapps.crt', RHUI_PKI_PRODUCT_DIR)
@@ -289,7 +289,7 @@ RHUI_SETUPS = {
                       extra_info={'agent_pkg': 'WALinuxAgent'},
                       os_version='8', content_channel=ContentChannel.E4S),
         mk_rhui_setup(clients={'rhui-azure-rhel8-base-sap-ha'}, leapp_pkg='leapp-rhui-azure-sap',
-                      mandatory_files=[('leapp-azure-sap-ha.repo', YUM_REPOS_PATH)],
+                      mandatory_files=[('leapp-azure-base-sap-ha.repo', YUM_REPOS_PATH)],
                       optional_files=[
                         ('key-sap-ha.pem', RHUI_PKI_DIR),
                         ('content-sap-ha.crt', RHUI_PKI_PRODUCT_DIR)
