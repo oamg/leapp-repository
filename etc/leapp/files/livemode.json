@@ -1,0 +1,13 @@
+{
+    "enabled": 1,
+    "url": "",
+    "squashfs": "/var/lib/leapp/live-upgrade.img",
+    "with_cache": 0,
+    "temp_dir": "/var/lib/leapp/tmp",
+    "dracut_network": "ip=dhcp",
+    "nm": 1,
+    "packages": [],
+    "autostart": 1,
+    "authorized_keys": "/root/.ssh/authorized_keys",
+    "strace": ""
+}

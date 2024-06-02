@@ -1,0 +1,14 @@
+[Unit]
+Description=Leapp strace upgrade service
+After=basic.target
+ConditionKernelCommandLine=!upgrade.autostart=0
+ConditionKernelCommandLine=upgrade.strace
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash -c "/usr/bin/strace -fTttyyvs 256 -o $(tr ' ' '\n' < /proc/cmdline | awk -F= '/^upgrade.strace=/ {print $2}') /usr/bin/upgrade"
+StandardOutput=journal
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,19 @@
+[Unit]
+Description=Leapp Upgrade Console service
+After=basic.target
+ConditionKernelCommandLine=!upgrade.autostart=0
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/tail -f /sysroot/var/log/leapp/leapp-upgrade.log
+StandardOutput=tty
+StandardError=tty
+StandardInput=tty-force
+TTYPath=/dev/tty1
+TTYReset=yes
+Restart=always
+RestartSec=5s
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target
