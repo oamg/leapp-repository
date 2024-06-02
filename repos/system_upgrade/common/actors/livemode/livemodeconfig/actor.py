@@ -7,7 +7,7 @@ from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common.rpms import has_package
 from leapp.libraries.stdlib import api
 from leapp.models import InstalledRPM, LiveModeConfigFacts, ModelViolationError
-from leapp.tags import FactsPhaseTag, IPUWorkflowTag
+from leapp.tags import ExperimentalTag, FactsPhaseTag, IPUWorkflowTag
 
 LEAPP_LIVEMODE_JSON = '/etc/leapp/files/livemode.json'
 
@@ -20,7 +20,7 @@ class LiveModeConfig(Actor):
     name = 'live_mode_config'
     consumes = (InstalledRPM)
     produces = (LiveModeConfigFacts)
-    tags = (FactsPhaseTag, IPUWorkflowTag,)
+    tags = (ExperimentalTag, FactsPhaseTag, IPUWorkflowTag,)
 
     def process(self):
         unsupported = os.getenv('LEAPP_UNSUPPORTED', 0)

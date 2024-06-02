@@ -12,7 +12,7 @@ from leapp.models import (
     TargetUserSpaceInfo,
     TargetKernelCmdlineArgTasks,
 )
-from leapp.tags import InterimPreparationPhaseTag, IPUWorkflowTag
+from leapp.tags import ExperimentalTag, InterimPreparationPhaseTag, IPUWorkflowTag
 
 
 class SetupBootEntry(Actor):
@@ -27,7 +27,7 @@ class SetupBootEntry(Actor):
                 TargetUserSpaceInfo,
                 TargetKernelCmdlineArgTasks)
     produces = (LiveBootEntryTasks,)
-    tags = (InterimPreparationPhaseTag, IPUWorkflowTag,)
+    tags = (ExperimentalTag, InterimPreparationPhaseTag, IPUWorkflowTag,)
 
     def process(self):
         livemode = next(api.consume(LiveModeConfigFacts), None)

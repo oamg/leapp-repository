@@ -2,7 +2,7 @@ from leapp import reporting
 from leapp.actors import Actor
 from leapp.models import LiveModeConfigFacts
 from leapp.reporting import Report
-from leapp.tags import FactsPhaseTag, IPUWorkflowTag
+from leapp.tags import ExperimentalTag, FactsPhaseTag, IPUWorkflowTag
 
 
 class LiveModeReport(Actor):
@@ -13,7 +13,7 @@ class LiveModeReport(Actor):
     name = 'live_mode_report'
     consumes = (LiveModeConfigFacts)
     produces = (Report)
-    tags = (IPUWorkflowTag, FactsPhaseTag)
+    tags = (ExperimentalTag, IPUWorkflowTag, FactsPhaseTag)
 
     def process(self):
         livemode = next(self.consume(LiveModeConfigFacts), None)

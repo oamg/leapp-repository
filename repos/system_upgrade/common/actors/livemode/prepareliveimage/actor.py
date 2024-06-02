@@ -9,7 +9,7 @@ from leapp.models import (
     StorageInfo,
     TargetUserSpaceInfo,
 )
-from leapp.tags import InterimPreparationPhaseTag, IPUWorkflowTag
+from leapp.tags import ExperimentalTag, InterimPreparationPhaseTag, IPUWorkflowTag
 
 
 class PrepareLiveImage(Actor):
@@ -24,7 +24,7 @@ class PrepareLiveImage(Actor):
                 StorageInfo,
                 TargetUserSpaceInfo)
     produces = (PrepareLiveImageTasks,)
-    tags = (InterimPreparationPhaseTag, IPUWorkflowTag,)
+    tags = (ExperimentalTag, InterimPreparationPhaseTag, IPUWorkflowTag,)
 
     def process(self):
         livemode = next(api.consume(LiveModeConfigFacts), None)

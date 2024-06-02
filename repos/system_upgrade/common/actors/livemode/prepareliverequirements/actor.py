@@ -9,7 +9,7 @@ from leapp.models import (
     TargetUserSpaceInfo,
     UsedTargetRepositories,
 )
-from leapp.tags import InterimPreparationPhaseTag, IPUWorkflowTag
+from leapp.tags import ExperimentalTag, InterimPreparationPhaseTag, IPUWorkflowTag
 
 # NOTE: would also need
 # _REQUIRED_PACKAGES from actors/commonleappdracutmodules/libraries/modscan.py
@@ -42,7 +42,7 @@ class PrepareLiveRequirements(Actor):
                 TargetUserSpaceInfo,
                 UsedTargetRepositories)
     produces = (LiveModeRequirementsTasks)
-    tags = (InterimPreparationPhaseTag, IPUWorkflowTag,)
+    tags = (ExperimentalTag, InterimPreparationPhaseTag, IPUWorkflowTag,)
 
     def process(self):
         livemode = next(api.consume(LiveModeConfigFacts), None)
