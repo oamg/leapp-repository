@@ -290,7 +290,19 @@ RHUI_SETUPS = {
     RHUIFamily(RHUIProvider.ALIBABA, client_files_folder='alibaba'): [
         mk_rhui_setup(clients={'client-rhel7'}, os_version='7'),
         mk_rhui_setup(clients={'aliyun_rhui_rhel8'}, leapp_pkg='leapp-rhui-alibaba',
-                      mandatory_files=[('leapp-alibaba.repo', YUM_REPOS_PATH)], os_version='8'),
+                      mandatory_files=[('leapp-alibaba.repo', YUM_REPOS_PATH)],
+                      optional_files=[
+                        ('key.pem', RHUI_PKI_DIR),
+                        ('content.crt', RHUI_PKI_PRODUCT_DIR)
+                      ],
+                      os_version='8'),
+        mk_rhui_setup(clients={'aliyun_rhui_rhel9'}, leapp_pkg='leapp-rhui-alibaba',
+                      mandatory_files=[('leapp-alibaba.repo', YUM_REPOS_PATH)],
+                      optional_files=[
+                        ('key.pem', RHUI_PKI_DIR),
+                        ('content.crt', RHUI_PKI_PRODUCT_DIR)
+                      ],
+                      os_version='9'),
     ]
 }
 
