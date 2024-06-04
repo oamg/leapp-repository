@@ -201,10 +201,8 @@ jobs:
   env:
     SOURCE_RELEASE: "7.9"
     TARGET_RELEASE: "8.8"
-    RHUI: "aws"
-    LEAPPDATA_BRANCH: "upstream"
     LEAPP_NO_RHSM: "1"
-    USE_CUSTOM_REPOS: rhui
+    RHUI_HYPERSCALER: aws
 
 - &sanity-79to88
   <<: *sanity-abstract-7to8
@@ -213,7 +211,6 @@ jobs:
   env:
     SOURCE_RELEASE: "7.9"
     TARGET_RELEASE: "8.8"
-    LEAPPDATA_BRANCH: "upstream"
 
 - &beaker-minimal-79to88
   <<: *beaker-minimal-7to8-abstract-ondemand
@@ -226,7 +223,6 @@ jobs:
   env:
     SOURCE_RELEASE: "7.9"
     TARGET_RELEASE: "8.8"
-    LEAPPDATA_BRANCH: "upstream"
 
 - &kernel-rt-79to88
   <<: *kernel-rt-abstract-7to8-ondemand
@@ -239,7 +235,6 @@ jobs:
   env:
     SOURCE_RELEASE: "7.9"
     TARGET_RELEASE: "8.8"
-    LEAPPDATA_BRANCH: "upstream"
 
 # Tests: 7.9 -> 8.10
 - &sanity-79to810
@@ -249,20 +244,15 @@ jobs:
   env:
     SOURCE_RELEASE: "7.9"
     TARGET_RELEASE: "8.10"
-    LEAPPDATA_BRANCH: "upstream"
 
-# NOTE(mkluson) RHEL 8.10 content is not publicly available (via RHUI)
-#- &sanity-79to810-aws
-#  <<: *sanity-abstract-7to8-aws
-#  trigger: pull_request
-#  identifier: sanity-7.9to8.10-aws
-#  env:
-#    SOURCE_RELEASE: "7.9"
-#    TARGET_RELEASE: "8.10"
-#    RHUI: "aws"
-#    LEAPPDATA_BRANCH: "upstream"
-#    LEAPP_NO_RHSM: "1"
-#    USE_CUSTOM_REPOS: rhui
+- &sanity-79to810-aws
+  <<: *sanity-abstract-7to8-aws
+  trigger: pull_request
+  identifier: sanity-7.9to8.10-aws
+  env:
+    SOURCE_RELEASE: "7.9"
+    TARGET_RELEASE: "8.10"
+    RHUI_HYPERSCALER: aws
 
 - &beaker-minimal-79to810
   <<: *beaker-minimal-7to8-abstract-ondemand
@@ -275,7 +265,6 @@ jobs:
   env:
     SOURCE_RELEASE: "7.9"
     TARGET_RELEASE: "8.10"
-    LEAPPDATA_BRANCH: "upstream"
 
 - &kernel-rt-79to810
   <<: *kernel-rt-abstract-7to8-ondemand
@@ -288,7 +277,6 @@ jobs:
   env:
     SOURCE_RELEASE: "7.9"
     TARGET_RELEASE: "8.10"
-    LEAPPDATA_BRANCH: "upstream"
 
 
 # ###################################################################### #
@@ -420,7 +408,6 @@ jobs:
     SOURCE_RELEASE: "8.8"
     TARGET_RELEASE: "9.2"
     RHSM_REPOS_EUS: "eus"
-    LEAPPDATA_BRANCH: "upstream"
     LEAPP_DEVEL_TARGET_RELEASE: "9.2"
 
 - &sanity-88to92-aws
@@ -447,11 +434,8 @@ jobs:
   env:
     SOURCE_RELEASE: "8.8"
     TARGET_RELEASE: "9.2"
-    RHSM_REPOS: "rhel-8-for-x86_64-appstream-eus-rpms,rhel-8-for-x86_64-baseos-eus-rpms"
-    RHUI: "aws"
-    LEAPPDATA_BRANCH: "upstream"
     LEAPP_NO_RHSM: "1"
-    USE_CUSTOM_REPOS: rhui
+    RHUI_HYPERSCALER: aws
 
 - &beaker-minimal-88to92
   <<: *beaker-minimal-8to9-abstract-ondemand
@@ -480,7 +464,6 @@ jobs:
   env:
     SOURCE_RELEASE: "8.8"
     TARGET_RELEASE: "9.2"
-    LEAPPDATA_BRANCH: "upstream"
     LEAPP_DEVEL_TARGET_RELEASE: "9.2"
 
 - &kernel-rt-88to92
@@ -509,7 +492,6 @@ jobs:
   env:
     SOURCE_RELEASE: "8.8"
     TARGET_RELEASE: "9.2"
-    LEAPPDATA_BRANCH: "upstream"
     LEAPP_DEVEL_TARGET_RELEASE: "9.2"
 
 
@@ -521,8 +503,6 @@ jobs:
   env:
     SOURCE_RELEASE: "8.10"
     TARGET_RELEASE: "9.4"
-    RHSM_REPOS: "rhel-8-for-x86_64-appstream-beta-rpms,rhel-8-for-x86_64-baseos-beta-rpms"
-    LEAPPDATA_BRANCH: "upstream"
 
 # On-demand minimal beaker tests
 - &beaker-minimal-810to94
@@ -536,7 +516,6 @@ jobs:
   env:
     SOURCE_RELEASE: "8.10"
     TARGET_RELEASE: "9.4"
-    LEAPPDATA_BRANCH: "upstream"
 
 # On-demand kernel-rt tests
 - &kernel-rt-810to94
@@ -550,8 +529,6 @@ jobs:
   env:
     SOURCE_RELEASE: "8.10"
     TARGET_RELEASE: "9.4"
-    RHSM_REPOS: "rhel-8-for-x86_64-appstream-beta-rpms,rhel-8-for-x86_64-baseos-beta-rpms"
-    LEAPPDATA_BRANCH: "upstream"
 
 
 # Tests: 8.10 -> 9.5
@@ -562,8 +539,6 @@ jobs:
   env:
     SOURCE_RELEASE: "8.10"
     TARGET_RELEASE: "9.5"
-    RHSM_REPOS: "rhel-8-for-x86_64-appstream-beta-rpms,rhel-8-for-x86_64-baseos-beta-rpms"
-    LEAPPDATA_BRANCH: "upstream"
 
 # On-demand minimal beaker tests
 - &beaker-minimal-810to95
@@ -577,7 +552,6 @@ jobs:
   env:
     SOURCE_RELEASE: "8.10"
     TARGET_RELEASE: "9.5"
-    LEAPPDATA_BRANCH: "upstream"
 
 # On-demand kernel-rt tests
 - &kernel-rt-810to95
@@ -591,5 +565,3 @@ jobs:
   env:
     SOURCE_RELEASE: "8.10"
     TARGET_RELEASE: "9.5"
-    RHSM_REPOS: "rhel-8-for-x86_64-appstream-beta-rpms,rhel-8-for-x86_64-baseos-beta-rpms"
-    LEAPPDATA_BRANCH: "upstream"
