@@ -111,18 +111,6 @@ jobs:
       distros: [RHEL-7.9-ZStream]
   identifier: sanity-abstract-7to8
   tmt_plan: ""
-  tf_extra_params:
-    test:
-      tmt:
-        plan_filter: 'tag:tier0 & enabled:true'
-    environments:
-      - tmt:
-          context:
-            distro: "rhel-7.9"
-        settings:
-          provisioning:
-            tags:
-              BusinessUnit: sst_upgrades@leapp_upstream_test
 
 - &sanity-abstract-7to8-aws
   <<: *sanity-abstract-7to8
@@ -135,19 +123,6 @@ jobs:
   identifier: sanity-abstract-7to8-aws
   # NOTE(ivasilev) Unfortunately to use yaml templates we need to rewrite the whole tf_extra_params dict
   # to use plan_filter (can't just specify one section test.tmt.plan_filter, need to specify environments.* as well)
-  tf_extra_params:
-    test:
-      tmt:
-        plan_filter: 'tag:upgrade_happy_path & enabled:true'
-    environments:
-      - tmt:
-          context:
-            distro: "rhel-7.9"
-        settings:
-          provisioning:
-            post_install_script: "#!/bin/sh\nsudo sed -i s/.*ssh-rsa/ssh-rsa/ /root/.ssh/authorized_keys"
-            tags:
-              BusinessUnit: sst_upgrades@leapp_upstream_test
 
 # On-demand minimal beaker tests
 - &beaker-minimal-7to8-abstract-ondemand
@@ -156,18 +131,6 @@ jobs:
   labels:
     - beaker-minimal
   identifier: beaker-minimal-7to8-abstract-ondemand
-  tf_extra_params:
-    test:
-      tmt:
-        plan_filter: 'tag:partitioning & tag:7to8 & enabled:true'
-    environments:
-      - tmt:
-          context:
-            distro: "rhel-7.9"
-        settings:
-          provisioning:
-            tags:
-              BusinessUnit: sst_upgrades@leapp_upstream_test
 
 # On-demand kernel-rt tests
 - &kernel-rt-abstract-7to8-ondemand
@@ -175,19 +138,6 @@ jobs:
   labels:
     - kernel-rt
   identifier: sanity-7to8-kernel-rt-abstract-ondemand
-  tf_extra_params:
-    test:
-      tmt:
-        plan_filter: 'tag:kernel-rt & tag:7to8 & enabled:true'
-    environments:
-      - tmt:
-          context:
-            distro: "rhel-7.9"
-        settings:
-          provisioning:
-            tags:
-              BusinessUnit: sst_upgrades@leapp_upstream_test
-
 
 # ###################################################################### #
 # ######################### Individual tests ########################### #
@@ -198,16 +148,38 @@ jobs:
   <<: *sanity-abstract-7to8-aws
   trigger: pull_request
   identifier: sanity-7.9to8.8-aws
+  tf_extra_params:
+    test:
+      tmt:
+        plan_filter: 'tag:7to8 & tag:rhui-tier[0] & enabled:true'
+    environments:
+      - tmt:
+          context:
+            distro: "rhel-7.9"
+            distro_target: "rhel-8.8"
+        settings:
+          provisioning:
+            post_install_script: "#!/bin/sh\nsudo sed -i s/.*ssh-rsa/ssh-rsa/ /root/.ssh/authorized_keys"
+            tags:
+              BusinessUnit: sst_upgrades@leapp_upstream_test
   env:
     SOURCE_RELEASE: "7.9"
     TARGET_RELEASE: "8.8"
-    LEAPP_NO_RHSM: "1"
     RHUI_HYPERSCALER: aws
 
 - &sanity-79to88
   <<: *sanity-abstract-7to8
   trigger: pull_request
   identifier: sanity-7.9to8.8
+  tf_extra_params:
+    test:
+      tmt:
+        plan_filter: 'tag:7to8 & tag:tier0 & enabled:true'
+    environments:
+      - tmt:
+          context:
+            distro: "rhel-7.9"
+            distro_target: "rhel-8.8"
   env:
     SOURCE_RELEASE: "7.9"
     TARGET_RELEASE: "8.8"
@@ -220,6 +192,15 @@ jobs:
     - beaker-minimal-7.9to8.8
     - 7.9to8.8
   identifier: sanity-7.9to8.8-beaker-minimal-ondemand
+  tf_extra_params:
+    test:
+      tmt:
+        plan_filter: 'tag:7to8 & tag:partitioning & enabled:true'
+    environments:
+      - tmt:
+          context:
+            distro: "rhel-7.9"
+            distro_target: "rhel-8.8"
   env:
     SOURCE_RELEASE: "7.9"
     TARGET_RELEASE: "8.8"
@@ -232,6 +213,15 @@ jobs:
     - kernel-rt-7.9to8.8
     - 7.9to8.8
   identifier: sanity-7.9to8.8-kernel-rt-ondemand
+  tf_extra_params:
+    test:
+      tmt:
+         plan_filter: 'tag:7to8 & tag:kernel-rt & enabled:true'
+    environments:
+      - tmt:
+          context:
+            distro: "rhel-7.9"
+            distro_target: "rhel-8.8"
   env:
     SOURCE_RELEASE: "7.9"
     TARGET_RELEASE: "8.8"
@@ -241,6 +231,15 @@ jobs:
   <<: *sanity-abstract-7to8
   trigger: pull_request
   identifier: sanity-7.9to8.10
+  tf_extra_params:
+    test:
+      tmt:
+        plan_filter: 'tag:7to8 & tag:tier0 & enabled:true'
+    environments:
+      - tmt:
+          context:
+            distro: "rhel-7.9"
+            distro_target: "rhel-8.10"
   env:
     SOURCE_RELEASE: "7.9"
     TARGET_RELEASE: "8.10"
@@ -249,6 +248,20 @@ jobs:
   <<: *sanity-abstract-7to8-aws
   trigger: pull_request
   identifier: sanity-7.9to8.10-aws
+  tf_extra_params:
+    test:
+      tmt:
+        plan_filter: 'tag:7to8 & tag:rhui-tier[0] & enabled:true'
+    environments:
+      - tmt:
+          context:
+            distro: "rhel-7.9"
+            distro_target: "rhel-8.10"
+        settings:
+          provisioning:
+            post_install_script: "#!/bin/sh\nsudo sed -i s/.*ssh-rsa/ssh-rsa/ /root/.ssh/authorized_keys"
+            tags:
+              BusinessUnit: sst_upgrades@leapp_upstream_test
   env:
     SOURCE_RELEASE: "7.9"
     TARGET_RELEASE: "8.10"
@@ -262,6 +275,15 @@ jobs:
     - beaker-minimal-7.9to8.10
     - 7.9to8.10
   identifier: sanity-7.9to8.10-beaker-minimal-ondemand
+  tf_extra_params:
+    test:
+      tmt:
+        plan_filter: 'tag:7to8 & tag:partitioning & enabled:true'
+    environments:
+      - tmt:
+          context:
+            distro: "rhel-7.9"
+            distro_target: "rhel-8.10"
   env:
     SOURCE_RELEASE: "7.9"
     TARGET_RELEASE: "8.10"
@@ -274,6 +296,15 @@ jobs:
     - kernel-rt-7.9to8.10
     - 7.9to8.10
   identifier: sanity-7.9to8.10-kernel-rt-ondemand
+  tf_extra_params:
+    test:
+      tmt:
+        plan_filter: 'tag:7to8 & tag:kernel-rt & enabled:true'
+    environments:
+      - tmt:
+          context:
+            distro: "rhel-7.9"
+            distro_target: "rhel-8.10"
   env:
     SOURCE_RELEASE: "7.9"
     TARGET_RELEASE: "8.10"
@@ -303,18 +334,6 @@ jobs:
     epel-8-x86_64:
       distros: [RHEL-8.10.0-Nightly]
   identifier: sanity-abstract-8to9
-  tf_extra_params:
-    test:
-      tmt:
-        plan_filter: 'tag:tier0 & tag:8to9 & enabled:true'
-    environments:
-      - tmt:
-          context:
-            distro: "rhel-8.10"
-        settings:
-          provisioning:
-            tags:
-              BusinessUnit: sst_upgrades@leapp_upstream_test
 
 - &sanity-abstract-8to9-aws
   <<: *sanity-abstract-8to9
@@ -325,19 +344,6 @@ jobs:
     epel-8-x86_64:
       distros: [RHEL-8.10-rhui]
   identifier: sanity-abstract-8to9-aws
-  tf_extra_params:
-    test:
-      tmt:
-        plan_filter: 'tag:upgrade_happy_path & enabled:true'
-    environments:
-      - tmt:
-          context:
-            distro: "rhel-8.10"
-        settings:
-          provisioning:
-            post_install_script: "#!/bin/sh\nsudo sed -i s/.*ssh-rsa/ssh-rsa/ /root/.ssh/authorized_keys"
-            tags:
-              BusinessUnit: sst_upgrades@leapp_upstream_test
 
 - &beaker-minimal-8to9-abstract-ondemand
   <<: *sanity-abstract-8to9
@@ -348,37 +354,12 @@ jobs:
     epel-8-x86_64:
       distros: [RHEL-8.10.0-Nightly]
   identifier: beaker-minimal-8to9-abstract-ondemand
-  tf_extra_params:
-    test:
-      tmt:
-        plan_filter: 'tag:partitioning & tag:8to9 & enabled:true'
-    environments:
-      - tmt:
-          context:
-            distro: "rhel-8.10"
-        settings:
-          provisioning:
-            tags:
-              BusinessUnit: sst_upgrades@leapp_upstream_test
 
 - &kernel-rt-abstract-8to9-ondemand
   <<: *beaker-minimal-8to9-abstract-ondemand
   labels:
     - kernel-rt
   identifier: sanity-8to9-kernel-rt-abstract-ondemand
-  tf_extra_params:
-    test:
-      tmt:
-        plan_filter: 'tag:kernel-rt & tag:8to9 & enabled:true'
-    environments:
-      - tmt:
-          context:
-            distro: "rhel-8.10"
-        settings:
-          provisioning:
-            tags:
-              BusinessUnit: sst_upgrades@leapp_upstream_test
-
 
 # ###################################################################### #
 # ######################### Individual tests ########################### #
@@ -395,11 +376,12 @@ jobs:
   tf_extra_params:
     test:
       tmt:
-        plan_filter: 'tag:tier0 & tag:8to9 & enabled:true'
+        plan_filter: 'tag:8to9 & tag:tier0 & enabled:true'
     environments:
       - tmt:
           context:
             distro: "rhel-8.8"
+            distro_target: "rhel-9.2"
         settings:
           provisioning:
             tags:
@@ -408,7 +390,6 @@ jobs:
     SOURCE_RELEASE: "8.8"
     TARGET_RELEASE: "9.2"
     RHSM_REPOS_EUS: "eus"
-    LEAPP_DEVEL_TARGET_RELEASE: "9.2"
 
 - &sanity-88to92-aws
   <<: *sanity-abstract-8to9-aws
@@ -421,11 +402,12 @@ jobs:
   tf_extra_params:
     test:
       tmt:
-        plan_filter: 'tag:upgrade_happy_path & enabled:true'
+        plan_filter: 'tag:8to9 & tag:rhui-tier[0] & enabled:true'
     environments:
       - tmt:
           context:
             distro: "rhel-8.8"
+            distro_target: "rhel-9.2"
         settings:
           provisioning:
             post_install_script: "#!/bin/sh\nsudo sed -i s/.*ssh-rsa/ssh-rsa/ /root/.ssh/authorized_keys"
@@ -434,7 +416,6 @@ jobs:
   env:
     SOURCE_RELEASE: "8.8"
     TARGET_RELEASE: "9.2"
-    LEAPP_NO_RHSM: "1"
     RHUI_HYPERSCALER: aws
 
 - &beaker-minimal-88to92
@@ -451,11 +432,12 @@ jobs:
   tf_extra_params:
     test:
       tmt:
-        plan_filter: 'tag:partitioning & tag:8to9 & enabled:true'
+        plan_filter: 'tag:8to9 &tag:partitioning & enabled:true'
     environments:
       - tmt:
           context:
             distro: "rhel-8.8"
+            distro_target: "rhel-9.2"
         settings:
           provisioning:
             post_install_script: "#!/bin/sh\nsudo sed -i s/.*ssh-rsa/ssh-rsa/ /root/.ssh/authorized_keys"
@@ -464,7 +446,7 @@ jobs:
   env:
     SOURCE_RELEASE: "8.8"
     TARGET_RELEASE: "9.2"
-    LEAPP_DEVEL_TARGET_RELEASE: "9.2"
+    RHSM_REPOS_EUS: "eus"
 
 - &kernel-rt-88to92
   <<: *kernel-rt-abstract-8to9-ondemand
@@ -480,11 +462,12 @@ jobs:
   tf_extra_params:
     test:
       tmt:
-        plan_filter: 'tag:kernel-rt & tag:8to9 & enabled:true'
+        plan_filter: 'tag:8to9 & tag:kernel-rt & enabled:true'
     environments:
       - tmt:
           context:
             distro: "rhel-8.8"
+            distro_target: "rhel-9.2"
         settings:
           provisioning:
             tags:
@@ -492,7 +475,7 @@ jobs:
   env:
     SOURCE_RELEASE: "8.8"
     TARGET_RELEASE: "9.2"
-    LEAPP_DEVEL_TARGET_RELEASE: "9.2"
+    RHSM_REPOS_EUS: "eus"
 
 
 # Tests: 8.10 -> 9.4
@@ -500,6 +483,15 @@ jobs:
   <<: *sanity-abstract-8to9
   trigger: pull_request
   identifier: sanity-8.10to9.4
+  tf_extra_params:
+    test:
+      tmt:
+        plan_filter: 'tag:8to9 & tag:tier0 & enabled:true'
+    environments:
+      - tmt:
+          context:
+            distro: "rhel-8.10"
+            distro_target: "rhel-9.4"
   env:
     SOURCE_RELEASE: "8.10"
     TARGET_RELEASE: "9.4"
@@ -513,6 +505,15 @@ jobs:
     - beaker-minimal-8.10to9.4
     - 8.10to9.4
   identifier: sanity-8.10to9.4-beaker-minimal-ondemand
+  tf_extra_params:
+    test:
+      tmt:
+        plan_filter: 'tag:8to9 & tag:partitioning & enabled:true'
+    environments:
+      - tmt:
+          context:
+            distro: "rhel-8.10"
+            distro_target: "rhel-9.4"
   env:
     SOURCE_RELEASE: "8.10"
     TARGET_RELEASE: "9.4"
@@ -526,6 +527,15 @@ jobs:
     - kernel-rt-8.10to9.4
     - 8.10to9.4
   identifier: sanity-8.10to9.4-kernel-rt-ondemand
+  tf_extra_params:
+    test:
+      tmt:
+         plan_filter: 'tag:8to9 & tag:kernel-rt & enabled:true'
+    environments:
+      - tmt:
+          context:
+            distro: "rhel-8.10"
+            distro_target: "rhel-9.4"
   env:
     SOURCE_RELEASE: "8.10"
     TARGET_RELEASE: "9.4"
@@ -536,6 +546,15 @@ jobs:
   <<: *sanity-abstract-8to9
   trigger: pull_request
   identifier: sanity-8.10to9.5
+  tf_extra_params:
+    test:
+      tmt:
+        plan_filter: 'tag:8to9 & tag:tier0 & enabled:true'
+    environments:
+      - tmt:
+          context:
+            distro: "rhel-8.10"
+            distro_target: "rhel-9.5"
   env:
     SOURCE_RELEASE: "8.10"
     TARGET_RELEASE: "9.5"
@@ -549,6 +568,15 @@ jobs:
     - beaker-minimal-8.10to9.5
     - 8.10to9.5
   identifier: sanity-8.10to9.5-beaker-minimal-ondemand
+  tf_extra_params:
+    test:
+      tmt:
+        plan_filter: 'tag:8to9 & tag:partitioning & enabled:true'
+    environments:
+      - tmt:
+          context:
+            distro: "rhel-8.10"
+            distro_target: "rhel-9.5"
   env:
     SOURCE_RELEASE: "8.10"
     TARGET_RELEASE: "9.5"
@@ -562,6 +590,15 @@ jobs:
     - kernel-rt-8.10to9.5
     - 8.10to9.5
   identifier: sanity-8.10to9.5-kernel-rt-ondemand
+  tf_extra_params:
+    test:
+      tmt:
+         plan_filter: 'tag:8to9 & tag:kernel-rt & enabled:true'
+    environments:
+      - tmt:
+          context:
+            distro: "rhel-8.10"
+            distro_target: "rhel-9.5"
   env:
     SOURCE_RELEASE: "8.10"
     TARGET_RELEASE: "9.5"
