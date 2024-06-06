@@ -313,6 +313,10 @@ def _get_files_owned_by_rpms(context, dirpath, pkgs=None, recursive=False):
         for root, _, files in os.walk(searchdir):
             for filename in files:
                 relpath = os.path.relpath(os.path.join(root, filename), searchdir)
+                # "directory-hash" files are not owned by any package and can dynamically
+                # grow to a huge amount of files causing hitting open files limit
+                if 'directory-hash' in relpath:
+                    continue
                 file_list.append(relpath)
     else:
         file_list = os.listdir(searchdir)
