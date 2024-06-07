@@ -89,7 +89,7 @@ class _InputData(object):
         It doesn't consume TargetRepositories, which are consumed in the
         own function.
         """
-        self.packages = {'dnf', 'dnf-command(config-manager)'}
+        self.packages = {'dnf', 'dnf-command(config-manager)', 'util-linux'}
         self.files = []
         _cftuples = set()
 
