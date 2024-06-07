@@ -594,7 +594,8 @@ def get_all_known_rhui_pkgs_for_current_upg():
     known_pkgs = set()
     for setup_family in RHUI_SETUPS.values():
         for setup in setup_family:
-            if setup.os_version not in upg_major_versions:
+            setup_major = str(setup.os_version[0])
+            if setup_major not in upg_major_versions:
                 continue
             known_pkgs.update(setup.clients)
             known_pkgs.add(setup.leapp_pkg)
