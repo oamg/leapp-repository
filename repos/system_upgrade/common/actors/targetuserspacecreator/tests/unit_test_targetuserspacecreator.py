@@ -1001,7 +1001,7 @@ def test_consume_data(monkeypatch, raised, no_rhsm, testdata):
     # do not write never into testdata inside the test !!
     xfs = testdata.xfs
     custom_repofiles = testdata.custom_repofiles
-    _exp_pkgs = {'dnf', 'dnf-command(config-manager)'}
+    _exp_pkgs = {'dnf', 'dnf-command(config-manager)', 'util-linux'}
     _exp_files = []
 
     def _get_pkgs(msg):

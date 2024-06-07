@@ -61,7 +61,7 @@ def test_get_leapp_packages(major_version, component, result, monkeypatch):
      r"component nosuchcomponent is unknown, available choices are \['cockpit', 'framework', 'repository', 'tools']")
     ),
    ('nosuchversion', "framework",
-    (ValueError, r"major_version nosuchversion is unknown, available choices are \['7', '8']")),
+    (ValueError, r"major_version nosuchversion is unknown, available choices are \['7', '8', '9']")),
    ('nosuchversion', False,
     (ValueError, r"At least one component must be specified when calling this function,"
      r" available choices are \['cockpit', 'framework', 'repository', 'tools']")),
