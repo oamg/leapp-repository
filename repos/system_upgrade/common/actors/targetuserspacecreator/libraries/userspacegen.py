@@ -1225,13 +1225,13 @@ def setup_target_rhui_access_if_needed(context, indata):
     except CalledProcessError as err:  # We failed to rpm -qf PKG, the PKG is most likely not installed
         api.current_logger().critical('Failed to query files owned by target RHUI clients (clients=%s). This is caused'
                                       ' by failing to install the target clients during the client-swap step.'
-                                      'Full error: %s', indata.rhui_info.target_client_pkg_names, err)
+                                      ' Full error: %s', indata.rhui_info.target_client_pkg_names, err)
 
         target_major = get_target_major_version()
         plural_suffix = 's' if len(indata.rhui_info.target_client_pkg_names) > 1 else ''
         client_rpms = ', '.join(indata.rhui_info.target_client_pkg_names)
         msg = ('Could not find the RHEL {target_major} RHUI client rpm{plural_suffix} ({client_rpms})'
-               'in the cloud provider\'s client repository.')
+               ' in the cloud provider\'s client repository.')
         raise StopActorExecutionError(msg.format(target_major=target_major, plural_suffix=plural_suffix,
                                                  client_rpms=client_rpms))
 
