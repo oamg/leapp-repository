@@ -1220,7 +1220,20 @@ def setup_target_rhui_access_if_needed(context, indata):
     _apply_rhui_access_postinstall_tasks(context, setup_info)
 
     # Do a cleanup so there are not duplicit repoids
-    files_owned_by_clients = _query_rpm_for_pkg_files(context, indata.rhui_info.target_client_pkg_names)
+    try:
+        files_owned_by_clients = _query_rpm_for_pkg_files(context, indata.rhui_info.target_client_pkg_names)
+    except CalledProcessError as err:  # We failed to rpm -qf PKG, the PKG is most likely not installed
+        api.current_logger().critical('Failed to query files owned by target RHUI clients (clients=%s). This is caused'
+                                      ' by failing to install the target clients during the client-swap step.'
+                                      'Full error: %s', indata.rhui_info.target_client_pkg_names, err)
+
+        target_major = get_target_major_version()
+        plural_suffix = 's' if len(indata.rhui_info.target_client_pkg_names) > 1 else ''
+        client_rpms = ', '.join(indata.rhui_info.target_client_pkg_names)
+        msg = ('Could not find the RHEL {target_major} RHUI client rpm{plural_suffix} ({client_rpms})'
+               'in the cloud provider\'s client repository.')
+        raise StopActorExecutionError(msg.format(target_major=target_major, plural_suffix=plural_suffix,
+                                                 client_rpms=client_rpms))
 
     for copy_task in setup_info.preinstall_tasks.files_to_copy_into_overlay:
         dest = get_copy_location_from_copy_in_task(context.base_dir, copy_task)
