@@ -1,3 +1,5 @@
+import resource
+
 import mock
 import pytest
 
@@ -50,3 +52,61 @@ def test_vet_upgrade_path(mock_open, monkeypatch):
     monkeypatch.setenv('LEAPP_DEVEL_TARGET_RELEASE', '9.0')
     args = mock.Mock(target='1.2')
     assert command_utils.vet_upgrade_path(args) == ('9.0', 'default')
+
+
+def _mock_getrlimit_factory(nofile_limits=(1024, 4096), fsize_limits=(1024, 4096)):
+    """
+    Factory function to create a mock `getrlimit` function with configurable return values.
+    The default param values are lower than the expected values.
+
+    :param nofile_limits: Tuple representing (soft, hard) limits for `RLIMIT_NOFILE`
+    :param fsize_limits: Tuple representing (soft, hard) limits for `RLIMIT_FSIZE`
+    :return: A mock `getrlimit` function
+    """
+    def mock_getrlimit(resource_type):
+        if resource_type == resource.RLIMIT_NOFILE:
+            return nofile_limits
+        if resource_type == resource.RLIMIT_FSIZE:
+            return fsize_limits
+        return (0, 0)
+
+    return mock_getrlimit
+
+
+@pytest.mark.parametrize("nofile_limits, fsize_limits, expected_calls", [
+    # Case where both limits need to be increased
+    ((1024, 4096), (1024, 4096), [
+        (resource.RLIMIT_NOFILE, (1024*16, 1024*16)),
+        (resource.RLIMIT_FSIZE, (resource.RLIM_INFINITY, resource.RLIM_INFINITY))
+    ]),
+    # Case where neither limit needs to be changed
+    ((1024*16, 1024*16), (resource.RLIM_INFINITY, resource.RLIM_INFINITY), [])
+])
+def test_set_resource_limits_increase(monkeypatch, nofile_limits, fsize_limits, expected_calls):
+    setrlimit_called = []
+
+    def mock_setrlimit(resource_type, limits):
+        setrlimit_called.append((resource_type, limits))
+
+    monkeypatch.setattr(resource, "getrlimit", _mock_getrlimit_factory(nofile_limits, fsize_limits))
+    monkeypatch.setattr(resource, "setrlimit", mock_setrlimit)
+
+    command_utils.set_resource_limits()
+
+    assert setrlimit_called == expected_calls
+
+
+@pytest.mark.parametrize("errortype, expected_message", [
+    (OSError, "Failed to set resource limit"),
+    (ValueError, "Failure occurred while attempting to set soft limit higher than the hard limit")
+])
+def test_set_resource_limits_exceptions(monkeypatch, errortype, expected_message):
+    monkeypatch.setattr(resource, "getrlimit", _mock_getrlimit_factory())
+
+    def mock_setrlimit(*args, **kwargs):
+        raise errortype("mocked error")
+
+    monkeypatch.setattr(resource, "setrlimit", mock_setrlimit)
+
+    with pytest.raises(CommandError, match=expected_message):
+        command_utils.set_resource_limits()
