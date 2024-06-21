@@ -319,7 +319,6 @@ RHUI_SETUPS = {
     ],
     RHUIFamily(RHUIProvider.GOOGLE, variant=RHUIVariant.SAP, client_files_folder='google-sap'): [
         mk_rhui_setup(clients={'google-rhui-client-rhel79-sap'}, os_version='7', content_channel=ContentChannel.E4S),
-        mk_rhui_setup(clients={'google-rhui-client-rhel7-sap-els'}, os_version='7'),
         mk_rhui_setup(clients={'google-rhui-client-rhel8-sap'}, leapp_pkg='leapp-rhui-google-sap',
                       mandatory_files=[('leapp-google-sap.repo', YUM_REPOS_PATH)],
                       files_supporting_client_operation=['leapp-google-sap.repo'],
