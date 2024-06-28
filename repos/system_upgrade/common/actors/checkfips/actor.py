@@ -41,7 +41,7 @@ class CheckFips(Actor):
                     reporting.ExternalLink(url=fips_7to8_steps_docs_url,
                                            title='Planning an upgrade from RHEL 7 to RHEL 8')
                 ])
-        else:
+        elif version.get_target_major_version() == '9':
             # FIXME(mhecko): We include these files manually as they are not included automatically when the fips
             # module is used due to a bug in dracut. This code should be removed, once the dracut bug is resolved.
             # See https://bugzilla.redhat.com/show_bug.cgi?id=2176560
@@ -53,3 +53,6 @@ class CheckFips(Actor):
                 ]
                 self.produce(UpgradeInitramfsTasks(include_files=fips_required_initramfs_files,
                                                    include_dracut_modules=[DracutModule(name='fips')]))
+        elif version.get_target_major_version() == '10':
+            # TODO(mmatuska): What to do with FIPS on 9to10? OAMG-11431
+            pass

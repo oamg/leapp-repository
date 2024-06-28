@@ -50,9 +50,10 @@ class OpenSshPermitRootLoginCheck(Actor):
             self.process7to8(config)
         elif get_source_major_version() == '8':
             self.process8to9(config)
+        elif int(get_source_major_version()) >= 9:
+            pass
         else:
-            api.current_logger().warning('Unknown source major version: {} (expecting 7 or 8)'
-                                         .format(get_source_major_version()))
+            api.current_logger().warning('Unknown source major version: {}'.format(get_source_major_version()))
 
     def process7to8(self, config):
         # when the config was not modified, we can pass this check and let the
