@@ -206,7 +206,7 @@ def _get_lsblk_info():
 @aslist
 def _get_pvs_info():
     """ Collect storage info from pvs command """
-    for entry in _get_cmd_output(['pvs', '--noheadings', '--separator', r':'], ':', 6):
+    for entry in _get_cmd_output(['pvs', '--noheadings', '--separator', r'|'], '|', 6):
         pv, vg, fmt, attr, psize, pfree = entry
         yield PvsEntry(
             pv=pv,
@@ -220,7 +220,7 @@ def _get_pvs_info():
 @aslist
 def _get_vgs_info():
     """ Collect storage info from vgs command """
-    for entry in _get_cmd_output(['vgs', '--noheadings', '--separator', r':'], ':', 7):
+    for entry in _get_cmd_output(['vgs', '--noheadings', '--separator', r'|'], '|', 7):
         vg, pv, lv, sn, attr, vsize, vfree = entry
         yield VgsEntry(
             vg=vg,
@@ -235,7 +235,7 @@ def _get_vgs_info():
 @aslist
 def _get_lvdisplay_info():
     """ Collect storage info from lvdisplay command """
-    for entry in _get_cmd_output(['lvdisplay', '-C', '--noheadings', '--separator', r':'], ':', 12):
+    for entry in _get_cmd_output(['lvdisplay', '-C', '--noheadings', '--separator', r'|'], '|', 12):
         lv, vg, attr, lsize, pool, origin, data, meta, move, log, cpy_sync, convert = entry
         yield LvdisplayEntry(
             lv=lv,
