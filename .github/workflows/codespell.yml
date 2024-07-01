@@ -15,7 +15,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: codespell-project/actions-codespell@master
+      - uses: codespell-project/actions-codespell@v2
         with:
           ignore_words_list: ro,fo,couldn,repositor,zeor
           skip: "./repos/system_upgrade/common/actors/storagescanner/tests/files/mounts,\
