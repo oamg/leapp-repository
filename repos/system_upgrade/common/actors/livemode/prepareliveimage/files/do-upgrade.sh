@@ -2,7 +2,7 @@
 # actually perform the upgrade, using UPGRADEBIN (set in /etc/conf.d)
 
 warn() {
-    echo $@
+    echo "$@"
 }
 
 get_rhel_major_release() {
@@ -317,7 +317,7 @@ save_journal() {
 # during the kernel-core rpm postscript.
 # the result is ro-bind-mounted over /proc/cmdline inside the container.
 awk '{print $1}' /proc/cmdline \
-    | xargs -I@ echo @ $(cat ${NEWROOT}/var/lib/leapp/.fakerootfs) \
+    | xargs -I@ echo @ $(cat "${NEWROOT}"/var/lib/leapp/.fakerootfs) \
     > ${NEWROOT}/var/lib/leapp/.fakecmdline
 
 ##### do the upgrade #######
