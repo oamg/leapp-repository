@@ -11,6 +11,9 @@ class LiveModeConfigFacts(Model):
     """
     enabled = fields.Integer()
 
+    setup_passwordless_root = fields.Boolean()
+    """ Setup passwordless root for the live image used during the upgrade. """
+
     """
     url pointing to the squashfs image.
     default is "" (booting locally)
@@ -79,18 +82,19 @@ class LiveModeRequirementsTasks(Model):
     packages = fields.List(fields.String())
 
 
-class PrepareLiveImageTasks(Model):
+class LiveImagePreparationInfo(Model):
+    """
+    Information about how the upgrade live image is set up.
+    """
     topic = BootPrepTopic
 
     kernel = fields.Nullable(fields.String())
     initramfs = fields.Nullable(fields.String())
-    service = fields.Boolean()
-    console = fields.Boolean()
-    fstab = fields.Boolean()
-    mountpoint = fields.Boolean()
-    root = fields.Boolean()
-    sshd = fields.Boolean()
-    etc_issue = fields.Boolean()
+
+    is_console_set_up = fields.Boolean(default=False)
+    has_passwordless_root = fields.Boolean(default=False)
+    has_sshd = fields.Boolean(default=False)
+    has_etc_issue = fields.Boolean(default=False)
 
 
 class PrepareLiveImagePostTasks(Model):
