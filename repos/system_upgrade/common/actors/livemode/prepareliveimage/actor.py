@@ -3,11 +3,11 @@ from leapp.libraries.actor.prepareliveimage import prepare_live_image
 from leapp.libraries.stdlib import api
 from leapp.models import (
     BootContent,
+    LiveImagePreparationInfo,
     LiveModeConfigFacts,
     LiveModeRequirementsTasks,
-    PrepareLiveImageTasks,
     StorageInfo,
-    TargetUserSpaceInfo,
+    TargetUserSpaceInfo
 )
 from leapp.tags import ExperimentalTag, InterimPreparationPhaseTag, IPUWorkflowTag
 
@@ -23,7 +23,7 @@ class PrepareLiveImage(Actor):
                 LiveModeRequirementsTasks,
                 StorageInfo,
                 TargetUserSpaceInfo)
-    produces = (PrepareLiveImageTasks,)
+    produces = (LiveImagePreparationInfo,)
     tags = (ExperimentalTag, InterimPreparationPhaseTag, IPUWorkflowTag,)
 
     def process(self):
@@ -35,6 +35,4 @@ class PrepareLiveImage(Actor):
         storage = next(api.consume(StorageInfo), None)
         boot_content = next(api.consume(BootContent), None)
 
-        api.produce(
-            prepare_live_image(userspace, storage, boot_content, livemode)
-        )
+        prepare_live_image(userspace, storage, boot_content, livemode)

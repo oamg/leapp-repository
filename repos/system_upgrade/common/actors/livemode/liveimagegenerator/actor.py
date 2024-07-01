@@ -3,12 +3,12 @@ from leapp.libraries.actor.liveimagegenerator import generate_live_image
 from leapp.libraries.stdlib import api
 from leapp.models import (
     BootContent,
+    LiveImagePreparationInfo,
     LiveModeArtifacts,
     LiveModeConfigFacts,
     LiveModeRequirementsTasks,
-    PrepareLiveImageTasks,
     PrepareLiveImagePostTasks,
-    TargetUserSpaceInfo,
+    TargetUserSpaceInfo
 )
 from leapp.tags import ExperimentalTag, InterimPreparationPhaseTag, IPUWorkflowTag
 
@@ -22,7 +22,7 @@ class LiveImageGenerator(Actor):
     consumes = (BootContent,
                 LiveModeConfigFacts,
                 LiveModeRequirementsTasks,
-                PrepareLiveImageTasks,
+                LiveImagePreparationInfo,
                 PrepareLiveImagePostTasks,
                 TargetUserSpaceInfo,)
     produces = (LiveModeArtifacts,)
@@ -34,22 +34,20 @@ class LiveImageGenerator(Actor):
             return
 
         userspace = next(api.consume(TargetUserSpaceInfo), None)
-        tasks = next(api.consume(PrepareLiveImageTasks), None)
+        tasks = next(api.consume(LiveImagePreparationInfo), None)
         boot_content = next(api.consume(BootContent), None)
 
-        kernel, initramfs, squashfs = generate_live_image(
-            livemode, userspace, tasks, boot_content)
+        kernel, initramfs, squashfs = generate_live_image(livemode, userspace, tasks, boot_content)
 
         api.produce(LiveModeArtifacts(
             kernel=kernel, initramfs=initramfs, squashfs=squashfs
         ))
 
-        api.current_logger().info('\n\n'
-            '============================================================\n'
-            ' Live Mode artifacts have been created:\n'
-            '  - %s\n'
-            '  - %s\n'
-            '  - %s\n'
-            '============================================================\n'
-            % (kernel, initramfs, squashfs)
-        )
+        msg = ('\n\n'
+               '============================================================\n'
+               ' Live Mode artifacts have been created:\n'
+               '  - {kernel}\n'
+               '  - {initramfs}\n'
+               '  - {squashfs}\n'
+               '============================================================\n')
+        msg = msg.format(kernel=kernel, initramfs=initramfs, squashfs=squashfs)

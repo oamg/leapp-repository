@@ -6,11 +6,8 @@ from leapp.models import (
     LiveBootEntryTasks,
     LiveModeArtifacts,
     LiveModeConfigFacts,
-    LiveModeRequirementsTasks,
-    PrepareLiveImageTasks,
-    PrepareLiveImagePostTasks,
-    TargetUserSpaceInfo,
     TargetKernelCmdlineArgTasks,
+    TargetUserSpaceInfo
 )
 from leapp.tags import ExperimentalTag, InterimPreparationPhaseTag, IPUWorkflowTag
 
@@ -34,7 +31,6 @@ class SetupBootEntry(Actor):
         if not livemode or not livemode.enabled:
             return
 
-        userspace = next(api.consume(TargetUserSpaceInfo), None)
         boot_content = next(api.consume(BootContent), None)
         artifacts = next(api.consume(LiveModeArtifacts), None)
 

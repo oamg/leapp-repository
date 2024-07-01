@@ -34,4 +34,3 @@ class LiveModeReport(Actor):
             reporting.Groups([reporting.Groups.BOOT]),
             reporting.RelatedResource('file', '/etc/leapp/files/livemode.json')
         ])
-

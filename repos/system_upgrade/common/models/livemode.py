@@ -1,5 +1,5 @@
 from leapp.models import fields, Model
-from leapp.topics import BootPrepTopic, TransactionTopic, SystemInfoTopic
+from leapp.topics import BootPrepTopic, SystemInfoTopic, TransactionTopic
 
 
 class LiveModeConfigFacts(Model):

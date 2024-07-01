@@ -1,15 +1,14 @@
+import grp
 import os
 import os.path
-import grp
 import shutil
-import subprocess
 from distutils.version import LooseVersion
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import mounting
 from leapp.libraries.common.config.version import get_target_major_version
 from leapp.libraries.stdlib import api, CalledProcessError
-from leapp.models import LiveModeConfigFacts, LiveImagePreparationInfo
+from leapp.models import LiveImagePreparationInfo, LiveModeConfigFacts
 
 LEAPP_UPGRADE_SERVICE_FILE = 'upgrade.service'
 """ Service that executes the actual upgrade (/usr/bin/upgrade). """
@@ -120,8 +119,8 @@ def setup_console(context):
         raise StopActorExecutionError('Failed to setup console for the upgrade image.', details=details)
 
     tty_service_path_template = '/etc/systemd/system/getty.target.wants/getty@tty{tty_num}.service'
-    lnk = '/etc/systemd/system/multi-user.target.wants/%s' \
-            % LEAPP_CONSOLE_SERVICE_FILE
+    console_enablement_link = os.path.join('/etc/systemd/system/multi-user.target.wants/', LEAPP_CONSOLE_SERVICE_FILE)
+
     try:
         # tty1 will be populated with leapp's logs
         tty1_service_symlink = tty_service_path_template.format(tty_num='1')
@@ -132,7 +131,7 @@ def setup_console(context):
             ttyi_service_path = context.full_path(tty_service_path_template.format(tty_num=i))
             os.symlink('/usr/lib/systemd/system/getty@.service', context.full_path(ttyi_service_path))
 
-        os.symlink(console_service_dest, context.full_path(lnk))
+        os.symlink(console_service_dest, context.full_path(console_enablement_link))
     except OSError as error:
         api.current_logger().error('Failed to change how tty services are set up in the upgrade image. Error: %s',
                                    error)
@@ -172,7 +171,6 @@ def setup_upgrade_service(context):
             'err': str(err)
         }
         raise StopActorExecutionError('Cannot copy the leapp_upgrade service files', details=details)
-
 
     # Enable Leapp's services by adding them as dependency to multi-user.target.wants
 
@@ -369,7 +367,7 @@ def setup_sshd(context, authorized_keys):
     # @Todo(mhecko): This is hazardous. I guess we are setting this so that we can use weaker SSH keys from RHEL7,
     # #              but this way we change crypto settings system-wise (could be a problem for FIPS). Instead, we
     # #              should check whether the keys will be OK on RHEL8, and inform the user otherwise.
-    if get_target_major_version() == '8': # set to LEGACY for 7>8 only
+    if get_target_major_version() == '8':  # set to LEGACY for 7>8 only
         try:
             with context.open('/etc/crypto-policies/config', 'w+') as f:
                 f.write('LEGACY\n')
@@ -522,22 +520,22 @@ def create_etc_issue(context, stop_upgrade_on_failure=False):
     Create /etc/issue warning the user about upgrade being in-progress.
     """
     try:
-        msg=('\n\n\n'
-             '============================================================\n'
-             '         LEAPP LIVE UPGRADE MODE - *UNSUPPORTED*\n'
-             '============================================================\n'
-             '      DO NOT REBOOT until the upgrade is finished.\n'
-             '      Upgrade logs are sent on tty1 (Ctrl+Alt+F1)\n'
-             '============================================================\n'
-             ' It will automatically reboot unless you touch this file:\n'
-             '   # touch /sysroot/.noreboot\n'
-             '\n'
-             ' If upgrade.autostart=0 is set, run an upgrade manually:\n'
-             '   # upgrade |& tee /sysroot/var/log/leapp/leapp-upgrade.log\n'
-             '\n'
-             ' Log in as root, without password.\n'
-             '\n\n'
-        )
+        msg = ('\n\n\n'
+               '============================================================\n'
+               '         LEAPP LIVE UPGRADE MODE - *UNSUPPORTED*\n'
+               '============================================================\n'
+               '      DO NOT REBOOT until the upgrade is finished.\n'
+               '      Upgrade logs are sent on tty1 (Ctrl+Alt+F1)\n'
+               '============================================================\n'
+               ' It will automatically reboot unless you touch this file:\n'
+               '   # touch /sysroot/.noreboot\n'
+               '\n'
+               ' If upgrade.autostart=0 is set, run an upgrade manually:\n'
+               '   # upgrade |& tee /sysroot/var/log/leapp/leapp-upgrade.log\n'
+               '\n'
+               ' Log in as root, without password.\n'
+               '\n\n')
+
         with context.open('/etc/issue', 'w+') as f:
             f.write(msg)
         with context.open('/etc/motd', 'w+') as f:
@@ -591,5 +589,4 @@ def prepare_live_image(userspace, storage, boot, livemode):
     # Workaround to hide the squashfs root arg in /proc/cmdline
     fakerootfs()
 
-    # To produce the PrepareLiveImageTasks
     api.produce(setup_info)

@@ -3,12 +3,7 @@ import os
 from leapp.actors import Actor
 from leapp.libraries.common import dnfplugin
 from leapp.libraries.stdlib import api
-from leapp.models import (
-    LiveModeConfigFacts,
-    LiveModeRequirementsTasks,
-    TargetUserSpaceInfo,
-    UsedTargetRepositories,
-)
+from leapp.models import LiveModeConfigFacts, LiveModeRequirementsTasks, TargetUserSpaceInfo, UsedTargetRepositories
 from leapp.tags import ExperimentalTag, InterimPreparationPhaseTag, IPUWorkflowTag
 
 # NOTE: would also need
@@ -54,7 +49,7 @@ class PrepareLiveRequirements(Actor):
 
         packages = _REQUIRED_PACKAGES_FOR_LIVE_MODE + livemode.packages
         if livemode.authorized_keys:
-           packages += ['openssh-server', 'crypto-policies']
+            packages += ['openssh-server', 'crypto-policies']
 
         if api.current_actor().configuration.architecture == 'x86_64':
             packages += ['dmidecode', 'pciutils', 'lsscsi']

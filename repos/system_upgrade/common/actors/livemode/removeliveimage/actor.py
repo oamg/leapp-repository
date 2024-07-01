@@ -2,7 +2,7 @@ import os
 
 from leapp.actors import Actor
 from leapp.libraries.stdlib import api
-from leapp.models import LiveModeConfigFacts, LiveModeArtifacts
+from leapp.models import LiveModeArtifacts, LiveModeConfigFacts
 from leapp.tags import ExperimentalTag, FirstBootPhaseTag, IPUWorkflowTag
 
 
@@ -25,7 +25,7 @@ class RemoveLiveImage(Actor):
         try:
             os.unlink(artifacts.squashfs)
         except (FileNotFoundError, PermissionError):
-            api.current_logger().warning('Cannot remove %s' %artifacts.squashfs)
+            api.current_logger().warning('Cannot remove %s', artifacts.squashfs)
 
         # upgrade vmlinuz/initramfs have already been removed by another actor
         # proceed anyway

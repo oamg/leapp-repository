@@ -1,6 +1,6 @@
+import json
 import os
 import os.path
-import json
 
 from leapp.actors import Actor
 from leapp.exceptions import StopActorExecutionError
@@ -38,7 +38,8 @@ class LiveModeConfig(Actor):
             raise StopActorExecutionError(
                 'Cannot parse live mode config',
                 details={'Problem': str(error)})
-        except:
+        except OSError as error:
+            api.current_logger().error('Failed to read livemode configuration. Error: %s', error)
             raise StopActorExecutionError(
                 'Cannot read live mode config',
                 details={'Problem': 'reading {} failed.'.format(LEAPP_LIVEMODE_JSON)})

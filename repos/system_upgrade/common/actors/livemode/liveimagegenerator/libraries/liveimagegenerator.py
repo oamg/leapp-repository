@@ -2,7 +2,6 @@ import os
 import os.path
 import shutil
 import subprocess
-from distutils.version import LooseVersion
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import mounting
@@ -10,16 +9,17 @@ from leapp.libraries.stdlib import api, CalledProcessError, run
 
 LEAPP_LIVE_IMAGE = '/var/lib/leapp/live-upgrade.img'
 LEAPP_LIVEOS_DIR = '/var/lib/leapp/tmp'
-DEFAULT_XFS_SIZE = 3072 # MB
+DEFAULT_XFS_SIZE = 3072  # MB
 
 
 def _shell(command):
+    # @Todo(mhecko): this needs to be replaced with run
     p = subprocess.Popen(command,
-                     stdout=subprocess.PIPE,
-                     stderr=subprocess.PIPE,
-                     close_fds=True,
-                     shell=True,
-                     universal_newlines=True)
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE,
+                         close_fds=True,
+                         shell=True,
+                         universal_newlines=True)
     p.wait()
     output = []
     while True:
@@ -40,19 +40,19 @@ def setup_boot_content(context, tasks, boot):
     if not tasks.kernel or not tasks.initramfs:
         raise StopActorExecutionError(
             'Cannot install the boot images for the live mode.',
-            details={'Problem': 'kernel: %s, initramfs: %s.'
-            % (tasks.kernel, tasks.initramfs)})
+            details={'Problem': 'kernel: {0}, initramfs: {1}.'.format(tasks.kernel, tasks.initramfs)}
+        )
 
     try:
         os.unlink(boot.kernel_path)
         os.unlink(boot.initram_path)
-    except:
+    except OSError:
         pass
 
     try:
         context.copy_from(tasks.kernel, boot.kernel_path)
         context.copy_from(tasks.initramfs, boot.initram_path)
-    except:
+    except OSError:
         raise StopActorExecutionError(
             'Cannot install the boot images for the live mode.',
             details={'Problem': 'copy to host failed.'})
@@ -69,7 +69,7 @@ def _backup_dnf_cache(context):
     try:
         shutil.move(context.full_path('/var/cache/dnf'), '/var/lib/leapp')
         context.makedirs('/var/cache/dnf')
-    except:
+    except OSError:
         api.current_logger().warning('Cannot backup the DNF cache.')
 
 
@@ -81,7 +81,7 @@ def _restore_dnf_cache(context):
         if os.path.isdir(context.full_path('/var/cache/dnf')):
             context.call(['rm', '-rf', '/var/cache/dnf'])
         shutil.move('/var/lib/leapp/dnf', context.full_path('/var/cache'))
-    except:
+    except OSError:
         api.current_logger().warning('Cannot restore the DNF cache.')
 
 
@@ -95,7 +95,7 @@ def _create_liveos_xfs(liveos_dir):
         os.makedirs("{}/LiveOS".format(liveos_dir))
         run(['mkfs.xfs', '-d', 'file,name=%s/LiveOS/rootfs.img,size=%sm'
             % (liveos_dir, xfs_size)])
-    except CalledProcessError as e:
+    except CalledProcessError:
         raise StopActorExecutionError(
            'Cannot mkfs temporary LiveOS image.',
            details={'details': 'the mkfs command failed.'}
@@ -105,7 +105,7 @@ def _create_liveos_xfs(liveos_dir):
 def _unmount_tmp_liveos(liveos_dir):
     try:
         run(['umount', '-fl', '{}_mnt'.format(liveos_dir)])
-    except:
+    except OSError:
         pass
 
 
@@ -132,13 +132,12 @@ def _copy_rootfs(userspace_dir, liveos_dir):
         # but it could cause issues with other actors that remove this directory
         # When mounted, its removal would lead to an EBUSY errno.
         api.current_logger().info('Copying the target userspace to the LiveOS')
-        ret, out = _shell('/bin/cp -fapZ %s/* %s_mnt'
-                        % (userspace_dir, liveos_dir))
+        ret, _ = _shell('/bin/cp -fapZ %s/* %s_mnt' % (userspace_dir, liveos_dir))
         if ret != 0:
             api.current_logger().error(
                 'Cannot the target userspace to the LiveOS'
             )
-    except:
+    except OSError:
         _unmount_tmp_liveos(liveos_dir)
         raise StopActorExecutionError(
            'Cannot the target userspace to the LiveOS',
@@ -153,9 +152,9 @@ def lighten_target_userpace(context):
     Remove unneeded files from the target userspace
     """
     try:
-        ret, out = _shell('rm -rf {}/artifacts'.format(context.base_dir))
-        ret, out = _shell('rm -rf {}/boot/*'.format(context.base_dir))
-    except:
+        _shell('rm -rf {}/artifacts'.format(context.base_dir))
+        _shell('rm -rf {}/boot/*'.format(context.base_dir))
+    except OSError:
         api.current_logger().warning(
            'Cannot remove /boot content from the live image.'
         )
@@ -180,7 +179,7 @@ def build_squashfs(context, livemode):
     os.chdir(liveos_dir)
     try:
         os.unlink(squashfs_filename)
-    except:
+    except OSError:
         pass
     try:
         run(['mksquashfs', '.', squashfs_filename])
@@ -196,7 +195,7 @@ def build_squashfs(context, livemode):
     try:
         run(['rm', '-rf', liveos_dir])
         os.rmdir('{}_mnt'.format(liveos_dir))
-    except:
+    except OSError:
         api.current_logger().warning('Cannot remove temporary LiveOS dir')
 
     if not livemode.with_cache:
