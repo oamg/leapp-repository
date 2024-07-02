@@ -2,7 +2,7 @@ import errno
 import os
 import re
 
-from leapp.libraries.common.config import get_env
+from leapp.libraries.common.config import get_env, version
 from leapp.libraries.stdlib import api
 from leapp.models import (
     InitrdIncludes,
@@ -39,6 +39,9 @@ def generate_link_file(interface):
 
 @suppress_deprecation(InitrdIncludes)
 def process():
+    if get_env('LEAPP_USE_NET_NAMING_SCHEMES', '0') == '1' and version.get_target_major_version() != '8':
+        api.current_logger().info('Skipping generation of .link files renaming NICs as LEAPP_USE_NET_NAMING_SCHEMES=1')
+        return
 
     if get_env('LEAPP_NO_NETWORK_RENAMING', '0') == '1':
         api.current_logger().info(
