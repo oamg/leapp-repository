@@ -1,5 +1,4 @@
 import os
-import resource
 import sys
 import uuid
 
@@ -60,21 +59,7 @@ def preupgrade(args, breadcrumbs):
     except LeappError as exc:
         raise CommandError(exc.message)
 
-    soft_nofile, _ = resource.getrlimit(resource.RLIMIT_NOFILE)
-    soft_fsize, _ = resource.getrlimit(resource.RLIMIT_FSIZE)
-    nofile_limit = 1024*16
-
-    if soft_nofile < nofile_limit:
-        try:
-            resource.setrlimit(resource.RLIMIT_NOFILE, (nofile_limit, nofile_limit))
-        except OSError as err:
-            raise CommandError('Failed to set limit for maximum number of open file descriptors: {}'.format(err))
-
-    if soft_fsize != resource.RLIM_INFINITY:
-        try:
-            resource.setrlimit(resource.RLIMIT_FSIZE, (resource.RLIM_INFINITY, resource.RLIM_INFINITY))
-        except OSError as err:
-            raise CommandError('Failed to set limit for maximum writeable file size: {}'.format(err))
+    command_utils.set_resource_limits()
 
     workflow = repositories.lookup_workflow('IPUWorkflow')()
     util.warn_if_unsupported(configuration)
