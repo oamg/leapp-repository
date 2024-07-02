@@ -48,6 +48,11 @@ class RhuiLeappRhuiPkgRepo(Config):
         Default: rhel-base
     """
 
+all_rhui_cfg = (RhuiSrcPkg, RhuiTargetPkg, RhuiLeappRhuiPkg, RhuiLeappRhuiPkg)
+# Usage: from configs import rhui
+#        class MyActor:
+#            [...]
+#            configs = all_rhui_cfg + (MyConfig,)
 
 ### We need to implement fields.Map before this can be enabled
 '''
