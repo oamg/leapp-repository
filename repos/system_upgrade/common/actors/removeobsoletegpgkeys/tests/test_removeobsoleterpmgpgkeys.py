@@ -1,3 +1,5 @@
+import os
+
 import pytest
 
 from leapp.libraries.actor import removeobsoleterpmgpgkeys
@@ -66,6 +68,9 @@ def test_get_obsolete_keys(monkeypatch, version, expected):
             msgs=[_get_test_installedrpm()]
         ),
     )
+
+    cur_dir = os.path.dirname(os.path.abspath(__file__))
+    monkeypatch.setattr(api, 'get_common_folder_path', lambda folder: os.path.join(cur_dir, '../../../files/', folder))
 
     keys = removeobsoleterpmgpgkeys._get_obsolete_keys()
     assert set(keys) == set(expected)
