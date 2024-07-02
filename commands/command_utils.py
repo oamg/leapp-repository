@@ -26,7 +26,7 @@ def check_version(version):
     """
     if not re.match(VERSION_REGEX, version):
         raise CommandError('Unexpected format of target version: {}'.format(version))
-    return version.split('.')[0]
+    return version.split('.')
 
 
 def get_major_version(version):

@@ -34,6 +34,7 @@ jobs:
     targets:
     - epel-7-x86_64
     - epel-8-x86_64
+    - epel-9-x86_64
   actions:
     create-archive:
     - bash -c "rm -f packaging/deps-pkgs.tar.gz"
@@ -54,6 +55,7 @@ jobs:
     targets:
     - epel-7-x86_64
     - epel-8-x86_64
+    - epel-9-x86_64
   actions:
     create-archive:
     - bash -c "rm -f packaging/deps-pkgs.tar.gz"
@@ -73,6 +75,7 @@ jobs:
     targets:
     - epel-7-x86_64
     - epel-8-x86_64
+    - epel-9-x86_64
   actions:
     create-archive:
     - bash -c "rm -f packaging/deps-pkgs.tar.gz"

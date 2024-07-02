@@ -1,0 +1,18 @@
+FROM registry.access.redhat.com/ubi9/ubi:latest
+
+VOLUME /repo
+
+RUN dnf update -y && \
+    dnf install -y python3-setuptools python3-pip make git rsync
+
+ENV PYTHON_VENV python3.9
+
+COPY . /repocopy
+
+WORKDIR /repocopy
+
+RUN rm -rf tut*
+
+RUN make clean && make install-deps-fedora
+
+WORKDIR /

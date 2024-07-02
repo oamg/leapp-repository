@@ -21,6 +21,7 @@ class _DnfPluginPathStr(str):
     _PATHS = {
         "8": os.path.join('/lib/python3.6/site-packages/dnf-plugins', DNF_PLUGIN_NAME),
         "9": os.path.join('/lib/python3.9/site-packages/dnf-plugins', DNF_PLUGIN_NAME),
+        "10": os.path.join('/lib/python3.12/site-packages/dnf-plugins', DNF_PLUGIN_NAME),
     }
 
     def __init__(self):  # noqa: W0231; pylint: disable=super-init-not-called
@@ -445,7 +446,7 @@ def perform_transaction_install(target_userspace_info, storage_info, used_repos,
         # set like that, however seatbelt is a good thing.
         dnfconfig.exclude_leapp_rpms(context, disable_plugins)
 
-        if get_target_major_version() == '9':
+        if int(get_target_major_version()) >= 9:
             _rebuild_rpm_db(context, root='/installroot')
         _transaction(
             context=context, stage='upgrade', target_repoids=target_repoids, plugin_info=plugin_info,

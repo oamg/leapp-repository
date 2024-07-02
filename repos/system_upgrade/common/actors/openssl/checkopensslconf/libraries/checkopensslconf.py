@@ -5,8 +5,11 @@ from leapp.libraries.stdlib import api
 from leapp.models import DistributionSignedRPM, TrackedFilesInfoSource
 
 DEFAULT_OPENSSL_CONF = '/etc/pki/tls/openssl.cnf'
-URL_8_CRYPTOPOLICIES = 'https://red.ht/rhel-8-system-wide-crypto-policies'
-URL_9_CRYPTOPOLICIES = 'https://red.ht/rhel-9-system-wide-crypto-policies'
+URL_CRYPTOPOLICIES = {
+    '8': 'https://red.ht/rhel-8-system-wide-crypto-policies',
+    '9': 'https://red.ht/rhel-9-system-wide-crypto-policies',
+    '10': 'https://red.ht/rhel-10-system-wide-crypto-policies',  # TODO actually make the url
+}
 
 
 def check_ibmca():
@@ -70,7 +73,7 @@ def check_default_openssl():
     if not _is_openssl_modified():
         return
 
-    crypto_url = URL_8_CRYPTOPOLICIES if version.get_target_major_version == '8' else URL_9_CRYPTOPOLICIES
+    crypto_url = URL_CRYPTOPOLICIES[version.get_target_major_version()]
 
     # TODO(pstodulk): Needs in future some rewording, as OpenSSL engines are
     # deprecated since "RHEL 8" and people should use OpenSSL providers instead.

@@ -50,6 +50,9 @@ class OpenSshPermitRootLoginCheck(Actor):
             self.process7to8(config)
         elif get_source_major_version() == '8':
             self.process8to9(config)
+        elif get_source_major_version() == '9':
+            # TODO(mmatuska): no-op?
+            pass
         else:
             api.current_logger().warning('Unknown source major version: {} (expecting 7 or 8)'
                                          .format(get_source_major_version()))

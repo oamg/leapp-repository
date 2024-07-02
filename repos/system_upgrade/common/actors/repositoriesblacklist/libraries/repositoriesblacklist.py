@@ -8,7 +8,8 @@ from leapp.models import CustomTargetRepository, RepositoriesBlacklisted, Reposi
 UNSUPPORTED_PESIDS = {
     "7": "rhel7-optional",
     "8": "rhel8-CRB",
-    "9": "rhel9-CRB"
+    "9": "rhel9-CRB",
+    "10": "rhel10-CRB"
 }
 
 

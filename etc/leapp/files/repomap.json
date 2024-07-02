@@ -233,7 +233,25 @@
                     ]
                 }
             ]
-        }
+        },
+        {
+            "source_major_version": "9",
+            "target_major_version": "10",
+            "entries": [
+                {
+                    "source": "rhel9-BaseOS",
+                    "target": [
+                        "rhel10-BaseOS"
+                    ]
+                },
+                {
+                    "source": "rhel9-AppStream",
+                    "target": [
+                        "rhel10-AppStream"
+                    ]
+                }
+	    ]
+	}
     ],
     "repositories": [
         {
@@ -3999,6 +4017,30 @@
                     "rhui": "alibaba"
                 }
             ]
+        },
+	{
+            "pesid": "rhel10-AppStream",
+            "entries": [
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-appstream-rpms",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm"
+                }
+	    ]
+	},
+        {
+            "pesid": "rhel10-BaseOS",
+            "entries": [
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-baseos-rpms",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm"
+                }
+	    ]
         }
     ],
     "provided_data_streams": [

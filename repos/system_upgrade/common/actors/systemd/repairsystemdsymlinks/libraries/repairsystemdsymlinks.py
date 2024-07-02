@@ -6,18 +6,11 @@ from leapp.libraries.common.config.version import get_target_major_version
 from leapp.libraries.stdlib import api, CalledProcessError, run
 from leapp.models import SystemdBrokenSymlinksSource, SystemdBrokenSymlinksTarget, SystemdServicesInfoSource
 
-_INSTALLATION_CHANGED_EL8 = ['rngd.service', 'sysstat.service']
-_INSTALLATION_CHANGED_EL9 = []
-
-
-def _get_installation_changed_units():
-    version = get_target_major_version()
-    if version == '8':
-        return _INSTALLATION_CHANGED_EL8
-    if version == '9':
-        return _INSTALLATION_CHANGED_EL9
-
-    return []
+_INSTALLATION_CHANGED = {
+    '8': ['rngd.service', 'sysstat.service'],
+    '9': [],
+    '10': [],
+}
 
 
 def _service_enabled_source(service_info, name):
@@ -49,7 +42,7 @@ def _handle_newly_broken_symlinks(symlinks, service_info):
 
 
 def _handle_bad_symlinks(service_files):
-    install_changed_units = _get_installation_changed_units()
+    install_changed_units = _INSTALLATION_CHANGED[get_target_major_version()]
     potentially_bad = [s for s in service_files if s.name in install_changed_units]
 
     for unit_file in potentially_bad:

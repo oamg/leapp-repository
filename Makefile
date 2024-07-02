@@ -111,7 +111,7 @@ help:
 	@echo "                              packaging"
 	@echo "  srpm                        create the SRPM"
 	@echo "  build_container             create the RPM in container"
-	@echo "                              - set BUILD_CONTAINER to el7 or el8"
+	@echo "                              - set BUILD_CONTAINER to el7, el8 or el9"
 	@echo "                              - don't run more than one build at the same time"
 	@echo "                                since containers operate on the same files!"
 	@echo "  copr_build                  create the COPR build using the COPR TOKEN"
@@ -164,7 +164,7 @@ help:
 	@echo "  PR=7 SUFFIX='my_additional_suffix' make <target>"
 	@echo "  MR=6 COPR_CONFIG='path/to/the/config/copr/file' make <target>"
 	@echo "  ACTOR=<actor> TEST_LIBS=y make test"
-	@echo "  BUILD_CONTAINER=rhel7 make build_container"
+	@echo "  BUILD_CONTAINER=el7 make build_container"
 	@echo "  TEST_CONTAINER=f34 make test_container"
 	@echo "  CONTAINER_TOOL=docker TEST_CONTAINER=rhel7 make test_container_no_lint"
 	@echo ""
@@ -189,8 +189,9 @@ source: prepare
 	@git archive --prefix "$(PKGNAME)-$(VERSION)/" -o "packaging/sources/$(PKGNAME)-$(VERSION).tar.gz" HEAD
 	@echo "--- PREPARE DEPS PKGS ---"
 	mkdir -p packaging/tmp/
-	@__TIMESTAMP=$(TIMESTAMP) $(MAKE) _build_subpkg
-	@__TIMESTAMP=$(TIMESTAMP) $(MAKE) DIST_VERSION=$$(($(DIST_VERSION) + 1)) _build_subpkg
+	@__TIMESTAMP=$(TIMESTAMP) $(MAKE) DIST_VERSION=7 _build_subpkg
+	@__TIMESTAMP=$(TIMESTAMP) $(MAKE) DIST_VERSION=8 _build_subpkg
+	@__TIMESTAMP=$(TIMESTAMP) $(MAKE) DIST_VERSION=9 _build_subpkg
 	@tar -czf packaging/sources/deps-pkgs.tar.gz -C packaging/RPMS/noarch `ls -1 packaging/RPMS/noarch | grep -o "[^/]*rpm$$"`
 	@rm -f packaging/RPMS/noarch/*.rpm
 
@@ -257,12 +258,15 @@ build_container:
 		el8) \
 			CONT_FILE="utils/container-builds/Containerfile.ubi8"; \
 			;; \
+		el9) \
+			CONT_FILE="utils/container-builds/Containerfile.ubi9"; \
+			;; \
 		"") \
 			echo "BUILD_CONTAINER must be set"; \
 			exit 1; \
 			;; \
 		*) \
-			echo "Available containers are el7, el8"; \
+			echo "Available containers are el7, el8, el9"; \
 			exit 1; \
 			;; \
 	esac && \
@@ -304,12 +308,20 @@ install-deps:
 		$(VENVNAME)/bin/pip install -I "git+https://github.com/oamg/leapp.git@refs/pull/$(REQ_LEAPP_PR)/head"; \
 	fi
 	$(_PYTHON_VENV) utils/install_actor_deps.py --actor=$(ACTOR) --repos="$(TEST_PATHS)"
+
 install-deps-fedora:
 	@# Check the necessary rpms are installed for py3 (and py2 below)
-	if ! rpm -q git findutils python3-virtualenv gcc; then \
-		if ! dnf install -y git findutils python3-virtualenv gcc; then \
+	if ! rpm -q git findutils gcc; then \
+		if ! dnf install -y git findutils gcc; then \
 			echo 'Please install the following rpms via the command: ' \
-				'sudo dnf install -y git findutils python3-virtualenv gcc'; \
+				'sudo dnf install -y git findutils gcc'; \
+			exit 1; \
+		fi; \
+	fi
+	if ! command -v virtualenv; then \
+		if ! (dnf install -y python3-virtualenv || pip install virtualenv); then \
+			echo 'Please install the following packages via the command: ' \
+				'sudo dnf install -y python3-virtualenv or pip install virtualenv'; \
 			exit 1; \
 		fi; \
 	fi
@@ -389,11 +401,14 @@ _test_container_ipu:
 	el8toel9) \
 		export REPOSITORIES="common,el8toel9"; \
 		;; \
+	el9toel10) \
+		export REPOSITORIES="common,el9toel10"; \
+		;; \
 	"") \
 		echo "TEST_CONT_IPU must be set"; exit 1; \
 		;; \
 	*) \
-		echo "Only supported TEST_CONT_IPUs are el7toel8, el8toel9"; exit 1; \
+		echo "Only supported TEST_CONT_IPUs are el7toel8, el8toel9, el9toel10"; exit 1; \
 		;; \
 	esac && \
 	$(_CONTAINER_TOOL) exec -w /repocopy $$_CONT_NAME make clean && \
@@ -428,6 +443,10 @@ test_container:
 		export CONT_FILE="utils/container-tests/Containerfile.rhel8"; \
 		export _VENV="python3.6"; \
 		;; \
+	rhel9) \
+		export CONT_FILE="utils/container-tests/Containerfile.rhel9"; \
+		export _VENV="python3.9"; \
+		;; \
 	*) \
 		echo "Error: Available containers are: f34, rhel7, rhel8"; exit 1; \
 		;; \
@@ -449,6 +468,10 @@ test_container:
 		;; \
 	python3.9) \
 		TEST_CONT_IPU=el8toel9 $(MAKE) _test_container_ipu; \
+		TEST_CONT_IPU=el9toel10 $(MAKE) _test_container_ipu; \
+		;; \
+	python3.12) \
+		TEST_CONT_IPU=el9toel10 $(MAKE) _test_container_ipu; \
 		;; \
 	*) \
 		TEST_CONT_IPU=el8toel9 $(MAKE) _test_container_ipu; \
@@ -473,7 +496,7 @@ test_container_all_no_lint:
 # clean all testing and building containers and their images
 clean_containers:
 	@for i in "leapp-repo-tests-f34" "leapp-repo-tests-rhel7" "leapp-repo-tests-rhel8" \
-	"leapp-repo-build-el7" "leapp-repo-build-el8"; do \
+	"leapp-repo-tests-rhel9" "leapp-repo-build-el7" "leapp-repo-build-el8"; do \
 		$(_CONTAINER_TOOL) kill "$$i-cont" || :; \
 		$(_CONTAINER_TOOL) rm "$$i-cont" || :; \
 		$(_CONTAINER_TOOL) rmi "$$i" || :;  \
@@ -484,7 +507,7 @@ fast_lint:
 	FILES_TO_LINT="$$(git diff --name-only $(MASTER_BRANCH) --diff-filter AMR | grep '\.py$$')"; \
 	if [[ -n "$$FILES_TO_LINT" ]]; then \
 		pylint -j 0 $$FILES_TO_LINT $(PYLINT_ARGS) && \
-		flake8 $$FILES_TO_LINT $(FLAKE8_ARG); \
+		flake8 $$FILES_TO_LINT $(FLAKE8_ARGS); \
 		LINT_EXIT_CODE="$$?"; \
 		if [[ "$$LINT_EXIT_CODE" != "0" ]]; then \
 			exit $$LINT_EXIT_CODE; \
