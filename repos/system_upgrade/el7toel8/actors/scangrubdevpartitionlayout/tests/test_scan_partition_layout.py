@@ -31,7 +31,8 @@ Partition = namedtuple('Partition', ['name', 'start_offset'])
         )
     ]
 )
-def test_get_partition_layout(monkeypatch, devices):
+@pytest.mark.parametrize('fs', ('Linux', 'Linux raid autodetect'))
+def test_get_partition_layout(monkeypatch, devices, fs):
     device_to_fdisk_output = {}
     for device in devices:
         fdisk_output = [
@@ -45,7 +46,7 @@ def test_get_partition_layout(monkeypatch, devices):
             '   Device Boot      Start         End      Blocks   Id  System',
         ]
         for part in device.partitions:
-            part_line = '{0}   *     {1}     2099199     1048576   83  Linux'.format(part.name, part.start_offset)
+            part_line = '{0}   *     {1}     2099199     1048576   83  {2}'.format(part.name, part.start_offset, fs)
             fdisk_output.append(part_line)
 
         device_to_fdisk_output[device.name] = fdisk_output
