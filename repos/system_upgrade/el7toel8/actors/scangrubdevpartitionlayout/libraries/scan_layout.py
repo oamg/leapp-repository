@@ -64,7 +64,6 @@ def get_partition_layout(device):
         if not line.startswith('Device'):
             continue
 
-        part_all_attrs = split_on_space_segments(line)
         break
 
     partitions = []
@@ -75,7 +74,7 @@ def get_partition_layout(device):
 
         # If the partition is not bootable, the Boot column might be empty
         part_device = part_info[0]
-        part_start = int(part_info[2]) if len(part_info) == len(part_all_attrs) else int(part_info[1])
+        part_start = int(part_info[2]) if part_info[1] == '*' else int(part_info[1])
         partitions.append(PartitionInfo(part_device=part_device, start_offset=part_start*unit))
 
     return GRUBDevicePartitionLayout(device=device, partitions=partitions)
