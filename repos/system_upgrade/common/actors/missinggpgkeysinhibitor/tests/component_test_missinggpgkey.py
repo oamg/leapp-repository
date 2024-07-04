@@ -2,7 +2,7 @@ import pytest
 from six.moves.urllib.error import URLError
 
 from leapp import reporting
-from leapp.exceptions import StopActorExecutionError
+from leapp.exceptions import StopActorExecution, StopActorExecutionError
 from leapp.libraries.actor.missinggpgkey import process
 from leapp.libraries.common.gpg import get_pubkeys_from_rpms
 from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked, logger_mocked, produce_mocked
@@ -191,12 +191,13 @@ def test_perform_missing_facts(monkeypatch, msgs):
     monkeypatch.setattr(api, 'current_logger', logger_mocked())
     # TODO: the gpg call should be mocked
 
-    with pytest.raises(StopActorExecutionError):
+    with pytest.raises(StopActorExecution):
         process()
     # nothing produced
     assert api.produce.called == 0
     # not skipped by --nogpgcheck
-    assert not api.current_logger.warnmsg
+    assert len(api.current_logger.warnmsg) == 1
+    assert "Missing TargetUserSpaceInfo data" in api.current_logger.warnmsg[0]
 
 
 @suppress_deprecation(TMPTargetRepositoriesFacts)
@@ -280,7 +281,7 @@ def test_perform_missing_some_repo_facts(monkeypatch):
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
     monkeypatch.setattr('leapp.libraries.common.gpg._gpg_show_keys', _gpg_show_keys_mocked)
 
-    with pytest.raises(StopActorExecutionError):
+    with pytest.raises(StopActorExecution):
         process()
     assert api.produce.called == 0
     assert reporting.create_report.called == 0

@@ -7,7 +7,7 @@ import tempfile
 from six.moves import urllib
 
 from leapp import reporting
-from leapp.exceptions import StopActorExecutionError
+from leapp.exceptions import StopActorExecution, StopActorExecutionError
 from leapp.libraries.common.config.version import get_target_major_version
 from leapp.libraries.common.gpg import get_gpg_fp_from_file, get_path_to_gpg_certs, is_nogpgcheck_set
 from leapp.libraries.stdlib import api
@@ -62,6 +62,15 @@ def _get_abs_file_path(target_userspace, file_url):
 
 def _consume_data():
     try:
+        target_userspace = next(api.consume(TargetUserSpaceInfo))
+    except StopIteration:
+        api.current_logger().warning(
+            'Missing TargetUserSpaceInfo data. The upgrade cannot continue'
+            ' without this data, so skipping any other actions.'
+        )
+        raise StopActorExecution()
+
+    try:
         used_target_repos = next(api.consume(UsedTargetRepositories)).repos
     except StopIteration:
         raise StopActorExecutionError(
@@ -82,12 +91,6 @@ def _consume_data():
     except StopIteration:
         raise StopActorExecutionError(
             'Could not check for valid GPG keys', details={'details': 'No TrustedGpgKeys facts'}
-        )
-    try:
-        target_userspace = next(api.consume(TargetUserSpaceInfo))
-    except StopIteration:
-        raise StopActorExecutionError(
-            'Could not check for valid GPG keys', details={'details': 'No TargetUserSpaceInfo facts'}
         )
 
     return used_target_repos, target_repos, trusted_gpg_keys, target_userspace
