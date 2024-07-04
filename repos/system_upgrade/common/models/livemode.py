@@ -11,7 +11,7 @@ class LiveModeConfigFacts(Model):
     """
     enabled = fields.Integer()
 
-    setup_passwordless_root = fields.Boolean()
+    setup_passwordless_root = fields.Boolean(default=False)
     """ Setup passwordless root for the live image used during the upgrade. """
 
     """

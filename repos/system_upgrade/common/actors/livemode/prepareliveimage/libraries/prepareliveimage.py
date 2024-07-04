@@ -129,7 +129,7 @@ def setup_console(context):
 
         for i in range(2, 5):
             ttyi_service_path = context.full_path(tty_service_path_template.format(tty_num=i))
-            os.symlink('/usr/lib/systemd/system/getty@.service', context.full_path(ttyi_service_path))
+            os.symlink('/usr/lib/systemd/system/getty@.service', ttyi_service_path)
 
         os.symlink(console_service_dest, context.full_path(console_enablement_link))
     except OSError as error:
@@ -352,17 +352,15 @@ def setup_sshd(context, authorized_keys):
         details = {'Problem': 'Failed to set up /root/.ssh/authorized_keys. Error: {0}'.format(error)}
         raise StopActorExecutionError('Failed to set up SSH access for the upgrade image.', details=details)
 
-    sshd_service_activation_link_dst = '/etc/systemd/system/multi-user.target.wants/sshd.service'
-    try:
-        os.symlink(
-            '/usr/lib/systemd/system/sshd.service',
-            context.full_path(sshd_service_activation_link_dst)
-        )
-    except OSError as error:
-        api.current_logger().error(
-            'Failed to enable the sshd service in the upgrade image (failed to create a symlink). Full error: %s',
-            error
-        )
+    sshd_service_activation_link_dst = context.full_path('/etc/systemd/system/multi-user.target.wants/sshd.service')
+    if not os.path.exists(sshd_service_activation_link_dst):
+        try:
+            os.symlink('/usr/lib/systemd/system/sshd.service', sshd_service_activation_link_dst)
+        except OSError as error:
+            api.current_logger().error(
+                'Failed to enable the sshd service in the upgrade image (failed to create a symlink). Full error: %s',
+                error
+            )
 
     # @Todo(mhecko): This is hazardous. I guess we are setting this so that we can use weaker SSH keys from RHEL7,
     # #              but this way we change crypto settings system-wise (could be a problem for FIPS). Instead, we
@@ -576,7 +574,7 @@ def prepare_live_image(userspace, storage, boot, livemode):
         create_symlink_from_sysroot_to_source_root_mountpoint(context)
 
         setup_info.kernel = kernel
-        setup_info.initrams = initramfs
+        setup_info.initramfs = initramfs
 
         if config.setup_passwordless_root:
             make_root_account_passwordless(context)
