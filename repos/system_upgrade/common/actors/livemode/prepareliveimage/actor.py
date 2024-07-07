@@ -18,8 +18,7 @@ class PrepareLiveImage(Actor):
     """
 
     name = 'prepare_live_image'
-    consumes = (BootContent,
-                LiveModeConfigFacts,
+    consumes = (LiveModeConfigFacts,
                 LiveModeRequirementsTasks,
                 StorageInfo,
                 TargetUserSpaceInfo)

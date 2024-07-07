@@ -402,90 +402,6 @@ def _get_target_kernel_version(context):
     return kernel_version
 
 
-def _backup_leapp_dracut_modules(context):
-    """
-    Move leapp dracut modules that are unneeded for the live initramfs
-
-    @Todo(mhecko): move this to initramfs generator
-    """
-    try:
-        shutil.move(
-            context.full_path('/usr/lib/dracut/modules.d/90sys-upgrade'),
-            context.full_path('/root'))
-        shutil.move(
-            context.full_path('/usr/lib/dracut/modules.d/85sys-upgrade-redhat'),
-            context.full_path('/root'))
-    except OSError as error:
-        api.current_logger().error(
-            'Failed to temporarily move leapp\'s dracut modules unneeded for the upgrade image. Error: %s', error
-        )
-        raise StopActorExecutionError('Failed to temporarily remove leapp\'s dracut modules.')
-
-
-def _restore_leapp_dracut_modules(context):
-    """
-    Restore leapp dracut modules to keep the original state
-
-    @Todo(mhecko): move this to initramfs generator
-    """
-    try:
-        shutil.move(
-            context.full_path('/root/90sys-upgrade'),
-            context.full_path('/usr/lib/dracut/modules.d'))
-        shutil.move(
-            context.full_path('/root/85sys-upgrade-redhat'),
-            context.full_path('/usr/lib/dracut/modules.d'))
-    except OSError:
-        # it happens at the very end, ignore
-        api.current_logger().warning('Cannot restore leapp dracut modules')
-
-
-def generate_initramfs(context, boot):
-    """
-    Generate the initramfs for the live mode  using dracut modules: dracut-live dracut-squash.
-    Silently replace upgrade boot images.
-
-    @Todo(mhecko): This needs to be changed.
-    """
-    api.current_logger().info('Building the live initramfs')
-
-    # without this, the [ -w '/boot' ] test failed.
-    # found this in the original upgradeinitramfsgenerator actor.
-    env = {}
-    if get_target_major_version() == '9':
-        env = {'SYSTEMD_SECCOMP': '0'}
-
-    _backup_leapp_dracut_modules(context)
-
-    kver = _get_target_kernel_version(context)
-    kernel = '/lib/modules/{}/vmlinuz'.format(kver)
-    initramfs = boot.initram_path
-
-    cmd = ['dracut', '--verbose', '--compress', 'xz',
-           '--add', 'livenet', '--add', 'dmsquash-live',
-           '--no-hostonly', '--no-hostonly-default-device',
-           '-o', 'plymouth dash resume ifcfg earlykdump',
-           '--lvmconf', '--mdadmconf',
-           '--kver', kver, '-f', initramfs]
-
-    try:
-        context.call(cmd, env=env)
-    except CalledProcessError as error:
-        api.current_logger().error('Failed to generate (live) upgrade image. Error: %s', error)
-        raise StopActorExecutionError(
-            'Cannot generate the initramfs for the live mode.',
-            details={'Problem': 'the dracut command failed: {}'.format(cmd)})
-
-    _restore_leapp_dracut_modules(context)
-
-    if not os.path.isfile(context.full_path(initramfs)):
-        initramfs = None
-    kernel = '/lib/modules/{}/vmlinuz'.format(kver)
-    if not os.path.isfile(context.full_path(kernel)):
-        kernel = None
-    return (kernel, initramfs)
-
-
 def fakerootfs():
     """
     Create the FAKEROOTFS_FILE with source system's kernel cmdline.
@@ -567,14 +483,15 @@ def prepare_live_image(userspace, storage, boot, livemode):
 
     with mounting.NspawnActions(base_dir=userspace.path) as context:
         setup_upgrade_service(context)
+
         setup_console(context)
+        setup_info.is_console_set_up = True
+
         setup_sshd(context, livemode.authorized_keys)
-        kernel, initramfs = generate_initramfs(context, boot)
+        setup_info.has_sshd = True
+
         create_fstab_mounting_current_root_elsewhere(context, storage.fstab)
         create_symlink_from_sysroot_to_source_root_mountpoint(context)
-
-        setup_info.kernel = kernel
-        setup_info.initramfs = initramfs
 
         if config.setup_passwordless_root:
             make_root_account_passwordless(context)

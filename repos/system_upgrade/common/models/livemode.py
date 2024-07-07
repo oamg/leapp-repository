@@ -88,13 +88,9 @@ class LiveImagePreparationInfo(Model):
     """
     topic = BootPrepTopic
 
-    kernel = fields.Nullable(fields.String())
-    initramfs = fields.Nullable(fields.String())
-
     is_console_set_up = fields.Boolean(default=False)
     has_passwordless_root = fields.Boolean(default=False)
     has_sshd = fields.Boolean(default=False)
-    has_etc_issue = fields.Boolean(default=False)
 
 
 class PrepareLiveImagePostTasks(Model):
