@@ -416,7 +416,7 @@ def _generate_livemode_initramfs(context, userspace_initramfs_dest, target_kerne
     copy_dracut_modules(context, initramfs_includes.dracut_modules)
     copy_kernel_modules(context, initramfs_includes.kernel_modules)
 
-    dracut_modules = ['livenet', 'dmsquash-live'] + initramfs_includes.dracut_modules
+    dracut_modules = ['livenet', 'dmsquash-live'] + [mod.name for mod in initramfs_includes.dracut_modules]
 
     cmd = ['dracut', '--verbose', '--compress', 'xz',
            '--no-hostonly', '--no-hostonly-default-device',
@@ -425,10 +425,10 @@ def _generate_livemode_initramfs(context, userspace_initramfs_dest, target_kerne
            '--kver', target_kernel_ver, '-f', userspace_initramfs_dest]
 
     # Add dracut modules
-    cmd += list(itertools.chain(('--add', module) for module in dracut_modules))
+    cmd += list(itertools.chain(*(('--add', module) for module in dracut_modules)))
 
     # Add kernel modules
-    cmd += itertools.chain(('--add-drivers', module) for module in initramfs_includes.kernel_modules)
+    cmd += itertools.chain(*(('--add-drivers', module.name) for module in initramfs_includes.kernel_modules))
 
     try:
         context.call(cmd, env=env)
