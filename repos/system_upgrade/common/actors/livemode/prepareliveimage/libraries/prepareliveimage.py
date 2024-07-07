@@ -198,7 +198,7 @@ def make_root_account_passwordless(context):
 
     :returns: Noting.
     :raises StopActorExecutionError: The upgrade is stopped if the user requests upgrade root account to be
-                                     passwordless, however, the correspoding modifications could not be performed.
+                                     passwordless, however, the corresponding modifications could not be performed.
     """
     target_userspace_passwd_path = context.full_path('/etc/passwd')
 
@@ -279,7 +279,7 @@ def setup_network(context, enable_nm):
     :raises StopActorExecutionError: The exception is raised when failing to copy the configuration
                                      files into the livemode image.
     """
-    # TODO(mhecko): implementation here is uncomplete
+    # TODO(mhecko): implementation here is incomplete
     # ideally we'd need to run nmcli con migrate for the live mode.
     if not enable_nm or get_target_major_version() < "9":
         return  # 8>9 only
@@ -298,9 +298,9 @@ def setup_network(context, enable_nm):
             nm_conn_fullpath = os.path.join(network_manager_conns_path, nm_conn)
             context.copy_to(nm_conn_fullpath, nm_conn_fullpath)
     except OSError as error:
-        api.current_logger().error('Failed to setup nework connections for the upgrade live image. Error: %s', error)
+        api.current_logger().error('Failed to setup network connections for the upgrade live image. Error: %s', error)
         details = {'Problem': str(error)}
-        raise StopActorExecutionError('Failed to setup nework connections for the upgrade live image.',
+        raise StopActorExecutionError('Failed to setup network connections for the upgrade live image.',
                                       details=details)
 
 
