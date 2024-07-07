@@ -321,8 +321,8 @@ def collect_initramfs_includes():
     additional_initramfs_files = set()
 
     for task in api.consume(UpgradeInitramfsTasks):
-        dracut_modules.update(task.include_dracut_modules)
-        kernel_modules.update(task.include_kernel_modules)
+        dracut_modules.extend(task.include_dracut_modules)
+        kernel_modules.extend(task.include_kernel_modules)
         additional_initramfs_files.update(task.include_files)
 
     return InitramfsIncludes(files=list(additional_initramfs_files),
