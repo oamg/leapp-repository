@@ -18,11 +18,11 @@ def load_tasks_file(path, logger):
     return []
 
 
-def load_tasks(base_dir, logger):
+def load_tasks(config, logger):
     # Loads configuration files to_install, to_keep, and to_remove from the given base directory
     rpms = next(api.consume(DistributionSignedRPM))
     rpm_names = [rpm.name for rpm in rpms.items]
-    to_install = load_tasks_file(os.path.join(base_dir, 'to_install'), logger)
+    to_install = config['transaction']['to_install']
     # we do not want to put into rpm transaction what is already installed (it will go to "to_upgrade" bucket)
     to_install_filtered = [pkg for pkg in to_install if pkg not in rpm_names]
 
@@ -34,5 +34,5 @@ def load_tasks(base_dir, logger):
 
     return RpmTransactionTasks(
         to_install=to_install_filtered,
-        to_keep=load_tasks_file(os.path.join(base_dir, 'to_keep'), logger),
-        to_remove=load_tasks_file(os.path.join(base_dir, 'to_remove'), logger))
+        to_keep=config['transaction']['to_keep'],
+        to_remove=config['transaction']['to_remove'])
