@@ -68,7 +68,7 @@ def _create_dracut_modules():
                'upgrade intiramfs due to livemode being enabled.')
         api.current_logger().debug(msg)
         return
-    
+
     if dracut_base_path:
         dracut_base_path = os.path.abspath(dracut_base_path)
         for module in os.listdir(dracut_base_path):
