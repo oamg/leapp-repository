@@ -60,25 +60,25 @@ def _create_liveos_xfs_image(image_dest):
                                       details={'details': 'mkfs command failed - full error: {0}'.format(error)})
 
 
-def _unmount_tmp_liveos(liveos_dir):
+def _unmount_tmp_liveos(liveos_mountpoint):
     try:
-        run(['umount', '-fl', '{}_mnt'.format(liveos_dir)])
+        run(['umount', '-fl', liveos_mountpoint])
     except OSError:
         pass
 
 
-def _copy_rootfs(userspace_dir, liveos_dir):
+def _copy_rootfs(userspace_dir, liveos_workspace):
     """
     Copy the target userspace content into the XFS image
     """
 
-    image_mnt_folder_name = '{0}_mnt'.format(os.path.basename(liveos_dir))
-    live_image_mount_dir = os.path.join(os.path.dirname(liveos_dir), image_mnt_folder_name)
+    image_mnt_folder_name = 'mnt'
+    live_image_mount_dir = os.path.join(os.path.dirname(liveos_workspace), image_mnt_folder_name)
     try:
         os.makedirs(live_image_mount_dir)
-        run(['mount', os.path.join(liveos_dir, '/LiveOS/rootfs.img'), live_image_mount_dir])
+        run(['mount', os.path.join(liveos_workspace, '/LiveOS/rootfs.img'), live_image_mount_dir])
     except CalledProcessError as error:
-        _unmount_tmp_liveos(liveos_dir)
+        _unmount_tmp_liveos(liveos_workspace)
         raise StopActorExecutionError(
            'Cannot mount temporary LiveOS image to populate it with target userspace.',
            details={'details': 'Full error: {0}'.format(error)}
@@ -98,7 +98,7 @@ def _copy_rootfs(userspace_dir, liveos_dir):
         raise StopActorExecutionError('Failed to populate upgrade root fs image.',
                                       details={'details': 'Full error: {0}'.format(error)})
     finally:
-        _unmount_tmp_liveos(liveos_dir)
+        _unmount_tmp_liveos(live_image_mount_dir)
 
 
 def lighten_target_userpace(context):
