@@ -1,7 +1,6 @@
 import grp
 import os
 import os.path
-import shutil
 from distutils.version import LooseVersion
 
 from leapp.exceptions import StopActorExecutionError

@@ -81,8 +81,8 @@ def add_boot_entry(configs=None):
 
         remove_undesired_args_cmd = [
             '/usr/sbin/grubby',
-           '--update-kernel', kernel_dst_path,
-           '--remove-args', ' '.join(args_to_remove_str)
+            '--update-kernel', kernel_dst_path,
+            '--remove-args', ' '.join(args_to_remove_str)
         ]
 
         if configs:

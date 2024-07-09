@@ -127,7 +127,7 @@ def build_squashfs(context, livemode_config):
     squashfs_fullpath = livemode_config.squashfs
 
     api.current_logger().info('Building the squashfs image %s using the temporary workspace %s',
-                               squashfs_fullpath, liveos_workspace)
+                              squashfs_fullpath, liveos_workspace)
 
     clean_up_workspace_from_previous_builds(liveos_workspace)
     os.mkdirs(os.path.join(liveos_workspace, 'LiveOS'))
