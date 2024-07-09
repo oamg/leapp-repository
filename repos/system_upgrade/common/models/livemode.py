@@ -108,6 +108,4 @@ class LiveModeArtifacts(Model):
     """
     Artifacts created for the Live Mode
     """
-    kernel = fields.Nullable(fields.String())
-    initramfs = fields.Nullable(fields.String())
-    squashfs = fields.Nullable(fields.String())
+    squashfs = fields.String()

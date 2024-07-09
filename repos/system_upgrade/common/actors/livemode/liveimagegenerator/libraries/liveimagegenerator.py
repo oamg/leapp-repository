@@ -1,65 +1,22 @@
 import os
 import os.path
 import shutil
-import subprocess
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import mounting
 from leapp.libraries.stdlib import api, CalledProcessError, run
+from leapp.models import (
+    LiveModeArtifacts,
+    LiveModeConfigFacts,
+    TargetUserSpaceInfo
+)
 
 LEAPP_LIVE_IMAGE = '/var/lib/leapp/live-upgrade.img'
 LEAPP_LIVEOS_DIR = '/var/lib/leapp/tmp'
 DEFAULT_XFS_SIZE = 3072  # MB
 
 
-def _shell(command):
-    # @Todo(mhecko): this needs to be replaced with run
-    p = subprocess.Popen(command,
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE,
-                         close_fds=True,
-                         shell=True,
-                         universal_newlines=True)
-    p.wait()
-    output = []
-    while True:
-        line = p.stdout.readline().rstrip('\n')
-        if line:
-            output.append(line)
-        else:
-            break
-    return (p.returncode, output)
-
-
-def setup_boot_content(context, tasks, boot):
-    """
-    Silently replace upgrade boot images.
-    """
-    api.current_logger().info('Setup the live boot content')
-
-    if not tasks.kernel or not tasks.initramfs:
-        raise StopActorExecutionError(
-            'Cannot install the boot images for the live mode.',
-            details={'Problem': 'kernel: {0}, initramfs: {1}.'.format(tasks.kernel, tasks.initramfs)}
-        )
-
-    try:
-        os.unlink(boot.kernel_path)
-        os.unlink(boot.initram_path)
-    except OSError:
-        pass
-
-    try:
-        context.copy_from(tasks.kernel, boot.kernel_path)
-        context.copy_from(tasks.initramfs, boot.initram_path)
-    except OSError:
-        raise StopActorExecutionError(
-            'Cannot install the boot images for the live mode.',
-            details={'Problem': 'copy to host failed.'})
-
-    if not os.path.isfile(boot.initram_path):
-        return (None, None)
-    return (boot.kernel_path, boot.initram_path)
+DNF_CACHE_BACKUP_PATH = '/var/lib/leapp/dnf'
 
 
 def _backup_dnf_cache(context):
@@ -67,10 +24,10 @@ def _backup_dnf_cache(context):
     Move temporary the DNF cache outside the target userspace
     """
     try:
-        shutil.move(context.full_path('/var/cache/dnf'), '/var/lib/leapp')
+        shutil.move(context.full_path('/var/cache/dnf'), DNF_CACHE_BACKUP_PATH)
         context.makedirs('/var/cache/dnf')
-    except OSError:
-        api.current_logger().warning('Cannot backup the DNF cache.')
+    except OSError as error:
+        api.current_logger().warning('Cannot backup the DNF cache. Full error: %s', error)
 
 
 def _restore_dnf_cache(context):
@@ -80,26 +37,27 @@ def _restore_dnf_cache(context):
     try:
         if os.path.isdir(context.full_path('/var/cache/dnf')):
             context.call(['rm', '-rf', '/var/cache/dnf'])
-        shutil.move('/var/lib/leapp/dnf', context.full_path('/var/cache'))
+        shutil.move(DNF_CACHE_BACKUP_PATH, context.full_path('/var/cache/dnf'))
     except OSError:
         api.current_logger().warning('Cannot restore the DNF cache.')
 
 
-def _create_liveos_xfs(liveos_dir):
+def clean_up_workspace_from_previous_builds(liveos_workspace):
+    run(['rm', '-rf', liveos_workspace])
+    os.makedirs(liveos_workspace)
+
+
+def _create_liveos_xfs_image(image_dest):
     """
     Create XFS image into LiveOS/rootfs.img
     """
+
     xfs_size = os.getenv('LEAPP_LIVE_XFS_SIZE', DEFAULT_XFS_SIZE)
     try:
-        run(['rm', '-rf', liveos_dir])
-        os.makedirs("{}/LiveOS".format(liveos_dir))
-        run(['mkfs.xfs', '-d', 'file,name=%s/LiveOS/rootfs.img,size=%sm'
-            % (liveos_dir, xfs_size)])
-    except CalledProcessError:
-        raise StopActorExecutionError(
-           'Cannot mkfs temporary LiveOS image.',
-           details={'details': 'the mkfs command failed.'}
-        )
+        run(['mkfs.xfs', '-d', 'file,name={0},size={1}m'.format(image_dest, xfs_size)])
+    except CalledProcessError as error:
+        raise StopActorExecutionError('Cannot mkfs temporary LiveOS image.',
+                                      details={'details': 'mkfs command failed - full error: {0}'.format(error)})
 
 
 def _unmount_tmp_liveos(liveos_dir):
@@ -113,16 +71,17 @@ def _copy_rootfs(userspace_dir, liveos_dir):
     """
     Copy the target userspace content into the XFS image
     """
+
+    image_mnt_folder_name = '{0}_mnt'.format(os.path.basename(liveos_dir))
+    live_image_mount_dir = os.path.join(os.path.dirname(liveos_dir), image_mnt_folder_name)
     try:
-        run(['rm', '-rf', '{}_mnt'.format(liveos_dir)])
-        os.makedirs('{}_mnt'.format(liveos_dir))
-        run(['mount', '{}/LiveOS/rootfs.img'.format(liveos_dir),
-             '{}_mnt'.format(liveos_dir)])
-    except CalledProcessError:
+        os.makedirs(live_image_mount_dir)
+        run(['mount', os.path.join(liveos_dir, '/LiveOS/rootfs.img'), live_image_mount_dir])
+    except CalledProcessError as error:
         _unmount_tmp_liveos(liveos_dir)
         raise StopActorExecutionError(
-           'Cannot mount temporary LiveOS image.',
-           details={'details': 'none'}
+           'Cannot mount temporary LiveOS image to populate it with target userspace.',
+           details={'details': 'Full error: {0}'.format(error)}
         )
 
     try:
@@ -132,92 +91,100 @@ def _copy_rootfs(userspace_dir, liveos_dir):
         # but it could cause issues with other actors that remove this directory
         # When mounted, its removal would lead to an EBUSY errno.
         api.current_logger().info('Copying the target userspace to the LiveOS')
-        ret, _ = _shell('/bin/cp -fapZ %s/* %s_mnt' % (userspace_dir, liveos_dir))
-        if ret != 0:
-            api.current_logger().error(
-                'Cannot the target userspace to the LiveOS'
-            )
-    except OSError:
-        _unmount_tmp_liveos(liveos_dir)
-        raise StopActorExecutionError(
-           'Cannot the target userspace to the LiveOS',
-           details={'details': 'none'}
-        )
 
-    _unmount_tmp_liveos(liveos_dir)
+        cmd = ['cp', '-fapZ', userspace_dir, live_image_mount_dir]
+        run(cmd)
+    except CalledProcessError as error:
+        raise StopActorExecutionError('Failed to populate upgrade root fs image.',
+                                      details={'details': 'Full error: {0}'.format(error)})
+    finally:
+        _unmount_tmp_liveos(liveos_dir)
 
 
 def lighten_target_userpace(context):
     """
-    Remove unneeded files from the target userspace
+    Remove unneeded files from the target userspace.
     """
-    try:
-        _shell('rm -rf {}/artifacts'.format(context.base_dir))
-        _shell('rm -rf {}/boot/*'.format(context.base_dir))
-    except OSError:
-        api.current_logger().warning(
-           'Cannot remove /boot content from the live image.'
-        )
+
+    userspace_trees_to_prune = ['artifacts', 'boot']
+
+    for tree_to_prune in userspace_trees_to_prune:
+        tree_full_path = os.path.join(context.base_dir, tree_to_prune)
+        try:
+            shutil.rmtree(tree_full_path)
+        except OSError as error:
+            api.current_logger().warning('Failed to remove /%s directory from the live image. Full error: %s',
+                                         tree_to_prune, error)
 
 
-def build_squashfs(context, livemode):
+def build_squashfs(context, livemode_config):
     """
     Generate the live rootfs image based on the target userspace
+
+    :param livemode LiveModeConfigFacts: Livemode configuration message
     """
-    api.current_logger().info('Building the squashfs image')
+    liveos_workspace = livemode_config.temp_dir
+    squashfs_fullpath = livemode_config.squashfs
 
-    liveos_dir = livemode.temp_dir or LEAPP_LIVEOS_DIR
-    squashfs_filename = livemode.squashfs or LEAPP_LIVE_IMAGE
+    api.current_logger().info('Building the squashfs image %s using the temporary workspace %s',
+                               squashfs_fullpath, liveos_workspace)
 
-    if not livemode.with_cache:
+    clean_up_workspace_from_previous_builds(liveos_workspace)
+    os.mkdirs(os.path.join(liveos_workspace, 'LiveOS'))
+
+    if not livemode_config.with_cache:
         _backup_dnf_cache(context)
 
-    _create_liveos_xfs(liveos_dir)
-    _copy_rootfs(context.base_dir, liveos_dir)
+    upgrade_image_fullpath = os.path.join(liveos_workspace, 'LiveOS', 'root.img')
+    _create_liveos_xfs_image(image_dest=upgrade_image_fullpath)
+    _copy_rootfs(context.base_dir, liveos_workspace)
+
+    try:
+        os.unlink(squashfs_fullpath)
+    except OSError as error:
+        api.current_logger().warning('Failed to remove already existing %s. Full error: %s',
+                                     squashfs_fullpath, error)
 
     cwd = os.getcwd()
-    os.chdir(liveos_dir)
     try:
-        os.unlink(squashfs_filename)
-    except OSError:
-        pass
-    try:
-        run(['mksquashfs', '.', squashfs_filename])
-    except CalledProcessError:
-        if not livemode.with_cache:
-            _restore_dnf_cache(context)
+        os.chdir(liveos_workspace)
+        # @Todo(mhecko): Can we build the image without changing the current directory?
+        run(['mksquashfs', '.', squashfs_fullpath])
+    except CalledProcessError as error:
         raise StopActorExecutionError(
            'Cannot pack the target userspace into a squash image. ',
-           details={'details': 'a problem occurs with mksquashfs.'}
+           details={'details': 'The following error occurred while building the squashfs image: {0}.'.format(error)}
         )
-    os.chdir(cwd)
+    finally:
+        if not livemode_config.with_cache:
+            _restore_dnf_cache(context)
+        os.chdir(cwd)
 
     try:
-        run(['rm', '-rf', liveos_dir])
-        os.rmdir('{}_mnt'.format(liveos_dir))
-    except OSError:
-        api.current_logger().warning('Cannot remove temporary LiveOS dir')
+        run(['rm', '-rf', liveos_workspace])
 
-    if not livemode.with_cache:
-        _restore_dnf_cache(context)
+        # @Todo(mhecko): We are cleaning out the temporary workspace here, make sure that the upgrade image is not
+        # in the workspace (misconfiguration)
+    except OSError as error:
+        api.current_logger().warning(
+            'Failed to remove the temporary workspace (at %s) due to the following error: %s', error
+        )
 
-    if not os.path.isfile(squashfs_filename):
-        return None
-    return squashfs_filename
+    return squashfs_fullpath
 
 
-def generate_live_image(livemode, userspace, tasks, boot):
+def generate_live_image_if_enabled():
     """
-    Main function to generate the live mode artifacts:
-     - vmlinuz-upgrade.x86_64
-     - initramfs-upgrade.x86_64.img
-     - leapp-live-upgrade.img
-    Update the upgrade boot entry with specific parameters afterwards.
+    Main function to generate the additional artifacts needed to run in live mode.
     """
 
-    with mounting.NspawnActions(base_dir=userspace.path) as context:
-        kernel, initramfs = setup_boot_content(context, tasks, boot)
+    livemode_config = next(api.consume(LiveModeConfigFacts), None)
+    if not livemode_config or not livemode_config.enabled:
+        return
+
+    userspace_info = next(api.consume(TargetUserSpaceInfo), None)
+
+    with mounting.NspawnActions(base_dir=userspace_info.path) as context:
         lighten_target_userpace(context)
-        squashfs = build_squashfs(context, livemode)
-
-    return (kernel, initramfs, squashfs)
+        squashfs = build_squashfs(context, livemode_config)
+        api.produce(LiveModeArtifacts(squashfs=squashfs))
