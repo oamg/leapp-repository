@@ -102,7 +102,7 @@ jobs:
   job: tests
   trigger: ignore
   fmf_url: "https://gitlab.cee.redhat.com/oamg/leapp-tests"
-  fmf_ref: "main"
+  fmf_ref: "rhel7"
   use_internal_tf: True
   labels:
     - sanity
