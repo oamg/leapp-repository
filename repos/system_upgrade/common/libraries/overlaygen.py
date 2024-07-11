@@ -1,6 +1,7 @@
 import contextlib
 import os
 import shutil
+import sys
 from collections import namedtuple
 
 from leapp.exceptions import StopActorExecutionError
@@ -343,7 +344,12 @@ def cleanup_scratch(scratch_dir, mounts_dir):
         # NOTE(pstodulk): From time to time, it helps me with some experiments
         return
     api.current_logger().debug('Recursively removing scratch directory %s.', scratch_dir)
-    shutil.rmtree(scratch_dir, onerror=utils.report_and_ignore_shutil_rmtree_error)
+    if sys.version_info >= (3, 12):
+        # NOTE(mmatuska): The pylint suppressions are required because of a bug in pylint:
+        # (https://github.com/pylint-dev/pylint/issues/9622)
+        shutil.rmtree(scratch_dir, onexc=utils.report_and_ignore_shutil_rmtree_error)  # noqa: E501; pylint: disable=unexpected-keyword-arg
+    else:
+        shutil.rmtree(scratch_dir, onerror=utils.report_and_ignore_shutil_rmtree_error)  # noqa: E501; pylint: disable=deprecated-argument
     api.current_logger().debug('Recursively removed scratch directory %s.', scratch_dir)
 
 
