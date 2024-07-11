@@ -149,7 +149,7 @@ jobs:
   tf_extra_params:
     test:
       tmt:
-        plan_filter: 'tag:7to8 & tag:rhui-tier[0] & enabled:true'
+        plan_filter: 'tag:7to8 & tag:upgrade_happy_path & enabled:true'
     environments:
       - tmt:
           context:
@@ -244,7 +244,7 @@ jobs:
   tf_extra_params:
     test:
       tmt:
-        plan_filter: 'tag:7to8 & tag:tier0 & enabled:true'
+        plan_filter: 'tag:7to8 & tag:sanity & enabled:true'
     environments:
       - tmt:
           context:
@@ -265,7 +265,7 @@ jobs:
   tf_extra_params:
     test:
       tmt:
-        plan_filter: 'tag:7to8 & tag:rhui-tier[0] & enabled:true'
+        plan_filter: 'tag:7to8 & tag:upgrade_happy_path & enabled:true'
     environments:
       - tmt:
           context:
