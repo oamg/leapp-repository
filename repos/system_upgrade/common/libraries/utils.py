@@ -105,10 +105,17 @@ def report_and_ignore_shutil_rmtree_error(func, path, exc_info):
     """
     Helper function for shutil.rmtree to only report errors but don't fail.
     """
-    api.current_logger().warning(
-        'While trying to remove directories: %s failed at %s with an exception %s message: %s',
-        func.__name__, path, exc_info[0].__name__, exc_info[1]
-    )
+    # third parameter has changed in Python 3.12
+    if sys.version_info >= (3, 12):
+        api.current_logger().warning(
+            'While trying to remove directories: %s failed at %s with an exception %s message: %s',
+            func.__name__, path, exc_info[0].__name__, exc_info[1]
+        )
+    else:
+        api.current_logger().warning(
+            'While trying to remove directories: %s failed at %s with an exception %s message: %s',
+            func.__name__, path, type(exc_info).__name__, str(exc_info)
+        )
 
 
 def call_with_oserror_handled(cmd):
