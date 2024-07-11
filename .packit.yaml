@@ -121,11 +121,6 @@ jobs:
     epel-7-x86_64:
       distros: [RHEL-7.9-rhui]
   identifier: sanity-abstract-7to8-aws
-  env:
-    RHUI: "aws"
-    LEAPPDATA_BRANCH: "upstream"
-    LEAPP_NO_RHSM: "1"
-    USE_CUSTOM_REPOS: rhui
 
 # On-demand minimal beaker tests
 - &beaker-minimal-7to8-abstract-ondemand
@@ -168,6 +163,10 @@ jobs:
   env:
     SOURCE_RELEASE: "7.9"
     TARGET_RELEASE: "8.8"
+    RHUI: "aws"
+    LEAPPDATA_BRANCH: "upstream"
+    LEAPP_NO_RHSM: "1"
+    USE_CUSTOM_REPOS: rhui
 
 - &sanity-79to88
   <<: *sanity-abstract-7to8
@@ -283,6 +282,10 @@ jobs:
   env:
     SOURCE_RELEASE: "7.9"
     TARGET_RELEASE: "8.10"
+    RHUI: "aws"
+    LEAPPDATA_BRANCH: "upstream"
+    LEAPP_NO_RHSM: "1"
+    USE_CUSTOM_REPOS: rhui
 
 - &beaker-minimal-79to810
   <<: *beaker-minimal-7to8-abstract-ondemand
