@@ -88,7 +88,8 @@ jobs:
 
 # NOTE: to see what envars, targets, .. can be set in tests, see
 # the configuration of tests here:
-#   https://gitlab.cee.redhat.com/oamg/leapp-tests/-/blob/main/config.yaml
+#  7toX path https://gitlab.cee.redhat.com/oamg/leapp-tests/-/blob/rhel7/config.yaml
+# >7tox path https://gitlab.cee.redhat.com/oamg/leapp-tests/-/blob/main/config.yaml
 # Available only to RH Employees.
 
 # ###################################################################### #
