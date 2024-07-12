@@ -88,7 +88,8 @@ jobs:
 
 # NOTE: to see what envars, targets, .. can be set in tests, see
 # the configuration of tests here:
-#   https://gitlab.cee.redhat.com/oamg/leapp-tests/-/blob/main/config.yaml
+#  7toX path https://gitlab.cee.redhat.com/oamg/leapp-tests/-/blob/rhel7/config.yaml
+# >7tox path https://gitlab.cee.redhat.com/oamg/leapp-tests/-/blob/main/config.yaml
 # Available only to RH Employees.
 
 # ###################################################################### #
@@ -102,7 +103,7 @@ jobs:
   job: tests
   trigger: ignore
   fmf_url: "https://gitlab.cee.redhat.com/oamg/leapp-tests"
-  fmf_ref: "main"
+  fmf_ref: "rhel7"
   use_internal_tf: True
   labels:
     - sanity
@@ -149,7 +150,7 @@ jobs:
   tf_extra_params:
     test:
       tmt:
-        plan_filter: 'tag:7to8 & tag:rhui-tier[0] & enabled:true'
+        plan_filter: 'tag:7to8 & tag:upgrade_happy_path & enabled:true'
     environments:
       - tmt:
           context:
@@ -163,7 +164,10 @@ jobs:
   env:
     SOURCE_RELEASE: "7.9"
     TARGET_RELEASE: "8.8"
-    RHUI_HYPERSCALER: aws
+    RHUI: "aws"
+    LEAPPDATA_BRANCH: "upstream"
+    LEAPP_NO_RHSM: "1"
+    USE_CUSTOM_REPOS: rhui
 
 - &sanity-79to88
   <<: *sanity-abstract-7to8
@@ -172,7 +176,7 @@ jobs:
   tf_extra_params:
     test:
       tmt:
-        plan_filter: 'tag:7to8 & tag:tier0 & enabled:true'
+        plan_filter: 'tag:7to8 & tag:sanity & enabled:true'
     environments:
       - tmt:
           context:
@@ -244,7 +248,7 @@ jobs:
   tf_extra_params:
     test:
       tmt:
-        plan_filter: 'tag:7to8 & tag:tier0 & enabled:true'
+        plan_filter: 'tag:7to8 & tag:sanity & enabled:true'
     environments:
       - tmt:
           context:
@@ -265,7 +269,7 @@ jobs:
   tf_extra_params:
     test:
       tmt:
-        plan_filter: 'tag:7to8 & tag:rhui-tier[0] & enabled:true'
+        plan_filter: 'tag:7to8 & tag:upgrade_happy_path & enabled:true'
     environments:
       - tmt:
           context:
@@ -279,7 +283,10 @@ jobs:
   env:
     SOURCE_RELEASE: "7.9"
     TARGET_RELEASE: "8.10"
-    RHUI_HYPERSCALER: aws
+    RHUI: "aws"
+    LEAPPDATA_BRANCH: "upstream"
+    LEAPP_NO_RHSM: "1"
+    USE_CUSTOM_REPOS: rhui
 
 - &beaker-minimal-79to810
   <<: *beaker-minimal-7to8-abstract-ondemand
