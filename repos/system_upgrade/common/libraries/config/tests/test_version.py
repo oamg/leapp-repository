@@ -121,3 +121,17 @@ def test_is_rhel_realtime(monkeypatch, result, kernel, release_id):
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(src_ver='7.9', kernel=kernel,
                                                                  release_id=release_id))
     assert version.is_rhel_realtime() == result
+
+
+@pytest.mark.parametrize('result,sys_version', [
+    ('7', '7.1.0'),
+    ('7', '7.9'),
+    ('7', '7'),
+    ('8', '8.10'),
+    ('10', '10.0'),
+    ('10', '10.10.0'),
+    ('10', '10.0'),
+    ('10', '10'),
+])
+def test_get_major_version(result, sys_version):
+    assert version.get_major_version(sys_version) == result
