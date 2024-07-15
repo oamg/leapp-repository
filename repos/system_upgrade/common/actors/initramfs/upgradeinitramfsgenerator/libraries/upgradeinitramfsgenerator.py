@@ -1,6 +1,5 @@
 import os
 import shutil
-from distutils.version import LooseVersion
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import dnfplugin, mounting
@@ -30,23 +29,35 @@ def _get_target_kernel_version(context):
 
     kernel_version = None
     try:
-        results = context.call(['rpm', '-qa', 'kernel-core'], split=True)
-
-        versions = [ver.replace('kernel-core-', '') for ver in results['stdout']]
-        api.current_logger().debug(
-            'Versions detected {versions}.'
-            .format(versions=versions))
-        sorted_versions = sorted(versions, key=LooseVersion, reverse=True)
-        kernel_version = next(iter(sorted_versions), None)
+        # NOTE: Currently we install/use always kernel-core in the upgrade
+        # initramfs. We do not use currently any different kernel package
+        # in the container. Note this could change in future e.g. on aarch64
+        # for IPU 9 -> 10.
+        # TODO(pstodulk): Investigate situation on ARM systems. OAMG-11433
+        results = context.call(['rpm', '-qa', 'kernel-core'], split=True)['stdout']
     except CalledProcessError:
         raise StopActorExecutionError(
-            'Cannot get version of the installed kernel.',
-            details={'Problem': 'Could not query the currently installed kernel through rmp.'})
+            'Cannot get version of the installed kernel inside container.',
+            details={'Problem': 'Could not query the currently installed kernel inside container using rpm.'})
+
+    if len(results) > 1:
+        # this is should not happen. It's hypothetic situation, which alone it's
+        # already error. So skipping more sophisticated implementation.
+        # The container is always created during the upgrade and as that we expect
+        # always one-and-only kernel installed.
+        raise StopActorExecutionError(
+            'Cannot get version of the installed kernel inside container.',
+            details={'Problem': 'Detected unexpectedly multiple kernels inside target userspace container.'}
+        )
+
+    # kernel version == version-release from package
+    kernel_version = '-'.join(results[0].rsplit("-", 2)[-2:])
+    api.current_logger().debug('Detected kernel version inside container: {}.'.format(kernel_version))
 
     if not kernel_version:
         raise StopActorExecutionError(
-            'Cannot get version of the installed kernel.',
-            details={'Problem': 'A rpm query for the available kernels did not produce any results.'})
+            'Cannot get version of the installed kernel inside container.',
+            details={'Problem': 'An rpm query for the available kernels did not produce any results.'})
 
     return kernel_version
 
