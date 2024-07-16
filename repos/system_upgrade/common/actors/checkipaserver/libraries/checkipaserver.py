@@ -27,7 +27,7 @@ def ipa_inhibit_upgrade(ipainfo):
             hint="Follow the IdM RHEL migration guide lines."
         ),
         reporting.ExternalLink(
-            url=MIGRATION_GUIDES[get_source_major_version()],
+            url=MIGRATION_GUIDES.get(get_source_major_version(), "TBD"),
             title="IdM migration guide",
         ),
         reporting.Severity(reporting.Severity.HIGH),
@@ -62,8 +62,8 @@ def ipa_warn_pkg_installed(ipainfo):
             commands=[["yum", "remove", "-y", "ipa-server"]],
         ),
         reporting.ExternalLink(
-            url=MIGRATION_GUIDES[get_source_major_version()],
-            title="Migrating IdM from RHEL 7 to 8",
+            url=MIGRATION_GUIDES.get(get_source_major_version(), "TBD"),
+            title="IdM migration guide",
         ),
         reporting.Severity(reporting.Severity.MEDIUM),
         reporting.Groups([reporting.Groups.SERVICES]),
