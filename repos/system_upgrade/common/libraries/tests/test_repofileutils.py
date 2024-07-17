@@ -1,7 +1,10 @@
 import json
 import os
 
+import pytest
+
 from leapp.libraries.common import repofileutils
+from leapp.models.fields import ModelViolationError
 
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -10,6 +13,30 @@ def test_invert_dict():
     input_dict = {1: ['a', 'b'], 2: ['b'], 3: []}
     inv_dict = repofileutils._invert_dict(input_dict)
     assert inv_dict == {'a': [1], 'b': [1, 2]}
+
+
+@pytest.mark.parametrize(
+    ('repoid', 'data'),
+    (
+        ('missing-name', {'baseurl': 'http://example.com', 'enabled': '1', 'gpgcheck': '1'}),
+        (None, {'name': 'name', 'baseurl': 'http://example.com', 'enabled': '1', 'gpgcheck': '1'}),
+        ('name-none', {'name': None, 'baseurl': 'http://example.com', 'enabled': '1', 'gpgcheck': '1'}),
+        ('baseurl-true', {'name': 'valid', 'baseurl': True, 'enabled': '1', 'gpgcheck': '1'}),
+    )
+)
+def test__parse_repository_missing_name(repoid, data):
+    with pytest.raises(ModelViolationError):
+        repofileutils._parse_repository(repoid, data)
+
+
+def test_parse_repofile_error(monkeypatch):
+    def _parse_repository_mocked(*args, **kwargs):
+        raise ModelViolationError('')
+
+    monkeypatch.setattr(repofileutils, '_parse_repository', _parse_repository_mocked)
+
+    with pytest.raises(repofileutils.InvalidRepoDefinition):
+        repofileutils.parse_repofile(os.path.join(CUR_DIR, 'sample_repos.txt'))
 
 
 def test_parse_repofile():
