@@ -1,5 +1,6 @@
 import itertools
 import contextlib
+from collections import namedtuple
 import enum
 import math
 import os
@@ -320,14 +321,15 @@ def populate_exit_stack_with_mount_dependencies(exit_stack, dependencies):
 
 
 def make_userspace_for_squashfs(install_root_dir, enabled_repos, packages):
+    # @CheckPoint(mhecko): install_root_dir has a different semantics than you might think
     required_space = estimate_required_disk_space_for_userspace(install_root_dir, enabled_repos, packages)
     required_space *= USERSPACE_OVERSIZE_COEF
     required_space = math.ceil(required_space)
     make_userspace_image(USERSPACE_IMAGE_FULLPATH, required_space)
 
+    dnf_cache_path = 'var/cache/dnf'
     dnf_cache_inside_userspace = os.path.join(install_root_dir, dnf_cache_path)
-    with mounting.LoopMount(source=SERSPACE_IMAGE_FULLPATH, target=install_root_dir):
-        dnf_cache_path = 'var/cache/dnf'
+    with mounting.LoopMount(source=USERSPACE_IMAGE_FULLPATH, target=install_root_dir):
         os.makedirs(dnf_cache_inside_userspace)
 
     make_external_dnf_cache_directory(USERSPACE_EXTERNAL_DNF_CACHE)
