@@ -217,7 +217,21 @@ def get_sysctls_status():
 
 def get_repositories_status():
     """ Get a basic information about YUM repositories installed in the system """
-    return RepositoriesFacts(repositories=repofileutils.get_parsed_repofiles())
+    try:
+        return RepositoriesFacts(repositories=repofileutils.get_parsed_repofiles())
+    except repofileutils.InvalidRepoDefinition as e:
+        raise StopActorExecutionError(
+            message='Invalid repository definition',
+            details={
+                'details': str(e),
+                'file': e.repofile,
+                'repoid': e.repoid,
+                'hint': 'To resolve this issue, please visit: {url}'
+                        .format(
+                            url='https://access.redhat.com/solutions/3185891'
+                        )
+            }
+        )
 
 
 def get_selinux_status():
