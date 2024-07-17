@@ -3,7 +3,16 @@ import pwd
 
 import pytest
 
-from leapp.libraries.actor.systemfacts import _get_system_groups, _get_system_users, anyendswith, anyhasprefix, aslist
+from leapp.exceptions import StopActorExecutionError
+from leapp.libraries.actor.systemfacts import (
+    _get_system_groups,
+    _get_system_users,
+    anyendswith,
+    anyhasprefix,
+    aslist,
+    get_repositories_status
+)
+from leapp.libraries.common import repofileutils
 from leapp.libraries.common.testutils import logger_mocked
 from leapp.libraries.stdlib import api
 from leapp.snactor.fixture import current_actor_libraries
@@ -116,3 +125,16 @@ def test_get_system_groups(monkeypatch, etc_group_names, skipped_group_names):
                 assert group_name not in api.current_logger().dbgmsg[0]
     else:
         assert not api.current_logger().dbgmsg
+
+
+def test_failed_parsed_repofiles(monkeypatch):
+    def _raise_invalidrepo_error():
+        raise repofileutils.InvalidRepoDefinition(msg='mocked error',
+                                                  repofile='/etc/yum.repos.d/mock.repo',
+                                                  repoid='mocked repoid')
+
+    monkeypatch.setattr(repofileutils, 'get_parsed_repofiles', _raise_invalidrepo_error)
+    monkeypatch.setattr(api, 'current_logger', logger_mocked())
+
+    with pytest.raises(StopActorExecutionError):
+        get_repositories_status()
