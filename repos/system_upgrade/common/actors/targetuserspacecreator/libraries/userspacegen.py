@@ -281,7 +281,7 @@ def estimate_required_disk_space_for_userspace(userspace_installroot, enabled_re
 
     msg = ('Userspace with packages (%s) will require the following disk space: %f + %f = %f mb '
            '(download+install)')
-    api.current_logger().debug(msg, mb_download, mb_install, mb_total)
+    api.current_logger().debug(msg, packages, mb_download, mb_install, mb_total)
 
     return mb_total
 
@@ -317,7 +317,7 @@ def prepare_target_userspace(context, userspace_dir, enabled_repos, packages):
         if config.is_verbose():
             cmd_with_no_pkgs.append('-v')
         if rhsm.skip_rhsm():
-            cmd_with_no_pkgs.extend('--disableplugin', 'subscription-manager')
+            cmd_with_no_pkgs.extend(('--disableplugin', 'subscription-manager'))
         try:
             result = estimate_required_disk_space_for_userspace(install_root_dir, enabled_repos, packages)
             import pdb; pdb.set_trace()
