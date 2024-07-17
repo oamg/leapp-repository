@@ -212,6 +212,80 @@ def _handle_transaction_err_msg_size(err):
     raise StopActorExecutionError(message=message, details=details)
 
 
+def parse_out_space_required_for_userspace(cmd_stdout):
+    """
+    :param cmd_stdout List[str]: stdout of the command used to set up the target userspace
+    :returns: number of megabytes required to set up target userspace, or None if we failed to parse the output
+    """
+
+    search_line_start = 'Installed size: '
+    needle_lines = [line for line in cmd_stdout if line.startswith(search_line_start)]
+    if len(needle_lines) != 1:
+        api.current_logger().warning('Failed to determine how much disk space is needed for the userspace. '
+                                     'Lines starting with \'Installed size:\' in userpace creation cmd output %s',
+                                      needle_lines)
+        return None
+
+    diskspace_requirement_info = needle_lines[0][len('Installed size: '):].strip()
+    # diskspace_requirement_info has the form <number> <unit>
+    req_info_fragments = diskspace_requirement_info.split(' ')
+    if len(req_info_fragments) != 2:
+        api.current_logger().warning('Failed to parse out the required disk space need for the userspace. '
+                                     'The disk requirement line does not have the expected form: \'%s\'',
+                                     needle_lines[0].strip())
+        return None
+
+    try:
+        raw_disk_space, unit = req_info_fragments
+        required_disk_space_mb = float(raw_disk_space)
+
+        if unit == 'G':
+            required_disk_space_mb *= 1024
+
+        return required_disk_space_mb
+    except ValueError:
+        api.current_logger().warning('Failed to parse out the required disk space need for the userspace. '
+                                     'The disk requirements (float) cannot be extracted from the output line: \'%s\'',
+                                     needle_lines[0].strip())
+        return None
+
+
+def estimate_required_disk_space_for_userspace(userspace_installroot, enabled_repos, packages):
+    import dnf
+
+    base = dnf.Base()
+    base.conf.installroot = userspace_installroot
+
+    base.read_all_repos()
+    base.fill_sack()
+
+    for repo_def in base.repos.all():
+        if repo_def in enabled_repos:
+            repo_def.enable()
+        else:
+            repo_def.disable()
+
+    base.install_specs(packages)
+    base.resolve()
+
+    bytes_for_download = 0
+    bytes_for_install = 0
+    for package in base.transaction.install_set:
+        bytes_for_download += package.downloadsize
+        bytes_for_install += package.installsize
+
+    div_coef = 1024 * 1024
+    mb_download = bytes_for_download / div_coef
+    mb_install = bytes_for_install / div_coef
+    mb_total = mb_download + mb_install
+
+    msg = ('Userspace with packages (%s) will require the following disk space: %f + %f = %f mb '
+           '(download+install)')
+    api.current_logger().debug(msg, mb_download, mb_install, mb_total)
+
+    return mb_total
+
+
 def prepare_target_userspace(context, userspace_dir, enabled_repos, packages):
     """
     Implement the creation of the target userspace.
@@ -230,10 +304,10 @@ def prepare_target_userspace(context, userspace_dir, enabled_repos, packages):
 
         repos_opt = [['--enablerepo', repo] for repo in enabled_repos]
         repos_opt = list(itertools.chain(*repos_opt))
-        cmd = ['dnf', 'install', '-y']
+        cmd_with_no_pkgs = ['dnf', 'install', '-y']
         if is_nogpgcheck_set():
-            cmd.append('--nogpgcheck')
-        cmd += [
+            cmd_with_no_pkgs.append('--nogpgcheck')
+        cmd_with_no_pkgs += [
             '--setopt=module_platform_id=platform:el{}'.format(target_major_version),
             '--setopt=keepcache=1',
             '--releasever', api.current_actor().configuration.version.target,
@@ -241,11 +315,16 @@ def prepare_target_userspace(context, userspace_dir, enabled_repos, packages):
             '--disablerepo', '*'
             ] + repos_opt + packages
         if config.is_verbose():
-            cmd.append('-v')
+            cmd_with_no_pkgs.append('-v')
         if rhsm.skip_rhsm():
-            cmd += ['--disableplugin', 'subscription-manager']
+            cmd_with_no_pkgs.extend('--disableplugin', 'subscription-manager')
         try:
-            context.call(cmd, callback_raw=utils.logging_handler)
+            result = estimate_required_disk_space_for_userspace(install_root_dir, enabled_repos, packages)
+            import pdb; pdb.set_trace()
+
+            # Todo create an XFS filesystem for the userspace and mount it into the userspace folder
+            install_cmd = cmd_with_no_pkgs + packages
+            context.call(install_cmd, callback_raw=utils.logging_handler, split=True)
         except CalledProcessError as exc:
             message = 'Unable to install RHEL {} userspace packages.'.format(target_major_version)
             details = {'details': str(exc), 'stderr': exc.stderr}
