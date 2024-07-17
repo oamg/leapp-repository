@@ -1,4 +1,7 @@
 import itertools
+import contextlib
+import enum
+import math
 import os
 import re
 import shutil
@@ -57,6 +60,10 @@ from leapp.utils.deprecation import suppress_deprecation
 PROD_CERTS_FOLDER = 'prod-certs'
 PERSISTENT_PACKAGE_CACHE_DIR = '/var/lib/leapp/persistent_package_cache'
 DEDICATED_LEAPP_PART_URL = 'https://access.redhat.com/solutions/7011704'
+
+USERSPACE_IMAGE_FULLPATH = '/var/lib/leapp/userspace.xfs.img'
+USERSPACE_EXTERNAL_DNF_CACHE = '/var/lib/leapp/dnf_cache'
+USERSPACE_OVERSIZE_COEF = 1.2
 
 
 def _check_deprecated_rhsm_skip():
@@ -251,6 +258,8 @@ def parse_out_space_required_for_userspace(cmd_stdout):
 
 
 def estimate_required_disk_space_for_userspace(userspace_installroot, enabled_repos, packages):
+    # @Todo(mhecko): We don't need to take download size into consideration --- we are shoveling packages
+    # outside the image either way
     import dnf
 
     base = dnf.Base()
@@ -286,6 +295,83 @@ def estimate_required_disk_space_for_userspace(userspace_installroot, enabled_re
     return mb_total
 
 
+
+
+class MountDependencyType(enum.Enum):
+    BIND = 'bind'
+    LOOP = 'loop'
+
+
+UserspaceMountDependency = namedtuple('UserspaceMountDependency', ('type', 'what', 'mountpoint'))
+
+
+def populate_exit_stack_with_mount_dependencies(exit_stack, dependencies):
+    for dep in dependencies:
+        kwargs = {'source': dep.what, 'target': dep.mountpoint}
+        dep_type_to_context_manager = {
+            MountDependencyType.BIND: mounting.BindMount,
+            MountDependencyType.LOOP: mounting.LoopMount,
+        }
+
+        if dep.type == MountDependencyType.BIND:
+            mgr_class = dep_type_to_context_manager[dep.type]
+            mgr = mgr_class(**kwargs)
+            exit_stack.enter_context(mgr)
+
+
+def make_userspace_for_squashfs(install_root_dir, enabled_repos, packages):
+    required_space = estimate_required_disk_space_for_userspace(install_root_dir, enabled_repos, packages)
+    required_space *= USERSPACE_OVERSIZE_COEF
+    required_space = math.ceil(required_space)
+    make_userspace_image(USERSPACE_IMAGE_FULLPATH, required_space)
+
+    dnf_cache_inside_userspace = os.path.join(install_root_dir, dnf_cache_path)
+    with mounting.LoopMount(source=SERSPACE_IMAGE_FULLPATH, target=install_root_dir):
+        dnf_cache_path = 'var/cache/dnf'
+        os.makedirs(dnf_cache_inside_userspace)
+
+    make_external_dnf_cache_directory(USERSPACE_EXTERNAL_DNF_CACHE)
+
+    return [
+        UserspaceMountDependency(type=MountDependencyType.LOOP,
+                                 what=USERSPACE_IMAGE_FULLPATH,
+                                 mountpoint=install_root_dir),
+        UserspaceMountDependency(type=MountDependencyType.BIND,
+                                 what=USERSPACE_EXTERNAL_DNF_CACHE,
+                                 mountpoint=dnf_cache_inside_userspace),
+    ]
+
+def make_userspace_image(image_fullpath, size_mb):
+    if os.path.exists(image_fullpath):
+        # @Todo: What if the old image is still mounted?
+        api.current_logger().debug('Found old userspace image at %s, removing it.', image_fullpath)
+        try:
+            os.unlink(image_fullpath)
+        except CalledProcessError as error: # Unlikely
+            details = {'details': 'Caused by error: {0}'.format(error)}
+            raise StopActorExecution('Failed to remove old XFS image for the target userspace.', details=details)
+
+    try:
+        run(['mkfs.xfs', '-d', 'file,name={0},size={1}m'.format(image_fullpath, size_mb)])
+    except CalledProcessError as error:
+        api.current_logger().error('Failed to create an userpace XFS image due to the error: %s', error)
+        details = {'details': str(error)}
+        raise StopActorExecution('Failed to create an XFS image for the target userspace.', details=details)
+
+
+def make_external_dnf_cache_directory(external_cache_fullpath):
+    if os.path.exists(external_cache_fullpath):
+        try:
+            shutil.rmtree(external_cache_fullpath)
+        except OSError as error:
+            msg = ('Failed to create an external DNF package cache dir while setting up target '
+                   'userspace with squasfs. Full error: {0}')
+            msg = msg.format(error)
+            api.current_logger().error(msg)
+            raise StopActorExecution(msg, details={'details': str(error)})
+    os.makedirs(external_cache_fullpath)
+
+
 def prepare_target_userspace(context, userspace_dir, enabled_repos, packages):
     """
     Implement the creation of the target userspace.
@@ -314,17 +400,21 @@ def prepare_target_userspace(context, userspace_dir, enabled_repos, packages):
             '--installroot', install_root_dir,
             '--disablerepo', '*'
             ] + repos_opt + packages
+            # @Todo(mhecko): We need to handle these options while computing how much disk space is needed
         if config.is_verbose():
             cmd_with_no_pkgs.append('-v')
         if rhsm.skip_rhsm():
             cmd_with_no_pkgs.extend(('--disableplugin', 'subscription-manager'))
         try:
-            result = estimate_required_disk_space_for_userspace(install_root_dir, enabled_repos, packages)
-            import pdb; pdb.set_trace()
+            mount_dependencies = make_userspace_for_squashfs(userspace_dir, enabled_repos, packages)
 
-            # Todo create an XFS filesystem for the userspace and mount it into the userspace folder
-            install_cmd = cmd_with_no_pkgs + packages
-            context.call(install_cmd, callback_raw=utils.logging_handler, split=True)
+            with contextlib.ExitStack() as exit_stack:
+                populate_exit_stack_with_mount_dependencies(exit_stack, mount_dependencies)
+
+                # Todo create an XFS filesystem for the userspace and mount it into the userspace folder
+                install_cmd = cmd_with_no_pkgs + packages
+                context.call(install_cmd, callback_raw=utils.logging_handler, split=True)
+                return mount_dependencies
         except CalledProcessError as exc:
             message = 'Unable to install RHEL {} userspace packages.'.format(target_major_version)
             details = {'details': str(exc), 'stderr': exc.stderr}
