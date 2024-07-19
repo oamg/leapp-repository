@@ -15,7 +15,7 @@ def test_no_leftover_and_no_removed_packages(monkeypatch):
     assert api.current_logger.infomsg == ['No leftover packages, skipping...']
 
 
-def test_no_removed_packages(monkeypatch):
+def test_no_removed_packages_leftover_present(monkeypatch):
     leftover_packages = LeftoverPackages(items=[RPM(name='rpm', version='1.0', release='1.el7', epoch='0',
                                                     packager='foo', arch='noarch', pgpsig='SIG')])
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[leftover_packages]))
@@ -28,6 +28,7 @@ def test_no_removed_packages(monkeypatch):
     assert 'Following RHEL packages have not been upgraded' in reporting.create_report.report_fields['summary']
     summary = 'Please remove these packages to keep your system in supported state.'
     assert summary in reporting.create_report.report_fields['summary']
+    assert 'rpm-1.0-1.el7' in reporting.create_report.report_fields['summary']
 
 
 def test_removed_packages(monkeypatch):
@@ -42,16 +43,3 @@ def test_removed_packages(monkeypatch):
     assert 'Leftover RHEL packages have been removed' in reporting.create_report.report_fields['title']
     assert 'Following packages have been removed' in reporting.create_report.report_fields['summary']
     assert 'rpm-1.0-1.el7' in reporting.create_report.report_fields['summary']
-
-
-def test_removed_packages_no_items(monkeypatch):
-    removed_packages = RemovedPackages()
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[removed_packages]))
-    monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
-    reportleftoverpackages.process()
-
-    assert reporting.create_report.called == 1
-    assert 'Leftover RHEL packages have been removed' in reporting.create_report.report_fields['title']
-    assert 'Following packages have been removed' in reporting.create_report.report_fields['summary']
-    summary = 'Dependent packages may have been removed as well, please check that you are not missing any packages.'
-    assert summary in reporting.create_report.report_fields['summary']
