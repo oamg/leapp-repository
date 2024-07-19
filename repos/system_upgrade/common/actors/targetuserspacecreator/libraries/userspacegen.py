@@ -307,17 +307,15 @@ UserspaceMountDependency = namedtuple('UserspaceMountDependency', ('type', 'what
 
 
 def populate_exit_stack_with_mount_dependencies(exit_stack, dependencies):
+    dep_type_to_context_manager = {
+        MountDependencyType.BIND: mounting.BindMount,
+        MountDependencyType.LOOP: mounting.LoopMount,
+    }
     for dep in dependencies:
         kwargs = {'source': dep.what, 'target': dep.mountpoint}
-        dep_type_to_context_manager = {
-            MountDependencyType.BIND: mounting.BindMount,
-            MountDependencyType.LOOP: mounting.LoopMount,
-        }
-
-        if dep.type == MountDependencyType.BIND:
-            mgr_class = dep_type_to_context_manager[dep.type]
-            mgr = mgr_class(**kwargs)
-            exit_stack.enter_context(mgr)
+        mgr_class = dep_type_to_context_manager[dep.type]
+        mgr = mgr_class(**kwargs)
+        exit_stack.enter_context(mgr)
 
 
 def make_userspace_for_squashfs(install_root_dir, enabled_repos, packages):
