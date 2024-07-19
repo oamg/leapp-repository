@@ -10,51 +10,41 @@ def process():
     leftover_packages = next(api.consume(LeftoverPackages), LeftoverPackages())
     leftover_pkgs_to_remove = ['-'.join([pkg.name, pkg.version, pkg.release]) for pkg in leftover_packages.items]
 
-    if removed_packages:
+    if removed_packages and removed_packages.items:
         title = 'Leftover RHEL packages have been removed'
-
-        if removed_packages.items:
-            removed = ['-'.join([pkg.name, pkg.version, pkg.release]) for pkg in removed_packages.items]
-            reporting.create_report([
-                reporting.Title(title),
-                reporting.Summary('Following packages have been removed:\n{}'.format('\n'.join(removed))),
-                reporting.Severity(reporting.Severity.HIGH),
-                reporting.Groups([reporting.Groups.SANITY]),
-            ] + [reporting.RelatedResource('package', pkg.name) for pkg in removed_packages.items])
-        else:
-            summary = (
-                'Following packages have been removed:{sep}{list}\n'
-                'Dependent packages may have been removed as well, please check that you are not missing '
-                'any packages.'
-                .format(
-                    sep=FMT_LIST_SEPARATOR,
-                    list=FMT_LIST_SEPARATOR.join(leftover_pkgs_to_remove)
-                )
+        removed = ['-'.join([pkg.name, pkg.version, pkg.release]) for pkg in removed_packages.items]
+        summary = (
+            'Following packages have been removed:{sep}{list}\n'
+            'Dependent packages may have been removed as well, please check that you are not missing '
+            'any packages.'
+            .format(
+                sep=FMT_LIST_SEPARATOR,
+                list=FMT_LIST_SEPARATOR.join(removed)
             )
-
-            reporting.create_report([
-                reporting.Title(title),
-                reporting.Summary(summary),
-                reporting.Severity(reporting.Severity.HIGH),
-                reporting.Groups([reporting.Groups.SANITY]),
-            ] + [reporting.RelatedResource('package', pkg.name) for pkg in leftover_packages.items])
-        return
-
-    if not leftover_packages.items:
-        api.current_logger().info('No leftover packages, skipping...')
-        return
-
-    summary = (
-        'Following RHEL packages have not been upgraded:{sep}{list}'
-        'Please remove these packages to keep your system in supported state.'
-        .format(
-            sep=FMT_LIST_SEPARATOR,
-            list=FMT_LIST_SEPARATOR.join(leftover_pkgs_to_remove)
         )
-    )
-    reporting.create_report([
-        reporting.Title('Some RHEL packages have not been upgraded'),
-        reporting.Summary(summary),
-        reporting.Severity(reporting.Severity.HIGH),
-        reporting.Groups([reporting.Groups.SANITY]),
-    ] + [reporting.RelatedResource('package', pkg.name) for pkg in leftover_packages.items])
+        reporting.create_report([
+            reporting.Title(title),
+            reporting.Summary(summary),
+            reporting.Severity(reporting.Severity.HIGH),
+            reporting.Groups([reporting.Groups.SANITY]),
+        ] + [reporting.RelatedResource('package', pkg.name) for pkg in removed_packages.items])
+        return
+
+    if leftover_packages and leftover_packages.items:
+        summary = (
+            'Following RHEL packages have not been upgraded:{sep}{list}'
+            'Please remove these packages to keep your system in supported state.'
+            .format(
+                sep=FMT_LIST_SEPARATOR,
+                list=FMT_LIST_SEPARATOR.join(leftover_pkgs_to_remove)
+            )
+        )
+        reporting.create_report([
+            reporting.Title('Some RHEL packages have not been upgraded'),
+            reporting.Summary(summary),
+            reporting.Severity(reporting.Severity.HIGH),
+            reporting.Groups([reporting.Groups.SANITY]),
+        ] + [reporting.RelatedResource('package', pkg.name) for pkg in leftover_packages.items])
+    else:
+        api.current_logger().info('No leftover packages, skipping...')
+    return
