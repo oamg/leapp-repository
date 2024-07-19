@@ -1289,37 +1289,41 @@ def _get_target_userspace():
     return constants.TARGET_USERSPACE.format(get_target_major_version())
 
 
-def _create_target_userspace(context, indata, packages, files, target_repoids):
+def _create_target_userspace(scratch_context, indata, packages, files, target_repoids):
     """Create the target userspace."""
-    target_path = _get_target_userspace()
-    prepare_target_userspace(context, target_path, target_repoids, list(packages))
-    _prep_repository_access(context, target_path)
+    userspace_fullpath = _get_target_userspace()
+    mount_deps = prepare_target_userspace(scratch_context, userspace_fullpath, target_repoids, list(packages))
 
-    with mounting.NspawnActions(base_dir=target_path) as target_context:
-        _copy_files(target_context, files)
-    dnfplugin.install(_get_target_userspace())
+    with contextlib.ExitStack() as exit_stack:
+        populate_exit_stack_with_mount_dependencies(exit_stack, mount_deps)
 
-    # If we used only repofiles from leapp-rhui-<provider> then remove these as they provide
-    # duplicit definitions as the target clients already installed in the target container
-    if indata.rhui_info:
-        api.current_logger().debug(
-            'Target container should have access to content. '
-            'Removing repofiles from leapp-rhui-<provider> from the target..'
-        )
-        setup_info = indata.rhui_info.target_client_setup_info
-        if not setup_info.bootstrap_target_client:
-            target_userspace_path = _get_target_userspace()
-            for copy in setup_info.preinstall_tasks.files_to_copy_into_overlay:
-                dst_in_container = get_copy_location_from_copy_in_task(target_userspace_path, copy)
-                dst_in_container = dst_in_container.strip('/')
-                dst_in_host = os.path.join(target_userspace_path, dst_in_container)
-                if os.path.isfile(dst_in_host) and dst_in_host.endswith('.repo'):
-                    api.current_logger().debug('Removing repofile: {0}'.format(dst_in_host))
-                    os.remove(dst_in_host)
+        _prep_repository_access(scratch_context, userspace_fullpath)
 
-    # and do not forget to set the rhsm into the container mode again
-    with mounting.NspawnActions(_get_target_userspace()) as target_context:
-        rhsm.set_container_mode(target_context)
+        with mounting.NspawnActions(base_dir=userspace_fullpath) as target_context:
+            _copy_files(target_context, files)
+        dnfplugin.install(_get_target_userspace())
+
+        # If we used only repofiles from leapp-rhui-<provider> then remove these as they provide
+        # duplicit definitions as the target clients already installed in the target container
+        if indata.rhui_info:
+            api.current_logger().debug(
+                'Target container should have access to content. '
+                'Removing repofiles from leapp-rhui-<provider> from the target..'
+            )
+            setup_info = indata.rhui_info.target_client_setup_info
+            if not setup_info.bootstrap_target_client:
+                target_userspace_path = _get_target_userspace()
+                for copy in setup_info.preinstall_tasks.files_to_copy_into_overlay:
+                    dst_in_container = get_copy_location_from_copy_in_task(target_userspace_path, copy)
+                    dst_in_container = dst_in_container.strip('/')
+                    dst_in_host = os.path.join(target_userspace_path, dst_in_container)
+                    if os.path.isfile(dst_in_host) and dst_in_host.endswith('.repo'):
+                        api.current_logger().debug('Removing repofile: {0}'.format(dst_in_host))
+                        os.remove(dst_in_host)
+
+        # and do not forget to set the rhsm into the container mode again
+        with mounting.NspawnActions(_get_target_userspace()) as target_context:
+            rhsm.set_container_mode(target_context)
 
 
 def _apply_rhui_access_preinstall_tasks(context, rhui_setup_info):
