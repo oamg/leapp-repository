@@ -321,7 +321,6 @@ def populate_exit_stack_with_mount_dependencies(exit_stack, dependencies):
 
 
 def make_userspace_for_squashfs(install_root_dir, enabled_repos, packages):
-    # @CheckPoint(mhecko): install_root_dir has a different semantics than you might think
     required_space = estimate_required_disk_space_for_userspace(install_root_dir, enabled_repos, packages)
     required_space *= USERSPACE_OVERSIZE_COEF
     required_space = math.ceil(required_space)
@@ -374,84 +373,93 @@ def make_external_dnf_cache_directory(external_cache_fullpath):
     os.makedirs(external_cache_fullpath)
 
 
-def prepare_target_userspace(context, userspace_dir, enabled_repos, packages):
+def make_userspace_installation_cmd(userspace_loc, enabled_repos, packages):
+    target_major_version = get_target_major_version()
+
+    repos_opt = [['--enablerepo', repo] for repo in enabled_repos]
+    repos_opt = list(itertools.chain(*repos_opt))
+
+    userspace_install_cmd = ['dnf', 'install', '-y']
+    if is_nogpgcheck_set():
+        userspace_install_cmd.append('--nogpgcheck')
+    userspace_install_cmd += [
+        '--setopt=module_platform_id=platform:el{}'.format(target_major_version),
+        '--setopt=keepcache=1',
+        '--releasever', api.current_actor().configuration.version.target,
+        '--installroot', userspace_loc,
+        '--disablerepo', '*'
+        ] + repos_opt + packages
+        # @Todo(mhecko): We need to handle these options while computing how much disk space is needed
+    if config.is_verbose():
+        userspace_install_cmd.append('-v')
+    if rhsm.skip_rhsm():
+        userspace_install_cmd.extend(('--disableplugin', 'subscription-manager'))
+
+    userspace_install_cmd.extend(packages)
+
+    return userspace_install_cmd
+
+
+def prepare_target_userspace(scratch_context, userspace_fullpath, enabled_repos, packages):
     """
     Implement the creation of the target userspace.
     """
-    _backup_to_persistent_package_cache(userspace_dir)
+    _backup_to_persistent_package_cache(userspace_fullpath)
 
-    run(['rm', '-rf', userspace_dir])
-    _create_target_userspace_directories(userspace_dir)
+    run(['rm', '-rf', userspace_fullpath])
+    _create_target_userspace_directories(userspace_fullpath)
 
     target_major_version = get_target_major_version()
-    install_root_dir = '/el{}target'.format(target_major_version)
-    with mounting.BindMount(source=userspace_dir, target=os.path.join(context.base_dir, install_root_dir.lstrip('/'))):
-        _restore_persistent_package_cache(userspace_dir)
-        if not is_nogpgcheck_set():
-            _import_gpg_keys(context, install_root_dir, target_major_version)
 
-        repos_opt = [['--enablerepo', repo] for repo in enabled_repos]
-        repos_opt = list(itertools.chain(*repos_opt))
-        cmd_with_no_pkgs = ['dnf', 'install', '-y']
-        if is_nogpgcheck_set():
-            cmd_with_no_pkgs.append('--nogpgcheck')
-        cmd_with_no_pkgs += [
-            '--setopt=module_platform_id=platform:el{}'.format(target_major_version),
-            '--setopt=keepcache=1',
-            '--releasever', api.current_actor().configuration.version.target,
-            '--installroot', install_root_dir,
-            '--disablerepo', '*'
-            ] + repos_opt + packages
-            # @Todo(mhecko): We need to handle these options while computing how much disk space is needed
-        if config.is_verbose():
-            cmd_with_no_pkgs.append('-v')
-        if rhsm.skip_rhsm():
-            cmd_with_no_pkgs.extend(('--disableplugin', 'subscription-manager'))
-        try:
-            mount_dependencies = make_userspace_for_squashfs(userspace_dir, enabled_repos, packages)
+    _restore_persistent_package_cache(userspace_fullpath)
+    if not is_nogpgcheck_set():
+        _import_gpg_keys(scratch_context, userspace_fullpath, target_major_version)
 
-            with contextlib.ExitStack() as exit_stack:
-                populate_exit_stack_with_mount_dependencies(exit_stack, mount_dependencies)
+    try:
+        mount_dependencies = make_userspace_for_squashfs(userspace_fullpath, enabled_repos, packages)
 
-                # Todo create an XFS filesystem for the userspace and mount it into the userspace folder
-                install_cmd = cmd_with_no_pkgs + packages
-                context.call(install_cmd, callback_raw=utils.logging_handler, split=True)
-                return mount_dependencies
-        except CalledProcessError as exc:
-            message = 'Unable to install RHEL {} userspace packages.'.format(target_major_version)
-            details = {'details': str(exc), 'stderr': exc.stderr}
+        with contextlib.ExitStack() as exit_stack:
+            populate_exit_stack_with_mount_dependencies(exit_stack, mount_dependencies)
 
-            if 'more space needed on the' in exc.stderr:
-                # The stderr contains this error summary:
-                # Disk Requirements:
-                #   At least <size> more space needed on the <path> filesystem.
-                _handle_transaction_err_msg_size(exc)
+            # Todo create an XFS filesystem for the userspace and mount it into the userspace folder
+            userspace_install_cmd = make_userspace_installation_cmd(userspace_fullpath, enabled_repos, packages)
+            scratch_context.call(userspace_install_cmd, callback_raw=utils.logging_handler, split=True)
+            return mount_dependencies
+    except CalledProcessError as exc:
+        message = 'Unable to install RHEL {} userspace packages.'.format(target_major_version)
+        details = {'details': str(exc), 'stderr': exc.stderr}
 
-            # If a proxy was set in dnf config, it should be the reason why dnf
-            # failed since leapp does not support updates behind proxy yet.
-            for manager_info in api.consume(PkgManagerInfo):
-                if manager_info.configured_proxies:
+        if 'more space needed on the' in exc.stderr:
+            # The stderr contains this error summary:
+            # Disk Requirements:
+            #   At least <size> more space needed on the <path> filesystem.
+            _handle_transaction_err_msg_size(exc)
+
+        # If a proxy was set in dnf config, it should be the reason why dnf
+        # failed since leapp does not support updates behind proxy yet.
+        for manager_info in api.consume(PkgManagerInfo):
+            if manager_info.configured_proxies:
+                details['details'] = (
+                    "DNF failed to install userspace packages, likely due to the proxy "
+                    "configuration detected in the YUM/DNF configuration file. "
+                    "Make sure the proxy is properly configured in /etc/dnf/dnf.conf. "
+                    "It's also possible the proxy settings in the DNF configuration file are "
+                    "incompatible with the target system. A compatible configuration can be "
+                    "placed in /etc/leapp/files/dnf.conf which, if present, will be used during "
+                    "the upgrade instead of /etc/dnf/dnf.conf. "
+                    "In such case the configuration will also be applied to the target system."
+                )
+
+        # Similarly if a proxy was set specifically for one of the repositories.
+        for repo_facts in api.consume(RepositoriesFacts):
+            for repo_file in repo_facts.repositories:
+                if any(repo_data.proxy and repo_data.enabled for repo_data in repo_file.data):
                     details['details'] = (
                         "DNF failed to install userspace packages, likely due to the proxy "
-                        "configuration detected in the YUM/DNF configuration file. "
-                        "Make sure the proxy is properly configured in /etc/dnf/dnf.conf. "
-                        "It's also possible the proxy settings in the DNF configuration file are "
-                        "incompatible with the target system. A compatible configuration can be "
-                        "placed in /etc/leapp/files/dnf.conf which, if present, will be used during "
-                        "the upgrade instead of /etc/dnf/dnf.conf. "
-                        "In such case the configuration will also be applied to the target system."
+                        "configuration detected in a repository configuration file."
                     )
 
-            # Similarly if a proxy was set specifically for one of the repositories.
-            for repo_facts in api.consume(RepositoriesFacts):
-                for repo_file in repo_facts.repositories:
-                    if any(repo_data.proxy and repo_data.enabled for repo_data in repo_file.data):
-                        details['details'] = (
-                            "DNF failed to install userspace packages, likely due to the proxy "
-                            "configuration detected in a repository configuration file."
-                        )
-
-            raise StopActorExecutionError(message=message, details=details)
+        raise StopActorExecutionError(message=message, details=details)
 
 
 def _query_rpm_for_pkg_files(context, pkgs):
