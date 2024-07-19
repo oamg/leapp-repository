@@ -12,7 +12,9 @@ except ImportError:
 
 
 class InvalidRepoDefinition(Exception):
-    def __init__(self, message, repofile=None, repoid=None):
+    def __init__(self, msg, repofile=None, repoid=None):
+        message = 'Invalid repository definition: {repoid} in: {repofile}: {msg}'.format(
+                    repoid=repoid, repofile=repofile, msg=msg)
         super(InvalidRepoDefinition, self).__init__(message)
         self.repofile = repofile
         self.repoid = repoid

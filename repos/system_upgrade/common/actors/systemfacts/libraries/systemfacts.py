@@ -221,14 +221,11 @@ def get_repositories_status():
         return RepositoriesFacts(repositories=repofileutils.get_parsed_repofiles())
     except repofileutils.InvalidRepoDefinition as e:
         raise StopActorExecutionError(
-            message='Invalid repository definition',
+            message=str(e),
             details={
-                'details': str(e),
-                'file': e.repofile,
-                'repoid': e.repoid,
-                'hint': 'To resolve this issue, please visit: {url}'
+                'hint': 'For more directions on how to resolve the issue, see: {url}.'
                         .format(
-                            url='https://access.redhat.com/solutions/3185891'
+                            url='https://access.redhat.com/solutions/6969001'
                         )
             }
         )
