@@ -358,7 +358,7 @@ jobs:
   job: tests
   trigger: ignore
   fmf_url: "https://gitlab.cee.redhat.com/oamg/leapp-tests"
-  fmf_ref: "RHELMISC-5949"
+  fmf_ref: "main"
   use_internal_tf: True
   labels:
     - sanity
