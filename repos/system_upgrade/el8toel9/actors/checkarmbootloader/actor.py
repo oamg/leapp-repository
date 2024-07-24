@@ -1,24 +1,24 @@
 import leapp.libraries.actor.checkarmbootloader as checkarmbootloader
 from leapp.actors import Actor
-from leapp.reporting import Report
+from leapp.models import TargetUserSpacePreupgradeTasks
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
 class CheckArmBootloader(Actor):
     """
-    Inhibit ARM system upgrades on path with incompatible kernel/bootloader
+    Install required RPM packages for ARM system upgrades on paths with
+    incompatible kernel/bootloader.
 
-    Due to an incompatibility of RHEL8 bootloader with newer versions of kernel
-    on RHEL9 since version 9.5, the upgrade cannot be performed as the old
-    bootloader cannot load the new kernel when entering the interim phase.
-
-    This is temporary workaround until the issue is resolved.
+    Due to an incompatibility of the RHEL8 bootloader with newer versions of
+    the kernel on RHEL9 (from version 9.5 onward), the upgrade requires the
+    installation of specific packages to support the new kernel during the
+    interim phase.
 
     """
 
     name = 'check_arm_bootloader'
     consumes = ()
-    produces = (Report,)
+    produces = (TargetUserSpacePreupgradeTasks,)
     tags = (ChecksPhaseTag, IPUWorkflowTag,)
 
     def process(self):
