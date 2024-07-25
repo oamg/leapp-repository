@@ -4,7 +4,7 @@ import shutil
 import glob
 
 from leapp.libraries.stdlib import CalledProcessError
-from leapp.models import TargetUserSpaceInfo
+from leapp.models import TargetUserSpaceInfo, UpgradeEFIBootEntry
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import mounting
 from leapp.libraries.stdlib import api, run
@@ -37,6 +37,37 @@ def canonical_path_to_efi_format(canonical_path):
 
     # We want to keep the last "/" of the EFI_MOUNTPOINT
     return canonical_path.replace(EFI_MOUNTPOINT[:-1], "").replace("/", "\\")
+
+
+def _copy_grub_files(required, optional):
+    """
+    Copy grub files from redhat/ dir to the /boot/efi/EFI/leapp/ dir.
+    """
+
+    flag_ok = True
+    all_files = required + optional
+    for filename in all_files:
+        src_path = os.path.join(RHEL_EFIDIR_CANONICAL_PATH, filename)
+        dst_path = os.path.join(LEAPP_EFIDIR_CANONICAL_PATH, filename)
+
+        #if os.path.exists(dst_path):
+        #    api.current_logger().debug("The {} file already exists. Copying skipped.".format())
+        #    continue
+
+        if not os.path.exists(src_path):
+            if filename in required:
+                flag_ok = False
+            continue
+
+        api.current_logger().info("Copying {} to {}".format(src_path, dst_path))
+        try:
+            shutil.copy2(src_path, dst_path)
+        except (OSError, IOError) as err:
+            # IOError for py2 and OSError for py3
+            api.current_logger().error("I/O error({}): {}".format(err.errno, err.strerror))
+            flag_ok = False
+
+    return flag_ok
 
 
 def _get_upgrade_boot_entry(efibootinfo, efi_path, label):
@@ -81,7 +112,10 @@ def _add_upgrade_boot_entry():
 
     efibootinfo = EFIBootInfo()
     if _is_upgrade_in_boot_entries(efibootinfo, efi_path, label):
-        return efibootinfo
+        upgrade_boot_entry = _get_upgrade_boot_entry(efibootinfo, efi_path, label)
+        _set_bootnext(upgrade_boot_entry.boot_number)
+
+        return upgrade_boot_entry
 
     # NOTE: The new boot entry is being set as first in the boot order
     cmd = [
@@ -104,11 +138,14 @@ def _add_upgrade_boot_entry():
 
     # Sanity check boot entry has been added
     efibootinfo_new = EFIBootInfo()
-    if _is_upgrade_in_boot_entries(efibootinfo_new, efi_path, label):
+    if not _is_upgrade_in_boot_entries(efibootinfo_new, efi_path, label):
         raise StopActorExecutionError(
             'Unable to find the new UEFI bootloader entry after adding.')
 
-    return efibootinfo_new
+    upgrade_boot_entry = _get_upgrade_boot_entry(efibootinfo_new, efi_path, label)
+    _set_bootnext(upgrade_boot_entry.boot_number)
+    
+    return upgrade_boot_entry
 
 
 def process():
@@ -136,7 +173,7 @@ def process():
                 context.call(['dnf', 'download', '-y', '--downloaddir', container_tmpdir, package_name,
                               # TODO: BIG HACK, figure out how to best handle this
                               '--setopt=module_platform_id=platform:el9',
-                              '--setopt=keepcache=1', '--releasever', '9.5',
+                              '--releasever', '9.5',
                               '--disablerepo', '*',
                               '--enablerepo', 'BASEOS', '--enablerepo', 'APPSTREAM'])
 
@@ -173,10 +210,18 @@ def process():
                 # Copy required files to LEAPP_EFIDIR_CANONICAL_PATH
                 run(['cp', '-r', os.path.join(host_dir, RHEL_EFIDIR_CANONICAL_PATH, '.'), LEAPP_EFIDIR_CANONICAL_PATH])
 
+
         # TODO: Copy grub.cfg and grubenv
+        if not _copy_grub_files(["grubenv", "grub.cfg"], ["user.cfg"]):
+            raise StopActorExecutionError(
+                "Some GRUB files have not been copied to /boot/efi/EFI/redhat")
 
         # Create efi entry and set it as default
-        efibootinfo = _add_upgrade_boot_entry()
+        upgrade_boot_entry = _add_upgrade_boot_entry()
 
-        upgrade_boot_entry = _get_upgrade_boot_entry(efibootinfo, efi_path, label)
-        _set_bootnext(upgrade_boot_entry.boot_number)
+        api.produce(UpgradeEFIBootEntry(
+            boot_number=upgrade_boot_entry.boot_number,
+            label=upgrade_boot_entry.label,
+            active=upgrade_boot_entry.active,
+            efi_bin_source=upgrade_boot_entry.efi_bin_source,
+        ))
