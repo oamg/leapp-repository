@@ -94,6 +94,8 @@ class EFIBootInfo:
 
         self.current_bootnum = None
         """The boot number (str) of the current boot."""
+        self.next_bootnum = None
+        """The boot number (str) of the next boot."""
         self.boot_order = tuple()
         """The tuple of the UEFI boot loader entries in the boot order."""
         self.entries = {}
@@ -101,6 +103,7 @@ class EFIBootInfo:
 
         self._parse_efi_boot_entries(bootmgr_output)
         self._parse_current_bootnum(bootmgr_output)
+        self._parse_next_bootnum(bootmgr_output)
         self._parse_boot_order(bootmgr_output)
         self._print_loaded_info()
 
@@ -130,14 +133,27 @@ class EFIBootInfo:
             # it's not expected that no entry exists
             raise StopActorExecution('UEFI: Unable to detect any UEFI bootloader entry.')
 
+    def _parse_key_value(self, bootmgr_output, key):
+        # e.g.: <key>: <value>
+        for line in bootmgr_output.splitlines():
+            if line.startswith(key + ':'):
+                return line.split(':')[1].strip()
+
+        return None
+
     def _parse_current_bootnum(self, bootmgr_output):
         # e.g.: BootCurrent: 0002
-        for line in bootmgr_output.splitlines():
-            if line.startswith('BootCurrent:'):
-                self.current_bootnum = line.split(':')[1].strip()
-                return
+        self.current_bootnum = self._parse_key_value(bootmgr_output, 'BootCurrent')
 
-        raise StopActorExecution('UEFI: Unable to detect current boot number.')
+        if self.current_bootnum is None:
+            raise StopActorExecution('UEFI: Unable to detect current boot number.')
+
+    def _parse_next_bootnum(self, bootmgr_output):
+        # e.g.: BootNext: 0002
+        self.next_bootnum = self._parse_key_value(bootmgr_output, 'BootNext')
+
+        if self.current_bootnum is None:
+            raise StopActorExecution('UEFI: Unable to detect next boot number.')
 
     def _parse_boot_order(self, bootmgr_output):
         # e.g.:  BootOrder: 0001,0002,0000,0003

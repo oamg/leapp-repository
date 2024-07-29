@@ -144,7 +144,7 @@ def _add_upgrade_boot_entry():
 
     upgrade_boot_entry = _get_upgrade_boot_entry(efibootinfo_new, efi_path, label)
     _set_bootnext(upgrade_boot_entry.boot_number)
-    
+
     return upgrade_boot_entry
 
 

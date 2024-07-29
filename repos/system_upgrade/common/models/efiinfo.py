@@ -14,7 +14,7 @@ class EFIBootEntry(Model):
     label = fields.String()
     """Label of the UEFI entry. E.g. 'Redhat'"""
 
-    active = fields.Bool()
+    active = fields.Boolean()
     """True when the UEFI entry is active (asterisk is present next to the boot number)"""
 
     efi_bin_source = fields.String()
