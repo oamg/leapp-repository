@@ -5,6 +5,7 @@ from leapp.utils.deprecation import deprecated
 
 class UserspaceMountDependency(Model):
     """ A mount that must be made in order to access the target userspace. """
+    topic = TransactionTopic
 
     type = fields.StringEnum(choices=['loop', 'bind'])
     """ Type of the mount that is required """
