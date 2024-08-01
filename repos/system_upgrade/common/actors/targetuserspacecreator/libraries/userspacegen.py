@@ -401,8 +401,19 @@ def prepare_target_userspace(scratch_context, userspace_fullpath, enabled_repos,
                                       'image will require mount dependencies.')
             mount_dependencies = make_userspace_for_squashfs(userspace_fullpath, enabled_repos, packages)
 
+        # We want to populate /var/lib/leapp/elXuserspace with target userspace, but we are in overlay, so any of
+        # our writes will not be propagated into the host OS. Therefore, we do an additional mount that bind mounts
+        # /var/lib/leapp/elXuserspace to <SCRATCH>/var/lib/leapp/elXuserspace. Therefore, writes will be visible
+        # to the host OS.
+        userspace_inside_scratch_path = os.path.join(scratch_context.base_dir, userspace_fullpath.strip('/'))
+        installroot_mount_dep = UserspaceMountDependency(type='bind',
+                                                         what=userspace_fullpath,
+                                                         mountpoint=userspace_inside_scratch_path)
+
+
         with contextlib.ExitStack() as exit_stack:
-            mounting.populate_exit_stack_with_mount_dependencies(exit_stack, mount_dependencies)
+            mounting.populate_exit_stack_with_mount_dependencies(exit_stack,
+                                                                 mount_dependencies + [installroot_mount_dep])
 
             # Todo create an XFS filesystem for the userspace and mount it into the userspace folder
             userspace_install_cmd = make_userspace_installation_cmd(userspace_fullpath, enabled_repos, packages)
