@@ -28,4 +28,4 @@ jobs:
             ./etc/leapp/files/pes-events.json,\
             ./etc/leapp/files/repomap.json,\
             ./repos/system_upgrade/common/files/prod-certs,\
-            ./docs/source/_static/"
+            ./docs/source/_static"
