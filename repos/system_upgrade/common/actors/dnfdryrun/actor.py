@@ -1,5 +1,7 @@
+import contextlib
+
 from leapp.actors import Actor
-from leapp.libraries.common import dnfplugin
+from leapp.libraries.common import dnfplugin, mounting
 from leapp.models import (
     BootContent,
     DNFPluginTask,
@@ -51,9 +53,14 @@ class DnfDryRun(Actor):
         target_iso = next(self.consume(TargetOSInstallationImage), None)
         on_aws = bool(rhui_info and rhui_info.provider == 'aws')
 
-        dnfplugin.perform_dry_run(
-            tasks=tasks, used_repos=used_repos, target_userspace_info=target_userspace_info,
-            xfs_info=xfs_info, storage_info=storage_info, plugin_info=plugin_info, on_aws=on_aws,
-            target_iso=target_iso,
-        )
-        self.produce(TransactionDryRun())
+        with contextlib.ExitStack() as exit_stack:
+            mounting.populate_exit_stack_with_mount_dependencies(exit_stack,
+                                                                 target_userspace_info.setup_mount_dependencies)
+
+            dnfplugin.perform_dry_run(
+                tasks=tasks, used_repos=used_repos, target_userspace_info=target_userspace_info,
+                xfs_info=xfs_info, storage_info=storage_info, plugin_info=plugin_info, on_aws=on_aws,
+                target_iso=target_iso,
+            )
+
+            self.produce(TransactionDryRun())
