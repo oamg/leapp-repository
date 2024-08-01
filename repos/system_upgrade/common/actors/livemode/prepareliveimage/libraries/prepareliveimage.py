@@ -1,3 +1,4 @@
+import contextlib
 import grp
 import os
 import os.path
@@ -7,7 +8,7 @@ from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import mounting
 from leapp.libraries.common.config.version import get_target_major_version
 from leapp.libraries.stdlib import api, CalledProcessError
-from leapp.models import LiveImagePreparationInfo, LiveModeConfigFacts
+from leapp.models import LiveImagePreparationInfo, LiveModeConfigFacts, TargetUserSpaceInfo
 
 LEAPP_UPGRADE_SERVICE_FILE = 'upgrade.service'
 """ Service that executes the actual upgrade (/usr/bin/upgrade). """
@@ -478,9 +479,16 @@ def prepare_live_image(userspace, storage, boot, livemode):
         # Something is wrong - there should be a configuration message (at least a default one)
         raise StopActorExecutionError('Did not receive any LiveModeConfigFacts messages.')
 
-    setup_info = LiveImagePreparationInfo()
+    userspace_info = next(api.consume(TargetUserSpaceInfo), None)
+    with contextlib.ExitStack() as exit_stack:
+        # Perform all mounts that are required to make the userspace functional, and then
+        # create an Nspawn context inside the userspace
+        mounting.populate_exit_stack_with_mount_dependencies(exit_stack, userspace_info.setup_mount_dependencies)
+        context = mounting.NspawnActions(base_dir=userspace.path)
+        exit_stack.enter_context(mounting.NspawnActions(base_dir=userspace.path))
 
-    with mounting.NspawnActions(base_dir=userspace.path) as context:
+        setup_info = LiveImagePreparationInfo()
+
         setup_upgrade_service(context)
 
         setup_console(context)
