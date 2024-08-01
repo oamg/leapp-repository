@@ -100,7 +100,7 @@ def add_boot_entry(configs=None):
             # See https://bugzilla.redhat.com/show_bug.cgi?id=1764306
             run(['/usr/sbin/zipl'])
 
-        if args_to_add_str.get('debug', '0') == '1':
+        if cmdline_args.get('debug', '0') == '1':
             # The kernelopts for target kernel are generated based on the cmdline used in the upgrade initramfs,
             # therefore, if we enabled debug above, and the original system did not have the debug kernelopt, we
             # need to explicitly remove it from the target os boot entry.
