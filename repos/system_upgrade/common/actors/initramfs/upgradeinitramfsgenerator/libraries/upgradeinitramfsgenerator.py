@@ -1,4 +1,5 @@
 from collections import namedtuple
+import contextlib
 import itertools
 import os
 import shutil
@@ -514,7 +515,11 @@ def process():
     target_iso = next(api.consume(TargetOSInstallationImage), None)
     livemode_info = next(api.consume(LiveImagePreparationInfo), None)
 
-    with mounting.NspawnActions(base_dir=userspace_info.path) as context:
+    with contextlib.ExitStack() as exit_stack:
+        mounting.populate_exit_stack_with_mount_dependencies(exit_stack, userspace_info.setup_mount_dependencies)
+        context = mounting.NspawnActions(base_dir=userspace_info.path)
+        exit_stack.enter_context(context)
+
         with mounting.mount_upgrade_iso_to_root_dir(userspace_info.path, target_iso):
             prepare_userspace_for_initram(context)
             if livemode_info:
