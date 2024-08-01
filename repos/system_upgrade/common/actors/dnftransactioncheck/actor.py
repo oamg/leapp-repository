@@ -1,5 +1,7 @@
+import contextlib
+
 from leapp.actors import Actor
-from leapp.libraries.common import dnfplugin
+from leapp.libraries.common import dnfplugin, mounting
 from leapp.models import (
     DNFPluginTask,
     DNFWorkaround,
@@ -42,7 +44,11 @@ class DnfTransactionCheck(Actor):
         target_iso = next(self.consume(TargetOSInstallationImage), None)
 
         if target_userspace_info:
-            dnfplugin.perform_transaction_check(
-                tasks=tasks, used_repos=used_repos, target_userspace_info=target_userspace_info,
-                xfs_info=xfs_info, storage_info=storage_info, plugin_info=plugin_info, target_iso=target_iso
-            )
+            with contextlib.ExitStack() as exit_stack:
+                mount_deps = target_userspace_info.setup_mount_dependencies
+                mounting.populate_exit_stack_with_mount_dependencies(exit_stack, mount_deps)
+                
+                dnfplugin.perform_transaction_check(
+                    tasks=tasks, used_repos=used_repos, target_userspace_info=target_userspace_info,
+                    xfs_info=xfs_info, storage_info=storage_info, plugin_info=plugin_info, target_iso=target_iso
+                )
