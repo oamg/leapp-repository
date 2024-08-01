@@ -340,16 +340,19 @@ def make_userspace_image(image_fullpath, size_mb):
 
 def make_external_dnf_cache_directory(external_cache_fullpath):
     preserve_external_cache = get_env('LEAPP_DEVEL_USE_PERSISTENT_PACKAGE_CACHE', '0') == '1'
-    if os.path.exists(external_cache_fullpath) and not preserve_external_cache:
+    external_cache_exists = os.path.exists(external_cache_fullpath)
+    if external_cache_exists and not preserve_external_cache:
         try:
             shutil.rmtree(external_cache_fullpath)
+            external_cache_exists = False
         except OSError as error:
             msg = ('Failed to create an external DNF package cache dir while setting up target '
                    'userspace with squasfs. Full error: {0}')
             msg = msg.format(error)
             api.current_logger().error(msg)
             raise StopActorExecution(msg, details={'details': str(error)})
-    os.makedirs(external_cache_fullpath)
+    if not external_cache_exists:
+        os.makedirs(external_cache_fullpath)
 
 
 def make_userspace_installation_cmd(userspace_loc, enabled_repos, packages):
