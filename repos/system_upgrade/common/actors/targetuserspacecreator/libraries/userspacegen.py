@@ -339,7 +339,8 @@ def make_userspace_image(image_fullpath, size_mb):
 
 
 def make_external_dnf_cache_directory(external_cache_fullpath):
-    if os.path.exists(external_cache_fullpath):
+    preserve_external_cache = get_env('LEAPP_DEVEL_USE_PERSISTENT_PACKAGE_CACHE', '0') == '1'
+    if os.path.exists(external_cache_fullpath) and not preserve_external_cache:
         try:
             shutil.rmtree(external_cache_fullpath)
         except OSError as error:
