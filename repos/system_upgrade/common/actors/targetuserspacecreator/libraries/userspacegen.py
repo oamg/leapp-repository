@@ -378,7 +378,7 @@ def make_userspace_installation_cmd(userspace_loc, enabled_repos, packages):
     return userspace_install_cmd
 
 
-def prepare_target_userspace(scratch_context, userspace_fullpath, enabled_repos, packages):
+def prepare_target_userspace(scratch_context, userspace_fullpath, enabled_repos, packages, is_squashfs_enabled=False):
     """
     Implement the creation of the target userspace.
     """
@@ -395,9 +395,8 @@ def prepare_target_userspace(scratch_context, userspace_fullpath, enabled_repos,
 
     try:
         # @Todo: Check whether we are using squashfs, if not use empty mount dependencies
-        squashfs_enabled = next(api.consume(LiveImagePreparationInfo), None) is None
         mount_dependencies = []
-        if squashfs_enabled:
+        if is_squashfs_enabled:
             api.current_logger().info('Upgrade with SquashFS image is enabled; manipulating SquashFS '
                                       'image will require mount dependencies.')
             mount_dependencies = make_userspace_for_squashfs(userspace_fullpath, enabled_repos, packages)
@@ -1273,13 +1272,17 @@ def _get_target_userspace():
     return constants.TARGET_USERSPACE.format(get_target_major_version())
 
 
-def _create_target_userspace(scratch_context, indata, packages, files, target_repoids):
+def _create_target_userspace(scratch_context, indata, packages, files, target_repoids, is_squashfs_enabled=False):
     """Create the target userspace."""
     userspace_fullpath = _get_target_userspace()
-    mount_deps = prepare_target_userspace(scratch_context, userspace_fullpath, target_repoids, list(packages))
+    mount_deps = prepare_target_userspace(scratch_context,
+                                          userspace_fullpath,
+                                          target_repoids,
+                                          list(packages),
+                                          is_squashfs_enabled=is_squashfs_enabled)
 
     with contextlib.ExitStack() as exit_stack:
-        populate_exit_stack_with_mount_dependencies(exit_stack, mount_deps)
+        mounting.populate_exit_stack_with_mount_dependencies(exit_stack, mount_deps)
 
         _prep_repository_access(scratch_context, userspace_fullpath)
 
@@ -1421,14 +1424,23 @@ def perform():
                 setup_target_rhui_access_if_needed(context, indata)
 
                 target_repoids = _gather_target_repositories(context, indata, prod_cert_path)
-                _create_target_userspace(context, indata, indata.packages, indata.files, target_repoids)
+
+                is_squashfs_enabled = next(api.consume(LiveImagePreparationInfo), None) is None
+
+                mount_deps = _create_target_userspace(context, indata, indata.packages, indata.files,
+                                                      target_repoids, is_squashfs_enabled=is_squashfs_enabled)
+
                 # TODO: this is tmp solution as proper one needs significant refactoring
                 target_repo_facts = repofileutils.get_parsed_repofiles(context)
                 api.produce(TMPTargetRepositoriesFacts(repositories=target_repo_facts))
                 # ## TODO ends here
                 api.produce(UsedTargetRepositories(
                     repos=[UsedTargetRepository(repoid=repo) for repo in target_repoids]))
-                api.produce(TargetUserSpaceInfo(
-                    path=_get_target_userspace(),
-                    scratch=constants.SCRATCH_DIR,
-                    mounts=constants.MOUNTS_DIR))
+
+                exported_userspace_image_path = USERSPACE_IMAGE_FULLPATH if is_squashfs_enabled else None
+                userspace_info = TargetUserSpaceInfo(path=_get_target_userspace(),
+                                                     scratch=constants.SCRATCH_DIR,
+                                                     setup_mount_dependencies=mount_deps,
+                                                     userspace_image_path=exported_userspace_image_path,
+                                                     mounts=constants.MOUNTS_DIR)
+                api.produce(userspace_info)

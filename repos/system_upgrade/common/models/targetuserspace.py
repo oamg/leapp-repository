@@ -58,6 +58,10 @@ class TargetUserSpaceInfo(Model):
     """
 
     setup_mount_dependencies = fields.List(fields.Model(UserspaceMountDependency), default=[])
+    """ A list of mount dependencies that must be mounted in order to manipulate the target userspace. """
+
+    userspace_image_path = fields.Nullable(fields.String())
+    """ Path to the image containing the userspace. Set only if upgrade with squashfs is enabled. """
 
 
 class CopyFile(Model):
