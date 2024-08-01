@@ -66,7 +66,7 @@ DEDICATED_LEAPP_PART_URL = 'https://access.redhat.com/solutions/7011704'
 
 USERSPACE_IMAGE_FULLPATH = '/var/lib/leapp/userspace.xfs.img'
 USERSPACE_EXTERNAL_DNF_CACHE = '/var/lib/leapp/dnf_cache'
-USERSPACE_OVERSIZE_COEF = 1.2
+USERSPACE_OVERSIZE_COEF = 1.6
 
 
 def _check_deprecated_rhsm_skip():
