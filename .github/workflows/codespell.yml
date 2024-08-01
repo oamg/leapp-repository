@@ -27,4 +27,5 @@ jobs:
             ./etc/leapp/files/device_driver_deprecation_data.json,\
             ./etc/leapp/files/pes-events.json,\
             ./etc/leapp/files/repomap.json,\
-            ./repos/system_upgrade/common/files/prod-certs"
+            ./repos/system_upgrade/common/files/prod-certs,\
+            ./docs/source/_static/"
