@@ -51,7 +51,7 @@ def build_squashfs(context, livemode_config, userspace_info):
                               squashfs_fullpath, liveos_workspace_path)
 
     clean_up_workspace_from_previous_builds(liveos_workspace_path)
-    os.mkdirs(os.path.join(liveos_workspace_path, 'LiveOS'))
+    os.makedirs(os.path.join(liveos_workspace_path, 'LiveOS'))
 
     try:
         if os.path.exists(squashfs_fullpath):
