@@ -1,10 +1,14 @@
 import os
 
 from leapp.actors import Actor
-from leapp.libraries.common import dnfplugin
 from leapp.libraries.stdlib import api
-from leapp.models import LiveModeConfigFacts, LiveModeRequirementsTasks, TargetUserSpaceInfo, UsedTargetRepositories
+from leapp.models import (
+    LiveModeConfigFacts,
+    LiveModeRequirementsTasks,
+    RequiredUpgradeInitramPackages,
+)
 from leapp.tags import ExperimentalTag, InterimPreparationPhaseTag, IPUWorkflowTag
+from leapp.utils.deprecation import suppress_deprecation
 
 # NOTE: would also need
 # _REQUIRED_PACKAGES from actors/commonleappdracutmodules/libraries/modscan.py
@@ -33,19 +37,15 @@ class PrepareLiveRequirements(Actor):
     """
 
     name = 'prepare_live_requirements'
-    consumes = (LiveModeConfigFacts,
-                TargetUserSpaceInfo,
-                UsedTargetRepositories)
-    produces = (LiveModeRequirementsTasks)
+    consumes = (LiveModeConfigFacts,)
+    produces = (LiveModeRequirementsTasks,)
     tags = (ExperimentalTag, InterimPreparationPhaseTag, IPUWorkflowTag,)
 
+    @suppress_deprecation(RequiredUpgradeInitramPackages)
     def process(self):
         livemode = next(api.consume(LiveModeConfigFacts), None)
         if not livemode or not livemode.enabled:
             return
-
-        userspace_info = next(api.consume(TargetUserSpaceInfo), None)
-        used_repos = api.consume(UsedTargetRepositories)
 
         packages = _REQUIRED_PACKAGES_FOR_LIVE_MODE + livemode.packages
         if livemode.authorized_keys:
@@ -57,9 +57,4 @@ class PrepareLiveRequirements(Actor):
         if os.getenv('LEAPP_LIVE_SOSREPORT', 0):
             packages += ['sos']
 
-        dnfplugin.install_initramdisk_requirements(
-            packages=packages,
-            target_userspace_info=userspace_info,
-            used_repos=used_repos)
-
-        api.produce(LiveModeRequirementsTasks(packages=packages))
+        api.produce(RequiredUpgradeInitramPackages(packages=packages))
