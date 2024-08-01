@@ -38,7 +38,7 @@ class PrepareLiveRequirements(Actor):
 
     name = 'prepare_live_requirements'
     consumes = (LiveModeConfigFacts,)
-    produces = (LiveModeRequirementsTasks,)
+    produces = (LiveModeRequirementsTasks, RequiredUpgradeInitramPackages)
     tags = (ExperimentalTag, InterimPreparationPhaseTag, IPUWorkflowTag,)
 
     @suppress_deprecation(RequiredUpgradeInitramPackages)
