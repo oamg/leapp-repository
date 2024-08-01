@@ -7,6 +7,7 @@ Tutorials
     :glob:
 
     templates/index
+    howto-first-actor-upgrade
 
 .. Indices and tables
 .. ==================
