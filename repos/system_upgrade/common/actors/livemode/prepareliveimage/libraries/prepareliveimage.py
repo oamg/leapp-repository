@@ -291,9 +291,14 @@ def setup_network(context, enable_nm):
     conns = os.listdir(network_manager_conns_path)
 
     try:
+        if ifcfgs:
+            context.makedirs(network_scripts_path)
         for ifcfg in ifcfgs:
             ifcfg_fullpath = os.path.join(network_scripts_path, ifcfg)
-            context.copy_to(ifcfg_fullpath,  ifcfg_fullpath)
+            context.copy_to(ifcfg_fullpath, ifcfg_fullpath)
+
+        if conns:
+            context.makedirs(network_manager_conns_path)
         for nm_conn in conns:
             nm_conn_fullpath = os.path.join(network_manager_conns_path, nm_conn)
             context.copy_to(nm_conn_fullpath, nm_conn_fullpath)
