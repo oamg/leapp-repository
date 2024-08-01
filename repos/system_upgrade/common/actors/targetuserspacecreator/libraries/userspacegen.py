@@ -19,6 +19,7 @@ from leapp.models import RequiredTargetUserspacePackages  # deprecated
 from leapp.models import TMPTargetRepositoriesFacts  # deprecated all the time
 from leapp.models import (
     CustomTargetRepositoryFile,
+    LiveImagePreparationInfo,
     PkgManagerInfo,
     RepositoriesFacts,
     RHSMInfo,
@@ -28,6 +29,7 @@ from leapp.models import (
     TargetRepositories,
     TargetUserSpaceInfo,
     TargetUserSpacePreupgradeTasks,
+    UserspaceMountDependency,
     UsedTargetRepositories,
     UsedTargetRepository,
     XFSPresence
@@ -296,28 +298,6 @@ def estimate_required_disk_space_for_userspace(userspace_installroot, enabled_re
     return mb_total
 
 
-
-
-class MountDependencyType(enum.Enum):
-    BIND = 'bind'
-    LOOP = 'loop'
-
-
-UserspaceMountDependency = namedtuple('UserspaceMountDependency', ('type', 'what', 'mountpoint'))
-
-
-def populate_exit_stack_with_mount_dependencies(exit_stack, dependencies):
-    dep_type_to_context_manager = {
-        MountDependencyType.BIND: mounting.BindMount,
-        MountDependencyType.LOOP: mounting.LoopMount,
-    }
-    for dep in dependencies:
-        kwargs = {'source': dep.what, 'target': dep.mountpoint}
-        mgr_class = dep_type_to_context_manager[dep.type]
-        mgr = mgr_class(**kwargs)
-        exit_stack.enter_context(mgr)
-
-
 def make_userspace_for_squashfs(install_root_dir, enabled_repos, packages):
     required_space = estimate_required_disk_space_for_userspace(install_root_dir, enabled_repos, packages)
     required_space *= USERSPACE_OVERSIZE_COEF
@@ -332,10 +312,10 @@ def make_userspace_for_squashfs(install_root_dir, enabled_repos, packages):
     make_external_dnf_cache_directory(USERSPACE_EXTERNAL_DNF_CACHE)
 
     return [
-        UserspaceMountDependency(type=MountDependencyType.LOOP,
+        UserspaceMountDependency(type='loop',
                                  what=USERSPACE_IMAGE_FULLPATH,
                                  mountpoint=install_root_dir),
-        UserspaceMountDependency(type=MountDependencyType.BIND,
+        UserspaceMountDependency(type='bind',
                                  what=USERSPACE_EXTERNAL_DNF_CACHE,
                                  mountpoint=dnf_cache_inside_userspace),
     ]
@@ -414,10 +394,16 @@ def prepare_target_userspace(scratch_context, userspace_fullpath, enabled_repos,
         _import_gpg_keys(scratch_context, userspace_fullpath, target_major_version)
 
     try:
-        mount_dependencies = make_userspace_for_squashfs(userspace_fullpath, enabled_repos, packages)
+        # @Todo: Check whether we are using squashfs, if not use empty mount dependencies
+        squashfs_enabled = next(api.consume(LiveImagePreparationInfo), None) is None
+        mount_dependencies = []
+        if squashfs_enabled:
+            api.current_logger().info('Upgrade with SquashFS image is enabled; manipulating SquashFS '
+                                      'image will require mount dependencies.')
+            mount_dependencies = make_userspace_for_squashfs(userspace_fullpath, enabled_repos, packages)
 
         with contextlib.ExitStack() as exit_stack:
-            populate_exit_stack_with_mount_dependencies(exit_stack, mount_dependencies)
+            mounting.populate_exit_stack_with_mount_dependencies(exit_stack, mount_dependencies)
 
             # Todo create an XFS filesystem for the userspace and mount it into the userspace folder
             userspace_install_cmd = make_userspace_installation_cmd(userspace_fullpath, enabled_repos, packages)
@@ -1322,6 +1308,8 @@ def _create_target_userspace(scratch_context, indata, packages, files, target_re
         # and do not forget to set the rhsm into the container mode again
         with mounting.NspawnActions(_get_target_userspace()) as target_context:
             rhsm.set_container_mode(target_context)
+
+    return mount_deps
 
 
 def _apply_rhui_access_preinstall_tasks(context, rhui_setup_info):

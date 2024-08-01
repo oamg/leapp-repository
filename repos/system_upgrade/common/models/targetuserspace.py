@@ -3,6 +3,19 @@ from leapp.topics import BootPrepTopic, TargetUserspaceTopic, TransactionTopic
 from leapp.utils.deprecation import deprecated
 
 
+class UserspaceMountDependency(Model):
+    """ A mount that must be made in order to access the target userspace. """
+
+    type = fields.StringEnum(choices=['loop', 'bind'])
+    """ Type of the mount that is required """
+
+    what = fields.String()
+    """ Device/path to be mounted """
+
+    mountpoint = fields.String()
+    """ Mountpoint at which should the device/path from `what` be mounted """
+
+
 class TargetUserSpaceInfo(Model):
     """
     Information about the target userspace container to be able to use it
@@ -43,6 +56,8 @@ class TargetUserSpaceInfo(Model):
 
     E.g. the overlayfss of the host filesystems can be stored here.
     """
+
+    setup_mount_dependencies = fields.List(fields.Model(UserspaceMountDependency), default=[])
 
 
 class CopyFile(Model):

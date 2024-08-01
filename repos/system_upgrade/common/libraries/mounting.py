@@ -442,3 +442,26 @@ def mount_upgrade_iso_to_root_dir(root_dir, target_iso):
     mountpoint = target_iso.mountpoint[1:]  # Strip the leading / from the absolute mountpoint
     mountpoint_in_root_dir = os.path.join(root_dir, mountpoint)
     return LoopMount(source=target_iso.path, target=mountpoint_in_root_dir)
+
+
+def populate_exit_stack_with_mount_dependencies(exit_stack, dependencies):
+    """
+    Populate the given contextlib.ExitStack with a UserspaceMountDependencies
+
+    The exit stack is populated in the same order as is the order of the dependencies parameter.
+
+    :param contextlib.ExitStack exit_stack: exit stack to pupulate with the dependencies
+    :param List[UserspaceMountDependencies] dependencies: A list of UserspaceMountDependency to pupulate the stack with
+    """
+    dep_type_to_context_manager = {
+        'bind': BindMount,
+        'loop': LoopMount,
+    }
+
+    for dep in dependencies:
+        kwargs = {'source': dep.what, 'target': dep.mountpoint}
+        mgr_class = dep_type_to_context_manager[dep.type]
+        mgr = mgr_class(**kwargs)
+        exit_stack.enter_context(mgr)
+
+

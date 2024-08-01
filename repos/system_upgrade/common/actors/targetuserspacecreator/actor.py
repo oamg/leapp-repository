@@ -5,6 +5,7 @@ from leapp.models import RequiredTargetUserspacePackages  # deprecated
 from leapp.models import TMPTargetRepositoriesFacts  # deprecated
 from leapp.models import (
     CustomTargetRepositoryFile,
+    LiveImagePreparationInfo,
     PkgManagerInfo,
     Report,
     RepositoriesFacts,
@@ -37,6 +38,7 @@ class TargetUserspaceCreator(Actor):
     name = 'target_userspace_creator'
     consumes = (
         CustomTargetRepositoryFile,
+        LiveImagePreparationInfo,
         RHSMInfo,
         RHUIInfo,
         RepositoriesFacts,
