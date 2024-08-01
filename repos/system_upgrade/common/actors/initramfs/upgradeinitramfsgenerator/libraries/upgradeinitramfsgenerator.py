@@ -368,7 +368,8 @@ def generate_initram_disk(context):
             cmd=os.path.join('/', INITRAM_GEN_SCRIPT_NAME))
     ], env=env)
 
-    copy_boot_files(context)
+    boot_files_info = copy_boot_files(context)
+    return boot_files_info
 
 
 def get_boot_artifact_names():
@@ -461,8 +462,15 @@ def prepare_boot_files_for_livemode(context):
 
     _generate_livemode_initramfs(context, userspace_initramfs_dest, target_kernel_ver)
 
+    api.current_logger().debug('Copying artifacts from userspace into host\'s /boot')
     host_initramfs_dest = os.path.join('/boot', initramfs_artifact_name)
+    host_kernel_dest = os.path.join('/boot', kernel_artifact_name)
     context.copy_from(userspace_initramfs_dest, host_initramfs_dest)
+    context.copy_from(userspace_initramfs_dest, host_kernel_dest)
+
+    return BootContent(kernel_path=host_kernel_dest,
+                       initram_path=host_initramfs_dest,
+                       kernel_hmac_path='')
 
 
 def create_upgrade_hmac_from_target_hmac(original_hmac_path, upgrade_hmac_path, upgrade_kernel):
@@ -485,8 +493,10 @@ def create_upgrade_hmac_from_target_hmac(original_hmac_path, upgrade_hmac_path, 
 
 def copy_boot_files(context):
     """
-    Function to copy the generated initram and corresponding kernel to /boot - Additionally produces a BootContent
-    message with their location.
+    Function to copy the generated initram and corresponding kernel to /boot
+    
+    
+    :returns: BootContent message containing the information about where the artifacts can be found.
     """
     curr_arch = api.current_actor().configuration.architecture
     kernel = 'vmlinuz-upgrade.{}'.format(curr_arch)
@@ -507,7 +517,7 @@ def copy_boot_files(context):
     kernel_hmac_path = context.full_path(os.path.join('/artifacts', kernel_hmac))
     create_upgrade_hmac_from_target_hmac(kernel_hmac_path, content.kernel_hmac_path, kernel)
 
-    api.produce(content)
+    return content
 
 
 def process():
@@ -523,6 +533,7 @@ def process():
         with mounting.mount_upgrade_iso_to_root_dir(userspace_info.path, target_iso):
             prepare_userspace_for_initram(context)
             if livemode_info:
-                prepare_boot_files_for_livemode(context)
+                boot_file_info = prepare_boot_files_for_livemode(context)
             else:
-                generate_initram_disk(context)
+                boot_file_info = generate_initram_disk(context)
+            api.produce(boot_file_info)
