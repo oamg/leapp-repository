@@ -212,6 +212,12 @@ Requires:   NetworkManager-libnm
 Requires:   python3-gobject-base
 
 %endif
+
+%if 0%{?rhel} && 0%{?rhel} == 9
+############# RHEL 9 dependencies (when the source system is RHEL 9) ##########
+# Required to convert pam_userdb database from BerkeleyDB to GDBM
+Requires:   libdb-utils
+%endif
 ##################################################
 # end requirement
 ##################################################
