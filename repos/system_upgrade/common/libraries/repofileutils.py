@@ -11,6 +11,15 @@ except ImportError:
     api.current_logger().warning('repofileutils.py: failed to import dnf')
 
 
+class InvalidRepoDefinition(Exception):
+    def __init__(self, msg, repofile, repoid):
+        message = 'Invalid repository definition: {repoid} in: {repofile}: {msg}'.format(
+                    repoid=repoid, repofile=repofile, msg=msg)
+        super(InvalidRepoDefinition, self).__init__(message)
+        self.repofile = repofile
+        self.repoid = repoid
+
+
 def _parse_repository(repoid, repo_data):
     def asbool(x):
         return x == '1'
@@ -38,7 +47,10 @@ def parse_repofile(repofile):
     with open(repofile, mode='r') as fp:
         cp = utils.parse_config(fp, strict=False)
         for repoid in cp.sections():
-            data.append(_parse_repository(repoid, dict(cp.items(repoid))))
+            try:
+                data.append(_parse_repository(repoid, dict(cp.items(repoid))))
+            except Exception as e:
+                raise InvalidRepoDefinition(e, repofile=repofile, repoid=repoid)
     return RepositoryFile(file=repofile, data=data)
 
 
