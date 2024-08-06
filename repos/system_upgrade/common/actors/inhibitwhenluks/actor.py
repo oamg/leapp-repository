@@ -1,40 +1,24 @@
-from leapp import reporting
 from leapp.actors import Actor
-from leapp.models import CephInfo, StorageInfo
-from leapp.reporting import create_report, Report
+from leapp.libraries.actor.inhibitwhenluks import check_invalid_luks_devices
+from leapp.models import CephInfo, LuksDumps, StorageInfo, TargetUserSpaceUpgradeTasks, UpgradeInitramfsTasks
+from leapp.reporting import Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
 class InhibitWhenLuks(Actor):
     """
-    Check if any encrypted partitions is in use. If yes, inhibit the upgrade process.
+    Check if any encrypted partitions are in use and whether they are supported for the upgrade.
 
-    Upgrading system with encrypted partition is not supported.
+    Upgrading EL7 system with encrypted partition is not supported (but ceph OSDs).
+    For EL8+ it's ok if the discovered used encrypted storage has LUKS2 format
+    and it's bounded to clevis-tpm2 token (so it can be automatically unlocked
+    during the process).
     """
 
     name = 'check_luks_and_inhibit'
-    consumes = (StorageInfo, CephInfo)
-    produces = (Report,)
+    consumes = (CephInfo, LuksDumps, StorageInfo)
+    produces = (Report, TargetUserSpaceUpgradeTasks, UpgradeInitramfsTasks)
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 
     def process(self):
-        # If encrypted Ceph volumes present, check if there are more encrypted disk in lsblk than Ceph vol
-        ceph_vol = []
-        try:
-            ceph_info = next(self.consume(CephInfo))
-            if ceph_info:
-                ceph_vol = ceph_info.encrypted_volumes[:]
-        except StopIteration:
-            pass
-
-        for storage_info in self.consume(StorageInfo):
-            for blk in storage_info.lsblk:
-                if blk.tp == 'crypt' and blk.name not in ceph_vol:
-                    create_report([
-                        reporting.Title('LUKS encrypted partition detected'),
-                        reporting.Summary('Upgrading system with encrypted partitions is not supported'),
-                        reporting.Severity(reporting.Severity.HIGH),
-                        reporting.Groups([reporting.Groups.BOOT, reporting.Groups.ENCRYPTION]),
-                        reporting.Groups([reporting.Groups.INHIBITOR]),
-                    ])
-                    break
+        check_invalid_luks_devices()
