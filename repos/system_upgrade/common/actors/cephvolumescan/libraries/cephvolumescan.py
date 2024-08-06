@@ -8,7 +8,7 @@ from leapp.libraries.stdlib import api, CalledProcessError, run
 from leapp.models import InstalledRPM
 
 CEPH_CONF = "/etc/ceph/ceph.conf"
-CONTAINER = "ceph-osd"
+CONTAINER = "ceph-.*osd"
 
 
 def select_osd_container(engine):
@@ -63,7 +63,8 @@ def encrypted_osds_list():
         output = get_ceph_lvm_list()
         if output is not None:
             try:
-                result = [output[key][0]['lv_uuid'] for key in output if output[key][0]['tags']['ceph.encrypted']]
+                for key in output:
+                    result.extend([element['lv_uuid'] for element in output[key] if element['tags']['ceph.encrypted']])
             except KeyError:
                 # TODO: possibly raise a report item with a medium risk factor
                 # TODO: possibly create list of problematic osds, extend the cephinfo
