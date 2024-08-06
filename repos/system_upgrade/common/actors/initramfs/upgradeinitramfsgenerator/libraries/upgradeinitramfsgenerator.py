@@ -466,7 +466,6 @@ def prepare_boot_files_for_livemode(context):
     host_initramfs_dest = os.path.join('/boot', initramfs_artifact_name)
     host_kernel_dest = os.path.join('/boot', kernel_artifact_name)
     context.copy_from(userspace_initramfs_dest, host_initramfs_dest)
-    context.copy_from(userspace_initramfs_dest, host_kernel_dest)
 
     return BootContent(kernel_path=host_kernel_dest,
                        initram_path=host_initramfs_dest,
