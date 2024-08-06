@@ -4,12 +4,14 @@ import shutil
 import glob
 
 from leapp.libraries.stdlib import CalledProcessError
-from leapp.models import TargetUserSpaceInfo, UpgradeEFIBootEntry
+from leapp.models import TargetUserSpaceInfo, EFIBootEntry, ArmWorkaroundEFIBootloaderInfo
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import mounting
 from leapp.libraries.stdlib import api, run
-from leapp.libraries.common.grub import (EFIBootInfo,
-                                         get_efi_partition, get_blk_device, get_efi_partition, get_device_number)
+from leapp.libraries.common.grub import (EFIBootInfo, get_blk_device, get_efi_partition, get_device_number,
+                                         canonical_path_to_efi_format, get_efi_device, GRUB2_BIOS_ENV_FILE, GRUB2_BIOS_ENTRYPOINT)
+
+UPGRADE_EFI_ENTRY_LABEL = 'Leapp Upgrade'
 
 ARM_SHIM_PACKAGE_NAME = 'shim-aa64'
 ARM_GRUB_PACKAGE_NAME = 'grub2-efi-aa64'
@@ -18,25 +20,140 @@ EFI_MOUNTPOINT = '/boot/efi/'
 LEAPP_EFIDIR_CANONICAL_PATH = os.path.join(EFI_MOUNTPOINT, 'EFI/leapp/')
 RHEL_EFIDIR_CANONICAL_PATH = os.path.join(EFI_MOUNTPOINT, 'EFI/redhat/')
 
-
-def get_efi_device():
-    """Get the block device on which GRUB is installed."""
-
-    return get_blk_device(get_efi_partition())
+CONTAINER_DOWNLOAD_DIR = '/tmp_pkg_download_dir'
 
 
-def canonical_path_to_efi_format(canonical_path):
-    r"""Transform the canonical path to the UEFI format.
+def _copy_file(src_path, dst_path):
+    if os.path.exists(dst_path):
+        api.current_logger().debug("The {} file already exists and its content will be overwritten.".format(dst_path))
 
-    e.g. /boot/efi/EFI/redhat/shimx64.efi -> \EFI\redhat\shimx64.efi
-    (just single backslash; so the string needs to be put into apostrophes
-    when used for /usr/sbin/efibootmgr cmd)
+    api.current_logger().info("Copying {} to {}".format(src_path, dst_path))
+    try:
+        shutil.copy2(src_path, dst_path)
+    except (OSError, IOError) as err:
+        raise StopActorExecutionError('I/O error({}): {}'.format(err.errno, err.strerror))
 
-    The path has to start with /boot/efi otherwise the path is invalid for UEFI.
-    """
 
-    # We want to keep the last "/" of the EFI_MOUNTPOINT
-    return canonical_path.replace(EFI_MOUNTPOINT[:-1], "").replace("/", "\\")
+def process():
+    userspace = _get_userspace_info()
+
+    binds = ['/boot', '/dev']
+    with mounting.NspawnActions(base_dir=userspace.path, binds=binds) as context:
+        _ensure_clean_environment()
+
+        # Download packages
+        for package_name in (ARM_SHIM_PACKAGE_NAME, ARM_GRUB_PACKAGE_NAME):
+            with tempfile.TemporaryDirectory() as tmpdir:
+                rpm_path = _download_package_to_container(context, package_name)
+
+                _copy_file(context.full_path(rpm_path), tmpdir)
+
+                _cleanup_container(context)
+
+                rpm_name = os.path.basename(rpm_path)
+                package_path = os.path.join(tmpdir, rpm_name)
+                _extract_package_files(package_path, tmpdir)
+
+                rhel_boot_files_dir = os.path.join(tmpdir, RHEL_EFIDIR_CANONICAL_PATH.lstrip(os.path.sep))
+                _copy_directory_content(rhel_boot_files_dir, LEAPP_EFIDIR_CANONICAL_PATH)
+
+        _copy_grub_files(['grubenv', 'grub.cfg'], ['user.cfg'])
+        _link_grubenv_to_upgrade_entry()
+
+        efibootinfo = EFIBootInfo()
+        current_boot_entry = efibootinfo.entries[efibootinfo.current_bootnum]
+        upgrade_boot_entry = _add_upgrade_boot_entry(efibootinfo)
+        _set_bootnext(upgrade_boot_entry.boot_number)
+
+        efibootentry_fields = ['boot_number', 'label', 'active', 'efi_bin_source']
+        api.produce(
+            ArmWorkaroundEFIBootloaderInfo(
+                original_entry=EFIBootEntry(**{f: getattr(current_boot_entry, f) for f in efibootentry_fields}),
+                upgrade_entry=EFIBootEntry(**{f: getattr(upgrade_boot_entry, f) for f in efibootentry_fields}),
+            )
+        )
+
+
+def _get_userspace_info():
+    msgs = api.consume(TargetUserSpaceInfo)
+
+    userspace = next(msgs, None)
+    if userspace is None:
+        raise StopActorExecutionError(
+            'Could not retrieve TargetUserSpaceInfo!')
+
+    if next(msgs, None):
+        raise api.current_logger().warning(
+            'Unexpectedly received more than one TargetUserSpaceInfo message.')
+
+    return userspace
+
+
+def _ensure_clean_environment():
+    if os.path.exists(LEAPP_EFIDIR_CANONICAL_PATH):
+        shutil.rmtree(LEAPP_EFIDIR_CANONICAL_PATH)
+
+    os.mkdir(LEAPP_EFIDIR_CANONICAL_PATH)
+
+
+def _download_package_to_container(context, package_name):
+
+    _run_dnf_download(context, package_name)
+    rpm_path = _get_rpm_path(context, package_name)
+
+    return rpm_path
+
+
+def _run_dnf_download(context, package_name):
+    api.current_logger().debug("Downloading package {}".format(package_name))
+    context.call(['dnf', 'download', '-y', '--downloaddir', CONTAINER_DOWNLOAD_DIR, package_name,
+                  '--setopt=module_platform_id=platform:el9',
+                  # FIXME: Hardcoded for now
+                  '--releasever', '9.5',
+                  '--disablerepo', '*',
+                  '--enablerepo', 'BASEOS', '--enablerepo', 'APPSTREAM'])
+
+
+def _get_rpm_path(context, package_name):
+
+    package_path_glob = os.path.join(context.full_path(CONTAINER_DOWNLOAD_DIR), package_name + '*')
+    result = glob.glob(package_path_glob)
+    if len(result) < 1:
+        msg = 'Could not find the RPM of package {} in container environment!'.format(package_name)
+        api.current_logger().error(msg)
+        raise StopActorExecutionError(msg)
+
+    if len(result) > 1:
+        msg = 'Globbing for package returned multiple results!'
+        api.current_logger().error(msg + " Found: {}".format(result))
+        raise StopActorExecutionError(msg)
+
+    rpm_name = os.path.basename(result[0])
+    if not rpm_name:
+        raise StopActorExecutionError('Could not resolve RPM name of {}'.format(package_name))
+
+    return os.path.join(CONTAINER_DOWNLOAD_DIR, rpm_name)
+
+
+def _cleanup_container(context):
+    context.remove_tree(CONTAINER_DOWNLOAD_DIR)
+
+
+def _extract_package_files(package_path, out_directory):
+    run(['rpm2archive', package_path])
+    run([
+        'tar',
+        '--gzip',
+        '--extract',
+        '--file',
+        package_path + '.tgz',
+        '--directory={}'.format(out_directory),
+        '--verbose',
+    ])
+
+
+def _copy_directory_content(src_dir, dst_dir):
+    run(['cp', '--recursive', os.path.join(src_dir, '.'), dst_dir])
 
 
 def _copy_grub_files(required, optional):
@@ -44,58 +161,35 @@ def _copy_grub_files(required, optional):
     Copy grub files from redhat/ dir to the /boot/efi/EFI/leapp/ dir.
     """
 
-    flag_ok = True
     all_files = required + optional
     for filename in all_files:
         src_path = os.path.join(RHEL_EFIDIR_CANONICAL_PATH, filename)
         dst_path = os.path.join(LEAPP_EFIDIR_CANONICAL_PATH, filename)
 
-        #if os.path.exists(dst_path):
-        #    api.current_logger().debug("The {} file already exists. Copying skipped.".format())
-        #    continue
-
         if not os.path.exists(src_path):
             if filename in required:
-                flag_ok = False
+                msg = 'Required file {} does not exists. Aborting.'.format(filename)
+                raise StopActorExecutionError(msg)
+
             continue
 
-        api.current_logger().info("Copying {} to {}".format(src_path, dst_path))
-        try:
-            shutil.copy2(src_path, dst_path)
-        except (OSError, IOError) as err:
-            # IOError for py2 and OSError for py3
-            api.current_logger().error("I/O error({}): {}".format(err.errno, err.strerror))
-            flag_ok = False
-
-    return flag_ok
+        _copy_file(src_path, dst_path)
 
 
-def _get_upgrade_boot_entry(efibootinfo, efi_path, label):
-    for entry in efibootinfo.entries.values():
-        if entry.label == label and efi_path in entry.efi_bin_source:
-            return entry
-
-    return None
+def _link_grubenv_to_upgrade_entry():
+    upgrade_env_file = os.path.join(LEAPP_EFIDIR_CANONICAL_PATH, 'grubenv')
+    upgrade_env_file_relpath = os.path.relpath(upgrade_env_file, GRUB2_BIOS_ENTRYPOINT)
+    run(['ln', '--symbolic', '--force', upgrade_env_file_relpath, GRUB2_BIOS_ENV_FILE])
 
 
-def _is_upgrade_in_boot_entries(efibootinfo, efi_path, label):
-    return _get_upgrade_boot_entry(efibootinfo, efi_path, label) is not None
-
-
-def _set_bootnext(boot_number):
-    result = run(['efibootmgr', '-n', boot_number], checked=False)
-    if result['exit_code']:
-        raise StopActorExecutionError('Could not set Leapp upgrade boot entry as BootNext.')
-
-
-def _add_upgrade_boot_entry():
+def _add_upgrade_boot_entry(efibootinfo):
     """
-    Create a new UEFI bootloader entry with a RHEL label and bin file.
+    Create a new UEFI bootloader entry with a upgrade label and bin file.
 
     If an entry for the label and bin file already exists no new entry
     will be created.
 
-    Return the new bootloader info (EFIBootInfo).
+    Return the upgrade efi entry (EFIEntry).
     """
 
     dev_number = get_device_number(get_efi_partition())
@@ -105,19 +199,12 @@ def _add_upgrade_boot_entry():
     if os.path.exists(tmp_efi_path):
         efi_path = canonical_path_to_efi_format(tmp_efi_path)
     else:
-        raise StopActorExecutionError(
-            'Unable to detect upgrade UEFI binary file.')
+        raise StopActorExecutionError('Unable to detect upgrade UEFI binary file.')
 
-    label = 'Leapp Upgrade'
-
-    efibootinfo = EFIBootInfo()
-    if _is_upgrade_in_boot_entries(efibootinfo, efi_path, label):
-        upgrade_boot_entry = _get_upgrade_boot_entry(efibootinfo, efi_path, label)
-        _set_bootnext(upgrade_boot_entry.boot_number)
-
+    upgrade_boot_entry = _get_upgrade_boot_entry(efibootinfo, efi_path, UPGRADE_EFI_ENTRY_LABEL)
+    if upgrade_boot_entry is not None:
         return upgrade_boot_entry
 
-    # NOTE: The new boot entry is being set as first in the boot order
     cmd = [
         "/usr/sbin/efibootmgr",
         "--create",
@@ -128,100 +215,42 @@ def _add_upgrade_boot_entry():
         "--loader",
         efi_path,
         "--label",
-        label,
+        UPGRADE_EFI_ENTRY_LABEL,
     ]
 
     result = run(cmd, checked=False)
     if result['exit_code']:
-        raise StopActorExecutionError(
-            'Unable to add a new UEFI bootloader entry for Leapp upgrade.')
+        raise StopActorExecutionError('Unable to add a new UEFI bootloader entry for upgrade.')
 
-    # Sanity check boot entry has been added
+    # Sanity check new boot entry has been added
     efibootinfo_new = EFIBootInfo()
-    if not _is_upgrade_in_boot_entries(efibootinfo_new, efi_path, label):
-        raise StopActorExecutionError(
-            'Unable to find the new UEFI bootloader entry after adding.')
-
-    upgrade_boot_entry = _get_upgrade_boot_entry(efibootinfo_new, efi_path, label)
-    _set_bootnext(upgrade_boot_entry.boot_number)
+    upgrade_boot_entry = _get_upgrade_boot_entry(efibootinfo_new, efi_path, UPGRADE_EFI_ENTRY_LABEL)
+    if upgrade_boot_entry is None:
+        raise StopActorExecutionError('Unable to find the new UEFI bootloader entry after adding it.')
 
     return upgrade_boot_entry
 
 
-def process():
-    userspace = next(api.consume(TargetUserSpaceInfo), None)
+def _get_upgrade_boot_entry(efibootinfo, efi_path, label):
+    """
+    Get the UEFI boot entry with label `label` and EFI binary path `efi_path`
 
-    # TODO(dkubek): Sanity check we obtained the userspace
-    assert userspace is not None
+    Return EFIBootEntry or None if not found.
+    """
 
-    binds = ['/boot', '/dev']
-    with mounting.NspawnActions(base_dir=userspace.path, binds=binds) as context:
+    for entry in efibootinfo.entries.values():
+        if entry.label == label and efi_path in entry.efi_bin_source:
+            return entry
 
-        # Ensure clean environment
-        if os.path.exists(LEAPP_EFIDIR_CANONICAL_PATH):
-            shutil.rmtree(LEAPP_EFIDIR_CANONICAL_PATH)
-
-        # Create directory /boot/efi/EFI/leapp
-        os.mkdir(LEAPP_EFIDIR_CANONICAL_PATH)
-
-        # Download packages
-        with tempfile.TemporaryDirectory() as tmpdir:
-            for package_name in (ARM_SHIM_PACKAGE_NAME, ARM_GRUB_PACKAGE_NAME):
-                container_tmpdir = '/tmp_pkg_download_dir'
-
-                # Download the package rpm and rename it
-                context.call(['dnf', 'download', '-y', '--downloaddir', container_tmpdir, package_name,
-                              # TODO: BIG HACK, figure out how to best handle this
-                              '--setopt=module_platform_id=platform:el9',
-                              '--releasever', '9.5',
-                              '--disablerepo', '*',
-                              '--enablerepo', 'BASEOS', '--enablerepo', 'APPSTREAM'])
-
-                package_glob = os.path.join(context.full_path(container_tmpdir), package_name + '*')
-                result = glob.glob(package_glob)
-                assert len(result) == 1
-                rpm_name = os.path.basename(result[0])
-                if not rpm_name:
-                    raise StopActorExecutionError('Could not resolve rpm name of {}'.format(package_name))
-
-                # Copy the package to the host
-                host_dir = os.path.join(tmpdir, package_name)
-                os.mkdir(host_dir)
-                context.copy_from(os.path.join(container_tmpdir, rpm_name), host_dir)
-
-                # Cleanup in the container
-                context.remove_tree(container_tmpdir)
-
-                # Extract files from boot/efi/EFI/
-                # FIXME: Add error checking
-                package_path = os.path.join(host_dir, rpm_name)
-                run(['rpm2archive', package_path])
-                run([
-                    'tar',
-                    '--gzip',
-                    '--extract',
-                    '--file',
-                    package_path + '.tgz',
-                    '--directory={}'.format(host_dir),
-                    '--verbose',  # For logging and debugging
-                ],
-                )
-
-                # Copy required files to LEAPP_EFIDIR_CANONICAL_PATH
-                run(['cp', '-r', os.path.join(host_dir, RHEL_EFIDIR_CANONICAL_PATH, '.'), LEAPP_EFIDIR_CANONICAL_PATH])
+    return None
 
 
-        # TODO: Copy grub.cfg and grubenv
-        if not _copy_grub_files(["grubenv", "grub.cfg"], ["user.cfg"]):
-            raise StopActorExecutionError(
-                "Some GRUB files have not been copied to /boot/efi/EFI/redhat")
+def _set_bootnext(boot_number):
+    """
+    Set the BootNext UEFI entry to `boot_number`.
+    """
 
-        # Create efi entry and set it as default
-        upgrade_boot_entry = _add_upgrade_boot_entry()
-
-        api.produce(UpgradeEFIBootEntry(
-            boot_number=upgrade_boot_entry.boot_number,
-            label=upgrade_boot_entry.label,
-            active=upgrade_boot_entry.active,
-            efi_bin_source=upgrade_boot_entry.efi_bin_source,
-        ))
+    api.current_logger().debug('Setting {} as BootNext'.format(boot_number))
+    result = run(['/usr/sbin/efibootmgr', '--bootnext', boot_number], checked=False)
+    if result['exit_code']:
+        raise StopActorExecutionError('Could not set boot entry {} as BootNext.'.format(boot_number))

@@ -9,6 +9,26 @@ from leapp.utils.deprecation import deprecated
 EFI_MOUNTPOINT = "/boot/efi/"
 """The path to the required mountpoint for ESP."""
 
+GRUB2_BIOS_ENTRYPOINT = "/boot/grub2"
+"""The entrypoint path of the BIOS GRUB2"""
+
+GRUB2_BIOS_ENV_FILE = os.path.join(GRUB2_BIOS_ENTRYPOINT, "grubenv")
+"""The path to the env file for GRUB2 in BIOS"""
+
+
+def canonical_path_to_efi_format(canonical_path):
+    r"""Transform the canonical path to the UEFI format.
+
+    e.g. /boot/efi/EFI/redhat/shimx64.efi -> \EFI\redhat\shimx64.efi
+    (just single backslash; so the string needs to be put into apostrophes
+    when used for /usr/sbin/efibootmgr cmd)
+
+    The path has to start with /boot/efi otherwise the path is invalid for UEFI.
+    """
+
+    # We want to keep the last "/" of the EFI_MOUNTPOINT
+    return canonical_path.replace(EFI_MOUNTPOINT[:-1], "").replace("/", "\\")
+
 
 class EFIBootLoader:
     """
@@ -348,6 +368,12 @@ def get_grub_devices():
     have_grub = [dev for dev in devices if has_grub(dev)]
     api.current_logger().info('GRUB is installed on {}'.format(",".join(have_grub)))
     return have_grub
+
+
+def get_efi_device():
+    """Get the block device on which GRUB is installed."""
+
+    return get_blk_device(get_efi_partition())
 
 
 @deprecated(since='2023-06-23', message='This function has been replaced by get_grub_devices')

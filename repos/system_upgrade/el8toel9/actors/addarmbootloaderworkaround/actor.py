@@ -3,7 +3,7 @@ from leapp.actors import Actor
 from leapp.libraries.actor import addupgradebootloader
 from leapp.libraries.common.config import architecture
 from leapp.libraries.common.config.version import get_target_version
-from leapp.models import TargetUserSpaceInfo, UpgradeEFIBootEntry
+from leapp.models import TargetUserSpaceInfo, ArmWorkaroundEFIBootloaderInfo
 from leapp.tags import IPUWorkflowTag, InterimPreparationPhaseTag
 
 
@@ -15,7 +15,7 @@ class AddArmBootloaderWorkaround(Actor):
 
     name = 'add_arm_bootloader_workaround'
     consumes = (TargetUserSpaceInfo,)
-    produces = (UpgradeEFIBootEntry,)
+    produces = (ArmWorkaroundEFIBootloaderInfo,)
     tags = (IPUWorkflowTag, InterimPreparationPhaseTag)
 
     def process(self):

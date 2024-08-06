@@ -2,18 +2,17 @@ from leapp.actors import Actor
 from leapp.libraries.actor.removeupgradeefientry import remove_upgrade_efi_entry
 from leapp.libraries.common.config import architecture
 from leapp.libraries.common.config.version import get_target_version
-from leapp.models import UpgradeEFIBootEntry
+from leapp.models import ArmWorkaroundEFIBootloaderInfo
 from leapp.tags import InitRamStartPhaseTag, IPUWorkflowTag
 
 
 class RemoveUpgradeEFIEntry(Actor):
     """
     Remove UEFI entry for LEAPP upgrade.
-
     """
 
-    name = 'remove_upgrade_boot_entry'
-    consumes = (UpgradeEFIBootEntry,)
+    name = 'remove_upgrade_efi_entry'
+    consumes = (ArmWorkaroundEFIBootloaderInfo,)
     produces = ()
     tags = (IPUWorkflowTag, InitRamStartPhaseTag)
 
