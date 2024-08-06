@@ -1,7 +1,8 @@
+import contextlib
 import shutil
 
 from leapp.actors import Actor
-from leapp.libraries.common import dnfplugin
+from leapp.libraries.common import dnfplugin, mounting
 from leapp.libraries.stdlib import run
 from leapp.models import (
     DNFPluginTask,
@@ -52,11 +53,15 @@ class DnfUpgradeTransaction(Actor):
         target_userspace_info = next(self.consume(TargetUserSpaceInfo), None)
         xfs_info = next(self.consume(XFSPresence), XFSPresence())
 
-        dnfplugin.perform_transaction_install(
-            tasks=tasks, used_repos=used_repos, storage_info=storage_info, target_userspace_info=target_userspace_info,
-            plugin_info=plugin_info, xfs_info=xfs_info
-        )
+        with contextlib.ExitStack() as exit_stack:
+            mount_deps = target_userspace_info.setup_mount_dependencies
+            mounting.populate_exit_stack_with_mount_dependencies(exit_stack, mount_deps)
+            dnfplugin.perform_transaction_install(tasks=tasks, used_repos=used_repos, storage_info=storage_info,
+                                                  target_userspace_info=target_userspace_info, plugin_info=plugin_info,
+                                                  xfs_info=xfs_info)
+
         self.produce(TransactionCompleted())
+
         userspace = next(self.consume(TargetUserSpaceInfo), None)
         if userspace:
             try:
