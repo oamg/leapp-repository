@@ -60,7 +60,7 @@ def add_boot_entry(configs=None):
     kernel_dst_path, initram_dst_path = get_boot_file_paths()
     _remove_old_upgrade_boot_entry(kernel_dst_path, configs=configs)
 
-    livemode_enabled = next(api.consume(LiveImagePreparationInfo), None) is None
+    livemode_enabled = next(api.consume(LiveImagePreparationInfo), None) is not None
 
     cmdline_args = collect_boot_args(livemode_enabled)
     undesired_cmdline_args = collect_undesired_args(livemode_enabled)
@@ -82,7 +82,7 @@ def add_boot_entry(configs=None):
         remove_undesired_args_cmd = [
             '/usr/sbin/grubby',
             '--update-kernel', kernel_dst_path,
-            '--remove-args', ' '.join(args_to_remove_str)
+            '--remove-args', args_to_remove_str
         ]
 
         if configs:
@@ -193,6 +193,12 @@ def _get_device_uuid(path):
     for uuid in os.listdir('/dev/disk/by-uuid'):
         uuid_fullpath = os.path.join('/dev/disk/by-uuid/', uuid)
         dev_path = os.readlink(uuid_fullpath)
+
+        # The link target is likely relative to the UUID_fullpath, e.g., ../../dm-1.
+        # Joining it will '/dev/disk/by-uuid' will resolve the relative path.
+        # If dev_path is absolute it returns dev_path.
+        dev_path = os.path.join('/dev/disk/by-uuid', dev_path)
+
         dev_id = os.stat(dev_path).st_rdev
         if dev_id == needle_dev_id:
             return uuid
@@ -209,7 +215,7 @@ def _get_rdlvm_args():
         arg_pair = raw_arg.split('=', maxsplit=1)
         if len(arg_pair) == 1:
             return (raw_arg, None)
-        return arg_pair
+        return tuple(arg_pair)
 
     return {into_arg_pair(arg) for arg in cmdline if arg.startswith('rd.lvm')}
 
