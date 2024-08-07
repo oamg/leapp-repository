@@ -28,18 +28,18 @@ def lighten_target_userpace(context):
                                          tree_to_prune, error)
 
 
-def build_squashfs(context, livemode_config, userspace_info):
+def build_squashfs(livemode_config, userspace_info):
     """
     Generate the live rootfs image based on the target userspace
 
     :param livemode LiveModeConfigFacts: Livemode configuration message
     :param userspace_info TargetUserspaceInfo: Information about how target userspace is set up
     """
-    target_userspace_fullpath = context.path
+    target_userspace_fullpath = userspace_info.path
     squashfs_fullpath = livemode_config.squashfs
 
     api.current_logger().info('Building the squashfs image %s from target userspace located at %s',
-                              squashfs_fullpath, context.path)
+                              squashfs_fullpath, target_userspace_fullpath)
 
     try:
         if os.path.exists(squashfs_fullpath):
