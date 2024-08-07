@@ -357,7 +357,7 @@ def prepare_target_userspace(scratch_context, userspace_fullpath, enabled_repos,
     try:
         userspace_inside_scratch_path = os.path.join(scratch_context.base_dir,
                                                      userspace_fullpath.strip('/'))
-        scratch_context.makedirs()
+        scratch_context.makedirs(userspace_fullpath)
         with mounting.BindMount(userspace_fullpath, userspace_inside_scratch_path):
             userspace_install_cmd = make_userspace_installation_cmd(userspace_fullpath, enabled_repos, packages)
             scratch_context.call(userspace_install_cmd, callback_raw=utils.logging_handler, split=True)
