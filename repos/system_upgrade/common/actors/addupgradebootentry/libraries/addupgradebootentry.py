@@ -65,6 +65,12 @@ def add_boot_entry(configs=None):
     cmdline_args = collect_boot_args(livemode_enabled)
     undesired_cmdline_args = collect_undesired_args(livemode_enabled)
 
+    # We need to update root= param separately, since we cannot do it during --add-kernel with --copy-default.
+    # This is likely a bug in grubby.
+    root_param_value = None
+    if 'root' in cmdline_args:
+        root_param_value = cmdline_args.pop('root')
+
     args_to_add_str = format_grubby_args_from_args_dict(cmdline_args)
     args_to_remove_str = format_grubby_args_from_args_dict(undesired_cmdline_args)
 
@@ -85,14 +91,29 @@ def add_boot_entry(configs=None):
             '--remove-args', args_to_remove_str
         ]
 
+        specify_root_param_for_the_entry_cmd = [
+            '/usr/sbin/grubby',
+            '--update-kernel', kernel_dst_path,
+            '--args', 'root={0}'.format(root_param_value)
+        ]
+
+        def apply_all_necessary_commands(extra_command_suffix=None):
+            if not extra_command_suffix:
+                extra_command_suffix = []
+
+            run(cmd + extra_command_suffix)
+
+            if root_param_value:
+                run(specify_root_param_for_the_entry_cmd + extra_command_suffix)
+
+            if undesired_cmdline_args:
+                run(remove_undesired_args_cmd + extra_command_suffix)
+
         if configs:
             for config in configs:
-                run(cmd + ['-c', config])
-                if undesired_cmdline_args:
-                    run(remove_undesired_args_cmd + ['-c', config])
+                apply_all_necessary_commands(extra_command_suffix=['-c', config])
         else:
-            run(cmd)
-            run(remove_undesired_args_cmd)
+            apply_all_necessary_commands(extra_command_suffix=None)
 
         if architecture.matches_architecture(architecture.ARCH_S390X):
             # on s390x we need to call zipl explicitly because of issue in grubby,
@@ -217,7 +238,10 @@ def _get_rdlvm_args():
             return (raw_arg, None)
         return tuple(arg_pair)
 
-    return {into_arg_pair(arg) for arg in cmdline if arg.startswith('rd.lvm')}
+    rd_lvm_args = [arg for arg in cmdline if arg.startswith('rd.lvm')]
+    api.current_logger().debug('Collected the following LVM args that are undesired for the squashfs: %s', rd_lvm_args)
+
+    return {into_arg_pair(arg) for arg in rd_lvm_args}
 
 
 def construct_cmdline_args_for_livemode():
@@ -251,7 +275,6 @@ def construct_cmdline_args_for_livemode():
         network_fragments = livemode_config.dracut_network.split('=', maxsplit=1)
 
         # @Todo(mhecko): verify this during config scan
-
         if len(network_fragments) == 1 or network_fragments[0] != 'ip':
             msg = ('The livemode dracut_network configuration value is incorrect - it does not '
                    'have the form of a key-value cmdline arg: `{0}`.')

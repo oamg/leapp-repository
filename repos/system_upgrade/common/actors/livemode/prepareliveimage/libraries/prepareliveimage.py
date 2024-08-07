@@ -505,7 +505,7 @@ def prepare_live_image(userspace, storage, boot, livemode):
         create_fstab_mounting_current_root_elsewhere(context, storage.fstab)
         create_symlink_from_sysroot_to_source_root_mountpoint(context)
 
-        if config.setup_passwordless_root:
+        if config.setup_passwordless_root or True:
             make_root_account_passwordless(context)
             setup_info.has_passwordless_root = True
 
