@@ -202,7 +202,7 @@ def make_root_account_passwordless(context):
     """
     target_userspace_passwd_path = context.full_path('/etc/passwd')
 
-    if not os.exists(target_userspace_passwd_path):
+    if not os.path.exists(target_userspace_passwd_path):
         api.current_logger().warning('Target userspace is lacking /etc/passwd; cannot setup passwordless root.')
         return
 
