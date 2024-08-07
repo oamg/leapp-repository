@@ -12,14 +12,6 @@ from leapp.models import (
 )
 
 
-DNF_CACHE_BACKUP_PATH = '/var/lib/leapp/dnf'
-
-
-def clean_up_workspace_from_previous_builds(liveos_workspace):
-    run(['rm', '-rf', liveos_workspace])
-    os.makedirs(liveos_workspace)
-
-
 def lighten_target_userpace(context):
     """
     Remove unneeded files from the target userspace.
@@ -38,20 +30,16 @@ def lighten_target_userpace(context):
 
 def build_squashfs(context, livemode_config, userspace_info):
     """
-    @Todo(mhecko): This is not used anymore, remove it. We now have the userspace image prepared, we just compress it.
     Generate the live rootfs image based on the target userspace
 
     :param livemode LiveModeConfigFacts: Livemode configuration message
     :param userspace_info TargetUserspaceInfo: Information about how target userspace is set up
     """
-    liveos_workspace_path = livemode_config.temp_dir
+    target_userspace_fullpath = context.path
     squashfs_fullpath = livemode_config.squashfs
 
-    api.current_logger().info('Building the squashfs image %s using the temporary workspace %s',
-                              squashfs_fullpath, liveos_workspace_path)
-
-    clean_up_workspace_from_previous_builds(liveos_workspace_path)
-    os.makedirs(os.path.join(liveos_workspace_path, 'LiveOS'))
+    api.current_logger().info('Building the squashfs image %s from target userspace located at %s',
+                              squashfs_fullpath, context.path)
 
     try:
         if os.path.exists(squashfs_fullpath):
@@ -60,28 +48,12 @@ def build_squashfs(context, livemode_config, userspace_info):
         api.current_logger().warning('Failed to remove already existing %s. Full error: %s',
                                      squashfs_fullpath, error)
 
-    cwd = os.getcwd()
     try:
-        with mounting.LoopMount(source=userspace_info.userspace_image_path,
-                                target=liveos_workspace_path):
-        # @Todo(mhecko): Can we build the image without changing the current directory?
-            os.chdir(liveos_workspace_path)
-            run(['mksquashfs', '.', squashfs_fullpath])
+        run(['mksquashfs', target_userspace_fullpath, squashfs_fullpath])
     except CalledProcessError as error:
         raise StopActorExecutionError(
            'Cannot pack the target userspace into a squash image. ',
            details={'details': 'The following error occurred while building the squashfs image: {0}.'.format(error)}
-        )
-    finally:
-        os.chdir(cwd)
-
-    try:
-        run(['rm', '-rf', liveos_workspace_path])
-        # @Todo(mhecko): We are cleaning out the temporary workspace here, make sure that the upgrade image is not
-        # in the workspace (misconfiguration)
-    except OSError as error:
-        api.current_logger().warning(
-            'Failed to remove the temporary workspace (at %s) due to the following error: %s', error
         )
 
     return squashfs_fullpath

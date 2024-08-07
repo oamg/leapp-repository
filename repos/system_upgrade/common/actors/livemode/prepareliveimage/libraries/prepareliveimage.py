@@ -485,13 +485,9 @@ def prepare_live_image(userspace, storage, boot, livemode):
         raise StopActorExecutionError('Did not receive any LiveModeConfigFacts messages.')
 
     userspace_info = next(api.consume(TargetUserSpaceInfo), None)
-    with contextlib.ExitStack() as exit_stack:
+    with mounting.NspawnActions(base_dir=userspace_info.path) as context:
         # Perform all mounts that are required to make the userspace functional, and then
         # create an Nspawn context inside the userspace
-        mounting.populate_exit_stack_with_mount_dependencies(exit_stack, userspace_info.setup_mount_dependencies)
-        context = mounting.NspawnActions(base_dir=userspace.path)
-        exit_stack.enter_context(mounting.NspawnActions(base_dir=userspace.path))
-
         setup_info = LiveImagePreparationInfo()
 
         setup_upgrade_service(context)

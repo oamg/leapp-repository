@@ -64,10 +64,6 @@ PROD_CERTS_FOLDER = 'prod-certs'
 PERSISTENT_PACKAGE_CACHE_DIR = '/var/lib/leapp/persistent_package_cache'
 DEDICATED_LEAPP_PART_URL = 'https://access.redhat.com/solutions/7011704'
 
-USERSPACE_IMAGE_FULLPATH = '/var/lib/leapp/userspace.xfs.img'
-USERSPACE_EXTERNAL_DNF_CACHE = '/var/lib/leapp/dnf_cache'
-USERSPACE_OVERSIZE_COEF = 1.6
-
 
 def _check_deprecated_rhsm_skip():
     # we do not plan to cover this case by tests as it is purely
@@ -298,28 +294,6 @@ def estimate_required_disk_space_for_userspace(userspace_installroot, enabled_re
     return mb_total
 
 
-def make_userspace_for_squashfs(install_root_dir, enabled_repos, packages):
-    required_space = estimate_required_disk_space_for_userspace(install_root_dir, enabled_repos, packages)
-    required_space *= USERSPACE_OVERSIZE_COEF
-    required_space = math.ceil(required_space)
-    make_userspace_image(USERSPACE_IMAGE_FULLPATH, required_space)
-
-    dnf_cache_path = 'var/cache/dnf'
-    dnf_cache_inside_userspace = os.path.join(install_root_dir, dnf_cache_path)
-    with mounting.LoopMount(source=USERSPACE_IMAGE_FULLPATH, target=install_root_dir):
-        os.makedirs(dnf_cache_inside_userspace)
-
-    make_external_dnf_cache_directory(USERSPACE_EXTERNAL_DNF_CACHE)
-
-    return [
-        UserspaceMountDependency(type='loop',
-                                 what=USERSPACE_IMAGE_FULLPATH,
-                                 mountpoint=install_root_dir),
-        UserspaceMountDependency(type='bind',
-                                 what=USERSPACE_EXTERNAL_DNF_CACHE,
-                                 mountpoint=dnf_cache_inside_userspace),
-    ]
-
 def make_userspace_image(image_fullpath, size_mb):
     if os.path.exists(image_fullpath):
         # @Todo: What if the old image is still mounted?
@@ -336,23 +310,6 @@ def make_userspace_image(image_fullpath, size_mb):
         api.current_logger().error('Failed to create an userpace XFS image due to the error: %s', error)
         details = {'details': str(error)}
         raise StopActorExecution('Failed to create an XFS image for the target userspace.', details=details)
-
-
-def make_external_dnf_cache_directory(external_cache_fullpath):
-    preserve_external_cache = get_env('LEAPP_DEVEL_USE_PERSISTENT_PACKAGE_CACHE', '0') == '1'
-    external_cache_exists = os.path.exists(external_cache_fullpath)
-    if external_cache_exists and not preserve_external_cache:
-        try:
-            shutil.rmtree(external_cache_fullpath)
-            external_cache_exists = False
-        except OSError as error:
-            msg = ('Failed to create an external DNF package cache dir while setting up target '
-                   'userspace with squasfs. Full error: {0}')
-            msg = msg.format(error)
-            api.current_logger().error(msg)
-            raise StopActorExecution(msg, details={'details': str(error)})
-    if not external_cache_exists:
-        os.makedirs(external_cache_fullpath)
 
 
 def make_userspace_installation_cmd(userspace_loc, enabled_repos, packages):
@@ -398,31 +355,12 @@ def prepare_target_userspace(scratch_context, userspace_fullpath, enabled_repos,
         _import_gpg_keys(scratch_context, userspace_fullpath, target_major_version)
 
     try:
-        # @Todo: Check whether we are using squashfs, if not use empty mount dependencies
-        mount_dependencies = []
-        if is_squashfs_enabled:
-            api.current_logger().info('Upgrade with SquashFS image is enabled; manipulating SquashFS '
-                                      'image will require mount dependencies.')
-            mount_dependencies = make_userspace_for_squashfs(userspace_fullpath, enabled_repos, packages)
-
-        # We want to populate /var/lib/leapp/elXuserspace with target userspace, but we are in overlay, so any of
-        # our writes will not be propagated into the host OS. Therefore, we do an additional mount that bind mounts
-        # /var/lib/leapp/elXuserspace to <SCRATCH>/var/lib/leapp/elXuserspace. Therefore, writes will be visible
-        # to the host OS.
-        userspace_inside_scratch_path = os.path.join(scratch_context.base_dir, userspace_fullpath.strip('/'))
-        installroot_mount_dep = UserspaceMountDependency(type='bind',
-                                                         what=userspace_fullpath,
-                                                         mountpoint=userspace_inside_scratch_path)
-
-
-        with contextlib.ExitStack() as exit_stack:
-            mounting.populate_exit_stack_with_mount_dependencies(exit_stack,
-                                                                 mount_dependencies + [installroot_mount_dep])
-
-            # Todo create an XFS filesystem for the userspace and mount it into the userspace folder
+        userspace_inside_scratch_path = os.path.join(scratch_context.base_dir,
+                                                     userspace_fullpath.strip('/'))
+        scratch_context.makedirs()
+        with mounting.BindMount(userspace_fullpath, userspace_inside_scratch_path):
             userspace_install_cmd = make_userspace_installation_cmd(userspace_fullpath, enabled_repos, packages)
             scratch_context.call(userspace_install_cmd, callback_raw=utils.logging_handler, split=True)
-            return mount_dependencies
     except CalledProcessError as exc:
         message = 'Unable to install RHEL {} userspace packages.'.format(target_major_version)
         details = {'details': str(exc), 'stderr': exc.stderr}
@@ -1290,44 +1228,36 @@ def _get_target_userspace():
 def _create_target_userspace(scratch_context, indata, packages, files, target_repoids, is_squashfs_enabled=False):
     """Create the target userspace."""
     userspace_fullpath = _get_target_userspace()
-    mount_deps = prepare_target_userspace(scratch_context,
-                                          userspace_fullpath,
-                                          target_repoids,
-                                          list(packages),
-                                          is_squashfs_enabled=is_squashfs_enabled)
+    prepare_target_userspace(scratch_context, userspace_fullpath, target_repoids,
+                             list(packages), is_squashfs_enabled=is_squashfs_enabled)
 
-    with contextlib.ExitStack() as exit_stack:
-        mounting.populate_exit_stack_with_mount_dependencies(exit_stack, mount_deps)
+    _prep_repository_access(scratch_context, userspace_fullpath)
 
-        _prep_repository_access(scratch_context, userspace_fullpath)
+    with mounting.NspawnActions(base_dir=userspace_fullpath) as target_context:
+        _copy_files(target_context, files)
+    dnfplugin.install(_get_target_userspace())
 
-        with mounting.NspawnActions(base_dir=userspace_fullpath) as target_context:
-            _copy_files(target_context, files)
-        dnfplugin.install(_get_target_userspace())
+    # If we used only repofiles from leapp-rhui-<provider> then remove these as they provide
+    # duplicit definitions as the target clients already installed in the target container
+    if indata.rhui_info:
+        api.current_logger().debug(
+            'Target container should have access to content. '
+            'Removing repofiles from leapp-rhui-<provider> from the target..'
+        )
+        setup_info = indata.rhui_info.target_client_setup_info
+        if not setup_info.bootstrap_target_client:
+            target_userspace_path = _get_target_userspace()
+            for copy in setup_info.preinstall_tasks.files_to_copy_into_overlay:
+                dst_in_container = get_copy_location_from_copy_in_task(target_userspace_path, copy)
+                dst_in_container = dst_in_container.strip('/')
+                dst_in_host = os.path.join(target_userspace_path, dst_in_container)
+                if os.path.isfile(dst_in_host) and dst_in_host.endswith('.repo'):
+                    api.current_logger().debug('Removing repofile: {0}'.format(dst_in_host))
+                    os.remove(dst_in_host)
 
-        # If we used only repofiles from leapp-rhui-<provider> then remove these as they provide
-        # duplicit definitions as the target clients already installed in the target container
-        if indata.rhui_info:
-            api.current_logger().debug(
-                'Target container should have access to content. '
-                'Removing repofiles from leapp-rhui-<provider> from the target..'
-            )
-            setup_info = indata.rhui_info.target_client_setup_info
-            if not setup_info.bootstrap_target_client:
-                target_userspace_path = _get_target_userspace()
-                for copy in setup_info.preinstall_tasks.files_to_copy_into_overlay:
-                    dst_in_container = get_copy_location_from_copy_in_task(target_userspace_path, copy)
-                    dst_in_container = dst_in_container.strip('/')
-                    dst_in_host = os.path.join(target_userspace_path, dst_in_container)
-                    if os.path.isfile(dst_in_host) and dst_in_host.endswith('.repo'):
-                        api.current_logger().debug('Removing repofile: {0}'.format(dst_in_host))
-                        os.remove(dst_in_host)
-
-        # and do not forget to set the rhsm into the container mode again
-        with mounting.NspawnActions(_get_target_userspace()) as target_context:
-            rhsm.set_container_mode(target_context)
-
-    return mount_deps
+    # and do not forget to set the rhsm into the container mode again
+    with mounting.NspawnActions(_get_target_userspace()) as target_context:
+        rhsm.set_container_mode(target_context)
 
 
 def _apply_rhui_access_preinstall_tasks(context, rhui_setup_info):
@@ -1442,8 +1372,8 @@ def perform():
 
                 is_squashfs_enabled = next(api.consume(LiveImagePreparationInfo), None) is None
 
-                mount_deps = _create_target_userspace(context, indata, indata.packages, indata.files,
-                                                      target_repoids, is_squashfs_enabled=is_squashfs_enabled)
+                _create_target_userspace(context, indata, indata.packages, indata.files,
+                                         target_repoids, is_squashfs_enabled=is_squashfs_enabled)
 
                 # TODO: this is tmp solution as proper one needs significant refactoring
                 target_repo_facts = repofileutils.get_parsed_repofiles(context)
@@ -1452,10 +1382,10 @@ def perform():
                 api.produce(UsedTargetRepositories(
                     repos=[UsedTargetRepository(repoid=repo) for repo in target_repoids]))
 
-                exported_userspace_image_path = USERSPACE_IMAGE_FULLPATH if is_squashfs_enabled else None
+                exported_userspace_image_path = None
                 userspace_info = TargetUserSpaceInfo(path=_get_target_userspace(),
                                                      scratch=constants.SCRATCH_DIR,
-                                                     setup_mount_dependencies=mount_deps,
+                                                     setup_mount_dependencies=[],
                                                      userspace_image_path=exported_userspace_image_path,
                                                      mounts=constants.MOUNTS_DIR)
                 api.produce(userspace_info)
