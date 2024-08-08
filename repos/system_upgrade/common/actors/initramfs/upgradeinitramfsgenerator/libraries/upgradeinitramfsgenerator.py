@@ -13,7 +13,7 @@ from leapp.models import RequiredUpgradeInitramPackages  # deprecated
 from leapp.models import UpgradeDracutModule  # deprecated
 from leapp.models import (
     BootContent,
-    LiveImagePreparationInfo,
+    LiveModeConfigFacts,
     TargetOSInstallationImage,
     TargetUserSpaceInfo,
     TargetUserSpaceUpgradeTasks,
@@ -522,7 +522,7 @@ def copy_boot_files(context):
 def process():
     userspace_info = next(api.consume(TargetUserSpaceInfo), None)
     target_iso = next(api.consume(TargetOSInstallationImage), None)
-    livemode_info = next(api.consume(LiveImagePreparationInfo), None)
+    livemode_config = next(api.consume(LiveModeConfigFacts), None)
 
     with contextlib.ExitStack() as exit_stack:
         mounting.populate_exit_stack_with_mount_dependencies(exit_stack, userspace_info.setup_mount_dependencies)
@@ -531,7 +531,7 @@ def process():
 
         with mounting.mount_upgrade_iso_to_root_dir(userspace_info.path, target_iso):
             prepare_userspace_for_initram(context)
-            if livemode_info:
+            if livemode_config and livemode_config.enabled:
                 boot_file_info = prepare_boot_files_for_livemode(context)
             else:
                 boot_file_info = generate_initram_disk(context)

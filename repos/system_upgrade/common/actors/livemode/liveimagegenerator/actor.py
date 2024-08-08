@@ -14,12 +14,11 @@ from leapp.tags import ExperimentalTag, InterimPreparationPhaseTag, IPUWorkflowT
 
 class LiveImageGenerator(Actor):
     """
-    Produces LiveModeArtifacts: kernel + live initramfs + squashfs image
+    Generates the squashfs image for the livemode upgrade
     """
 
     name = 'live_image_generator'
-    consumes = (BootContent,
-                LiveModeConfigFacts,
+    consumes = (LiveModeConfigFacts,
                 LiveModeRequirementsTasks,
                 LiveImagePreparationInfo,
                 PrepareLiveImagePostTasks,

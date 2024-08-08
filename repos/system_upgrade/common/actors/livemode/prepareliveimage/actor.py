@@ -15,13 +15,20 @@ from leapp.tags import ExperimentalTag, InterimPreparationPhaseTag, IPUWorkflowT
 class PrepareLiveImage(Actor):
     """
     Generate the live upgrade initramfs.
+
+    Actor depends on BootContent to require that the upgrade initramfs has already
+    been generated since during installation of initramfs dependencies systemd units
+    might be modified, overwriting changes that might have been done by this actor.
     """
 
     name = 'prepare_live_image'
-    consumes = (LiveModeConfigFacts,
-                LiveModeRequirementsTasks,
-                StorageInfo,
-                TargetUserSpaceInfo)
+    consumes = (
+        LiveModeConfigFacts,
+        LiveModeRequirementsTasks,
+        StorageInfo,
+        TargetUserSpaceInfo,
+        BootContent,
+    )
     produces = (LiveImagePreparationInfo,)
     tags = (ExperimentalTag, InterimPreparationPhaseTag, IPUWorkflowTag,)
 

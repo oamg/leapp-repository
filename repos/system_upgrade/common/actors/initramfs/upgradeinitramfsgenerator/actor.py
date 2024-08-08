@@ -5,7 +5,7 @@ from leapp.models import UpgradeDracutModule  # deprecated
 from leapp.models import (
     BootContent,
     FIPSInfo,
-    LiveImagePreparationInfo,
+    LiveModeConfigFacts,
     TargetOSInstallationImage,
     TargetUserSpaceInfo,
     TargetUserSpaceUpgradeTasks,
@@ -30,7 +30,7 @@ class UpgradeInitramfsGenerator(Actor):
     name = 'upgrade_initramfs_generator'
     consumes = (
         FIPSInfo,
-        LiveImagePreparationInfo,
+        LiveModeConfigFacts,
         RequiredUpgradeInitramPackages,  # deprecated
         TargetOSInstallationImage,
         TargetUserSpaceInfo,
