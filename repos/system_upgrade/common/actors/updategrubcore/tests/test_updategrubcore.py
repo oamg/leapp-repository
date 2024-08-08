@@ -3,11 +3,10 @@ import pytest
 from leapp import reporting
 from leapp.exceptions import StopActorExecution
 from leapp.libraries.actor import updategrubcore
-from leapp.libraries.common import testutils
+from leapp.libraries.common import grub, testutils
 from leapp.libraries.common.config import architecture
 from leapp.libraries.stdlib import CalledProcessError
 from leapp.models import FirmwareFacts
-from leapp.reporting import Report
 
 UPDATE_OK_TITLE = 'GRUB core successfully updated'
 UPDATE_FAILED_TITLE = 'GRUB core update failed'
@@ -107,14 +106,13 @@ def test_update_grub_nogrub_system_ibmz(monkeypatch):
 
 
 def test_update_grub_nogrub_system(monkeypatch):
-    def raise_call_oserror(dummy):
-        # Note: grub2-probe is enough right now. If the implementation is changed,
-        # the test will most likely start to fail and better mocking will be needed.
-        raise OSError('File not found: grub2-probe')
+    def get_grub_devices_mocked():
+        # this is not very well documented, but the grub.get_grub_devices function raises a StopActorExecution on error
+        # (whether that's caused by determining root partition or determining the block device a given partition is on
+        raise StopActorExecution()
 
+    monkeypatch.setattr(grub, 'get_grub_devices', get_grub_devices_mocked)
     monkeypatch.setattr(reporting, 'create_report', testutils.create_report_mocked())
-    monkeypatch.setattr(updategrubcore, 'run', run_mocked(raise_err=True, raise_callback=raise_call_oserror))
-
     msgs = [FirmwareFacts(firmware='bios')]
     curr_actor_mocked = testutils.CurrentActorMocked(arch=architecture.ARCH_X86_64, msgs=msgs)
     monkeypatch.setattr(updategrubcore.api, 'current_actor', curr_actor_mocked)

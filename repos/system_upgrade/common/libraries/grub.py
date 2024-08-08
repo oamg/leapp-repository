@@ -36,7 +36,7 @@ def blk_dev_from_partition(partition):
         api.current_logger().warning(
             'Could not get parent device of {} partition'.format(partition)
         )
-        raise StopActorExecution()
+        raise StopActorExecution()  # TODO: return some meaningful value/error
     # lsblk "-s" option prints dependencies in inverse order, so the parent device will always
     # be the last or the only device.
     # Command result example:
@@ -55,14 +55,14 @@ def get_boot_partition():
         api.current_logger().warning(
             'Could not get name of underlying /boot partition'
         )
-        raise StopActorExecution()
+        raise StopActorExecution()  # TODO: return some meaningful value/error
     except OSError:
         api.current_logger().warning(
             'Could not get name of underlying /boot partition:'
             ' grub2-probe is missing.'
             ' Possibly called on system that does not use GRUB2?'
         )
-        raise StopActorExecution()
+        raise StopActorExecution()  # TODO: return some meaningful value/error
     boot_partition = result['stdout'].strip()
     api.current_logger().info('/boot is on {}'.format(boot_partition))
     return boot_partition
@@ -77,6 +77,7 @@ def get_grub_devices():
     :return: Devices where GRUB is located
     :rtype: list
     """
+    # TODO: catch errors and return meaningful value/error instead of StopActorExecution
     boot_device = get_boot_partition()
     devices = []
     if mdraid.is_mdraid_dev(boot_device):
