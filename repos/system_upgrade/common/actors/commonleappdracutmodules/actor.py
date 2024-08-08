@@ -4,7 +4,7 @@ from leapp.tags import InterimPreparationPhaseTag, IPUWorkflowTag
 from leapp.utils.deprecation import suppress_deprecation
 
 from leapp.models import (  # isort:skip
-    LiveImagePreparationInfo,
+    LiveModeConfigFacts,
     RequiredUpgradeInitramPackages,  # deprecated
     UpgradeDracutModule,  # deprecated
     TargetUserSpaceUpgradeTasks,
@@ -24,7 +24,7 @@ class CommonLeappDracutModules(Actor):
     """
 
     name = 'common_leapp_dracut_modules'
-    consumes = (LiveImagePreparationInfo,)
+    consumes = (LiveModeConfigFacts,)
     produces = (
         RequiredUpgradeInitramPackages,  # deprecated
         TargetUserSpaceUpgradeTasks,

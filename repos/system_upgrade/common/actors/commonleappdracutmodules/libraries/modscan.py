@@ -7,7 +7,7 @@ from leapp.utils.deprecation import suppress_deprecation
 
 from leapp.models import (  # isort:skip
     CopyFile,
-    LiveImagePreparationInfo,
+    LiveModeConfigFacts,
     RequiredUpgradeInitramPackages,  # deprecated
     UpgradeDracutModule,  # deprecated
     DracutModule,
@@ -63,9 +63,10 @@ def _create_initram_networking_tasks():
 def _create_dracut_modules():
     dracut_base_path = api.get_actor_folder_path('dracut')
 
-    if next(api.consume(LiveImagePreparationInfo), None):
+    livemode_config = next(api.consume(LiveModeConfigFacts), None)
+    if livemode_config and livemode_config.enabled:
         msg = ('Skipping requesting leapp\'s dracut modules to be included into '
-               'upgrade intiramfs due to livemode being enabled.')
+               'upgrade initramfs due to livemode being enabled.')
         api.current_logger().debug(msg)
         return
 
