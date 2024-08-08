@@ -72,5 +72,5 @@ def generate_live_image_if_enabled():
 
     with mounting.NspawnActions(base_dir=userspace_info.path) as context:
         lighten_target_userpace(context)
-        squashfs = build_squashfs(context, livemode_config, userspace_info)
+        squashfs = build_squashfs(livemode_config, userspace_info)
         api.produce(LiveModeArtifacts(squashfs=squashfs))
