@@ -34,6 +34,7 @@ class MountingMode(object):
 
 def _makedirs(path, mode=0o777, exists_ok=True):
     """ Helper function which extends os.makedirs with exists_ok on all versions of python. """
+    api.current_logger().debug('Making dir:%s with mode:%o', path, mode)
     try:
         os.makedirs(path, mode=mode)
     except OSError:
