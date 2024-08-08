@@ -3,6 +3,20 @@ from leapp.topics import BootPrepTopic, TargetUserspaceTopic, TransactionTopic
 from leapp.utils.deprecation import deprecated
 
 
+class UserspaceMountDependency(Model):
+    """ A mount that must be made in order to access the target userspace. """
+    topic = TransactionTopic
+
+    type = fields.StringEnum(choices=['loop', 'bind'])
+    """ Type of the mount that is required """
+
+    what = fields.String()
+    """ Device/path to be mounted """
+
+    mountpoint = fields.String()
+    """ Mountpoint at which should the device/path from `what` be mounted """
+
+
 class TargetUserSpaceInfo(Model):
     """
     Information about the target userspace container to be able to use it
@@ -43,6 +57,12 @@ class TargetUserSpaceInfo(Model):
 
     E.g. the overlayfss of the host filesystems can be stored here.
     """
+
+    setup_mount_dependencies = fields.List(fields.Model(UserspaceMountDependency), default=[])
+    """ A list of mount dependencies that must be mounted in order to manipulate the target userspace. """
+
+    userspace_image_path = fields.Nullable(fields.String())
+    """ Path to the image containing the userspace. Set only if upgrade with squashfs is enabled. """
 
 
 class CopyFile(Model):

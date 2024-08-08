@@ -1,4 +1,8 @@
 import itertools
+import contextlib
+from collections import namedtuple
+import enum
+import math
 import os
 import re
 import shutil
@@ -15,6 +19,7 @@ from leapp.models import RequiredTargetUserspacePackages  # deprecated
 from leapp.models import TMPTargetRepositoriesFacts  # deprecated all the time
 from leapp.models import (
     CustomTargetRepositoryFile,
+    LiveImagePreparationInfo,
     PkgManagerInfo,
     RepositoriesFacts,
     RHSMInfo,
@@ -24,6 +29,7 @@ from leapp.models import (
     TargetRepositories,
     TargetUserSpaceInfo,
     TargetUserSpacePreupgradeTasks,
+    UserspaceMountDependency,
     UsedTargetRepositories,
     UsedTargetRepository,
     XFSPresence
@@ -212,75 +218,184 @@ def _handle_transaction_err_msg_size(err):
     raise StopActorExecutionError(message=message, details=details)
 
 
-def prepare_target_userspace(context, userspace_dir, enabled_repos, packages):
+def parse_out_space_required_for_userspace(cmd_stdout):
+    """
+    :param cmd_stdout List[str]: stdout of the command used to set up the target userspace
+    :returns: number of megabytes required to set up target userspace, or None if we failed to parse the output
+    """
+
+    search_line_start = 'Installed size: '
+    needle_lines = [line for line in cmd_stdout if line.startswith(search_line_start)]
+    if len(needle_lines) != 1:
+        api.current_logger().warning('Failed to determine how much disk space is needed for the userspace. '
+                                     'Lines starting with \'Installed size:\' in userpace creation cmd output %s',
+                                      needle_lines)
+        return None
+
+    diskspace_requirement_info = needle_lines[0][len('Installed size: '):].strip()
+    # diskspace_requirement_info has the form <number> <unit>
+    req_info_fragments = diskspace_requirement_info.split(' ')
+    if len(req_info_fragments) != 2:
+        api.current_logger().warning('Failed to parse out the required disk space need for the userspace. '
+                                     'The disk requirement line does not have the expected form: \'%s\'',
+                                     needle_lines[0].strip())
+        return None
+
+    try:
+        raw_disk_space, unit = req_info_fragments
+        required_disk_space_mb = float(raw_disk_space)
+
+        if unit == 'G':
+            required_disk_space_mb *= 1024
+
+        return required_disk_space_mb
+    except ValueError:
+        api.current_logger().warning('Failed to parse out the required disk space need for the userspace. '
+                                     'The disk requirements (float) cannot be extracted from the output line: \'%s\'',
+                                     needle_lines[0].strip())
+        return None
+
+
+def estimate_required_disk_space_for_userspace(userspace_installroot, enabled_repos, packages):
+    # @Todo(mhecko): We don't need to take download size into consideration --- we are shoveling packages
+    # outside the image either way
+    import dnf
+
+    base = dnf.Base()
+    base.conf.installroot = userspace_installroot
+
+    base.read_all_repos()
+    base.fill_sack()
+
+    for repo_def in base.repos.all():
+        if repo_def in enabled_repos:
+            repo_def.enable()
+        else:
+            repo_def.disable()
+
+    base.install_specs(packages)
+    base.resolve()
+
+    bytes_for_download = 0
+    bytes_for_install = 0
+    for package in base.transaction.install_set:
+        bytes_for_download += package.downloadsize
+        bytes_for_install += package.installsize
+
+    div_coef = 1024 * 1024
+    mb_download = bytes_for_download / div_coef
+    mb_install = bytes_for_install / div_coef
+    mb_total = mb_download + mb_install
+
+    msg = ('Userspace with packages (%s) will require the following disk space: %f + %f = %f mb '
+           '(download+install)')
+    api.current_logger().debug(msg, packages, mb_download, mb_install, mb_total)
+
+    return mb_total
+
+
+def make_userspace_image(image_fullpath, size_mb):
+    if os.path.exists(image_fullpath):
+        # @Todo: What if the old image is still mounted?
+        api.current_logger().debug('Found old userspace image at %s, removing it.', image_fullpath)
+        try:
+            os.unlink(image_fullpath)
+        except CalledProcessError as error: # Unlikely
+            details = {'details': 'Caused by error: {0}'.format(error)}
+            raise StopActorExecution('Failed to remove old XFS image for the target userspace.', details=details)
+
+    try:
+        run(['mkfs.xfs', '-d', 'file,name={0},size={1}m'.format(image_fullpath, size_mb)])
+    except CalledProcessError as error:
+        api.current_logger().error('Failed to create an userpace XFS image due to the error: %s', error)
+        details = {'details': str(error)}
+        raise StopActorExecution('Failed to create an XFS image for the target userspace.', details=details)
+
+
+def make_userspace_installation_cmd(userspace_loc, enabled_repos, packages):
+    target_major_version = get_target_major_version()
+
+    repos_opt = [['--enablerepo', repo] for repo in enabled_repos]
+    repos_opt = list(itertools.chain(*repos_opt))
+
+    userspace_install_cmd = ['dnf', 'install', '-y']
+    if is_nogpgcheck_set():
+        userspace_install_cmd.append('--nogpgcheck')
+    userspace_install_cmd += [
+        '--setopt=module_platform_id=platform:el{}'.format(target_major_version),
+        '--setopt=keepcache=1',
+        '--releasever', api.current_actor().configuration.version.target,
+        '--installroot', userspace_loc,
+        '--disablerepo', '*'
+        ] + repos_opt + packages
+        # @Todo(mhecko): We need to handle these options while computing how much disk space is needed
+    if config.is_verbose():
+        userspace_install_cmd.append('-v')
+    if rhsm.skip_rhsm():
+        userspace_install_cmd.extend(('--disableplugin', 'subscription-manager'))
+
+    userspace_install_cmd.extend(packages)
+
+    return userspace_install_cmd
+
+
+def prepare_target_userspace(scratch_context, userspace_fullpath, enabled_repos, packages, is_squashfs_enabled=False):
     """
     Implement the creation of the target userspace.
     """
-    _backup_to_persistent_package_cache(userspace_dir)
+    _backup_to_persistent_package_cache(userspace_fullpath)
 
-    run(['rm', '-rf', userspace_dir])
-    _create_target_userspace_directories(userspace_dir)
+    run(['rm', '-rf', userspace_fullpath])
+    _create_target_userspace_directories(userspace_fullpath)
 
     target_major_version = get_target_major_version()
-    install_root_dir = '/el{}target'.format(target_major_version)
-    with mounting.BindMount(source=userspace_dir, target=os.path.join(context.base_dir, install_root_dir.lstrip('/'))):
-        _restore_persistent_package_cache(userspace_dir)
-        if not is_nogpgcheck_set():
-            _import_gpg_keys(context, install_root_dir, target_major_version)
 
-        repos_opt = [['--enablerepo', repo] for repo in enabled_repos]
-        repos_opt = list(itertools.chain(*repos_opt))
-        cmd = ['dnf', 'install', '-y']
-        if is_nogpgcheck_set():
-            cmd.append('--nogpgcheck')
-        cmd += [
-            '--setopt=module_platform_id=platform:el{}'.format(target_major_version),
-            '--setopt=keepcache=1',
-            '--releasever', api.current_actor().configuration.version.target,
-            '--installroot', install_root_dir,
-            '--disablerepo', '*'
-            ] + repos_opt + packages
-        if config.is_verbose():
-            cmd.append('-v')
-        if rhsm.skip_rhsm():
-            cmd += ['--disableplugin', 'subscription-manager']
-        try:
-            context.call(cmd, callback_raw=utils.logging_handler)
-        except CalledProcessError as exc:
-            message = 'Unable to install RHEL {} userspace packages.'.format(target_major_version)
-            details = {'details': str(exc), 'stderr': exc.stderr}
+    _restore_persistent_package_cache(userspace_fullpath)
+    if not is_nogpgcheck_set():
+        _import_gpg_keys(scratch_context, userspace_fullpath, target_major_version)
 
-            if 'more space needed on the' in exc.stderr:
-                # The stderr contains this error summary:
-                # Disk Requirements:
-                #   At least <size> more space needed on the <path> filesystem.
-                _handle_transaction_err_msg_size(exc)
+    try:
+        userspace_inside_scratch_path = os.path.join(scratch_context.base_dir,
+                                                     userspace_fullpath.strip('/'))
+        scratch_context.makedirs(userspace_fullpath)
+        with mounting.BindMount(userspace_fullpath, userspace_inside_scratch_path):
+            userspace_install_cmd = make_userspace_installation_cmd(userspace_fullpath, enabled_repos, packages)
+            scratch_context.call(userspace_install_cmd, callback_raw=utils.logging_handler, split=True)
+    except CalledProcessError as exc:
+        message = 'Unable to install RHEL {} userspace packages.'.format(target_major_version)
+        details = {'details': str(exc), 'stderr': exc.stderr}
 
-            # If a proxy was set in dnf config, it should be the reason why dnf
-            # failed since leapp does not support updates behind proxy yet.
-            for manager_info in api.consume(PkgManagerInfo):
-                if manager_info.configured_proxies:
+        if 'more space needed on the' in exc.stderr:
+            # The stderr contains this error summary:
+            # Disk Requirements:
+            #   At least <size> more space needed on the <path> filesystem.
+            _handle_transaction_err_msg_size(exc)
+
+        # If a proxy was set in dnf config, it should be the reason why dnf
+        # failed since leapp does not support updates behind proxy yet.
+        for manager_info in api.consume(PkgManagerInfo):
+            if manager_info.configured_proxies:
+                details['details'] = (
+                    "DNF failed to install userspace packages, likely due to the proxy "
+                    "configuration detected in the YUM/DNF configuration file. "
+                    "Make sure the proxy is properly configured in /etc/dnf/dnf.conf. "
+                    "It's also possible the proxy settings in the DNF configuration file are "
+                    "incompatible with the target system. A compatible configuration can be "
+                    "placed in /etc/leapp/files/dnf.conf which, if present, will be used during "
+                    "the upgrade instead of /etc/dnf/dnf.conf. "
+                    "In such case the configuration will also be applied to the target system."
+                )
+
+        # Similarly if a proxy was set specifically for one of the repositories.
+        for repo_facts in api.consume(RepositoriesFacts):
+            for repo_file in repo_facts.repositories:
+                if any(repo_data.proxy and repo_data.enabled for repo_data in repo_file.data):
                     details['details'] = (
                         "DNF failed to install userspace packages, likely due to the proxy "
-                        "configuration detected in the YUM/DNF configuration file. "
-                        "Make sure the proxy is properly configured in /etc/dnf/dnf.conf. "
-                        "It's also possible the proxy settings in the DNF configuration file are "
-                        "incompatible with the target system. A compatible configuration can be "
-                        "placed in /etc/leapp/files/dnf.conf which, if present, will be used during "
-                        "the upgrade instead of /etc/dnf/dnf.conf. "
-                        "In such case the configuration will also be applied to the target system."
+                        "configuration detected in a repository configuration file."
                     )
 
-            # Similarly if a proxy was set specifically for one of the repositories.
-            for repo_facts in api.consume(RepositoriesFacts):
-                for repo_file in repo_facts.repositories:
-                    if any(repo_data.proxy and repo_data.enabled for repo_data in repo_file.data):
-                        details['details'] = (
-                            "DNF failed to install userspace packages, likely due to the proxy "
-                            "configuration detected in a repository configuration file."
-                        )
-
-            raise StopActorExecutionError(message=message, details=details)
+        raise StopActorExecutionError(message=message, details=details)
 
 
 def _query_rpm_for_pkg_files(context, pkgs):
@@ -1114,13 +1229,15 @@ def _get_target_userspace():
     return constants.TARGET_USERSPACE.format(get_target_major_version())
 
 
-def _create_target_userspace(context, indata, packages, files, target_repoids):
+def _create_target_userspace(scratch_context, indata, packages, files, target_repoids, is_squashfs_enabled=False):
     """Create the target userspace."""
-    target_path = _get_target_userspace()
-    prepare_target_userspace(context, target_path, target_repoids, list(packages))
-    _prep_repository_access(context, target_path)
+    userspace_fullpath = _get_target_userspace()
+    prepare_target_userspace(scratch_context, userspace_fullpath, target_repoids,
+                             list(packages), is_squashfs_enabled=is_squashfs_enabled)
 
-    with mounting.NspawnActions(base_dir=target_path) as target_context:
+    _prep_repository_access(scratch_context, userspace_fullpath)
+
+    with mounting.NspawnActions(base_dir=userspace_fullpath) as target_context:
         _copy_files(target_context, files)
     dnfplugin.install(_get_target_userspace())
 
@@ -1269,14 +1386,23 @@ def perform():
                 setup_target_rhui_access_if_needed(context, indata)
 
                 target_repoids = _gather_target_repositories(context, indata, prod_cert_path)
-                _create_target_userspace(context, indata, indata.packages, indata.files, target_repoids)
+
+                is_squashfs_enabled = next(api.consume(LiveImagePreparationInfo), None) is None
+
+                _create_target_userspace(context, indata, indata.packages, indata.files,
+                                         target_repoids, is_squashfs_enabled=is_squashfs_enabled)
+
                 # TODO: this is tmp solution as proper one needs significant refactoring
                 target_repo_facts = repofileutils.get_parsed_repofiles(context)
                 api.produce(TMPTargetRepositoriesFacts(repositories=target_repo_facts))
                 # ## TODO ends here
                 api.produce(UsedTargetRepositories(
                     repos=[UsedTargetRepository(repoid=repo) for repo in target_repoids]))
-                api.produce(TargetUserSpaceInfo(
-                    path=_get_target_userspace(),
-                    scratch=constants.SCRATCH_DIR,
-                    mounts=constants.MOUNTS_DIR))
+
+                exported_userspace_image_path = None
+                userspace_info = TargetUserSpaceInfo(path=_get_target_userspace(),
+                                                     scratch=constants.SCRATCH_DIR,
+                                                     setup_mount_dependencies=[],
+                                                     userspace_image_path=exported_userspace_image_path,
+                                                     mounts=constants.MOUNTS_DIR)
+                api.produce(userspace_info)
