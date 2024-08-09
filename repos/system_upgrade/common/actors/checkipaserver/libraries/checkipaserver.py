@@ -5,9 +5,11 @@ MIGRATION_GUIDE_7 = "https://red.ht/IdM-upgrading-RHEL-7-to-RHEL-8"
 
 # TBD: update the doc url when migration guide 8->9 becomes available
 MIGRATION_GUIDE_8 = "https://red.ht/IdM-upgrading-RHEL-8-to-RHEL-9"
+MIGRATION_GUIDE_9 = "https://red.ht/IdM-upgrading-RHEL-9-to-RHEL-10"
 MIGRATION_GUIDES = {
     '7': MIGRATION_GUIDE_7,
-    '8': MIGRATION_GUIDE_8
+    '8': MIGRATION_GUIDE_8,
+    '9': MIGRATION_GUIDE_9
 }
 
 
@@ -27,7 +29,7 @@ def ipa_inhibit_upgrade(ipainfo):
             hint="Follow the IdM RHEL migration guide lines."
         ),
         reporting.ExternalLink(
-            url=MIGRATION_GUIDES[get_source_major_version()],
+            url=MIGRATION_GUIDES.get(get_source_major_version(), "TBD"),
             title="IdM migration guide",
         ),
         reporting.Severity(reporting.Severity.HIGH),
@@ -62,8 +64,8 @@ def ipa_warn_pkg_installed(ipainfo):
             commands=[["yum", "remove", "-y", "ipa-server"]],
         ),
         reporting.ExternalLink(
-            url=MIGRATION_GUIDES[get_source_major_version()],
-            title="Migrating IdM from RHEL 7 to 8",
+            url=MIGRATION_GUIDES.get(get_source_major_version(), "TBD"),
+            title="IdM migration guide",
         ),
         reporting.Severity(reporting.Severity.MEDIUM),
         reporting.Groups([reporting.Groups.SERVICES]),
