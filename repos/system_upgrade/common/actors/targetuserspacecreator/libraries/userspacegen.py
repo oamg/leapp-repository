@@ -1266,6 +1266,7 @@ def perform():
             target_iso = next(api.consume(TargetOSInstallationImage), None)
             with mounting.mount_upgrade_iso_to_root_dir(overlay.target, target_iso):
 
+                # TODO: this is out of tests completely
                 setup_target_rhui_access_if_needed(context, indata)
 
                 target_repoids = _gather_target_repositories(context, indata, prod_cert_path)
