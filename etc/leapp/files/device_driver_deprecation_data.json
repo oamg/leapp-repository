@@ -1,6 +1,6 @@
 {
   "provided_data_streams": [
-    "3.0"
+    "3.1"
   ],
   "data": [
     {
@@ -2688,6 +2688,60 @@
     },
     {
       "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "",
+      "device_name": "QLogic FCoE Driver",
+      "device_type": "pci",
+      "driver_name": "bnx2fc",
+      "maintained_in_rhel": [
+        7,
+        8,
+        9
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "",
+      "device_name": "QLogic NetXtreme II BCM5706/5708/5709/57710/57711/57712/57800/57810/57840 iSCSI Driver",
+      "device_type": "pci",
+      "driver_name": "bnx2i",
+      "maintained_in_rhel": [
+        7,
+        8,
+        9
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "",
+      "device_name": "QLogic BCM57710/57711/57711E/57712/57712_MF/57800/57800_MF/57810/57810_MF/57840/57840_MF Driver",
+      "device_type": "pci",
+      "driver_name": "bnx2x",
+      "maintained_in_rhel": [
+        7,
+        8,
+        9
+      ]
+    },
+    {
+      "available_in_rhel": [
         7
       ],
       "deprecation_announced": "",
@@ -2696,6 +2750,24 @@
       "device_type": "pci",
       "driver_name": "carl9170",
       "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "",
+      "device_name": "QLogic cnic Driver",
+      "device_type": "pci",
+      "driver_name": "cnic",
+      "maintained_in_rhel": [
+        7,
+        8,
+        9
+      ]
     },
     {
       "available_in_rhel": [
@@ -3968,7 +4040,233 @@
     {
       "available_in_rhel": [
         7,
+        8,
+        9
+      ],
+      "deprecation_announced": "",
+      "device_id": "0x15B3:0x1003",
+      "device_name": "Mellanox Technologies: MT27500 Family [ConnectX-3]",
+      "device_type": "pci",
+      "driver_name": "mlx4_core",
+      "maintained_in_rhel": [
+        7,
         8
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9
+      ],
+      "deprecation_announced": "",
+      "device_id": "0x15B3:0x1004",
+      "device_name": "Mellanox Technologies: MT27500 Family [ConnectX-3 Virtual Function]",
+      "device_type": "pci",
+      "driver_name": "mlx4_core",
+      "maintained_in_rhel": [
+        7,
+        8
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9
+      ],
+      "deprecation_announced": "",
+      "device_id": "0x15B3:0x1005",
+      "device_name": "Mellanox Technologies: MT27510 Family [ConnectX-3]",
+      "device_type": "pci",
+      "driver_name": "mlx4_core",
+      "maintained_in_rhel": [
+        7,
+        8
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9
+      ],
+      "deprecation_announced": "",
+      "device_id": "0x15B3:0x1006",
+      "device_name": "Mellanox Technologies: MT27511 Family [ConnectX-3]",
+      "device_type": "pci",
+      "driver_name": "mlx4_core",
+      "maintained_in_rhel": [
+        7,
+        8
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9
+      ],
+      "deprecation_announced": "",
+      "device_id": "0x15B3:0x1007",
+      "device_name": "Mellanox Technologies: MT27520 Family [ConnectX-3 Pro]",
+      "device_type": "pci",
+      "driver_name": "mlx4_core",
+      "maintained_in_rhel": [
+        7,
+        8
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9
+      ],
+      "deprecation_announced": "",
+      "device_id": "0x15B3:0x1008",
+      "device_name": "Mellanox Technologies: MT27521 Family [ConnectX-3 Pro]",
+      "device_type": "pci",
+      "driver_name": "mlx4_core",
+      "maintained_in_rhel": [
+        7,
+        8
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9
+      ],
+      "deprecation_announced": "",
+      "device_id": "0x15B3:0x1009",
+      "device_name": "Mellanox Technologies: MT27530 Family [ConnectX-3 Pro]",
+      "device_type": "pci",
+      "driver_name": "mlx4_core",
+      "maintained_in_rhel": [
+        7,
+        8
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9
+      ],
+      "deprecation_announced": "",
+      "device_id": "0x15B3:0x100a",
+      "device_name": "Mellanox Technologies: MT27531 Family [ConnectX-3 Pro]",
+      "device_type": "pci",
+      "driver_name": "mlx4_core",
+      "maintained_in_rhel": [
+        7,
+        8
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9
+      ],
+      "deprecation_announced": "",
+      "device_id": "0x15B3:0x100b",
+      "device_name": "Mellanox Technologies: MT27540 Family [ConnectX-3 Pro]",
+      "device_type": "pci",
+      "driver_name": "mlx4_core",
+      "maintained_in_rhel": [
+        7,
+        8
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9
+      ],
+      "deprecation_announced": "",
+      "device_id": "0x15B3:0x100c",
+      "device_name": "Mellanox Technologies: MT27541 Family [ConnectX-3 Pro]",
+      "device_type": "pci",
+      "driver_name": "mlx4_core",
+      "maintained_in_rhel": [
+        7,
+        8
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9
+      ],
+      "deprecation_announced": "",
+      "device_id": "0x15B3:0x100d",
+      "device_name": "Mellanox Technologies: MT27550 Family [ConnectX-3 Pro]",
+      "device_type": "pci",
+      "driver_name": "mlx4_core",
+      "maintained_in_rhel": [
+        7,
+        8
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9
+      ],
+      "deprecation_announced": "",
+      "device_id": "0x15B3:0x100e",
+      "device_name": "Mellanox Technologies: MT27551 Family [ConnectX-3 Pro]",
+      "device_type": "pci",
+      "driver_name": "mlx4_core",
+      "maintained_in_rhel": [
+        7,
+        8
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9
+      ],
+      "deprecation_announced": "",
+      "device_id": "0x15B3:0x100f",
+      "device_name": "Mellanox Technologies: MT27560 Family [ConnectX-3 Pro]",
+      "device_type": "pci",
+      "driver_name": "mlx4_core",
+      "maintained_in_rhel": [
+        7,
+        8
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9
+      ],
+      "deprecation_announced": "",
+      "device_id": "0x15B3:0x1010",
+      "device_name": "Mellanox Technologies: MT27561 Family [ConnectX-3 Pro]",
+      "device_type": "pci",
+      "driver_name": "mlx4_core",
+      "maintained_in_rhel": [
+        7,
+        8
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
       ],
       "deprecation_announced": "",
       "device_id": "0x15B3:0xA2DC",
@@ -4387,6 +4685,22 @@
       "device_name": "QLogic/NetXen (1/10) GbE Intelligent Ethernet Driver",
       "device_type": "pci",
       "driver_name": "netxen_nic",
+      "maintained_in_rhel": [
+        7,
+        8
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9
+      ],
+      "deprecation_announced": "",
+      "device_id": "",
+      "device_name": "Netronome NFP driver",
+      "device_type": "pci",
+      "driver_name": "nfp",
       "maintained_in_rhel": [
         7,
         8
@@ -5070,8 +5384,7 @@
       "available_in_rhel": [
         7,
         8,
-        9,
-        10
+        9
       ],
       "deprecation_announced": "",
       "device_id": "",
