@@ -8,7 +8,14 @@ from leapp.libraries.actor import addupgradebootentry
 from leapp.libraries.common.config.architecture import ARCH_S390X, ARCH_X86_64
 from leapp.libraries.common.testutils import CurrentActorMocked, produce_mocked
 from leapp.libraries.stdlib import api
-from leapp.models import BootContent, KernelCmdlineArg, TargetKernelCmdlineArgTasks
+from leapp.models import (
+    BootContent,
+    KernelCmdline,
+    KernelCmdlineArg,
+    LiveModeArtifacts,
+    LiveModeConfig,
+    TargetKernelCmdlineArgTasks
+)
 
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -46,7 +53,7 @@ run_args_add = [
     '--copy-default',
     '--make-default',
     '--args',
-    'debug enforcing=0 rd.plymouth=0 plymouth.enable=0'
+    'debug enforcing=0 plymouth.enable=0 rd.plymouth=0'
     ]
 
 run_args_zipl = ['/usr/sbin/zipl']
@@ -66,9 +73,8 @@ def test_add_boot_entry(monkeypatch, run_args, arch):
 
     monkeypatch.setattr(addupgradebootentry, 'get_boot_file_paths', get_boot_file_paths_mocked)
     monkeypatch.setattr(api, 'produce', produce_mocked())
-    monkeypatch.setenv('LEAPP_DEBUG', '1')
     monkeypatch.setattr(addupgradebootentry, 'run', run_mocked())
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(arch))
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(arch, envars={'LEAPP_DEBUG': '1'}))
 
     addupgradebootentry.add_boot_entry()
 
@@ -91,10 +97,10 @@ def test_debug_kernelopt_removal_task_production(monkeypatch, is_leapp_invoked_w
 
     monkeypatch.setattr(addupgradebootentry, 'get_boot_file_paths', get_boot_file_paths_mocked)
     monkeypatch.setattr(api, 'produce', produce_mocked())
-    monkeypatch.setenv('LEAPP_DEBUG', '1' if is_leapp_invoked_with_debug else '0')
     monkeypatch.setattr(addupgradebootentry, 'run', run_mocked())
 
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked())
+    monkeypatch.setattr(api, 'current_actor',
+                        CurrentActorMocked(envars={'LEAPP_DEBUG': str(int(is_leapp_invoked_with_debug))}))
 
     addupgradebootentry.add_boot_entry()
 
@@ -114,9 +120,8 @@ def test_add_boot_entry_configs(monkeypatch):
         return '/abc', '/def'
 
     monkeypatch.setattr(addupgradebootentry, 'get_boot_file_paths', get_boot_file_paths_mocked)
-    monkeypatch.setenv('LEAPP_DEBUG', '1')
     monkeypatch.setattr(addupgradebootentry, 'run', run_mocked())
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked())
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(envars={'LEAPP_DEBUG': '1'}))
     monkeypatch.setattr(api, 'produce', produce_mocked())
 
     addupgradebootentry.add_boot_entry(CONFIGS)
@@ -128,7 +133,7 @@ def test_add_boot_entry_configs(monkeypatch):
     assert addupgradebootentry.run.args[3] == run_args_add + ['-c', CONFIGS[1]]
     assert api.produce.model_instances == [
         TargetKernelCmdlineArgTasks(to_remove=[KernelCmdlineArg(key='debug')]),
-        TargetKernelCmdlineArgTasks(to_remove=[KernelCmdlineArg(key='enforcing', value='0')])
+        TargetKernelCmdlineArgTasks(to_remove=[KernelCmdlineArg(key='enforcing', value='0')]),
     ]
 
 
@@ -167,3 +172,164 @@ def test_fix_grub_config_error(monkeypatch, error_type, test_file_name):
 
     with open(os.path.join(CUR_DIR, 'files/{}.fixed'.format(test_file_name))) as f:
         assert addupgradebootentry.write_to_file.content == f.read()
+
+
+@pytest.mark.parametrize(
+    ('is_debug_enabled', 'network_enablement_type'),
+    (
+        (True, 'network-manager'),
+        (True, 'scripts'),
+        (True, False),
+        (False, False),
+    )
+)
+def test_collect_boot_args(monkeypatch, is_debug_enabled, network_enablement_type):
+    env_vars = {'LEAPP_DEBUG': str(int(is_debug_enabled))}
+    if network_enablement_type:
+        env_vars['LEAPP_DEVEL_INITRAM_NETWORK'] = network_enablement_type
+
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(envars=env_vars))
+    monkeypatch.setattr(addupgradebootentry, 'construct_cmdline_args_for_livemode',
+                        lambda *args: {'livemodearg': 'value'})
+
+    args = addupgradebootentry.collect_boot_args(livemode_enabled=True)
+
+    assert args['enforcing'] == '0'
+    assert args['rd.plymouth'] == '0'
+    assert args['plymouth.enable'] == '0'
+    assert args['livemodearg'] == 'value'
+
+    if is_debug_enabled:
+        assert args['debug'] is None
+
+    if network_enablement_type:
+        assert args['ip'] == 'dhcp'
+        assert args['rd.neednet'] == '1'
+
+
+@pytest.mark.parametrize(
+    'livemode_config',
+    (
+        LiveModeConfig(is_enabled=True,
+                       squashfs_fullpath='/dir/squashfs.img',
+                       url_to_load_squashfs_from='my-url'),
+        LiveModeConfig(is_enabled=True,
+                       squashfs_fullpath='/dir/squashfs.img',
+                       dracut_network="ip=192.168.122.146::192.168.122.1:255.255.255.0:foo::none"),
+        LiveModeConfig(is_enabled=True,
+                       squashfs_fullpath='/dir/squashfs.img',
+                       autostart_upgrade_after_reboot=False),
+        LiveModeConfig(is_enabled=True,
+                       squashfs_fullpath='/dir/squashfs.img',
+                       autostart_upgrade_after_reboot=True),
+        LiveModeConfig(is_enabled=True,
+                       squashfs_fullpath='/dir/squashfs.img',
+                       capture_upgrade_strace_into='/var/strace.out'),
+    ),
+)
+def test_construct_cmdline_for_livemode(monkeypatch, livemode_config):
+    artifacts = LiveModeArtifacts(squashfs_path=livemode_config.squashfs_fullpath)
+    messages = [livemode_config, artifacts]
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=messages))
+
+    monkeypatch.setattr(addupgradebootentry, '_get_device_uuid', lambda *args: 'MY_UUID')
+
+    args = addupgradebootentry.construct_cmdline_args_for_livemode()
+
+    assert 'rw' in args
+
+    if livemode_config.url_to_load_squashfs_from:
+        assert args['root'] == 'live:my-url'
+    else:
+        assert args['root'] == 'live:UUID=MY_UUID'
+        assert args['rd.live.dir'] == '/dir'
+        assert args['rd.live.squashimg'] == 'squashfs.img'
+
+    if livemode_config.dracut_network:
+        assert args['ip'] == '192.168.122.146::192.168.122.1:255.255.255.0:foo::none'
+        assert args['rd.needsnet'] == '1'
+
+    assert args['upgrade.autostart'] == str(int(livemode_config.autostart_upgrade_after_reboot))
+
+    if livemode_config.capture_upgrade_strace_into:
+        assert args['upgrade.strace'] == livemode_config.capture_upgrade_strace_into
+
+
+def test_get_rdlvm_arg_values(monkeypatch):
+    cmdline = [
+        KernelCmdlineArg(key='debug', value=None),
+        KernelCmdlineArg(key='rd.lvm.lv', value='A'),
+        KernelCmdlineArg(key='other', value='A'),
+        KernelCmdlineArg(key='rd.lvm.lv', value='B')
+    ]
+    messages = [KernelCmdline(parameters=cmdline)]
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=messages))
+
+    args = addupgradebootentry._get_rdlvm_arg_values()
+
+    assert args == ['A', 'B']
+
+
+def test_get_device_uuid(monkeypatch):
+    """
+    The file in question is /var/lib/file
+    Underlying partition /var is a device /dev/sda1 (dev_id=10) linked to from /dev/disk/by-uuid/MY_UUID1
+    """
+
+    execution_stats = {
+        'is_mount_call_count': 0
+    }
+
+    def is_mount_mock(path):
+        execution_stats['is_mount_call_count'] += 1
+        assert execution_stats['is_mount_call_count'] <= 3
+        return path == '/var'
+
+    monkeypatch.setattr(os.path, 'ismount', is_mount_mock)
+
+    StatResult = namedtuple('StatResult', ('st_dev', 'st_rdev'))
+
+    def stat_mock(path):
+        known_paths_table = {
+            '/var': StatResult(st_dev=1, st_rdev=None),
+            '/dev/sda1': StatResult(st_dev=0, st_rdev=1),
+            '/dev/sda2': StatResult(st_dev=0, st_rdev=2),
+            '/dev/vda0': StatResult(st_dev=0, st_rdev=3),
+        }
+        return known_paths_table[path]
+
+    monkeypatch.setattr(addupgradebootentry, 'local_os_stat', stat_mock)
+
+    def listdir_mock(path):
+        assert path == '/dev/disk/by-uuid'
+        return ['MY_UUID0', 'MY_UUID1', 'MY_UUID2']
+
+    monkeypatch.setattr(os, 'listdir', listdir_mock)
+
+    def readlink_mock(path):
+        known_links = {
+            '/dev/disk/by-uuid/MY_UUID0': '/dev/vda0',
+            '/dev/disk/by-uuid/MY_UUID1': '../../sda1',
+            '/dev/disk/by-uuid/MY_UUID2': '../../sda2',
+        }
+        return known_links[path]
+
+    monkeypatch.setattr(os, 'readlink', readlink_mock)
+
+    path = '/var/lib/file'
+    uuid = addupgradebootentry._get_device_uuid(path)
+
+    assert uuid == 'MY_UUID1'
+
+
+@pytest.mark.parametrize(
+    ('args', 'expected_result'),
+    (
+        ([('argA', 'val'), ('argB', 'valB'), ('argC', None), ], 'argA=val argB=valB argC'),
+        ([('argA', ('val1', 'val2'))], 'argA=val1 argA=val2')
+    )
+)
+def test_format_grubby_args_from_args_dict(args, expected_result):
+    actual_result = addupgradebootentry.format_grubby_args_from_args_dict(dict(args))
+
+    assert actual_result == expected_result

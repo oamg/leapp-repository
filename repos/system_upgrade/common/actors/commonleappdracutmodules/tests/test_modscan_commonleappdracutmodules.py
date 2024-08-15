@@ -26,6 +26,8 @@ def _files_get_folder_path(name):
 
 @suppress_deprecation(UpgradeDracutModule)
 def test_created_modules(monkeypatch):
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked())
+
     monkeypatch.setattr(api, 'get_actor_folder_path', _files_get_folder_path)
     path = os.path.abspath(api.get_actor_folder_path('dracut'))
     required_modules = {'sys-upgrade', 'sys-upgrade-redhat'}
