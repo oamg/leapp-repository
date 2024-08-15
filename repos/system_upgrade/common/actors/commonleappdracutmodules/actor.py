@@ -1,9 +1,10 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import modscan
-from leapp.tags import FactsPhaseTag, IPUWorkflowTag
+from leapp.tags import InterimPreparationPhaseTag, IPUWorkflowTag
 from leapp.utils.deprecation import suppress_deprecation
 
 from leapp.models import (  # isort:skip
+    LiveModeConfig,
     RequiredUpgradeInitramPackages,  # deprecated
     UpgradeDracutModule,  # deprecated
     TargetUserSpaceUpgradeTasks,
@@ -23,14 +24,14 @@ class CommonLeappDracutModules(Actor):
     """
 
     name = 'common_leapp_dracut_modules'
-    consumes = ()
+    consumes = (LiveModeConfig,)
     produces = (
         RequiredUpgradeInitramPackages,  # deprecated
         TargetUserSpaceUpgradeTasks,
         UpgradeDracutModule,  # deprecated
         UpgradeInitramfsTasks,
     )
-    tags = (IPUWorkflowTag, FactsPhaseTag)
+    tags = (IPUWorkflowTag, InterimPreparationPhaseTag)
 
     def process(self):
         modscan.process()
