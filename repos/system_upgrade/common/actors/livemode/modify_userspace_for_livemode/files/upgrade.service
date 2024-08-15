@@ -1,0 +1,14 @@
+[Unit]
+Description=Leapp Upgrade service
+After=basic.target
+ConditionKernelCommandLine=!upgrade.autostart=0
+ConditionKernelCommandLine=!upgrade.strace
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/upgrade
+StandardOutput=journal
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target
