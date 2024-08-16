@@ -22,4 +22,4 @@ RUN yum -y install python27-python-pip && \
     python -m pip install --ignore-installed pip==20.3.4 ipaddress virtualenv
 
 WORKDIR /payload
-ENTRYPOINT make install-deps && make test_no_lint
+ENTRYPOINT make install-deps && make lint

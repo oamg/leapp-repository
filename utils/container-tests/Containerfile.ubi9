@@ -8,4 +8,4 @@ RUN dnf update -y && \
 RUN pip install virtualenv
 
 WORKDIR /payload
-ENTRYPOINT make install-deps && make test
+ENTRYPOINT make install-deps && make test_no_lint
