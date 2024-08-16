@@ -6,4 +6,4 @@ RUN dnf update -y && \
     dnf install python3-virtualenv python3-setuptools python3-pip make git -y
 
 WORKDIR /payload
-ENTRYPOINT make install-deps && make test_no_lint
+ENTRYPOINT make install-deps && make lint
