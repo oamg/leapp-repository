@@ -32,7 +32,7 @@ def process():
 
     if leftover_packages and leftover_packages.items:
         summary = (
-            'Following RHEL packages have not been upgraded:{sep}{list}'
+            'Following RHEL packages have not been upgraded:{sep}{list}\n'
             'Please remove these packages to keep your system in supported state.'
             .format(
                 sep=FMT_LIST_SEPARATOR,
