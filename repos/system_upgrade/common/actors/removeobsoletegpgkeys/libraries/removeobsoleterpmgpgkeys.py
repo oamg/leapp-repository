@@ -12,11 +12,14 @@ def _get_obsolete_keys():
     distribution = api.current_actor().configuration.os_release.release_id
     obsoleted_keys_map = get_distribution_data(distribution).get('obsoleted-keys', {})
     keys = []
-    for version in range(7, int(get_target_major_version()) + 1):
-        for key in obsoleted_keys_map[str(version)]:
-            name, version, release = key.rsplit("-", 2)
-            if has_package(InstalledRPM, name, version=version, release=release):
-                keys.append(key)
+    try:
+        for version in range(7, int(get_target_major_version()) + 1):
+            for key in obsoleted_keys_map[str(version)]:
+                name, version, release = key.rsplit("-", 2)
+                if has_package(InstalledRPM, name, version=version, release=release):
+                    keys.append(key)
+    except KeyError:
+        pass
 
     return keys
 
