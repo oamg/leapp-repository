@@ -77,6 +77,56 @@ def test_get_obsolete_keys(monkeypatch, version, expected):
 
 
 @pytest.mark.parametrize(
+    "version, obsoleted_keys, expected",
+    [
+        (10, None, []),
+        (10, {}, []),
+        (10, {"8": ["gpg-pubkey-888-abc"], "10": ["gpg-pubkey-10-10"]}, ["gpg-pubkey-888-abc", "gpg-pubkey-10-10"]),
+        (9, {"8": ["gpg-pubkey-888-abc"], "9": ["gpg-pubkey-999-def"]}, ["gpg-pubkey-999-def", "gpg-pubkey-888-abc"]),
+        (8, {"8": ["gpg-pubkey-888-abc"], "9": ["gpg-pubkey-999-def"]}, ["gpg-pubkey-888-abc"])
+    ]
+)
+def test_get_obsolete_keys_incomplete_data(monkeypatch, version, obsoleted_keys, expected):
+    def get_target_major_version_mocked():
+        return version
+
+    def get_distribution_data_mocked(_distro):
+        if obsoleted_keys is None:
+            return {}
+        return {'obsoleted-keys': obsoleted_keys}
+
+    def has_package_mocked(*args, **kwargs):
+        return True
+
+    monkeypatch.setattr(
+        removeobsoleterpmgpgkeys,
+        "get_target_major_version",
+        get_target_major_version_mocked,
+    )
+
+    monkeypatch.setattr(
+        removeobsoleterpmgpgkeys,
+        "get_distribution_data",
+        get_distribution_data_mocked,
+    )
+
+    monkeypatch.setattr(
+        removeobsoleterpmgpgkeys,
+        "has_package",
+        has_package_mocked,
+    )
+
+    monkeypatch.setattr(
+        api,
+        "current_actor",
+        CurrentActorMocked(),
+    )
+
+    keys = removeobsoleterpmgpgkeys._get_obsolete_keys()
+    assert set(keys) == set(expected)
+
+
+@pytest.mark.parametrize(
     "keys, should_register",
     [
         (["gpg-pubkey-d4082792-5b32db75"], True),
