@@ -6,7 +6,7 @@ from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import ensurevalidgrubcfghybrid
 from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked
 from leapp.libraries.stdlib import api, CalledProcessError
-from leapp.models import HybridImage
+from leapp.models import HybridImageAzure
 
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -63,7 +63,7 @@ def test_valid_grubcfg(monkeypatch):
     Test valid configuration does not trigger grub2-mkconfig
     """
 
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[HybridImage()]))
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[HybridImageAzure()]))
     monkeypatch.setattr(api, 'current_logger', logger_mocked())
     monkeypatch.setattr(ensurevalidgrubcfghybrid, 'run', run_mocked(raise_err=False))
 
@@ -83,7 +83,7 @@ def test_invalid_grubcfg(monkeypatch):
     Test invalid configuration triggers grub2-mkconfig
     """
 
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[HybridImage()]))
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[HybridImageAzure()]))
     monkeypatch.setattr(api, 'current_logger', logger_mocked())
     monkeypatch.setattr(ensurevalidgrubcfghybrid, 'run', run_mocked(raise_err=False))
 
@@ -104,7 +104,7 @@ def test_run_error(monkeypatch):
     Test invalid configuration triggers grub2-mkconfig
     """
 
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[HybridImage()]))
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[HybridImageAzure()]))
     monkeypatch.setattr(api, 'current_logger', logger_mocked())
     monkeypatch.setattr(ensurevalidgrubcfghybrid, 'run', run_mocked(raise_err=True))
 

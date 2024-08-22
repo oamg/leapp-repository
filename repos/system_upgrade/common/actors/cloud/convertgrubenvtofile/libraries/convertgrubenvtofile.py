@@ -1,7 +1,15 @@
 from leapp.libraries.stdlib import api, CalledProcessError, run
+from leapp.models import ConvertGrubenvTask
 
 BIOS_PATH = '/boot/grub2/grubenv'
 EFI_PATH = '/boot/efi/EFI/redhat/grubenv'
+
+
+def process():
+    convert_grubenv_task = next(api.consume(ConvertGrubenvTask), None)
+
+    if convert_grubenv_task:
+        grubenv_to_file()
 
 
 def grubenv_to_file():

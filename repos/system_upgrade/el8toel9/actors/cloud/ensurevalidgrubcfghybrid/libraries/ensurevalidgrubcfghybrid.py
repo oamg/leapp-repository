@@ -3,7 +3,7 @@ import re
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common.config.architecture import ARCH_ACCEPTED
 from leapp.libraries.stdlib import api, CalledProcessError, run
-from leapp.models import HybridImage
+from leapp.models import HybridImageAzure
 
 GRUB_CFG_PATH = '/boot/grub2/grub.cfg'
 
@@ -23,7 +23,7 @@ def process():
 
 
 def _is_hybrid_image():
-    return next(api.consume(HybridImage), None) is not None
+    return next(api.consume(HybridImageAzure), None) is not None
 
 
 def _read_grubcfg():
