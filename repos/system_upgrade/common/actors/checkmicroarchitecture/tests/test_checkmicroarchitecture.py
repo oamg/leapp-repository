@@ -25,10 +25,15 @@ def test_not_x86_64_passes(monkeypatch, arch):
     assert not reporting.create_report.called
 
 
+ENTIRE_V2_FLAG_SET = checkmicroarchitecture.X86_64_BASELINE_FLAGS + checkmicroarchitecture.X86_64_V2_FLAGS
+ENTIRE_V3_FLAG_SET = ENTIRE_V2_FLAG_SET + checkmicroarchitecture.X86_64_V3_FLAGS
+
+
 @pytest.mark.parametrize(
     ('target_ver', 'cpu_flags'),
     [
-        ('9.0', checkmicroarchitecture.X86_64_BASELINE_FLAGS + checkmicroarchitecture.X86_64_V2_FLAGS)
+        ('9.0', ENTIRE_V2_FLAG_SET),
+        ('10.0', ENTIRE_V3_FLAG_SET)
     ]
 )
 def test_valid_microarchitecture(monkeypatch, target_ver, cpu_flags):
@@ -48,16 +53,22 @@ def test_valid_microarchitecture(monkeypatch, target_ver, cpu_flags):
     assert not reporting.create_report.called
 
 
-@pytest.mark.parametrize('target_ver', ['9.0'])
-def test_invalid_microarchitecture(monkeypatch, target_ver):
+@pytest.mark.parametrize(
+    ('target_ver', 'cpu_flags'),
+    (
+        ('9.0', checkmicroarchitecture.X86_64_BASELINE_FLAGS),
+        ('10.0', ENTIRE_V2_FLAG_SET),
+    )
+)
+def test_invalid_microarchitecture(monkeypatch, target_ver, cpu_flags):
     """
     Test report is generated on x86-64 architecture with invalid microarchitecture and the upgrade is inhibited
     """
-
+    cpu_info = CPUInfo(flags=cpu_flags)
     monkeypatch.setattr(reporting, "create_report", create_report_mocked())
     monkeypatch.setattr(api, 'current_logger', logger_mocked())
     monkeypatch.setattr(api, 'current_actor',
-                        CurrentActorMocked(arch=ARCH_X86_64, msgs=[CPUInfo()], dst_ver=target_ver))
+                        CurrentActorMocked(arch=ARCH_X86_64, msgs=[cpu_info], dst_ver=target_ver))
 
     checkmicroarchitecture.process()
 
