@@ -8,6 +8,7 @@ from leapp.models import CPUInfo
 
 X86_64_BASELINE_FLAGS = ['cmov', 'cx8', 'fpu', 'fxsr', 'mmx', 'syscall', 'sse', 'sse2']
 X86_64_V2_FLAGS = ['cx16', 'lahf_lm', 'popcnt', 'pni', 'sse4_1', 'sse4_2', 'ssse3']
+X86_64_V3_FLAGS = ['avx2', 'bmi1', 'bmi2', 'f16c', 'fma', 'abm', 'movbe', 'xsave']
 
 MicroarchInfo = namedtuple('MicroarchInfo', ('required_flags', 'extra_report_fields', 'microarch_ver'))
 
@@ -16,7 +17,7 @@ def _inhibit_upgrade(missing_flags, target_rhel, microarch_ver, extra_report_fie
     title = 'Current x86-64 microarchitecture is unsupported in {0}'.format(target_rhel)
     summary = ('{0} has a higher CPU requirement than older versions, it now requires a CPU '
                'compatible with {1} instruction set or higher.\n\n'
-               'Missings flags detected are: {2}\n'.format(target_rhel, microarch_ver, ', '.join(missing_flags)))
+               'Missings flags detected are: {2}\n').format(target_rhel, microarch_ver, ', '.join(missing_flags))
 
     report_fields = [
         reporting.Title(title),
@@ -24,7 +25,7 @@ def _inhibit_upgrade(missing_flags, target_rhel, microarch_ver, extra_report_fie
         reporting.Severity(reporting.Severity.HIGH),
         reporting.Groups([reporting.Groups.INHIBITOR]),
         reporting.Groups([reporting.Groups.SANITY]),
-        reporting.Remediation(hint=('If case of using virtualization, virtualization platforms often allow '
+        reporting.Remediation(hint=('If a case of using virtualization, virtualization platforms often allow '
                                     'configuring a minimum denominator CPU model for compatibility when migrating '
                                     'between different CPU models. Ensure that minimum requirements are not below '
                                     'that of {0}\n').format(target_rhel)),
@@ -56,6 +57,9 @@ def process():
         '9': MicroarchInfo(microarch_ver='x86-64-v2',
                            required_flags=(X86_64_BASELINE_FLAGS + X86_64_V2_FLAGS),
                            extra_report_fields=[rhel9_microarch_article]),
+        '10': MicroarchInfo(microarch_ver='x86-64-v3',
+                            required_flags=(X86_64_BASELINE_FLAGS + X86_64_V2_FLAGS + X86_64_V3_FLAGS),
+                            extra_report_fields=[]),
     }
 
     microarch_info = rhel_major_to_microarch_reqs.get(get_target_major_version())
