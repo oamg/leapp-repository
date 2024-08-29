@@ -175,14 +175,14 @@ def entrypoint(configs=None):
         api.current_logger().error(str(e))
 
         if use_cmdline_file():
-            report_hint = reporting.Hints(
+            report_hint = (
                 'After the system has been rebooted into the new version of RHEL, you'
                 ' should take the kernel cmdline arguments from /proc/cmdline (Everything'
                 ' except the BOOT_IMAGE entry and initrd entries) and copy them into'
                 ' /etc/kernel/cmdline before installing any new kernels.'
             )
         else:
-            report_hint = reporting.Hints(
+            report_hint = (
                 'After the system has been rebooted into the new version of RHEL, you'
                 ' should take the kernel cmdline arguments from /proc/cmdline (Everything'
                 ' except the BOOT_IMAGE entry and initrd entries) and then use the'
@@ -204,7 +204,7 @@ def entrypoint(configs=None):
                 ' not able to set the arguments as the default for kernels installed in'
                 ' the future.'
             ),
-            report_hint,
+            reporting.Remediation(hint=report_hint),
             reporting.Severity(reporting.Severity.HIGH),
             reporting.Groups([
                 reporting.Groups.BOOT,
