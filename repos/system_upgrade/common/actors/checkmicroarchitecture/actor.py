@@ -17,7 +17,8 @@ class CheckMicroarchitecture(Actor):
     levels.
 
     RHEL9 has a higher CPU requirement than older versions, it now requires a
-    CPU compatible with ``x86-64-v2`` instruction set or higher.
+    CPU compatible with ``x86-64-v2`` instruction set or higher. Similarly,
+    RHEL10 requires at least ``x86-64-v3`` instruction set.
 
     .. table:: Required CPU features by microarchitecure level with a
                corresponding flag as shown by ``lscpu``.
@@ -43,7 +44,15 @@ class CheckMicroarchitecture(Actor):
         |            | SSE4_2      | sse4_2             |
         |            | SSSE3       | ssse3              |
         +------------+-------------+--------------------+
-        | ...        |             |                    |
+        | x86-64-v3  | AVX         | avx                |
+        |            | AVX2        | avx2               |
+        |            | BMI1        | bmi1               |
+        |            | BMI2        | bmi2               |
+        |            | F16C        | f16c               |
+        |            | FMA         | fma                |
+        |            | LZCNT       | abm                |
+        |            | MOVBE       | movbe              |
+        |            | OSXSAVE     | xsave              |
         +------------+-------------+--------------------+
 
     Note: To get the corresponding flag for the CPU feature consult the file
