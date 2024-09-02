@@ -4,7 +4,7 @@
 name: Differential ShellCheck
 on:
   pull_request:
-    branches: [master]
+    branches: [main]
 
 permissions:
   contents: read
@@ -17,7 +17,7 @@ jobs:
       security-events: write
       pull-requests: write
 
-    steps: 
+    steps:
       - name: Repository checkout
         uses: actions/checkout@v4
         with:

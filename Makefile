@@ -64,7 +64,7 @@ endif
 
 # just to reduce number of unwanted builds mark as the upstream one when
 # someone will call copr_build without additional parameters
-MASTER_BRANCH=master
+MASTER_BRANCH=main
 
 # In case the PR or MR is defined or in case build is not coming from the
 # MATER_BRANCH branch, N_REL=0; (so build is not update of the approved
@@ -76,10 +76,10 @@ SHORT_SHA=`git rev-parse --short HEAD`
 BRANCH=`git rev-parse --abbrev-ref HEAD | tr -- '-/' '_'`
 
 # The dependent framework PR connection will be taken from the top commit's depends-on message.
-REQ_LEAPP_PR=$(shell git log master..HEAD | grep -m1 -iE '^[[:space:]]*Depends-On:[[:space:]]*.*[[:digit:]]+[[:space:]]*$$' | grep -Eo '*[[:digit:]]*')
+REQ_LEAPP_PR=$(shell git log main..HEAD | grep -m1 -iE '^[[:space:]]*Depends-On:[[:space:]]*.*[[:digit:]]+[[:space:]]*$$' | grep -Eo '*[[:digit:]]*')
 # NOTE(ivasilev) In case of travis relying on top commit is a no go as a top commit will be a merge commit.
 ifdef CI
-	REQ_LEAPP_PR=$(shell git log master..HEAD | grep -m1 -iE '^[[:space:]]*Depends-On:[[:space:]]*.*[[:digit:]]+[[:space:]]*$$' | grep -Eo '[[:digit:]]*')
+	REQ_LEAPP_PR=$(shell git log main..HEAD | grep -m1 -iE '^[[:space:]]*Depends-On:[[:space:]]*.*[[:digit:]]+[[:space:]]*$$' | grep -Eo '[[:digit:]]*')
 endif
 
 # In case anyone would like to add any other suffix, just make it possible
@@ -92,8 +92,8 @@ REQUEST=`if test -n "$$PR"; then echo ".PR$${PR}"; elif test -n "$$MR"; then ech
 # Examples:
 #    0.201810080027Z.4078402.packaging.PR2
 #    0.201810080027Z.4078402.packaging
-#    0.201810080027Z.4078402.master.MR2
-#    1.201810080027Z.4078402.master
+#    0.201810080027Z.4078402.main.MR2
+#    1.201810080027Z.4078402.main
 RELEASE="$(N_REL).$(TIMESTAMP).$(SHORT_SHA).$(BRANCH)$(REQUEST)$(_SUFFIX)"
 
 all: help
@@ -302,7 +302,7 @@ install-deps:
 	pip install --upgrade setuptools; \
 	pip install --upgrade -r requirements.txt; \
 	./utils/install_commands.sh $(_PYTHON_VENV); \
-	# In case the top commit Depends-On some yet unmerged framework patch - override master leapp with the proper version
+	# In case the top commit Depends-On some yet unmerged framework patch - override main leapp with the proper version
 	if [[ ! -z "$(REQ_LEAPP_PR)" ]] ; then \
 		echo "Leapp-repository depends on the yet unmerged pr of the framework #$(REQ_LEAPP_PR), installing it.." && \
 		$(VENVNAME)/bin/pip install -I "git+https://github.com/oamg/leapp.git@refs/pull/$(REQ_LEAPP_PR)/head"; \
@@ -332,7 +332,7 @@ install-deps-fedora:
 	pip install --upgrade setuptools; \
 	pip install --upgrade -r requirements.txt; \
 	./utils/install_commands.sh $(_PYTHON_VENV); \
-	# In case the top commit Depends-On some yet unmerged framework patch - override master leapp with the proper version
+	# In case the top commit Depends-On some yet unmerged framework patch - override main leapp with the proper version
 	if [[ ! -z "$(REQ_LEAPP_PR)" ]] ; then \
 		echo "Leapp-repository depends on the yet unmerged pr of the framework #$(REQ_LEAPP_PR), installing it.." && \
 		$(VENVNAME)/bin/pip install -I "git+https://github.com/oamg/leapp.git@refs/pull/$(REQ_LEAPP_PR)/head"; \

@@ -28,7 +28,7 @@ jobs:
             However, here are additional useful commands for packit:
             - **`/packit test`** to re-run manually the default tests
             - **`/packit retest-failed`** to re-run failed tests manually
-            - **`/packit test oamg/leapp#42`** to run tests with leapp builds for the leapp PR#42 (default is latest upstream - master - build)
+            - **`/packit test oamg/leapp#42`** to run tests with leapp builds for the leapp PR#42 (default is latest upstream - main - build)
 
             Note that first time contributors cannot run tests automatically - they need to be started by a reviewer.
 
