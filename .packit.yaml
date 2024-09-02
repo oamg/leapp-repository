@@ -22,7 +22,7 @@ actions:
   fix-spec-file:
   - bash -c "sed -i -r \"0,/Release:/ s/Release:(\s*)\S*/Release:\1${PACKIT_RPMSPEC_RELEASE}%{?dist}/\" packaging/leapp-repository.spec"
   post-upstream-clone:
-  # builds from PRs should have lower NVR than those from master branch
+  # builds from PRs should have lower NVR than those from main branch
   - bash -c "sed -i \"s/1%{?dist}/0%{?dist}/g\" packaging/leapp-repository.spec"
 
 jobs:
@@ -44,12 +44,12 @@ jobs:
     fix-spec-file:
     - bash -c "sed -i -r \"0,/Release:/ s/Release:(\s*)\S*/Release:\1${PACKIT_RPMSPEC_RELEASE}%{?dist}/\" packaging/leapp-repository.spec"
     post-upstream-clone:
-    # builds from PRs should have lower NVR than those from master branch
+    # builds from PRs should have lower NVR than those from main branch
     - bash -c "sed -i \"s/1%{?dist}/0%{?dist}/g\" packaging/leapp-repository.spec"
 - job: copr_build
   trigger: commit
   metadata:
-    branch: master
+    branch: main
     owner: "@oamg"
     project: leapp
     targets:
@@ -65,7 +65,7 @@ jobs:
     fix-spec-file:
     - bash -c "sed -i -r \"0,/Release:/ s/Release:(\s*)\S*/Release:\1${PACKIT_RPMSPEC_RELEASE}%{?dist}/\" packaging/leapp-repository.spec"
     post-upstream-clone:
-    # builds from master branch should start with 100 release, to have high priority
+    # builds from main branch should start with 100 release, to have high priority
     - bash -c "sed -i \"s/1%{?dist}/100%{?dist}/g\" packaging/leapp-repository.spec"
 - job: copr_build
   trigger: release
@@ -85,7 +85,7 @@ jobs:
     fix-spec-file:
     - bash -c "sed -i -r \"0,/Release:/ s/Release:(\s*)\S*/Release:\1${PACKIT_RPMSPEC_RELEASE}%{?dist}/\" packaging/leapp-repository.spec"
     post-upstream-clone:
-    # builds from master branch should start with 100 release, to have high priority
+    # builds from main branch should start with 100 release, to have high priority
     - bash -c "sed -i \"s/1%{?dist}/100%{?dist}/g\" packaging/leapp-repository.spec"
 
 

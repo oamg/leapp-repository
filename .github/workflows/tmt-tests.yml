@@ -12,7 +12,7 @@ jobs:
 
   call_workflow_tests_79to88_integration:
     needs: call_workflow_copr_build
-    uses: oamg/leapp/.github/workflows/reuse-tests-7to8.yml@master
+    uses: oamg/leapp/.github/workflows/reuse-tests-7to8.yml@main
     secrets: inherit
     with:
       copr_artifacts: ${{ needs.call_workflow_copr_build.outputs.artifacts }}
@@ -26,7 +26,7 @@ jobs:
 
   call_workflow_tests_79to86_integration:
     needs: call_workflow_copr_build
-    uses: oamg/leapp/.github/workflows/reuse-tests-7to8.yml@master
+    uses: oamg/leapp/.github/workflows/reuse-tests-7to8.yml@main
     secrets: inherit
     with:
       copr_artifacts: ${{ needs.call_workflow_copr_build.outputs.artifacts }}
@@ -40,7 +40,7 @@ jobs:
 
   call_workflow_tests_79to88_sst:
     needs: call_workflow_copr_build
-    uses: oamg/leapp/.github/workflows/reuse-tests-7to8.yml@master
+    uses: oamg/leapp/.github/workflows/reuse-tests-7to8.yml@main
     secrets: inherit
     with:
       copr_artifacts: ${{ needs.call_workflow_copr_build.outputs.artifacts }}
@@ -55,7 +55,7 @@ jobs:
 
   call_workflow_tests_7to8_aws:
     needs: call_workflow_copr_build
-    uses: oamg/leapp/.github/workflows/reuse-tests-7to8.yml@master
+    uses: oamg/leapp/.github/workflows/reuse-tests-7to8.yml@main
     secrets: inherit
     with:
       copr_artifacts: ${{ needs.call_workflow_copr_build.outputs.artifacts }}
@@ -71,7 +71,7 @@ jobs:
 
   call_workflow_tests_86to90_integration:
     needs: call_workflow_copr_build
-    uses: oamg/leapp/.github/workflows/reuse-tests-8to9.yml@master
+    uses: oamg/leapp/.github/workflows/reuse-tests-8to9.yml@main
     secrets: inherit
     with:
       copr_artifacts: ${{ needs.call_workflow_copr_build.outputs.artifacts }}
@@ -85,7 +85,7 @@ jobs:
 
   call_workflow_tests_88to92_integration:
     needs: call_workflow_copr_build
-    uses: oamg/leapp/.github/workflows/reuse-tests-8to9.yml@master
+    uses: oamg/leapp/.github/workflows/reuse-tests-8to9.yml@main
     secrets: inherit
     with:
       copr_artifacts: ${{ needs.call_workflow_copr_build.outputs.artifacts }}
@@ -101,7 +101,7 @@ jobs:
 
   call_workflow_tests_86to90_sst:
     needs: call_workflow_copr_build
-    uses: oamg/leapp/.github/workflows/reuse-tests-8to9.yml@master
+    uses: oamg/leapp/.github/workflows/reuse-tests-8to9.yml@main
     secrets: inherit
     with:
       copr_artifacts: ${{ needs.call_workflow_copr_build.outputs.artifacts }}
@@ -116,7 +116,7 @@ jobs:
 
   call_workflow_tests_86to90_aws:
     needs: call_workflow_copr_build
-    uses: oamg/leapp/.github/workflows/reuse-tests-8to9.yml@master
+    uses: oamg/leapp/.github/workflows/reuse-tests-8to9.yml@main
     secrets: inherit
     with:
       copr_artifacts: ${{ needs.call_workflow_copr_build.outputs.artifacts }}

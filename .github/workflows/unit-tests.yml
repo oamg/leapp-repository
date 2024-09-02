@@ -2,10 +2,10 @@ name: Unit Tests
 on:
   push:
     branches:
-      - master
+      - main
   pull_request:
     branches:
-      - master
+      - main
 
 jobs:
   test:
@@ -74,10 +74,10 @@ jobs:
           # NOTE(ivasilev) fetch-depth 0 is critical here as leapp deps discovery depends on specific substring in
           # commit message and default 1 option will get us just merge commit which has an unrelevant message.
           fetch-depth: '0'
-      # NOTE(ivasilev) master -> origin/master is used for leapp deps discovery in Makefile via git log master..HEAD
-      - name: Set master to origin/master
-        if: github.ref != 'refs/heads/master'
+      # NOTE(ivasilev) main -> origin/main is used for leapp deps discovery in Makefile via git log main..HEAD
+      - name: Set main to origin/main
+        if: github.ref != 'refs/heads/main'
         run: |
-          git branch -f master origin/master
+          git branch -f main origin/main
       - name: ${{matrix.scenarios.name}}
         run: script -e -c /bin/bash -c 'TERM=xterm podman build --security-opt=seccomp=unconfined -t leapp-tests -f utils/container-tests/Containerfile.${{matrix.scenarios.container}} utils/container-tests && PYTHON_VENV=${{matrix.scenarios.python}} REPOSITORIES=${{matrix.scenarios.repos}} podman run --security-opt=seccomp=unconfined --rm -ti -v ${PWD}:/payload --env=PYTHON_VENV --env=REPOSITORIES leapp-tests'
