@@ -39,7 +39,7 @@ def collect_upgrade_kernel_args(livemode_enabled):
     upgrade_kernel_args = collect_set_of_kernel_args_from_msgs(UpgradeKernelCmdlineArgTasks, 'to_add')
     args.update(upgrade_kernel_args)
 
-    return set(args)
+    return set(args.items())
 
 
 def collect_undesired_args(livemode_enabled):
@@ -48,7 +48,7 @@ def collect_undesired_args(livemode_enabled):
         args = dict(zip(('ro', 'rhgb', 'quiet'), itertools.repeat(None)))
         args['rd.lvm.lv'] = _get_rdlvm_arg_values()
 
-    return set(args)
+    return set(args.items())
 
 
 def format_grubby_args_from_args_set(args_dict):
@@ -98,7 +98,7 @@ def figure_out_commands_needed_to_add_entry(kernel_path, initramfs_path, args_to
 
     # We need to update root= param separately, since we cannot do it during --add-kernel with --copy-default.
     # This is likely a bug in grubby.
-    root_param_value = args_to_add.get('root', None)
+    root_param_value = dict(args_to_add).get('root', None)
     if root_param_value:
         enforce_root_param_for_the_entry_cmd = [
             '/usr/sbin/grubby',
