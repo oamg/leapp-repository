@@ -12,6 +12,7 @@ except ImportError:
 
 
 class InvalidRepoDefinition(Exception):
+    """Raised when a repository definition is invalid."""
     def __init__(self, msg, repofile, repoid):
         message = 'Invalid repository definition: {repoid} in: {repofile}: {msg}'.format(
                     repoid=repoid, repofile=repofile, msg=msg)
@@ -42,6 +43,8 @@ def parse_repofile(repofile):
     :param repofile: Path to the repo file
     :type repofile: str
     :rtype: RepositoryFile
+    :raises InvalidRepoDefinition: If the repository definition is invalid,
+        this can for example occur if 'name' field in repository is missing or it is invalid.
     """
     data = []
     with open(repofile, mode='r') as fp:
@@ -49,7 +52,7 @@ def parse_repofile(repofile):
         for repoid in cp.sections():
             try:
                 data.append(_parse_repository(repoid, dict(cp.items(repoid))))
-            except Exception as e:
+            except fields.ModelViolationError as e:
                 raise InvalidRepoDefinition(e, repofile=repofile, repoid=repoid)
     return RepositoryFile(file=repofile, data=data)
 
