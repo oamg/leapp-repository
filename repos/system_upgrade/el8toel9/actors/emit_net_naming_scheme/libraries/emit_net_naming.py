@@ -34,8 +34,11 @@ def is_net_scheme_compatible_with_current_cmdline():
 
     is_compatible = allows_predictable_names and not already_has_a_net_naming_scheme
 
-    msg = 'Should net.naming-scheme be added to kernel cmdline: %s'
-    api.current_logger().info(msg, 'yes' if is_compatible else 'no')
+    msg = ('Should net.naming-scheme be added to kernel cmdline: %s. '
+           'Reason: allows_predictable_names=%s, already_has_a_net_naming_scheme=%s')
+    api.current_logger().info(msg, 'yes' if is_compatible else 'no',
+                              allows_predictable_names,
+                              already_has_a_net_naming_scheme)
 
     return is_compatible
 
