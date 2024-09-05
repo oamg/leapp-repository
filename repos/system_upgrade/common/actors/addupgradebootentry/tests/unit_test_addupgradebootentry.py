@@ -132,13 +132,8 @@ def test_add_boot_entry_configs(monkeypatch):
     assert addupgradebootentry.run.args[2] == run_args_add + ['-c', CONFIGS[0]]
     assert addupgradebootentry.run.args[3] == run_args_add + ['-c', CONFIGS[1]]
     assert api.produce.model_instances == [
-<<<<<<< HEAD
-        TargetKernelCmdlineArgTasks(to_remove=[KernelCmdlineArg(key='debug')]),
-        TargetKernelCmdlineArgTasks(to_remove=[KernelCmdlineArg(key='enforcing', value='0')]),
-=======
         LateTargetKernelCmdlineArgTasks(to_remove=[KernelCmdlineArg(key='debug'),
                                                    KernelCmdlineArg(key='enforcing', value='0')])
->>>>>>> afb7fe51 (late_kernel_cmdline: break dependency loop)
     ]
 
 
