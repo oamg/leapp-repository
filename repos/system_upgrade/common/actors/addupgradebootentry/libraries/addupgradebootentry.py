@@ -158,7 +158,7 @@ def add_boot_entry(configs=None):
 
     livemode_enabled = next(api.consume(LiveImagePreparationInfo), None) is not None
 
-    # We have to keep the desired and unwanted args separate and modify cmline in two seperate grubby calls. Merging
+    # We have to keep the desired and unwanted args separate and modify cmline in two separate grubby calls. Merging
     # these sets and trying to execute only a single command would leave the unwanted cmdline args present  if they
     # are present on the original system.
     added_cmdline_args = collect_upgrade_kernel_args(livemode_enabled)
