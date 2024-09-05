@@ -12,9 +12,9 @@ from leapp.models import (
     BootContent,
     KernelCmdline,
     KernelCmdlineArg,
+    LateTargetKernelCmdlineArgTasks,
     LiveModeArtifacts,
     LiveModeConfig,
-    LateTargetKernelCmdlineArgTasks,
     TargetKernelCmdlineArgTasks
 )
 

@@ -9,10 +9,10 @@ from leapp.models import (
     BootContent,
     KernelCmdline,
     KernelCmdlineArg,
+    LateTargetKernelCmdlineArgTasks,
     LiveImagePreparationInfo,
     LiveModeArtifacts,
     LiveModeConfig,
-    LateTargetKernelCmdlineArgTasks,
     TargetKernelCmdlineArgTasks,
     UpgradeKernelCmdlineArgTasks
 )

@@ -8,13 +8,13 @@ from leapp.models import (
     FirmwareFacts,
     GrubConfigError,
     KernelCmdline,
+    LateTargetKernelCmdlineArgTasks,
     LiveImagePreparationInfo,
     LiveModeArtifacts,
     LiveModeConfig,
-    LateTargetKernelCmdlineArgTasks,
     TargetKernelCmdlineArgTasks,
     TransactionDryRun,
-    UpgradeKernelCmdlineArgTasks,
+    UpgradeKernelCmdlineArgTasks
 )
 from leapp.tags import InterimPreparationPhaseTag, IPUWorkflowTag
 
