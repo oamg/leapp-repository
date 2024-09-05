@@ -125,16 +125,6 @@ def collect_set_of_kernel_args_from_msgs(msg_type, arg_list_field_name):
     return set((arg.key, arg.value) for arg in args)
 
 
-def fmt_kernel_args(args):
-    def fmt_arg(arg):
-        if arg[1]:
-            return '{0}={1}'.format(*arg)
-        return arg[0]
-
-    args_str = ' '.join(fmt_arg(arg) for arg in sorted(args, key=lambda arg: arg[0]))
-    return args_str
-
-
 def emit_removal_of_args_meant_only_for_upgrade_kernel(added_upgrade_kernel_args):
     """
     Emit message requesting removal of upgrade kernel args that should not be on the target kernel.
