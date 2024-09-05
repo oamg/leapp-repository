@@ -81,11 +81,14 @@ def test_emit_msgs_to_use_net_naming_schemes(monkeypatch, is_net_scheme_enabled,
         assert not api.produce.called
         return
 
-    if is_current_cmdline_compatible:
-        pass
-    else:
-        upgrade_cmdline_mods = (msg for msg in produced_messages if isinstance(msg, UpgradeKernelCmdlineArgTasks))
-        assert not next(upgrade_cmdline_mods, None)
+    upgrade_cmdline_mods = (msg for msg in produced_messages if isinstance(msg, UpgradeKernelCmdlineArgTasks))
+    target_cmdline_mods = (msg for msg in produced_messages if isinstance(msg, TargetKernelCmdlineArgTasks))
 
-        target_cmdline_mods = (msg for msg in produced_messages if isinstance(msg, TargetKernelCmdlineArgTasks))
+    if is_current_cmdline_compatible:
+        # We should emit cmdline modifications - both UpgradeKernelCmdlineArgTasks and TargetKernelCmdlineArgTasks
+        # should be produced
+        assert next(upgrade_cmdline_mods, None)
+        assert next(target_cmdline_mods, None)
+    else:
+        assert not next(upgrade_cmdline_mods, None)
         assert not next(target_cmdline_mods, None)
