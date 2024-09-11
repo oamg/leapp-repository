@@ -6,6 +6,8 @@ Tutorials
     :caption: Contents:
     :glob:
 
+    templates/index
+
 .. Indices and tables
 .. ==================
 ..
