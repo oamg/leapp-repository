@@ -10,9 +10,14 @@ providing Red Hat Enterprise Linux in-place upgrade functionality.
     :caption: Contents:
     :glob:
 
-
-
-
+    installation-and-building
+    tutorials/index
+    project-structure
+    upgrade-architecture-and-workflow
+    configuring-ipu
+    libraries-and-api
+    contrib-and-devel-guidelines
+    faq
 
 .. Indices and tables
 .. ==================
