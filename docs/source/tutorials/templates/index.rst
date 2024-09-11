@@ -28,6 +28,7 @@ rpm -qa "leapp-upgrade*"
     :glob:
 
     add-kernel-driver
+    execute-custom-script
 
 .. Indices and tables
 .. ==================
