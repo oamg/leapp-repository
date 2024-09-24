@@ -6,13 +6,13 @@ from leapp.libraries.common import mdraid
 from leapp.libraries.stdlib import api, CalledProcessError, run
 from leapp.utils.deprecation import deprecated
 
-EFI_MOUNTPOINT = "/boot/efi/"
+EFI_MOUNTPOINT = '/boot/efi/'
 """The path to the required mountpoint for ESP."""
 
-GRUB2_BIOS_ENTRYPOINT = "/boot/grub2"
+GRUB2_BIOS_ENTRYPOINT = '/boot/grub2'
 """The entrypoint path of the BIOS GRUB2"""
 
-GRUB2_BIOS_ENV_FILE = os.path.join(GRUB2_BIOS_ENTRYPOINT, "grubenv")
+GRUB2_BIOS_ENV_FILE = os.path.join(GRUB2_BIOS_ENTRYPOINT, 'grubenv')
 """The path to the env file for GRUB2 in BIOS"""
 
 
@@ -67,6 +67,14 @@ class EFIBootLoader:
     def __ne__(self, other):
         return not self.__eq__(other)
 
+    def __repr__(self):
+        return 'EFIBootLoader({boot_number}, {label}, {active}, {efi_bin_source})'.format(
+            boot_number=repr(self.boot_number),
+            label=repr(self.label),
+            active=repr(self.active),
+            efi_bin_source=repr(self.efi_bin_source)
+        )
+
     def is_referring_to_file(self):
         """Return True when the boot source is a file.
 
@@ -106,9 +114,10 @@ class EFIBootInfo:
     def __init__(self):
         if not is_efi():
             raise StopActorExecution('Unable to collect data about UEFI on a BIOS system.')
-        result = run(['/usr/sbin/efibootmgr', '-v'], checked=False)
-        if result['exit_code']:
-            raise CalledProcessError('Unable to get information about UEFI boot entries.')
+        try:
+            result = run(['/usr/sbin/efibootmgr', '-v'])
+        except CalledProcessError:
+            raise StopActorExecution('Unable to get information about UEFI boot entries.')
 
         bootmgr_output = result['stdout']
 
@@ -221,10 +230,10 @@ def blk_dev_from_partition(partition):
     try:
         result = run(['lsblk', '-spnlo', 'name', partition])
     except CalledProcessError:
-        api.current_logger().warning(
-            'Could not get parent device of {} partition'.format(partition)
-        )
-        raise StopActorExecution()  # TODO: return some meaningful value/error
+        msg = 'Could not get parent device of {} partition'.format(partition)
+        api.current_logger().warning(msg)
+        raise StopActorExecution(msg)
+
     # lsblk "-s" option prints dependencies in inverse order, so the parent device will always
     # be the last or the only device.
     # Command result example:
@@ -240,16 +249,15 @@ def _get_partition(directory):
     try:
         result = run(['grub2-probe', '--target=device', directory])
     except CalledProcessError:
-        api.current_logger().warning(
-            'Could not get name of underlying {} partition'.format(directory)
-        )
-        raise StopActorExecution()
+        msg = 'Could not get name of underlying {} partition'.format(directory)
+        api.current_logger().warning(msg)
+        raise StopActorExecution(msg)
     except OSError:
         msg = ('Could not get name of underlying {} partition:'
                ' grub2-probe is missing.'
                ' Possibly called on system that does not use GRUB2?').format(directory)
         api.current_logger().warning(msg)
-        raise StopActorExecution()
+        raise StopActorExecution(msg)
 
     partition = result['stdout'].strip()
     api.current_logger().info('{} is on {}'.format(directory, partition))
@@ -286,11 +294,11 @@ def get_efi_partition():
     """
 
     if not is_efi():
-        raise StopActorExecution("Unable to get ESP when BIOS is used.")
+        raise StopActorExecution('Unable to get ESP when BIOS is used.')
 
     if not os.path.exists(EFI_MOUNTPOINT) or not os.path.ismount(EFI_MOUNTPOINT):
         raise StopActorExecution(
-            "The UEFI has been detected but the ESP is not mounted in /boot/efi as required."
+            'The UEFI has been detected but the ESP is not mounted in /boot/efi as required.'
         )
 
     return _get_partition('/boot/efi/')
@@ -308,10 +316,10 @@ def get_blk_device(device):
     Raise CalledProcessError when unable to get the block device.
     """
 
-    result = run(['lsblk', '-spnlo', 'name', device], checked=False)
-
-    if result['exit_code']:
-        raise CalledProcessError('Unable to get a block device for {}'.format(device))
+    try:
+        result = run(['lsblk', '-spnlo', 'name', device])
+    except CalledProcessError:
+        raise StopActorExecution('Unable to get a block device for {}'.format(device))
 
     return result['stdout'].strip().splitlines()[-1].strip()
 
@@ -328,14 +336,13 @@ def get_device_number(device):
     :rtype: int
     """
 
-    result = run(
-        ['/usr/sbin/blkid', '-p', '-s', 'PART_ENTRY_NUMBER', device],
-        checked=False
-    )
-    output = result['stdout'].strip()
-
-    if result['exit_code']:
-        raise CalledProcessError('Unable to get information about the {} device'.format(device))
+    try:
+        result = run(
+            ['/usr/sbin/blkid', '-p', '-s', 'PART_ENTRY_NUMBER', device],
+        )
+        output = result['stdout'].strip()
+    except CalledProcessError:
+        raise StopActorExecution('Unable to get information about the {} device'.format(device))
 
     if not output:
         raise StopActorExecution('The {} device has no PART_ENTRY_NUMBER'.format(device))
