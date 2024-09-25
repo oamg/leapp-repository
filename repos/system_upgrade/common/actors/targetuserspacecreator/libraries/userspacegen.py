@@ -311,6 +311,16 @@ def _get_files_owned_by_rpms(context, dirpath, pkgs=None, recursive=False):
     searchdir = context.full_path(dirpath)
     if recursive:
         for root, _, files in os.walk(searchdir):
+            if '/directory-hash/' in root:
+                # tl;dr; for the performance improvement
+                # The directory has been relatively recently added to ca-certificates
+                # rpm on EL 9+ systems and the content does not seem to be important
+                # for the IPU process. Also, it contains high number of files and
+                # their processing floods the output and slows down IPU.
+                # So skipping it entirely.
+                # This is updated solution that we drop originally: 60f500e59bb92
+                api.current_logger().debug('SKIP files in the {} directory: Not important for the IPU.'.format(root))
+                continue
             for filename in files:
                 relpath = os.path.relpath(os.path.join(root, filename), searchdir)
                 file_list.append(relpath)
