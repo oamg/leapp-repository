@@ -41,6 +41,8 @@ disable=
  consider-using-from-import,
  use-list-literal,
  use-dict-literal,
+ too-many-lines,  # we do not want to take care about that one
+ too-many-positional-arguments,  # we cannot set yet max-possitional-arguments unfortunately
 # new for python3 version of pylint
  useless-object-inheritance,
  consider-using-set-comprehension,  # pylint3 force to use comprehension in place we don't want (py2 doesnt have these options, for inline skip)
@@ -57,8 +59,7 @@ disable=
  redundant-u-string-prefix,  # still have py2 to support
  logging-format-interpolation,
  logging-not-lazy,
- use-yield-from,  # yield from cannot be used until we require python 3.3 or greater
- too-many-lines  # we do not want to take care about that one
+ use-yield-from  # yield from cannot be used until we require python 3.3 or greater
 
 [FORMAT]
 # Maximum number of characters on a single line.
