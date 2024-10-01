@@ -1,0 +1,7 @@
+sphinx==7.2.6
+sphinx_rtd_theme
+sphinxcontrib-jquery
+docutils
+CommonMark
+myst-parser
+sphinx-autobuild
