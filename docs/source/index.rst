@@ -13,7 +13,7 @@ providing Red Hat Enterprise Linux in-place upgrade functionality.
     installation-and-building
     tutorials/index
     project-structure
-    upgrade-architecture-and-workflow
+    upgrade-architecture-and-workflow/index
     configuring-ipu
     libraries-and-api
     contrib-and-devel-guidelines
