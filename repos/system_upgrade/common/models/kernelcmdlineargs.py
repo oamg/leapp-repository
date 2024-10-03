@@ -24,6 +24,27 @@ class TargetKernelCmdlineArgTasks(Model):
     to_remove = fields.List(fields.Model(KernelCmdlineArg), default=[])
 
 
+class LateTargetKernelCmdlineArgTasks(Model):
+    """
+    Desired modifications of the target kernel args produced later in the upgrade process.
+
+    Defined to prevent loops in the actor dependency graph.
+    """
+    topic = SystemInfoTopic
+
+    to_add = fields.List(fields.Model(KernelCmdlineArg), default=[])
+    to_remove = fields.List(fields.Model(KernelCmdlineArg), default=[])
+
+
+class UpgradeKernelCmdlineArgTasks(Model):
+    """
+    Modifications of the upgrade kernel cmdline.
+    """
+    topic = SystemInfoTopic
+
+    to_add = fields.List(fields.Model(KernelCmdlineArg), default=[])
+
+
 class KernelCmdline(Model):
     """
     Kernel command line parameters the system was booted with
