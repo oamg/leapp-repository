@@ -1,0 +1,12 @@
+rhui:
+  use_config : True
+  source_clients: [ rh-amazon-rhui-client ]
+  target_clients: [ rh-amazon-rhui-client ]
+  cloud_provider: aws
+  upgrade_files:
+    /usr/share/leapp-repository/repositories/system_upgrade/common/files/rhui/leapp-rhui-aws/rhui-client-config-server-9.crt : /etc/pki/rhui/product/
+    /usr/share/leapp-repository/repositories/system_upgrade/common/files/rhui/leapp-rhui-aws/rhui-client-config-server-9.key : /etc/pki/rhui/private/
+    /usr/share/leapp-repository/repositories/system_upgrade/common/files/rhui/leapp-rhui-aws/leapp-aws.repo : /etc/yum.repos.d/
+  enabled_target_repositories:
+    - rhel-9-appstream-rhui-rpms
+    - rhel-9-baseos-rhui-rpms

@@ -2,6 +2,7 @@ import os
 import sys
 import uuid
 
+from leapp.actors import config as actor_config
 from leapp.cli.commands import command_utils
 from leapp.cli.commands.config import get_config
 from leapp.cli.commands.upgrade import breadcrumbs, util
@@ -60,6 +61,13 @@ def preupgrade(args, breadcrumbs):
         raise CommandError(exc.message)
 
     workflow = repositories.lookup_workflow('IPUWorkflow')()
+
+    # Read the Actor Config and validate it against the schemas saved in the configuration.
+    actor_config_schemas = tuple(actor.config_schemas for actor in repositories.actors)
+    actor_config_schemas = actor_config.normalize_schemas(actor_config_schemas)
+    actor_config_path = cfg.get('actor_config', 'path')
+    actor_config.load(actor_config_path, actor_config_schemas)
+
     util.warn_if_unsupported(configuration)
     util.process_whitelist_experimental(repositories, workflow, configuration, logger)
     with beautify_actor_exception():
