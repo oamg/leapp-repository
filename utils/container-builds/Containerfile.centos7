@@ -2,6 +2,11 @@ FROM centos:7
 
 VOLUME /repo
 
+# mirror.centos.org is dead, comment out mirrorlist and set baseurl to vault.centos.org
+RUN sed -i s/mirror.centos.org/vault.centos.org/ /etc/yum.repos.d/CentOS-*.repo
+RUN sed -i s/^#\s*baseurl=http/baseurl=http/ /etc/yum.repos.d/CentOS-*.repo
+RUN sed -i s/^mirrorlist=http/#mirrorlist=http/ /etc/yum.repos.d/CentOS-*.repo
+
 RUN yum update -y && \
     yum install -y rpm-build python-devel make git
 
