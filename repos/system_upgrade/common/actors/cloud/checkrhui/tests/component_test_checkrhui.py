@@ -4,17 +4,20 @@ from enum import Enum
 import pytest
 
 from leapp import reporting
+from leapp.configs.common.rhui import all_rhui_cfg
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import checkrhui as checkrhui_lib
 from leapp.libraries.common import rhsm, rhui
-from leapp.libraries.common.config import mock_configs, version
 from leapp.libraries.common.rhui import mk_rhui_setup, RHUIFamily
-from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked, produce_mocked
+from leapp.libraries.common.testutils import (
+    _make_default_config,
+    create_report_mocked,
+    CurrentActorMocked,
+    produce_mocked
+)
 from leapp.libraries.stdlib import api
 from leapp.models import (
-    CopyFile,
     InstalledRPM,
-    RequiredTargetUserspacePackages,
     RHUIInfo,
     RPM,
     RpmTransactionTasks,
@@ -23,8 +26,6 @@ from leapp.models import (
     TargetRHUISetupInfo,
     TargetUserSpacePreupgradeTasks
 )
-from leapp.reporting import Report
-from leapp.snactor.fixture import current_actor_context
 
 RH_PACKAGER = 'Red Hat, Inc. <http://bugzilla.redhat.com/bugzilla>'
 
@@ -95,7 +96,8 @@ def mk_cloud_map(variants):
     ]
 )
 def test_determine_rhui_src_variant(monkeypatch, extra_pkgs, rhui_setups, expected_result):
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(src_ver='7.9'))
+    actor = CurrentActorMocked(src_ver='7.9', config=_make_default_config(all_rhui_cfg))
+    monkeypatch.setattr(api, 'current_actor', actor)
     installed_pkgs = {'zip', 'zsh', 'bash', 'grubby'}.union(set(extra_pkgs))
 
     if expected_result and not isinstance(expected_result, RHUIFamily):  # An exception
@@ -167,7 +169,8 @@ def test_google_specific_customization(provider, should_mutate):
 )
 def test_aws_specific_customization(monkeypatch, rhui_family, target_major, should_mutate):
     dst_ver = '{major}.0'.format(major=target_major)
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(dst_ver=dst_ver))
+    actor = CurrentActorMocked(dst_ver=dst_ver, config=_make_default_config(all_rhui_cfg))
+    monkeypatch.setattr(api, 'current_actor', actor)
 
     setup_info = mk_setup_info()
     checkrhui_lib.customize_rhui_setup_for_aws(rhui_family, setup_info)
@@ -215,12 +218,12 @@ def produce_rhui_info_to_setup_target(monkeypatch):
 
 
 def test_produce_rpms_to_install_into_target(monkeypatch):
-    source_rhui_setup = mk_rhui_setup(clients={'src_pkg'}, leapp_pkg='leapp_pkg')
-    target_rhui_setup = mk_rhui_setup(clients={'target_pkg'}, leapp_pkg='leapp_pkg')
+    source_clients = {'src_pkg'}
+    target_clients = {'target_pkg'}
 
     monkeypatch.setattr(api, 'produce', produce_mocked())
 
-    checkrhui_lib.produce_rpms_to_install_into_target(source_rhui_setup, target_rhui_setup)
+    checkrhui_lib.produce_rpms_to_install_into_target(source_clients, target_clients)
 
     assert len(api.produce.model_instances) == 2
     userspace_tasks, target_rpm_tasks = api.produce.model_instances[0], api.produce.model_instances[1]
@@ -276,7 +279,8 @@ def test_process(monkeypatch, extra_installed_pkgs, skip_rhsm, expected_action):
     installed_rpms = InstalledRPM(items=installed_pkgs)
 
     monkeypatch.setattr(api, 'produce', produce_mocked())
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(src_ver='7.9', msgs=[installed_rpms]))
+    actor = CurrentActorMocked(src_ver='7.9', msgs=[installed_rpms], config=_make_default_config(all_rhui_cfg))
+    monkeypatch.setattr(api, 'current_actor', actor)
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
     monkeypatch.setattr(rhsm, 'skip_rhsm', lambda: skip_rhsm)
     monkeypatch.setattr(rhui, 'RHUI_SETUPS', known_setups)
@@ -315,7 +319,8 @@ def test_unknown_target_rhui_setup(monkeypatch, is_target_setup_known):
     installed_rpms = InstalledRPM(items=installed_pkgs)
 
     monkeypatch.setattr(api, 'produce', produce_mocked())
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(src_ver='7.9', msgs=[installed_rpms]))
+    actor = CurrentActorMocked(src_ver='7.9', msgs=[installed_rpms], config=_make_default_config(all_rhui_cfg))
+    monkeypatch.setattr(api, 'current_actor', actor)
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
     monkeypatch.setattr(rhsm, 'skip_rhsm', lambda: True)
     monkeypatch.setattr(rhui, 'RHUI_SETUPS', known_setups)

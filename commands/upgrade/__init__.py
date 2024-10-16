@@ -2,6 +2,7 @@ import os
 import sys
 import uuid
 
+from leapp.actors import config as actor_config
 from leapp.cli.commands import command_utils
 from leapp.cli.commands.config import get_config
 from leapp.cli.commands.upgrade import breadcrumbs, util
@@ -90,6 +91,17 @@ def upgrade(args, breadcrumbs):
     except LeappError as exc:
         raise CommandError(exc.message)
     workflow = repositories.lookup_workflow('IPUWorkflow')(auto_reboot=args.reboot)
+
+    # Read the Actor Config and validate it against the schemas saved in the
+    # configuration.
+    actor_config_schemas = tuple(actor.config_schemas for actor in repositories.actors)
+    actor_config_schemas = actor_config.normalize_schemas(actor_config_schemas)
+    actor_config_path = cfg.get('actor_config', 'path')
+    # Note: actor_config.load() stores the loaded actor config into a global
+    # variable which can then be accessed by functions in that file.  Is this
+    # the right way to store that information?
+    actor_config.load(actor_config_path, actor_config_schemas)
+
     util.process_whitelist_experimental(repositories, workflow, configuration, logger)
     util.warn_if_unsupported(configuration)
     with beautify_actor_exception():

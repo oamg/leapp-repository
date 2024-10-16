@@ -4,6 +4,7 @@ import os
 from collections import namedtuple
 
 from leapp import reporting
+from leapp.actors.config import _normalize_config, normalize_schemas
 from leapp.libraries.common.config import architecture
 from leapp.models import EnvVar
 from leapp.utils.deprecation import deprecated
@@ -67,9 +68,15 @@ class logger_mocked(object):
         return self
 
 
+def _make_default_config(actor_config_schema):
+    """ Make a config dict populated with default values. """
+    merged_schema = normalize_schemas((actor_config_schema, ))
+    return _normalize_config({}, merged_schema)  # Will fill default values during normalization
+
+
 class CurrentActorMocked(object):  # pylint:disable=R0904
     def __init__(self, arch=architecture.ARCH_X86_64, envars=None, kernel='3.10.0-957.43.1.el7.x86_64',
-                 release_id='rhel', src_ver='7.8', dst_ver='8.1', msgs=None, flavour='default'):
+                 release_id='rhel', src_ver='7.8', dst_ver='8.1', msgs=None, flavour='default', config=None):
         envarsList = [EnvVar(name=k, value=v) for k, v in envars.items()] if envars else []
         version = namedtuple('Version', ['source', 'target'])(src_ver, dst_ver)
         release = namedtuple('OS_release', ['release_id', 'version_id'])(release_id, src_ver)
@@ -82,6 +89,7 @@ class CurrentActorMocked(object):  # pylint:disable=R0904
             'configuration', ['architecture', 'kernel', 'leapp_env_vars', 'os_release', 'version', 'flavour']
         )(arch, kernel, envarsList, release, version, flavour)
         self._msgs = msgs or []
+        self.config = {} if config is None else config
 
     def __call__(self):
         return self
