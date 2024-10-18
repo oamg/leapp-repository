@@ -43,6 +43,8 @@ class LsblkEntry(Model):
     ro = fields.String()
     tp = fields.String()
     mountpoint = fields.String()
+    parent_name = fields.String()
+    parent_path = fields.String()
 
 
 class PvsEntry(Model):
