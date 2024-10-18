@@ -1,11 +1,11 @@
 from leapp.actors import Actor
-from leapp.libraries.actor.inhibitwhenluks import check_invalid_luks_devices
+from leapp.libraries.actor.checkluks import check_invalid_luks_devices
 from leapp.models import CephInfo, LuksDumps, StorageInfo, TargetUserSpaceUpgradeTasks, UpgradeInitramfsTasks
 from leapp.reporting import Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
-class InhibitWhenLuks(Actor):
+class CheckLuks(Actor):
     """
     Check if any encrypted partitions are in use and whether they are supported for the upgrade.
 
@@ -15,7 +15,7 @@ class InhibitWhenLuks(Actor):
     during the process).
     """
 
-    name = 'check_luks_and_inhibit'
+    name = 'check_luks'
     consumes = (CephInfo, LuksDumps, StorageInfo)
     produces = (Report, TargetUserSpaceUpgradeTasks, UpgradeInitramfsTasks)
     tags = (ChecksPhaseTag, IPUWorkflowTag)
