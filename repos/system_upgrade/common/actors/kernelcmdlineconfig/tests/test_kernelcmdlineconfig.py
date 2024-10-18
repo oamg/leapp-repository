@@ -4,11 +4,12 @@ from collections import namedtuple
 
 import pytest
 
+from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries import stdlib
 from leapp.libraries.actor import kernelcmdlineconfig
 from leapp.libraries.common.config import architecture
-from leapp.libraries.common.testutils import CurrentActorMocked
+from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked
 from leapp.libraries.stdlib import api
 from leapp.models import InstalledTargetKernelInfo, KernelCmdlineArg, TargetKernelCmdlineArgTasks
 
@@ -181,6 +182,51 @@ def test_kernelcmdline_config_no_version(monkeypatch):
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(architecture.ARCH_S390X))
     kernelcmdlineconfig.modify_kernel_args_in_boot_cfg()
     assert not mocked_run.commands
+
+
+SECOND_KERNEL_ARGS = (
+    'ro rootflags=subvol=root'
+    ' resume=/dev/mapper/luks-2c0df999-81ec-4a35-a1f9-b93afee8c6ad'
+    ' rd.luks.uuid=luks-90a6412f-c588-46ca-9118-5aca35943d25'
+    ' rd.luks.uuid=luks-2c0df999-81ec-4a35-a1f9-b93afee8c6ad'
+)
+SECOND_KERNEL_ROOT = 'UUID=1aa15850-2685-418d-95a6-f7266a2de83b'
+
+
+@pytest.mark.parametrize(
+    'second_grubby_output',
+    (
+        TEMPLATE_GRUBBY_INFO_OUTPUT.format(SECOND_KERNEL_ARGS, SECOND_KERNEL_ROOT),
+        TEMPLATE_GRUBBY_INFO_OUTPUT.format(SAMPLE_KERNEL_ARGS, SECOND_KERNEL_ROOT),
+        TEMPLATE_GRUBBY_INFO_OUTPUT.format(SECOND_KERNEL_ARGS, SAMPLE_KERNEL_ROOT),
+    )
+)
+def test_kernelcmdline_config_mutiple_args(monkeypatch, second_grubby_output):
+    kernel_img_path = '/boot/vmlinuz-X'
+    kernel_info = InstalledTargetKernelInfo(pkg_nevra=TARGET_KERNEL_NEVRA,
+                                            uname_r='',
+                                            kernel_img_path=kernel_img_path,
+                                            initramfs_path='/boot/initramfs-X')
+
+    # For this test, we need to check we get the proper report if grubby --info
+    # outputs multiple different `root=` or `args=`
+    # and that the first ones are used
+    grubby_info_output = "\n".join((SAMPLE_GRUBBY_INFO_OUTPUT, second_grubby_output))
+
+    mocked_run = MockedRun(
+        outputs={" ".join(("grubby", "--info", kernel_img_path)): grubby_info_output,
+                 }
+    )
+    monkeypatch.setattr(stdlib, 'run', mocked_run)
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked())
+    monkeypatch.setattr(reporting, "create_report", create_report_mocked())
+
+    root, args = kernelcmdlineconfig.retrieve_args_for_default_kernel(kernel_info)
+    assert root == SAMPLE_KERNEL_ROOT
+    assert args == SAMPLE_KERNEL_ARGS
+    assert reporting.create_report.called == 1
+    expected_title = 'Ensure that expected default kernel cmdline arguments are set'
+    assert expected_title in reporting.create_report.report_fields['title']
 
 
 def test_kernelcmdline_config_malformed_args(monkeypatch):
