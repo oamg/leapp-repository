@@ -2,17 +2,29 @@ import itertools
 import os
 from collections import namedtuple
 
+import leapp.configs.common.rhui as rhui_config_lib
 from leapp import reporting
+from leapp.configs.common.rhui import (  # Import all config fields so we are not using their name attributes directly
+    RhuiCloudProvider,
+    RhuiCloudVariant,
+    RhuiSourcePkgs,
+    RhuiTargetPkgs,
+    RhuiTargetRepositoriesToUse,
+    RhuiUpgradeFiles,
+    RhuiUseConfig
+)
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import rhsm, rhui
 from leapp.libraries.common.config import version
 from leapp.libraries.stdlib import api
 from leapp.models import (
     CopyFile,
+    CustomTargetRepository,
     DNFPluginTask,
     InstalledRPM,
     RHUIInfo,
     RpmTransactionTasks,
+    TargetRepositories,
     TargetRHUIPostInstallTasks,
     TargetRHUIPreInstallTasks,
     TargetRHUISetupInfo,
@@ -291,11 +303,11 @@ def produce_rhui_info_to_setup_target(rhui_family, source_setup_desc, target_set
     api.produce(rhui_info)
 
 
-def produce_rpms_to_install_into_target(source_setup, target_setup):
-    to_install = sorted(target_setup.clients - source_setup.clients)
-    to_remove = sorted(source_setup.clients - target_setup.clients)
+def produce_rpms_to_install_into_target(source_clients, target_clients):
+    to_install = sorted(target_clients - source_clients)
+    to_remove = sorted(source_clients - target_clients)
 
-    api.produce(TargetUserSpacePreupgradeTasks(install_rpms=sorted(target_setup.clients)))
+    api.produce(TargetUserSpacePreupgradeTasks(install_rpms=sorted(target_clients)))
     if to_install or to_remove:
         api.produce(RpmTransactionTasks(to_install=to_install, to_remove=to_remove))
 
@@ -316,7 +328,85 @@ def inform_about_upgrade_with_rhui_without_no_rhsm():
     return False
 
 
+def emit_rhui_setup_tasks_based_on_config(rhui_config_dict):
+    config_upgrade_files = rhui_config_dict[RhuiUpgradeFiles.name]
+
+    nonexisting_files_to_copy = []
+    for source_path in config_upgrade_files:
+        if not os.path.exists(source_path):
+            nonexisting_files_to_copy.append(source_path)
+
+    if nonexisting_files_to_copy:
+        details_lines = ['The following files were not found:']
+        # Use .format and put backticks around paths so that weird unicode spaces will be easily seen
+        details_lines.extend('  - `{0}`'.format(path) for path in nonexisting_files_to_copy)
+        details = '\n'.join(details_lines)
+
+        reason = 'RHUI config lists nonexisting files in its `{0}` field.'.format(RhuiUpgradeFiles.name)
+        raise StopActorExecutionError(reason, details={'details': details})
+
+    files_to_copy_into_overlay = [CopyFile(src=key, dst=value) for key, value in config_upgrade_files.items()]
+    preinstall_tasks = TargetRHUIPreInstallTasks(files_to_copy_into_overlay=files_to_copy_into_overlay)
+
+    target_client_setup_info = TargetRHUISetupInfo(
+        preinstall_tasks=preinstall_tasks,
+        postinstall_tasks=TargetRHUIPostInstallTasks(),
+        bootstrap_target_client=False,  # We don't need to install the client into overlay - user provided all files
+    )
+
+    rhui_info = RHUIInfo(
+        provider=rhui_config_dict[RhuiCloudProvider.name],
+        variant=rhui_config_dict[RhuiCloudVariant.name],
+        src_client_pkg_names=rhui_config_dict[RhuiSourcePkgs.name],
+        target_client_pkg_names=rhui_config_dict[RhuiTargetPkgs.name],
+        target_client_setup_info=target_client_setup_info
+    )
+    api.produce(rhui_info)
+
+
+def request_configured_repos_to_be_enabled(rhui_config):
+    config_repos_to_enable = rhui_config[RhuiTargetRepositoriesToUse.name]
+    custom_repos = [CustomTargetRepository(repoid=repoid) for repoid in config_repos_to_enable]
+    if custom_repos:
+        target_repos = TargetRepositories(custom_repos=custom_repos, rhel_repos=[])
+        api.produce(target_repos)
+
+
+def stop_with_err_if_config_missing_fields(config):
+    required_fields = [
+        RhuiTargetRepositoriesToUse,
+        RhuiCloudProvider,
+        # RhuiCloudVariant, <- this is not required
+        RhuiSourcePkgs,
+        RhuiTargetPkgs,
+        RhuiUpgradeFiles,
+    ]
+
+    missing_fields = tuple(field for field in required_fields if not config[field.name])
+    if missing_fields:
+        field_names = (field.name for field in missing_fields)
+        missing_fields_str = ', '.join(field_names)
+        details = 'The following required RHUI config fields are missing or they are set to an empty value: {}'
+        details = details.format(missing_fields_str)
+        raise StopActorExecutionError('Provided RHUI config is missing values for required fields.',
+                                      details={'details': details})
+
+
 def process():
+    rhui_config = api.current_actor().config[rhui_config_lib.RHUI_CONFIG_SECTION]
+
+    if rhui_config[RhuiUseConfig.name]:
+        api.current_logger().info('Skipping RHUI upgrade auto-configuration - using provided config instead.')
+        stop_with_err_if_config_missing_fields(rhui_config)
+        emit_rhui_setup_tasks_based_on_config(rhui_config)
+
+        src_clients = set(rhui_config[RhuiSourcePkgs.name])
+        target_clients = set(rhui_config[RhuiTargetPkgs.name])
+        produce_rpms_to_install_into_target(src_clients, target_clients)
+
+        request_configured_repos_to_be_enabled(rhui_config)
+        return
+
     installed_rpm = itertools.chain(*[installed_rpm_msg.items for installed_rpm_msg in api.consume(InstalledRPM)])
     installed_pkgs = {rpm.name for rpm in installed_rpm}
 
@@ -342,7 +432,9 @@ def process():
     # Instruction on how to access the target content
     produce_rhui_info_to_setup_target(src_rhui_setup.family, src_rhui_setup.description, target_setup_desc)
 
-    produce_rpms_to_install_into_target(src_rhui_setup.description, target_setup_desc)
+    source_clients = src_rhui_setup.description.clients
+    target_clients = target_setup_desc.clients
+    produce_rpms_to_install_into_target(source_clients, target_clients)
 
     if src_rhui_setup.family.provider == rhui.RHUIProvider.AWS:
         # We have to disable Amazon-id plugin in the initramdisk phase as there is no network

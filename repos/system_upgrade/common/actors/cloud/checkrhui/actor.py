@@ -1,4 +1,5 @@
 from leapp.actors import Actor
+from leapp.configs.common.rhui import all_rhui_cfg
 from leapp.libraries.actor import checkrhui as checkrhui_lib
 from leapp.models import (
     CopyFile,
@@ -8,6 +9,7 @@ from leapp.models import (
     RequiredTargetUserspacePackages,
     RHUIInfo,
     RpmTransactionTasks,
+    TargetRepositories,
     TargetUserSpacePreupgradeTasks
 )
 from leapp.reporting import Report
@@ -21,6 +23,7 @@ class CheckRHUI(Actor):
     """
 
     name = 'checkrhui'
+    config_schemas = all_rhui_cfg
     consumes = (InstalledRPM,)
     produces = (
         KernelCmdlineArg,
@@ -28,6 +31,7 @@ class CheckRHUI(Actor):
         RequiredTargetUserspacePackages,
         Report, DNFPluginTask,
         RpmTransactionTasks,
+        TargetRepositories,
         TargetUserSpacePreupgradeTasks,
         CopyFile,
     )
