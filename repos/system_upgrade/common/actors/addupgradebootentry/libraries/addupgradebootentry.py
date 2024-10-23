@@ -9,14 +9,16 @@ from leapp.models import (
     BootContent,
     KernelCmdline,
     KernelCmdlineArg,
+    LateTargetKernelCmdlineArgTasks,
     LiveImagePreparationInfo,
     LiveModeArtifacts,
     LiveModeConfig,
-    TargetKernelCmdlineArgTasks
+    TargetKernelCmdlineArgTasks,
+    UpgradeKernelCmdlineArgTasks
 )
 
 
-def collect_boot_args(livemode_enabled):
+def collect_upgrade_kernel_args(livemode_enabled):
     args = {
         'enforcing': '0',
         'rd.plymouth': '0',
@@ -34,7 +36,10 @@ def collect_boot_args(livemode_enabled):
         livemode_args = construct_cmdline_args_for_livemode()
         args.update(livemode_args)
 
-    return args
+    upgrade_kernel_args = collect_set_of_kernel_args_from_msgs(UpgradeKernelCmdlineArgTasks, 'to_add')
+    args.update(upgrade_kernel_args)
+
+    return set(args.items())
 
 
 def collect_undesired_args(livemode_enabled):
@@ -43,11 +48,11 @@ def collect_undesired_args(livemode_enabled):
         args = dict(zip(('ro', 'rhgb', 'quiet'), itertools.repeat(None)))
         args['rd.lvm.lv'] = _get_rdlvm_arg_values()
 
-    return args
+    return set(args.items())
 
 
-def format_grubby_args_from_args_dict(args_dict):
-    """ Format the given args dictionary in a form required by grubby's --args. """
+def format_grubby_args_from_args_set(args_dict):
+    """ Format the given args set in a form required by grubby's --args. """
 
     def fmt_single_arg(arg_pair):
         key, value = arg_pair
@@ -65,7 +70,7 @@ def format_grubby_args_from_args_dict(args_dict):
         else:
             yield (key, value)  # Just a single (key, value) pair
 
-    arg_sequence = itertools.chain(*(flatten_arguments(arg_pair) for arg_pair in args_dict.items()))
+    arg_sequence = itertools.chain(*(flatten_arguments(arg_pair) for arg_pair in args_dict))
 
     # Sorting should be fine as only values can be None, but we cannot have a (key, None) and (key, value) in
     # the dictionary at the same time.
@@ -78,7 +83,7 @@ def format_grubby_args_from_args_dict(args_dict):
 def figure_out_commands_needed_to_add_entry(kernel_path, initramfs_path, args_to_add, args_to_remove):
     boot_entry_modification_commands = []
 
-    args_to_add_str = format_grubby_args_from_args_dict(args_to_add)
+    args_to_add_str = format_grubby_args_from_args_set(args_to_add)
 
     create_entry_cmd = [
         '/usr/sbin/grubby',
@@ -93,7 +98,7 @@ def figure_out_commands_needed_to_add_entry(kernel_path, initramfs_path, args_to
 
     # We need to update root= param separately, since we cannot do it during --add-kernel with --copy-default.
     # This is likely a bug in grubby.
-    root_param_value = args_to_add.get('root', None)
+    root_param_value = dict(args_to_add).get('root', None)
     if root_param_value:
         enforce_root_param_for_the_entry_cmd = [
             '/usr/sbin/grubby',
@@ -103,7 +108,7 @@ def figure_out_commands_needed_to_add_entry(kernel_path, initramfs_path, args_to
         boot_entry_modification_commands.append(enforce_root_param_for_the_entry_cmd)
 
     if args_to_remove:
-        args_to_remove_str = format_grubby_args_from_args_dict(args_to_remove)
+        args_to_remove_str = format_grubby_args_from_args_set(args_to_remove)
         remove_undesired_args_cmd = [
             '/usr/sbin/grubby',
             '--update-kernel', kernel_path,
@@ -113,18 +118,55 @@ def figure_out_commands_needed_to_add_entry(kernel_path, initramfs_path, args_to
     return boot_entry_modification_commands
 
 
+def collect_set_of_kernel_args_from_msgs(msg_type, arg_list_field_name):
+    cmdline_modification_msgs = api.consume(msg_type)
+    lists_of_args_to_add = (getattr(msg, arg_list_field_name, []) for msg in cmdline_modification_msgs)
+    args = itertools.chain(*lists_of_args_to_add)
+    return set((arg.key, arg.value) for arg in args)
+
+
+def emit_removal_of_args_meant_only_for_upgrade_kernel(added_upgrade_kernel_args):
+    """
+    Emit message requesting removal of upgrade kernel args that should not be on the target kernel.
+
+    Target kernel args are created by copying the args of the booted (upgrade) kernel. Therefore,
+    we need to explicitly modify the target kernel cmdline, removing what should not have been copied.
+    """
+    target_args_to_add = collect_set_of_kernel_args_from_msgs(TargetKernelCmdlineArgTasks, 'to_add')
+    actual_kernel_args = collect_set_of_kernel_args_from_msgs(KernelCmdline, 'parameters')
+
+    # actual_kernel_args should not be changed during upgrade, unless explicitly removed by
+    # TargetKernelCmdlineArgTasks.to_remove, but that is handled by some other upgrade component. We just want
+    # to make sure we remove what was not on the source system and that we don't overwrite args to be added to target.
+    args_not_present_on_target_kernel = added_upgrade_kernel_args - actual_kernel_args - target_args_to_add
+
+    # We remove only what we've added and what will not be already removed by someone else.
+    args_to_remove = [KernelCmdlineArg(key=arg[0], value=arg[1]) for arg in args_not_present_on_target_kernel]
+
+    if args_to_remove:
+        msg = ('Following upgrade kernel args were added, but they should not be present '
+               'on target cmdline: `%s`, requesting removal.')
+        api.current_logger().info(msg, args_not_present_on_target_kernel)
+        args_sorted = sorted(args_to_remove, key=lambda arg: arg.key)
+        api.produce(LateTargetKernelCmdlineArgTasks(to_remove=args_sorted))
+
+
 def add_boot_entry(configs=None):
     kernel_dst_path, initram_dst_path = get_boot_file_paths()
+
     _remove_old_upgrade_boot_entry(kernel_dst_path, configs=configs)
 
     livemode_enabled = next(api.consume(LiveImagePreparationInfo), None) is not None
 
-    cmdline_args = collect_boot_args(livemode_enabled)
+    # We have to keep the desired and unwanted args separate and modify cmline in two separate grubby calls. Merging
+    # these sets and trying to execute only a single command would leave the unwanted cmdline args present  if they
+    # are present on the original system.
+    added_cmdline_args = collect_upgrade_kernel_args(livemode_enabled)
     undesired_cmdline_args = collect_undesired_args(livemode_enabled)
 
     commands_to_run = figure_out_commands_needed_to_add_entry(kernel_dst_path,
                                                               initram_dst_path,
-                                                              args_to_add=cmdline_args,
+                                                              args_to_add=added_cmdline_args,
                                                               args_to_remove=undesired_cmdline_args)
 
     def run_commands_adding_entry(extra_command_suffix=None):
@@ -146,16 +188,8 @@ def add_boot_entry(configs=None):
             # See https://bugzilla.redhat.com/show_bug.cgi?id=1764306
             run(['/usr/sbin/zipl'])
 
-        if 'debug' in cmdline_args:
-            # The kernelopts for target kernel are generated based on the cmdline used in the upgrade initramfs,
-            # therefore, if we enabled debug above, and the original system did not have the debug kernelopt, we
-            # need to explicitly remove it from the target os boot entry.
-            # NOTE(mhecko): This will also unconditionally remove debug kernelopt if the source system used it.
-            api.produce(TargetKernelCmdlineArgTasks(to_remove=[KernelCmdlineArg(key='debug')]))
-
-        # NOTE(mmatuska): This will remove the option even if the source system had it set.
-        # However enforcing=0 shouldn't be set persistently anyway.
-        api.produce(TargetKernelCmdlineArgTasks(to_remove=[KernelCmdlineArg(key='enforcing', value='0')]))
+        effective_upgrade_kernel_args = added_cmdline_args - undesired_cmdline_args
+        emit_removal_of_args_meant_only_for_upgrade_kernel(effective_upgrade_kernel_args)
 
     except CalledProcessError as e:
         raise StopActorExecutionError(
