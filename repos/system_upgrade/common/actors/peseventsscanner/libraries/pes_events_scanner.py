@@ -78,19 +78,22 @@ def get_installed_pkgs():
 
 def get_transaction_configuration():
     """
-    Get pkgs to install, keep and remove from the user configuration files in /etc/leapp/transaction/.
+    Get pkgs to install, keep and remove from RpmTransactionTasks messages.
 
-    These configuration files have higher priority than PES data.
-    :return: RpmTransactionTasks model instance
+    Note these messages reflects inputs from various actors and configuration
+    files in /etc/leapp/transaction/. As these are explicit instruction, they
+    have higher priority than instructions from PES data.
+
+    :return: TransactionConfiguration
     """
-    transaction_configuration = TransactionConfiguration(to_install=[], to_remove=[], to_keep=[])
+    transaction_configuration = TransactionConfiguration(to_install=set(), to_remove=set(), to_keep=set())
 
     _Pkg = partial(Package, repository=None, modulestream=None)
 
     for tasks in api.consume(RpmTransactionTasks):
-        transaction_configuration.to_install.extend(_Pkg(name=pkg_name) for pkg_name in tasks.to_install)
-        transaction_configuration.to_remove.extend(_Pkg(name=pkg_name) for pkg_name in tasks.to_remove)
-        transaction_configuration.to_keep.extend(_Pkg(name=pkg_name) for pkg_name in tasks.to_keep)
+        transaction_configuration.to_install.update(_Pkg(name=pkg_name) for pkg_name in tasks.to_install)
+        transaction_configuration.to_remove.update(_Pkg(name=pkg_name) for pkg_name in tasks.to_remove)
+        transaction_configuration.to_keep.update(_Pkg(name=pkg_name) for pkg_name in tasks.to_keep)
     return transaction_configuration
 
 
