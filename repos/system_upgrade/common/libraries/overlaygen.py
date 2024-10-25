@@ -68,6 +68,27 @@ or close to that size, stay always with this minimal protected size defined by
 this constant.
 """
 
+_MAX_DISK_IMAGE_SIZE_MB = 2**20  # 1*TB
+"""
+Maximum size of the created (sparse) images.
+
+Defaults to 1TB. If a disk with capacity larger than _MAX_DISK_IMAGE_SIZE_MB
+is mounted on the system, the corresponding image used to store overlay
+modifications will be capped to _MAX_DISK_IMAGE_SIZE_MB.
+
+Engineering rationale:
+   This constant was introduced to prevent leapp from creating files that are
+   virtually larger than the maximum file size supported by the file system.
+   E.g. if the source system hosts /var/lib/leapp on EXT4, then we cannot
+   create a file larger than 16TB.
+   We create these "disk images" to be able to verify the system has enough
+   disk space to perform the RPM upgrade transaction. From our experience,
+   we are not aware of any system which could have installed so much content
+   by RPMs that we would need 1TB of the free space on a single FS. Therefore,
+   we consider this value as safe while preventing us from exceeding FS
+   limits.
+"""
+
 
 MountPoints = namedtuple('MountPoints', ['fs_file', 'fs_vfstype'])
 
@@ -287,6 +308,13 @@ def _prepare_required_mounts(scratch_dir, mounts_dir, storage_info, scratch_rese
         disk_size = _get_fspace(mountpoint, convert_to_mibs=True, coefficient=0.95)
         if mountpoint == scratch_mp:
             disk_size = scratch_disk_size
+
+        if disk_size > _MAX_DISK_IMAGE_SIZE_MB:
+            msg = ('Image for overlayfs corresponding to the disk mounted at %s would ideally have %d MB, '
+                   'but we truncate it to %d MB to avoid bumping to max file limits.')
+            api.current_logger().info(msg, mountpoint, disk_size, _MAX_DISK_IMAGE_SIZE_MB)
+            disk_size = _MAX_DISK_IMAGE_SIZE_MB
+
         image = _create_mount_disk_image(disk_images_directory, mountpoint, disk_size)
         result[mountpoint] = mounting.LoopMount(
             source=image,
