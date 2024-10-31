@@ -470,9 +470,8 @@ def replace_pesids_with_repoids_in_packages(packages, source_pkgs_repoids):
     return packages_with_repoid.union(packages_without_pesid)
 
 
-def apply_transaction_configuration(source_pkgs):
+def apply_transaction_configuration(source_pkgs, transaction_configuration):
     source_pkgs_with_conf_applied = set(source_pkgs)
-    transaction_configuration = get_transaction_configuration()
 
     source_pkgs_with_conf_applied = source_pkgs.union(transaction_configuration.to_install)
 
@@ -504,6 +503,50 @@ def remove_leapp_related_events(events):
     return res
 
 
+def include_instructions_from_transaction_configuration(rpm_tasks, transaction_configuration, installed_pkgs):
+    """
+    Extend current rpm_tasks applying data from transaction_configuration
+
+    :param PESRpmTransactionTasks rpm_tasks: Currently calculated rpm tasks based on PES data.
+    :param TransactionConfiguration transaction_configuration: Tasked configured by user manually.
+    :param set(str) installed_pkgs: Set of distribution signed packages installed on the system.
+    :returns: updated tasks respecting configuration changes made by user
+    :rtype: PESRpmTransactionTasks
+    """
+    to_install_from_rpm_tasks = set() if not rpm_tasks else set(rpm_tasks.to_install)
+    to_remove_from_rpm_tasks = set() if not rpm_tasks else set(rpm_tasks.to_remove)
+    to_keep_from_rpm_tasks = set() if not rpm_tasks else set(rpm_tasks.to_keep)
+
+    # We don't want to try removing packages that are not installed - include only installed ones
+    installed_pkgs_requested_to_be_removed = transaction_configuration.to_remove.intersection(installed_pkgs)
+    pkgs_names_to_extend_to_remove_with = set(pkg.name for pkg in installed_pkgs_requested_to_be_removed)
+
+    # Add packages to 'to_install' only if they are not already requested to be installed by rpm_tasks
+    pkgs_names_requested_to_be_installed = set(pkg.name for pkg in transaction_configuration.to_install)
+    to_install_pkgs_names_missing_from_tasks = pkgs_names_requested_to_be_installed - to_install_from_rpm_tasks
+
+    pkg_names_user_wants_to_keep = {pkg.name for pkg in transaction_configuration.to_keep}
+
+    # Remove packages that were requested by rpm_tasks or by user, but exclude those that should be kept
+    new_to_remove_set = (to_remove_from_rpm_tasks | pkgs_names_to_extend_to_remove_with) - pkg_names_user_wants_to_keep
+    new_to_remove_list = sorted(new_to_remove_set)
+
+    new_to_install_list = sorted(to_install_from_rpm_tasks | to_install_pkgs_names_missing_from_tasks)
+    new_to_keep_list = sorted(to_keep_from_rpm_tasks | pkg_names_user_wants_to_keep)
+
+    if not any((new_to_remove_list, new_to_keep_list, new_to_install_list)):  # Are all empty?
+        return rpm_tasks  # We do not modify the original tasks
+
+    modules_to_enable = rpm_tasks.modules_to_enable if rpm_tasks else []
+    modules_to_reset = rpm_tasks.modules_to_reset if rpm_tasks else []
+
+    return PESRpmTransactionTasks(to_install=new_to_install_list,
+                                  to_remove=new_to_remove_list,
+                                  to_keep=new_to_keep_list,
+                                  modules_to_enable=modules_to_enable,
+                                  modules_to_reset=modules_to_reset)
+
+
 def process():
     # Retrieve data - installed_pkgs, transaction configuration, pes events
     events = get_pes_events('/etc/leapp/files', 'pes-events.json')
@@ -511,24 +554,27 @@ def process():
         return
 
     releases = get_relevant_releases(events)
-    source_pkgs = get_installed_pkgs()
-    source_pkgs = apply_transaction_configuration(source_pkgs)
+    installed_pkgs = get_installed_pkgs()
+    transaction_configuration = get_transaction_configuration()
+    pkgs_to_begin_computation_with = apply_transaction_configuration(installed_pkgs, transaction_configuration)
 
     # Keep track of what repoids have the source packages to be able to determine what are the PESIDs of the computed
     # packages of the target system, so we can distinguish what needs to be repomapped
-    repoids_of_source_pkgs = {pkg.repository for pkg in source_pkgs}
+    repoids_of_source_pkgs = {pkg.repository for pkg in pkgs_to_begin_computation_with}
 
     events = remove_leapp_related_events(events)
     events = remove_undesired_events(events, releases)
 
     # Apply events - compute what packages should the target system have
-    target_pkgs, pkgs_to_demodularize = compute_packages_on_target_system(source_pkgs, events, releases)
+    target_pkgs, pkgs_to_demodularize = compute_packages_on_target_system(pkgs_to_begin_computation_with,
+                                                                          events, releases)
 
     # Packages coming out of the events have PESID as their repository, however, we need real repoid
     target_pkgs = replace_pesids_with_repoids_in_packages(target_pkgs, repoids_of_source_pkgs)
 
     # Apply the desired repository blacklisting
-    blacklisted_repoids, target_pkgs = remove_new_packages_from_blacklisted_repos(source_pkgs, target_pkgs)
+    blacklisted_repoids, target_pkgs = remove_new_packages_from_blacklisted_repos(pkgs_to_begin_computation_with,
+                                                                                  target_pkgs)
 
     # Look at the target packages and determine what repositories to enable
     target_repoids = sorted(set(p.repository for p in target_pkgs) - blacklisted_repoids - repoids_of_source_pkgs)
@@ -536,6 +582,8 @@ def process():
     api.produce(repos_to_enable)
 
     # Compare the packages on source system and the computed packages on target system and determine what to install
-    rpm_tasks = compute_rpm_tasks_from_pkg_set_diff(source_pkgs, target_pkgs, pkgs_to_demodularize)
+    rpm_tasks = compute_rpm_tasks_from_pkg_set_diff(pkgs_to_begin_computation_with, target_pkgs, pkgs_to_demodularize)
+    rpm_tasks = include_instructions_from_transaction_configuration(rpm_tasks, transaction_configuration,
+                                                                    installed_pkgs)
     if rpm_tasks:
         api.produce(rpm_tasks)
