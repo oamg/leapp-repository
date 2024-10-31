@@ -9,9 +9,7 @@ from leapp.libraries.actor.pes_events_scanner import (
     api,
     compute_packages_on_target_system,
     compute_rpm_tasks_from_pkg_set_diff,
-    get_installed_pkgs,
     Package,
-    process,
     reporting,
     TransactionConfiguration
 )
@@ -27,7 +25,7 @@ from leapp.models import (
     RepositoriesSetupTasks,
     RepositoryData,
     RepositoryFile,
-    RHUIInfo,
+    RpmTransactionTasks,
     RPM
 )
 
@@ -475,3 +473,52 @@ def test_remove_leapp_related_events(monkeypatch):
 
     out_events = pes_events_scanner.remove_leapp_related_events(in_events)
     assert out_events == expected_out_events
+
+
+def test_transaction_configuration_is_applied(monkeypatch):
+    installed_pkgs = {
+         Package(name='moved-in', repository='rhel7-base', modulestream=None),
+         Package(name='split-in', repository='rhel7-base', modulestream=None),
+    }
+    monkeypatch.setattr(pes_events_scanner, 'get_installed_pkgs', lambda *args, **kwags: installed_pkgs)
+
+    Pkg = partial(Package, modulestream=None)
+    events = [
+        Event(1, Action.SPLIT,
+              {Pkg('split-in', 'rhel7-base')},
+              {Pkg('split-out0', 'rhel8-BaseOS'), Pkg('split-out1', 'rhel8-BaseOS')},
+              (7, 9), (8, 0), []),
+        Event(3, Action.MOVED,
+              {Pkg('moved-in', 'rhel7-base')}, {Pkg('moved-out', 'rhel8-BaseOS')},
+              (7, 9), (8, 0), []),
+    ]
+    monkeypatch.setattr(pes_events_scanner, 'get_pes_events', lambda *args, **kwargs: events)
+    monkeypatch.setattr(pes_events_scanner, 'remove_leapp_related_events', lambda events: events)
+    monkeypatch.setattr(pes_events_scanner, 'remove_undesired_events', lambda events, releases: events)
+    monkeypatch.setattr(pes_events_scanner, '_get_enabled_modules', lambda *args: [])
+    monkeypatch.setattr(pes_events_scanner, 'replace_pesids_with_repoids_in_packages',
+                        lambda target_pkgs, repoids_of_source_pkgs: target_pkgs)
+    monkeypatch.setattr(pes_events_scanner,
+                        'remove_new_packages_from_blacklisted_repos',
+                        lambda source_pkgs, target_pkgs: (set(), target_pkgs))
+
+    msgs = [
+        RpmTransactionTasks(to_remove=['split-in', 'split-in']),
+        RpmTransactionTasks(to_remove=['split-in'])
+    ]
+    mocked_actor = CurrentActorMocked(arch='x86_64', src_ver='7.9', dst_ver='8.8', msgs=msgs)
+    monkeypatch.setattr(api, 'current_actor', mocked_actor)
+
+    monkeypatch.setattr(api, 'produce', produce_mocked())
+
+    pes_events_scanner.process()
+
+    assert api.produce.called == 2
+
+    produced_rpm_transaction_tasks = [
+        msg for msg in api.produce.model_instances if isinstance(msg, PESRpmTransactionTasks)
+    ]
+
+    assert len(produced_rpm_transaction_tasks) == 1
+    rpm_transaction_tasks = produced_rpm_transaction_tasks[0]
+    assert sorted(rpm_transaction_tasks.to_remove) == ['moved-in', 'split-in']
