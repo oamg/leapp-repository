@@ -25,8 +25,8 @@ from leapp.models import (
     RepositoriesSetupTasks,
     RepositoryData,
     RepositoryFile,
-    RpmTransactionTasks,
-    RPM
+    RPM,
+    RpmTransactionTasks
 )
 
 
