@@ -1,0 +1,22 @@
+#!/usr/bin/bash -e
+
+# just in case of hidden files.. not sure why would someone do that, it's more
+# like forgotten cache file possibility, but rather do that..
+shopt -s dotglob
+
+handle_dir() {
+    # Check that $1 is a symlink then unlink it so that RPM
+    # can freely create the directory.
+    if [ ! -L "$1" ]; then
+        return
+    fi
+
+    # There is no configuration or anything that the user should ever customize
+    # and expect to retain.
+    unlink "$1"
+
+    return 0
+}
+
+
+handle_dir /usr/share/ruby/irb
