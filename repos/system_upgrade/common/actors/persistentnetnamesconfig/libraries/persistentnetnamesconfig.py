@@ -39,7 +39,8 @@ def generate_link_file(interface):
 
 @suppress_deprecation(InitrdIncludes)
 def process():
-    if get_env('LEAPP_USE_NET_NAMING_SCHEMES', '0') == '1' and version.get_target_major_version() != '8':
+    if get_env('LEAPP_USE_NET_NAMING_SCHEMES', '0') == '1' and version.get_target_major_version() == '9':
+        # We can use this only for 8>9, for now
         api.current_logger().info('Skipping generation of .link files renaming NICs as LEAPP_USE_NET_NAMING_SCHEMES=1')
         return
 
