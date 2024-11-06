@@ -44,7 +44,10 @@ def is_net_scheme_compatible_with_current_cmdline():
 
 
 def emit_msgs_to_use_net_naming_schemes():
-    if get_env('LEAPP_USE_NET_NAMING_SCHEMES', '0') != '1' and version.get_target_major_version() != '8':
+    is_env_var_set = get_env('LEAPP_USE_NET_NAMING_SCHEMES', '0') == '1'
+    is_upgrade_8to9 = version.get_target_major_version() == '9'
+    is_net_naming_enabled_and_permitted = is_env_var_set and is_upgrade_8to9
+    if not is_net_naming_enabled_and_permitted:
         return
 
     # The package should be installed regardless of whether we will modify the cmdline -
