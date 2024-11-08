@@ -14,7 +14,7 @@
 
 
 %define leapp_repo_deps  10
-%define leapp_framework_deps 5
+%define leapp_framework_deps 6
 
 # NOTE: the Version contains the %{rhel} macro just for the convenience to
 # have always upgrade path between newer and older deps packages. So for
@@ -112,6 +112,7 @@ Requires:   python3
 Requires:   python3-six
 Requires:   python3-setuptools
 Requires:   python3-requests
+Requires:   python3-PyYAML
 
 
 %description -n %{ldname}
