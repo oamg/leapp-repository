@@ -1,10 +1,12 @@
+import hashlib
 import json
 import os
 import re
 import resource
 
+from leapp.actors import config as actor_config
 from leapp.exceptions import CommandError
-from leapp.utils import path
+from leapp.utils import audit, path
 
 HANA_BASE_PATH = '/hana/shared'
 HANA_SAPCONTROL_PATH_X86_64 = 'exe/linuxx86_64/hdb/sapcontrol'
@@ -178,3 +180,31 @@ def set_resource_limits():
 
     if soft_fsize != fsize_limit:
         set_resource_limit(resource.RLIMIT_FSIZE, fsize_limit, fsize_limit)
+
+
+def load_actor_configs_and_store_it_in_db(context, repositories, framework_cfg):
+    """
+    Load actor configuration so that actor's can access it and store it into leapp db.
+
+    :param context: Current execution context
+    :param repositories: Discovered repositories
+    :param framework_cfg: Leapp's configuration
+    """
+    # Read the Actor Config and validate it against the schemas saved in the
+    # configuration.
+
+    actor_config_schemas = tuple(actor.config_schemas for actor in repositories.actors)
+    actor_config_schemas = actor_config.normalize_schemas(actor_config_schemas)
+    actor_config_path = framework_cfg.get('actor_config', 'path')
+
+    # Note: actor_config.load() stores the loaded actor config into a global
+    # variable which can then be accessed by functions in that file.  Is this
+    # the right way to store that information?
+    actor_cfg = actor_config.load(actor_config_path, actor_config_schemas)
+
+    # Dump the collected configuration, checksum it and store it inside the DB
+    config_text = json.dumps(actor_cfg)
+    config_text_hash = hashlib.sha256(config_text.encode('utf-8')).hexdigest()
+    config_data = audit.ActorConfigData(config=config_text, hash_id=config_text_hash)
+    db_config = audit.ActorConfig(config=config_data, context=context)
+    db_config.store()
