@@ -62,6 +62,9 @@ def preupgrade(args, breadcrumbs):
     command_utils.set_resource_limits()
 
     workflow = repositories.lookup_workflow('IPUWorkflow')()
+
+    command_utils.load_actor_configs_and_store_it_in_db(context, repositories, cfg)
+
     util.warn_if_unsupported(configuration)
     util.process_whitelist_experimental(repositories, workflow, configuration, logger)
     with beautify_actor_exception():
