@@ -68,6 +68,16 @@ def get_partition_layout(device):
 
     partitions = []
     for partition_line in table_iter:
+        if not partition_line.startswith('/'):
+            # the output can contain warning msg when a partition is not aligned
+            # on physical sector boundary, like:
+            # ~~~
+            # Partition 4 does not start on physical sector boundary.
+            # ~~~
+            # We know that in case of MBR the line we expect to parse always
+            # starts with canonical path. So let's use this condition.
+            # See https://issues.redhat.com/browse/RHEL-50947
+            continue
         # Fields:               Device     Boot   Start      End  Sectors Size Id Type
         # The line looks like: `/dev/vda1  *       2048  2099199  2097152   1G 83 Linux`
         part_info = split_on_space_segments(partition_line)
