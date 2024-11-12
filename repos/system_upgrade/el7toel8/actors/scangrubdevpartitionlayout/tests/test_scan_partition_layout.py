@@ -49,6 +49,9 @@ def test_get_partition_layout(monkeypatch, devices, fs):
             part_line = '{0}   *     {1}     2099199     1048576   83  {2}'.format(part.name, part.start_offset, fs)
             fdisk_output.append(part_line)
 
+        # add a problematic warning msg to test:
+        # https://issues.redhat.com/browse/RHEL-50947
+        fdisk_output.append('Partition 3 does not start on physical sector boundary.')
         device_to_fdisk_output[device.name] = fdisk_output
 
     def mocked_run(cmd, *args, **kwargs):
