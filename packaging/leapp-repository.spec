@@ -272,6 +272,9 @@ rm -rf %{buildroot}%{repositorydir}/common/actors/testactor
 find %{buildroot}%{repositorydir}/common -name "test.py" -delete
 rm -rf `find %{buildroot}%{repositorydir} -name "tests" -type d`
 find %{buildroot}%{repositorydir} -name "Makefile" -delete
+# .gitkeep file is used to have a directory in the repo. but we do not want these
+# files in the resulting RPM
+find %{buildroot} -name .gitkeep -delete
 
 for DIRECTORY in $(find  %{buildroot}%{repositorydir}/  -mindepth 1 -maxdepth 1 -type d);
 do
