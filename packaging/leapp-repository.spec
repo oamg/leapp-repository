@@ -250,9 +250,7 @@ install -m 0755 -d %{buildroot}%{_sysconfdir}/leapp/files/
 install -m 0644 etc/leapp/transaction/* %{buildroot}%{_sysconfdir}/leapp/transaction
 install -m 0644 etc/leapp/files/* %{buildroot}%{_sysconfdir}/leapp/files
 
-# Actor configuration dir
-install -m 0755 -d %{buildroot}%{_sysconfdir}/leapp/actor_conf.d/
-# uncomment to install existing configs
+# uncomment to install existing configs if any exists
 #install -m 0644 etc/leapp/actor_conf.d/* %%{buildroot}%%{_sysconfdir}/leapp/actor_conf.d
 
 # install CLI commands for the leapp utility on the expected path
