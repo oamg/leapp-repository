@@ -51,11 +51,11 @@ def test_is_net_scheme_compatible_with_current_cmdline(monkeypatch, kernel_args,
     ]
 )
 def test_emit_msgs_to_use_net_naming_schemes(monkeypatch, is_net_scheme_enabled, is_current_cmdline_compatible):
-    envvar_value = '1' if is_net_scheme_enabled else '0'
+    envvar_value = '0' if is_net_scheme_enabled else '1'
 
     mocked_actor = CurrentActorMocked(src_ver='8.10',
                                       dst_ver='9.5',
-                                      envars={'LEAPP_USE_NET_NAMING_SCHEMES': envvar_value})
+                                      envars={'LEAPP_DISABLE_NET_NAMING_SCHEMES': envvar_value})
     monkeypatch.setattr(api, 'current_actor', mocked_actor)
 
     monkeypatch.setattr(api, 'produce', produce_mocked())
