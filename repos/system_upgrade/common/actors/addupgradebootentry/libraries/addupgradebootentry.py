@@ -303,7 +303,7 @@ def _get_rdlvm_arg_values():
     api.current_logger().debug('Collected the following rd.lvm.lv args that are undesired for the squashfs: %s',
                                rd_lvm_values)
 
-    return rd_lvm_values
+    return tuple(rd_lvm_values)
 
 
 def construct_cmdline_args_for_livemode():
