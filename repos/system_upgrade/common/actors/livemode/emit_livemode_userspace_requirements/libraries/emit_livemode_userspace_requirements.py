@@ -33,6 +33,9 @@ def emit_livemode_userspace_requirements():
     if livemode_config.setup_opensshd_with_auth_keys:
         packages += ['openssh-server', 'crypto-policies']
 
+    # TODO: Make this conditional depending on whether we detect stratis on the source system
+    packages += ['stratisd']
+
     packages = sorted(set(packages))
 
     api.produce(TargetUserSpaceUpgradeTasks(install_rpms=packages))
