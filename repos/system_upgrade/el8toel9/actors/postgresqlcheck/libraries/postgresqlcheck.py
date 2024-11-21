@@ -7,8 +7,9 @@ from leapp.models import DistributionSignedRPM
 report_server_inst_summary = (
     'PostgreSQL server component will be upgraded. Since RHEL-9 includes'
     ' PostgreSQL server 13 by default, which is incompatible with 9.6, 10 and 12'
-    ' included in RHEL-8, it is necessary to proceed with additional steps'
+    ' included in RHEL-8, in those cases, it is necessary to proceed with additional steps'
     ' for the complete upgrade of the PostgreSQL data.'
+    'If the database has already been upgraded, then no further actions are required.'
 )
 
 report_server_inst_hint = (
