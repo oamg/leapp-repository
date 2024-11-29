@@ -43,7 +43,7 @@ def connection_guard(url='https://example.com'):
     return closure
 
 
-def space_guard(path='/', min_free_mb=100):
+def space_guard(path='/', min_free_mb=200):
     def closure():
         info = os.statvfs(path)
         free_mb = (info.f_bavail * info.f_frsize) >> 20
