@@ -54,6 +54,8 @@ def remove_upgrade_efi_entry():
     except CalledProcessError:
         api.current_logger().warning('Unable to remove Leapp upgrade efi files.')
 
+    # Reload EFI info, boot order has changed as Leapp upgrade efi entry was removed
+    bootloader_info = get_workaround_efi_info()
     original_boot_number = bootloader_info.original_entry.boot_number
     run(['/usr/sbin/efibootmgr', '--bootnext', original_boot_number])
 
