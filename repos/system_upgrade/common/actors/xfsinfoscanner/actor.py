@@ -1,6 +1,6 @@
 from leapp.actors import Actor
 from leapp.libraries.actor.xfsinfoscanner import scan_xfs
-from leapp.models import StorageInfo, XFSPresence
+from leapp.models import StorageInfo, XFSPresence, XFSInfoFacts
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 
@@ -12,11 +12,14 @@ class XFSInfoScanner(Actor):
     using ftype = 0. The actor will produce a message with the findings.
     It will contain a list of all XFS mountpoints with ftype = 0 so that those mountpoints can be handled appropriately
     for the overlayfs that is going to be created.
+
     """
+
+    #FIXME: add XFSInfoFacts to description
 
     name = 'xfs_info_scanner'
     consumes = (StorageInfo,)
-    produces = (XFSPresence,)
+    produces = (XFSPresence, XFSInfoFacts,)
     tags = (FactsPhaseTag, IPUWorkflowTag,)
 
     def process(self):
