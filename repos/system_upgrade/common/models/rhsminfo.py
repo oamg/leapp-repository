@@ -20,3 +20,10 @@ class RHSMInfo(Model):
     """ Product certificates that are currently installed on the system. """
     sca_detected = fields.Boolean(default=False)
     """ Info about whether SCA manifest was used or not. """
+    is_registered = fields.Boolean(default=False)
+    """
+    Whether the system is registered through subscription-manager
+
+    Note that this doesn't differentiate between a registration to an SKU or
+    SCA organization.
+    """

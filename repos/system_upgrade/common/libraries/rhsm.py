@@ -20,6 +20,15 @@ _DEFAULT_RHSM_REPOFILE = '/etc/yum.repos.d/redhat.repo'
 
 SCA_TEXT = "Content Access Mode is set to Simple Content Access"
 
+_DEFAULT_EXCEPTION_HINT = (
+    'Please ensure you have a valid RHEL subscription and your network is up.'
+    ' If you are using proxy for Red Hat subscription-manager, please make sure'
+    ' it is specified inside the /etc/rhsm/rhsm.conf file.'
+    ' Or use the --no-rhsm option when running leapp, if you do not want to'
+    ' use subscription-manager for the in-place upgrade and you want to'
+    ' deliver all target repositories by yourself or using RHUI on public cloud.'
+)
+
 
 def _rhsm_retry(max_attempts, sleep=None):
     """
@@ -72,20 +81,12 @@ def _handle_rhsm_exceptions(hint=None):
             }
         )
     except CalledProcessError as e:
-        _def_hint = (
-            'Please ensure you have a valid RHEL subscription and your network is up.'
-            ' If you are using proxy for Red Hat subscription-manager, please make sure'
-            ' it is specified inside the /etc/rhsm/rhsm.conf file.'
-            ' Or use the --no-rhsm option when running leapp, if you do not want to'
-            ' use subscription-manager for the in-place upgrade and you want to'
-            ' deliver all target repositories by yourself or using RHUI on public cloud.'
-        )
         raise StopActorExecutionError(
             message='A subscription-manager command failed to execute',
             details={
                 'details': str(e),
                 'stderr': e.stderr,
-                'hint': hint or _def_hint,
+                'hint': hint or _DEFAULT_EXCEPTION_HINT,
                 'link': 'https://access.redhat.com/solutions/6138372'
             }
         )
@@ -383,6 +384,40 @@ def switch_certificate(context, rhsm_info, cert_path):
             context.copy_to(cert_path, os.path.join(path, os.path.basename(cert_path)))
 
 
+def is_rhsm_registered(context):
+    """
+    Check whether the system is registered with Red Hat Subscription Manager
+
+    Note that this doesn't differentiate between SCA and SKU access.
+    If subscription-manager isn't installed it's assumed the system is not
+    registered and false is returned.
+
+    :param context: An instance of a mounting.IsolatedActions class
+    :type context: mounting.IsolatedActions class
+    :return: True if it is registered, false otherwise
+    :rtype: bool
+    """
+    try:
+        result = context.call(['subscription-manager', 'identity'], checked=False)
+    except OSError as e:
+        api.current_logger().error('Failed to execute subscription-manager executable: {}'.format(e))
+        return False
+    if result['exit_code'] == 0:
+        return True
+    if result['exit_code'] == 1:
+        return False
+    raise StopActorExecutionError(
+        message='A subscription-manager command failed to execute',
+        details={
+            'details': 'Command \'subscription-manager identity\' exited with exit code: {}'.format(
+                result["exit_code"]
+            ),
+            'hint': _DEFAULT_EXCEPTION_HINT,
+            'link': 'https://access.redhat.com/solutions/6138372'  # TODO check link
+        }
+    )
+
+
 @with_rhsm
 def scan_rhsm_info(context):
     """
@@ -402,4 +437,5 @@ def scan_rhsm_info(context):
     info.release = get_release(context)
     info.existing_product_certificates.extend(get_existing_product_certificates(context))
     info.sca_detected = is_manifest_sca(context)
+    info.is_registered = is_rhsm_registered(context)
     return info
