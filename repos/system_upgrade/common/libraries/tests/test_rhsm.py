@@ -19,6 +19,7 @@ CMD_RHSM_LIST_CONSUMED = ('subscription-manager', 'list', '--consumed')
 CMD_RHSM_STATUS = ('subscription-manager', 'status')
 CMD_RHSM_RELEASE = ('subscription-manager', 'release')
 CMD_RHSM_LIST_ENABLED_REPOS = ('subscription-manager', 'repos', '--list-enabled')
+CMD_RHSM_IDENTITY = ('subscription-manager', 'identity')
 
 RHSM_STATUS_OUTPUT_NOSCA = '''
 +-------------------------------------------+
@@ -79,11 +80,13 @@ class IsolatedActionsMocked(object):
             tuple(cmd),  # Cast to tuple, as list is not hashable
             self.call_return)
 
-    def add_mocked_command_call_with_stdout(self, cmd, stdout):
+    def add_mocked_command_call(self, cmd, stdout=None, stderr=None, exit_code=0):
         # We cast `cmd` from list to tuple, as a list cannot be hashed
         self.mocked_command_call_outputs[tuple(cmd)] = {
             'stdout': stdout,
-            'stderr': None}
+            'stderr': stderr,
+            'exit_code': exit_code
+        }
 
     def full_path(self, path):
         return path
@@ -203,7 +206,7 @@ def test_inhibit_on_duplicate_repos_no_dups(monkeypatch):
 
 def test_sku_listing(monkeypatch, actor_mocked, context_mocked):
     """Tests whether the rhsm library can obtain used SKUs correctly."""
-    context_mocked.add_mocked_command_call_with_stdout(CMD_RHSM_LIST_CONSUMED, 'SKU: 598339696910')
+    context_mocked.add_mocked_command_call(CMD_RHSM_LIST_CONSUMED, 'SKU: 598339696910')
 
     attached_skus = rhsm.get_attached_skus(context_mocked)
 
@@ -234,7 +237,7 @@ def test_scanrhsminfo_with_skip_rhsm(monkeypatch, context_mocked):
 
 def test_get_release(monkeypatch, actor_mocked, context_mocked):
     """Tests whether the library correctly retrieves release from RHSM."""
-    context_mocked.add_mocked_command_call_with_stdout(CMD_RHSM_RELEASE, 'Release: 7.9')
+    context_mocked.add_mocked_command_call(CMD_RHSM_RELEASE, 'Release: 7.9')
 
     release = rhsm.get_release(context_mocked)
 
@@ -245,7 +248,7 @@ def test_get_release(monkeypatch, actor_mocked, context_mocked):
 def test_get_release_with_release_not_set(monkeypatch, actor_mocked, context_mocked):
     """Tests whether the library does not retrieve release information when the release is not set."""
     # Test whether no release is detected correctly too
-    context_mocked.add_mocked_command_call_with_stdout(CMD_RHSM_RELEASE, 'Release not set')
+    context_mocked.add_mocked_command_call(CMD_RHSM_RELEASE, 'Release not set')
 
     release = rhsm.get_release(context_mocked)
 
@@ -255,7 +258,7 @@ def test_get_release_with_release_not_set(monkeypatch, actor_mocked, context_moc
 
 def test_is_manifest_sca_on_nonsca_system(monkeypatch, actor_mocked, context_mocked):
     """Tests whether the library obtains the SCA information correctly from a non-SCA system."""
-    context_mocked.add_mocked_command_call_with_stdout(CMD_RHSM_STATUS, RHSM_STATUS_OUTPUT_NOSCA)
+    context_mocked.add_mocked_command_call(CMD_RHSM_STATUS, RHSM_STATUS_OUTPUT_NOSCA)
 
     is_sca = rhsm.is_manifest_sca(context_mocked)
     assert not is_sca, 'SCA was detected on a non-SCA system.'
@@ -263,7 +266,7 @@ def test_is_manifest_sca_on_nonsca_system(monkeypatch, actor_mocked, context_moc
 
 def test_is_manifest_sca_on_sca_system(monkeypatch, actor_mocked, context_mocked):
     """Tests whether the library obtains the SCA information from SCA system correctly."""
-    context_mocked.add_mocked_command_call_with_stdout(CMD_RHSM_STATUS, RHSM_STATUS_OUTPUT_SCA)
+    context_mocked.add_mocked_command_call(CMD_RHSM_STATUS, RHSM_STATUS_OUTPUT_SCA)
 
     is_sca = rhsm.is_manifest_sca(context_mocked)
     assert is_sca, 'Failed to detected SCA on a SCA system.'
@@ -286,7 +289,7 @@ def test_get_enabled_repo_ids(monkeypatch, actor_mocked, context_mocked):
         rhsm_output_fragment += '\n'
         rhsm_list_enabled_output += rhsm_output_fragment
 
-    context_mocked.add_mocked_command_call_with_stdout(CMD_RHSM_LIST_ENABLED_REPOS, rhsm_list_enabled_output)
+    context_mocked.add_mocked_command_call(CMD_RHSM_LIST_ENABLED_REPOS, rhsm_list_enabled_output)
 
     enabled_repo_ids = rhsm.get_enabled_repo_ids(context_mocked)
 
@@ -385,3 +388,24 @@ def test_get_existing_product_certificates_missing_cert_directory(monkeypatch, a
     assert len(existing_product_certificates) == 1, fail_description
     fail_description = 'Library failed to identify certificate from mocked outputs.'
     assert existing_product_certificates[0] == '/etc/pki/product-default/cert', fail_description
+
+
+def test_is_registered_on_registered_system(context_mocked):
+    """Tests whether the library obtains the registraton status correctly from a registered system."""
+    context_mocked.add_mocked_command_call(CMD_RHSM_IDENTITY, exit_code=0)
+    assert rhsm.is_rhsm_registered(context_mocked)
+
+
+def test_is_registered_on_unregistered_system(context_mocked):
+    """Tests whether the library obtains the registraton status correctly from an unregistered system."""
+    context_mocked.add_mocked_command_call(CMD_RHSM_IDENTITY, exit_code=1)
+    assert not rhsm.is_rhsm_registered(context_mocked)
+
+
+def test_is_registered_error(context_mocked):
+    """Tests whether the is_rhsm_registered function correctly handles command errors"""
+    context_mocked.add_mocked_command_call(CMD_RHSM_IDENTITY, exit_code=2)
+    with pytest.raises(StopActorExecutionError) as err:
+        rhsm.is_rhsm_registered(context_mocked)
+
+    assert 'A subscription-manager command failed to execute' in str(err)
