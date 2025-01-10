@@ -3,7 +3,7 @@ The very core of a RHEL upgrade process is installing packages of the target
 system. When these packages are built, however, they expect that they will
 be installed on a target system not on some old RHEL with an old package
 manager. Therefore, they can use some of the newer features of RPM such as rich
-dependencies, etc. Therefore, attempting to use RHEL7 RPM stack to install RHEL8
+dependencies, etc. Therefore, attempting to use RHEL 7 RPM stack to install RHEL 8
 RPMs might not work at all.
 
 Therefore, leapp downloads and sets up a very bare-bones installation of the target
@@ -21,7 +21,7 @@ of the source system such as the repositories defined in `/etc/yum.repos.d`
 can be problematic, as the tool doing these temporary modifications needs to
 gracefully roll back these changes even in the presence of unforeseen problems.
 Speaking plainly, errors in leapp and unforeseen external commands cannot result
-in the source system loosing repository access after a failed attempted upgrade.
+in the source system losing repository access after a failed attempted upgrade.
 Therefore, leapp uses an [OverlayFS](https://www.kernel.org/doc/html/latest/filesystems/overlayfs.html)
 filesystem with the lower `lowerdir` being source system's `/`. This filesystem
 is mounted at `/var/lib/leapp/scratch/mounts/root_/system_overlay`.
@@ -42,9 +42,9 @@ uses the root filesystem present at `/var/lib/leapp/scratch/mounts/root_/system_
 is used as the root of the container using
 the `-D` option.
 
-#### An important detail in how is the Scrach container set up
+#### An important detail in how is the Scratch container set up
 If we attempt to perform the actual download and installation of the target userspace,
-having the scratch container set up as described above, as 
+having the scratch container set up as described above, as
 ```
 dnf install --installroot /var/lib/leapp/elXuserspace dnf
 ```
@@ -54,12 +54,12 @@ different effect than we expected. Since we are in an overlay, after the command
 finishes, there will be no `/var/lib/leapp/elXuserspace` (from the perspective of the host/source system)
 since all modifications
 are being written to overlay's upper directories. Therefore, we have to perform an
-additional bindmount of source system's `/var/lib/leapp/elXuserspace` 
+additional bindmount of source system's `/var/lib/leapp/elXuserspace`
 to `/var/lib/leapp/scratch/installroot`. Therefore, if you look at leapp's logs, you will see a slightly
 mysterious command that installs target RHEL's dnf into `/installroot`.
 
 #### A comprehensive example of what is mounted where in the scratch container
-Consider a source system with the following file system table: 
+Consider a source system with the following file system table:
 
 | Device      | Mounted at |
 |--------     |--------    |
@@ -74,7 +74,7 @@ Leapp would create the scratch container as follows:
 | `/`                      | `/`                 | `/var/lib/leapp/scratch/mounts/root_/upper`     | `/var/lib/leapp/scratch/mounts/root_/work`     |
 | `/boot`                  | `/boot`             | `/var/lib/leapp/scratch/mounts/root_boot/upper` | `/var/lib/leapp/scratch/mounts/root_boot/work` |
 | `/var`                   | `/var`              | `/var/lib/leapp/scratch/mounts/root_var/upper`  | `/var/lib/leapp/scratch/mounts/root_var/work`  |
- 
+
 ### Target repositories and how are they obtained
 > This section is currently under construction
 
