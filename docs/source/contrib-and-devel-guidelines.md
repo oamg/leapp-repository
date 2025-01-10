@@ -24,7 +24,7 @@ code, i.e., the code has been previously executed.
 provided by the os`/`shutil` libraries that are used by your actor whenever possible.
 
 ### Python2/3 compatibility
-**Leapp is no longer released for RHEL 7, and thus, it is no longer neccessary to maintain
+**Leapp is no longer released for RHEL 7, and thus, it is no longer necessary to maintain
 Python2 compatibility in _common_ actors.**
 
 Leapp allows users to upgrade from RHEL 7.9 (with Python 2.7) to newer RHEL releases.
@@ -33,7 +33,7 @@ facilitating common functionality are shared between upgrade paths, one needs to
 common actors in way that is compatible with both, Python 2 and Python 3. There are a lot
 of subtle changes in Python's standard library, however, there is typically no need to
 check everything as when submitting a PR, end-to-end test will be run on a representative
-subset of the supported upgrade paths. Typically, any incompatibilities would be 
+subset of the supported upgrade paths. Typically, any incompatibilities would be
 discovered either prior, or during execution of these tests.
 
 ### Reading environmental variables
@@ -49,21 +49,22 @@ Leapp provides the`stdlib.run` function to execute external commands in
 its standard library. This function exposes a simple interface and ensures
 that the calls are properly logged into the (pre)upgrade logs. Calling the function
 might raise `CalledProcessError` (if the command exits with nonzero exit code; this
-behavour can be disabled). Calling the function can also rise `OSError`, if the
+behaviour can be disabled). Calling the function can also rise `OSError`, if the
 binary is not present, or if the file is not executable at all. The
 `CalledProcessError` needs to be always handled. Handling `OSError` is not required,
 given that the command is guaranteed to exist and be executable.
 
 ## Commits and pull requests
 When your pull-request is ready to be reviewed, every commit needs to include
-a title and a body contining a description of the change---what problem is
+a titale and a body continuing a description of the change---what problem is
 being solved and how. The end of the commit body should contain Jira issue
 number (if applicable), GitHub issue that is being fixed, etc.:
 ```
   .... description ....
   Jira-ref: <ticket-number>
 ```
-The granularity of commits depends strongly on the probem being solved. However,
+
+The granularity of commits depends strongly on the problem being solved. However,
 a large number of small commits is typically undesired. If possible, aim a
 Git history such that commits can be reverted individually, without requiring reverting
 numerous other dependent commits in order to get the `main` branch into a working state.
