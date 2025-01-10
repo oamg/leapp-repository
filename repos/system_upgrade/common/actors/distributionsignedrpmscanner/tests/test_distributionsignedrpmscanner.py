@@ -11,7 +11,7 @@ from leapp.models import (
     Model,
     OSRelease,
     RPM,
-    ThirdPartyRPM,
+    ThirdPartyRPM
 )
 
 RH_PACKAGER = 'Red Hat, Inc. <http://bugzilla.redhat.com/bugzilla>'
