@@ -1,11 +1,6 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import distributionsignedrpmscanner
-from leapp.models import (
-    DistributionSignedRPM,
-    InstalledRPM,
-    InstalledUnsignedRPM,
-    ThirdPartyRPM,
-)
+from leapp.models import DistributionSignedRPM, InstalledRPM, InstalledUnsignedRPM, ThirdPartyRPM
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 from leapp.utils.deprecation import suppress_deprecation
 

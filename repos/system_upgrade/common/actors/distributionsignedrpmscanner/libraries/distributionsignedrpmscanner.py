@@ -2,12 +2,7 @@ from leapp.libraries.common import rhui
 from leapp.libraries.common.config import get_env
 from leapp.libraries.common.distro import get_distribution_data
 from leapp.libraries.stdlib import api
-from leapp.models import (
-    DistributionSignedRPM,
-    InstalledRPM,
-    InstalledUnsignedRPM,
-    ThirdPartyRPM,
-)
+from leapp.models import DistributionSignedRPM, InstalledRPM, InstalledUnsignedRPM, ThirdPartyRPM
 from leapp.utils.deprecation import suppress_deprecation
 
 
