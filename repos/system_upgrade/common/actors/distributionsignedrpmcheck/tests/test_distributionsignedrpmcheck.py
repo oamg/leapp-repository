@@ -1,5 +1,5 @@
 from leapp import reporting
-from leapp.libraries.actor import redhatsignedrpmcheck
+from leapp.libraries.actor import distributionsignedrpmcheck
 from leapp.libraries.common.testutils import create_report_mocked, produce_mocked
 from leapp.libraries.stdlib import api
 from leapp.models import InstalledUnsignedRPM, RPM
@@ -16,9 +16,9 @@ def test_actor_execution_without_unsigned_data(monkeypatch):
     monkeypatch.setattr(api, "show_message", lambda x: True)
     monkeypatch.setattr(reporting, "create_report", create_report_mocked())
 
-    packages = redhatsignedrpmcheck.get_unsigned_packages()
+    packages = distributionsignedrpmcheck.get_unsigned_packages()
     assert not packages
-    redhatsignedrpmcheck.generate_report(packages)
+    distributionsignedrpmcheck.generate_report(packages)
     assert reporting.create_report.called == 0
 
 
@@ -40,8 +40,8 @@ def test_actor_execution_with_unsigned_data(monkeypatch):
     monkeypatch.setattr(api, "show_message", lambda x: True)
     monkeypatch.setattr(reporting, "create_report", create_report_mocked())
 
-    packages = redhatsignedrpmcheck.get_unsigned_packages()
+    packages = distributionsignedrpmcheck.get_unsigned_packages()
     assert len(packages) == 4
-    redhatsignedrpmcheck.generate_report(packages)
+    distributionsignedrpmcheck.generate_report(packages)
     assert reporting.create_report.called == 1
     assert 'Packages not signed by Red Hat found' in reporting.create_report.report_fields['title']
