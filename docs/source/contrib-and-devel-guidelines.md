@@ -56,7 +56,7 @@ given that the command is guaranteed to exist and be executable.
 
 ## Commits and pull requests
 When your pull-request is ready to be reviewed, every commit needs to include
-a titale and a body continuing a description of the change---what problem is
+a title and a body continuing a description of the change --- what problem is
 being solved and how. The end of the commit body should contain Jira issue
 number (if applicable), GitHub issue that is being fixed, etc.:
 ```
