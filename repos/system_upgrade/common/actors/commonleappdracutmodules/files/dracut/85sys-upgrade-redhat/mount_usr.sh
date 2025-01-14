@@ -107,7 +107,7 @@ try_to_mount_usr() {
 
   # In case we have the LVM command available try make it activate all partitions
   if command -v lvm 2>/dev/null 1>/dev/null; then
-      lvm vgchange -a y || {
+      lvm vgchange --sysinit -a y || {
           warn "Detected problem when tried to activate LVM VG."
           if [ "$_last_attempt" != "true" ]; then
               # this is not last execution, retry
