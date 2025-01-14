@@ -64,17 +64,41 @@ def get_os_release(path):
                                       details={'details': str(e)})
 
 
+def check_target_major_version(curr_version, target_version):
+    required_major_version = int(curr_version.split('.')[0]) + 1
+    specified_major_version = int(target_version.split('.')[0])
+    if specified_major_version != required_major_version:
+        raise StopActorExecutionError(
+            message='Specified invalid major version of the target system',
+            details={
+                'Specified target major version': str(specified_major_version),
+                'Required target major version': str(required_major_version),
+                'hint': (
+                    'The in-place upgrade is possible only to the next system'
+                    ' major version: {ver}. Specify a valid version of the'
+                    ' target system when running leapp.'
+                    ' For more information about supported in-place upgrade paths'
+                    ' follow: https://access.redhat.com/articles/4263361'
+                    .format(ver=required_major_version)
+                )
+            }
+        )
+
+
 def produce_ipu_config(actor):
     flavour = os.environ.get('LEAPP_UPGRADE_PATH_FLAVOUR')
     target_version = os.environ.get('LEAPP_UPGRADE_PATH_TARGET_RELEASE')
     os_release = get_os_release('/etc/os-release')
+    source_version = os_release.version_id
+
+    check_target_major_version(source_version, target_version)
 
     actor.produce(IPUConfig(
         leapp_env_vars=get_env_vars(),
         os_release=os_release,
         architecture=platform.machine(),
         version=Version(
-            source=os_release.version_id,
+            source=source_version,
             target=target_version
         ),
         kernel=get_booted_kernel(),

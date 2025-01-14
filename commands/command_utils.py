@@ -28,7 +28,10 @@ def check_version(version):
     :return: release tuple
     """
     if not re.match(VERSION_REGEX, version):
-        raise CommandError('Unexpected format of target version: {}'.format(version))
+        raise CommandError(
+            "Unexpected format of target version: {}. "
+            "The required format is 'X.Y' (major and minor version).".format(version)
+        )
     return version.split('.')
 
 
@@ -126,7 +129,6 @@ def vet_upgrade_path(args):
     Make sure the user requested upgrade_path is a supported one.
     If LEAPP_DEVEL_TARGET_RELEASE is set then it's value is not vetted against upgrade_paths_map but used as is.
 
-    :raises: `CommandError` if the specified upgrade_path is not supported
     :return: `tuple` (target_release, flavor)
     """
     flavor = get_upgrade_flavour()
@@ -135,13 +137,6 @@ def vet_upgrade_path(args):
         check_version(env_version_override)
         return (env_version_override, flavor)
     target_release = args.target or get_target_version(flavor)
-    supported_target_versions = get_supported_target_versions(flavor)
-    if target_release not in supported_target_versions:
-        raise CommandError(
-                "Upgrade to {to} for {flavor} upgrade path is not supported, possible choices are {choices}".format(
-                    to=target_release,
-                    flavor=flavor,
-                    choices=','.join(supported_target_versions)))
     return (target_release, flavor)
 
 
