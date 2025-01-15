@@ -14,7 +14,7 @@
 ## Why is the leapp-repository project separated from Leapp?
 
 It's similar relationship as you can find between Ansible and ansible playbooks.
-Having ansible does not mean that it configure all systems as people want.
+Having Ansible does not mean that it configure all systems as people want.
 People have to create playbooks to define how systems should be configured.
 
 With leapp and leapp-repository it's same. The leapp project covers only the
@@ -23,7 +23,7 @@ with the development and testing. The framework has been supposed to be used
 for multiple purposes. In-Place Upgrades have been just one of them.
 
 Even when we work on both projects, having the work on framework separated
-from leapp repositories containing number of actors simplifies the maintainance
+from leapp repositories containing number of actors simplifies the maintenance
 of the project.
 
 ## What is an actor and what does it do?
@@ -78,7 +78,7 @@ Execution time:
 
 ## Are there some actions that are either forbidden or not recommended to be done in actors?
 
-There are several, covered also in contribution guideline, but highligh these few:
+There are several, covered also in contribution guideline, but highlight these few:
 1. **Do not alter the system in any way during so called preupgrade phases.**
 Even then we want to postpone as many changes as possible after the `LateTestsPhase`
 phase. Any deviation from this rule must be well justified.
@@ -97,5 +97,5 @@ the package, and try to not replace them again. If it is not that case, contact
 vendor of the package for support.
 
 Note that in public space there are number of various versions of these files
-and we are reponsible only for files that we distribute together with our code.
+and we are responsible only for files that we distribute together with our code.
 
