@@ -25,7 +25,7 @@ class CheckNetworkDeprecations9to10(Actor):
         summary = ('NetworkManager is configured to use the "dhclient" DHCP module.'
                    ' In Red Hat Enterprise Linux 10, this setting will be ignored'
                    ' along with any dhcp-client specific configuration.')
-        remediation = ('Remove "dhcp=internal" line from "[main]" section from all'
+        remediation = ('Remove "dhcp=dhclient" line from "[main]" section from all'
                        ' configuration files in "/etc/NetworkManager". Review'
                        ' configuration in "/etc/dhcp", which will be ignored.')
         reporting.create_report([
