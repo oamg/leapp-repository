@@ -35,8 +35,8 @@ def remove_upgrade_efi_entry():
 
     bootloader_info = get_workaround_efi_info()
 
-    _copy_grub_files(['grubenv', 'grub.cfg'], ['user.cfg'])
-    _link_grubenv_to_rhel_entry()
+    # _copy_grub_files(['grubenv', 'grub.cfg'], ['user.cfg'])
+    # _link_grubenv_to_rhel_entry()
 
     upgrade_boot_number = bootloader_info.upgrade_entry.boot_number
     try:

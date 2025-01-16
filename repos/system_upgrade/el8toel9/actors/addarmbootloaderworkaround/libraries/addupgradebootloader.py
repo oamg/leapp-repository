@@ -6,6 +6,7 @@ from leapp.libraries.common import mounting
 from leapp.libraries.common.grub import (
     canonical_path_to_efi_format,
     EFIBootInfo,
+    get_boot_partition,
     get_device_number,
     get_efi_device,
     get_efi_partition,
@@ -25,6 +26,15 @@ LEAPP_EFIDIR_CANONICAL_PATH = os.path.join(EFI_MOUNTPOINT, 'EFI/leapp/')
 RHEL_EFIDIR_CANONICAL_PATH = os.path.join(EFI_MOUNTPOINT, 'EFI/redhat/')
 
 CONTAINER_DOWNLOAD_DIR = '/tmp_pkg_download_dir'
+
+LEAPP_GRUB2_CFG_TEMPLATE = 'grub2_config_template'
+"""
+Our grub configuration file template that is used in case the system's grubcfg would not load our grubenv.
+
+The template contains placeholders named with LEAPP_*, that need to be replaced in order to
+obtain a valid config.
+
+"""
 
 
 def _copy_file(src_path, dst_path):
@@ -49,11 +59,14 @@ def process():
         context.copytree_from(RHEL_EFIDIR_CANONICAL_PATH, LEAPP_EFIDIR_CANONICAL_PATH)
 
         _copy_grub_files(['grubenv', 'grub.cfg'], ['user.cfg'])
-        _link_grubenv_to_upgrade_entry()
 
         efibootinfo = EFIBootInfo()
         current_boot_entry = efibootinfo.entries[efibootinfo.current_bootnum]
         upgrade_boot_entry = _add_upgrade_boot_entry(efibootinfo)
+
+        leapp_efi_grubenv = os.path.join(EFI_MOUNTPOINT, LEAPP_EFIDIR_CANONICAL_PATH, 'grubenv')
+        patch_efi_redhat_grubcfg_to_load_correct_grubenv()
+
         _set_bootnext(upgrade_boot_entry.boot_number)
 
         efibootentry_fields = ['boot_number', 'label', 'active', 'efi_bin_source']
@@ -183,3 +196,90 @@ def _set_bootnext(boot_number):
         run(['/usr/sbin/efibootmgr', '--bootnext', boot_number])
     except CalledProcessError:
         raise StopActorExecutionError('Could not set boot entry {} as BootNext.'.format(boot_number))
+
+
+def _notify_user_to_check_grub2_cfg():
+    # Or maybe rather ask a question in a dialog? But this is rare, so maybe continuing is fine.
+    pass
+
+
+def _will_grubcfg_read_our_grubenv(grubcfg_path):
+    with open(grubcfg_path) as grubcfg:
+        config_lines = grubcfg.readlines()
+
+    will_read = False
+    for line in config_lines:
+        if line.strip() == 'load_env -f ${config_directory}/grubenv':
+            will_read = True
+            break
+
+    return will_read
+
+
+def _get_boot_device_uuid():
+    boot_device = get_boot_partition()
+    try:
+        raw_device_info_lines = run(['blkid', boot_device], split=True)['stdout']
+        raw_device_info = raw_device_info_lines[0]  # There is only 1 output line
+
+        uuid_needle_start_pos = raw_device_info.index('UUID')
+        raw_device_info = raw_device_info[uuid_needle_start_pos:]  # results in: "UUID="..." ....
+
+        uuid = raw_device_info.split(' ', 1)[0]  # UUID cannot contain spaces
+        uuid = uuid[len('UUID='):]  # Remove UUID=
+        uuid = uuid.strip('"')
+        return uuid
+
+    except CalledProcessError as error:
+        details = {'details': 'blkid failed with error: {}'.format(error)}
+        raise StopActorExecutionError('Failed to obtain UUID of /boot partition', details=details)
+
+
+def _prepare_config_contents():
+    config_template_path = api.get_actor_file_path(LEAPP_GRUB2_CFG_TEMPLATE)
+    with open(config_template_path) as config_template_handle:
+        config_template = config_template_handle.read()
+
+    substitutions = {
+        'LEAPP_BOOT_UUID': _get_boot_device_uuid()
+    }
+
+    api.current_logger().debug(
+        'Applying the following substitution map to grub config template: {}'.format(substitutions)
+    )
+
+    for placeholder, placeholder_value in substitutions.items():
+        config_template = config_template.replace(placeholder, placeholder_value)
+
+    return config_template
+
+
+def _write_config(config_path, config_contents):
+    with open(config_path, 'w') as grub_cfg_handle:
+        grub_cfg_handle.write(config_contents)
+
+
+def patch_efi_redhat_grubcfg_to_load_correct_grubenv():
+    """
+    Replaces /boot/efi/EFI/redhat/grub2.cfg with a patched grub2.cfg shipped in leapp.
+
+    The grub2.cfg shipped on some AWS images omits the section that loads grubenv different
+    EFI entries. Thus, we need to replace it with our own that will load grubenv shipped
+    of our UEFI boot entry.
+    """
+    leapp_grub_cfg_path = os.path.join(EFI_MOUNTPOINT, LEAPP_EFIDIR_CANONICAL_PATH, 'grub.cfg')
+
+    if not os.path.isfile(leapp_grub_cfg_path):
+        msg = 'The file {} does not exists, cannot check whether bootloader is configured properly.'
+        raise StopActorExecutionError(msg.format(leapp_grub_cfg_path))
+
+    if _will_grubcfg_read_our_grubenv(leapp_grub_cfg_path):
+        api.current_logger().debug('The current grub.cfg will read our grubenv without any modifications.')
+        return
+
+    api.current_logger().info('Current grub2.cfg is likely faulty (would not read our grubenv), patching.')
+
+    config_contents = _prepare_config_contents()
+    _write_config(leapp_grub_cfg_path, config_contents)
+
+    api.current_logger().info('New upgrade grub.cfg has been written to {}'.format(leapp_grub_cfg_path))
