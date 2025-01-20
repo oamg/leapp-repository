@@ -310,7 +310,7 @@ def test_process(monkeypatch):
     expected = ArmWorkaroundEFIBootloaderInfo(
             original_entry=EFIBootEntry(**{f: getattr(TEST_RHEL_EFI_ENTRY, f) for f in efibootentry_fields}),
             upgrade_entry=EFIBootEntry(**{f: getattr(TEST_UPGRADE_EFI_ENTRY, f) for f in efibootentry_fields}),
-            upgrade_bls_dir='/boot/upgrade-loader/entries',
+            upgrade_bls_dir=addupgradebootloader.UPGRADE_BLS_DIR,
             upgrade_entry_efi_path='/boot/efi/EFI/leapp/',
         )
     actual = api.produce.model_instances[0]
@@ -323,6 +323,7 @@ def test_patch_grubcfg(is_config_ok, monkeypatch):
     expected_grubcfg_path = os.path.join(addupgradebootloader.EFI_MOUNTPOINT,
                                          addupgradebootloader.LEAPP_EFIDIR_CANONICAL_PATH,
                                          'grub.cfg')
+
     def isfile_mocked(path):
         assert expected_grubcfg_path == path
         return True

@@ -54,6 +54,8 @@ def remove_upgrade_efi_entry():
     except CalledProcessError:
         api.current_logger().warning('Unable to remove Leapp upgrade efi files.')
 
+    _remove_upgrade_blsdir(bootloader_info)
+
     original_boot_number = bootloader_info.original_entry.boot_number
     run(['/usr/sbin/efibootmgr', '--bootnext', original_boot_number])
 
@@ -82,7 +84,7 @@ def _copy_file(src_path, dst_path):
 
 def _copy_grub_files(required, optional):
     """
-    Copy grub files from redhat/ dir to the /boot/efi/EFI/leapp/ dir.
+    Copy grub files from /boot/efi/EFI/leapp/ dir to the /boot/efi/EFI/redhat/ dir.
     """
 
     all_files = required + optional
@@ -98,3 +100,13 @@ def _copy_grub_files(required, optional):
             continue
 
         _copy_file(src_path, dst_path)
+
+
+def _remove_upgrade_blsdir(bootloader_info):
+    api.current_logger().debug('Removing upgrade BLS directory: {}'.format(bootloader_info.upgrade_bls_dir))
+    try:
+        shutil.rmtree(bootloader_info.upgrade_bls_dir)
+    except OSError as error:
+        # I tried, no can do at this point
+        msg = 'Failed to remove upgrade BLS directory: {} with error {}'
+        api.current_logger().debug(msg.format(bootloader_info.upgrade_bls_dir, error))

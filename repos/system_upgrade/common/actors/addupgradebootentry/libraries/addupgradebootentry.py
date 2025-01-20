@@ -1,11 +1,13 @@
 import itertools
 import os
 import re
+import shutil
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common.config import architecture, get_env
 from leapp.libraries.stdlib import api, CalledProcessError, run
 from leapp.models import (
+    ArmWorkaroundEFIBootloaderInfo,
     BootContent,
     KernelCmdline,
     KernelCmdlineArg,
@@ -197,6 +199,8 @@ def add_boot_entry(configs=None):
            details={'details': '{}: {}'.format(str(e), e.stderr)}
         )
 
+    apply_arm_specific_modifications()
+
 
 def _remove_old_upgrade_boot_entry(kernel_dst_path, configs=None):
     """
@@ -357,3 +361,96 @@ def construct_cmdline_args_for_livemode():
     api.current_logger().info('The use of live mode image implies the following cmdline args: %s', args)
 
     return args
+
+
+def _list_grubenv_variables():
+    try:
+        output_lines = run(['grub2-editenv', 'list'], split=True)['stdout']
+    except CalledProcessError:
+        raise StopActorExecutionError('Failed to list grubenv variables used by the system')
+
+    vars_with_values = {}
+    for line in output_lines:
+        var_with_value = line.split('=', 1)
+        if len(var_with_value) <= 1:
+            api.current_logger().warning(
+                'Skipping \'{}\' in grub2-editenv output, the line does not have the form <var>=<value>'
+            )
+            continue
+        vars_with_values[var_with_value[0]] = var_with_value[1]
+
+    return vars_with_values
+
+
+def apply_arm_specific_modifications():
+    arm_efi_info = next(api.consume(ArmWorkaroundEFIBootloaderInfo), None)
+    if not arm_efi_info:
+        return
+
+    modify_our_grubenv_to_have_separate_blsdir(arm_efi_info)
+
+
+def modify_our_grubenv_to_have_separate_blsdir(efi_info):
+    """ Create a new blsdir for the upgrade entry if using a separate EFI entry. """
+    leapp_efi_grubenv_path = os.path.join(efi_info.upgrade_entry_efi_path, 'grubenv')
+
+    api.current_logger().debug(
+        'Setting up separate blsdir for the upgrade using grubenv: {}'.format(leapp_efi_grubenv_path)
+    )
+
+    grubenv_vars = _list_grubenv_variables()
+    system_bls_dir = grubenv_vars.get('blsdir', '/loader/entries').lstrip('/')
+
+    # BLS dir is relative to /boot, prepend it so we can list its contents
+    system_bls_dir = os.path.join('/boot', system_bls_dir)
+
+    # Find our loader entry
+    try:
+        bls_entries = os.listdir(system_bls_dir)
+    except IOError:  # Technically, we want FileNotFoundError, but that is only Python3.3+, so this is fine
+        details = {
+            'details': 'Failed to list {}.'.format(system_bls_dir)
+        }
+        raise StopActorExecutionError('Failed to set up bootloader for the upgrade.', details=details)
+
+    leapp_bls_entry = None
+    for bls_entry in bls_entries:
+        if bls_entry.endswith('upgrade.aarch64.conf'):
+            leapp_bls_entry = bls_entry
+            break
+
+    if not leapp_bls_entry:
+        details = {
+            'details': 'Failed to identify BLS entry that belongs to leapp in {}'.format(system_bls_dir)
+        }
+        raise StopActorExecutionError('Failed to set up bootloader for the upgrade.')
+
+    # The 'blsdir' grubenv variable specifies location of bls directory relative to /boot
+    if os.path.exists(efi_info.upgrade_bls_dir):
+        msg = 'The {} directory exists, probably a left-over from previous executions. Removing.'
+        api.current_logger().debug(msg.format(efi_info.upgrade_bls_dir))
+        shutil.rmtree(efi_info.upgrade_bls_dir)
+
+    os.makedirs(efi_info.upgrade_bls_dir)
+    api.current_logger().debug('Successfully created upgrade BLS directory: {}'.format(efi_info.upgrade_bls_dir))
+
+    leapp_bls_entry_fullpath = os.path.join(system_bls_dir, leapp_bls_entry)
+    bls_entry_dst = os.path.join(efi_info.upgrade_bls_dir, leapp_bls_entry)
+    api.current_logger().debug(
+        'Moving leapp\'s BLS entry ({}) into a separate BLS dir located at {}'.format(
+            leapp_bls_entry, efi_info.upgrade_bls_dir
+        )
+    )
+
+    shutil.move(leapp_bls_entry_fullpath, bls_entry_dst)
+
+    upgrade_bls_dir_rel_to_boot = efi_info.upgrade_bls_dir[len('/boot'):]
+
+    # Modify leapp's grubenv to define our own BLSDIR
+    try:
+        run(['grub2-editenv', leapp_efi_grubenv_path, 'set', 'blsdir={}'.format(upgrade_bls_dir_rel_to_boot)])
+    except CalledProcessError as error:
+        details = {
+            'details': 'Failed to modify upgrade grubenv to contain a custom blsdir definition. Error {}'.format(error)
+        }
+        raise StopActorExecutionError('Failed to set up bootloader for the upgrade.', details=details)

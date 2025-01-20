@@ -5,11 +5,12 @@ from leapp.libraries.actor import removeupgradebootentry
 from leapp.libraries.common.config import architecture
 from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked
 from leapp.libraries.stdlib import api
-from leapp.models import BootContent, FirmwareFacts
+from leapp.models import ArmWorkaroundEFIBootloaderInfo, BootContent, EFIBootEntry, FirmwareFacts
 
 
 class run_mocked(object):
-    args = []
+    def __init__(self):
+        self.args = []
 
     def __call__(self, args, split=True):
         self.args.append(args)
@@ -17,17 +18,25 @@ class run_mocked(object):
 
 @pytest.mark.parametrize('firmware', ['bios', 'efi'])
 @pytest.mark.parametrize('arch', [architecture.ARCH_X86_64, architecture.ARCH_S390X])
-def test_remove_boot_entry(firmware, arch, monkeypatch):
+@pytest.mark.parametrize('has_separate_bls_dir', [True, False])
+def test_remove_boot_entry(firmware, arch, has_separate_bls_dir, monkeypatch):
     def get_upgrade_kernel_filepath_mocked():
         return '/abc'
 
-    def consume_systemfacts_mocked(*models):
-        yield FirmwareFacts(firmware=firmware)
+    messages = [FirmwareFacts(firmware=firmware)]
+    if has_separate_bls_dir:
+        some_efi_entry = EFIBootEntry(boot_number='0001', label='entry', active=True, efi_bin_source='')
+        workaround_info = ArmWorkaroundEFIBootloaderInfo(
+            original_entry=some_efi_entry,
+            upgrade_entry=some_efi_entry,
+            upgrade_bls_dir='/boot/upgrade-loader/entries',
+            upgrade_entry_efi_path='/boot/efi/EFI/leapp/'
+        )
+        messages.append(workaround_info)
 
-    monkeypatch.setattr(removeupgradebootentry, 'get_upgrade_kernel_filepath', get_upgrade_kernel_filepath_mocked, )
-    monkeypatch.setattr(api, 'consume', consume_systemfacts_mocked)
+    monkeypatch.setattr(removeupgradebootentry, 'get_upgrade_kernel_filepath', get_upgrade_kernel_filepath_mocked)
     monkeypatch.setattr(removeupgradebootentry, 'run', run_mocked())
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(arch))
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(arch, msgs=messages))
     monkeypatch.setattr(api, 'current_logger', logger_mocked())
 
     removeupgradebootentry.remove_boot_entry()
@@ -36,15 +45,15 @@ def test_remove_boot_entry(firmware, arch, monkeypatch):
     if firmware == 'efi':
         boot_mounts.append(['/bin/mount', '/boot/efi'])
 
-    calls = boot_mounts + [['/usr/sbin/grubby', '--remove-kernel=/abc']]
-    if arch == architecture.ARCH_S390X:
-        calls.append(['/usr/sbin/zipl'])
-    calls.append(['/bin/mount', '-a'])
+    calls = boot_mounts
+    if not has_separate_bls_dir:
+        # If we are using a separate BLS dir (ARM specific), then do not call anything
+        calls += [['/usr/sbin/grubby', '--remove-kernel=/abc']]
+        if arch == architecture.ARCH_S390X:
+            calls.append(['/usr/sbin/zipl'])
+        calls.append(['/bin/mount', '-a'])
 
     assert removeupgradebootentry.run.args == calls
-
-    # clear args for next run
-    del removeupgradebootentry.run.args[:]
 
 
 def test_get_upgrade_kernel_filepath(monkeypatch):
