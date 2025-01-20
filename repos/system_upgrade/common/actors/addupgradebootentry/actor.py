@@ -4,6 +4,7 @@ from leapp.actors import Actor
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor.addupgradebootentry import add_boot_entry, fix_grub_config_error
 from leapp.models import (
+    ArmWorkaroundEFIBootloaderInfo,
     BootContent,
     FirmwareFacts,
     GrubConfigError,
@@ -28,6 +29,7 @@ class AddUpgradeBootEntry(Actor):
 
     name = 'add_upgrade_boot_entry'
     consumes = (
+        ArmWorkaroundEFIBootloaderInfo,
         BootContent,
         GrubConfigError,
         FirmwareFacts,

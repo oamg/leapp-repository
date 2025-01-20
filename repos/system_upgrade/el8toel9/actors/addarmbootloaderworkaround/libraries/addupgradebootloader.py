@@ -24,6 +24,7 @@ ARM_GRUB_PACKAGE_NAME = 'grub2-efi-aa64'
 EFI_MOUNTPOINT = '/boot/efi/'
 LEAPP_EFIDIR_CANONICAL_PATH = os.path.join(EFI_MOUNTPOINT, 'EFI/leapp/')
 RHEL_EFIDIR_CANONICAL_PATH = os.path.join(EFI_MOUNTPOINT, 'EFI/redhat/')
+UPGRADE_BLS_DIR = '/boot/upgrade-loader'
 
 CONTAINER_DOWNLOAD_DIR = '/tmp_pkg_download_dir'
 
@@ -64,7 +65,6 @@ def process():
         current_boot_entry = efibootinfo.entries[efibootinfo.current_bootnum]
         upgrade_boot_entry = _add_upgrade_boot_entry(efibootinfo)
 
-        leapp_efi_grubenv = os.path.join(EFI_MOUNTPOINT, LEAPP_EFIDIR_CANONICAL_PATH, 'grubenv')
         patch_efi_redhat_grubcfg_to_load_correct_grubenv()
 
         _set_bootnext(upgrade_boot_entry.boot_number)
@@ -74,6 +74,8 @@ def process():
             ArmWorkaroundEFIBootloaderInfo(
                 original_entry=EFIBootEntry(**{f: getattr(current_boot_entry, f) for f in efibootentry_fields}),
                 upgrade_entry=EFIBootEntry(**{f: getattr(upgrade_boot_entry, f) for f in efibootentry_fields}),
+                upgrade_bls_dir=UPGRADE_BLS_DIR,
+                upgrade_entry_efi_path=os.path.join(EFI_MOUNTPOINT, LEAPP_EFIDIR_CANONICAL_PATH),
             )
         )
 

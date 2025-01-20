@@ -1,4 +1,5 @@
 import os
+import shutil
 
 import pytest
 
@@ -20,7 +21,9 @@ TEST_EFI_INFO = ArmWorkaroundEFIBootloaderInfo(
         label='Leapp',
         active=True,
         efi_bin_source="HD(.*)/File(\\EFI\\leapp\\shimx64.efi)",
-    )
+    ),
+    upgrade_bls_dir='/boot/upgrade-loaders/entries',
+    upgrade_entry_efi_path='/boot/efi/EFI/leapp'
 )
 
 
@@ -89,9 +92,14 @@ def test_remove_upgrade_efi_entry(monkeypatch):
     def mock_copy_grub_files(required, optional):
         copy_grub_files_calls.append((required, optional))
 
+    def rmtree_mocked(tree, *args):
+        run_calls.append('shutil.rmtree')
+        assert tree == TEST_EFI_INFO.upgrade_bls_dir
+
     monkeypatch.setattr(removeupgradeefientry, '_copy_grub_files', mock_copy_grub_files)
     monkeypatch.setattr(removeupgradeefientry, '_link_grubenv_to_rhel_entry', lambda: None)
     monkeypatch.setattr(removeupgradeefientry, 'run', mock_run)
+    monkeypatch.setattr(shutil, 'rmtree', rmtree_mocked)
 
     removeupgradeefientry.remove_upgrade_efi_entry()
 
@@ -100,6 +108,7 @@ def test_remove_upgrade_efi_entry(monkeypatch):
         ['/bin/mount', '/boot/efi'],
         ['/usr/sbin/efibootmgr', '--delete-bootnum', '--bootnum', '0002'],
         ['rm', '-rf', removeupgradeefientry.LEAPP_EFIDIR_CANONICAL_PATH],
+        'shutil.rmtree',
         ['/usr/sbin/efibootmgr', '--bootnext', '0001'],
         ['/bin/mount', '-a'],
     ]

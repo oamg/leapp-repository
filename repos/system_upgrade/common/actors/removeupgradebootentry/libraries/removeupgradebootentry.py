@@ -1,7 +1,7 @@
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common.config import architecture
 from leapp.libraries.stdlib import api, CalledProcessError, run
-from leapp.models import BootContent, FirmwareFacts
+from leapp.models import ArmWorkaroundEFIBootloaderInfo, BootContent, FirmwareFacts
 
 
 def remove_boot_entry():
@@ -25,6 +25,14 @@ def remove_boot_entry():
             # partitions have been most likely already mounted
             pass
     kernel_filepath = get_upgrade_kernel_filepath()
+
+    arm_bootloader_workaround_info = next(api.consume(ArmWorkaroundEFIBootloaderInfo), None)
+    if arm_bootloader_workaround_info and arm_bootloader_workaround_info.upgrade_bls_dir:
+        # Leapp has a separate BLS dir and grubby will not know about it. We don't need to call
+        # grubby here - we are removing the entire BLS dir in another actor.
+        api.current_logger().debug('Skipping removal of upgrade kernel entry since we are using a separate BLS dir.')
+        return
+
     run([
         '/usr/sbin/grubby',
         '--remove-kernel={0}'.format(kernel_filepath)
