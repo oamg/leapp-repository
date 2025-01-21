@@ -413,9 +413,11 @@ def is_rhsm_registered(context):
     raise StopActorExecutionError(
         message='A subscription-manager command failed to execute',
         details={
-            'details': f'Command \'subscription-manager identity\' exited with exit code: {result["exit_code"]}',
+            'details': 'Command \'subscription-manager identity\' exited with exit code: {}'.format(
+                result["exit_code"]
+            ),
             'hint': _DEFAULT_EXCEPTION_HINT,
-            'link': 'https://access.redhat.com/solutions/6138372' # TODO check link
+            'link': 'https://access.redhat.com/solutions/6138372'  # TODO check link
         }
     )
 
