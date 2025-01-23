@@ -14,7 +14,7 @@ class FilterRpmTransactionTasks(Actor):
 
     In order to calculate a working DNF Upgrade transaction, Leapp can collect data from multiple
     sources and find workarounds for possible problems. This actor will filter all collected
-    workarounds and keep only those relevants to current system based on installed packages.
+    workarounds and keep only those relevant to current system based on installed packages.
     """
 
     name = 'check_rpm_transaction_events'
