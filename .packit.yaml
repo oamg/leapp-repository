@@ -106,7 +106,7 @@ jobs:
   job: tests
   trigger: ignore
   fmf_url: "https://gitlab.cee.redhat.com/oamg/leapp-tests"
-  fmf_ref: "rhel7"
+  fmf_ref: "fix-check-of-config-files"
   use_internal_tf: True
   labels:
     - sanity
