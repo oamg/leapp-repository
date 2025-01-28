@@ -9,9 +9,7 @@ from leapp.libraries.common.grub import (
     get_boot_partition,
     get_device_number,
     get_efi_device,
-    get_efi_partition,
-    GRUB2_BIOS_ENTRYPOINT,
-    GRUB2_BIOS_ENV_FILE
+    get_efi_partition
 )
 from leapp.libraries.stdlib import api, CalledProcessError, run
 from leapp.models import ArmWorkaroundEFIBootloaderInfo, EFIBootEntry, TargetUserSpaceInfo
@@ -116,12 +114,6 @@ def _copy_grub_files(required, optional):
             continue
 
         _copy_file(src_path, dst_path)
-
-
-def _link_grubenv_to_upgrade_entry():
-    upgrade_env_file = os.path.join(LEAPP_EFIDIR_CANONICAL_PATH, 'grubenv')
-    upgrade_env_file_relpath = os.path.relpath(upgrade_env_file, GRUB2_BIOS_ENTRYPOINT)
-    run(['ln', '--symbolic', '--force', upgrade_env_file_relpath, GRUB2_BIOS_ENV_FILE])
 
 
 def _add_upgrade_boot_entry(efibootinfo):

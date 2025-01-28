@@ -287,7 +287,6 @@ def test_process(monkeypatch):
     monkeypatch.setattr(addupgradebootloader.mounting, 'NspawnActions', lambda *args, **kwargs: context_mock)
 
     monkeypatch.setattr(addupgradebootloader, '_copy_grub_files', lambda optional, required: None)
-    monkeypatch.setattr(addupgradebootloader, '_link_grubenv_to_upgrade_entry', lambda: None)
 
     efibootinfo_mock = MockEFIBootInfo([TEST_RHEL_EFI_ENTRY])
     monkeypatch.setattr(addupgradebootloader, 'EFIBootInfo', lambda: efibootinfo_mock)
