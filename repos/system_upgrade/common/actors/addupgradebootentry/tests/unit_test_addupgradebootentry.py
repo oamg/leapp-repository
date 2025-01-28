@@ -273,7 +273,7 @@ def test_get_rdlvm_arg_values(monkeypatch):
 
     args = addupgradebootentry._get_rdlvm_arg_values()
 
-    assert args == ['A', 'B']
+    assert args == ('A', 'B')
 
 
 def test_get_device_uuid(monkeypatch):
