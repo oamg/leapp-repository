@@ -8,6 +8,7 @@ Tutorials
 
     templates/index
     howto-first-actor-upgrade
+    troubleshooting-debugging
 
 .. Indices and tables
 .. ==================
