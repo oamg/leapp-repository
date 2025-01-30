@@ -11,6 +11,12 @@ If set to `1`, Leapp will explicitly enable synchronization on the SQLite databa
 #### LEAPP_DEBUG
 Enables debug logging. Equivalent to --debug, which takes precedence.
 
+#### LEAPP_DISABLE_NET_NAMING_SCHEMES
+On RHEL 8 to 9 upgrades, by default, net.naming-scheme is used to make network interface names immutable during the upgrade. In this case an extra RPM named `rhel-net-naming-sysattrs` is installed to the target system and target userspace container, providing the definitions of the "profiles" for net.naming-scheme.
+
+If set to `0`, the "legacy" mechanism is used where leapp writes .link files to prevent interfaces being renamed
+after booting to post-upgrade system.
+
 #### LEAPP_ENABLE_REPOS
 Specify repositories (repoids) split by comma, that should be used during the in-place upgrade to the target system. It‘s overwritten automatically in case the --enablerepo option is used. It‘s recommended to use the --enablerepo option instead of the envar.
 
@@ -62,6 +68,9 @@ To use development variables, the LEAPP_UNSUPPORTED variable has to be set.
 #### LEAPP_DEVEL_DATABASE_SYNC_OFF
 If set to `1`, leapp will disable explicit synchronization on the SQLite database. The positive effect is significant speedup of leapp execution, however it comes at the cost of risking a corrupted database, so it is currently used for testing / development purposes only.
 
+#### LEAPP_DEVEL_ENABLE_LIVE_MODE
+If set to `1`, enable the use of the experimental live mode
+
 #### LEAPP_DEVEL_DM_DISABLE_UDEV
 Setting the environment variable provides a more convenient way of disabling udev support in libdevmapper, dmsetup and LVM2 tools globally without a need to modify any existing configuration settings. This is mostly useful if the system environment does not use udev.
 
@@ -88,7 +97,6 @@ Change the default target RHEL version. Format: `MAJOR.MINOR`.
 
 #### LEAPP_DEVEL_USE_PERSISTENT_PACKAGE_CACHE
 Caches downloaded packages when set to `1`. This will reduce the time needed by leapp when executed multiple times, because it will not have to download already downloaded packages. However, this can lead to a random issues in case the data is not up-to-date or when setting or repositories change. The environment variable is meant to be used only for the part of the upgrade before the reboot and has no effect or use otherwise.
-
 
 ## Actor configuration
 ```{warning}
