@@ -358,7 +358,7 @@ lint:
 
 	if [[  "`git rev-parse --abbrev-ref HEAD`" != "$(MASTER_BRANCH)" ]] && [[ -n "`git diff $(MASTER_BRANCH) --name-only --diff-filter AMR`" ]]; then \
 		. $(VENVNAME)/bin/activate; \
-		git diff $(MASTER_BRANCH) --name-only --diff-filter AMR | xargs isort -c --diff || \
+		git diff $(MASTER_BRANCH) --name-only --diff-filter AMR | grep -v "^docs/" | xargs isort -c --diff || \
 		{ \
 			echo; \
 			echo "------------------------------------------------------------------------------"; \
@@ -370,7 +370,7 @@ lint:
 
 lint_fix:
 	. $(VENVNAME)/bin/activate; \
-	git diff $(MASTER_BRANCH) --name-only --diff-filter AMR | xargs isort && \
+	git diff $(MASTER_BRANCH) --name-only --diff-filter AMR | grep -v "^docs/" | xargs isort && \
 	echo "--- isort inplace fixing done. ---;"
 
 test_no_lint:
