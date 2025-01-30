@@ -5,21 +5,21 @@ To make the development & testing easier we provide the Makefile with useful
 commands for local building and also upstream DNF COPR repository for public
 upstream and testing builds.
 
-## Local builds
-To build the package locally from the current code we prepared building in
-containers, so we could build the RPM with packages of the particular system.
+## Building packages locally
+Containerized builds can be used to build the packages locally.
 To build the RPM e.g. for RHEL 8 systems, execute:
 ```bash
 $ BUILD_CONTAINER=el8 make container_build
 ```
+Possible values for BUILD_CONTAINER are `el7`,`el8`, `el9`.
 
-You will find created builds under the `packaging/RPMS/` directory.
+The built packages can be found under the `packaging/RPMS/` directory.
 
 If a particular container image does not exist, it will be automatically created
 based on prepared [container files](https://github.com/oamg/leapp-repository/tree/main/utils/container-builds).
 
 Note that from time to time it's possible you may want to (or need to)
-rebuild the container image. To clean created container images, call
+rebuild the container image. To clean created container images use
 ```
 $ make clean_containers
 ```
@@ -31,8 +31,8 @@ E.g.:
 $ CONTAINER_TOOL=docker BUILD_CONTAINER=el8 make container_build
 ```
 
-### Install local builds
-For that, just use DNF:
+### Install locally built packages
+To install the packages use `dnf`:
 ```bash
 $ dnf install -y path/to/create/rpm/files
 ```
@@ -44,10 +44,7 @@ $ dnf install -y \
     packaging/RPMS/noarch/leapp-upgrade-el8toel9-deps-0.21.0-0.202411131807Z.05f15b28.actor_config.el8.noarch.rpm
 ```
 
-Note that to install packages from the leapp-repository build you also the leapp
-packages installed or available. If you do not have a local builds of leapp
-created manually, you can use the upstream [@oamg/leapp](https://copr.fedorainfracloud.org/coprs/g/oamg/leapp/)
-COPR repository.
+Note that to install packages built from leapp-repository you also need the leapp packages installed or available. If you do not have a local builds of leapp created manually, you can use the upstream [@oamg/leapp](https://copr.fedorainfracloud.org/coprs/g/oamg/leapp/) COPR repository.
 
 ## Public COPR repository
 The [@oamg/leapp](https://copr.fedorainfracloud.org/coprs/g/oamg/leapp/) COPR
@@ -102,7 +99,7 @@ In similar way you can install particular `leapp` packages if you want any
 specific build.
 
 #### Instructions for for non-intel architectures
-All packages are `noarch` (architecture agnostic). To save a time and resources
+All packages are `noarch` (architecture agnostic). To save time and resources
 we build packages just for the x86\_64 repository.
 So in case you use a different architecture (IBM Z, Power, ARM)
 replace the `$basearch` variable in the repo file by static `x86_64`.
