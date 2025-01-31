@@ -1,0 +1,2 @@
+2025-01-23T15:28:05.352420Z 0 [Warning] [MY-011069] [Server] The syntax '--old' is deprecated and will be removed in a future release.
+2025-01-23T15:28:05.352425Z 0 [Warning] [MY-011069] [Server] The syntax 'avoid_temporal_upgrade' is deprecated and will be removed in a future release.
