@@ -65,7 +65,7 @@ def test_parse_config_empty():
     output = parse_config([])
     assert isinstance(output, OpenSslConfig)
     assert not output.openssl_conf
-    assert len(output.blocks) == 0
+    assert not output.blocks
 
 
 def test_parse_config_bare_include():
