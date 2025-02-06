@@ -331,7 +331,8 @@ def test_get_device_uuid(monkeypatch):
     assert uuid == 'MY_UUID1'
 
 
-def test_modify_grubenv_to_have_separate_blsdir(monkeypatch):
+@pytest.mark.parametrize('has_separate_boot', (True, False))
+def test_modify_grubenv_to_have_separate_blsdir(monkeypatch, has_separate_boot):
     efi_info = ArmWorkaroundEFIBootloaderInfo(
         original_entry=EFIBootEntry(
             boot_number='0001',
@@ -349,9 +350,14 @@ def test_modify_grubenv_to_have_separate_blsdir(monkeypatch):
         upgrade_entry_efi_path='/boot/efi/EFI/leapp'
     )
 
+    def is_mount_mocked(path):
+        assert path.rstrip('/') == '/boot'
+        return has_separate_boot
+
     def list_grubenv_variables_mock():
+        blsdir = '/blsdir' if has_separate_boot else '/boot/blsdir'
         return {
-            'blsdir': '/blsdir'
+            'blsdir': blsdir
         }
 
     def listdir_mock(dir_path):
@@ -369,11 +375,13 @@ def test_modify_grubenv_to_have_separate_blsdir(monkeypatch):
         assert dst == '/boot/upgrade-loader/entries/4a9c76478b98444fb5e0fbf533950edf-upgrade.aarch64.conf'
 
     def run_mocked(cmd, *arg, **kwargs):
-        assert cmd == ['grub2-editenv', '/boot/efi/EFI/leapp/grubenv', 'set', 'blsdir=/upgrade-loader/entries']
+        blsdir = '/upgrade-loader/entries' if has_separate_boot else '/boot/upgrade-loader/entries'
+        assert cmd == ['grub2-editenv', '/boot/efi/EFI/leapp/grubenv', 'set', 'blsdir={}'.format(blsdir)]
 
     monkeypatch.setattr(addupgradebootentry, '_list_grubenv_variables', list_grubenv_variables_mock)
     monkeypatch.setattr(os, 'listdir', listdir_mock)
     monkeypatch.setattr(os.path, 'exists', assert_path_correct)
+    monkeypatch.setattr(os.path, 'ismount', is_mount_mocked)
     monkeypatch.setattr(os, 'makedirs', assert_path_correct)
     monkeypatch.setattr(shutil, 'move', move_mocked)
     monkeypatch.setattr(addupgradebootentry, 'run', run_mocked)

@@ -399,10 +399,18 @@ def modify_our_grubenv_to_have_separate_blsdir(efi_info):
     )
 
     grubenv_vars = _list_grubenv_variables()
-    system_bls_dir = grubenv_vars.get('blsdir', '/loader/entries').lstrip('/')
+
+    if os.path.ismount('/boot'):
+        default_blsdir = '/loader/entries'
+        grub_root_device_mountpoint = '/boot'
+    else:
+        default_blsdir = '/boot/loader/entries'
+        grub_root_device_mountpoint = '/'
+
+    system_bls_dir = grubenv_vars.get('blsdir', default_blsdir).lstrip('/')
 
     # BLS dir is relative to /boot, prepend it so we can list its contents
-    system_bls_dir = os.path.join('/boot', system_bls_dir)
+    system_bls_dir = os.path.join(grub_root_device_mountpoint, system_bls_dir)
 
     # Find our loader entry
     try:
@@ -444,7 +452,12 @@ def modify_our_grubenv_to_have_separate_blsdir(efi_info):
 
     shutil.move(leapp_bls_entry_fullpath, bls_entry_dst)
 
-    upgrade_bls_dir_rel_to_boot = efi_info.upgrade_bls_dir[len('/boot'):]
+    # BLSDIR must be relative to grub's root device. Therefore, if /boot is a separate mountpoint
+    # we need to convert blsdir=/boot/upgrade-loader into blsdir=/upgrade-loader. If there is no
+    # separate root, then root=/, so rstripping('/') produces an empty string.
+    # In such a case, the relative paths stays unchanged: blsdir=/boot/upgrade-loader
+    grub_root_device_mp_without_trail = grub_root_device_mountpoint.rstrip('/')
+    upgrade_bls_dir_rel_to_boot = efi_info.upgrade_bls_dir[len(grub_root_device_mp_without_trail):]
 
     # Modify leapp's grubenv to define our own BLSDIR
     try:
