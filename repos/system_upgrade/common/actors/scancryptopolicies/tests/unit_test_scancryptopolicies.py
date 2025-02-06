@@ -1,4 +1,5 @@
 import os
+import shutil
 import tempfile
 
 import pytest
@@ -30,21 +31,26 @@ def test_find_rpm_untracked(current_actor_context):
     files = ["/etc/crypto-policies/config"]
     assert find_rpm_untracked(files) == []
 
-    # the tempfile is not tracked by RPM
-    with tempfile.NamedTemporaryFile(delete=False) as f:
-        files = [f.name]
-        assert find_rpm_untracked(files) == [f.name]
+    # python2 compatibility :/
+    dirpath = tempfile.mkdtemp()
+
+    try:
+        # the tempfile is not tracked by RPM
+        files = [dirpath]
+        assert find_rpm_untracked(files) == [dirpath]
 
         # not existing files are ignored
         files = [NOFILE]
         assert find_rpm_untracked(files) == []
 
         # combinations should yield expected results too
-        files = ["/tmp", f.name, NOFILE]
-        assert find_rpm_untracked(files) == [f.name]
+        files = ["/tmp", dirpath, NOFILE]
+        assert find_rpm_untracked(files) == [dirpath]
         # regardless the order
-        files = [NOFILE, f.name, "/tmp"]
-        assert find_rpm_untracked(files) == [f.name]
+        files = [NOFILE, dirpath, "/tmp"]
+        assert find_rpm_untracked(files) == [dirpath]
+    finally:
+        shutil.rmtree(dirpath)
 
 
 def test_read_current_policy():
@@ -63,43 +69,53 @@ def test_read_current_policy():
 
 
 def test_read_policy_dirs(current_actor_context):
-    with tempfile.TemporaryDirectory() as dir1:
+    # python2 compatibility :/
+    dirpath = tempfile.mkdtemp()
+
+    try:
         # empty
-        files = read_policy_dirs([dir1], CustomCryptoPolicy, ".pol")
+        files = read_policy_dirs([dirpath], CustomCryptoPolicy, ".pol")
         assert files == []
 
         # first policy module
-        path1 = os.path.join(dir1, "policy.mpol")
-        with open(path1, "x") as f:
+        path1 = os.path.join(dirpath, "policy.mpol")
+        with open(path1, "w") as f:
             f.write('test')
-        files = read_policy_dirs([dir1], CustomCryptoPolicy, ".pol")
+        files = read_policy_dirs([dirpath], CustomCryptoPolicy, ".pol")
         assert files == []
-        files = read_policy_dirs([dir1], CustomCryptoPolicyModule, ".mpol")
+        files = read_policy_dirs([dirpath], CustomCryptoPolicyModule, ".mpol")
         assert files == [CustomCryptoPolicyModule(name="policy", path=path1)]
 
-        with tempfile.TemporaryDirectory() as dir2:
-            files = read_policy_dirs([dir1], CustomCryptoPolicy, ".pol")
+        # python2 compatibility :/
+        dirpath2 = tempfile.mkdtemp()
+
+        try:
+            files = read_policy_dirs([dirpath], CustomCryptoPolicy, ".pol")
             assert files == []
-            files = read_policy_dirs([dir1, dir2], CustomCryptoPolicyModule, ".mpol")
+            files = read_policy_dirs([dirpath, dirpath2], CustomCryptoPolicyModule, ".mpol")
             assert files == [CustomCryptoPolicyModule(name="policy", path=path1)]
 
             # first policy file
-            path2 = os.path.join(dir2, "mypolicy.pol")
-            with open(path2, "x") as f:
+            path2 = os.path.join(dirpath2, "mypolicy.pol")
+            with open(path2, "w") as f:
                 f.write('test2')
             # second policy file
-            path3 = os.path.join(dir2, "other.pol")
-            with open(path3, "x") as f:
+            path3 = os.path.join(dirpath2, "other.pol")
+            with open(path3, "w") as f:
                 f.write('test3')
 
-            files = read_policy_dirs([dir1, dir2], dict, ".pol")
+            files = read_policy_dirs([dirpath, dirpath2], dict, ".pol")
             assert len(files) == 2
             assert dict(name="mypolicy", path=path2) in files
             assert dict(name="other", path=path3) in files
-            files = read_policy_dirs([dir1, dir2], CustomCryptoPolicyModule, ".mpol")
+            files = read_policy_dirs([dirpath, dirpath2], CustomCryptoPolicyModule, ".mpol")
             assert files == [CustomCryptoPolicyModule(name="policy", path=path1)]
+        finally:
+            shutil.rmtree(dirpath2)
 
-        files = read_policy_dirs([dir1], CustomCryptoPolicy, ".pol")
+        files = read_policy_dirs([dirpath], CustomCryptoPolicy, ".pol")
         assert files == []
-        files = read_policy_dirs([dir1], CustomCryptoPolicyModule, ".mpol")
+        files = read_policy_dirs([dirpath], CustomCryptoPolicyModule, ".mpol")
         assert files == [CustomCryptoPolicyModule(name="policy", path=path1)]
+    finally:
+        shutil.rmtree(dirpath)
