@@ -1,5 +1,6 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import cryptopoliciescheck
+from leapp.libraries.common.config import version
 from leapp.models import CryptoPolicyInfo, Report, TargetUserSpacePreupgradeTasks
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
@@ -21,4 +22,8 @@ class CryptoPoliciesCheck(Actor):
     tags = (IPUWorkflowTag, ChecksPhaseTag,)
 
     def process(self):
+        if version.get_source_major_version() == '7':
+            # there are no crypto policies in EL 7
+            return
+
         cryptopoliciescheck.process(self.consume(CryptoPolicyInfo))
