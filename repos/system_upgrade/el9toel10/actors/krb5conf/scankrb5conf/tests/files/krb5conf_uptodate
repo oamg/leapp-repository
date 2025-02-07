@@ -1,0 +1,2 @@
+[libdefaults]
+pkinit_anchors = FILE:/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
