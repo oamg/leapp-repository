@@ -11,23 +11,23 @@ CRYPTO_POLICIES_MODULES_DIRS = ('/etc/crypto-policies/policies/modules',
                                 '/usr/share/crypto-policies/policies/modules',)
 
 
-def read_current_policy(file):
-    if not os.path.exists(file):
+def read_current_policy(filename):
+    if not os.path.exists(filename):
         # NOTE(pstodulk) just seatbelt, I do not expect the file is not present
         # skipping tests
         raise StopActorExecutionError(
-                'File not found: {}'.format(file),
+                'File not found: {}'.format(filename),
                 details={'details:': 'Cannot check the current set crypto policies.'}
         )
     current = 'DEFAULT'
-    with open(file) as fp:
+    with open(filename) as fp:
         current = fp.read().strip()
     return current
 
 
-def _get_name_from_file(file):
+def _get_name_from_file(filename):
     """This is just stripping the path and the extension"""
-    base = os.path.basename(file)
+    base = os.path.basename(filename)
     return os.path.splitext(base)[0]
 
 
@@ -44,10 +44,10 @@ def find_rpm_untracked(files):
 
     # return only untracked files from the list
     out = []
-    for file in files:
-        exp = "file {} is not owned by any package".format(file)
+    for filename in files:
+        exp = "file {} is not owned by any package".format(filename)
         if exp in res['stdout']:
-            out.append(file)
+            out.append(filename)
     return out
 
 
@@ -56,17 +56,17 @@ def read_policy_dirs(dirs, obj, extension):
     files = []
     # find all policy files
     for d in dirs:
-        for file in os.listdir(d):
-            file = os.path.join(d, file)
-            if not os.path.isfile(file) or not file.endswith(extension):
+        for filename in os.listdir(d):
+            filepath = os.path.join(d, filename)
+            if not os.path.isfile(filepath) or not filepath.endswith(extension):
                 continue
-            files.append(file)
+            files.append(filepath)
     # now, check which are not tracked by RPM:
     files = find_rpm_untracked(files)
     out = []
-    for file in files:
-        name = _get_name_from_file(file)
-        out.append(obj(name=name, path=file))
+    for filename in files:
+        name = _get_name_from_file(filename)
+        out.append(obj(name=name, path=filename))
 
     return out
 
