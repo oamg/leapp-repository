@@ -1,5 +1,6 @@
 import errno
 
+from leapp.libraries.common.config import version
 from leapp.libraries.common.rpms import check_file_modification
 from leapp.libraries.stdlib import api
 from leapp.models import OpenSslConfig, OpenSslConfigBlock, OpenSslConfigPair
@@ -86,6 +87,11 @@ def scan_config(producer):
     """
     Parse openssl.cnf file to create OpenSslConfig message.
     """
+
+    if version.get_source_major_version() == '7':
+        # Apply this only for EL 8+ as we are not interested about this
+        # on EL 7 anymore (moved from el8toel9)
+        return
 
     # direct access to configuration file
     output = read_config()
