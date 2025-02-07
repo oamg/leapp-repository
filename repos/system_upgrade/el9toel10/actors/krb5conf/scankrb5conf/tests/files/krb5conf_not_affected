@@ -1,0 +1,2 @@
+[libdefaults]
+pkinit_anchors = FILE:/not/affected/ca-bundle.pem
