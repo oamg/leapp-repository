@@ -1,6 +1,8 @@
 import xml.etree.ElementTree as ElementTree
+from xml.etree.ElementTree import ParseError
 
 from leapp.libraries.actor import firewalldfactsactor
+from leapp.models import FirewalldFacts
 
 
 def test_firewalldfactsactor_direct():
@@ -30,6 +32,13 @@ def test_firewalldfactsactor_direct():
         '''
     )
     assert set(firewalldfactsactor.getEbtablesTablesInUse(root)) == set(['broute', 'nat'])
+
+    # emulate a parse error
+    facts = FirewalldFacts()
+    try:
+        raise ParseError()
+    except ParseError:
+        assert not facts.ebtablesTablesInUse
 
 
 def test_firewalldfactsactor_firewallConfigCommand():
