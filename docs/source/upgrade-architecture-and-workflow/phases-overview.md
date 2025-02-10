@@ -16,7 +16,7 @@ If the information and checks can only be performed on the target system, e.g. t
 Three actors are usually required to do this properly. One actor in the `FactsCollectionPhase` to collect the required information from the system and pass it on in a message. Second actor in `ChecksPhase` to check whether a modification is needed and in such case producing a report informing the user that the modification will be done during the upgrade. Third actor should reside either in the `ApplicationsPhase` in case of a vendor provided application or `ThirdPartyApplicationsPhase` in case of a third party application. This actor should perform the required modification (e.g. modify a configuration file). Note that the application is already upgraded in these phases.
 
 ## Phases Overview
-As every Leapp `Workflow`(TODO link) , the in-place upgrade workflow consists of several phases outlined in the image below.
+As every Leapp {py:class}`~leapp.workflows.Workflow`, the in-place upgrade workflow consists of several phases outlined in the image below.
 ![In Place Upgrade Workflow](../../_static/images/inplace-upgrade-workflow.svg)
 
 ### Old System
