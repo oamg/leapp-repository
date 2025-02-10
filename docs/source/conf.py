@@ -17,10 +17,18 @@ release = '0.21.0'
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
-    'sphinx.ext.githubpages',
     'sphinx.ext.autosectionlabel',
+    'sphinx.ext.githubpages',
+    'sphinx.ext.intersphinx',
     'myst_parser',
 ]
+
+intersphinx_mapping = {
+    'python': ('https://docs.python.org/3', None),
+    'leapp': ('https://leapp.readthedocs.io/en/stable/', None)
+}
+
+autosectionlabel_prefix_document = True
 
 templates_path = ['_templates']
 exclude_patterns = []

@@ -29,7 +29,7 @@ code, i.e., the code has been previously executed.
 
 #### Testing tips
 - Try avoiding the use of temporary files and directories. Instead, mock functions
-provided by the `os`/`shutil` libraries that are used by your actor whenever possible.
+provided by the {py:mod}`os`/{py:mod}`shutil` libraries that are used by your actor whenever possible.
 - Check unit-tests in other actors to get inspiration
 - Use the `leapp.libraries.common.testutils` library when in tests when possible.
   It contains various useful functions and classes that makes your testing much
@@ -64,25 +64,27 @@ in this project for each relevant version of Python.
 Using environmental variables might be problematic as the computer is rebooted
 several times during the upgrade process. The original environment does not
 survive reboots. If you need to use environmental variables, use the prefix `LEAPP_`
-in their name. Moreover, avoid using bare `os.environ` and instead use provided
+in their name. Moreover, avoid using bare {py:data}`os.environ` and instead use provided
 `get_env` function from the `leapp.libraries.common.config` library.
 This combination ensures that the environmental variables are available
 throughout the entire upgrade and also helps with possible investigation when
 any problems occur.
 
 ### Running external commands
-Leapp provides the `leapp.libraries.stdlib.run` function to execute external commands in
-its standard library. This function exposes a simple interface and ensures
-that the calls are properly logged. Calling the function might raise
-`CalledProcessError` (if the command exits with nonzero exit code; this
-behaviour can be disabled). Calling the function can also rise `OSError`, if the
-binary is not present, or if the file is not executable at all. The
-`CalledProcessError` needs to be always handled. Handling `OSError` is not required
-if the application is guaranteed to exist and executable.
+Leapp provides the {py:func}`leapp.libraries.stdlib.run` function to execute
+external commands in its standard library. This function exposes a simple
+interface and ensures that the calls are properly logged. Calling the function
+might raise {py:exc}`leapp.libraries.stdlib.CalledProcessError` (if the command
+exits with nonzero exit code; this behaviour can be disabled). Calling the
+function can also raise {py:exc}`OSError`, if the binary is not present, or if
+the file is not executable at all. The
+{py:exc}`~leapp.libraries.stdlib.CalledProcessError` needs to be always
+handled. Handling {py:exc}`OSError` is not required if the application is
+guaranteed to exist and executable.
 
-The use of the `subprocess` library is forbidden in leapp repositories. Use of
-the library would require very good reasoning, why the `run` function cannot
-be used.
+The use of the {py:mod}`subprocess` library is forbidden in leapp repositories.
+Use of the library would require very good reasoning, why the
+{py:func}`~leapp.libraries.stdlib.run` function cannot be used.
 
 ## Commits and pull requests (PRs)
 ### PR description

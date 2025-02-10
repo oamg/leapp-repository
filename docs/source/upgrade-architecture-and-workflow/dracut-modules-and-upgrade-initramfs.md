@@ -42,10 +42,7 @@ service then runs upgrade scripts from `85sys-upgrade-redhat`
 
 ### Including custom dracut and kernel modules
 Actors and custom actors can produce messages to include custom dracut
-modules as well as kernel modules in the upgrade initramfs. See [TBD
-link](templates) for examples on how to write such actors.
-
-TBD - add/link the doc to the relevant models here
+modules as well as kernel modules in the upgrade initramfs. See {doc}`/tutorials/templates/add-kernel-driver` for examples on how to write such actors.
 
 ## Generating the initramfs
 The initramfs is built by the `upgradeinitramfsgenerator` actor. It collects
@@ -55,8 +52,7 @@ the target userspace container. Generates the initramfs using `dracut` and
 copies it to `/boot`.
 
 ## Network in initramfs
-Currently networking support in the initramfs is experimental. See [TDB link
-LEAPP_DEVEL_INITRAM_NETWORK]() for more information.
+Currently networking support in the initramfs is experimental. See {ref}`configuring-ipu:leapp_devel_initram_network` for more information.
 
 ## Debugging inside initramfs
-See [TDB link]() for detailed information about initramfs debugging.
+See {ref}`the debugging tutorial<tutorials/troubleshooting-debugging:debugging inside initramfs>` for detailed information about initramfs debugging.
