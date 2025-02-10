@@ -7,9 +7,8 @@ available on the system. Well, you will always need to do some Python code,
 but in case you do not need anything else, just execute the code in the right
 phase of the upgrade, here is the minimal actor to do so.
 
-For more tips, check our actors how they work with the `run` function. There
-are many useful examples:
- [system\_upgrade\_common repo](https://github.com/oamg/leapp-repository/tree/main/repos/system\_upgrade/common/actors)
+For more tips, check our actors how they work with the {py:func}`~leapp.libraries.stdlib.run` function. There
+are many useful examples in the [system\_upgrade/common repo](https://github.com/oamg/leapp-repository/tree/main/repos/system_upgrade/common/actors).
 
 The full list of existing phases in the `IPUWorkflow` and their tags see [IPUWorkflow](https://github.com/oamg/leapp-repository/blob/main/repos/system_upgrade/common/workflows/inplace_upgrade.py)
 

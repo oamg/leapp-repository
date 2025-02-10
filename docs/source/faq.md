@@ -21,7 +21,7 @@ of the project.
 
 ## What is an actor and what does it do?
 
-An actor in the realm of the Leapp project is a step that is executed within a workflow. Actors define what kind of data they expect and what kind of data they produce.
+An {py:class}`~leapp.actors.Actor` in the realm of the Leapp project is a step that is executed within a workflow. Actors define what kind of data they expect and what kind of data they produce.
 
 One of the use cases for actors is to scan the system and provide the discoveries to other actors through messages. Other actors consume these messages to make decisions, apply changes to the system, or process the information to produce new messages.
 
@@ -76,8 +76,8 @@ There are several, covered also in contribution guideline, but highlight these f
 Even then we want to postpone as many changes as possible after the `LateTestsPhase`
 phase. Any deviation from this rule must be well justified.
 
-1. **Do not use `subprocess` python module**. If you need to execute a shell command,
-use the `run` function instead.
+1. **Do not use {py:mod}`subprocess` python module**. If you need to execute a shell command,
+use the {py:func}`leapp.libraries.stdlib.run` function instead.
 
 1. **Do not interact with the system during the `ChecksPhase`.** You can scan
 the system in previous phase and generate a leapp message for the check actor.

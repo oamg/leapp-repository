@@ -1,5 +1,5 @@
 # Phases of the Upgrade Workflow
-This page explains the individual phases of an in-place upgrade and how to choose the correct phase for your actor.
+This page explains the individual {ref}`phases<building-blocks-and-architecture:phase>` of an in-place upgrade {ref}`workflow<building-blocks-and-architecture:workflow>` and how to choose the correct phase for your actor.
 
 ## Choosing a Phase for an Actor
 Here we cover some of the common cases for adding actors to the in-place upgrade process and choosing the right phase for them. For more complicated cases see the overview of each phase in the section below.
@@ -16,7 +16,7 @@ If the information and checks can only be performed on the target system, e.g. t
 Three actors are usually required to do this properly. One actor in the `FactsCollectionPhase` to collect the required information from the system and pass it on in a message. Second actor in `ChecksPhase` to check whether a modification is needed and in such case producing a report informing the user that the modification will be done during the upgrade. Third actor should reside either in the `ApplicationsPhase` in case of a vendor provided application or `ThirdPartyApplicationsPhase` in case of a third party application. This actor should perform the required modification (e.g. modify a configuration file). Note that the application is already upgraded in these phases.
 
 ## Phases Overview
-As every Leapp `Workflow`(TODO link) , the in-place upgrade workflow consists of several phases outlined in the image below.
+As every Leapp {py:class}`~leapp.workflows.Workflow`, the in-place upgrade workflow consists of several phases outlined in the image below.
 ![In Place Upgrade Workflow](../../_static/images/inplace-upgrade-workflow.svg)
 
 ### Old System
@@ -37,7 +37,7 @@ This phase is analogous to the `FactsCollectionPhase` for the target system.
 
 Here the information about what repositories are available on target system,
 what is expected calculation of target transaction (what will be installed, removed, ...) is collected.
-This is also the place where target userspace is created by [`TargetUserspaceCreator`](TODO-link).
+This is also the place where target userspace is created by {doc}`target-userspace-creator`.
 
 #### TargetTransactionCheck
 Checks upgradability regarding the information gathered about the target system. Such as whether expected repositories and RPMs are available, what RPMs are planned to install, remove, ...
@@ -45,13 +45,14 @@ Checks upgradability regarding the information gathered about the target system.
 IOW, checks related to RPM transaction mainly.
 
 #### ReportsPhase
-This is a dummy phase not containing any actors (see [Working With Workflow](working-with-workflows). Reports are presented to the user during this phase. This is also the final phase if leapp is run using `leapp preupgrade`.
+This is a dummy phase not containing any actors (see {external:doc}`tutorials/working-with-workflows`. Reports are presented to the user during this phase. This is also the final phase if leapp is run using `leapp preupgrade`.
 
 #### DownloadPhase
 Download the RPM packages and perform the RPM transaction test to determine the success of the packages upgrade using the Leapp DNF plugin.
 
 #### InterimPreparationPhase
-Prepare the upgrade iniramfs (initial RAM file system) if required, see [Leapp dracut modules and upgrade initramfs](TODO-link). Setup bootloader - mainly the upgrade boot entry.
+Prepare the {doc}`upgrade initramfs (initial RAM file system)<dracut-modules-and-upgrade-initramfs>` and setup bootloader - mainly the upgrade boot entry.
+
 This is the last phase ran in the source system - user is prompted to review the reports and reboot. The upgrade continues after the reboot.
 
 ---

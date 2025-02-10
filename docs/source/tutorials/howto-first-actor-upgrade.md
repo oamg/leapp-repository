@@ -2,11 +2,11 @@
 
 An **actor** is the core unit of execution in a Leapp upgrade workflow. If
 something needs to be done during an upgrade, you likely need to create an
-actor. A general overview of writing actors can be found in [How to Write an
-Actor](TODO). Please read it first (it will take you just few minutes and you
-will understand the concept). This guide helps you to create your actors specifically
-for the **In-Place Upgrade (IPU)** process between major versions of RHEL systems
-(or RHEL-like systems if relevant).
+actor. We advise to read the {external:doc}`general tutorial on writing actors
+for the Leapp framework<tutorials/first-actor>` first, it will help
+understanding the concept. This guide helps you to create your actors
+*specifically* for the **In-Place Upgrade (IPU)** process between major
+versions of RHEL systems (or RHEL-like systems if relevant).
 
 ```{note}
 When speaking about e.g. IPU 8 -> 9, it means an In-Place Upgrade from RHEL 8
@@ -61,12 +61,13 @@ To simply create an actor for upgrades, you need to do basically this:
    In real life we strongly suggest to follow the best practices in this project
    and put all your code into actor's library. This will usually make your life
    easier, especially when trying to write unit-tests for actors.
-   As an exmaple, see the [rpm_scanner](https://github.com/oamg/leapp-repository/tree/main/repos/system_upgrade/common/actors/rpmscanner)
+   As an example, see the [rpm_scanner](https://github.com/oamg/leapp-repository/tree/main/repos/system_upgrade/common/actors/rpmscanner)
    actor.
    ```
 
-Next to number of existing actors, we suggest you to examine [templates](#templates) we
-prepared for some specific use-cases that could help you with some tasks.
+Next to number of existing actors, we suggest you to examine
+{doc}`templates</tutorials/templates/index>` we prepared for some specific
+use-cases that could help you with some tasks.
 
 ### Most common phases for actors
 Unless you need to do something special most likely you will want to use usually
@@ -78,8 +79,6 @@ these tags for **IPUWorkflow**'s phases:
 * `ApplicationsPhaseTag` - For actors modyfiying the upgraded system (after the
   RPM upgrade transaction is finished successfully). Alternatively, use
   `ThirdPartyApplicationsPhaseTag` for custom or third-party applications.
-
-TODO: continue next time
 
 
 ## Formulate Your Requirements
@@ -131,7 +130,7 @@ the relevant information.
 
 Many useful functions are also already available in libraries. Be sure to
 review these before starting your implementation. For an overview consult
-[Leapp Upgrade Libraries](TODO)
+{doc}`/libraries-and-api`.
 
 
 ## Determine Implementation Details
@@ -142,13 +141,13 @@ should address the following questions during this stage:
 - **What ``Model``s do I need to create?**
 
     Models are the primary means by which actors communicate and exchange
-    information. Refer to [How to Create Models](TODO) for guidance.
+    information. Refer to {external:doc}`tutorials/messaging` for guidance.
 
 - **Which actors will my actor interact with?**
 
 - **Which phase should my actor belong to?**
 
-    Refer to the [Phases Overview](TODO) for details on phase organization.
+    Refer to the {doc}`/upgrade-architecture-and-workflow/phases-overview` for details on phase organization.
 
 
 ## Where to Place Your Actors
