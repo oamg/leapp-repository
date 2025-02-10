@@ -5,12 +5,6 @@ Sometimes it is necessary to tweak some parts of the upgrade for it to be succes
 Below is a list of the general and development variables available.
 ### General variables
 
-#### LEAPP_DATABASE_FORCE_SYNC_ON
-If set to `1`, Leapp will explicitly enable synchronization on the SQLite database. Enabling the synchronization has negative impact on the performance (sometimes very negative). However, it is more reliable in case of extreme situations (e.g. lost power). Note the synchronization is nowadays switched off by default only during the phases executed before the reboot of the system to the upgrade environment, which we consider safe. As a result, we do not expect that someone would want to use this option now.
-
-#### LEAPP_DEBUG
-Enables debug logging. Equivalent to --debug, which takes precedence.
-
 #### LEAPP_DISABLE_NET_NAMING_SCHEMES
 On RHEL 8 to 9 upgrades, by default, net.naming-scheme is used to make network interface names immutable during the upgrade. In this case an extra RPM named `rhel-net-naming-sysattrs` is installed to the target system and target userspace container, providing the definitions of the "profiles" for net.naming-scheme.
 
@@ -53,20 +47,10 @@ Set the path to the target OS ISO image that should be used for the IPU. It‘s 
 #### LEAPP_TARGET_PRODUCT_CHANNEL
 The alternative to the --channel leapp option. As a parameter accepts a channel acronym. E.g. `eus` or `e4s`. For more info, see the leapp preupgrade --help. In case the beta channel is required, use the `LEAPP_DEVEL_TARGET_PRODUCT_TYPE` envar instead.
 
-#### LEAPP_UNSUPPORTED
-Necessary to use in case you use any envar with the LEAPP_DEVEL prefix (see the list in the next section) and in case you use the –whitelist-experimental option for the Leapp tool.
-
-#### LEAPP_VERBOSE
-Enables debug logging. Equivalent to --verbose, which takes precedence.
-
-
 ### Development variables
 ```{note}
 To use development variables, the LEAPP_UNSUPPORTED variable has to be set.
 ```
-
-#### LEAPP_DEVEL_DATABASE_SYNC_OFF
-If set to `1`, leapp will disable explicit synchronization on the SQLite database. The positive effect is significant speedup of leapp execution, however it comes at the cost of risking a corrupted database, so it is currently used for testing / development purposes only.
 
 #### LEAPP_DEVEL_ENABLE_LIVE_MODE
 If set to `1`, enable the use of the experimental live mode
