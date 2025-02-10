@@ -53,13 +53,18 @@ def process():
         url='https://red.ht/rhel-9-intel-microarchitectures'
     )
 
+    rhel10_microarch_article = reporting.ExternalLink(
+        title='Building Red Hat Enterprise Linux 10 for the x86-64-v3 microarchitecture level',
+        url='https://red.ht/rhel-10-intel-microarchitectures'
+    )
+
     rhel_major_to_microarch_reqs = {
         '9': MicroarchInfo(microarch_ver='x86-64-v2',
                            required_flags=(X86_64_BASELINE_FLAGS + X86_64_V2_FLAGS),
                            extra_report_fields=[rhel9_microarch_article]),
         '10': MicroarchInfo(microarch_ver='x86-64-v3',
                             required_flags=(X86_64_BASELINE_FLAGS + X86_64_V2_FLAGS + X86_64_V3_FLAGS),
-                            extra_report_fields=[]),
+                            extra_report_fields=[rhel10_microarch_article]),
     }
 
     microarch_info = rhel_major_to_microarch_reqs.get(get_target_major_version())
