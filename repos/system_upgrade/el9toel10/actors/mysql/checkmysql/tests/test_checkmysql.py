@@ -1,11 +1,11 @@
 import pytest
 
 from leapp import reporting
+from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import checkmysql
 from leapp.libraries.common.testutils import create_report_mocked, logger_mocked
 from leapp.libraries.stdlib import api
 from leapp.models import MySQLConfiguration, Report
-from leapp.exceptions import StopActorExecutionError
 
 
 def _find_hint(report: dict) -> str | None:
