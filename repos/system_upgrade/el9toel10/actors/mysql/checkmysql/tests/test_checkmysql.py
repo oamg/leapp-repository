@@ -64,7 +64,7 @@ def test_process_no_deprecated(monkeypatch):
     # Check that Hint was in the report
     assert r is not None
 
-    assert ('Following configuration options won\'t work on a new version'
+    assert ('Following incompatible configuration options'
             not in r)
 
 
