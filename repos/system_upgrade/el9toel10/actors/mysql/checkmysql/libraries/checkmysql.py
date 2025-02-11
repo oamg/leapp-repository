@@ -10,28 +10,12 @@ else:
 
 FMT_LIST_SEPARATOR = '\n    - '
 
-# https://dev.mysql.com/doc/refman/8.0/en/server-system-variables.html
-# https://dev.mysql.com/doc/refman/8.0/en/server-options.html
-# https://dev.mysql.com/doc/refman/8.4/en/mysql-nutshell.html
-REMOVED_ARGS = [
-    '--avoid-temporal-upgrade',
-    'avoid_temporal_upgrade',
-    '--show-old-temporals',
-    'show_old_temporals',
-    '--old',
-    '--new',
-    '--default-authentication-plugin',
-    'default_authentication_plugin',
-    '--no-dd-upgrade',
-    '--language',
-    '--ssl',
-    '--admin-ssl',
-    '--character-set-client-handshake',
-    '--old-style-user-limits',
-]
-
 # Link URL for mysql-server report
 REPORT_SERVER_INST_LINK_URL = 'https://access.redhat.com/articles/7099234'
+
+
+def _formatted_list_output(input_list, sep=FMT_LIST_SEPARATOR):
+    return ['{}{}'.format(sep, item) for item in input_list]
 
 
 def _generate_mysql_present_report() -> None:
@@ -46,7 +30,7 @@ def _generate_mysql_present_report() -> None:
     immediate action is needed.
     """
     reporting.create_report([
-        reporting.Title('Further action to upgrade MySQL might be needed'),
+        reporting.Title('Manual migration of data from MySQL database might be needed'),
         reporting.Summary((
             'MySQL server component will be upgraded. '
             'Since RHEL-10 includes MySQL server 8.4 by default, '
@@ -63,14 +47,14 @@ def _generate_mysql_present_report() -> None:
         reporting.Remediation(hint=(
             'Dump or backup your data before proceeding with the upgrade '
             'and consult attached article '
-            '\'Migrating MySQL databases from RHEL 9 to RHEL 10\' '
+            '"Migrating MySQL databases from RHEL 9 to RHEL 10" '
             'with up to date recommended steps before and after the upgrade.'
         )),
         ])
 
 
-def _generate_deprecated_config_report(found_options: set | list,
-                                       found_arguments: set | list) -> None:
+def _generate_deprecated_config_report(found_options: list,
+                                       found_arguments: list) -> None:
     """
     Create report on mysql-server deprecated configuration.
 
@@ -79,66 +63,53 @@ def _generate_deprecated_config_report(found_options: set | list,
     proceeding with upgrade will result in MySQL server failing to start.
     """
 
-    generated_list = ''
+    summary_list = []
+    remedy_list = []
     if found_options:
-        generated_list += (
-            'Following configuration options won\'t work on a new version '
-            'of MySQL after upgrading and have to be removed from configuration files:'
-            )
-
-        for arg in found_options:
-            generated_list += FMT_LIST_SEPARATOR + arg
-
-        generated_list += (
-            '\nDefault configuration file is present at `/etc/my.cnf`\n'
+        summary_list.append(
+            'Following incompatible configuration options have been detected:{}'
+            '\nDefault configuration file is present at `/etc/my.cnf`'
+            .format(''.join(_formatted_list_output(found_options)))
         )
+        remedy_list.append('Drop all deprecated configuration options before the upgrade.')
 
     if found_arguments:
-        generated_list += (
-            'Following startup arguments won\'t work on a new version '
-            'of MySQL after upgrading and have to be removed from '
-            'systemd service files:'
-            )
-
-        for arg in found_arguments:
-            generated_list += FMT_LIST_SEPARATOR + arg
-
-        generated_list += (
-            '\nDefault service override file is present at '
-            '`/etc/systemd/system/mysqld.service.d/override.conf`\n'
+        summary_list.append(
+            'Following detected startup arguments in systemd service files'
+            'will not work with the new MySQL after upgrading:{}\n'
+            'Default service override file is present at '
+            '`/etc/systemd/system/mysqld.service.d/override.conf`'
+            .format(''.join(_formatted_list_output(found_arguments)))
+        )
+        remedy_list.append(
+            'Drop all detected problematic startup arguments from '
+            'the customized systemd service file.'
         )
 
     reporting.create_report([
-        reporting.Title('MySQL is using configuration that will be invalid after upgrade'),
+        reporting.Title('Detected incompatible MySQL configuration'),
         reporting.Summary((
-            'MySQL server component will be upgraded. '
-            'Since RHEL-10 includes MySQL server 8.4 by default, '
-            'it is necessary to proceed with additional steps. '
-            'Some options that are currently used in MySQL configuration are '
-            'deprecated and will result in MySQL server failing to start '
-            'after upgrading. '
-            'After RHEL upgrade is completed MySQL server should automatically upgrade all '
-            'data on first start in simple setups. In more '
-            'complicated setups manual intervention might be needed.'
+            'Current MySQL configuration is not compatible with the new MySQL '
+            'version on the target system and '
+            'will result in MySQL server failing to start after upgrading.'
+            '\n\n{}'
+            .format('\n\n'.join(summary_list))
         )),
         reporting.Severity(reporting.Severity.MEDIUM),
         reporting.Groups([reporting.Groups.SERVICES]),
         reporting.ExternalLink(title='Migrating MySQL databases from RHEL 9 to RHEL 10',
                                url=REPORT_SERVER_INST_LINK_URL),
         reporting.RelatedResource('package', 'mysql-server'),
+        reporting.RelatedResource('file', '/etc/my.cnf'),
+        reporting.RelatedResource('file', '/etc/systemd/system/mysqld.service.d/override.conf'),
         reporting.Remediation(hint=(
-            'To ensure smooth upgrade process it is strongly recommended to '
-            'remove deprecated config options \n' +
-            generated_list +
-            'Dump or backup your data before proceeding with the upgrade '
-            'and consult attached article '
-            '\'Migrating MySQL databases from RHEL 9 to RHEL 10\' '
-            'with up to date recommended steps before and after the upgrade.'
+            'To ensure smooth upgrade process it is strongly recommended to:{}'
+            .format(''.join(''._formatted_list_output(remedy_list)))
         )),
         ])
 
 
-def _generate_report(found_options: set | list, found_arguments: set | list) -> None:
+def _generate_report(found_options: list, found_arguments: list) -> None:
     """
     Create report on mysql-server package installation detection.
 
