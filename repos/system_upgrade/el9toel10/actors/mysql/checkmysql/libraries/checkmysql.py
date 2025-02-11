@@ -1,7 +1,6 @@
 from leapp import reporting
-from leapp.libraries.stdlib import api
-from leapp.models import MySQLConfiguration
 from leapp.exceptions import StopActorExecutionError
+from leapp.libraries.stdlib import api
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
