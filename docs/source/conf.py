@@ -28,6 +28,7 @@ intersphinx_mapping = {
     'leapp': ('https://leapp.readthedocs.io/en/refactor-docs/', None)
 }
 
+autosectionlabel_prefix_document = True
 
 templates_path = ['_templates']
 exclude_patterns = []

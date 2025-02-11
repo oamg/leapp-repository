@@ -51,7 +51,8 @@ This is a dummy phase not containing any actors (see [Working With Workflow](wor
 Download the RPM packages and perform the RPM transaction test to determine the success of the packages upgrade using the Leapp DNF plugin.
 
 #### InterimPreparationPhase
-Prepare the upgrade iniramfs (initial RAM file system) if required, see [Leapp dracut modules and upgrade initramfs](TODO-link). Setup bootloader - mainly the upgrade boot entry.
+Prepare the {doc}`upgrade initramfs (initial RAM file system)<dracut-modules-and-upgrade-initramfs>` and setup bootloader - mainly the upgrade boot entry.
+
 This is the last phase ran in the source system - user is prompted to review the reports and reboot. The upgrade continues after the reboot.
 
 ---

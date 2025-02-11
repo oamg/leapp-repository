@@ -5,13 +5,12 @@ but are not listed again.
 The dates in brackets correspond to the end of the deprecation protection period,
 after which the related functionality can be removed at any time.
 
-*Note* The lists cover just the functionality provided inside the el7toel8
-repository only. For the functionality deprecated in the leapp
-framework, see [TODO link](../deprecation.md#list-of-the-deprecated-functionality-in-leapp).
-
 ```{note}
-Only versions where deprecations have been made are listed.
+The list covers only the deprecations made in leapp-repository. For the functionality deprecated in the leapp
+framework, see {ref}`deprecation:list of the deprecated functionality in leapp`.
 ```
+
+Only the versions in which a deprecation has been made are listed.
 
 ## v0.20.0 <span style="font-size:0.5em; font-weight:normal">(till TODO date)</span>
 - Models
