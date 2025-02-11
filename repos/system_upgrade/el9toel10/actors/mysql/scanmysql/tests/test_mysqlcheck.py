@@ -1,5 +1,6 @@
-import pytest
+from typing import TYPE_CHECKING
 import os
+import pytest
 
 from leapp import reporting
 from leapp.libraries.common.testutils import produce_mocked, CurrentActorMocked
@@ -7,7 +8,6 @@ from leapp.libraries.stdlib import api
 from leapp.libraries import stdlib
 from leapp.models import DistributionSignedRPM, RPM
 
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from repos.system_upgrade.el9toel10.models.mysql import MySQLConfiguration
     from repos.system_upgrade.el9toel10.actors.mysql.scanmysql.libraries import scanmysql

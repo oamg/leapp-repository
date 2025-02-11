@@ -1,8 +1,9 @@
-from leapp.models import DistributionSignedRPM
+from typing import TYPE_CHECKING
+
 from leapp.libraries.common.rpms import has_package
 from leapp.libraries.stdlib import api, run
+from leapp.models import DistributionSignedRPM
 
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from repos.system_upgrade.el9toel10.models.mysql import MySQLConfiguration
 else:
