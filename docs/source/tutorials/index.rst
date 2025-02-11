@@ -22,6 +22,7 @@ write leapp actors for **In-Place Upgrades (IPU)** with the leapp framework.
     custom-content
     templates/index
     troubleshooting-debugging
+    dealing-with-dependencies
 
 .. Indices and tables
 .. ==================
