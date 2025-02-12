@@ -34,7 +34,7 @@ def process():
                 'by third-party RPMs. You must make sure these third-party '
                 'RPMs were updated to reflect this change, or you may be '
                 'unable to complete Kerberos PKINIT pre-authentication (e.g. '
-                'using user certificates, or smartcards) The following files '
+                'using user certificates, or smartcards). The following files '
                 'are affected:'
                 '{sep}{files}'.format(sep=FMT_LIST_SEPARATOR, files=FMT_LIST_SEPARATOR.join([f'{r.path} (provided by {r.rpm})'for r in msg.rpm_provided_files]))),
             reporting.Severity(reporting.Severity.MEDIUM),
