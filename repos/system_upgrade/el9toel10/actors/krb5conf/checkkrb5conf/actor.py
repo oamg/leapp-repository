@@ -1,6 +1,6 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import checkkrb5conf
-from leapp.models import OutdatedKrb5confLocation, Report
+from leapp.models import OutdatedKrb5conf, Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
@@ -10,7 +10,7 @@ class CheckKrb5conf(Actor):
     """
 
     name = 'check_krb5_conf'
-    consumes = (OutdatedKrb5confLocation,)
+    consumes = (OutdatedKrb5conf,)
     produces = (Report,)
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 

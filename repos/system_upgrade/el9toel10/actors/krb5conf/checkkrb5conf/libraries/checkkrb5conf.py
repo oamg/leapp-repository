@@ -1,15 +1,15 @@
 from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.stdlib import api
-from leapp.models import OutdatedKrb5confLocation
+from leapp.models import OutdatedKrb5conf
 
 FMT_LIST_SEPARATOR = "\n    - "
 
 
 def process():
-    msg = next(api.consume(OutdatedKrb5confLocation), None)
+    msg = next(api.consume(OutdatedKrb5conf), None)
     if not msg:
-        raise StopActorExecutionError('Expected OutdatedKrb5confLocation, but got None')
+        raise StopActorExecutionError('Expected OutdatedKrb5conf, but got None')
 
     if msg.locations:
         reporting.create_report([

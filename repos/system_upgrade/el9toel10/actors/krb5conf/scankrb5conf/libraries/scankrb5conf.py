@@ -1,6 +1,6 @@
 import os
 
-from leapp.models import OutdatedKrb5confLocation
+from leapp.models import OutdatedKrb5conf
 
 
 def fetch_outdated_krb5_conf_files(conf_paths, ca_bundle_path='/etc/ssl/certs/ca-certificates.crt'):
@@ -19,4 +19,4 @@ def fetch_outdated_krb5_conf_files(conf_paths, ca_bundle_path='/etc/ssl/certs/ca
             if -1 != f.read().find(ca_bundle_path):
                 locations.add(file_path)
 
-    return OutdatedKrb5confLocation(locations=list(locations))
+    return OutdatedKrb5conf(locations=list(locations))

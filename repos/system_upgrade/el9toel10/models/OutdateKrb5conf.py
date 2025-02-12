@@ -2,7 +2,7 @@ from leapp.models import fields, Model
 from leapp.topics import SystemInfoTopic
 
 
-class OutdatedKrb5confLocation(Model):
+class OutdatedKrb5conf(Model):
     """
     Provides a list of outdated krb5 conf files.
     """

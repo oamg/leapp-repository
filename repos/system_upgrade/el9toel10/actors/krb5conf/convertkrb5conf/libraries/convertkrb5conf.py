@@ -1,6 +1,6 @@
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.stdlib import api
-from leapp.models import OutdatedKrb5confLocation
+from leapp.models import OutdatedKrb5conf
 
 
 def _convert_krb5conf(conf_file):
@@ -12,10 +12,10 @@ def _convert_krb5conf(conf_file):
 
 
 def process():
-    msg = next(api.consume(OutdatedKrb5confLocation), None)
+    msg = next(api.consume(OutdatedKrb5conf), None)
     if not msg:
         api.current_logger().error(
-            'Expected OutdatedKrb5confLocation, but got None. '
+            'Expected OutdatedKrb5conf, but got None. '
             'Cannot apply possibly needed changes in kerberos configuration files.'
         )
         return

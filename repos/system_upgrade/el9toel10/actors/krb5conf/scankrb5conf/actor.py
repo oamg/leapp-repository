@@ -1,6 +1,6 @@
 from leapp.actors import Actor
 from leapp.libraries.actor.scankrb5conf import fetch_outdated_krb5_conf_files
-from leapp.models import OutdatedKrb5confLocation
+from leapp.models import OutdatedKrb5conf
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 
@@ -11,7 +11,7 @@ class ScanKrb5conf(Actor):
 
     name = 'scan_krb5_conf'
     consumes = ()
-    produces = (OutdatedKrb5confLocation,)
+    produces = (OutdatedKrb5conf,)
     tags = (FactsPhaseTag, IPUWorkflowTag)
 
     def process(self):
