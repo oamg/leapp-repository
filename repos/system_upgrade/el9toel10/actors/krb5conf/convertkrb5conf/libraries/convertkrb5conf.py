@@ -20,6 +20,6 @@ def process():
         )
         return
 
-    if msg.locations:
-        for location in msg.locations:
-            _convert_krb5conf(location)
+    if msg.unmanaged_files:
+        for file_path in msg.unmanaged_files:
+            _convert_krb5conf(file_path)
