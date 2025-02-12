@@ -446,3 +446,128 @@ jobs:
   env:
     SOURCE_RELEASE: "8.10"
     TARGET_RELEASE: "9.6"
+
+# ###################################################################### #
+# ############################## 9 TO 10 ################################ #
+# ###################################################################### #
+
+# ###################################################################### #
+# ### Abstract job definitions to make individual tests/jobs smaller ### #
+# ###################################################################### #
+
+- &sanity-abstract-9to10
+  job: tests
+  trigger: ignore
+  fmf_url: "https://gitlab.cee.redhat.com/oamg/leapp-tests"
+  fmf_ref: "main"
+  use_internal_tf: True
+  labels:
+    - sanity
+  targets:
+    epel-9-x86_64:
+      distros: [RHEL-9.6.0-Nightly]
+  identifier: sanity-abstract-9to10
+
+- &sanity-abstract-9to10-aws
+  <<: *sanity-abstract-9to10
+  labels:
+    - sanity
+    - aws
+  targets:
+    epel-9-x86_64:
+      distros: [RHEL-9.6-rhui]
+  identifier: sanity-abstract-9to10-aws
+
+- &beaker-minimal-9to10-abstract-ondemand
+  <<: *sanity-abstract-9to10
+  manual_trigger: True
+  labels:
+    - beaker-minimal
+  targets:
+    epel-9-x86_64:
+      distros: [RHEL-9.6.0-Nightly]
+  identifier: beaker-minimal-9to10-abstract-ondemand
+
+- &kernel-rt-abstract-9to10-ondemand
+  <<: *beaker-minimal-9to10-abstract-ondemand
+  labels:
+    - kernel-rt
+  identifier: sanity-9to10-kernel-rt-abstract-ondemand
+
+# ###################################################################### #
+# ######################### Individual tests ########################### #
+# ###################################################################### #
+
+# Tests: 9.6 -> 10.0
+- &sanity-96to100
+  <<: *sanity-abstract-9to10
+  trigger: pull_request
+  identifier: sanity-9.6to10.0
+  tf_extra_params:
+    test:
+      tmt:
+        plan_filter: 'tag:9to10 & tag:tier0 & enabled:true'
+    environments:
+      - tmt:
+          context:
+            distro: "rhel-9.6"
+            distro_target: "rhel-10.0"
+        settings:
+          provisioning:
+            tags:
+              BusinessUnit: sst_upgrades@leapp_upstream_test
+  env:
+    SOURCE_RELEASE: "9.6"
+    TARGET_RELEASE: "10.0"
+
+# On-demand minimal beaker tests
+- &beaker-minimal-96to100
+  <<: *beaker-minimal-9to10-abstract-ondemand
+  trigger: pull_request
+  labels:
+    - beaker-minimal
+    - beaker-minimal-9.6to10.0
+    - 9.6to10.0
+  identifier: sanity-9.6to10.0-beaker-minimal-ondemand
+  tf_extra_params:
+    test:
+      tmt:
+        plan_filter: 'tag:8to9 & tag:partitioning & enabled:true'
+    environments:
+      - tmt:
+          context:
+            distro: "rhel-9.6"
+            distro_target: "rhel-10.0"
+        settings:
+          provisioning:
+            tags:
+              BusinessUnit: sst_upgrades@leapp_upstream_test
+  env:
+    SOURCE_RELEASE: "9.6"
+    TARGET_RELEASE: "10.0"
+
+# On-demand kernel-rt tests
+- &kernel-rt-96to100
+  <<: *kernel-rt-abstract-9to10-ondemand
+  trigger: pull_request
+  labels:
+    - kernel-rt
+    - kernel-rt-9.6to10.0
+    - 9.6to10.0
+  identifier: sanity-9.6to10.0-kernel-rt-ondemand
+  tf_extra_params:
+    test:
+      tmt:
+         plan_filter: 'tag:8to9 & tag:kernel-rt & enabled:true'
+    environments:
+      - tmt:
+          context:
+            distro: "rhel-9.6"
+            distro_target: "rhel-10.0"
+        settings:
+          provisioning:
+            tags:
+              BusinessUnit: sst_upgrades@leapp_upstream_test
+  env:
+    SOURCE_RELEASE: "9.6"
+    TARGET_RELEASE: "10.0"
