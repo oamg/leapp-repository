@@ -59,14 +59,6 @@ def test_process_no_deprecated(monkeypatch):
     # Check that we have made a report
     assert len(reporting.create_report.reports) == 1
 
-    r = _find_hint(reporting.create_report.reports[0])
-
-    # Check that Hint was in the report
-    assert r is not None
-
-    assert ('Following incompatible configuration options'
-            not in r)
-
 
 def test_process_deprecated(monkeypatch):
     def consume_mocked(*args, **kwargs):
@@ -80,10 +72,18 @@ def test_process_deprecated(monkeypatch):
     checkmysql.process()
 
     # Check that we have made a report
-    assert len(reporting.create_report.reports) == 1
+    assert len(reporting.create_report.reports) == 2
 
-    # Find first hint message in remediations
-    r = _find_hint(reporting.create_report.reports[0])
+    # Find deprecation report
+    found = None
+    for rep in reporting.create_report.reports:
+        if rep['title'] == 'Detected incompatible MySQL configuration':
+            found = rep
+            break
+
+    assert found is not None
+
+    r = found['summary']
 
     # Check that Hint was in the report
     assert r is not None
