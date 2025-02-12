@@ -104,7 +104,7 @@ def _generate_deprecated_config_report(found_options: list,
         reporting.RelatedResource('file', '/etc/systemd/system/mysqld.service.d/override.conf'),
         reporting.Remediation(hint=(
             'To ensure smooth upgrade process it is strongly recommended to:{}'
-            .format(''.join(''._formatted_list_output(remedy_list)))
+            .format(''.join(_formatted_list_output(remedy_list)))
         )),
         ])
 
@@ -120,8 +120,8 @@ def _generate_report(found_options: list, found_arguments: list) -> None:
 
     if found_arguments or found_options:
         _generate_deprecated_config_report(found_options, found_arguments)
-    else:
-        _generate_mysql_present_report()
+
+    _generate_mysql_present_report()
 
 
 def process() -> None:
