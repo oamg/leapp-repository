@@ -5,16 +5,7 @@ from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import checkmysql
 from leapp.libraries.common.testutils import create_report_mocked, logger_mocked
 from leapp.libraries.stdlib import api
-from leapp.models import MySQLConfiguration, Report
-
-
-def _find_hint(report: dict) -> str | None:
-    r = None
-    for remedy in report['detail']['remediations']:
-        if remedy['type'] == 'hint':
-            r = remedy['context']
-            break
-    return r
+from leapp.models import MySQLConfiguration
 
 
 def test_process_no_msg(monkeypatch):
