@@ -36,7 +36,7 @@ def _check_incompatible_config() -> set[str]:
     """
     Get incompatible configuration options. Since MySQL can have basically
     unlimited number of config files that can link to one another, most
-    convenient way is running `mysqld` command with `--validate-config 
+    convenient way is running `mysqld` command with `--validate-config
     --log-error-verbosity=2` arguments. Validate config only validates the
     config, without starting the MySQL server. Verbosity=2 is required to show
     deprecated options - which are removed after upgrade.

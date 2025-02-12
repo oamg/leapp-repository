@@ -1,8 +1,9 @@
+from typing import TYPE_CHECKING
+
 from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.stdlib import api
 
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from repos.system_upgrade.el9toel10.models.mysql import MySQLConfiguration
 else:

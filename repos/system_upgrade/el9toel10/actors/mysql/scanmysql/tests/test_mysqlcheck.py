@@ -1,19 +1,18 @@
-from typing import TYPE_CHECKING
 import os
+from typing import TYPE_CHECKING
+
 import pytest
 
-from leapp import reporting
-from leapp.libraries.common.testutils import produce_mocked, CurrentActorMocked
+from leapp.libraries.common.testutils import CurrentActorMocked, produce_mocked
 from leapp.libraries.stdlib import api
-from leapp.libraries import stdlib
 from leapp.models import DistributionSignedRPM, RPM
 
 if TYPE_CHECKING:
-    from repos.system_upgrade.el9toel10.models.mysql import MySQLConfiguration
     from repos.system_upgrade.el9toel10.actors.mysql.scanmysql.libraries import scanmysql
+    from repos.system_upgrade.el9toel10.models.mysql import MySQLConfiguration
 else:
-    from leapp.models import MySQLConfiguration
     from leapp.libraries.actor import scanmysql
+    from leapp.models import MySQLConfiguration
 
 
 def _generate_rpm_with_name(name):
