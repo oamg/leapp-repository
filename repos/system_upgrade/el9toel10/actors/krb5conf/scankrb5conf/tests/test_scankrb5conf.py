@@ -19,5 +19,5 @@ CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 )
 def test_fetch_outdated_krb5_conf_files_with_files(inp, exp_out):
     msg = fetch_outdated_krb5_conf_files([os.path.join(CUR_DIR, i) for i in inp])
-    assert len(msg.locations) == len(exp_out)
-    assert set(msg.locations) == set(os.path.join(CUR_DIR, o) for o in exp_out)
+    assert len(msg.unmanaged_files) == len(exp_out)
+    assert set(msg.unmanaged_files) == set(os.path.join(CUR_DIR, o) for o in exp_out)
