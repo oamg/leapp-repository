@@ -16,7 +16,7 @@ class OutdatedKrb5conf(Model):
     topic = SystemInfoTopic
 
     unmanaged_files = fields.List(fields.String(), default=[])
-    rpm_provided_files = fields.List(RpmKrb5conf(), default=[])
+    rpm_provided_files = fields.List(fields.Model(RpmKrb5conf), default=[])
     """
     The list with the full path to the krb5 conf files.
     """

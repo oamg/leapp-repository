@@ -1,7 +1,7 @@
 from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.stdlib import api
-from leapp.models import OutdatedKrb5conf, RpmKrb5conf
+from leapp.models import OutdatedKrb5conf
 
 FMT_LIST_SEPARATOR = "\n    - "
 
@@ -13,7 +13,8 @@ def process():
 
     if msg.unmanaged_files:
         reporting.create_report([
-            reporting.Title('Unmanaged MIT krb5 configuration file(s) will be updated to point the new X.509 CA bundle file'),
+            reporting.Title('Unmanaged MIT krb5 configuration file(s) will be '
+                            'updated to point the new X.509 CA bundle file'),
             reporting.Summary(
                 'On RHEL 10, the location of the reference X.509 CA bundle '
                 'file was modified. The following unmanaged MIT krb5 '
@@ -26,7 +27,8 @@ def process():
 
     if msg.rpm_provided_files:
         reporting.create_report([
-            reporting.Title('RPM-provided MIT krb5 configuration file(s) are pointing to outdated X.509 CA bundle file'),
+            reporting.Title('RPM-provided MIT krb5 configuration file(s) are '
+                            'pointing to outdated X.509 CA bundle file'),
             reporting.Summary(
                 'On RHEL 10, the location of the reference X.509 CA bundle '
                 'file was modified. Some MIT krb5 configuration files on this '
@@ -36,7 +38,10 @@ def process():
                 'unable to complete Kerberos PKINIT pre-authentication (e.g. '
                 'using user certificates, or smartcards). The following files '
                 'are affected:'
-                '{sep}{files}'.format(sep=FMT_LIST_SEPARATOR, files=FMT_LIST_SEPARATOR.join([f'{r.path} (provided by {r.rpm})'for r in msg.rpm_provided_files]))),
+                '{sep}{files}'.format(
+                    sep=FMT_LIST_SEPARATOR,
+                    files=FMT_LIST_SEPARATOR.join(
+                        [f'{r.path} (provided by {r.rpm})'for r in msg.rpm_provided_files]))),
             reporting.Severity(reporting.Severity.MEDIUM),
             reporting.Groups([reporting.Groups.SECURITY, reporting.Groups.AUTHENTICATION])
         ])

@@ -1,4 +1,3 @@
-from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.stdlib import api, CalledProcessError, run
 from leapp.models import OutdatedKrb5conf
 
@@ -9,6 +8,7 @@ def _backup_krb5conf(conf_file):
     except CalledProcessError:
         return False
     return True
+
 
 def _convert_krb5conf(conf_file):
     with open(conf_file) as f:
@@ -31,7 +31,7 @@ def process():
         for file_path in msg.unmanaged_files:
             if not _backup_krb5conf(file_path):
                 api.current_logger().error(
-                    f'Could not back up the {file_path} file. Skipping other actions.'
+                    'Could not back up the {} file. Skipping other actions.'.format(file_path)
                 )
                 return
             _convert_krb5conf(file_path)

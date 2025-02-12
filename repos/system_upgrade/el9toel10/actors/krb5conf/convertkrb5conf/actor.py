@@ -1,7 +1,7 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import convertkrb5conf
 from leapp.models import OutdatedKrb5conf
-from leapp.tags import IPUWorkflowTag, ApplicationsPhaseTag
+from leapp.tags import ApplicationsPhaseTag, IPUWorkflowTag
 
 
 class ConvertKrb5conf(Actor):
