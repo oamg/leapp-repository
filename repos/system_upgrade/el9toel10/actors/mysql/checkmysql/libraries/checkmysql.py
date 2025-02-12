@@ -75,7 +75,7 @@ def _generate_deprecated_config_report(found_options: list,
 
     if found_arguments:
         summary_list.append(
-            'Following detected startup arguments in systemd service files'
+            'Following detected startup arguments in systemd service files '
             'will not work with the new MySQL after upgrading:{}\n'
             'Default service override file is present at '
             '`/etc/systemd/system/mysqld.service.d/override.conf`'
