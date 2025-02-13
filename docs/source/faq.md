@@ -1,15 +1,8 @@
 # Frequently Asked Questions
 
-- [Why is the leapp-repository project separated from Leapp?](#why-is-the-leapp-repository-project-separated-from-leapp)
-- [What is an actor and what does it do?](#what-is-an-actor-and-what-does-it-do)
-- [When and why do I need to write an actor?](#when-and-why-do-i-need-to-write-an-actor)
-- [What are the best practices for writing actors for in-place upgrades?](#what-are-the-best-practices-for-writing-actors-for-in-place-upgrades)
-- [What are the best practices for creating and adding custom actors for in-place upgrades?](#what-are-the-best-practices-for-creating-and-adding-custom-actors-for-in-place-upgrades)
-- [What are the requirements for actors to be accepted by upstream?](#what-are-the-requirements-for-actors-to-be-accepted-by-upstream)
-- [How can I debug my actor? Is there a standard/supported way how to log and get logs from actors/channels?](#)
-- [Are there some technical limitations for an actor? Like maximum time execution](#are-there-some-technical-limitations-for-an-actor-like-maximum-time-execution)
-- [Are there some actions that are either forbidden or not recommended to be done in actors?](#are-there-some-actions-that-are-either-forbidden-or-not-recommended-to-be-done-in-actors)
-- [I got an error about PES data/ Repositories mapping.](#i-got-an-error-about-pes-data-repositories-mapping)
+```{contents}
+:local:
+```
 
 ## Why is the leapp-repository project separated from Leapp?
 
