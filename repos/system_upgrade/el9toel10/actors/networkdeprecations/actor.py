@@ -5,6 +5,12 @@ from leapp.actors import Actor
 from leapp.models import IfCfg, NetworkManagerConfig, Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
+FMT_LIST_SEPARATOR = '\n    - '
+
+
+def _formatted_list_output(input_list, sep=FMT_LIST_SEPARATOR):
+    return ['{}{}'.format(sep, item) for item in sorted(input_list)]
+
 
 class CheckNetworkDeprecations9to10(Actor):
     """
@@ -45,11 +51,15 @@ class CheckNetworkDeprecations9to10(Actor):
     def report_ifcfg_rules(conn):
         reporting.create_report([
             reporting.Title('Legacy network configuration with policy routing rules found'),
-            reporting.Summary('Network configuration files in "ifcfg" format is present accompanied'
-                              ' by legacy routing rules. In Red Hat Enterprise Linux 10, support'
-                              ' for these files is no longer enabled and the configuration will be'
-                              ' ignored. Legacy routing rules are not supported by NetworkManager'
-                              ' natively and therefore can not be migrated automatically.'),
+            reporting.Summary(
+                'Network configuration files in "ifcfg" format are present accompanied'
+                ' by legacy routing rules. In Red Hat Enterprise Linux 10, support'
+                ' for these files is no longer enabled and the configuration will be'
+                ' ignored. Legacy routing rules are not supported by NetworkManager'
+                ' natively and therefore can not be migrated automatically.'
+                ' The following configuration files were found:{}'
+                .format(''.join(_formatted_list_output(conn.values())))
+            ),
             reporting.Remediation(hint='Replace the routing rules with equivalent'
                                        ' "ipv4.routing-rules" or "ipv6.routing-rules" properties,'
                                        ' then migrate the connection with "nmcli conn migrate"'),
@@ -77,9 +87,12 @@ class CheckNetworkDeprecations9to10(Actor):
     def report_ifcfg_leftover(conn):
         reporting.create_report([
             reporting.Title('Unused legacy network configuration found'),
-            reporting.Summary('Files that used to accompany legacy network configuration in "ifcfg"'
-                              ' format are present, even though the configuration itself is not'
-                              ' longer there. These files will be ignored.'),
+            reporting.Summary(
+                'Files that used to accompany legacy network configuration in "ifcfg"'
+                ' format are present, even though the configuration itself is not'
+                ' longer there. These files will be ignored:{}'
+                .format(''.join(_formatted_list_output(conn.values())))
+            ),
             reporting.Remediation(hint='Verify that the files were not left behind by incomplete'
                                        ' migration, fix up configuration if necessary, and remove'
                                        ' them.'),
@@ -95,9 +108,12 @@ class CheckNetworkDeprecations9to10(Actor):
     def report_ifcfg(conn):
         reporting.create_report([
             reporting.Title('Legacy network configuration found'),
-            reporting.Summary('Network configuration file in legacy "ifcfg" format is present.'
-                              ' In Red Hat Enterprise Linux 10, support for these files is no longer'
-                              ' enabled and the configuration will be ignored.'),
+            reporting.Summary(
+                'Network configuration files in legacy "ifcfg" format are present.'
+                'In Red Hat Enterprise Linux 10, support for these files is no longer'
+                ' enabled and the configuration will be ignored. The following files'
+                ' were found:{}'.format(''.join(_formatted_list_output(conn.values())))
+            ),
             reporting.Remediation(
                 hint='Convert the configuration into NetworkManager native "keyfile" format.',
                 commands=[['nmcli', 'connection', 'migrate', conn['ifcfg']]]),
