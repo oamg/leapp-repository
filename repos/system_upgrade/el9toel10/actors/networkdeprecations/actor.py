@@ -5,6 +5,8 @@ from leapp.actors import Actor
 from leapp.models import IfCfg, NetworkManagerConfig, Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
+FMT_LIST_SEPARATOR = '\n    - '
+
 
 class CheckNetworkDeprecations9to10(Actor):
     """
@@ -45,8 +47,10 @@ class CheckNetworkDeprecations9to10(Actor):
     def report_ifcfg_rules(conn):
         reporting.create_report([
             reporting.Title('Legacy network configuration with policy routing rules found'),
-            reporting.Summary('Network configuration files in "ifcfg" format is present accompanied'
-                              ' by legacy routing rules. In Red Hat Enterprise Linux 10, support'
+            reporting.Summary('Network configuration files in "ifcfg" format are present accompanied'
+                              ' by legacy routing rules:'
+                              f'{FMT_LIST_SEPARATOR}{FMT_LIST_SEPARATOR.join(conn.values())}'
+                              'In Red Hat Enterprise Linux 10, support'
                               ' for these files is no longer enabled and the configuration will be'
                               ' ignored. Legacy routing rules are not supported by NetworkManager'
                               ' natively and therefore can not be migrated automatically.'),
@@ -79,7 +83,9 @@ class CheckNetworkDeprecations9to10(Actor):
             reporting.Title('Unused legacy network configuration found'),
             reporting.Summary('Files that used to accompany legacy network configuration in "ifcfg"'
                               ' format are present, even though the configuration itself is not'
-                              ' longer there. These files will be ignored.'),
+                              ' longer there:'
+                              f'{FMT_LIST_SEPARATOR}{FMT_LIST_SEPARATOR.join(conn.values())}'
+                              'These files will be ignored.'),
             reporting.Remediation(hint='Verify that the files were not left behind by incomplete'
                                        ' migration, fix up configuration if necessary, and remove'
                                        ' them.'),
@@ -95,9 +101,12 @@ class CheckNetworkDeprecations9to10(Actor):
     def report_ifcfg(conn):
         reporting.create_report([
             reporting.Title('Legacy network configuration found'),
-            reporting.Summary('Network configuration file in legacy "ifcfg" format is present.'
-                              ' In Red Hat Enterprise Linux 10, support for these files is no longer'
-                              ' enabled and the configuration will be ignored.'),
+            reporting.Summary(
+                'Network configuration files in legacy "ifcfg" format are present:'
+                f'{FMT_LIST_SEPARATOR}{FMT_LIST_SEPARATOR.join(conn.values())}'
+                'In Red Hat Enterprise Linux 10, support for these files is no longer'
+                ' enabled and the configuration will be ignored.'
+            ),
             reporting.Remediation(
                 hint='Convert the configuration into NetworkManager native "keyfile" format.',
                 commands=[['nmcli', 'connection', 'migrate', conn['ifcfg']]]),
