@@ -1,6 +1,9 @@
 In-place upgrade architecture and workflow
 =====================================================================
-TBD
+The upgrade :ref:`building-blocks-and-architecture:workflow` and architecture of the upgrade process is quite complex.
+The following pages provide detailed description of the most important components.
+
+For the general architecture of the leapp framework see :external:doc:`building-blocks-and-architecture` in framework documentation.
 
 .. toctree::
     :maxdepth: 4

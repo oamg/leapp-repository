@@ -20,6 +20,7 @@ write leapp actors for **In-Place Upgrades (IPU)** with the leapp framework.
     setup-devel-env
     howto-first-actor-upgrade
     custom-content
+    configurable-actors
     templates/index
     troubleshooting-debugging
     dealing-with-dependencies
