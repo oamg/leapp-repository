@@ -24,7 +24,7 @@ SAP_HANA_RHEL90_MINIMAL_VERSION_STRING = 'HANA 2.0 SPS05 rev 59.04 or later, or 
 
 def _report_skip_check():
     summary = (
-        'For the target RHEL releases >=8.8 and >=9.2 '
+        'For the target RHEL releases >=8.8, >=9.2 and >=10.0 '
         'the leapp utility does not check RHEL and SAP HANA 2.0 '
         'versions compatibility. Please ensure your SAP HANA 2.0 '
         'is supported on the target RHEL release and '
@@ -187,8 +187,6 @@ def version2_check(info):
             continue
         if version.matches_target_version('> 8.6', '< 9.0') or version.matches_target_version('> 9.0'):
             # if a target release is >=8.8 or >=9.2, the SAP HANA and RHEL versions compatibility is not checked
-            # TODO(mmatuska): We don't know whether the check will be skipped on RHEL 10 (9to10) yet,
-            # update the method accoridingly then
             _report_skip_check()
             return
         # if a starget release is 8.6 or 9.0 we still check SAP HANA and RHEL versions compatibility
@@ -243,14 +241,14 @@ def platform_check():
 
     EXTERNAL_LINK = {
         '8': reporting.ExternalLink(
-            url='https://access.redhat.com/solutions/5154031',
-            title='How to in-place upgrade SAP environments from RHEL 7 to RHEL 8'),
+            url='https://red.ht/how-to-in-place-upgrade-sap-environments-from-rhel-7-to-rhel-8',
+            title='Upgrading SAP environments from RHEL 7 to RHEL 8'),
         '9': reporting.ExternalLink(
             url='https://red.ht/how-to-in-place-upgrade-sap-environments-from-rhel-8-to-rhel-9',
-            title='How to in-place upgrade SAP environments from RHEL 8 to RHEL 9'),
+            title='Upgrading SAP environments from RHEL 8 to RHEL 9'),
         '10': reporting.ExternalLink(
             url='https://red.ht/how-to-in-place-upgrade-sap-environments-from-rhel-9-to-rhel-10',
-            title='How to in-place upgrade SAP environments from RHEL 9 to RHEL 10'),
+            title='Upgrading SAP environments from RHEL 9 to RHEL 10'),
     }
 
     reporting.create_report([
