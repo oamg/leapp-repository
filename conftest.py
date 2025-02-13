@@ -5,6 +5,7 @@ from leapp.repository.manager import RepositoryManager
 from leapp.repository.scan import find_and_scan_repositories
 from leapp.utils.repository import find_repository_basedir, get_repository_id
 
+pytest_plugins = ('leapp.snactor.fixture',)
 logger = logging.getLogger(__name__)
 logging.getLogger("asyncio").setLevel(logging.INFO)
 logging.getLogger("parso").setLevel(logging.INFO)
