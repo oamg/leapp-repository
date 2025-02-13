@@ -1,5 +1,5 @@
 # Phases of the Upgrade Workflow
-This page explains the individual phases of an in-place upgrade and how to choose the correct phase for your actor.
+This page explains the individual {ref}`phases<building-blocks-and-architecture:phase>` of an in-place upgrade {ref}`workflow<building-blocks-and-architecture:workflow>` and how to choose the correct phase for your actor.
 
 ## Choosing a Phase for an Actor
 Here we cover some of the common cases for adding actors to the in-place upgrade process and choosing the right phase for them. For more complicated cases see the overview of each phase in the section below.
@@ -37,7 +37,7 @@ This phase is analogous to the `FactsCollectionPhase` for the target system.
 
 Here the information about what repositories are available on target system,
 what is expected calculation of target transaction (what will be installed, removed, ...) is collected.
-This is also the place where target userspace is created by [`TargetUserspaceCreator`](TODO-link).
+This is also the place where target userspace is created by {doc}`target-userspace-creator`.
 
 #### TargetTransactionCheck
 Checks upgradability regarding the information gathered about the target system. Such as whether expected repositories and RPMs are available, what RPMs are planned to install, remove, ...
@@ -45,7 +45,7 @@ Checks upgradability regarding the information gathered about the target system.
 IOW, checks related to RPM transaction mainly.
 
 #### ReportsPhase
-This is a dummy phase not containing any actors (see [Working With Workflow](working-with-workflows). Reports are presented to the user during this phase. This is also the final phase if leapp is run using `leapp preupgrade`.
+This is a dummy phase not containing any actors (see {external:doc}`tutorials/working-with-workflows`. Reports are presented to the user during this phase. This is also the final phase if leapp is run using `leapp preupgrade`.
 
 #### DownloadPhase
 Download the RPM packages and perform the RPM transaction test to determine the success of the packages upgrade using the Leapp DNF plugin.
