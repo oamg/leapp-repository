@@ -26,7 +26,7 @@ Only the versions in which a deprecation has been made are listed.
 
 ## v0.16.0 <span style="font-size:0.5em; font-weight:normal">(till September 2022)</span>
 - Shared libraries
-    - **`leapp.libraries.common.utils.apply_yum_workaround`** - The `apply_yum_workaround` function has been deprecated, use `DNFWorkaround` message as used in the successing `RegisterYumAdjustment` actor.
+    - **`leapp.libraries.common.utils.apply_yum_workaround`** - The `apply_yum_workaround` function has been deprecated, use `DNFWorkaround` message as used in the successive `RegisterYumAdjustment` actor.
 
 ## v0.15.0 <span style="font-size:0.5em; font-weight:normal">(till April 2022)</span>
 - Models
