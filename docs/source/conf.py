@@ -9,9 +9,9 @@
 import sphinx_rtd_theme
 
 project = 'leapp-repository'
-copyright = '2024, Leapp team'
+copyright = '2025, Leapp team'
 author = 'Leapp team'
-release = '0.21.0'
+release = '0.22.0'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

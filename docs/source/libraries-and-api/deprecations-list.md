@@ -12,7 +12,11 @@ framework, see {ref}`deprecation:list of the deprecated functionality in leapp`.
 
 Only the versions in which a deprecation has been made are listed.
 
-## v0.20.0 <span style="font-size:0.5em; font-weight:normal">(till TODO date)</span>
+## Next release <span style="font-size:0.5em; font-weight:normal">(till TODO date)</span>
+
+- No new deprecation yet
+
+## v0.20.0 <span style="font-size:0.5em; font-weight:normal">(till September 2024)</span>
 - Models
   - **`InstalledRedHatSignedRPM`** - Replaced by the distribution agnostic `DistributionSignedRPM`.
 
