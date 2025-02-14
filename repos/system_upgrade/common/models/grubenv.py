@@ -1,12 +1,11 @@
-from leapp.models import fields, Model
+from leapp.models import Model
 from leapp.topics import SystemFactsTopic
 
 
-class HybridImage(Model):
+class ConvertGrubenvTask(Model):
     """
-    Model used for instructing Leapp to convert "grubenv" symlink
-    into a regular file in case of hybrid (BIOS/EFI) images using BIOS
-    on Azure.
+    Model used for instructing Leapp to convert "grubenv" symlink into a
+    regular file.
     """
+
     topic = SystemFactsTopic
-    detected = fields.Boolean(default=False)
