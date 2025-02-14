@@ -1,5 +1,6 @@
-**Before doing anything, please read
-[Leapp framework documentation](https://leapp.readthedocs.io/).**
+**Before doing anything, please read the upstream [documentation](https://leapp-repository.readthedocs.io/).**
+
+Also, you could find useufl to read [Leapp framework documentation](https://leapp.readthedocs.io/).
 
 ---
 
