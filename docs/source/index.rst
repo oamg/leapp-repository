@@ -1,9 +1,14 @@
-Welcome to developer documentation for Leapp repository!
+Welcome to developer documentation for leapp-repository!
 ========================================================
 
-`Leapp repository <https://oamg.github.io/leapp-repository/>`_ is a collection
-of repositories for the `Leapp framework <https://oamg.github.io/leapp/>`_
+`leapp-repository <https://github.com/oamg/leapp-repository>`_ is a collection
+of repositories for the `Leapp framework <https://github.com/oamg/leapp>`_ (:external+leapp:doc:`documentation<index>`)
 providing Red Hat Enterprise Linux in-place upgrade functionality.
+
+.. important::
+    This documentation is currently under (re)construction and we will appreciate feedback.
+    Feel free to contact us via `GH discussion <https://github.com/oamg/leapp-repository/discussions>`_
+    in our upstream project.
 
 .. toctree::
     :maxdepth: 4
