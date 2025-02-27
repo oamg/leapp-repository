@@ -71,6 +71,7 @@ def rerun(args):
         nogpgcheck=False,
         channel=None,
         report_schema='1.1.0',
+        enable_experimental_feature=[],
         whitelist_experimental=[],
         enablerepo=[]))
 
