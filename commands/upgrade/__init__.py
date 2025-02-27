@@ -20,6 +20,10 @@ from leapp.utils.output import beautify_actor_exception, report_errors, report_i
 @command_opt('resume', is_flag=True, help='Continue the last execution after it was stopped (e.g. after reboot)')
 @command_opt('reboot', is_flag=True, help='Automatically performs reboot when requested.')
 @command_opt('whitelist-experimental', action='append', metavar='ActorName', help='Enable experimental actors')
+@command_opt('enable-experimental-feature', action='append', metavar='Feature',
+             help=('Enable experimental feature. '
+                   'Available experimental features: {}').format(util.get_help_str_with_avail_experimental_features()),
+             choices=list(util.EXPERIMENTAL_FEATURES), default=[])
 @command_opt('debug', is_flag=True, help='Enable debug mode', inherit=False)
 @command_opt('verbose', is_flag=True, help='Enable verbose logging', inherit=False)
 @command_opt('no-rhsm', is_flag=True, help='Use only custom repositories and skip actions'
