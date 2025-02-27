@@ -24,7 +24,7 @@ def lighten_target_userpace(context):
                                          tree_to_prune, error)
 
 
-def build_squashfs(livemode_config, userspace_info):
+def build_squashfs(livemode_config, userspace_info, paths_to_exclude=None):
     """
     Generate the live rootfs image based on the target userspace
 
@@ -34,8 +34,11 @@ def build_squashfs(livemode_config, userspace_info):
     target_userspace_fullpath = userspace_info.path
     squashfs_fullpath = livemode_config.squashfs_fullpath
 
-    api.current_logger().info('Building the squashfs image %s from target userspace located at %s',
-                              squashfs_fullpath, target_userspace_fullpath)
+    if not paths_to_exclude:
+        paths_to_exclude = []
+
+    api.current_logger().info('Building the squashfs image %s from target userspace located at %s with excludes: %s',
+                              squashfs_fullpath, target_userspace_fullpath, ', '.join(paths_to_exclude))
 
     try:
         if os.path.exists(squashfs_fullpath):
@@ -44,8 +47,13 @@ def build_squashfs(livemode_config, userspace_info):
         api.current_logger().warning('Failed to remove already existing %s. Full error: %s',
                                      squashfs_fullpath, error)
 
+    mksquashfs_command = ['mksquashfs', target_userspace_fullpath, squashfs_fullpath]
+    if paths_to_exclude:
+        mksquashfs_command.append('-e')
+        mksquashfs_command.extend(paths_to_exclude)
+
     try:
-        run(['mksquashfs', target_userspace_fullpath, squashfs_fullpath])
+        run(mksquashfs_command)
     except CalledProcessError as error:
         raise StopActorExecutionError(
            'Cannot pack the target userspace into a squash image. ',
@@ -68,5 +76,9 @@ def generate_live_image_if_enabled():
 
     with mounting.NspawnActions(base_dir=userspace_info.path) as context:
         lighten_target_userpace(context)
-        squashfs_path = build_squashfs(livemode_config, userspace_info)
+
+        # Exclude the DNF cache - we do not need it, leapp mounts /sysroot and uses userspace's dnf cache from there
+        paths_to_exclude = [os.path.join(userspace_info.path, 'var/cache/dnf')]
+
+        squashfs_path = build_squashfs(livemode_config, userspace_info, paths_to_exclude=paths_to_exclude)
         api.produce(LiveModeArtifacts(squashfs_path=squashfs_path))
