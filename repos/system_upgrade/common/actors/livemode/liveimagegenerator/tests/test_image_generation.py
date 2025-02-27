@@ -78,10 +78,12 @@ def test_generate_live_image_if_enabled(monkeypatch, livemode_config, should_pro
         def __exit__(self, *args, **kwargs):
             pass
 
+    def build_squashfs_image_mock(livemode_config, userspace_info, *args, **kwargs):
+        return '/squashfs'
+
     monkeypatch.setattr(mounting, 'NspawnActions', NspawnMock)
     monkeypatch.setattr(live_image_generator_lib, 'lighten_target_userpace', lambda context: None)
-    monkeypatch.setattr(live_image_generator_lib, 'build_squashfs',
-                        lambda livemode_config, userspace_info: '/squashfs')
+    monkeypatch.setattr(live_image_generator_lib, 'build_squashfs', build_squashfs_image_mock)
     monkeypatch.setattr(api, 'produce', produce_mocked())
 
     live_image_generator_lib.generate_live_image_if_enabled()
