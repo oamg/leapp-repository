@@ -1,26 +1,6 @@
 from leapp.exceptions import StopActorExecutionError
-from leapp.libraries.common.config.version import get_source_major_version
+from leapp.libraries.common.rpms import get_leapp_packages
 from leapp.libraries.stdlib import api, CalledProcessError
-
-
-def get_leapp_packages():
-    """
-    Return the list of leapp and leapp-repository rpms that should be preserved
-    during the upgrade.
-
-    It's list of packages that should be preserved, not what is really
-    installed.
-
-    The snactor RPM doesn't have to be installed, but if so, we have to take
-    care about that too as well to prevent broken dnf transaction.
-    """
-    # TODO: should we set the seatbelt and exclude leapp RPMs from the target
-    # system too?
-    generic = ['leapp', 'snactor']
-    if get_source_major_version() == '7':
-        return generic + ['python2-leapp', 'leapp-upgrade-el7toel8']
-
-    return generic + ['python3-leapp', 'leapp-upgrade-el8toel9']
 
 
 def _strip_split(data, sep, maxsplit=-1):
