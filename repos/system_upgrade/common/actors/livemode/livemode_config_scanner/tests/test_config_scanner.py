@@ -86,29 +86,21 @@ def test_enablement_conditions(monkeypatch, case_descr):
 def test_config_scanning(monkeypatch):
     """ Test whether scanning a valid config is properly transcribed into a config message. """
 
-    config_lines = [
-        '[livemode]',
-        'squashfs_fullpath=IMG',
-        'setup_network_manager=yes',
-        'autostart_upgrade_after_reboot=no',
-        'setup_opensshd_with_auth_keys=/root/.ssh/authorized_keys',
-        'setup_passwordless_root=no',
-        'additional_packages=pkgA,pkgB'
-    ]
-    config_content = '\n'.join(config_lines) + '\n'
-
-    if sys.version[0] == '2':
-        config_content = config_content.decode('utf-8')  # python2 compat
-
-    class ConfigParserMock(configparser.ConfigParser):  # pylint: disable=too-many-ancestors
-        def read(self, file_paths, *args, **kwargs):
-            self.read_string(config_content)
-            return file_paths
-
-    monkeypatch.setattr(configparser, 'ConfigParser', ConfigParserMock)
-
+    config = {
+        'livemode': {
+            'squashfs_image_path': '/var/lib/leapp/live-upgrade2.img',
+            'additional_packages': ['petri-nets'],
+            'autostart_upgrade_after_reboot': True,
+            'setup_network_manager': True,
+            'setup_passwordless_root': True,
+            'dracut_network': '',
+            'url_to_load_squashfs_image_from': '',
+            'setup_opensshd_using_auth_keys': '/root/.ssh/authorized_keys',
+            'capture_strace_info_into': ''
+        }
+    }
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(config=config))
     monkeypatch.setattr(scan_livemode_config_lib, 'should_scan_config', lambda: True)
-
     monkeypatch.setattr(api, 'produce', produce_mocked())
 
     scan_livemode_config_lib.scan_config_and_emit_message()
@@ -119,7 +111,7 @@ def test_config_scanning(monkeypatch):
     produced_message = api.produce.model_instances[0]
     assert isinstance(produced_message, LiveModeConfig)
 
-    assert produced_message.additional_packages == ['pkgA', 'pkgB']
-    assert produced_message.squashfs_fullpath == 'IMG'
+    assert produced_message.additional_packages == ['petri-nets']
+    assert produced_message.squashfs_fullpath == '/var/lib/leapp/live-upgrade2.img'
     assert produced_message.setup_opensshd_with_auth_keys == '/root/.ssh/authorized_keys'
     assert produced_message.setup_network_manager
