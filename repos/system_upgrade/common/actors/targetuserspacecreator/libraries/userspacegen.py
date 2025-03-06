@@ -1239,7 +1239,35 @@ def setup_target_rhui_access_if_needed(context, indata):
         'shell'
     ]
 
-    context.call(cmd, callback_raw=utils.logging_handler, stdin='\n'.join(dnf_transaction_steps))
+    try:
+        dnf_shell_instructions = '\n'.join(dnf_transaction_steps)
+        api.current_logger().debug(
+            'Supplying the following instructions to the `dnf shell`: {}'.format(dnf_shell_instructions)
+        )
+        context.call(cmd, callback_raw=utils.logging_handler, stdin=dnf_shell_instructions)
+    except CalledProcessError as error:
+        api.current_logger().debug(
+            'Failed to swap RHUI clients. This is likely because there are no repositories '
+            ' containing RHUI clients enabled, or we cannot access them.'
+        )
+        api.current_logger().debug(error)
+
+        swapping_clients_info_msg = 'Failed to swap `{0}` (source client{1}) with {2} (target client{3}).'
+        swapping_clients_info_msg = swapping_clients_info_msg.format(
+            ' '.join(indata.rhui_info.src_client_pkg_names),
+            '' if len(indata.rhui_info.src_client_pkg_names) == 1 else 's',
+            ' '.join(indata.rhui_info.target_client_pkg_names),
+            '' if len(indata.rhui_info.target_client_pkg_names) == 1 else 's',
+        )
+
+        details = {
+            'details': swapping_clients_info_msg,
+            'error': str(error)
+        }
+        raise StopActorExecutionError(
+            'Failed to swap RHUI clients to establish content access',
+            details=details
+        )
 
     _apply_rhui_access_postinstall_tasks(context, setup_info)
 
