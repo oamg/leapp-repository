@@ -80,6 +80,6 @@ def scan_config_and_emit_message():
             continue
 
         config_msg_init_kwargs[model_field_name] = config[config_field.name]
-    
+
     config_msg = LiveModeConfig(**config_msg_init_kwargs)
     api.produce(config_msg)
