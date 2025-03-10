@@ -16,7 +16,6 @@ from leapp.utils.audit import get_checkpoints, get_connection, get_messages
 from leapp.utils.output import report_unsupported
 from leapp.utils.report import fetch_upgrade_report_messages, generate_report_file
 
-
 EXPERIMENTAL_FEATURES = {
     'livemode': [
         'live_image_generator',

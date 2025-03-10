@@ -1,5 +1,5 @@
-from leapp.exceptions import StopActorExecutionError
 from leapp.configs.actor import livemode as livemode_config_lib
+from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common.config import architecture, get_env
 from leapp.libraries.common.rpms import has_package
 from leapp.libraries.stdlib import api
