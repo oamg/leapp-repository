@@ -1,15 +1,9 @@
-try:
-    import configparser
-except ImportError:
-    import ConfigParser as configparser
-
 from leapp.exceptions import StopActorExecutionError
 from leapp.configs.actor import livemode as livemode_config_lib
 from leapp.libraries.common.config import architecture, get_env
 from leapp.libraries.common.rpms import has_package
 from leapp.libraries.stdlib import api
 from leapp.models import InstalledRPM, LiveModeConfig
-from leapp.models.fields import ModelViolationError
 
 LIVEMODE_CONFIG_LOCATION = '/etc/leapp/files/devel-livemode.ini'
 DEFAULT_SQUASHFS_PATH = '/var/lib/leapp/live-upgrade.img'
