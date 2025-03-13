@@ -50,12 +50,16 @@ def get_os_release(path):
     try:
         with open(path) as f:
             data = dict(l.strip().split('=', 1) for l in f.readlines() if '=' in l)
+            release_id = data.get('ID', '').strip('"')
+            version_id = data.get('VERSION_ID', '').strip('"')
+            if release_id == 'centos' and '.' not in version_id:
+                version_id = "{}.999".format(version_id)
             return OSRelease(
-                release_id=data.get('ID', '').strip('"'),
+                release_id=release_id,
                 name=data.get('NAME', '').strip('"'),
                 pretty_name=data.get('PRETTY_NAME', '').strip('"'),
                 version=data.get('VERSION', '').strip('"'),
-                version_id=data.get('VERSION_ID', '').strip('"'),
+                version_id=version_id,
                 variant=data.get('VARIANT', '').strip('"') or None,
                 variant_id=data.get('VARIANT_ID', '').strip('"') or None
             )
