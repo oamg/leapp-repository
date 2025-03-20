@@ -1,3 +1,4 @@
+import errno
 import grp
 import os
 import os.path
@@ -253,16 +254,30 @@ def enable_dbus(context):
     Enable dbus-daemon into the target userspace
     Looks like it's not enabled by default when installing into a container.
     """
-    api.current_logger().info('Configuring the dbus services')
+    dbus_daemon_service = '/usr/lib/systemd/system/dbus-daemon.service'
 
     links = ['/etc/systemd/system/multi-user.target.wants/dbus-daemon.service',
              '/etc/systemd/system/dbus.service',
              '/etc/systemd/system/messagebus.service']
 
+    api.current_logger().info(('Enabling dbus services. Leapp will attempt to create the following '
+                               'symlinks: {0}, all pointing to {1}').format(', '.join(links),
+                                                                            dbus_daemon_service))
+
     for link in links:
+        api.current_logger().debug('Creating symlink at {0} that points to {1}'.format(link, dbus_daemon_service))
         try:
             os.symlink('/usr/lib/systemd/system/dbus-daemon.service', context.full_path(link))
         except OSError as err:
+            if err.errno == errno.EEXIST:
+                # @Note: We are not catching FileExistsError because of python2 (there is no such error class)
+                # We are performing installations within container, so the systemd symlinks that are created
+                # during installation should have correct destination
+                api.current_logger().debug(
+                    'A file already exists at {0}, assuming it is a symlink with a correct content.'
+                )
+                continue
+
             details = {'Problem': 'An error occurred while creating the systemd symlink', 'source_error': str(err)}
             raise StopActorExecutionError('Cannot enable the dbus services', details=details)
 
