@@ -92,6 +92,10 @@ class SELinuxApplyCustom(Actor):
 
                 command.extend(['-X', str(module.priority), '-i', cil_filename])
 
+            if command == ['semodule']:
+                # no modules selected for installation
+                continue
+
             try:
                 run(command)
             except CalledProcessError as e:
