@@ -4,24 +4,12 @@ import pytest
 
 from leapp import reporting
 from leapp.libraries.actor import checktargetversion
+from leapp.libraries.common.config import architecture
 from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked, logger_mocked
 from leapp.libraries.stdlib import api
-from leapp.models import IPUPath, IPUPaths
+from leapp.models import IPUSourceToPossibleTargets
 from leapp.utils.deprecation import suppress_deprecation
 from leapp.utils.report import is_inhibitor
-
-
-# It must be in a function so we can suppress the deprecation warning in tests.
-@suppress_deprecation(IPUPaths)
-def _get_upgrade_paths_data():
-    return IPUPaths(data=[
-        IPUPath(source_version='7.9', target_versions=['8.10']),
-        IPUPath(source_version='8.10', target_versions=['9.4', '9.5', '9.6']),
-        IPUPath(source_version='9.6', target_versions=['10.0']),
-        IPUPath(source_version='7', target_versions=['8.10']),
-        IPUPath(source_version='8', target_versions=['9.4', '9.5', '9.6']),
-        IPUPath(source_version='9', target_versions=['10.0'])
-    ])
 
 
 @pytest.fixture
@@ -29,11 +17,20 @@ def setup_monkeypatch(monkeypatch):
     """Fixture to set up common monkeypatches."""
 
     def _setup(source_version, target_version, leapp_unsupported='0'):
+        suppoted_upgrade_paths = [
+            IPUSourceToPossibleTargets(source_version='7.9', target_versions=['8.10']),
+            IPUSourceToPossibleTargets(source_version='8.10', target_versions=['9.4', '9.5', '9.6']),
+            IPUSourceToPossibleTargets(source_version='9.6', target_versions=['10.0']),
+            IPUSourceToPossibleTargets(source_version='7', target_versions=['8.10']),
+            IPUSourceToPossibleTargets(source_version='8', target_versions=['9.4', '9.5', '9.6']),
+            IPUSourceToPossibleTargets(source_version='9', target_versions=['10.0'])
+        ]
+
         curr_actor_mocked = CurrentActorMocked(
             src_ver=source_version,
             dst_ver=target_version,
             envars={'LEAPP_UNSUPPORTED': leapp_unsupported},
-            msgs=[_get_upgrade_paths_data()]
+            supported_upgrade_paths=suppoted_upgrade_paths
         )
         monkeypatch.setattr(api, 'current_actor', curr_actor_mocked)
         monkeypatch.setattr(api, 'current_logger', logger_mocked())
