@@ -1,9 +1,10 @@
+import json
 import os
 import platform
 
 from leapp.exceptions import StopActorExecutionError
-from leapp.libraries.stdlib import CalledProcessError, run
-from leapp.models import EnvVar, IPUConfig, OSRelease, Version
+from leapp.libraries.stdlib import api, CalledProcessError, run
+from leapp.models import EnvVar, IPUConfig, IPUSourceToPossibleTargets, OSRelease, Version
 
 ENV_IGNORE = ('LEAPP_CURRENT_PHASE', 'LEAPP_CURRENT_ACTOR', 'LEAPP_VERBOSE',
               'LEAPP_DEBUG')
@@ -85,24 +86,34 @@ def check_target_major_version(curr_version, target_version):
         )
 
 
-def load_raw_upgrade_paths_for_flavour(flavour='default', paths_definition_file='upgrade_paths.json'):
+def load_upgrade_paths_definitions(paths_definition_file):
     with open(api.get_common_file_path(paths_definition_file)) as fp:
-        data = json.loads(fp.read())
+        definitions = json.loads(fp.read())
+    return definitions
 
-    raw_upgrade_paths = data.get(flavour, {})
 
-    if not raw_upgrade_paths:
-        api.current_logger().warning('Cannot discover any upgrade paths for flavour: {}'.format(flavour))
+def load_raw_upgrade_paths_for_distro_and_flavour(distro_id, flavour, paths_definition_file='upgrade_paths.json'):
+    all_definitions = load_upgrade_paths_definitions(paths_definition_file)
+    raw_upgrade_paths_for_distro = all_definitions.get(distro_id, {})
 
-    return raw_upgrade_paths
+    if not raw_upgrade_paths_for_distro:
+        api.current_logger().warning('No upgrade paths defined for distro \'{}\''.format(distro_id))
+
+    raw_upgrade_paths_for_flavour = raw_upgrade_paths_for_distro.get(flavour, {})
+
+    if not raw_upgrade_paths_for_flavour:
+        api.current_logger().warning('Cannot discover any upgrade paths for flavour: {}/{}'.format(distro_id, flavour))
+
+    return raw_upgrade_paths_for_flavour
 
 
 def construct_models_for_paths_matching_source_major(raw_paths, src_major_version):
     multipaths_matching_source = []
-    for src_version, target_versions in ipu_paths.items():
+    for src_version, target_versions in raw_paths.items():
         if src_version.split('.')[0] == src_major_version:
-            source_to_targets = IPUSourceToPossibleTargets(source_version=src_version, target_versions=target_versions)
-            multipaths_matching_source.append()
+            source_to_targets = IPUSourceToPossibleTargets(source_version=src_version,
+                                                           target_versions=target_versions)
+            multipaths_matching_source.append(source_to_targets)
     return multipaths_matching_source
 
 
@@ -114,7 +125,7 @@ def produce_ipu_config(actor):
 
     check_target_major_version(source_version, target_version)
 
-    raw_upgrade_paths = load_raw_upgrade_paths_for_flavour(flavour)
+    raw_upgrade_paths = load_raw_upgrade_paths_for_distro_and_flavour(os_release.release_id, flavour)
     source_major_version = source_version.split('.')[0]
     exposed_supported_paths = construct_models_for_paths_matching_source_major(raw_upgrade_paths, source_major_version)
 
