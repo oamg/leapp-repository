@@ -8,19 +8,24 @@ from leapp.exceptions import CommandError
 
 
 @mock.patch("leapp.cli.commands.command_utils.get_upgrade_paths_config",
-            return_value={"default": {"7.9": ["8.4"], "8.6": ["9.0"], "7": ["8.4"], "8": ["9.0"]}})
+            return_value={'rhel': {"default": {"7.9": ["8.4"], "8.6": ["9.0"], "7": ["8.4"], "8": ["9.0"]}}})
 def test_get_target_version(mock_open, monkeypatch):
-
-    monkeypatch.setattr(command_utils, 'get_os_release_version_id', lambda x: '8.6')
+    etc_os_release_contents = {'ID': 'rhel', 'VERSION_ID': '8.6'}
+    monkeypatch.setattr(command_utils, '_retrieve_os_release_contents',
+                        lambda *args, **kwargs: etc_os_release_contents)
     assert command_utils.get_target_version('default') == '9.0'
 
     monkeypatch.setenv('LEAPP_DEVEL_TARGET_RELEASE', '')
-    monkeypatch.setattr(command_utils, 'get_os_release_version_id', lambda x: '8.6')
+    etc_os_release_contents = {'ID': 'rhel', 'VERSION_ID': '8.6'}
+    monkeypatch.setattr(command_utils, '_retrieve_os_release_contents',
+                        lambda *args, **kwargs: etc_os_release_contents)
     assert command_utils.get_target_version('default') == '9.0'
 
     monkeypatch.delenv('LEAPP_DEVEL_TARGET_RELEASE', raising=True)
     # unsupported path
-    monkeypatch.setattr(command_utils, 'get_os_release_version_id', lambda x: '8.5')
+    etc_os_release_contents = {'ID': 'rhel', 'VERSION_ID': '8.5'}
+    monkeypatch.setattr(command_utils, '_retrieve_os_release_contents',
+                        lambda *args, **kwargs: etc_os_release_contents)
     assert command_utils.get_target_version('default') == '9.0'
 
 

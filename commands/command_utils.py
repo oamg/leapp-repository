@@ -71,15 +71,24 @@ def get_upgrade_flavour():
     return LEAPP_UPGRADE_FLAVOUR_DEFAULT
 
 
+def _retrieve_os_release_contents(_os_release_path='/etc/os-release'):
+    """
+    Retrieve the contents of /etc/os-release
+
+    :rtype: dict[str, str]
+    """
+    with open(_os_release_path) as os_release_handle:
+        lines = os_release_handle.readlines()
+        return dict(line.strip().split('=', 1) for line in lines if '=' in line)
+
+
 def get_os_release_version_id(filepath):
     """
     Retrieve data about System OS release from provided file.
 
     :return: `str` version_id
     """
-    with open(filepath) as f:
-        data = dict(l.strip().split('=', 1) for l in f.readlines() if '=' in l)
-        return data.get('VERSION_ID', '').strip('"')
+    return _retrieve_os_release_contents(_os_release_path=filepath).get('VERSION_ID', '').strip('"')
 
 
 def get_upgrade_paths_config():
@@ -92,13 +101,13 @@ def get_upgrade_paths_config():
     return upgrade_paths_map
 
 
-def get_target_versions_from_config(src_version_id, flavor):
+def get_target_versions_from_config(src_version_id, distro, flavor):
     """
     Retrieve all possible target versions from upgrade_paths_map.
     If no match is found returns empty list.
     """
     upgrade_paths_map = get_upgrade_paths_config()
-    return upgrade_paths_map.get(flavor, {}).get(src_version_id, [])
+    return upgrade_paths_map.get(distro, {}).get(flavor, {}).get(src_version_id, [])
 
 
 def get_supported_target_versions(flavour=get_upgrade_flavour()):
@@ -107,14 +116,17 @@ def get_supported_target_versions(flavour=get_upgrade_flavour()):
     The default value for `flavour` is `default`.
     """
 
-    current_version_id = get_os_release_version_id('/etc/os-release')
-    target_versions = get_target_versions_from_config(current_version_id, flavour)
+    os_release_contents = _retrieve_os_release_contents()
+    current_version_id = os_release_contents.get('VERSION_ID', '').strip('"')
+    distro_id = os_release_contents.get('ID', '').strip('"')
+
+    target_versions = get_target_versions_from_config(current_version_id, distro_id, flavour)
     if not target_versions:
         # If we cannot find a particular major.minor version in the map,
         # we fallback to pick a target version just based on a major version.
         # This can happen for example when testing not yet released versions
         major_version = get_major_version(current_version_id)
-        target_versions = get_target_versions_from_config(major_version, flavour)
+        target_versions = get_target_versions_from_config(major_version, distro_id, flavour)
 
     return target_versions
 
