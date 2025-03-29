@@ -85,6 +85,27 @@ def check_target_major_version(curr_version, target_version):
         )
 
 
+def load_raw_upgrade_paths_for_flavour(flavour='default', paths_definition_file='upgrade_paths.json'):
+    with open(api.get_common_file_path(paths_definition_file)) as fp:
+        data = json.loads(fp.read())
+
+    raw_upgrade_paths = data.get(flavour, {})
+
+    if not raw_upgrade_paths:
+        api.current_logger().warning('Cannot discover any upgrade paths for flavour: {}'.format(flavour))
+
+    return raw_upgrade_paths
+
+
+def construct_models_for_paths_matching_source_major(raw_paths, src_major_version):
+    multipaths_matching_source = []
+    for src_version, target_versions in ipu_paths.items():
+        if src_version.split('.')[0] == src_major_version:
+            source_to_targets = IPUSourceToPossibleTargets(source_version=src_version, target_versions=target_versions)
+            multipaths_matching_source.append()
+    return multipaths_matching_source
+
+
 def produce_ipu_config(actor):
     flavour = os.environ.get('LEAPP_UPGRADE_PATH_FLAVOUR')
     target_version = os.environ.get('LEAPP_UPGRADE_PATH_TARGET_RELEASE')
@@ -92,6 +113,10 @@ def produce_ipu_config(actor):
     source_version = os_release.version_id
 
     check_target_major_version(source_version, target_version)
+
+    raw_upgrade_paths = load_raw_upgrade_paths_for_flavour(flavour)
+    source_major_version = source_version.split('.')[0]
+    exposed_supported_paths = construct_models_for_paths_matching_source_major(raw_upgrade_paths, source_major_version)
 
     actor.produce(IPUConfig(
         leapp_env_vars=get_env_vars(),
@@ -102,5 +127,6 @@ def produce_ipu_config(actor):
             target=target_version
         ),
         kernel=get_booted_kernel(),
-        flavour=flavour
+        flavour=flavour,
+        supported_upgrade_paths=exposed_supported_paths
     ))
