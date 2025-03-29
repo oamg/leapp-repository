@@ -6,7 +6,7 @@ from collections import namedtuple
 from leapp import reporting
 from leapp.actors.config import _normalize_config, normalize_schemas
 from leapp.libraries.common.config import architecture
-from leapp.models import EnvVar
+from leapp.models import EnvVar, IPUSourceToPossibleTargets
 from leapp.utils.deprecation import deprecated
 
 
@@ -76,7 +76,11 @@ def _make_default_config(actor_config_schema):
 
 class CurrentActorMocked(object):  # pylint:disable=R0904
     def __init__(self, arch=architecture.ARCH_X86_64, envars=None, kernel='3.10.0-957.43.1.el7.x86_64',
-                 release_id='rhel', src_ver='7.8', dst_ver='8.1', msgs=None, flavour='default', config=None):
+                 release_id='rhel', src_ver='7.8', dst_ver='8.1', msgs=None, flavour='default', config=None,
+                 supported_upgrade_paths=None):
+        """
+        :param List[IPUSourceToPossibleTargets] supported_upgrade_paths: List of supported upgrade paths.
+        """
         envarsList = [EnvVar(name=k, value=v) for k, v in envars.items()] if envars else []
         version = namedtuple('Version', ['source', 'target'])(src_ver, dst_ver)
         release = namedtuple('OS_release', ['release_id', 'version_id'])(release_id, src_ver)
@@ -85,9 +89,15 @@ class CurrentActorMocked(object):  # pylint:disable=R0904
         self._common_tools_folder = '../../tools'
         self._actor_folder = 'files'
         self._actor_tools_folder = 'tools'
-        self.configuration = namedtuple(
-            'configuration', ['architecture', 'kernel', 'leapp_env_vars', 'os_release', 'version', 'flavour']
-        )(arch, kernel, envarsList, release, version, flavour)
+
+        if not supported_upgrade_paths:
+            supported_upgrade_paths = [IPUSourceToPossibleTargets(source_version=src_ver, target_versions=[dst_ver])]
+
+        ipu_conf_fields = ['architecture', 'kernel', 'leapp_env_vars', 'os_release',
+                           'version', 'flavour', 'supported_upgrade_paths']
+        config_type = namedtuple('configuration', ipu_conf_fields)
+        self.configuration = config_type(arch, kernel, envarsList, release, version, flavour, supported_upgrade_paths)
+
         self._msgs = msgs or []
         self.config = {} if config is None else config
 
