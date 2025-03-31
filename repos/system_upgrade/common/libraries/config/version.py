@@ -126,6 +126,12 @@ class _SupportedVersionsDict(dict):
 
 
 SUPPORTED_VERSIONS = _SupportedVersionsDict()
+"""
+Deprecated since 2025-03-31.
+
+Use is_supported_version(), or IPUConfig.supported_upgrade_paths to check what source
+versions are supported for the current (release, flavour).
+"""
 
 
 def _version_to_tuple(version):
@@ -319,13 +325,14 @@ def is_supported_version():
     :return: `True` if the current version is supported and `False` otherwise.
     :rtype: bool
     """
-    release_id, version_id = current_version()
-    if is_rhel_alt():
-        release_id = 'rhel-alt'
-    elif is_sap_hana_flavour():
-        release_id = 'rhel-saphana'
+    source_version = get_source_version()
+    supported_upgrade_paths = api.current_actor().configuration.supported_upgrade_paths
 
-    if not matches_release(SUPPORTED_VERSIONS, release_id):
-        return False
+    # Check if there are any paths defined from the current source_version. If not,
+    # the upgrade version is unsupported
+    for ipu_source_to_targets in supported_upgrade_paths:
+        # No need to use matches_version - our version list is always a singleton
+        if ipu_source_to_targets.source_version == source_version:
+            return True
 
-    return matches_version(SUPPORTED_VERSIONS[release_id], version_id)
+    return False
