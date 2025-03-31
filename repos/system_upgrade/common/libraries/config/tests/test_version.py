@@ -3,6 +3,7 @@ import pytest
 from leapp.libraries.common.config import version
 from leapp.libraries.common.testutils import CurrentActorMocked
 from leapp.libraries.stdlib import api
+from leapp.models import IPUSourceToPossibleTargets
 from leapp.utils.deprecation import suppress_deprecation
 
 
@@ -92,21 +93,20 @@ def test_is_rhel_alt(monkeypatch, result, kernel, release_id, src_ver):
     assert version.is_rhel_alt() == result
 
 
-@pytest.mark.parametrize('result,is_alt,src_ver,saphana', [
-    (True, True, '7.6', False),
-    (True, False, '7.8', False),
-    (False, True, '7.8', False),
-    (False, False, '7.6', False),
-    (True, True, '7.6', True),
-    (True, False, '7.7', True),
-    (False, True, '7.7', True),
-    (False, False, '7.6', True),
+@pytest.mark.parametrize('result,src_ver,is_saphana', [
+    (True, '7.8', False),  # default rhel
+    (False, '7.6', False),
+    (True, '7.7', True),  # saphana
+    (False, '7.6', True),
 ])
-def test_is_supported_version(monkeypatch, result, is_alt, src_ver, saphana):
-    monkeypatch.setattr(version, 'is_rhel_alt', lambda: is_alt)
-    monkeypatch.setattr(version, 'is_sap_hana_flavour', lambda: saphana)
-    monkeypatch.setattr(version, 'SUPPORTED_VERSIONS', {'rhel': ['7.8'], 'rhel-alt': ['7.6'], 'rhel-saphana': ['7.7']})
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(src_ver=src_ver))
+def test_is_supported_version(monkeypatch, result, src_ver, is_saphana):
+    if is_saphana:
+        supported_upgrade_paths = [IPUSourceToPossibleTargets(source_version='7.7', target_versions=['8.10'])]
+    else:
+        supported_upgrade_paths = [IPUSourceToPossibleTargets(source_version='7.8', target_versions=['8.10'])]
+
+    actor_mock = CurrentActorMocked(src_ver=src_ver, supported_upgrade_paths=supported_upgrade_paths)
+    monkeypatch.setattr(api, 'current_actor', actor_mock)
     assert version.is_supported_version() == result
 
 
