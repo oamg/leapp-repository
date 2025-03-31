@@ -5286,7 +5286,8 @@
       "driver_name": "arp_tables",
       "maintained_in_rhel": [
         7,
-        8
+        8,
+        9
       ]
     },
     {
@@ -5654,7 +5655,8 @@
       "driver_name": "ebtables",
       "maintained_in_rhel": [
         7,
-        8
+        8,
+        9
       ]
     },
     {
@@ -5845,7 +5847,8 @@
       "driver_name": "ip6_tables",
       "maintained_in_rhel": [
         7,
-        8
+        8,
+        9
       ]
     },
     {
@@ -5862,7 +5865,8 @@
       "driver_name": "ip_set",
       "maintained_in_rhel": [
         7,
-        8
+        8,
+        9
       ]
     },
     {
@@ -5879,7 +5883,8 @@
       "driver_name": "ip_tables",
       "maintained_in_rhel": [
         7,
-        8
+        8,
+        9
       ]
     },
     {
@@ -7567,7 +7572,8 @@
       "driver_name": "nft_compat",
       "maintained_in_rhel": [
         7,
-        8
+        8,
+        9
       ]
     },
     {
