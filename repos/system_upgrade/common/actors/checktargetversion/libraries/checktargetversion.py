@@ -1,22 +1,15 @@
 from leapp import reporting
-from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common.config import get_env, version
 from leapp.libraries.stdlib import api
-from leapp.models import IPUPaths
-from leapp.utils.deprecation import suppress_deprecation
 
 FMT_LIST_SEPARATOR = '\n    - '
 
 
-@suppress_deprecation(IPUPaths)
 def get_supported_target_versions():
-    ipu_paths = next(api.consume(IPUPaths), None)
     src_version = version.get_source_version()
-    if not ipu_paths:
-        # NOTE: missing unit-tests. Unexpected situation and the solution
-        # is possibly temporary
-        raise StopActorExecutionError('Missing the IPUPaths message. Cannot determine defined upgrade paths.')
-    for ipu_path in ipu_paths.data:
+    supported_paths = api.current_actor().configuration.supported_upgrade_paths
+
+    for ipu_path in supported_paths:
         if ipu_path.source_version == src_version:
             return ipu_path.target_versions
 
@@ -28,7 +21,7 @@ def get_supported_target_versions():
         .format(src_version)
     )
     maj_version = version.get_source_major_version()
-    for ipu_path in ipu_paths.data:
+    for ipu_path in supported_paths:
         if ipu_path.source_version == maj_version:
             return ipu_path.target_versions
 
