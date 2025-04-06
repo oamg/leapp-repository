@@ -46,10 +46,11 @@ build() {
     if [[ -n "$LEAPP_DRACUT_LVMCONF" ]]; then
         DRACUT_LVMCONF_ARG="--lvmconf"
     fi
-    DRACUT_MDADMCONF_ARG="--nomdadmconf"
-    if [[ -n "$LEAPP_DRACUT_MDADMCONF" ]]; then
-        # include local /etc/mdadm.conf
-        DRACUT_MDADMCONF_ARG="--mdadmconf"
+
+    # include local /etc/mdadm.conf
+    DRACUT_MDADMCONF_ARG="--mdadmconf"
+    if [[ -n "$LEAPP_DRACUT_NO_MDADMCONF" ]]; then
+        DRACUT_MDADMCONF_ARG="--nomdadmconf"
     fi
 
     KERNEL_VERSION=$LEAPP_KERNEL_VERSION
