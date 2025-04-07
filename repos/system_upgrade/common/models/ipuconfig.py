@@ -34,6 +34,21 @@ class Version(Model):
     """Version of the target system. E.g. '8.2.'."""
 
 
+class IPUSourceToPossibleTargets(Model):
+    """
+    Represents upgrade paths from a source system version.
+
+    This model is not supposed to be produced nor consumed directly by any actor.
+    """
+    topic = SystemInfoTopic
+
+    source_version = fields.String()
+    """Source system version."""
+
+    target_versions = fields.List(fields.String())
+    """List of defined target system versions for the `source_version` system."""
+
+
 class IPUConfig(Model):
     """
     IPU workflow configuration model
@@ -59,3 +74,10 @@ class IPUConfig(Model):
 
     flavour = fields.StringEnum(('default', 'saphana'), default='default')
     """Flavour of the upgrade - Used to influence changes in supported source/target release"""
+
+    supported_upgrade_paths = fields.List(fields.Model(IPUSourceToPossibleTargets))
+    """
+    List of supported upgrade paths.
+
+    The list contains only upgrade paths for the `flavour` of the source system.
+    """
