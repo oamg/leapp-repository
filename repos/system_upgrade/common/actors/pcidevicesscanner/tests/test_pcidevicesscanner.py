@@ -2,8 +2,16 @@ import os
 
 import pytest
 
-from leapp.libraries.actor.pcidevicesscanner import parse_pci_devices, produce_pci_devices
-from leapp.models import PCIDevice, PCIDevices
+from leapp.libraries.actor.pcidevicesscanner import parse_pci_devices, produce_detected_devices, produce_pci_devices
+from leapp.libraries.common.testutils import CurrentActorMocked, produce_mocked
+from leapp.libraries.stdlib import api
+from leapp.models import (
+    DetectedDeviceOrDriver,
+    DeviceDriverDeprecationData,
+    DeviceDriverDeprecationEntry,
+    PCIDevice,
+    PCIDevices
+)
 
 
 def test_parse_pci_devices():
@@ -37,9 +45,9 @@ Module:	ata_generic
 '''
     devices_numeric = '''Slot:	00:00.0
 Class:	Host bridge
-Vendor:	15b45
+Vendor:	15B45
 Device:	0724
-SVendor:	15b46
+SVendor:	15B46
 SDevice:	0725
 PhySlot:	3
 Rev:	02
@@ -76,6 +84,7 @@ Module:	ata_generic
     assert dev.progif == '80'
     assert dev.driver == 'ata_piix'
     assert dev.pci_id == '15b43:0722'
+    assert dev.pci_id.islower() is True
     assert len(dev.modules) == 3
     assert 'ata_piix' in dev.modules
     assert 'pata_acpi' in dev.modules
@@ -204,6 +213,53 @@ def test_produce_no_devices():
     produce_pci_devices(fake_producer, [])
     assert len(output) == 1
     assert not output[0].devices
+
+
+def test_shorten_id(monkeypatch):
+
+    input_data = [PCIDevice(
+        slot='b765:00:02.0',
+        dev_cls='Ethernet controller',
+        vendor='Mellanox Technologies',
+        name='MT27500/MT27520 Family [ConnectX-3/ConnectX-3 Pro Virtual Function]',
+        subsystem_vendor='Mellanox Technologies',
+        subsystem_name='Device 61b0',
+        physical_slot='2',
+        rev='',
+        progif='',
+        driver='mlx4_core',
+        modules=['mlx4_core'],
+        numa_node='0',
+        pci_id='15b3:1004:15b3:61b0'
+    )]
+
+    messages = [DeviceDriverDeprecationData(entries=[DeviceDriverDeprecationEntry(
+        available_in_rhel=[7, 8, 9],
+        deprecation_announced="",
+        device_id="0x15B3:0x1004",
+        device_name="Mellanox Technologies: MT27500 Family [ConnectX-3 Virtual Function]",
+        device_type="pci",
+        driver_name="mlx4_core",
+        maintained_in_rhel=[7, 8]
+    )])]
+
+    expected_output = DetectedDeviceOrDriver(
+        available_in_rhel=[7, 8, 9],
+        deprecation_announced="",
+        device_id="0x15B3:0x1004",
+        device_name="Mellanox Technologies: MT27500 Family [ConnectX-3 Virtual Function]",
+        device_type="pci",
+        driver_name="mlx4_core",
+        maintained_in_rhel=[7, 8]
+    )
+
+    current_actor = CurrentActorMocked(msgs=messages, src_ver='8.10', dst_ver='9.6')
+    monkeypatch.setattr(api, 'current_actor', current_actor)
+    monkeypatch.setattr(api, 'produce', produce_mocked())
+
+    produce_detected_devices(input_data)
+    assert api.produce.model_instances
+    assert expected_output == api.produce.model_instances[0]
 
 
 # TODO(pstodulk): update the test - drop current_actor_context and use monkeypatch

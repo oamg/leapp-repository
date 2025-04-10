@@ -60,7 +60,7 @@ def parse_pci_device(textual_block, numeric_block):
         driver=device['Driver'],
         modules=device['Module'],
         numa_node=device['NUMANode'],
-        pci_id=":".join(PCI_ID_REG.findall(numeric_block))
+        pci_id=(":".join(PCI_ID_REG.findall(numeric_block)).lower())
     )
 
 
@@ -78,14 +78,19 @@ def parse_pci_devices(pci_textual, pci_numeric):
 def produce_detected_devices(devices):
     prefix_re = re.compile('0x')
     entry_lookup = {
-        prefix_re.sub('', entry.device_id): entry
+        prefix_re.sub('', entry.device_id.lower()): entry
         for message in api.consume(DeviceDriverDeprecationData) for entry in message.entries
     }
-    api.produce(*[
-        DetectedDeviceOrDriver(**entry_lookup[device.pci_id].dump())
-        for device in devices
-        if device.pci_id in entry_lookup
-    ])
+
+    device_list = []
+    for device in devices:
+        shorten_pci_id = ":".join(device.pci_id.split(':')[:-2])
+        if device.pci_id in entry_lookup:
+            device_list.append(DetectedDeviceOrDriver(**entry_lookup[device.pci_id].dump()))
+        elif shorten_pci_id in entry_lookup:
+            device_list.append(DetectedDeviceOrDriver(**entry_lookup[shorten_pci_id].dump()))
+
+    api.produce(*device_list)
 
 
 def produce_detected_drivers(devices):
