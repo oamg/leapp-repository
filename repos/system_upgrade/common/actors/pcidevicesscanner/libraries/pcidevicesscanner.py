@@ -78,13 +78,14 @@ def parse_pci_devices(pci_textual, pci_numeric):
 def produce_detected_devices(devices):
     prefix_re = re.compile('0x')
     entry_lookup = {
-        prefix_re.sub('', entry.device_id): entry
+        prefix_re.sub('', entry.device_id.lower()): entry
         for message in api.consume(DeviceDriverDeprecationData) for entry in message.entries
     }
     api.produce(*[
         DetectedDeviceOrDriver(**entry_lookup[device.pci_id].dump())
-        for device in devices
         if device.pci_id in entry_lookup
+        else DetectedDeviceOrDriver(**entry_lookup[":".join(device.pci_id.split(':')[:-2])].dump())
+        for device in devices
     ])
 
 
