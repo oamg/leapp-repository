@@ -11,14 +11,9 @@ DEFAULT_SQUASHFS_PATH = '/var/lib/leapp/live-upgrade.img'
 
 def should_scan_config():
     is_unsupported = get_env('LEAPP_UNSUPPORTED', '0') == '1'
-    is_livemode_enabled = get_env('LEAPP_DEVEL_ENABLE_LIVE_MODE', '0') == '1'
 
     if not is_unsupported:
         api.current_logger().debug('Will not scan livemode config - the upgrade is not unsupported.')
-        return False
-
-    if not is_livemode_enabled:
-        api.current_logger().debug('Will not scan livemode config - the live mode is not enabled.')
         return False
 
     if not architecture.matches_architecture(architecture.ARCH_X86_64):
