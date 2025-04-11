@@ -1,14 +1,9 @@
-try:
-    import configparser
-except ImportError:
-    import ConfigParser as configparser
-
+from leapp.configs.actor import livemode as livemode_config_lib
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common.config import architecture, get_env
 from leapp.libraries.common.rpms import has_package
 from leapp.libraries.stdlib import api
 from leapp.models import InstalledRPM, LiveModeConfig
-from leapp.models.fields import ModelViolationError
 
 LIVEMODE_CONFIG_LOCATION = '/etc/leapp/files/devel-livemode.ini'
 DEFAULT_SQUASHFS_PATH = '/var/lib/leapp/live-upgrade.img'
@@ -16,14 +11,9 @@ DEFAULT_SQUASHFS_PATH = '/var/lib/leapp/live-upgrade.img'
 
 def should_scan_config():
     is_unsupported = get_env('LEAPP_UNSUPPORTED', '0') == '1'
-    is_livemode_enabled = get_env('LEAPP_DEVEL_ENABLE_LIVE_MODE', '0') == '1'
 
     if not is_unsupported:
         api.current_logger().debug('Will not scan livemode config - the upgrade is not unsupported.')
-        return False
-
-    if not is_livemode_enabled:
-        api.current_logger().debug('Will not scan livemode config - the live mode is not enabled.')
         return False
 
     if not architecture.matches_architecture(architecture.ARCH_X86_64):
@@ -50,76 +40,32 @@ def scan_config_and_emit_message():
         return
 
     api.current_logger().info('Loading livemode config from %s', LIVEMODE_CONFIG_LOCATION)
-    parser = configparser.ConfigParser()
 
-    try:
-        parser.read((LIVEMODE_CONFIG_LOCATION, ))
-    except configparser.ParsingError as error:
-        api.current_logger().error('Failed to parse live mode configuration due to the following error: %s', error)
+    config = api.current_actor().config[livemode_config_lib.LIVEMODE_CONFIG_SECTION]
 
-        details = 'Failed to read livemode configuration due to the following error: {0}.'
-        raise StopActorExecutionError(
-            'Failed to read livemode configuration',
-            details={'Problem': details.format(error)}
-        )
-
-    livemode_section = 'livemode'
-    if not parser.has_section(livemode_section):
-        details = 'The configuration is missing the \'[{0}]\' section'.format(livemode_section)
-        raise StopActorExecutionError(
-            'Live mode configuration does not have the required structure',
-            details={'Problem': details}
-        )
-
-    config_kwargs = {
-        'is_enabled': True,
-        'url_to_load_squashfs_from': None,
-        'squashfs_fullpath': DEFAULT_SQUASHFS_PATH,
-        'dracut_network': None,
-        'setup_network_manager': False,
-        'additional_packages': [],
-        'autostart_upgrade_after_reboot': True,
-        'setup_opensshd_with_auth_keys': None,
-        'setup_passwordless_root': False,
-        'capture_upgrade_strace_into': None
+    # Mapping from model field names to configuration fields - because we might have
+    # changed some configuration field names for configuration to be more
+    # comprehensible for our users.
+    model_fields_to_config_options_map = {
+        'url_to_load_squashfs_from': livemode_config_lib.URLToLoadSquashfsImageFrom,
+        'squashfs_fullpath': livemode_config_lib.SquashfsImagePath,
+        'dracut_network': livemode_config_lib.DracutNetwork,
+        'setup_network_manager': livemode_config_lib.SetupNetworkManager,
+        'additional_packages': livemode_config_lib.AdditionalPackages,
+        'autostart_upgrade_after_reboot': livemode_config_lib.AutostartUpgradeAfterReboot,
+        'setup_opensshd_with_auth_keys': livemode_config_lib.SetupOpenSSHDUsingAuthKeys,
+        'setup_passwordless_root': livemode_config_lib.SetupPasswordlessRoot,
+        'capture_upgrade_strace_into': livemode_config_lib.CaptureSTraceInfoInto
     }
 
-    config_str_options = (
-        'url_to_load_squashfs_from',
-        'squashfs_fullpath',
-        'dracut_network',
-        'setup_opensshd_with_auth_keys',
-        'capture_upgrade_strace_into'
-    )
+    # Read values of model fields from user-supplied configuration according to the above mapping
+    config_msg_init_kwargs = {}
+    for model_field_name, config_field in model_fields_to_config_options_map.items():
+        config_msg_init_kwargs[model_field_name] = config[config_field.name]
 
-    config_list_options = (
-        'additional_packages',
-    )
+    # Some fields of the LiveModeConfig are historical and can no longer be changed by the user
+    # in the config. Therefore, we just hard-code them here.
+    config_msg_init_kwargs['is_enabled'] = True
 
-    config_bool_options = (
-        'setup_network_manager',
-        'setup_passwordless_root',
-        'autostart_upgrade_after_reboot',
-    )
-
-    for config_option in config_str_options:
-        if parser.has_option(livemode_section, config_option):
-            config_kwargs[config_option] = parser.get(livemode_section, config_option)
-
-    for config_option in config_bool_options:
-        if parser.has_option(livemode_section, config_option):
-            config_kwargs[config_option] = parser.getboolean(livemode_section, config_option)
-
-    for config_option in config_list_options:
-        if parser.has_option(livemode_section, config_option):
-            option_val = parser.get(livemode_section, config_option)
-            option_list = (opt_val.strip() for opt_val in option_val.split(','))
-            option_list = [opt for opt in option_list if opt]
-            config_kwargs[config_option] = option_list
-
-    try:
-        config = LiveModeConfig(**config_kwargs)
-    except ModelViolationError as error:
-        raise StopActorExecutionError('Failed to parse livemode configuration.', details={'Problem': str(error)})
-
-    api.produce(config)
+    config_msg = LiveModeConfig(**config_msg_init_kwargs)
+    api.produce(config_msg)

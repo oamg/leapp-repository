@@ -52,9 +52,6 @@ The alternative to the --channel leapp option. As a parameter accepts a channel 
 To use development variables, the LEAPP_UNSUPPORTED variable has to be set.
 ```
 
-#### LEAPP_DEVEL_ENABLE_LIVE_MODE
-If set to `1`, enable the use of the experimental live mode
-
 #### LEAPP_DEVEL_DM_DISABLE_UDEV
 Setting the environment variable provides a more convenient way of disabling udev support in libdevmapper, dmsetup and LVM2 tools globally without a need to modify any existing configuration settings. This is mostly useful if the system environment does not use udev.
 
