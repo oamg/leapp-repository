@@ -120,7 +120,7 @@ Requires:       leapp-repository-dependencies = %{leapp_repo_deps}
 
 # IMPORTANT: this is capability provided by the leapp framework rpm.
 # Check that 'version' instead of the real framework rpm version.
-Requires:       leapp-framework >= 6.0, leapp-framework < 7
+Requires:       leapp-framework >= 6.1, leapp-framework < 7
 
 # Since we provide sub-commands for the leapp utility, we expect the leapp
 # tool to be installed as well.
