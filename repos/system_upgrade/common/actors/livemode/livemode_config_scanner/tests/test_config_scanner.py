@@ -29,19 +29,16 @@ EnablementTestCase = namedtuple('EnablementTestCase', ('env_vars', 'arch', 'pkgs
 @pytest.mark.parametrize(
     'case_descr',
     (
-        EnablementTestCase(env_vars={'LEAPP_UNSUPPORTED': '1', 'LEAPP_DEVEL_ENABLE_LIVE_MODE': '1'},
+        EnablementTestCase(env_vars={'LEAPP_UNSUPPORTED': '1'},
                            arch=architecture.ARCH_X86_64, pkgs=('squashfs-tools', ),
                            result=EnablementResult.SCAN_CONFIG),
-        EnablementTestCase(env_vars={'LEAPP_UNSUPPORTED': '0', 'LEAPP_DEVEL_ENABLE_LIVE_MODE': '1'},
+        EnablementTestCase(env_vars={'LEAPP_UNSUPPORTED': '0'},
                            arch=architecture.ARCH_X86_64, pkgs=('squashfs-tools', ),
                            result=EnablementResult.DO_NOTHING),
-        EnablementTestCase(env_vars={'LEAPP_UNSUPPORTED': '1', 'LEAPP_DEVEL_ENABLE_LIVE_MODE': '0'},
-                           arch=architecture.ARCH_X86_64, pkgs=('squashfs-tools', ),
-                           result=EnablementResult.DO_NOTHING),
-        EnablementTestCase(env_vars={'LEAPP_UNSUPPORTED': '1', 'LEAPP_DEVEL_ENABLE_LIVE_MODE': '1'},
+        EnablementTestCase(env_vars={'LEAPP_UNSUPPORTED': '1'},
                            arch=architecture.ARCH_ARM64, pkgs=('squashfs-tools', ),
                            result=EnablementResult.RAISE),
-        EnablementTestCase(env_vars={'LEAPP_UNSUPPORTED': '1', 'LEAPP_DEVEL_ENABLE_LIVE_MODE': '1'},
+        EnablementTestCase(env_vars={'LEAPP_UNSUPPORTED': '1'},
                            arch=architecture.ARCH_ARM64, pkgs=tuple(),
                            result=EnablementResult.RAISE),
     )
@@ -52,7 +49,6 @@ def test_enablement_conditions(monkeypatch, case_descr):
 
     Enablement conditions:
     - LEAPP_UNSUPPORTED=1
-    - LEAPP_DEVEL_ENABLE_LIVE_MODE=1
 
     Not meeting enablement conditions should prevent config message from being produced.
 
