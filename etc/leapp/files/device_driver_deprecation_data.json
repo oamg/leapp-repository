@@ -477,12 +477,29 @@
         10
       ],
       "deprecation_announced": "",
-      "device_id": "x86_64:amd:23:*",
+      "device_id": "x86_64:amd:23:1",
       "device_name": "AMD Family 17h",
       "device_type": "cpu",
       "driver_name": "",
       "maintained_in_rhel": [
         7,
+        8,
+        9
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:amd:23:49",
+      "device_name": "AMD Family 17h",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": [
         8,
         9,
         10
@@ -496,12 +513,46 @@
         10
       ],
       "deprecation_announced": "",
-      "device_id": "x86_64:amd:25:*",
+      "device_id": "x86_64:amd:23:{17,96}",
+      "device_name": "AMD Family 17h",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": [
+        8,
+        9
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:amd:25:{1,8,17,24,80,97,160}",
       "device_name": "AMD Family 19h",
       "device_type": "cpu",
       "driver_name": "",
       "maintained_in_rhel": [
+        8,
+        9,
+        10
+      ]
+    },
+    {
+      "available_in_rhel": [
         7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:amd:26:{2,17}",
+      "device_name": "AMD Family 1Ah",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": [
         8,
         9,
         10
@@ -557,7 +608,7 @@
         10
       ],
       "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:10",
+      "device_id": "x86_64:intel:6:[2-13]",
       "device_name": "UNKNOWN_CPU",
       "device_type": "cpu",
       "driver_name": "",
@@ -571,7 +622,35 @@
         10
       ],
       "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:100",
+      "device_id": "x86_64:intel:6:14",
+      "device_name": "CORE_YONAH",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:15",
+      "device_name": "CORE2_MEROM",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:[16-21]",
       "device_name": "UNKNOWN_CPU",
       "device_type": "cpu",
       "driver_name": "",
@@ -585,7 +664,823 @@
         10
       ],
       "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:101",
+      "device_id": "x86_64:intel:6:22",
+      "device_name": "CORE2_MEROM_L",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:23",
+      "device_name": "CORE2_PENRYN",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": [
+        7
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:[24-25]",
+      "device_name": "UNKNOWN_CPU",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:26",
+      "device_name": "NEHALEM_EP",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": [
+        7
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:27",
+      "device_name": "UNKNOWN_CPU",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:28",
+      "device_name": "ATOM_BONNELL",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:29",
+      "device_name": "CORE2_DUNNINGTON",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": [
+        7
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:30",
+      "device_name": "NEHALEM",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": [
+        7
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:31",
+      "device_name": "NEHALEM_G",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": [
+        7
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:[32-36]",
+      "device_name": "UNKNOWN_CPU",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:37",
+      "device_name": "WESTMERE",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": [
+        7
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:38",
+      "device_name": "ATOM_BONNELL_MID",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:39",
+      "device_name": "ATOM_SALTWELL_MID",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:[40-41]",
+      "device_name": "UNKNOWN_CPU",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:42",
+      "device_name": "SANDYBRIDGE",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": [
+        7
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:43",
+      "device_name": "UNKNOWN_CPU",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:44",
+      "device_name": "WESTMERE_EP",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": [
+        7
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:45",
+      "device_name": "SANDYBRIDGE_X",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": [
+        7
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:46",
+      "device_name": "NEHALEM_EX",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": [
+        7
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:47",
+      "device_name": "WESTMERE_EX",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": [
+        7
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:[48-52]",
+      "device_name": "UNKNOWN_CPU",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:53",
+      "device_name": "ATOM_SALTWELL_TABLET",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:54",
+      "device_name": "ATOM_SALTWELL",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:55",
+      "device_name": "ATOM_SILVERMONT",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:[56-57]",
+      "device_name": "UNKNOWN_CPU",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:58",
+      "device_name": "IVYBRIDGE",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": [
+        7
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:59",
+      "device_name": "UNKNOWN_CPU",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:60",
+      "device_name": "HASWELL",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": [
+        7,
+        8
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:61",
+      "device_name": "BROADWELL",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": [
+        7,
+        8
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:62",
+      "device_name": "IVYBRIDGE_X",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": [
+        7
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:63",
+      "device_name": "HASWELL_X",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": [
+        7,
+        8,
+        9
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:[64-69]",
+      "device_name": "UNKNOWN_CPU",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:69",
+      "device_name": "HASWELL_L",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": [
+        7,
+        8
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:70",
+      "device_name": "HASWELL_G",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": [
+        7,
+        8
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:71",
+      "device_name": "BROADWELL_G",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": [
+        7,
+        8
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:[72-73]",
+      "device_name": "UNKNOWN_CPU",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:74",
+      "device_name": "ATOM_SILVERMONT_MID",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:75",
+      "device_name": "UNKNOWN_CPU",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:76",
+      "device_name": "ATOM_AIRMONT",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:77",
+      "device_name": "ATOM_SILVERMONT_D",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": [
+        7
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:78",
+      "device_name": "SKYLAKE_L",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": [
+        7,
+        8
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:79",
+      "device_name": "BROADWELL_X",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": [
+        7,
+        8,
+        9
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:[80-84]",
+      "device_name": "UNKNOWN_CPU",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:85",
+      "device_name": "SKYLAKE_X",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:86",
+      "device_name": "BROADWELL_D",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": [
+        7,
+        8
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:87",
+      "device_name": "XEON_PHI_KNL",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": [
+        7
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:[88-89]",
+      "device_name": "UNKNOWN_CPU",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:90",
+      "device_name": "ATOM_AIRMONT_MID",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:91",
+      "device_name": "UNKNOWN_CPU",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:92",
+      "device_name": "ATOM_GOLDMONT",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": [
+        7,
+        8,
+        9
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:93",
+      "device_name": "UNKNOWN_CPU",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": []
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:94",
+      "device_name": "SKYLAKE",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": [
+        7,
+        8
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:95",
+      "device_name": "ATOM_GOLDMONT_D",
+      "device_type": "cpu",
+      "driver_name": "",
+      "maintained_in_rhel": [
+        7,
+        8
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7,
+        8,
+        9,
+        10
+      ],
+      "deprecation_announced": "",
+      "device_id": "x86_64:intel:6:[96-101]",
       "device_name": "UNKNOWN_CPU",
       "device_type": "cpu",
       "driver_name": "",
@@ -613,35 +1508,7 @@
         10
       ],
       "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:103",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:104",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:105",
+      "device_id": "x86_64:intel:6:[103-105]",
       "device_name": "UNKNOWN_CPU",
       "device_type": "cpu",
       "driver_name": "",
@@ -705,119 +1572,7 @@
         10
       ],
       "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:109",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:11",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:110",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:111",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:112",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:113",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:114",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:115",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:116",
+      "device_id": "x86_64:intel:6:[109-116]",
       "device_name": "UNKNOWN_CPU",
       "device_type": "cpu",
       "driver_name": "",
@@ -845,63 +1600,7 @@
         10
       ],
       "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:118",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:119",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:12",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:120",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:121",
+      "device_id": "x86_64:intel:6:[118-121]",
       "device_name": "UNKNOWN_CPU",
       "device_type": "cpu",
       "driver_name": "",
@@ -932,21 +1631,7 @@
         10
       ],
       "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:123",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:124",
+      "device_id": "x86_64:intel:6:[123-124]",
       "device_name": "UNKNOWN_CPU",
       "device_type": "cpu",
       "driver_name": "",
@@ -994,91 +1679,7 @@
         10
       ],
       "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:127",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:128",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:129",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:13",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:130",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:131",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:132",
+      "device_id": "x86_64:intel:6:[127-132]",
       "device_name": "UNKNOWN_CPU",
       "device_type": "cpu",
       "driver_name": "",
@@ -1126,35 +1727,7 @@
         10
       ],
       "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:135",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:136",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:137",
+      "device_id": "x86_64:intel:6:[135-137]",
       "device_name": "UNKNOWN_CPU",
       "device_type": "cpu",
       "driver_name": "",
@@ -1186,20 +1759,6 @@
       "deprecation_announced": "",
       "device_id": "x86_64:intel:6:139",
       "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:14",
-      "device_name": "CORE_YONAH",
       "device_type": "cpu",
       "driver_name": "",
       "maintained_in_rhel": []
@@ -1284,92 +1843,8 @@
         10
       ],
       "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:144",
+      "device_id": "x86_64:intel:6:[144-149]",
       "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:145",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:146",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:147",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:148",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:149",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:15",
-      "device_name": "CORE2_MEROM",
       "device_type": "cpu",
       "driver_name": "",
       "maintained_in_rhel": []
@@ -1417,21 +1892,7 @@
         10
       ],
       "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:152",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:153",
+      "device_id": "x86_64:intel:6:[152-153]",
       "device_name": "UNKNOWN_CPU",
       "device_type": "cpu",
       "driver_name": "",
@@ -1526,91 +1987,7 @@
         10
       ],
       "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:159",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:16",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:160",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:161",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:162",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:163",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:164",
+      "device_id": "x86_64:intel:6:[159-164]",
       "device_name": "UNKNOWN_CPU",
       "device_type": "cpu",
       "driver_name": "",
@@ -1678,40 +2055,7 @@
         10
       ],
       "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:168",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ]
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:169",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:17",
+      "device_id": "x86_64:intel:6:[168-169]",
       "device_name": "UNKNOWN_CPU",
       "device_type": "cpu",
       "driver_name": "",
@@ -1824,77 +2168,7 @@
         10
       ],
       "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:176",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:177",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:178",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:179",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:18",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:180",
+      "device_id": "x86_64:intel:6:[176-180]",
       "device_name": "UNKNOWN_CPU",
       "device_type": "cpu",
       "driver_name": "",
@@ -1959,21 +2233,7 @@
         10
       ],
       "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:184",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:185",
+      "device_id": "x86_64:intel:6:[184-185]",
       "device_name": "UNKNOWN_CPU",
       "device_type": "cpu",
       "driver_name": "",
@@ -2004,21 +2264,7 @@
         10
       ],
       "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:187",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:188",
+      "device_id": "x86_64:intel:6:[187-188]",
       "device_name": "UNKNOWN_CPU",
       "device_type": "cpu",
       "driver_name": "",
@@ -2040,20 +2286,6 @@
         9,
         10
       ]
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:19",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
     },
     {
       "available_in_rhel": [
@@ -2098,63 +2330,7 @@
         10
       ],
       "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:192",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:193",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:194",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:195",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:196",
+      "device_id": "x86_64:intel:6:[192-196]",
       "device_name": "UNKNOWN_CPU",
       "device_type": "cpu",
       "driver_name": "",
@@ -2202,91 +2378,7 @@
         10
       ],
       "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:199",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:2",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:20",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:200",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:201",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:202",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:203",
+      "device_id": "x86_64:intel:6:[199-203]",
       "device_name": "UNKNOWN_CPU",
       "device_type": "cpu",
       "driver_name": "",
@@ -2314,21 +2406,7 @@
         10
       ],
       "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:205",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:206",
+      "device_id": "x86_64:intel:6:[205-206]",
       "device_name": "UNKNOWN_CPU",
       "device_type": "cpu",
       "driver_name": "",
@@ -2360,203 +2438,7 @@
         10
       ],
       "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:208",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:209",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:21",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:210",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:211",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:212",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:213",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:214",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:215",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:216",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:217",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:218",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:219",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:22",
-      "device_name": "CORE2_MEROM_L",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:220",
+      "device_id": "x86_64:intel:6:[208-220]",
       "device_name": "UNKNOWN_CPU",
       "device_type": "cpu",
       "driver_name": "",
@@ -2584,7 +2466,7 @@
         10
       ],
       "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:222",
+      "device_id": "x86_64:intel:6:[222-255]",
       "device_name": "UNKNOWN_CPU",
       "device_type": "cpu",
       "driver_name": "",
@@ -2598,1680 +2480,10 @@
         10
       ],
       "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:223",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:224",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:225",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:226",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:227",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:228",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:229",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:23",
-      "device_name": "CORE2_PENRYN",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": [
-        7
-      ]
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:230",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:231",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:232",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:233",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:234",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:235",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:236",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:237",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:238",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:239",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:24",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:240",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:241",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:242",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:243",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:244",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:245",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:246",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:247",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:248",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:249",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:25",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:250",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:251",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:252",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:253",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:254",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:255",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:26",
-      "device_name": "NEHALEM_EP",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": [
-        7
-      ]
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:27",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:28",
-      "device_name": "ATOM_BONNELL",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:29",
-      "device_name": "CORE2_DUNNINGTON",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": [
-        7
-      ]
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:3",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:30",
-      "device_name": "NEHALEM",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": [
-        7
-      ]
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:31",
-      "device_name": "NEHALEM_G",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": [
-        7
-      ]
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:32",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:33",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:34",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:35",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:36",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:37",
-      "device_name": "WESTMERE",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": [
-        7
-      ]
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:38",
-      "device_name": "ATOM_BONNELL_MID",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:39",
-      "device_name": "ATOM_SALTWELL_MID",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:4",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:40",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:41",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:42",
-      "device_name": "SANDYBRIDGE",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": [
-        7
-      ]
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:43",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:44",
-      "device_name": "WESTMERE_EP",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": [
-        7
-      ]
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:45",
-      "device_name": "SANDYBRIDGE_X",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": [
-        7
-      ]
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:46",
-      "device_name": "NEHALEM_EX",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": [
-        7
-      ]
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:47",
-      "device_name": "WESTMERE_EX",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": [
-        7
-      ]
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:48",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:49",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:5",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:50",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:51",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:52",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:53",
-      "device_name": "ATOM_SALTWELL_TABLET",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:54",
-      "device_name": "ATOM_SALTWELL",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:55",
-      "device_name": "ATOM_SILVERMONT",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:56",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:57",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:58",
-      "device_name": "IVYBRIDGE",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": [
-        7
-      ]
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:59",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:6",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:60",
-      "device_name": "HASWELL",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": [
-        7,
-        8
-      ]
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:61",
-      "device_name": "BROADWELL",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": [
-        7,
-        8
-      ]
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:62",
-      "device_name": "IVYBRIDGE_X",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": [
-        7
-      ]
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:63",
-      "device_name": "HASWELL_X",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": [
-        7,
-        8,
-        9
-      ]
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:64",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:65",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:66",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:67",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:68",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:69",
-      "device_name": "HASWELL_L",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": [
-        7,
-        8
-      ]
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:7",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:70",
-      "device_name": "HASWELL_G",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": [
-        7,
-        8
-      ]
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:71",
-      "device_name": "BROADWELL_G",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": [
-        7,
-        8
-      ]
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:72",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:73",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:74",
-      "device_name": "ATOM_SILVERMONT_MID",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:75",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:76",
-      "device_name": "ATOM_AIRMONT",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:77",
-      "device_name": "ATOM_SILVERMONT_D",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": [
-        7
-      ]
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:78",
-      "device_name": "SKYLAKE_L",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": [
-        7,
-        8
-      ]
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:79",
-      "device_name": "BROADWELL_X",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": [
-        7,
-        8,
-        9
-      ]
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:8",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:80",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:81",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:82",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:83",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:84",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:85",
-      "device_name": "SKYLAKE_X",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ]
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:86",
-      "device_name": "BROADWELL_D",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": [
-        7,
-        8
-      ]
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:87",
-      "device_name": "XEON_PHI_KNL",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": [
-        7
-      ]
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:88",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:89",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:9",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:90",
-      "device_name": "ATOM_AIRMONT_MID",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:91",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:92",
-      "device_name": "ATOM_GOLDMONT",
+      "device_id": "x86_64:intel:19:00",
+      "device_name": "INVALID_CPU",
       "device_type": "cpu",
       "driver_name": "",
-      "maintained_in_rhel": [
-        7,
-        8,
-        9
-      ]
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:93",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:94",
-      "device_name": "SKYLAKE",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": [
-        7,
-        8
-      ]
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:95",
-      "device_name": "ATOM_GOLDMONT_D",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": [
-        7,
-        8
-      ]
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:96",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
-      "maintained_in_rhel": []
-    },
-    {
-      "available_in_rhel": [
-        7,
-        8,
-        9,
-        10
-      ],
-      "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:97",
-      "device_name": "UNKNOWN_CPU",
-      "device_type": "cpu",
-      "driver_name": "",
       "maintained_in_rhel": []
     },
     {
@@ -4282,8 +2494,8 @@
         10
       ],
       "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:98",
-      "device_name": "UNKNOWN_CPU",
+      "device_id": "x86_64:intel:19:1",
+      "device_name": "PANTHERCOVE_X",
       "device_type": "cpu",
       "driver_name": "",
       "maintained_in_rhel": []
@@ -4296,7 +2508,7 @@
         10
       ],
       "deprecation_announced": "",
-      "device_id": "x86_64:intel:6:99",
+      "device_id": "x86_64:intel:19:[2-255]",
       "device_name": "UNKNOWN_CPU",
       "device_type": "cpu",
       "driver_name": "",
