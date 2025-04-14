@@ -260,8 +260,8 @@ def prepare_configuration(args):
 
     current_version = command_utils.get_os_release_version_id('/etc/os-release')
     os.environ['LEAPP_IPU_IN_PROGRESS'] = '{source}to{target}'.format(
-        source=command_utils.get_major_version(current_version),
-        target=command_utils.get_major_version(target_version)
+        source=command_utils.get_major_version_from_a_valid_version(current_version),
+        target=command_utils.get_major_version_from_a_valid_version(target_version)
     )
 
     configuration = {
