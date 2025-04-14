@@ -13,6 +13,8 @@ are provided.
     :caption: Contents:
     :glob:
 
+    livemode
+
 
 .. Indices and tables
 .. ==================
