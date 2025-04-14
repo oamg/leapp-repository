@@ -1,3 +1,4 @@
+from enum import Enum
 import hashlib
 import json
 import os
@@ -16,26 +17,35 @@ LEAPP_UPGRADE_FLAVOUR_DEFAULT = 'default'
 LEAPP_UPGRADE_FLAVOUR_SAP_HANA = 'saphana'
 LEAPP_UPGRADE_PATHS = 'upgrade_paths.json'
 
-VERSION_REGEX = re.compile(r"^([1-9]\d*)\.(\d+)$")
+
+_VersionFormat = namedtuple('VersionFormat', ('human_readable', 'regex'))
 
 
-def check_version(version):
+class VersionFormats(Enum):
+    MAJOR_ONLY = _VersionFormat('MAJOR_VER', re.compile(r'^[1-9]\d*$'))
+    MAJOR_MINOR = _VersionFormat('MAJOR_VER.MINOR_VER', re.compile(r"^([1-9]\d*)\.(\d+)$"))
+
+
+class _VersionKind(str, Enum):
+    """ Enum encoding information whether the given OS version is source or target. """
+    SOURCE = 'source'
+    TARGET = 'target'
+
+
+def assert_version_format(version_str, desired_format, version_kind):
     """
-    Versioning schema: MAJOR.MINOR
-    In case version contains an invalid version string, an CommandError will be raised.
+    Check whether a given version_str has the given desired format.
+
+    In case the version does not conform to the desired_format, an CommandError will be raised.
 
     :raises: CommandError
-    :return: release tuple
     """
-    if not re.match(VERSION_REGEX, version):
-        raise CommandError(
-            "Unexpected format of target version: {}. "
-            "The required format is 'X.Y' (major and minor version).".format(version)
-        )
-    return version.split('.')
+    if not re.match(desired_format.regex, version_str):
+        error_str = 'Unexpected format of target version: {0}. The required format is \'{1}\'.'
+        raise CommandError(error_str.format(version_str, desired_format.human_readable))
 
 
-def get_major_version(version):
+def get_major_version_from_a_valid_version(version):
     """
     Return the major version from the given version string.
 
@@ -45,7 +55,7 @@ def get_major_version(version):
     :rtype: str
     :returns: The major version from the given version string.
     """
-    return str(check_version(version)[0])
+    return version.split('.')[0]
 
 
 def detect_sap_hana():
@@ -125,7 +135,7 @@ def get_supported_target_versions(flavour=get_upgrade_flavour()):
         # If we cannot find a particular major.minor version in the map,
         # we fallback to pick a target version just based on a major version.
         # This can happen for example when testing not yet released versions
-        major_version = get_major_version(current_version_id)
+        major_version = get_major_version_from_a_valid_version(current_version_id)
         target_versions = get_target_versions_from_config(major_version, distro_id, flavour)
 
     return target_versions
@@ -146,7 +156,7 @@ def vet_upgrade_path(args):
     flavor = get_upgrade_flavour()
     env_version_override = os.getenv('LEAPP_DEVEL_TARGET_RELEASE')
     if env_version_override:
-        check_version(env_version_override)
+        assert_version_format(env_version_override)
         return (env_version_override, flavor)
     target_release = args.target or get_target_version(flavor)
     return (target_release, flavor)
