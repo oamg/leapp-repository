@@ -19,7 +19,7 @@ providing Red Hat Enterprise Linux in-place upgrade functionality.
     tutorials/index
     project-structure/index
     upgrade-architecture-and-workflow/index
-    configuring-ipu
+    configuring-ipu/index
     libraries-and-api/index
     contrib-and-devel-guidelines
     faq
