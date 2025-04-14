@@ -17,7 +17,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: codespell-project/actions-codespell@v2
         with:
-          ignore_words_list: ro,fo,couldn,repositor,zeor
+          ignore_words_list: ro,fo,couldn,repositor,zeor,bootup
           skip: "./repos/system_upgrade/common/actors/storagescanner/tests/files/mounts,\
             ./repos/system_upgrade/common/actors/networkmanagerreadconfig/tests/files/nm_cfg_file_error,\
             ./repos/system_upgrade/el8toel9/actors/xorgdrvfact/tests/files/journalctl-xorg-intel,\
