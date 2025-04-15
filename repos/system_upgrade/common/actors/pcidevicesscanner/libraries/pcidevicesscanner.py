@@ -60,7 +60,7 @@ def parse_pci_device(textual_block, numeric_block):
         driver=device['Driver'],
         modules=device['Module'],
         numa_node=device['NUMANode'],
-        pci_id=":".join(PCI_ID_REG.findall(numeric_block))
+        pci_id=(":".join(PCI_ID_REG.findall(numeric_block)).lower())
     )
 
 
@@ -83,9 +83,8 @@ def produce_detected_devices(devices):
     }
     api.produce(*[
         DetectedDeviceOrDriver(**entry_lookup[device.pci_id].dump())
-        if device.pci_id in entry_lookup
-        else DetectedDeviceOrDriver(**entry_lookup[":".join(device.pci_id.split(':')[:-2])].dump())
         for device in devices
+        if device.pci_id in entry_lookup or ":".join(device.pci_id.split(':')[:-2]) in entry_lookup
     ])
 
 

@@ -25,6 +25,16 @@ def process():
                                              docs_url='',
                                              docs_title='')
 
+    # Unify all device ids to lowercase
+    try:
+        for entry in deprecation_data['data']:
+            if "device_id" in entry.keys():
+                entry["device_id"] = entry.get("device_id").lower()
+    except (KeyError, AttributeError, TypeError):
+        api.current_logger().warning('No device id detected for entry in device driver'
+                                     'deprecation data file. Continuing.')
+        pass
+
     try:
         api.produce(
             DeviceDriverDeprecationData(
