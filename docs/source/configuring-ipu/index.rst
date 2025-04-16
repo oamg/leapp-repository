@@ -12,7 +12,7 @@ experimental features.
     :caption: Contents:
     :glob:
 
-    configuring-ipu
+    envars
     experimental-features/index
 
 .. Indices and tables
