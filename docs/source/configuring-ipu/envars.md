@@ -78,11 +78,3 @@ Change the default target RHEL version. Format: `MAJOR.MINOR`.
 
 #### LEAPP_DEVEL_USE_PERSISTENT_PACKAGE_CACHE
 Caches downloaded packages when set to `1`. This will reduce the time needed by leapp when executed multiple times, because it will not have to download already downloaded packages. However, this can lead to a random issues in case the data is not up-to-date or when setting or repositories change. The environment variable is meant to be used only for the part of the upgrade before the reboot and has no effect or use otherwise.
-
-## Actor configuration
-```{warning}
-Actor configuration is currently a preview of the feature, it might change in future releases.
-```
-The actor configuration is to be placed in the `/etc/leapp/actor_conf.d/` directory. An actor configuration is a file in YAML format.
-
-To define configuration options on your own actor refer to this tutorial TODO link.
