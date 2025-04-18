@@ -49,23 +49,6 @@ jobs:
             python: python3.6
             repos: 'el8toel9,common'
             container: ubi8-lint
-          # 7to8
-          - name: Run unit tests for el7toel8 and common repositories on python 3.6
-            python: python3.6
-            repos: 'el7toel8,common'
-            container: ubi8
-          - name: Run python linters for el7toel8 and common repositories on python 3.6
-            python: python3.6
-            repos: 'el7toel8,common'
-            container: ubi8-lint
-          - name: Run unit tests for el7toel8 and common repositories on python 2.7
-            python: python2.7
-            repos: 'el7toel8,common'
-            container: ubi7
-          - name: Run python linters for el7toel8 and common repositories on python 2.7
-            python: python2.7
-            repos: 'el7toel8,common'
-            container: ubi7-lint
 
     steps:
       - name: Checkout code
