@@ -149,9 +149,9 @@ def _validate_versions(versions):
                              "but provided was '{}'".format(versions))
 
 
-def _simple_versions(versions):
+def _are_comparison_operators_used(versions):
     """Return ``True`` if provided versions are list of strings without comparison operators."""
-    return all(len(v.split()) == 1 for v in versions)
+    return not all(len(v.split()) == 1 for v in versions)
 
 
 def _cmp_versions(versions):
@@ -190,10 +190,11 @@ def matches_version(match_list, detected):
                         "but provided was {}: '{}'".format(type(detected), detected))
     _validate_versions([detected])
 
-    if _simple_versions(match_list):
+    if not _are_comparison_operators_used(match_list):
         # match_list = ['7.6', '7.7', '7.8', '7.9']
         _validate_versions(match_list)
         return detected in match_list
+
     if _cmp_versions(match_list):
         detected = _version_to_tuple(detected)
         # match_list = ['>= 7.6', '< 7.10']

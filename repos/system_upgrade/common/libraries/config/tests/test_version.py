@@ -17,9 +17,9 @@ def test_validate_versions():
         assert version._validate_versions(['7.6', 'z.z'])
 
 
-def test_simple_versions():
-    assert version._simple_versions(['7.6', '7.7'])
-    assert not version._simple_versions(['7.6', '< 7.7'])
+def test_comparison_operator_detection():
+    assert not version._are_comparison_operators_used(['7.6', '7.7'])
+    assert version._are_comparison_operators_used(['7.6', '< 7.7'])
 
 
 def test_cmp_versions():
