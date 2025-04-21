@@ -1,4 +1,5 @@
 import operator
+import re
 
 import six
 
@@ -141,10 +142,10 @@ def _version_to_tuple(version):
 
 
 def _validate_versions(versions):
-    """Raise ``TypeError`` if provided versions are not strings in the form ``<integer>.<integer>``."""
-    for ver in versions:
-        split = ver.split('.')
-        if not len(split) == 2 or not all(x.isdigit() for x in split):
+    """Raise ``ValueError`` if provided versions are not strings in the form ``<integer>.<integer>``."""
+    version_format_regex = re.compile(r'^([1-9]\d*)\.(\d+)$')
+    for version in versions:
+        if not re.match(version_format_regex, version):
             raise ValueError("Versions have to be in the form of '<integer>.<integer>' "
                              "but provided was '{}'".format(versions))
 
