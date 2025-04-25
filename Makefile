@@ -356,16 +356,17 @@ lint:
 		echo "--- Linting done. ---"; \
 	fi
 
-	if [[  "`git rev-parse --abbrev-ref HEAD`" != "$(MASTER_BRANCH)" ]] && [[ -n "`git diff $(MASTER_BRANCH) --name-only --diff-filter AMR`" ]]; then \
+	if [[  "`git rev-parse --abbrev-ref HEAD`" != "$(MASTER_BRANCH)" ]]; then \
 		. $(VENVNAME)/bin/activate; \
-		git diff $(MASTER_BRANCH) --name-only --diff-filter AMR | grep -v "^docs/" | xargs isort -c --diff || \
-		{ \
+		files_to_sort=`git diff main --name-only --diff-filter AMR | grep -v "^docs/"`; \
+		if [ -n "$$files_to_sort" ]; then \
+			echo "$$files_to_sort" | xargs isort -c --diff || { \
 			echo; \
-			echo "------------------------------------------------------------------------------"; \
-			echo "Hint: Apply the required changes."; \
+			echo "Hint: Apply the required changes.";\
 			echo "      Execute the following command to apply them automatically: make lint_fix"; \
 			exit 1; \
-		} && echo "--- isort check done. ---"; \
+			} && echo "--- isort check done. ---"; \
+		fi \
 	fi
 
 lint_fix:
