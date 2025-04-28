@@ -23,7 +23,7 @@ class RepoMapDataHandler(object):
     Provide the basic functionality to work with the repository data easily.
     """
 
-    def __init__(self, repo_map, cloud_provider='', default_channels=None):
+    def __init__(self, repo_map, distro='', cloud_provider='', default_channels=None):
         """
         Initialize the object based on the given RepositoriesMapping msg.
 
@@ -32,6 +32,8 @@ class RepoMapDataHandler(object):
 
         :param repo_map: A valid RepositoryMapping message.
         :type repo_map: RepositoryMapping
+        :param distro: Which distribution's mappings to use, default to current
+        :type distro: str
         :param default_channels: A list of default channels to use when a target repository
                                  equivalent exactly matching a source repository was not found.
         :type default_channels: List[str]
@@ -42,6 +44,7 @@ class RepoMapDataHandler(object):
         # ideal for work, but there is not any significant impact..
         self.repositories = repo_map.repositories
         self.mapping = repo_map.mapping
+        self.distro = distro or api.current_actor().configuration.os_release.release_id
         # FIXME(pstodulk): what about default_channel -> fallback_channel
         # hardcoded always as ga? instead of list of channels..
         # it'd be possibly confusing naming now...
@@ -93,6 +96,8 @@ class RepoMapDataHandler(object):
         If multiple pesid repo entries with the same repoid were found, the entry with rhui matching the source
         system's rhui info will be returned. If no entry with matching rhui exists, the CDN one is returned if any.
 
+        Note that repositories are automatically filtered based on the specified OS release ID (self.distro).
+
         :param repoid: RepoID that should the PESIDRepositoryEntry match.
         :type repoid: str
         :param major_version: RepoID that should the PESIDRepositoryEntry match.
@@ -103,9 +108,23 @@ class RepoMapDataHandler(object):
         """
         matching_pesid_repos = []
         for pesid_repo in self.repositories:
-            if pesid_repo.repoid == repoid and pesid_repo.major_version == major_version:
+            # FIXME(pstodulk): Why we do not check actually architecture here?
+            # It seems obvious we should check it but the fixme comment below
+            # suggests that it's expected - for not obvious reason.
+            # For the investigation:
+            # # check repoids matching various architectures
+            # # check repoids without $arch in substring on how many architectures they are present
+            # Investigate and: add a comment with an explanation or fix the
+            # condition.
+            if (
+                pesid_repo.repoid == repoid
+                and pesid_repo.major_version == major_version
+                and pesid_repo.distro == self.distro
+            ):
                 matching_pesid_repos.append(pesid_repo)
 
+        # FIXME: when a PESID is present for multiple architectures, there
+        # multiple matching repos even though there should really be just one
         if len(matching_pesid_repos) == 1:
             # Perform no heuristics if only a single pesid repository with matching repoid found
             return matching_pesid_repos[0]
@@ -136,27 +155,34 @@ class RepoMapDataHandler(object):
                 pesids.update(repomap.target)
         return sorted(pesids)
 
-    def get_pesid_repos(self, pesid, major_version):
+    def get_pesid_repos(self, pesid, major_version, distro):
         """
-        Get the list of PESIDRepositoryEntry with the specified PES ID and OS major version.
+        Get the list of PESIDRepositoryEntry with the specified PES ID,
+        OS major version, and OS release ID.
 
         :param pesid: PES ID of the repositories to be retrieved.
         :type pesid: str
-        :param major_version: OS major version of the repositories to be retrieved.
+        :param major_version: OS major version of repositories to be retrieved.
         :type major_version: str
-        :return: A list of PESIDRepositoryEntries that match the provided PES ID and OS major version.
+        :param distro: OS release ID of repositories to be retrieved,
+        :type distro: str
+        :return: A list of PESIDRepositoryEntries that match the provided PES ID, OS major version, and OS release ID.
         :rtype: List[PESIDRepositoryEntry]
         """
         pesid_repos = []
         for pesid_repo in self.repositories:
-            if pesid_repo.pesid == pesid and pesid_repo.major_version == major_version:
+            if (
+                pesid_repo.pesid == pesid
+                and pesid_repo.major_version == major_version
+                and pesid_repo.distro == distro
+            ):
                 pesid_repos.append(pesid_repo)
         return pesid_repos
 
     def get_source_pesid_repos(self, pesid):
         """
         Return the list of PESIDRepositoryEntry objects for a specified PES ID
-        matching the source OS major version.
+        matching the source OS.
 
         :param pesid: The PES ID for which to retrieve PESIDRepositoryEntries.
         :type pesid: str
@@ -164,12 +190,12 @@ class RepoMapDataHandler(object):
                  the OS Major version same as the source OS.
         :rtype: List[PESIDRepositoryEntry]
         """
-        return self.get_pesid_repos(pesid, get_source_major_version())
+        return self.get_pesid_repos(pesid, get_source_major_version(), self.distro)
 
     def get_target_pesid_repos(self, pesid):
         """
         Return the list of PESIDRepositoryEntry objects for a specified PES ID
-        matching the target OS major version.
+        matching the target OS.
 
         :param pesid: The PES ID for which to retrieve PESIDRepositoryEntries.
         :type pesid: str
@@ -177,7 +203,7 @@ class RepoMapDataHandler(object):
                  the OS Major version same as the target OS.
         :rtype: List[PESIDRepositoryEntry]
         """
-        return self.get_pesid_repos(pesid, get_target_major_version())
+        return self.get_pesid_repos(pesid, get_target_major_version(), self.distro)
 
     def _find_repository_target_equivalent(self, src_pesidrepo, target_pesid):
         """
@@ -197,8 +223,9 @@ class RepoMapDataHandler(object):
             matches_rhui = candidate.rhui == src_pesidrepo.rhui
             matches_repo_type = candidate.repo_type == 'rpm'
             matches_arch = candidate.arch == api.current_actor().configuration.architecture
+            matches_distro = candidate.distro == self.distro
 
-            if matches_rhui and matches_arch and matches_repo_type:
+            if matches_rhui and matches_arch and matches_distro and matches_repo_type:
                 # user can specify in future the specific channel should be
                 # prioritized always (e.g. want to go to EUS...).
                 channel = self.prio_channel or src_pesidrepo.channel

@@ -7,10 +7,9 @@ import requests
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import repositoriesmapping
 from leapp.libraries.common import fetch
-from leapp.libraries.common.config import architecture, version
 from leapp.libraries.common.testutils import CurrentActorMocked, produce_mocked
 from leapp.libraries.stdlib import api
-from leapp.models import ConsumedDataAsset, PESIDRepositoryEntry, RPM
+from leapp.models import ConsumedDataAsset, PESIDRepositoryEntry
 
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -53,7 +52,7 @@ def test_scan_existing_valid_data(monkeypatch, adjust_cwd):
     # 2. Verify that only repositories valid for the current IPU are produced
     pesid_repos = repo_mapping.repositories
     fail_description = 'Actor produced incorrect number of IPU-relevant pesid repos.'
-    assert len(pesid_repos) == 3, fail_description
+    assert len(pesid_repos) == 5, fail_description
 
     expected_pesid_repos = [
         PESIDRepositoryEntry(
@@ -63,7 +62,8 @@ def test_scan_existing_valid_data(monkeypatch, adjust_cwd):
             arch='x86_64',
             repo_type='rpm',
             channel='eus',
-            rhui=''
+            rhui='',
+            distro='rhel',
         ),
         PESIDRepositoryEntry(
             pesid='pesid2',
@@ -72,7 +72,8 @@ def test_scan_existing_valid_data(monkeypatch, adjust_cwd):
             arch='x86_64',
             repo_type='rpm',
             channel='eus',
-            rhui=''
+            rhui='',
+            distro='rhel',
         ),
         PESIDRepositoryEntry(
             pesid='pesid3',
@@ -81,7 +82,28 @@ def test_scan_existing_valid_data(monkeypatch, adjust_cwd):
             arch='x86_64',
             repo_type='rpm',
             channel='eus',
-            rhui=''
+            rhui='',
+            distro='rhel',
+        ),
+        PESIDRepositoryEntry(
+            pesid='pesid6',
+            major_version='7',
+            repoid='some-centos-9-repoid1',
+            arch='x86_64',
+            repo_type='rpm',
+            channel='ga',
+            rhui='',
+            distro='centos',
+        ),
+        PESIDRepositoryEntry(
+            pesid='pesid7',
+            major_version='8',
+            repoid='some-centos-10-repoid1',
+            arch='x86_64',
+            repo_type='rpm',
+            channel='ga',
+            rhui='',
+            distro='centos',
         ),
     ]
 
@@ -177,7 +199,8 @@ def test_scan_repositories_with_mapping_to_pesid_without_repos(monkeypatch):
                         'repoid': 'some-rhel-7-repo',
                         'arch': 'x86_64',
                         'repo_type': 'rpm',
-                        'channel': 'eus'
+                        'channel': 'eus',
+                        'distro': 'rhel',
                     }
                 ]
             }
