@@ -17,7 +17,7 @@ REPOMAP_FILE = 'repomap.json'
 
 
 class RepoMapData(object):
-    VERSION_FORMAT = '1.2.1'
+    VERSION_FORMAT = '1.3.0'
 
     def __init__(self):
         self.repositories = []
@@ -40,7 +40,8 @@ class RepoMapData(object):
             repo_type=data['repo_type'],
             arch=data['arch'],
             major_version=data['major_version'],
-            pesid=pesid
+            pesid=pesid,
+            distro=data['distro'],
         ))
 
     def get_repositories(self, valid_major_versions):

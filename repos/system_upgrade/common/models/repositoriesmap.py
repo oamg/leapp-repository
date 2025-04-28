@@ -78,6 +78,11 @@ class PESIDRepositoryEntry(Model):
     Empty string denotes that the repository is not specific to any cloud provider.
     """
 
+    distro = fields.StringEnum(['rhel', 'centos'])
+    """
+    Specifies what distribution is the repository specific to.
+    """
+
 
 class RepositoriesMapping(Model):
     """
