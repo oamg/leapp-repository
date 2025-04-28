@@ -17,11 +17,16 @@ from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 class SetupTargetRepos(Actor):
     """
-    Produces list of repositories that should be available to be used by Upgrade process.
+    Produces list of repositories that should be available to be used during IPU process.
 
-    Based on current set of Red Hat Enterprise Linux repositories, produces the list of target
-    repositories. Additionally process request to use custom repositories during the upgrade
-    transaction.
+    The list of expected target repositories is produced based on:
+      * required custom target repositories,
+      * discovered enabled repositories,
+      * repositories from which originates the installed content,
+      * and the system distribution.
+
+    The list of repositories can be additionally affected in case of RHEL by
+    required channel (e.g. eus) or by detected use of RHUI.
     """
 
     name = 'setuptargetrepos'

@@ -6,7 +6,6 @@ from leapp.libraries.common.testutils import create_report_mocked, CurrentActorM
 from leapp.libraries.stdlib import api
 from leapp.models import (
     CustomTargetRepository,
-    EnvVar,
     PESIDRepositoryEntry,
     RepoMapEntry,
     RepositoriesBlacklisted,
@@ -42,6 +41,7 @@ def rhel7_optional_pesidrepo():
         arch='x86_64',
         channel='ga',
         repo_type='rpm',
+        distro='rhel',
     )
 
 
@@ -54,7 +54,9 @@ def rhel8_crb_pesidrepo():
         rhui='',
         arch='x86_64',
         channel='ga',
-        repo_type='rpm')
+        repo_type='rpm',
+        distro='rhel',
+    )
 
 
 @pytest.fixture
