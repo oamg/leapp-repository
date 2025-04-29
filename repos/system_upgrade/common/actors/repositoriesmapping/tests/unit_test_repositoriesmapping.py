@@ -7,10 +7,9 @@ import requests
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import repositoriesmapping
 from leapp.libraries.common import fetch
-from leapp.libraries.common.config import architecture, version
 from leapp.libraries.common.testutils import CurrentActorMocked, produce_mocked
 from leapp.libraries.stdlib import api
-from leapp.models import ConsumedDataAsset, PESIDRepositoryEntry, RPM
+from leapp.models import ConsumedDataAsset, PESIDRepositoryEntry
 
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -63,7 +62,8 @@ def test_scan_existing_valid_data(monkeypatch, adjust_cwd):
             arch='x86_64',
             repo_type='rpm',
             channel='eus',
-            rhui=''
+            rhui='',
+            distro='rhel',
         ),
         PESIDRepositoryEntry(
             pesid='pesid2',
@@ -72,7 +72,8 @@ def test_scan_existing_valid_data(monkeypatch, adjust_cwd):
             arch='x86_64',
             repo_type='rpm',
             channel='eus',
-            rhui=''
+            rhui='',
+            distro='rhel',
         ),
         PESIDRepositoryEntry(
             pesid='pesid3',
@@ -81,7 +82,8 @@ def test_scan_existing_valid_data(monkeypatch, adjust_cwd):
             arch='x86_64',
             repo_type='rpm',
             channel='eus',
-            rhui=''
+            rhui='',
+            distro='rhel',
         ),
     ]
 
@@ -177,7 +179,8 @@ def test_scan_repositories_with_mapping_to_pesid_without_repos(monkeypatch):
                         'repoid': 'some-rhel-7-repo',
                         'arch': 'x86_64',
                         'repo_type': 'rpm',
-                        'channel': 'eus'
+                        'channel': 'eus',
+                        'distro': 'rhel',
                     }
                 ]
             }

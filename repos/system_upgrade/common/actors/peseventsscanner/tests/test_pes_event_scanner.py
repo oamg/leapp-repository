@@ -246,9 +246,9 @@ def test_actor_performs(monkeypatch):
         ],
         repositories=[
             PESIDRepositoryEntry(pesid='rhel7-base', major_version='7', repoid='rhel7-repo', arch='x86_64',
-                                 repo_type='rpm', channel='ga', rhui=''),
+                                 repo_type='rpm', channel='ga', rhui='', distro='rhel'),
             PESIDRepositoryEntry(pesid='rhel8-BaseOS', major_version='8', repoid='rhel8-repo', arch='x86_64',
-                                 repo_type='rpm', channel='ga', rhui='')]
+                                 repo_type='rpm', channel='ga', rhui='', distro='rhel')]
     )
 
     enabled_modules = EnabledModules(modules=[])
