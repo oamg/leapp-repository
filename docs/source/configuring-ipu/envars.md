@@ -47,6 +47,16 @@ Set the path to the target OS ISO image that should be used for the IPU. It‘s 
 #### LEAPP_TARGET_PRODUCT_CHANNEL
 The alternative to the --channel leapp option. As a parameter accepts a channel acronym. E.g. `eus` or `e4s`. For more info, see the leapp preupgrade --help. In case the beta channel is required, use the `LEAPP_DEVEL_TARGET_PRODUCT_TYPE` envar instead.
 
+#### LEAPP_OVL_IMG_FS_EXT4
+During the execution of IPUWorkflow the process requires creation of internal
+disk images for the correct virtualisation of the host storage and creation
+of OverlayFS (OVL) layer. During that time these images are formatted with
+XFS filesystem by default. However for some system setups this could be
+problematic and could lead sometimes to issues. For these uncommon problems
+it is possible to specify `LEAPP_OVL_IMG_FS_EXT4=1` when running leapp to
+instruct the use of the EXT4 file system instead.
+
+
 ### Development variables
 ```{note}
 To use development variables, the LEAPP_UNSUPPORTED variable has to be set.
