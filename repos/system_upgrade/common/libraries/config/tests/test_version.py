@@ -61,6 +61,21 @@ def test_matches_version_pass(monkeypatch):
     assert version.matches_version(['> 7.6', '< 7.10'], '7.7')
 
 
+def test_matches_version_centos_autocorrect(monkeypatch):
+    actor_mock = CurrentActorMocked(release_id='centos',
+                                    src_ver='8', dst_ver='9',
+                                    virtual_source_version='8.10', virtual_target_version='9.5')
+    monkeypatch.setattr(api, 'current_actor', actor_mock)
+
+    assert version.matches_version(['8'], '8.10')
+    assert version.matches_version(['9'], '9.5')
+    assert not version.matches_version(['8'], '9.5')
+
+    assert version.matches_version(['> 8', '<= 9'], '9.5')
+
+    assert version.matches_version(['> 8.10', '<= 9.7'], '9')
+
+
 @pytest.mark.parametrize('result,version_list', [
     (True, ['7.6', '7.7']),
     (True, ['7.6']),
