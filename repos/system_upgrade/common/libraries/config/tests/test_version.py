@@ -27,7 +27,9 @@ def test_cmp_versions():
     assert not version._cmp_versions(['>= 7.6', '& 7.7'])
 
 
-def test_matches_version_wrong_args():
+def test_matches_version_wrong_args(monkeypatch):
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked())
+
     with pytest.raises(TypeError):
         version.matches_version('>= 7.6', '7.7')
     with pytest.raises(TypeError):
@@ -42,7 +44,9 @@ def test_matches_version_wrong_args():
         version.matches_version(['>= 7.6', '& 7.7'], '7.7')
 
 
-def test_matches_version_fail():
+def test_matches_version_fail(monkeypatch):
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked())
+
     assert not version.matches_version(['> 7.6', '< 7.7'], '7.6')
     assert not version.matches_version(['> 7.6', '< 7.7'], '7.7')
     assert not version.matches_version(['> 7.6', '< 7.10'], '7.6')
@@ -50,7 +54,9 @@ def test_matches_version_fail():
     assert not version.matches_version(['7.6', '7.7', '7.10'], '7.8')
 
 
-def test_matches_version_pass():
+def test_matches_version_pass(monkeypatch):
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked())
+
     assert version.matches_version(['7.6', '7.7', '7.10'], '7.7')
     assert version.matches_version(['> 7.6', '< 7.10'], '7.7')
 
