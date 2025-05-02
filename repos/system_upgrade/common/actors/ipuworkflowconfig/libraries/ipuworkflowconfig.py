@@ -10,6 +10,7 @@ ENV_IGNORE = ('LEAPP_CURRENT_PHASE', 'LEAPP_CURRENT_ACTOR', 'LEAPP_VERBOSE',
               'LEAPP_DEBUG')
 
 ENV_MAPPING = {'LEAPP_DEVEL_DM_DISABLE_UDEV': 'DM_DISABLE_UDEV'}
+CENTOS_VIRTUAL_VERSIONS_KEY = '_virtual_versions'
 
 
 def get_env_vars():
@@ -92,8 +93,7 @@ def load_upgrade_paths_definitions(paths_definition_file):
     return definitions
 
 
-def load_raw_upgrade_paths_for_distro_and_flavour(distro_id, flavour, paths_definition_file='upgrade_paths.json'):
-    all_definitions = load_upgrade_paths_definitions(paths_definition_file)
+def extract_upgrade_paths_for_distro_and_flavour(all_definitions, distro_id, flavour):
     raw_upgrade_paths_for_distro = all_definitions.get(distro_id, {})
 
     if not raw_upgrade_paths_for_distro:
@@ -117,6 +117,39 @@ def construct_models_for_paths_matching_source_major(raw_paths, src_major_versio
     return multipaths_matching_source
 
 
+def construct_virtual_versions(all_upgrade_path_defs, distro_id, source_version, target_version):
+    if distro_id.lower() != 'centos':
+        return (source_version, target_version)
+
+    centos_upgrade_paths = all_upgrade_path_defs.get('centos', {})
+    if not centos_upgrade_paths:
+        raise StopActorExecutionError('There are no upgrade paths defined for CentOS.')
+
+    virtual_versions = centos_upgrade_paths.get(CENTOS_VIRTUAL_VERSIONS_KEY, {})
+    if not virtual_versions:  # Unlikely, only if using old upgrade_paths.json, but the user should not touch the file
+        details = {'details': 'The file does not contain any information about virtual versions of CentOS'}
+        raise StopActorExecutionError('The internal upgrade_paths.json file is malformed.')
+
+    source_virtual_version = virtual_versions.get(source_version)
+    target_virtual_version = virtual_versions.get(target_version)
+
+    if not source_virtual_version or not target_virtual_version:
+        if not source_virtual_version and not target_virtual_version:
+            what_is_missing = 'CentOS {} (source) and CentOS {} (target)'.format(source_virtual_version,
+                                                                                 target_virtual_version)
+        elif not source_virtual_version:
+            what_is_missing = 'CentOS {} (source)'.format(source_virtual_version)
+        else:
+            what_is_missing = 'CentOS {} (target)'.format(target_virtual_version)
+
+        details_msg = 'The {} field in upgrade path definitions does not provide any information for {}'
+        details = {'details': details_msg.format(CENTOS_VIRTUAL_VERSIONS_KEY, what_is_missing)}
+        raise StopActorExecutionError('Failed to identify virtual minor version number for the system.',
+                                      details=details)
+
+    return (source_virtual_version, target_virtual_version)
+
+
 def produce_ipu_config(actor):
     flavour = os.environ.get('LEAPP_UPGRADE_PATH_FLAVOUR')
     target_version = os.environ.get('LEAPP_UPGRADE_PATH_TARGET_RELEASE')
@@ -125,9 +158,17 @@ def produce_ipu_config(actor):
 
     check_target_major_version(source_version, target_version)
 
-    raw_upgrade_paths = load_raw_upgrade_paths_for_distro_and_flavour(os_release.release_id, flavour)
+    all_upgrade_path_defs = load_upgrade_paths_definitions('upgrade_paths.json')
+    raw_upgrade_paths = extract_upgrade_paths_for_distro_and_flavour(all_upgrade_path_defs,
+                                                                     os_release.release_id,
+                                                                     flavour)
     source_major_version = source_version.split('.')[0]
     exposed_supported_paths = construct_models_for_paths_matching_source_major(raw_upgrade_paths, source_major_version)
+
+    virtual_source_version, virtual_target_version = construct_virtual_versions(all_upgrade_path_defs,
+                                                                                os_release.release_id,
+                                                                                source_version,
+                                                                                target_version)
 
     actor.produce(IPUConfig(
         leapp_env_vars=get_env_vars(),
@@ -135,7 +176,9 @@ def produce_ipu_config(actor):
         architecture=platform.machine(),
         version=Version(
             source=source_version,
-            target=target_version
+            target=target_version,
+            virtual_source_version=virtual_source_version,
+            virtual_target_version=virtual_target_version,
         ),
         kernel=get_booted_kernel(),
         flavour=flavour,
