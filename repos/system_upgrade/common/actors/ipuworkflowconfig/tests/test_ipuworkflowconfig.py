@@ -149,7 +149,44 @@ def test_load_raw_upgrade_paths_for_distro_and_flavour(monkeypatch, distro, flav
             }
         }
     }
-    monkeypatch.setattr(ipuworkflowconfig, 'load_upgrade_paths_definitions', lambda *args: defined_upgrade_paths)
 
-    result = ipuworkflowconfig.load_raw_upgrade_paths_for_distro_and_flavour(distro, flavour)
+    result = ipuworkflowconfig.extract_upgrade_paths_for_distro_and_flavour(defined_upgrade_paths,
+                                                                            distro, flavour)
     assert result == expected_result
+
+
+@pytest.mark.parametrize(
+    ('construction_params', 'expected_versions'),
+    [
+        (('centos', '8', '9'), ('8.10', '9.5')),
+        (('rhel', '8.10', '9.4'), ('8.10', '9.4')),
+    ]
+)
+def test_virtual_version_construction(construction_params, expected_versions):
+    defined_upgrade_paths = {
+        'rhel': {
+            'default': {
+                '8.10': ['9.4', '9.5', '9.6'],
+                '8.4': ['9.2'],
+                '9.6': ['10.0'],
+                '8': ['9.4', '9.5', '9.6'],
+                '9': ['10.0']
+            },
+            'saphana': {
+                '8.10': ['9.6', '9.4'],
+                '8': ['9.6', '9.4'],
+                '9.6': ['10.0'],
+                '9': ['10.0']
+            }
+        },
+        'centos': {
+            '8': ['9'],
+            '_virtual_versions': {
+                '8': '8.10',
+                '9': '9.5',
+            }
+        },
+    }
+
+    result = ipuworkflowconfig.construct_virtual_versions(defined_upgrade_paths, *construction_params)
+    assert result == expected_versions
