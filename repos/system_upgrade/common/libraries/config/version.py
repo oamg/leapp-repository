@@ -164,6 +164,15 @@ def _cmp_versions(versions):
     return all(s[0] in OP_MAP for s in split)
 
 
+def _autocorrect_centos_version(version_to_correct):
+    version_cfg = api.current_actor().configuration.version
+    if version_to_correct == version_cfg.source:
+        version_to_correct = version_cfg.virtual_source_version
+    elif version_to_correct == version_cfg.target:
+        version_to_correct = version_cfg.virtual_target_version
+    return version_to_correct
+
+
 def matches_version(match_list, detected):
     """
     Check if the `detected` version meets the criteria specified in `match_list`.
@@ -189,6 +198,31 @@ def matches_version(match_list, detected):
     if not isinstance(detected, six.string_types):
         raise TypeError("Detected version has to be a string "
                         "but provided was {}: '{}'".format(type(detected), detected))
+
+    # If we are on CentOS, and we are provided with a version of the form MAJOR, try to correct
+    # the version into MAJOR.MINOR using virtual versions
+    if api.current_actor().configuration.os_release.release_id == 'centos':
+        new_detected = _autocorrect_centos_version(detected)
+        # We might have a matchlist ['> 8', '<= 9'] that, e.g., results from blindly using source/target versions
+        # to make a matchlist. Our `detected` version might be some fixed string, e.g., `9.1`. So we need to
+        # also autocorrect the matchlist. Due to how autocorrection works, no changes are done to matchlist
+        # parts that contain full versions.
+        new_matchlist = []
+        for predicate in match_list:
+            if ' ' in predicate:
+                op, version = predicate.split(' ', 1)
+                version = _autocorrect_centos_version(version)
+                new_matchlist.append('{} {}'.format(op, version))
+            else:
+                version = _autocorrect_centos_version(predicate)
+                new_matchlist.append(version)
+
+        msg = 'Performed autocorrection from matches_version(%s, %s) to matches_version(%s, %s)'
+        api.current_logger().debug(msg, match_list, detected, new_matchlist, new_detected)
+
+        match_list = new_matchlist
+        detected = new_detected
+
     _validate_versions([detected])
 
     if not _are_comparison_operators_used(match_list):
