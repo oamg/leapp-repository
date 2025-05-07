@@ -80,6 +80,7 @@ def produce_detected_devices(devices):
     entry_lookup = {
         prefix_re.sub('', entry.device_id.lower()): entry
         for message in api.consume(DeviceDriverDeprecationData) for entry in message.entries
+        if entry.device_id
     }
 
     device_list = []

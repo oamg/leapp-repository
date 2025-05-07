@@ -262,6 +262,77 @@ def test_shorten_id(monkeypatch):
     assert expected_output == api.produce.model_instances[0]
 
 
+def test_cut_pci_id(monkeypatch):
+
+    input_data = [
+        PCIDevice(
+            slot='00:03.0',
+            dev_cls='Ethernet controller',
+            vendor='Intel Corporation',
+            name='82599 Ethernet Controller Virtual Function',
+            subsystem_vendor='',
+            subsystem_name='',
+            physical_slot='3',
+            rev='01',
+            progif='',
+            driver='ixgbevf',
+            modules=['ixgbevf'],
+            numa_node='',
+            pci_id='8086:10ed'
+            ),
+        PCIDevice(
+            slot='b765:00:02.0',
+            dev_cls='Ethernet controller',
+            vendor='Mellanox Technologies',
+            name='MT27500/MT27520 Family [ConnectX-3/ConnectX-3 Pro Virtual Function]',
+            subsystem_vendor='Mellanox Technologies',
+            subsystem_name='Device 61b0',
+            physical_slot='2',
+            rev='',
+            progif='',
+            driver='mlx4_core',
+            modules=['mlx4_core'],
+            numa_node='0',
+            pci_id='15b3:1004:15b3:61b0'
+            )]
+
+    messages = [DeviceDriverDeprecationData(entries=[DeviceDriverDeprecationEntry(
+        available_in_rhel=[7],
+        deprecation_announced='',
+        device_id='',
+        device_name='',
+        device_type='pci',
+        driver_name='wil6210',
+        maintained_in_rhel=[]
+        ),
+        DeviceDriverDeprecationEntry(
+        available_in_rhel=[7, 8, 9],
+        deprecation_announced="",
+        device_id="0x15B3:0x1004",
+        device_name="Mellanox Technologies: MT27500 Family [ConnectX-3 Virtual Function]",
+        device_type="pci",
+        driver_name="mlx4_core",
+        maintained_in_rhel=[7, 8])]
+        )]
+
+    expected_output = DetectedDeviceOrDriver(
+        available_in_rhel=[7, 8, 9],
+        deprecation_announced="",
+        device_id="0x15B3:0x1004",
+        device_name="Mellanox Technologies: MT27500 Family [ConnectX-3 Virtual Function]",
+        device_type="pci",
+        driver_name="mlx4_core",
+        maintained_in_rhel=[7, 8]
+    )
+    current_actor = CurrentActorMocked(msgs=messages, src_ver='8.10', dst_ver='9.6')
+    monkeypatch.setattr(api, 'current_actor', current_actor)
+    monkeypatch.setattr(api, 'produce', produce_mocked())
+
+    produce_detected_devices(input_data)
+    assert api.produce.model_instances
+    assert expected_output == api.produce.model_instances[0]
+
+
 # TODO(pstodulk): update the test - drop current_actor_context and use monkeypatch
 @pytest.mark.skipif(not os.path.exists('/usr/sbin/lspci'), reason='lspci not installed on the system')
 def test_actor_execution(current_actor_context):
