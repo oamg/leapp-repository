@@ -121,7 +121,13 @@ def get_path_to_gpg_certs():
     # only beta is special in regards to the GPG signing keys
     if target_product_type == 'beta':
         certs_dir = '{}beta'.format(target_major_version)
-    return os.path.join(api.get_common_folder_path(GPG_CERTS_FOLDER), certs_dir)
+    distro = api.current_actor().configuration.os_release.release_id
+    return os.path.join(
+        api.get_common_folder_path('distro'),
+        distro,
+        GPG_CERTS_FOLDER,
+        certs_dir
+    )
 
 
 def is_nogpgcheck_set():
