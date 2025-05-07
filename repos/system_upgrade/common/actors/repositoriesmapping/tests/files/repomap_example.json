@@ -94,6 +94,32 @@
           "distro": "rhel"
         }
       ]
+    },
+    {
+      "pesid": "pesid6",
+      "entries": [
+        {
+          "major_version": "7",
+          "repoid": "some-centos-9-repoid1",
+          "arch": "x86_64",
+          "repo_type": "rpm",
+          "channel": "ga",
+          "distro": "centos"
+        }
+      ]
+    },
+    {
+      "pesid": "pesid7",
+      "entries": [
+        {
+          "major_version": "8",
+          "repoid": "some-centos-10-repoid1",
+          "arch": "x86_64",
+          "repo_type": "rpm",
+          "channel": "ga",
+          "distro": "centos"
+        }
+      ]
     }
   ]
 }
