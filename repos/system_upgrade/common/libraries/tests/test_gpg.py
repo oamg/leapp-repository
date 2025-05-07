@@ -11,14 +11,16 @@ from leapp.libraries.stdlib import api
 from leapp.models import GpgKey, InstalledRPM, RPM
 
 
-@pytest.mark.parametrize('target, product_type, exp', [
-    ('8.6', 'beta', '../../files/rpm-gpg/8beta'),
-    ('8.8', 'htb', '../../files/rpm-gpg/8'),
-    ('9.0', 'beta', '../../files/rpm-gpg/9beta'),
-    ('9.2', 'ga', '../../files/rpm-gpg/9'),
+@pytest.mark.parametrize('target, product_type, distro, exp', [
+    ('8.6', 'beta', 'rhel', '../../files/distro/rhel/rpm-gpg/8beta'),
+    ('8.8', 'htb', 'rhel', '../../files/distro/rhel/rpm-gpg/8'),
+    ('9.0', 'beta', 'rhel', '../../files/distro/rhel/rpm-gpg/9beta'),
+    ('9.2', 'ga', 'rhel', '../../files/distro/rhel/rpm-gpg/9'),
+    ('10.0', 'ga', 'rhel', '../../files/distro/rhel/rpm-gpg/10'),
+    ('10', 'ga', 'centos', '../../files/distro/centos/rpm-gpg/10'),
 ])
-def test_get_path_to_gpg_certs(monkeypatch, target, product_type, exp):
-    current_actor = CurrentActorMocked(dst_ver=target,
+def test_get_path_to_gpg_certs(monkeypatch, target, product_type, distro, exp):
+    current_actor = CurrentActorMocked(dst_ver=target, release_id=distro,
                                        envars={'LEAPP_DEVEL_TARGET_PRODUCT_TYPE': product_type})
     monkeypatch.setattr(api, 'current_actor', current_actor)
 
@@ -33,7 +35,7 @@ def is_rhel7():
 @pytest.mark.skipif(distro.id() not in ("rhel", "centos"), reason="Requires RHEL or CentOS for valid results.")
 def test_gpg_show_keys(loaded_leapp_repository, monkeypatch):
     src = '7.9' if is_rhel7() else '8.6'
-    current_actor = CurrentActorMocked(src_ver=src)
+    current_actor = CurrentActorMocked(src_ver=src, release_id='rhel')
     monkeypatch.setattr(api, 'current_actor', current_actor)
 
     # python2 compatibility :/
@@ -78,7 +80,8 @@ def test_gpg_show_keys(loaded_leapp_repository, monkeypatch):
         # with some test data now -- rhel9 release key
         # rhel9_key_path = os.path.join(api.get_common_folder_path('rpm-gpg'), '9')
         cur_dir = os.path.dirname(os.path.abspath(__file__))
-        rhel9_key_path = os.path.join(cur_dir, '..', '..', 'files', 'rpm-gpg', '9',
+        rhel9_key_path = os.path.join(cur_dir, '..', '..', 'files',
+                                      'distro', 'rhel', 'rpm-gpg', '9',
                                       'RPM-GPG-KEY-redhat-release')
         res = gpg._gpg_show_keys(rhel9_key_path)
     finally:
