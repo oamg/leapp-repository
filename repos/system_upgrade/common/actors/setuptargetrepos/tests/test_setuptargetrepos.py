@@ -127,7 +127,8 @@ def test_repos_mapping(monkeypatch):
                 arch='x86_64',
                 repo_type='rpm',
                 channel='ga',
-                rhui=''
+                rhui='',
+                distro='rhel',
             ),
             PESIDRepositoryEntry(
                 pesid='rhel8-baseos',
@@ -136,7 +137,8 @@ def test_repos_mapping(monkeypatch):
                 arch='x86_64',
                 repo_type='rpm',
                 channel='ga',
-                rhui=''
+                rhui='',
+                distro='rhel',
             ),
             PESIDRepositoryEntry(
                 pesid='rhel8-appstream',
@@ -145,7 +147,8 @@ def test_repos_mapping(monkeypatch):
                 arch='x86_64',
                 repo_type='rpm',
                 channel='ga',
-                rhui=''
+                rhui='',
+                distro='rhel',
             ),
             PESIDRepositoryEntry(
                 pesid='rhel8-blacklist',
@@ -154,7 +157,8 @@ def test_repos_mapping(monkeypatch):
                 arch='x86_64',
                 repo_type='rpm',
                 channel='ga',
-                rhui=''
+                rhui='',
+                distro='rhel',
             ),
             PESIDRepositoryEntry(
                 pesid='rhel7-satellite-extras',
@@ -163,7 +167,8 @@ def test_repos_mapping(monkeypatch):
                 arch='x86_64',
                 repo_type='rpm',
                 channel='ga',
-                rhui=''
+                rhui='',
+                distro='rhel',
             ),
             PESIDRepositoryEntry(
                 pesid='rhel8-satellite-extras',
@@ -172,7 +177,8 @@ def test_repos_mapping(monkeypatch):
                 arch='x86_64',
                 repo_type='rpm',
                 channel='ga',
-                rhui=''
+                rhui='',
+                distro='rhel',
             ),
         ]
     )
