@@ -52,7 +52,7 @@ def test_scan_existing_valid_data(monkeypatch, adjust_cwd):
     # 2. Verify that only repositories valid for the current IPU are produced
     pesid_repos = repo_mapping.repositories
     fail_description = 'Actor produced incorrect number of IPU-relevant pesid repos.'
-    assert len(pesid_repos) == 3, fail_description
+    assert len(pesid_repos) == 5, fail_description
 
     expected_pesid_repos = [
         PESIDRepositoryEntry(
@@ -85,10 +85,31 @@ def test_scan_existing_valid_data(monkeypatch, adjust_cwd):
             rhui='',
             distro='rhel',
         ),
+        PESIDRepositoryEntry(
+            pesid='pesid6',
+            major_version='7',
+            repoid='some-centos-9-repoid1',
+            arch='x86_64',
+            repo_type='rpm',
+            channel='ga',
+            rhui='',
+            distro='centos',
+        ),
+        PESIDRepositoryEntry(
+            pesid='pesid7',
+            major_version='8',
+            repoid='some-centos-10-repoid1',
+            arch='x86_64',
+            repo_type='rpm',
+            channel='ga',
+            rhui='',
+            distro='centos',
+        ),
     ]
 
     fail_description = 'Expected pesid repo is not present in the deserialization output.'
     for expected_pesid_repo in expected_pesid_repos:
+        print(expected_pesid_repo.repoid)
         assert expected_pesid_repo in pesid_repos, fail_description
 
 
