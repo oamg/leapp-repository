@@ -181,6 +181,8 @@ class MockSAPHanaVersionInstance(object):
     )
 )
 def test_checksaphana__fullfills_rhel86_hana_min_version(monkeypatch, major, rev, patchlevel, result):
+    monkeypatch.setattr(checksaphana.api, 'current_actor', testutils.CurrentActorMocked())
+
     monkeypatch.setattr(version, 'get_target_major_version', lambda: '8')
     monkeypatch.setattr(version, 'get_target_version', lambda: '8.6')
     monkeypatch.setattr(checksaphana, 'SAP_HANA_RHEL86_REQUIRED_PATCH_LEVELS', ((4, 48, 2), (5, 52, 0)))
@@ -213,6 +215,8 @@ def test_checksaphana__fullfills_rhel86_hana_min_version(monkeypatch, major, rev
     )
 )
 def test_checksaphana__fullfills_hana_rhel90_min_version(monkeypatch, major, rev, patchlevel, result):
+    monkeypatch.setattr(checksaphana.api, 'current_actor', testutils.CurrentActorMocked())
+
     monkeypatch.setattr(version, 'get_target_major_version', lambda: '9')
     monkeypatch.setattr(version, 'get_target_version', lambda: '9.0')
     monkeypatch.setattr(checksaphana, 'SAP_HANA_RHEL90_REQUIRED_PATCH_LEVELS', ((5, 59, 4), (6, 63, 0)))
