@@ -400,6 +400,7 @@ def get_pesid_to_repoid_map(target_pesids):
             repo_type='rpm',
             channel='ga',
             rhui='',
+            distro='rhel',
         )
 
     for pesid in target_pesids:
