@@ -6,7 +6,7 @@ from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 class ScanKernelCmdline(Actor):
     """
-    No documentation has been provided for the scan_kernel_cmdline actor.
+    Scan the kernel command line of the booted system.
     """
 
     name = 'scan_kernel_cmdline'
@@ -19,7 +19,7 @@ class ScanKernelCmdline(Actor):
         parameters = []
         for parameter in cmdline.split(' '):
             if '=' in parameter:
-                kv = parameter.split('=')
+                kv = parameter.split('=', 1)
                 parameters.append(KernelCmdlineArg(key=kv[0], value=kv[1]))
             else:
                 parameters.append(KernelCmdlineArg(key=parameter))
