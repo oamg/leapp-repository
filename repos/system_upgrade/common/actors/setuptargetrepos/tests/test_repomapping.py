@@ -197,7 +197,7 @@ def test_get_target_pesids_distro(
 @pytest.mark.parametrize(
     'distro,expect_pesid3,expect_pesid1',
     [
-        ('rhel', [5, 6, 7], [0 ,1]),
+        ('rhel', [5, 6, 7], [0, 1]),
         ('centos', [8], [2]),
     ]
 )
