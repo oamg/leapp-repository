@@ -23,7 +23,7 @@ class RepoMapDataHandler(object):
     Provide the basic functionality to work with the repository data easily.
     """
 
-    def __init__(self, repo_map, distro=None, cloud_provider="", default_channels=None):
+    def __init__(self, repo_map, distro=None, cloud_provider='', default_channels=None):
         """
         Initialize the object based on the given RepositoriesMapping msg.
 
