@@ -9,43 +9,43 @@ on:
 
 jobs:
   test:
-    name: Run unit tests in containers
+    name: 'Run: ${{ matrix.scenarios.name }}'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         scenarios:
           # 9to10
-          - name: Run unit tests for el9toel10 and common repositories on python 3.12
+          - name: 'Unit tests (python:3.12; repos:el9toel10,common)'
             python: python3.12
             repos: 'el9toel10,common'
             container: ubi9
-          - name: Run python linters for el9toel10 and common repositories on python 3.12
+          - name: 'Linters (python:3.12; repos:el9toel10,common)'
             python: python3.12
             repos: 'el9toel10,common'
             container: ubi9-lint
-          - name: Run unit tests for el9toel10 and common repositories on python 3.9
+          - name: 'Unit tests (python:3.9; repos:el9toel10,common)'
             python: python3.9
             repos: 'el9toel10,common'
             container: ubi9
-          - name: Run python linters for el9toel10 and common repositories on python 3.9
+          - name: 'Linters (python:3.9; repos:el9toel10,common)'
             python: python3.9
             repos: 'el9toel10,common'
             container: ubi9-lint
           # 8to9
-          - name: Run unit tests for el8toel9 and common repositories on python 3.9
+          - name: 'Unit tests (python:3.9; repos:el8toel9,common)'
             python: python3.9
             repos: 'el8toel9,common'
             container: ubi9
-          - name: Run python linters for el8toel9 and common repositories on python 3.9
+          - name: 'Linters (python:3.9; repos:el8toel9,common)'
             python: python3.9
             repos: 'el8toel9,common'
             container: ubi9-lint
-          - name: Run unit tests for el8toel9 and common repositories on python 3.6
+          - name: 'Unit tests (python:3.6; repos:el8toel9,common)'
             python: python3.6
             repos: 'el8toel9,common'
             container: ubi8
-          - name: Run python linters for el8toel9 and common repositories on python 3.6
+          - name: 'Linters (python:3.6; repos:el8toel9,common)'
             python: python3.6
             repos: 'el8toel9,common'
             container: ubi8-lint
