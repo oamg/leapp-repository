@@ -164,9 +164,9 @@ help:
 	@echo "  PR=7 SUFFIX='my_additional_suffix' make <target>"
 	@echo "  MR=6 COPR_CONFIG='path/to/the/config/copr/file' make <target>"
 	@echo "  ACTOR=<actor> TEST_LIBS=y make test"
-	@echo "  BUILD_CONTAINER=el7 make build_container"
+	@echo "  BUILD_CONTAINER=rhel8 make build_container"
 	@echo "  TEST_CONTAINER=f34 make test_container"
-	@echo "  CONTAINER_TOOL=docker TEST_CONTAINER=rhel7 make test_container_no_lint"
+	@echo "  CONTAINER_TOOL=docker TEST_CONTAINER=rhel8 make test_container_no_lint"
 	@echo ""
 
 clean:
@@ -459,30 +459,33 @@ test_container:
 	$(_CONTAINER_TOOL) ps -q -f name=$$_CONT_NAME && { $(_CONTAINER_TOOL) kill $$_CONT_NAME; $(_CONTAINER_TOOL) rm $$_CONT_NAME; }; \
 	$(_CONTAINER_TOOL) run -di --name $$_CONT_NAME -v "$$PWD":/repo:Z -e PYTHON_VENV=$$_VENV $$TEST_IMAGE && \
 	$(_CONTAINER_TOOL) exec $$_CONT_NAME rsync -aur --delete --exclude "tut*" /repo/ /repocopy && \
+	export res=0; \
 	case $$_VENV in \
 	python2.7) \
-		TEST_CONT_IPU=el7toel8 $(MAKE) _test_container_ipu; \
+		TEST_CONT_IPU=el7toel8 $(MAKE) _test_container_ipu || res=1; \
 		;;\
 	python3.6) \
-		TEST_CONT_IPU=el7toel8 $(MAKE) _test_container_ipu; \
-		TEST_CONT_IPU=el8toel9 $(MAKE) _test_container_ipu; \
+		echo "INFO: Skipping testing of el7toel8 repository. Obsoleted"; \
+		TEST_CONT_IPU=el8toel9 $(MAKE) _test_container_ipu || res=1; \
 		;; \
 	python3.9) \
-		TEST_CONT_IPU=el8toel9 $(MAKE) _test_container_ipu; \
-		TEST_CONT_IPU=el9toel10 $(MAKE) _test_container_ipu; \
+		TEST_CONT_IPU=el8toel9 $(MAKE) _test_container_ipu || res=1; \
+		TEST_CONT_IPU=el9toel10 $(MAKE) _test_container_ipu || res=1; \
 		;; \
 	python3.12) \
-		TEST_CONT_IPU=el9toel10 $(MAKE) _test_container_ipu; \
+		TEST_CONT_IPU=el9toel10 $(MAKE) _test_container_ipu || res=1; \
 		;; \
 	*) \
-		TEST_CONT_IPU=el8toel9 $(MAKE) _test_container_ipu; \
-		;;\
+		TEST_CONT_IPU=el8toel9 $(MAKE) _test_container_ipu || res=1; \
+		;; \
 	esac; \
 	$(_CONTAINER_TOOL) kill $$_CONT_NAME; \
-	$(_CONTAINER_TOOL) rm $$_CONT_NAME
+	$(_CONTAINER_TOOL) rm $$_CONT_NAME; \
+	[ $$res -ne 0 ] && echo "TIP: If you do not see an error in the end of logs, scroll up. Multiple tests could be executed." ; \
+	exit $$res
 
 test_container_all:
-	@for container in "f34" "rhel7" "rhel8"; do \
+	@for container in "f34" "rhel7" "rhel8" "rhel9"; do \
 		TEST_CONTAINER=$$container $(MAKE) test_container || exit 1; \
 	done
 
@@ -490,7 +493,7 @@ test_container_no_lint:
 	@_TEST_CONT_TARGET="test_no_lint" $(MAKE) test_container
 
 test_container_all_no_lint:
-	@for container in "f34" "rhel7" "rhel8"; do \
+	@for container in "f34" "rhel7" "rhel8" "rhel9"; do \
 		TEST_CONTAINER=$$container $(MAKE) test_container_no_lint || exit 1; \
 	done
 
