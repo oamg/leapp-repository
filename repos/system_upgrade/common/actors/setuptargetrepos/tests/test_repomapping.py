@@ -5,12 +5,21 @@ import pytest
 
 from leapp.libraries.actor import setuptargetrepos_repomap
 from leapp.libraries.actor.setuptargetrepos_repomap import get_default_repository_channels, RepoMapDataHandler
-from leapp.libraries.common.testutils import CurrentActorMocked, produce_mocked
+from leapp.libraries.common.testutils import CurrentActorMocked
 from leapp.libraries.stdlib import api
 from leapp.models import PESIDRepositoryEntry, RepoMapEntry, RepositoriesMapping
 
 
-def make_pesid_repo(pesid, major_version, repoid, arch='x86_64', repo_type='rpm', channel='ga', rhui=''):
+def make_pesid_repo(
+    pesid,
+    major_version,
+    repoid,
+    arch='x86_64',
+    repo_type='rpm',
+    channel='ga',
+    rhui='',
+    distro='rhel',
+):
     """
     PESIDRepositoryEntry factory function allowing shorter data description in tests by providing default values.
     """
@@ -21,7 +30,8 @@ def make_pesid_repo(pesid, major_version, repoid, arch='x86_64', repo_type='rpm'
         arch=arch,
         repo_type=repo_type,
         channel=channel,
-        rhui=rhui
+        rhui=rhui,
+        distro=distro,
     )
 
 
@@ -45,6 +55,27 @@ def repomap_data_for_pesid_repo_retrieval():
             make_pesid_repo('pesid4', '7', 'pesid4-repoid1'),
             make_pesid_repo('pesid4', '8', 'pesid4-repoid2'),
         ]
+    )
+    return repomap_data
+
+
+@pytest.fixture
+def repomap_data_multiple_distros():
+    repomap_data = RepositoriesMapping(
+        mapping=[
+            RepoMapEntry(source="pesid1", target=["pesid3", "pesid2"]),
+        ],
+        repositories=[
+            make_pesid_repo("pesid1", "9", "pesid1-repoid"),
+            make_pesid_repo("pesid1", "9", "pesid1-repoid-eus", channel="eus"),
+            make_pesid_repo("pesid1", "9", "pesid1-repoid-centos", distro="centos"),
+            make_pesid_repo("pesid2", "10", "pesid2-repoid"),
+            make_pesid_repo("pesid2", "10", "pesid2-repoid-centos", distro="centos"),
+            make_pesid_repo("pesid3", "10", "pesid3-repoid"),
+            make_pesid_repo("pesid3", "10", "pesid3-repoid-eus", channel="eus"),
+            make_pesid_repo("pesid3", "10", "pesid3-repoid-aws", rhui="aws"),
+            make_pesid_repo("pesid3", "10", "pesid3-repoid-centos", distro="centos"),
+        ],
     )
     return repomap_data
 
@@ -75,6 +106,40 @@ def test_get_pesid_repo_entry(monkeypatch, repomap_data_for_pesid_repo_retrieval
     assert handler.get_pesid_repo_entry('nonexisting-repo', '7') is None, fail_description
 
 
+@pytest.mark.parametrize('distro', ('rhel', 'centos'))
+def test_get_pesid_repo_entry_distro(
+    monkeypatch, repomap_data_multiple_distros, distro
+):
+    """
+    Test for the RepoMapDataHandler.get_pesid_repo_entry method.
+
+    Verifies that the method correctly retrieves PESIDRepositoryEntry that are
+    matching the OS major version, repoid and the distro.
+    """
+    monkeypatch.setattr(
+        api,
+        "current_actor",
+        CurrentActorMocked(
+            arch="x86_64", src_ver="9.6", dst_ver="10.2", release_id=distro
+        ),
+    )
+    handler = RepoMapDataHandler(repomap_data_multiple_distros)
+    repositories = [
+        repo
+        for repo in repomap_data_multiple_distros.repositories
+        if repo.distro == distro
+    ]
+
+    fail_description = (
+        "get_pesid_repo_entry method failed to find correct pesid repository that matches given parameters."
+    )
+    for exp_repo in repositories:
+        result_repo = handler.get_pesid_repo_entry(
+            exp_repo.repoid, exp_repo.major_version
+        )
+        assert result_repo == exp_repo, fail_description
+
+
 def test_get_target_pesids(monkeypatch, repomap_data_for_pesid_repo_retrieval):
     """
     Test for the RepoMapDataHandler.get_target_pesids method.
@@ -98,36 +163,84 @@ def test_get_target_pesids(monkeypatch, repomap_data_for_pesid_repo_retrieval):
     assert [] == handler.get_target_pesids('pesid_no_mapping'), fail_description
 
 
-def test_get_pesid_repos(monkeypatch, repomap_data_for_pesid_repo_retrieval):
+@pytest.mark.parametrize('distro', ('rhel', 'centos'))
+def test_get_target_pesids_distro(
+    monkeypatch, repomap_data_multiple_distros, distro
+):
+    """
+    Test for the RepoMapDataHandler.get_target_pesids method.
+
+    Verifies that the method correctly tells what target pesids is the given source pesid mapped to.
+    """
+    monkeypatch.setattr(
+        api,
+        "current_actor",
+        CurrentActorMocked(
+            arch="x86_64", src_ver="7.9", dst_ver="8.4", release_id=distro
+        ),
+    )
+    handler = RepoMapDataHandler(repomap_data_multiple_distros)
+
+    expected_target_pesids = ['pesid2', 'pesid3']
+    actual_target_pesids = handler.get_target_pesids('pesid1')
+
+    fail_description = (
+        'The get_target_pesids method did not correctly identify what is the given source pesid mapped to.')
+    assert expected_target_pesids == actual_target_pesids, fail_description
+
+    fail_description = (
+        'The get_target_pesids method found target pesids even if the source repository is not mapped.')
+    assert [] == handler.get_target_pesids('pesid2'), fail_description
+    assert [] == handler.get_target_pesids('pesid_no_mapping'), fail_description
+
+
+@pytest.mark.parametrize(
+    'distro,expect_pesid3,expect_pesid1',
+    [
+        ('rhel', [5, 6, 7], [0, 1]),
+        ('centos', [8], [2]),
+    ]
+)
+def test_get_pesid_repos(
+    monkeypatch, repomap_data_multiple_distros, distro, expect_pesid3, expect_pesid1
+):
     """
     Test for the RepoMapDataHandler.get_pesid_repos method.
 
     Verifies that the method is able to collect all PESIDRepositoryEntry present in the repomap data that
     match the given OS major version and the given pesid.
     """
-    monkeypatch.setattr(api, 'current_actor',
-                        CurrentActorMocked(arch='x86_64', src_ver='7.9', dst_ver='8.4'))
-    handler = RepoMapDataHandler(repomap_data_for_pesid_repo_retrieval)
-    repositories = repomap_data_for_pesid_repo_retrieval.repositories
+    monkeypatch.setattr(
+        api,
+        "current_actor",
+        CurrentActorMocked(
+            arch="x86_64", src_ver="9.6", dst_ver="10.4", release_id=distro
+        ),
+    )
+    handler = RepoMapDataHandler(repomap_data_multiple_distros)
 
-    actual_pesid_repos = handler.get_pesid_repos('pesid3', '8')
-    expected_pesid_repos = [repositories[3], repositories[4], repositories[5]]
+    actual_pesid_repos = handler.get_pesid_repos('pesid3', '10', distro)
+    expected_pesid_repos = [
+        repomap_data_multiple_distros.repositories[repo] for repo in expect_pesid3
+    ]
     fail_description = 'The get_pesid_repos failed to find pesid repos matching the given criteria.'
     assert len(expected_pesid_repos) == len(actual_pesid_repos), fail_description
     for actual_pesid_repo in actual_pesid_repos:
         assert actual_pesid_repo in expected_pesid_repos, fail_description
 
-    actual_pesid_repos = handler.get_pesid_repos('pesid1', '7')
-    expected_pesid_repos = [repositories[0], repositories[1]]
+    actual_pesid_repos = handler.get_pesid_repos('pesid1', '9', distro)
+    expected_pesid_repos = [
+        repomap_data_multiple_distros.repositories[repo] for repo in expect_pesid1
+    ]
     assert len(expected_pesid_repos) == len(actual_pesid_repos), fail_description
     for actual_pesid_repo in actual_pesid_repos:
         assert actual_pesid_repo in expected_pesid_repos, fail_description
 
     fail_description = (
         'The get_pesid_repos found some pesid repositories matching criteria, but there are no such repositories.')
-    assert [] == handler.get_pesid_repos('pesid3', '7'), fail_description
-    assert [] == handler.get_pesid_repos('pesid1', '8'), fail_description
-    assert [] == handler.get_pesid_repos('nonexisting_pesid', '7'), fail_description
+    assert [] == handler.get_pesid_repos('pesid3', '7', 'rhel'), fail_description
+    assert [] == handler.get_pesid_repos('pesid1', '8', 'rhel'), fail_description
+    assert [] == handler.get_pesid_repos('nonexisting_pesid', '7', 'rhel'), fail_description
 
 
 def test_get_source_pesid_repos(monkeypatch, repomap_data_for_pesid_repo_retrieval):
@@ -639,20 +752,26 @@ def test_multiple_repoids_in_repomapping(monkeypatch, rhui):
 
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(arch='x86_64', src_ver='7.9', dst_ver='8.6'))
 
-    mk_rhui_el7_pesid_repo = functools.partial(PESIDRepositoryEntry,
-                                               pesid='rhel7-rhui',
-                                               major_version='7',
-                                               repoid='repoid7-rhui',
-                                               repo_type='rpm',
-                                               arch='x86_64',
-                                               channel='ga')
+    mk_rhui_el7_pesid_repo = functools.partial(
+        PESIDRepositoryEntry,
+        pesid='rhel7-rhui',
+        major_version='7',
+        repoid='repoid7-rhui',
+        repo_type='rpm',
+        arch='x86_64',
+        channel='ga',
+        distro='rhel'
+    )
 
-    mk_rhui_el8_pesid_repo = functools.partial(PESIDRepositoryEntry,
-                                               pesid='rhel8-rhui',
-                                               major_version='8',
-                                               repo_type='rpm',
-                                               arch='x86_64',
-                                               channel='ga')
+    mk_rhui_el8_pesid_repo = functools.partial(
+        PESIDRepositoryEntry,
+        pesid='rhel8-rhui',
+        major_version='8',
+        repo_type='rpm',
+        arch='x86_64',
+        channel='ga',
+        distro='rhel',
+    )
 
     repomap = RepositoriesMapping(
         mapping=[RepoMapEntry(source='rhel7-rhui', target=['rhel8-rhui'])],
