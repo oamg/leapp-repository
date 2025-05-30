@@ -108,6 +108,7 @@ def test_matches_target_version(monkeypatch, result, version_list):
     (False, '4.14.0-100.8.2.el8.x86_64', 'rhel', '8.1'),
     (False, '4.14.0-100.8.2.el9.x86_64', 'rhel', '9.1'),
 ])
+@suppress_deprecation(version.is_rhel_alt)
 def test_is_rhel_alt(monkeypatch, result, kernel, release_id, src_ver):
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(src_ver=src_ver, kernel=kernel,
                                                                  release_id=release_id))
