@@ -294,6 +294,12 @@
                     "target": [
                         "rhel10-HighAvailability"
                     ]
+                },
+                {
+                    "source": "rhel9-rhui-custom-client-at-alibaba",
+                    "target": [
+                        "rhel10-rhui-custom-client-at-alibaba"
+                    ]
                 }
             ]
         }
@@ -429,6 +435,22 @@
                     "arch": "x86_64",
                     "channel": "ga",
                     "repo_type": "rpm"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhui-rhel-10-for-x86_64-baseos-rhui-rpms",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "rhui": "alibaba"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhui-rhel-10-for-aarch64-baseos-rhui-rpms",
+                    "arch": "aarch64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "rhui": "alibaba"
                 }
             ]
         },
@@ -562,6 +584,22 @@
                     "arch": "x86_64",
                     "channel": "ga",
                     "repo_type": "rpm"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhui-rhel-10-for-x86_64-appstream-rhui-rpms",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "rhui": "alibaba"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhui-rhel-10-for-aarch64-appstream-rhui-rpms",
+                    "arch": "aarch64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "rhui": "alibaba"
                 }
             ]
         },
@@ -4920,6 +4958,27 @@
                 {
                     "major_version": "9",
                     "repoid": "rhui-custom-rhui_client_at_alibaba-rhel-9",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "rhui": "alibaba"
+                }
+            ]
+        },
+        {
+            "pesid": "rhel10-rhui-custom-client-at-alibaba",
+            "entries": [
+                {
+                    "major_version": "10",
+                    "repoid": "rhui-custom-rhui_client_at_alibaba-rhel-10",
+                    "arch": "aarch64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "rhui": "alibaba"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhui-custom-rhui_client_at_alibaba-rhel-10",
                     "arch": "x86_64",
                     "channel": "ga",
                     "repo_type": "rpm",
