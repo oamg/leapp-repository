@@ -11,7 +11,7 @@ To build the RPM e.g. for RHEL 8 systems, execute:
 ```bash
 $ BUILD_CONTAINER=el8 make container_build
 ```
-Possible values for BUILD_CONTAINER are `el7`,`el8`, `el9`.
+Possible values for BUILD_CONTAINER are `el8`, `el9`.
 
 The built packages can be found under the `packaging/RPMS/` directory.
 

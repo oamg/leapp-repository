@@ -28,15 +28,13 @@ S.5....T.  c etc/leapp/files/pes-events.json
 
 @pytest.mark.parametrize('a_file,name', [
     ('repos/system_upgrade/el8toel9/actors/checkblacklistca/actor.py', 'checkblacklistca'),
-    ('repos/system_upgrade/el7toel8/actors/checkmemcached/actor.py', 'check_memcached'),
     # actor library
-    ('repos/system_upgrade/el7toel8/actors/checkmemcached/libraries/checkmemcached.py', 'check_memcached'),
+    ('repos/system_upgrade/el8toel9/actors/checkifcfg/libraries/checkifcfg_ifcfg.py', 'check_ifcfg'),
     # actor file
     ('repos/system_upgrade/common/actors/createresumeservice/files/leapp_resume.service', 'create_systemd_service'),
     ('repos/system_upgrade/common/actors/commonleappdracutmodules/files/dracut/85sys-upgrade-redhat/do-upgrade.sh',
      'common_leapp_dracut_modules'),
     # not a library and not an actor file
-    ('repos/system_upgrade/el7toel8/models/authselect.py', ''),
     ('repos/system_upgrade/common/files/rhel_upgrade.py', ''),
     # common library not tied to any actor
     ('repos/system_upgrade/common/libraries/mounting.py', ''),
