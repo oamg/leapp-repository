@@ -927,7 +927,13 @@ def _get_rh_available_repoids(context, indata):
             os.rename(foreign_repofile, '{0}.back'.format(foreign_repofile))
 
         try:
-            dnf_cmd = ['dnf', 'repolist', '--releasever', target_ver, '-v', '--enablerepo', '*']
+            dnf_cmd = [
+                'dnf', 'repolist',
+                '--releasever', target_ver, '-v',
+                '--enablerepo', '*',
+                '--disablerepo', '*-source-*',
+                '--disablerepo', '*-debug-*',
+            ]
             repolist_result = context.call(dnf_cmd)['stdout']
             repoid_lines = [line for line in repolist_result.split('\n') if line.startswith('Repo-id')]
             rhui_repoids = {extract_repoid_from_line(line) for line in repoid_lines}
