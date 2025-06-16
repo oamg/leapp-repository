@@ -383,6 +383,13 @@ RHUI_SETUPS = {
                         ('content.crt', RHUI_PKI_PRODUCT_DIR)
                       ],
                       os_version='9'),
+        mk_rhui_setup(clients={'aliyun_rhui_rhel10'}, leapp_pkg='leapp-rhui-alibaba',
+                      mandatory_files=[('leapp-alibaba.repo', YUM_REPOS_PATH)],
+                      optional_files=[
+                        ('key.pem', RHUI_PKI_DIR),
+                        ('content.crt', RHUI_PKI_PRODUCT_DIR)
+                      ],
+                      os_version='10'),
     ],
     RHUIFamily(RHUIProvider.ALIBABA, arch=arch.ARCH_ARM64, client_files_folder='alibaba'): [
         mk_rhui_setup(clients={'aliyun_rhui_rhel8'}, leapp_pkg='leapp-rhui-alibaba',
@@ -399,6 +406,13 @@ RHUI_SETUPS = {
                         ('content.crt', RHUI_PKI_PRODUCT_DIR)
                       ],
                       os_version='9'),
+        mk_rhui_setup(clients={'aliyun_rhui_rhel10'}, leapp_pkg='leapp-rhui-alibaba',
+                      mandatory_files=[('leapp-alibaba.repo', YUM_REPOS_PATH)],
+                      optional_files=[
+                        ('key.pem', RHUI_PKI_DIR),
+                        ('content.crt', RHUI_PKI_PRODUCT_DIR)
+                      ],
+                      os_version='10'),
     ]
 }
 
@@ -601,15 +615,29 @@ RHUI_CLOUD_MAP = {
             ],
         },
     },
+    '9to10': {
+        'alibaba': {
+            'src_pkg': 'aliyun_rhui_rhel9',
+            'target_pkg': 'aliyun_rhui_rhel10',
+            'leapp_pkg': 'leapp-rhui-alibaba',
+            'leapp_pkg_repo': 'leapp-alibaba.repo',
+            'files_map': [
+                ('content.crt', RHUI_PKI_PRODUCT_DIR),
+                ('key.pem', RHUI_PKI_DIR),
+                ('leapp-alibaba.repo', YUM_REPOS_PATH)
+            ],
+        },
+    }
 }
 
 
-# TODO(mmatuska) deprecate or adjust for 9to10?
 def get_upg_path():
     """
     Get upgrade path in specific string format
     """
-    return '7to8' if get_target_major_version() == '8' else '8to9'
+    source_major_version = get_source_major_version()
+    target_major_version = get_target_major_version()
+    return '{0}to{1}'.format(source_major_version, target_major_version)
 
 
 @deprecated(since='2023-07-27', message='This functionality has been replaced with the RHUIInfo message.')
