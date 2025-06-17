@@ -254,10 +254,16 @@ def customize_rhui_setup_for_aws(rhui_family, setup_info):
         # The leapp-rhui-aws will provide all necessary files to access entire RHEL8 content
         setup_info.bootstrap_target_client = False
         return
+    if target_version == '9':
+        amazon_plugin_copy_task = CopyFile(src='/usr/lib/python3.9/site-packages/dnf-plugins/amazon-id.py',
+                                           dst='/usr/lib/python3.6/site-packages/dnf-plugins/')
+        setup_info.postinstall_tasks.files_to_copy.append(amazon_plugin_copy_task)
+        return
 
-    amazon_plugin_copy_task = CopyFile(src='/usr/lib/python3.9/site-packages/dnf-plugins/amazon-id.py',
-                                       dst='/usr/lib/python3.6/site-packages/dnf-plugins/')
-    setup_info.postinstall_tasks.files_to_copy.append(amazon_plugin_copy_task)
+    # For 9>10 and higher we give up trying to do client swapping since the client has too many dependencies
+    # from target system's repositories. Our leapp-rhui-aws package will carry all of the repos provided
+    # by the client.
+    setup_info.bootstrap_target_client = False
 
 
 def produce_rhui_info_to_setup_target(rhui_family, source_setup_desc, target_setup_desc):
