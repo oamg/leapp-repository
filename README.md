@@ -29,4 +29,4 @@ Then you may attach only the `leapp-logs.tgz` file.
 We’ll gladly answer your questions and lead you to through any troubles with the
 actor development.
 
-You can reach us at IRC: `#leapp` on Libera.Chat.
+You can reach us in the [discussions sections of our GitHub repository](https://github.com/oamg/leapp-repository/discussions).
