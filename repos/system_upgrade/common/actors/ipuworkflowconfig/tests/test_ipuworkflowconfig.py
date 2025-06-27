@@ -129,6 +129,13 @@ def test_construct_models_for_paths_matching_source_major(source_major_version, 
                 '9': ['10.0']
             }
         ),
+        (
+            'almalinux', 'default',
+            {
+                '8.10': ['9.0', '9.1', '9.2', '9.3', '9.4', '9.5', '9.6'],
+                '9.6': ['10.0']
+            }
+        ),
     )
 )
 def test_load_raw_upgrade_paths_for_distro_and_flavour(monkeypatch, distro, flavour, expected_result):
@@ -147,6 +154,12 @@ def test_load_raw_upgrade_paths_for_distro_and_flavour(monkeypatch, distro, flav
                 '9.6': ['10.0'],
                 '9': ['10.0']
             }
+        },
+        'almalinux': {
+            'default': {
+                '8.10': ['9.0', '9.1', '9.2', '9.3', '9.4', '9.5', '9.6'],
+                '9.6': ['10.0']
+            }
         }
     }
 
@@ -160,6 +173,7 @@ def test_load_raw_upgrade_paths_for_distro_and_flavour(monkeypatch, distro, flav
     [
         (('centos', '8', '9'), ('8.10', '9.5')),
         (('rhel', '8.10', '9.4'), ('8.10', '9.4')),
+        (('almalinux', '8.10', '9.6'), ('8.10', '9.6')),
     ]
 )
 def test_virtual_version_construction(construction_params, expected_versions):
@@ -184,6 +198,12 @@ def test_virtual_version_construction(construction_params, expected_versions):
             '_virtual_versions': {
                 '8': '8.10',
                 '9': '9.5',
+            }
+        },
+        'almalinux': {
+            'default': {
+                '8.10': ['9.0', '9.1', '9.2', '9.3', '9.4', '9.5', '9.6'],
+                '9.6': ['10.0']
             }
         },
     }
