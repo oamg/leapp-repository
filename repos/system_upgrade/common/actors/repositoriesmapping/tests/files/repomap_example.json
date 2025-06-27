@@ -120,6 +120,45 @@
           "distro": "centos"
         }
       ]
+    },
+    {
+      "pesid": "pesid8",
+      "entries": [
+        {
+          "major_version": "8",
+          "repoid": "some-almalinux-8-repoid1",
+          "arch": "x86_64",
+          "repo_type": "rpm",
+          "channel": "ga",
+          "distro": "almalinux"
+        }
+      ]
+    },
+    {
+      "pesid": "pesid9",
+      "entries": [
+        {
+          "major_version": "9",
+          "repoid": "some-almalinux-9-repoid1",
+          "arch": "x86_64",
+          "repo_type": "rpm",
+          "channel": "ga",
+          "distro": "almalinux"
+        }
+      ]
+    },
+    {
+      "pesid": "pesid10",
+      "entries": [
+        {
+          "major_version": "10",
+          "repoid": "some-almalinux-10-repoid1",
+          "arch": "x86_64",
+          "repo_type": "rpm",
+          "channel": "ga",
+          "distro": "almalinux"
+        }
+      ]
     }
   ]
 }
