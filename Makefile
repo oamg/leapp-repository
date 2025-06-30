@@ -3,7 +3,7 @@ SHELL=/bin/bash
 
 __PKGNAME=$${_PKGNAME:-leapp-repository}
 VENVNAME ?= tut
-DIST_VERSION ?= 7
+DIST_VERSION ?= 8
 PKGNAME=leapp-repository
 DEPS_PKGNAME=leapp-el7toel8-deps
 VERSION=`grep -m1 "^Version:" packaging/$(PKGNAME).spec | grep -om1 "[0-9].[0-9.]**"`
@@ -23,7 +23,7 @@ PYLINT_ARGS ?=
 FLAKE8_ARGS ?=
 
 # python version to run test with
-_PYTHON_VENV=$${PYTHON_VENV:-python2.7}
+_PYTHON_VENV=$${PYTHON_VENV:-python3.6}
 
 ifdef ACTOR
 	TEST_PATHS=`$(_PYTHON_VENV) utils/actor_path.py $(ACTOR)`
@@ -55,9 +55,9 @@ _TEST_CONTAINER=$${TEST_CONTAINER:-rhel8}
 
 # In case just specific CHROOTs should be used for the COPR build, you can
 # set the multiple CHROOTs separated by comma in the COPR_CHROOT envar, e.g.
-# "epel-7-x86_64,epel-8-x86_64". But for the copr-cli utility, each of them
+# "epel-8-x86_64,epel-9-x86_64". But for the copr-cli utility, each of them
 # has to be specified separately for the -r option; So we transform it
-# automatically to "-r epel-7-x86_64 -r epel-8-x86_64" (without quotes).
+# automatically to "-r epel-8-x86_64 -r epel-9-x86_64" (without quotes).
 ifdef COPR_CHROOT
 	_COPR_CHROOT=`echo $${COPR_CHROOT} | grep -o "[^,]*" | sed "s/^/-r /g"`
 endif
@@ -111,7 +111,7 @@ help:
 	@echo "                              packaging"
 	@echo "  srpm                        create the SRPM"
 	@echo "  build_container             create the RPM in container"
-	@echo "                              - set BUILD_CONTAINER to el7, el8 or el9"
+	@echo "                              - set BUILD_CONTAINER to el8 or el9"
 	@echo "                              - don't run more than one build at the same time"
 	@echo "                                since containers operate on the same files!"
 	@echo "  copr_build                  create the COPR build using the COPR TOKEN"
@@ -154,7 +154,7 @@ help:
 	@echo "  COPR_CONFIG           path to the COPR config with API token"
 	@echo "                          (default: ~/.config/copr_rh_oamg.conf)"
 	@echo "  COPR_CHROOT           specify the CHROOT which should be used for"
-	@echo "                        the build, e.g. 'epel-7-x86_64'. You can"
+	@echo "                        the build, e.g. 'epel-8-x86_64'. You can"
 	@echo "                        specify multiple CHROOTs separated by comma."
 	@echo ""
 	@echo "Possible use:"
@@ -189,7 +189,6 @@ source: prepare
 	@git archive --prefix "$(PKGNAME)-$(VERSION)/" -o "packaging/sources/$(PKGNAME)-$(VERSION).tar.gz" HEAD
 	@echo "--- PREPARE DEPS PKGS ---"
 	mkdir -p packaging/tmp/
-	@__TIMESTAMP=$(TIMESTAMP) $(MAKE) DIST_VERSION=7 _build_subpkg
 	@__TIMESTAMP=$(TIMESTAMP) $(MAKE) DIST_VERSION=8 _build_subpkg
 	@__TIMESTAMP=$(TIMESTAMP) $(MAKE) DIST_VERSION=9 _build_subpkg
 	@tar -czf packaging/sources/deps-pkgs.tar.gz -C packaging/RPMS/noarch `ls -1 packaging/RPMS/noarch | grep -o "[^/]*rpm$$"`
@@ -250,11 +249,8 @@ _build_local: source
 	@mv packaging/$(PKGNAME).spec.bak packaging/$(PKGNAME).spec
 
 build_container:
-	echo "--- Build RPM ${PKGNAME}-${VERSION}-${RELEASE}.el$(DIST_VERSION).rpm in container ---"; \
+	echo "--- Build RPM ${PKGNAME}-${VERSION}-${RELEASE}.el$(DIST_VERSION).rpm in container ---";
 	case "$(BUILD_CONTAINER)" in \
-		el7) \
-			CONT_FILE="utils/container-builds/Containerfile.centos7"; \
-			;; \
 		el8) \
 			CONT_FILE="utils/container-builds/Containerfile.ubi8"; \
 			;; \
@@ -266,7 +262,7 @@ build_container:
 			exit 1; \
 			;; \
 		*) \
-			echo "Available containers are el7, el8, el9"; \
+			echo "Available containers are el8, el9"; \
 			exit 1; \
 			;; \
 	esac && \
@@ -375,12 +371,14 @@ lint_fix:
 	echo "--- isort inplace fixing done. ---;"
 
 test_no_lint:
-	. $(VENVNAME)/bin/activate; \
+	@. $(VENVNAME)/bin/activate; \
 	snactor repo find --path repos/; \
-	cd repos/system_upgrade/el7toel8/; \
-	snactor workflow sanity-check ipu && \
-	cd - && \
+	for dir in repos/system_upgrade/*/; do \
+		echo "Running sanity-check in $$dir"; \
+		(cd $$dir && snactor workflow sanity-check ipu); \
+	done; \
 	$(_PYTHON_VENV) -m pytest $(REPORT_ARG) $(TEST_PATHS) $(LIBRARY_PATH) $(PYTEST_ARGS)
+
 
 test: lint test_no_lint
 
@@ -396,9 +394,6 @@ _build_container_image:
 # tests one IPU, leapp repositories irrelevant to the tested IPU are deleted
 _test_container_ipu:
 	@case $$TEST_CONT_IPU in \
-	el7toel8) \
-		export REPOSITORIES="common,el7toel8"; \
-		;; \
 	el8toel9) \
 		export REPOSITORIES="common,el8toel9"; \
 		;; \
@@ -409,7 +404,7 @@ _test_container_ipu:
 		echo "TEST_CONT_IPU must be set"; exit 1; \
 		;; \
 	*) \
-		echo "Only supported TEST_CONT_IPUs are el7toel8, el8toel9, el9toel10"; exit 1; \
+		echo "Only supported TEST_CONT_IPUs are el8toel9, el9toel10"; exit 1; \
 		;; \
 	esac && \
 	$(_CONTAINER_TOOL) exec -w /repocopy $$_CONT_NAME make clean && \
@@ -421,24 +416,19 @@ lint_container:
 	@_TEST_CONT_TARGET="lint" $(MAKE) test_container
 
 lint_container_all:
-	@for container in "f34" "rhel7" "rhel8"; do \
+	@for container in "f34" "rhel8" "rhel9"; do \
 		TEST_CONTAINER=$$container $(MAKE) lint_container || exit 1; \
 	done
 
 # Runs tests in a container
 # Builds testing image first if it doesn't exist
 # On some Python versions, we need to test both IPUs,
-# because e.g. RHEL7 to RHEL8 IPU must work on python2.7 and python3.6
-# and RHEL8 to RHEL9 IPU must work on python3.6 and python3.9.
+# because e.g RHEL8 to RHEL9 IPU must work on python3.6 and python3.9.
 test_container:
 	@case $(_TEST_CONTAINER) in \
 	f34) \
 		export CONT_FILE="utils/container-tests/Containerfile.f34"; \
 		export _VENV="python3.9"; \
-		;; \
-	rhel7) \
-		export CONT_FILE="utils/container-tests/Containerfile.rhel7"; \
-		export _VENV="python2.7"; \
 		;; \
 	rhel8) \
 		export CONT_FILE="utils/container-tests/Containerfile.rhel8"; \
@@ -449,7 +439,7 @@ test_container:
 		export _VENV="python3.9"; \
 		;; \
 	*) \
-		echo "Error: Available containers are: f34, rhel7, rhel8"; exit 1; \
+		echo "Error: Available containers are: f34, rhel8, rhel9"; exit 1; \
 		;; \
 	esac; \
 	export TEST_IMAGE="leapp-repo-tests-$(_TEST_CONTAINER)"; \
@@ -461,11 +451,7 @@ test_container:
 	$(_CONTAINER_TOOL) exec $$_CONT_NAME rsync -aur --delete --exclude "tut*" /repo/ /repocopy && \
 	export res=0; \
 	case $$_VENV in \
-	python2.7) \
-		TEST_CONT_IPU=el7toel8 $(MAKE) _test_container_ipu || res=1; \
-		;;\
 	python3.6) \
-		echo "INFO: Skipping testing of el7toel8 repository. Obsoleted"; \
 		TEST_CONT_IPU=el8toel9 $(MAKE) _test_container_ipu || res=1; \
 		;; \
 	python3.9) \
@@ -485,7 +471,7 @@ test_container:
 	exit $$res
 
 test_container_all:
-	@for container in "f34" "rhel7" "rhel8" "rhel9"; do \
+	@for container in "f34" "rhel8" "rhel9"; do \
 		TEST_CONTAINER=$$container $(MAKE) test_container || exit 1; \
 	done
 
@@ -493,14 +479,14 @@ test_container_no_lint:
 	@_TEST_CONT_TARGET="test_no_lint" $(MAKE) test_container
 
 test_container_all_no_lint:
-	@for container in "f34" "rhel7" "rhel8" "rhel9"; do \
+	@for container in "f34" "rhel8" "rhel9"; do \
 		TEST_CONTAINER=$$container $(MAKE) test_container_no_lint || exit 1; \
 	done
 
 # clean all testing and building containers and their images
 clean_containers:
-	@for i in "leapp-repo-tests-f34" "leapp-repo-tests-rhel7" "leapp-repo-tests-rhel8" \
-	"leapp-repo-tests-rhel9" "leapp-repo-build-el7" "leapp-repo-build-el8"; do \
+	@for i in "leapp-repo-tests-f34" "leapp-repo-tests-rhel8" \
+	"leapp-repo-tests-rhel9" "leapp-repo-build-el8"; do \
 		$(_CONTAINER_TOOL) kill "$$i-cont" || :; \
 		$(_CONTAINER_TOOL) rm "$$i-cont" || :; \
 		$(_CONTAINER_TOOL) rmi "$$i" || :;  \
