@@ -1,6 +1,6 @@
-**Before doing anything, please read the upstream [documentation](https://leapp-repository.readthedocs.io/).**
+**Before doing anything, please read the [leapp-repository documentation](https://leapp-repository.readthedocs.io/).**
 
-Also, you could find useufl to read [Leapp framework documentation](https://leapp.readthedocs.io/).
+Also, you could find the [Leapp framework documentation](https://leapp.readthedocs.io/) useful to read.
 
 ---
 
@@ -17,7 +17,7 @@ Also, you could find useufl to read [Leapp framework documentation](https://leap
   - *All files in /var/log/leapp*
   - */var/lib/leapp/leapp.db*
   - *journalctl*
-  - If you want, you can optionally send anything else would you like to provide (e.g. storage info)
+  - If you want, you can optionally send any other relevant information (e.g. storage, network)
 
 **For your convenience you can pack all logs with this command:**
 
