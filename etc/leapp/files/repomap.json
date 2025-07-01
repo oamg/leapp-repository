@@ -234,6 +234,30 @@
                     "target": [
                         "rhel9-rhui-custom-client-at-alibaba"
                     ]
+                },
+                {
+                    "source": "satellite-6.16-for-rhel-8-x86_64-rpms",
+                    "target": [
+                        "satellite-6.16-for-rhel-9-x86_64-rpms"
+                    ]
+                },
+                {
+                    "source": "satellite-maintenance-6.16-for-rhel-8-x86_64-rpms",
+                    "target": [
+                        "satellite-maintenance-6.16-for-rhel-9-x86_64-rpms"
+                    ]
+                },
+                {
+                    "source": "satellite-capsule-6.16-for-rhel-8-x86_64-rpms",
+                    "target": [
+                        "satellite-capsule-6.16-for-rhel-9-x86_64-rpms"
+                    ]
+                },
+                {
+                    "source": "satellite-utils-6.16-for-rhel-8-x86_64-rpms",
+                    "target": [
+                        "satellite-utils-6.16-for-rhel-9-x86_64-rpms"
+                    ]
                 }
             ]
         },
@@ -293,6 +317,30 @@
                     "source": "rhel9-HighAvailability",
                     "target": [
                         "rhel10-HighAvailability"
+                    ]
+                },
+                {
+                    "source": "satellite-6.16-for-rhel-9-x86_64-rpms",
+                    "target": [
+                        "satellite-6.16-for-rhel-10-x86_64-rpms"
+                    ]
+                },
+                {
+                    "source": "satellite-maintenance-6.16-for-rhel-9-x86_64-rpms",
+                    "target": [
+                        "satellite-maintenance-6.16-for-rhel-10-x86_64-rpms"
+                    ]
+                },
+                {
+                    "source": "satellite-capsule-6.16-for-rhel-9-x86_64-rpms",
+                    "target": [
+                        "satellite-capsule-6.16-for-rhel-10-x86_64-rpms"
+                    ]
+                },
+                {
+                    "source": "satellite-utils-6.16-for-rhel-9-x86_64-rpms",
+                    "target": [
+                        "satellite-utils-6.16-for-rhel-10-x86_64-rpms"
                     ]
                 }
             ]
