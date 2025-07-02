@@ -1,5 +1,5 @@
 {
-    "datetime": "202505201636Z",
+    "datetime": "202507171303Z",
     "version_format": "1.3.0",
     "provided_data_streams": [
         "4.0"
@@ -294,6 +294,24 @@
                     "target": [
                         "rhel10-HighAvailability"
                     ]
+                },
+                {
+                    "source": "rhel9-rhui-client-config-server-9",
+                    "target": [
+                        "rhel10-rhui-client-config-server-10"
+                    ]
+                },
+                {
+                    "source": "rhel9-rhui-microsoft-azure-rhel9",
+                    "target": [
+                        "rhel10-rhui-microsoft-azure-rhel10"
+                    ]
+                },
+                {
+                    "source": "rhel9-rhui-custom-client-at-alibaba",
+                    "target": [
+                        "rhel10-rhui-custom-client-at-alibaba"
+                    ]
                 }
             ]
         }
@@ -346,11 +364,29 @@
                 {
                     "major_version": "10",
                     "repoid": "rhel-10-baseos-rhui-rpms",
+                    "arch": "aarch64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel",
+                    "rhui": "azure"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-baseos-rhui-rpms",
                     "arch": "x86_64",
                     "channel": "ga",
                     "repo_type": "rpm",
                     "distro": "rhel",
                     "rhui": "aws"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-baseos-rhui-rpms",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel",
+                    "rhui": "azure"
                 },
                 {
                     "major_version": "10",
@@ -458,6 +494,15 @@
                 },
                 {
                     "major_version": "10",
+                    "repoid": "rhel-10-for-x86_64-baseos-e4s-rhui-rpms",
+                    "arch": "x86_64",
+                    "channel": "e4s",
+                    "repo_type": "rpm",
+                    "distro": "rhel",
+                    "rhui": "aws"
+                },
+                {
+                    "major_version": "10",
                     "repoid": "rhel-10-for-x86_64-baseos-e4s-rpms",
                     "arch": "x86_64",
                     "channel": "e4s",
@@ -479,6 +524,24 @@
                     "channel": "ga",
                     "repo_type": "rpm",
                     "distro": "rhel"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhui-rhel-10-for-aarch64-baseos-rhui-rpms",
+                    "arch": "aarch64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel",
+                    "rhui": "alibaba"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhui-rhel-10-for-x86_64-baseos-rhui-rpms",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel",
+                    "rhui": "alibaba"
                 }
             ]
         },
@@ -529,11 +592,29 @@
                 {
                     "major_version": "10",
                     "repoid": "rhel-10-appstream-rhui-rpms",
+                    "arch": "aarch64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel",
+                    "rhui": "azure"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-appstream-rhui-rpms",
                     "arch": "x86_64",
                     "channel": "ga",
                     "repo_type": "rpm",
                     "distro": "rhel",
                     "rhui": "aws"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-appstream-rhui-rpms",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel",
+                    "rhui": "azure"
                 },
                 {
                     "major_version": "10",
@@ -641,6 +722,15 @@
                 },
                 {
                     "major_version": "10",
+                    "repoid": "rhel-10-for-x86_64-appstream-e4s-rhui-rpms",
+                    "arch": "x86_64",
+                    "channel": "e4s",
+                    "repo_type": "rpm",
+                    "distro": "rhel",
+                    "rhui": "aws"
+                },
+                {
+                    "major_version": "10",
                     "repoid": "rhel-10-for-x86_64-appstream-e4s-rpms",
                     "arch": "x86_64",
                     "channel": "e4s",
@@ -662,6 +752,24 @@
                     "channel": "ga",
                     "repo_type": "rpm",
                     "distro": "rhel"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhui-rhel-10-for-aarch64-appstream-rhui-rpms",
+                    "arch": "aarch64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel",
+                    "rhui": "alibaba"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhui-rhel-10-for-x86_64-appstream-rhui-rpms",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel",
+                    "rhui": "alibaba"
                 }
             ]
         },
@@ -744,11 +852,29 @@
                 {
                     "major_version": "10",
                     "repoid": "codeready-builder-for-rhel-10-rhui-rpms",
+                    "arch": "aarch64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel",
+                    "rhui": "azure"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "codeready-builder-for-rhel-10-rhui-rpms",
                     "arch": "x86_64",
                     "channel": "ga",
                     "repo_type": "rpm",
                     "distro": "rhel",
                     "rhui": "aws"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "codeready-builder-for-rhel-10-rhui-rpms",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel",
+                    "rhui": "azure"
                 },
                 {
                     "major_version": "10",
@@ -813,6 +939,24 @@
                     "channel": "ga",
                     "repo_type": "rpm",
                     "distro": "centos"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhui-codeready-builder-for-rhel-10-aarch64-rhui-rpms",
+                    "arch": "aarch64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel",
+                    "rhui": "alibaba"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhui-codeready-builder-for-rhel-10-x86_64-rhui-rpms",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel",
+                    "rhui": "alibaba"
                 }
             ]
         },
@@ -923,6 +1067,33 @@
                     "repo_type": "rpm",
                     "distro": "rhel",
                     "rhui": "aws"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-supplementary-rhui-rpms",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel",
+                    "rhui": "azure"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhui-rhel-10-for-aarch64-supplementary-rhui-rpms",
+                    "arch": "aarch64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel",
+                    "rhui": "alibaba"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhui-rhel-10-for-x86_64-supplementary-rhui-rpms",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel",
+                    "rhui": "alibaba"
                 }
             ]
         },
@@ -1003,6 +1174,14 @@
                     "repoid": "rhel-10-for-aarch64-nfv-beta-rpms",
                     "arch": "aarch64",
                     "channel": "beta",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-for-aarch64-nfv-e4s-rpms",
+                    "arch": "aarch64",
+                    "channel": "e4s",
                     "repo_type": "rpm",
                     "distro": "rhel"
                 },
@@ -1117,6 +1296,15 @@
                 },
                 {
                     "major_version": "10",
+                    "repoid": "rhel-10-for-x86_64-sap-netweaver-e4s-rhui-rpms",
+                    "arch": "x86_64",
+                    "channel": "e4s",
+                    "repo_type": "rpm",
+                    "distro": "rhel",
+                    "rhui": "aws"
+                },
+                {
+                    "major_version": "10",
                     "repoid": "rhel-10-for-x86_64-sap-netweaver-e4s-rpms",
                     "arch": "x86_64",
                     "channel": "e4s",
@@ -1159,6 +1347,15 @@
                     "channel": "ga",
                     "repo_type": "rpm",
                     "distro": "rhel"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-for-x86_64-sap-solutions-e4s-rhui-rpms",
+                    "arch": "x86_64",
+                    "channel": "e4s",
+                    "repo_type": "rpm",
+                    "distro": "rhel",
+                    "rhui": "aws"
                 },
                 {
                     "major_version": "10",
@@ -1319,6 +1516,15 @@
                 },
                 {
                     "major_version": "10",
+                    "repoid": "rhel-10-for-x86_64-highavailability-e4s-rhui-rpms",
+                    "arch": "x86_64",
+                    "channel": "e4s",
+                    "repo_type": "rpm",
+                    "distro": "rhel",
+                    "rhui": "aws"
+                },
+                {
+                    "major_version": "10",
                     "repoid": "rhel-10-for-x86_64-highavailability-e4s-rpms",
                     "arch": "x86_64",
                     "channel": "e4s",
@@ -1340,6 +1546,75 @@
                     "channel": "ga",
                     "repo_type": "rpm",
                     "distro": "rhel"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhui-rhel-10-for-x86_64-highavailability-rhui-rpms",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel",
+                    "rhui": "alibaba"
+                }
+            ]
+        },
+        {
+            "pesid": "rhel10-rhui-microsoft-azure-rhel10",
+            "entries": [
+                {
+                    "major_version": "10",
+                    "repoid": "rhui-microsoft-azure-rhel10",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel",
+                    "rhui": "azure"
+                }
+            ]
+        },
+        {
+            "pesid": "rhel10-rhui-client-config-server-10",
+            "entries": [
+                {
+                    "major_version": "10",
+                    "repoid": "rhui-client-config-server-10",
+                    "arch": "aarch64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel",
+                    "rhui": "aws"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhui-client-config-server-10",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel",
+                    "rhui": "aws"
+                }
+            ]
+        },
+        {
+            "pesid": "rhel10-rhui-custom-client-at-alibaba",
+            "entries": [
+                {
+                    "major_version": "10",
+                    "repoid": "rhui-custom-rhui_client_at_alibaba-rhel-10",
+                    "arch": "aarch64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel",
+                    "rhui": "alibaba"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhui-custom-rhui_client_at_alibaba-rhel-10",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel",
+                    "rhui": "alibaba"
                 }
             ]
         },
@@ -5230,6 +5505,14 @@
                 },
                 {
                     "major_version": "9",
+                    "repoid": "rhel-9-for-aarch64-nfv-e4s-rpms",
+                    "arch": "aarch64",
+                    "channel": "e4s",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
+                },
+                {
+                    "major_version": "9",
                     "repoid": "rhel-9-for-aarch64-nfv-rpms",
                     "arch": "aarch64",
                     "channel": "ga",
@@ -5591,6 +5874,14 @@
                     "repoid": "rhel-9-for-s390x-highavailability-rpms",
                     "arch": "s390x",
                     "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
+                },
+                {
+                    "major_version": "9",
+                    "repoid": "rhel-9-for-x86_64-highavailability-aus-rpms",
+                    "arch": "x86_64",
+                    "channel": "aus",
                     "repo_type": "rpm",
                     "distro": "rhel"
                 },
