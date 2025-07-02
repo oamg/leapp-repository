@@ -253,8 +253,8 @@ def prepare_configuration(args):
     if args.nogpgcheck:
         os.environ['LEAPP_NOGPGCHECK'] = '1'
 
-    # Check upgrade path and fail early if it's unsupported
-    target_version, flavor = command_utils.vet_upgrade_path(args)
+    # Check upgrade path and fail early if it's invalid
+    target_version, flavor = command_utils.get_target_release(args)
     os.environ['LEAPP_UPGRADE_PATH_TARGET_RELEASE'] = target_version
     os.environ['LEAPP_UPGRADE_PATH_FLAVOUR'] = flavor
 
