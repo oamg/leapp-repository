@@ -25,6 +25,8 @@ except ImportError:
 
 def _get_package_repository_data_yum():
     yum_base = yum.YumBase()
+    # DNF configuration is not loaded here, since no impact for operations
+    # done by the actor is observed here
     pkg_repos = {}
 
     try:
