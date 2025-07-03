@@ -38,6 +38,7 @@ def _create_or_get_dnf_base(base=None):
         conf.substitutions.update_from_etc('/')
 
         base = dnf.Base(conf=conf)
+        base.conf.read()
         base.init_plugins()
         base.read_all_repos()
         # configure plugins after the repositories are loaded
