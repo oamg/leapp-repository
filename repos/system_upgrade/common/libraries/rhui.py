@@ -273,7 +273,12 @@ RHUI_SETUPS = {
                       extra_info={'agent_pkg': 'WALinuxAgent'},
                       os_version='9'),
         mk_rhui_setup(clients={'rhui-azure-rhel10'}, leapp_pkg='leapp-rhui-azure',
-                      mandatory_files=[('leapp-azure.repo', YUM_REPOS_PATH)],
+                      mandatory_files=[
+                          ('leapp-azure.repo', YUM_REPOS_PATH),
+                          # We need to have the new GPG key ready when we will be bootstrapping
+                          # target rhui client.
+                          ('RPM-GPG-KEY-microsoft-azure-release-new', '/etc/pki/rpm-gpg/')
+                      ],
                       optional_files=[
                         ('key.pem', RHUI_PKI_DIR),
                         ('content.crt', RHUI_PKI_PRODUCT_DIR)
