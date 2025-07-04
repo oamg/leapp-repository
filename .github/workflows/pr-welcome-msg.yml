@@ -19,7 +19,7 @@ jobs:
           issue-number: ${{ github.event.pull_request.number }}
           body: |
             ## **Thank you for contributing to the Leapp project!**
-            Please note that every PR needs to comply with the [Leapp Guidelines](https://leapp.readthedocs.io/en/latest/contributing.html#) and must pass all tests in order to be mergeable.
+            Please note that every PR needs to comply with the [leapp-repository contribution and development guidelines](https://leapp-repository.readthedocs.io/latest/contrib-and-devel-guidelines.html) and must pass all tests in order to be mergeable.
             If you want to request a review or rebuild a package in copr, you can use following commands as a comment:
             - **`review please @oamg/developers`** to notify leapp developers of the review request
             - **`/packit copr-build`** to submit a public copr build using packit
@@ -39,6 +39,6 @@ jobs:
 
             See other labels for particular jobs defined in the `.packit.yaml` file.
 
-            Please [open ticket](https://url.corp.redhat.com/oamg-ci-issue) in case you experience technical problem with the CI. (RH internal only)
+            Please [open ticket](https://red.ht/rhel-upgrades-ci-issue) in case you experience technical problem with the CI. (RH internal only)
 
             **Note:** In case there are problems with tests not being triggered automatically on new PR/commit or pending for a long time, please contact leapp-infra.
