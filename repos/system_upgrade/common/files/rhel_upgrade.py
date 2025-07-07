@@ -116,6 +116,7 @@ class RhelUpgradeCommand(dnf.cli.Command):
         self.base.conf.best = self.plugin_data['dnf_conf']['best']
         self.base.conf.assumeyes = True
         self.base.conf.gpgcheck = self.plugin_data['dnf_conf']['gpgcheck']
+        self.base.conf.localpkg_gpgcheck = False
         self.base.conf.debug_solver = self.plugin_data['dnf_conf']['debugsolver']
         self.base.conf.module_platform_id = self.plugin_data['dnf_conf']['platform_id']
         installroot = self.plugin_data['dnf_conf'].get('installroot')
