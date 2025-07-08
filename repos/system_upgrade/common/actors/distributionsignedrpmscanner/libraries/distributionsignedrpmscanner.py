@@ -2,7 +2,13 @@ from leapp.libraries.common import rhui
 from leapp.libraries.common.config import get_env
 from leapp.libraries.common.distro import get_distribution_data
 from leapp.libraries.stdlib import api
-from leapp.models import DistributionSignedRPM, InstalledRPM, InstalledUnsignedRPM
+from leapp.models import (
+    DistributionSignedRPM,
+    InstalledRPM,
+    InstalledUnsignedRPM,
+    ThirdPartyRPM,
+)
+from leapp.utils.deprecation import suppress_deprecation
 
 
 def is_distro_signed(pkg, distro_keys):
@@ -29,6 +35,7 @@ def is_exceptional(pkg, allowlist):
     return pkg.name == 'gpg-pubkey' or pkg.name.startswith('katello-ca-consumer') or pkg.name in allowlist
 
 
+@suppress_deprecation(InstalledUnsignedRPM)
 def process():
     distribution = api.current_actor().configuration.os_release.release_id
     distro_keys = get_distribution_data(distribution).get('keys', [])
@@ -37,6 +44,7 @@ def process():
 
     signed_pkgs = DistributionSignedRPM()
     unsigned_pkgs = InstalledUnsignedRPM()
+    thirdparty_pkgs = ThirdPartyRPM()
 
     for rpm_pkgs in api.consume(InstalledRPM):
         for pkg in rpm_pkgs.items:
@@ -44,6 +52,8 @@ def process():
                 signed_pkgs.items.append(pkg)
             else:
                 unsigned_pkgs.items.append(pkg)
+                thirdparty_pkgs.items.append(pkg)
 
     api.produce(signed_pkgs)
     api.produce(unsigned_pkgs)
+    api.produce(thirdparty_pkgs)

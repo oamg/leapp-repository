@@ -1,7 +1,7 @@
 from leapp import reporting
 from leapp.libraries.stdlib import api
 from leapp.libraries.stdlib.config import is_verbose
-from leapp.models import InstalledUnsignedRPM
+from leapp.models import ThirdPartyRPM
 
 
 def generate_report(packages):
@@ -46,10 +46,10 @@ def generate_report(packages):
 
 def get_unsigned_packages():
     """ Get list of unsigned packages installed in the system """
-    rpm_messages = api.consume(InstalledUnsignedRPM)
-    data = next(rpm_messages, InstalledUnsignedRPM())
+    rpm_messages = api.consume(ThirdPartyRPM)
+    data = next(rpm_messages, ThirdPartyRPM())
     if list(rpm_messages):
-        api.current_logger().warning('Unexpectedly received more than one InstalledUnsignedRPM message.')
+        api.current_logger().warning('Unexpectedly received more than one ThirdPartyRPM message.')
     unsigned_packages = set()
     unsigned_packages.update([pkg.name for pkg in data.items])
     unsigned_packages = list(unsigned_packages)

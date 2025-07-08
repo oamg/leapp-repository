@@ -23,8 +23,30 @@ class InstalledRPM(Model):
 
 
 class DistributionSignedRPM(InstalledRPM):
+    """
+    Installed packages signed by the vendor of the distribution.
+    """
     pass
 
 
+class ThirdPartyRPM(InstalledRPM):
+    """
+    Installed packages not signed by the vendor of the distribution.
+
+    This includes:
+     - packages signed by other distribution vendors
+     - packages signed by other software vendors
+     - unsigned packages
+    From the POV of in-place upgrades such packages are considered third-party.
+
+    This does not include:
+     - packages known not to be signed as they are created by a delivered
+       product (which is possibly part of the distribution). E.g. katello RPMS
+       created in a Satellite server.
+    """
+    pass
+
+
+@deprecated(since='2025-07-09', message='Replaced by ThirdPartyRPM')
 class InstalledUnsignedRPM(InstalledRPM):
     pass
