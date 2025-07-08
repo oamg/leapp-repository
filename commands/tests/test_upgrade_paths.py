@@ -41,7 +41,7 @@ def test_get_target_version(mock_open, monkeypatch):
         }
     },
 )
-def test_get_target_release(mock_open, monkeypatch):
+def test_get_target_release(mock_open, monkeypatch):  # do not remove mock_open
     monkeypatch.setattr(command_utils, 'get_os_release_version_id', lambda x: '8.6')
 
     # make sure env var LEAPP_DEVEL_TARGET_RELEASE takes precedence
@@ -50,16 +50,19 @@ def test_get_target_release(mock_open, monkeypatch):
     print(os.getenv('LEAPP_DEVEL_TARGET_RELEASE'))
     assert command_utils.get_target_release(args) == ('9.2', 'default')
 
-    # when env var set to a bad version - continue - it's a devel flag,
-    # the user should know what they are doing
+    # when env var set to a bad version, expect an error
     monkeypatch.setenv('LEAPP_DEVEL_TARGET_RELEASE', '9.0.0')
-    assert command_utils.get_target_release(args) == ('9.0.0', 'default')
+    with pytest.raises(CommandError) as err:
+        command_utils.get_target_release(args)
+        assert 'Unexpected format of target version' in err
 
     # when env var set to a version not in upgrade_paths map - go on and use it
+    # this is checked by an actor in the IPU
     monkeypatch.setenv('LEAPP_DEVEL_TARGET_RELEASE', '1.2')
     assert command_utils.get_target_release(args) == ('1.2', 'default')
 
-    # no env var set, --target is set to proper version
+    # no env var set, --target is set to proper version - use it
+    args = mock.Mock(target='9.0')
     monkeypatch.delenv('LEAPP_DEVEL_TARGET_RELEASE', raising=False)
     assert command_utils.get_target_release(args) == ('9.0', 'default')
 
@@ -70,7 +73,7 @@ def test_get_target_release(mock_open, monkeypatch):
         assert 'Unexpected format of target version' in err
 
     # env var is set to proper version, --target set to a bad one:
-    # use env var and go on with the upgrade
+    # env var has priority, use it and go on with the upgrade
     monkeypatch.setenv('LEAPP_DEVEL_TARGET_RELEASE', '9.0')
     args = mock.Mock(target='9.0.0')
     assert command_utils.get_target_release(args) == ('9.0', 'default')
