@@ -48,3 +48,5 @@ def test_actor_execution_with_third_party_pkgs(monkeypatch):
         "Packages not signed by the distribution vendor found on the system"
         in reporting.create_report.report_fields["title"]
     )
+    # the key of the pre-generalization, original RHEL focused report
+    assert reporting.create_report.report_fields["key"] == "13f0791ae5f19f50e7d0d606fb6501f91b1efb2c"

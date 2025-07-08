@@ -43,6 +43,9 @@ def _generate_report(packages):
                 url="https://red.ht/customize-rhel-upgrade-actors",
                 title="Handling the migration of your custom and third-party applications",
             ),
+            # setting a stable key of the original, semantically equal, report
+            # which was concerned with RHEL only
+            reporting.Key("13f0791ae5f19f50e7d0d606fb6501f91b1efb2c")
         ]
     )
 
