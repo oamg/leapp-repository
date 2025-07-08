@@ -61,7 +61,6 @@ def assert_version_format(version_str, desired_format, version_kind):
     if not re.match(desired_format.regex, version_str):
         error_str = (
             'Unexpected format of target version: {0}. The required format is \'{1}\'.'
-            ' Each VER must be an integer.'  # NOTE: true for the distros enabled right now, might need change later
         )
         raise CommandError(error_str.format(version_str, desired_format.human_readable))
 
@@ -193,25 +192,22 @@ def get_target_release(args):
     LEAPP_DEVEL_TARGET_RELEASE or args.target (--target cmdline arg) or in the
     config file.
 
-    NOTE: the version format is not checked when specified through the env var.
-
     NOTE: when specified via the env var or cmdline arg, the version isn't
-    checked against supported versions, this is done later in the upgrade process.
+    checked against supported versions, this is done later by an actor in the
+    upgrade process.
 
     :return: `tuple` (target_release, flavor)
     """
     flavor = get_upgrade_flavour()
     env_version_override = os.getenv('LEAPP_DEVEL_TARGET_RELEASE')
 
-    if env_version_override:
-        return (env_version_override, flavor)
-
-    if args.target:
+    target_ver = env_version_override or args.target
+    if target_ver:
         os_release_contents = _retrieve_os_release_contents()
         distro_id = os_release_contents.get('ID', '')
         expected_version_format = _DISTRO_VERSION_FORMATS.get(distro_id, VersionFormats.MAJOR_MINOR).value
-        assert_version_format(args.target, expected_version_format, _VersionKind.TARGET)
-        return (args.target, flavor)
+        assert_version_format(target_ver, expected_version_format, _VersionKind.TARGET)
+        return (target_ver, flavor)
 
     return (get_target_version(flavor), flavor)
 
