@@ -10,7 +10,8 @@ from leapp.models import (
     IPUConfig,
     Model,
     OSRelease,
-    RPM
+    RPM,
+    ThirdPartyRPM,
 )
 
 RH_PACKAGER = 'Red Hat, Inc. <http://bugzilla.redhat.com/bugzilla>'
@@ -33,9 +34,10 @@ def test_no_installed_rpms(current_actor_context):
     current_actor_context.run(config_model=mock_configs.CONFIG)
     assert current_actor_context.consume(DistributionSignedRPM)
     assert current_actor_context.consume(InstalledUnsignedRPM)
+    assert current_actor_context.consume(ThirdPartyRPM)
 
 
-def test_actor_execution_with_signed_unsigned_data(current_actor_context):
+def test_actor_execution_with_signed_and_third_party_pkgs(current_actor_context):
     installed_rpm = [
         RPM(name='sample01', version='0.1', release='1.sm01', epoch='1', packager=RH_PACKAGER, arch='noarch',
             pgpsig='RSA/SHA256, Mon 01 Jan 1970 00:00:00 AM -03, Key ID 199e2f91fd431d51'),
@@ -62,9 +64,11 @@ def test_actor_execution_with_signed_unsigned_data(current_actor_context):
     assert len(current_actor_context.consume(DistributionSignedRPM)[0].items) == 5
     assert current_actor_context.consume(InstalledUnsignedRPM)
     assert len(current_actor_context.consume(InstalledUnsignedRPM)[0].items) == 4
+    assert current_actor_context.consume(ThirdPartyRPM)
+    assert len(current_actor_context.consume(ThirdPartyRPM)[0].items) == 4
 
 
-def test_actor_execution_with_signed_unsigned_data_centos(current_actor_context):
+def test_actor_execution_with_signed_and_third_party_pkgs_centos(current_actor_context):
     CENTOS_PACKAGER = 'CentOS BuildSystem <http://bugs.centos.org>'
     config = mock_configs.CONFIG
 
@@ -102,6 +106,8 @@ def test_actor_execution_with_signed_unsigned_data_centos(current_actor_context)
     assert len(current_actor_context.consume(DistributionSignedRPM)[0].items) == 3
     assert current_actor_context.consume(InstalledUnsignedRPM)
     assert len(current_actor_context.consume(InstalledUnsignedRPM)[0].items) == 6
+    assert current_actor_context.consume(ThirdPartyRPM)
+    assert len(current_actor_context.consume(ThirdPartyRPM)[0].items) == 6
 
 
 def test_actor_execution_with_signed_unsigned_data_almalinux(current_actor_context):
@@ -150,6 +156,7 @@ def test_actor_execution_with_unknown_distro(current_actor_context):
     current_actor_context.run(config_model=config)
     assert not current_actor_context.consume(DistributionSignedRPM)
     assert not current_actor_context.consume(InstalledUnsignedRPM)
+    assert not current_actor_context.consume(ThirdPartyRPM)
 
 
 def test_all_rpms_signed(current_actor_context):
@@ -169,6 +176,7 @@ def test_all_rpms_signed(current_actor_context):
     assert current_actor_context.consume(DistributionSignedRPM)
     assert len(current_actor_context.consume(DistributionSignedRPM)[0].items) == 4
     assert not current_actor_context.consume(InstalledUnsignedRPM)[0].items
+    assert not current_actor_context.consume(ThirdPartyRPM)[0].items
 
 
 def test_katello_pkg_goes_to_signed(current_actor_context):
@@ -187,6 +195,7 @@ def test_katello_pkg_goes_to_signed(current_actor_context):
     assert current_actor_context.consume(DistributionSignedRPM)
     assert len(current_actor_context.consume(DistributionSignedRPM)[0].items) == 1
     assert not current_actor_context.consume(InstalledUnsignedRPM)[0].items
+    assert not current_actor_context.consume(ThirdPartyRPM)[0].items
 
 
 def test_gpg_pubkey_pkg(current_actor_context):
@@ -203,6 +212,8 @@ def test_gpg_pubkey_pkg(current_actor_context):
     assert len(current_actor_context.consume(DistributionSignedRPM)[0].items) == 2
     assert current_actor_context.consume(InstalledUnsignedRPM)
     assert not current_actor_context.consume(InstalledUnsignedRPM)[0].items
+    assert current_actor_context.consume(ThirdPartyRPM)
+    assert not current_actor_context.consume(ThirdPartyRPM)[0].items
 
 
 def test_create_lookup():
@@ -258,3 +269,5 @@ def test_has_package(current_actor_context):
     assert not rpms.has_package(DistributionSignedRPM, 'nosuchpackage', context=current_actor_context)
     assert rpms.has_package(InstalledUnsignedRPM, 'sample02', context=current_actor_context)
     assert not rpms.has_package(InstalledUnsignedRPM, 'nosuchpackage', context=current_actor_context)
+    assert rpms.has_package(ThirdPartyRPM, 'sample02', context=current_actor_context)
+    assert not rpms.has_package(ThirdPartyRPM, 'nosuchpackage', context=current_actor_context)
