@@ -87,7 +87,7 @@ def create_lookup(model, field, keys, context=stdlib.api):
 
 def has_package(model, package_name, arch=None, version=None, release=None, context=stdlib.api):
     """
-    Expects a model DistributionSignedRPM or InstalledUnsignedRPM.
+    Expects a DistributionSignedRPM or ThirdPartyRPM model.
     Can be useful in cases like a quick item presence check, ex. check in actor that
     a certain package is installed.
 
