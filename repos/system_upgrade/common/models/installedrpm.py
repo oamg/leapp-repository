@@ -26,10 +26,5 @@ class DistributionSignedRPM(InstalledRPM):
     pass
 
 
-@deprecated(since='2024-01-31', message='Replaced by DistributionSignedRPM')
-class InstalledRedHatSignedRPM(InstalledRPM):
-    pass
-
-
 class InstalledUnsignedRPM(InstalledRPM):
     pass
