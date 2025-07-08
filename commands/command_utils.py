@@ -24,7 +24,7 @@ _VersionFormat = namedtuple('VersionFormat', ('human_readable', 'regex'))
 
 class VersionFormats(Enum):
     MAJOR_ONLY = _VersionFormat('MAJOR_VER', re.compile(r'^[1-9]\d*$'))
-    MAJOR_MINOR = _VersionFormat('MAJOR_VER.MINOR_VER', re.compile(r"^([1-9]\d*)\.(\d+)$"))
+    MAJOR_MINOR = _VersionFormat('MAJOR_VER.MINOR_VER', re.compile(r"^[1-9]\d*\.([1-9]\d*|0)$"))
 
 
 class _VersionKind(str, Enum):
