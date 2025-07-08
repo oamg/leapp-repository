@@ -1,11 +1,10 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import distributionsignedrpmscanner
-from leapp.models import DistributionSignedRPM, InstalledRedHatSignedRPM, InstalledRPM, InstalledUnsignedRPM
+from leapp.models import DistributionSignedRPM, InstalledRPM, InstalledUnsignedRPM
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 from leapp.utils.deprecation import suppress_deprecation
 
 
-@suppress_deprecation(InstalledRedHatSignedRPM)
 class DistributionSignedRpmScanner(Actor):
     """
     Provide data about distribution signed & unsigned RPM packages.
@@ -27,7 +26,7 @@ class DistributionSignedRpmScanner(Actor):
 
     name = 'distribution_signed_rpm_scanner'
     consumes = (InstalledRPM,)
-    produces = (DistributionSignedRPM, InstalledRedHatSignedRPM, InstalledUnsignedRPM,)
+    produces = (DistributionSignedRPM, InstalledUnsignedRPM)
     tags = (IPUWorkflowTag, FactsPhaseTag)
 
     def process(self):

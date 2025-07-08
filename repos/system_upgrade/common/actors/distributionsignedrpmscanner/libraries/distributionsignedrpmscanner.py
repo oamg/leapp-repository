@@ -2,7 +2,7 @@ from leapp.libraries.common import rhui
 from leapp.libraries.common.config import get_env
 from leapp.libraries.common.distro import get_distribution_data
 from leapp.libraries.stdlib import api
-from leapp.models import DistributionSignedRPM, InstalledRedHatSignedRPM, InstalledRPM, InstalledUnsignedRPM
+from leapp.models import DistributionSignedRPM, InstalledRPM, InstalledUnsignedRPM
 
 
 def is_distro_signed(pkg, distro_keys):
@@ -36,18 +36,14 @@ def process():
     rhui_pkgs = rhui.get_all_known_rhui_pkgs_for_current_upg()
 
     signed_pkgs = DistributionSignedRPM()
-    rh_signed_pkgs = InstalledRedHatSignedRPM()
     unsigned_pkgs = InstalledUnsignedRPM()
 
     for rpm_pkgs in api.consume(InstalledRPM):
         for pkg in rpm_pkgs.items:
             if all_signed or is_distro_signed(pkg, distro_keys) or is_exceptional(pkg, rhui_pkgs):
                 signed_pkgs.items.append(pkg)
-                if distribution == 'rhel':
-                    rh_signed_pkgs.items.append(pkg)
-                continue
-            unsigned_pkgs.items.append(pkg)
+            else:
+                unsigned_pkgs.items.append(pkg)
 
     api.produce(signed_pkgs)
-    api.produce(rh_signed_pkgs)
     api.produce(unsigned_pkgs)
