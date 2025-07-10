@@ -390,6 +390,7 @@ test_no_lint:
 	snactor workflow sanity-check ipu
 
 	@echo "==================== unit tests ======================" 2>&1
+	. $(VENVNAME)/bin/activate; \
 	$(_PYTHON_VENV) -m pytest $(REPORT_ARG) $(TEST_PATHS) $(LIBRARY_PATH) $(PYTEST_ARGS)
 
 test: lint test_no_lint
