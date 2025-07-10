@@ -19,6 +19,7 @@ write leapp actors for **In-Place Upgrades (IPU)** with the leapp framework.
 
     setup-devel-env
     howto-first-actor-upgrade
+    howto-properly-inhibit
     custom-content
     configurable-actors
     templates/index
