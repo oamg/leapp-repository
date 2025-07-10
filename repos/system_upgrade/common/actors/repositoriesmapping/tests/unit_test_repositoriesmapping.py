@@ -52,7 +52,7 @@ def test_scan_existing_valid_data(monkeypatch, adjust_cwd):
     # 2. Verify that only repositories valid for the current IPU are produced
     pesid_repos = repo_mapping.repositories
     fail_description = 'Actor produced incorrect number of IPU-relevant pesid repos.'
-    assert len(pesid_repos) == 5, fail_description
+    assert len(pesid_repos) == 6, fail_description
 
     expected_pesid_repos = [
         PESIDRepositoryEntry(
@@ -104,6 +104,16 @@ def test_scan_existing_valid_data(monkeypatch, adjust_cwd):
             channel='ga',
             rhui='',
             distro='centos',
+        ),
+        PESIDRepositoryEntry(
+            pesid='pesid8',
+            major_version='8',
+            repoid='some-almalinux-8-repoid1',
+            arch='x86_64',
+            repo_type='rpm',
+            channel='ga',
+            rhui='',
+            distro='almalinux',
         ),
     ]
 

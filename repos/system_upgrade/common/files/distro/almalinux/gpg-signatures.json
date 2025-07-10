@@ -1,0 +1,25 @@
+{
+    "keys": [
+        "51d6647ec21ad6ea",
+        "d36cb86cb86b3716",
+        "2ae81e8aced7258b",
+        "429785e181b961a5",
+        "d07bf2a08d50eb66"
+    ],
+    "obsoleted-keys": {
+        "7": [],
+        "8": [
+            "gpg-pubkey-2fa658e0-45700c69",
+            "gpg-pubkey-37017186-45761324",
+            "gpg-pubkey-db42a60e-37ea5438"
+          ],
+        "9": [
+            "gpg-pubkey-d4082792-5b32db75",
+            "gpg-pubkey-3abb34f8-5ffd890e",
+            "gpg-pubkey-6275f250-5e26cb2e",
+            "gpg-pubkey-73e3b907-6581b071"
+          ],
+        "10": []
+    }
+    
+}
