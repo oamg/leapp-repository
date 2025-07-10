@@ -255,7 +255,7 @@ do_upgrade() {
 
         # NOTE: We disable shell-check since we want to word-break NSPAWN_OPTS
         # shellcheck disable=SC2086
-        /usr/bin/systemd-nspawn $NSPAWN_OPTS -D "$NEWROOT" /usr/bin/bash -c "mount -a; /usr/bin/python3 -B $LEAPP3_BIN upgrade --resume $args"
+        /usr/bin/systemd-nspawn $NSPAWN_OPTS -D "$NEWROOT" /usr/bin/bash -c "mount -a; /usr/libexec/platform-python -EBsI $LEAPP3_BIN upgrade --resume $args"
         rv=$?
     fi
 
