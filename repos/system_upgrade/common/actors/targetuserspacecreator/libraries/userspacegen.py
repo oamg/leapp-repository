@@ -294,6 +294,8 @@ def _get_files_owned_by_rpms(context, dirpath, pkgs=None, recursive=False):
     """
     Return the list of file names inside dirpath owned by RPMs.
 
+    The returned paths are relative to the dirpath.
+
     This is important e.g. in case of RHUI which installs specific repo files
     in the yum.repos.d directory.
 
@@ -334,7 +336,7 @@ def _get_files_owned_by_rpms(context, dirpath, pkgs=None, recursive=False):
             api.current_logger().debug('SKIP the {} file: not owned by any rpm'.format(fname))
             continue
         if pkgs and not [pkg for pkg in pkgs if pkg in result['stdout']]:
-            api.current_logger().debug('SKIP the {} file: not owned by any searched rpm:'.format(fname))
+            api.current_logger().debug('SKIP the {} file: not owned by any searched rpm'.format(fname))
             continue
         api.current_logger().debug('Found the file owned by an rpm: {}.'.format(fname))
         files_owned_by_rpms.append(fname)
