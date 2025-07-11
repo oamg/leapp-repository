@@ -13,6 +13,7 @@ from leapp.libraries.actor import userspacegen
 from leapp.libraries.common import overlaygen, repofileutils, rhsm
 from leapp.libraries.common.config import architecture
 from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked, produce_mocked
+from leapp.libraries.stdlib import api, CalledProcessError
 from leapp.utils.deprecation import suppress_deprecation
 
 if sys.version_info < (2, 8):
@@ -1225,3 +1226,75 @@ def test_perform_ok(monkeypatch):
     assert userspacegen.api.produce.model_instances[1] == msg_target_repos
     # this one is full of constants, so it's safe to check just the instance
     assert isinstance(userspacegen.api.produce.model_instances[2], models.TargetUserSpaceInfo)
+
+
+def test__get_files_owned_by_rpms(monkeypatch):
+    # this is not necessarily accurate, but close enoguh
+    fake_walk = [
+        ("/base/dir/etc/pki", ["ca-trust", "tls", "rpm-gpg"], []),
+        ("/base/dir/etc/pki/ca-trust", ["extracted", "source"], []),
+        ("/base/dir/etc/pki/ca-trust/extracted", ["openssl", "java"], []),
+        ("/base/dir/etc/pki/ca-trust/extracted/openssl", [], ["ca-bundle.trust.crt"]),
+        ("/base/dir/etc/pki/ca-trust/extracted/java", [], ["cacerts"]),
+
+        ("/base/dir/etc/pki/ca-trust/source", ["anchors", "directory-hash"], []),
+        ("/base/dir/etc/pki/ca-trust/source/anchors", [], ["my-ca.crt"]),
+        ("/base/dir/etc/pki/ca-trust/extracted/pem/directory-hash", [], [
+          "5931b5bc.0", "a94d09e5.0"
+        ]),
+        ("/base/dir/etc/pki/tls", ["certs", "private"], []),
+        ("/base/dir/etc/pki/tls/certs", [], ["server.crt", "ca-bundle.crt"]),
+        ("/base/dir/etc/pki/tls/private", [], ["server.key"]),
+        ("/base/dir/etc/pki/rpm-gpg", [], [
+            "RPM-GPG-KEY-1",
+            "RPM-GPG-KEY-2",
+        ]),
+    ]
+    monkeypatch.setattr(os, 'walk', lambda _: fake_walk)
+    logger = logger_mocked()
+    monkeypatch.setattr(api, 'current_logger', logger)
+
+    class _MockContext():
+
+        def __init__(self, owned):
+            self.base_dir = '/base/dir'
+            # list of files owned, no base_dir prefixed
+            self.owned = owned
+
+        def full_path(self, path):
+            return os.path.join(self.base_dir, os.path.abspath(path).lstrip('/'))
+
+        def call(self, cmd):
+            assert len(cmd) == 3 and cmd[0] == 'rpm' and cmd[1] == '-qf'
+            if cmd[2] in self.owned:
+                return {'exit_code': 0}
+            raise CalledProcessError("Command failed with exit code 1", cmd, 1)
+
+    search_dir = '/etc/pki'
+    owned = [
+        'tls/certs/ca-bundle.crt',
+        'ca-trust/extracted/openssl/ca-bundle.trust.crt',
+        'rpm-gpg/RPM-GPG-KEY-1',
+        'rpm-gpg/RPM-GPG-KEY-2',
+        'ca-trust/extracted/pem/directory-hash/a94d09e5.0',
+        'ca-trust/extracted/pem/directory-hash/a94d09e5.0',
+    ]
+    # the rpm -qf call happens with the full path
+    owned_fullpath = [os.path.join(search_dir, f) for f in owned]
+    context = _MockContext(owned_fullpath)
+
+    out = userspacegen._get_files_owned_by_rpms(context, '/etc/pki', recursive=True)
+
+    # any directory-hash directory should be skipped
+    assert sorted(owned[0:4]) == sorted(out)
+
+    def has_dbgmsg(substr):
+        return any([substr in log for log in logger.dbgmsg])
+
+    # test a few
+    assert has_dbgmsg(
+        "SKIP files in the /base/dir/etc/pki/ca-trust/extracted/pem/directory-hash directory:"
+        " Not important for the IPU.",
+    )
+    assert has_dbgmsg('SKIP the tls/certs/server.crt file: not owned by any rpm')
+    assert has_dbgmsg('Found the file owned by an rpm: rpm-gpg/RPM-GPG-KEY-2.')
