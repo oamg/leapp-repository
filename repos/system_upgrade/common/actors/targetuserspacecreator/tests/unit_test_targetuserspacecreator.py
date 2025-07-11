@@ -1229,7 +1229,7 @@ def test_perform_ok(monkeypatch):
 
 
 def test__get_files_owned_by_rpms(monkeypatch):
-    # this is not necessarily accurate, but close enoguh
+    # this is not necessarily accurate, but close enough
     fake_walk = [
         ("/base/dir/etc/pki", ["ca-trust", "tls", "rpm-gpg"], []),
         ("/base/dir/etc/pki/ca-trust", ["extracted", "source"], []),
