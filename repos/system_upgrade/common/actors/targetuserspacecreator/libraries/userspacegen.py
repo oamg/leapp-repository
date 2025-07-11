@@ -311,7 +311,7 @@ def _get_files_owned_by_rpms(context, dirpath, pkgs=None, recursive=False):
     searchdir = context.full_path(dirpath)
     if recursive:
         for root, _, files in os.walk(searchdir):
-            if '/directory-hash/' in root:
+            if '/directory-hash' in root:
                 # tl;dr; for the performance improvement
                 # The directory has been relatively recently added to ca-certificates
                 # rpm on EL 9+ systems and the content does not seem to be important
