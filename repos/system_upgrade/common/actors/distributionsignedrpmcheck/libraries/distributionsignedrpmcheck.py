@@ -62,9 +62,8 @@ def get_third_party_pkgs():
         api.current_logger().warning(
             "Unexpectedly received more than one ThirdPartyRPM message."
         )
-    third_party_pkgs = set()
-    third_party_pkgs.update([pkg.name for pkg in data.items])
-    third_party_pkgs = list(third_party_pkgs)
+
+    third_party_pkgs = list(set(pkg.name for pkg in data.items))
     third_party_pkgs.sort()
     return third_party_pkgs
 
