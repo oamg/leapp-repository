@@ -14,9 +14,10 @@ LIBRARY_PATH=
 REPORT_ARG=
 
 ifdef ACTOR
-	# If REPOSITORIES is set, search for the actor only in the specified repos,
-	# if REPOSITORIES is not set i.e. it's empty, search in all repos, this is
-	# broken due to name collisions in repositories (FIXME)
+	# If REPOSITORIES is set, the utils/actor_path.py script searches for the
+	# actor only in the specified repositories.
+	# if REPOSITORIES is not set i.e. it's empty, all repositories are searched
+	# - this is broken due to name collisions in repositories (FIXME)
 	TEST_PATHS=`$(_PYTHON_VENV) utils/actor_path.py $(ACTOR) $(REPOSITORIES)`
 	APPROX_TEST_PATHS=$(shell $(_PYTHON_VENV) utils/find_actors.py -C repos $(ACTOR))  # Dev only
 else
@@ -380,7 +381,10 @@ lint_fix:
 
 test_no_lint:
 	@if [ -z "$(REPOSITORIES)" -a -n "$(ACTOR)" ]; then \
-		printf "\033[0;31mWARNING\033[0m: Running tests with ACTOR without specifying REPOSITORIES is currently broken, specify REPOSITORIES with only one elXtoelY repository (e.g. REPOSITORIES=common,el8toel9)\n" 2>&1; \
+		printf "\033[0;31mWARNING\033[0m: Running tests with ACTOR without"; \
+		printf " specifying REPOSITORIES is currently broken.\n" 2>&1; \
+		printf "         Specify REPOSITORIES with only one elXtoelY repository"; \
+		printf " (e.g. REPOSITORIES=common,el8toel9).\n" 2>&1; \
 	fi
 
 	@echo "============= snactor sanity-check ipu ===============" 2>&1
