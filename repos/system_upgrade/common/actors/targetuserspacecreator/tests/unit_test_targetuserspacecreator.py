@@ -1228,7 +1228,45 @@ def test_perform_ok(monkeypatch):
     assert isinstance(userspacegen.api.produce.model_instances[2], models.TargetUserSpaceInfo)
 
 
+class _MockContext():
+
+    def __init__(self, base_dir, owned_by_rpms):
+        self.base_dir = base_dir
+        # list of files owned, no base_dir prefixed
+        self.owned_by_rpms = owned_by_rpms
+
+    def full_path(self, path):
+        return os.path.join(self.base_dir, os.path.abspath(path).lstrip('/'))
+
+    def call(self, cmd):
+        assert len(cmd) == 3 and cmd[0] == 'rpm' and cmd[1] == '-qf'
+        if cmd[2] in self.owned_by_rpms:
+            return {'exit_code': 0}
+        raise CalledProcessError("Command failed with exit code 1", cmd, 1)
+
+
 def test__get_files_owned_by_rpms(monkeypatch):
+
+    def listdir_mocked(path):
+        assert path == '/base/dir/some/path'
+        return ['fileA', 'fileB.txt', 'test.log', 'script.sh']
+
+    monkeypatch.setattr(os, 'listdir', listdir_mocked)
+    logger = logger_mocked()
+    monkeypatch.setattr(api, 'current_logger', logger)
+
+    search_dir = '/some/path'
+    # output doesn't include full paths
+    owned = ['fileA', 'script.sh']
+    # but the rpm -qf call happens with the full path
+    owned_fullpath = [os.path.join(search_dir, f) for f in owned]
+    context = _MockContext('/base/dir', owned_fullpath)
+
+    out = userspacegen._get_files_owned_by_rpms(context, '/some/path', recursive=False)
+    assert sorted(owned) == sorted(out)
+
+
+def test__get_files_owned_by_rpms_recursive(monkeypatch):
     # this is not necessarily accurate, but close enough
     fake_walk = [
         ("/base/dir/etc/pki", ["ca-trust", "tls", "rpm-gpg"], []),
@@ -1250,27 +1288,17 @@ def test__get_files_owned_by_rpms(monkeypatch):
             "RPM-GPG-KEY-2",
         ]),
     ]
-    monkeypatch.setattr(os, 'walk', lambda _: fake_walk)
+
+    def walk_mocked(path):
+        assert path == '/base/dir/etc/pki'
+        return fake_walk
+
+    monkeypatch.setattr(os, 'walk', walk_mocked)
     logger = logger_mocked()
     monkeypatch.setattr(api, 'current_logger', logger)
 
-    class _MockContext():
-
-        def __init__(self, owned):
-            self.base_dir = '/base/dir'
-            # list of files owned, no base_dir prefixed
-            self.owned = owned
-
-        def full_path(self, path):
-            return os.path.join(self.base_dir, os.path.abspath(path).lstrip('/'))
-
-        def call(self, cmd):
-            assert len(cmd) == 3 and cmd[0] == 'rpm' and cmd[1] == '-qf'
-            if cmd[2] in self.owned:
-                return {'exit_code': 0}
-            raise CalledProcessError("Command failed with exit code 1", cmd, 1)
-
     search_dir = '/etc/pki'
+    # output doesn't include full paths
     owned = [
         'tls/certs/ca-bundle.crt',
         'ca-trust/extracted/openssl/ca-bundle.trust.crt',
@@ -1281,10 +1309,9 @@ def test__get_files_owned_by_rpms(monkeypatch):
     ]
     # the rpm -qf call happens with the full path
     owned_fullpath = [os.path.join(search_dir, f) for f in owned]
-    context = _MockContext(owned_fullpath)
+    context = _MockContext('/base/dir', owned_fullpath)
 
-    out = userspacegen._get_files_owned_by_rpms(context, '/etc/pki', recursive=True)
-
+    out = userspacegen._get_files_owned_by_rpms(context, search_dir, recursive=True)
     # any directory-hash directory should be skipped
     assert sorted(owned[0:4]) == sorted(out)
 
