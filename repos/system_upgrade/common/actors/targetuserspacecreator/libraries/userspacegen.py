@@ -1091,6 +1091,26 @@ def _install_custom_repofiles(context, custom_repofiles):
         context.copy_to(rfile.file, _dst_path)
 
 
+def adjust_dnf_stream_variable(context, varfile='/etc/dnf/vars/stream'):
+    """
+    Adjust the version in the dnf 'stream' variable to the target version.
+
+    URLs in CentOS Stream repofiles contain the $stream variable which,
+    if not adjusted, retains the value from the source system making
+    the URLs point to repos for the source version. This function adjusts
+    the variable so that the URLs point to the target version repos.
+    """
+
+    target_version = get_target_major_version()
+    try:
+        with context.open(varfile, 'w') as f:
+            f.write(target_version + '-stream\n')
+    except (FileNotFoundError, OSError) as e:
+        raise StopActorExecutionError(
+            message='Failed to adjust dnf variable in {} to "{}".'.format(varfile, target_version + '-stream'),
+            details={'details': str(e)})
+
+
 def _gather_target_repositories(context, indata, prod_cert_path):
     """
     This is wrapper function to gather the target repoids.
@@ -1108,6 +1128,9 @@ def _gather_target_repositories(context, indata, prod_cert_path):
     """
     rhsm.set_container_mode(context)
     rhsm.switch_certificate(context, indata.rhsm_info, prod_cert_path)
+
+    if api.current_actor().configuration.os_release.release_id == 'centos':
+        adjust_dnf_stream_variable(context)
 
     _install_custom_repofiles(context, indata.custom_repofiles)
     return gather_target_repositories(context, indata)

@@ -3,6 +3,7 @@ from __future__ import division, print_function
 import os
 import subprocess
 import sys
+import tempfile
 from collections import namedtuple
 
 import pytest
@@ -39,6 +40,9 @@ class MockedMountingBase(object):
     def __init__(self, **dummy_kwargs):
         self.called_copytree_from = []
         self.target = ''
+
+    def open(self, fullpath, *args, **kwargs):
+        return open(self, fullpath, *args, **kwargs)
 
     def copytree_from(self, src, dst):
         self.called_copytree_from.append((src, dst))
@@ -1338,3 +1342,52 @@ def test__get_files_owned_by_rpms_recursive(monkeypatch):
     )
     assert has_dbgmsg('SKIP the tls/certs/server.crt file: not owned by any rpm')
     assert has_dbgmsg('Found the file owned by an rpm: rpm-gpg/RPM-GPG-KEY-2.')
+
+
+def test_writing_stream_varfile(monkeypatch):
+
+    monkeypatch.setattr(userspacegen.api, 'current_actor', CurrentActorMocked())
+    monkeypatch.setattr(userspacegen, 'get_target_major_version', lambda: '10')
+
+    with tempfile.NamedTemporaryFile(mode='w+') as tmpf:
+        tmpf.write('incorrect-stream-value\n')
+        tmpf.flush()
+        userspacegen.adjust_dnf_stream_variable(MockedMountingBase, tmpf.name)
+        tmpf.seek(0)
+        content = tmpf.read()
+
+    assert content == '10-stream\n'
+
+
+def test_failing_stream_varfile_write(monkeypatch):
+    monkeypatch.setattr(userspacegen.api, 'current_actor', CurrentActorMocked())
+    monkeypatch.setattr(userspacegen, 'get_target_major_version', lambda: '10')
+    with pytest.raises(StopActorExecutionError) as err:
+        userspacegen.adjust_dnf_stream_variable(MockedMountingBase, '/path/not/exists')
+
+    assert 'Failed to adjust dnf variable' in str(err.value)
+
+
+@pytest.mark.parametrize("distro,should_adjust", [('rhel', False), ('centos', True)])
+def test_if_adjust_dnf_stream_variable_only_for_centos(monkeypatch, distro, should_adjust):
+
+    def do_nothing(*args, **kwargs):
+        pass
+
+    def mock_adjust_stream_variable(context, varfile='/etc/dnf/vars/stream'):
+        assert varfile == '/etc/dnf/vars/stream'
+        nonlocal adjust_called
+        adjust_called = True
+
+    monkeypatch.setattr(userspacegen.api, 'current_actor', CurrentActorMocked(release_id=distro))
+    monkeypatch.setattr(userspacegen, 'get_target_major_version', lambda: '10')
+    monkeypatch.setattr(rhsm, 'set_container_mode', do_nothing)
+    monkeypatch.setattr(rhsm, 'switch_certificate', do_nothing)
+    monkeypatch.setattr(userspacegen, '_install_custom_repofiles', do_nothing)
+    monkeypatch.setattr(userspacegen, 'adjust_dnf_stream_variable', mock_adjust_stream_variable)
+    monkeypatch.setattr(userspacegen, 'gather_target_repositories', do_nothing)
+
+    adjust_called = False
+
+    userspacegen._gather_target_repositories(MockedMountingBase, testInData, None)
+    assert adjust_called == should_adjust
