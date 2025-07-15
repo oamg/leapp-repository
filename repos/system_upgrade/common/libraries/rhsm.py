@@ -7,7 +7,7 @@ import time
 from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import repofileutils
-from leapp.libraries.common.config import get_env
+from leapp.libraries.common.config import get_distro_id, get_env
 from leapp.libraries.stdlib import api, CalledProcessError
 from leapp.models import RHSMInfo
 
@@ -331,10 +331,19 @@ def set_container_mode(context):
     /etc/pki/entitlement directories exists, even when leapp is executed with
     --no-rhsm option. If any of these directories are missing, skip other
     actions - most likely RHSM is not installed in such a case.
+    Note that this only true on RHEL systems, on non-RHEL (which don't use RHSM)
+    this function does nothing.
 
     :param context: An instance of a mounting.IsolatedActions class
     :type context: mounting.IsolatedActions class
     """
+    # this has to happen even with skip_rhsm, but only on RHEL
+    if get_distro_id() != 'rhel':
+        api.current_logger().info(
+            'Skipping setting RHSM into container mode on non-RHEL systems.'
+        )
+        return
+
     if not context.is_isolated():
         api.current_logger().error('Trying to set RHSM into the container mode'
                                    'on host. Skipping the action.')

@@ -7,7 +7,7 @@ from leapp import reporting
 from leapp.exceptions import StopActorExecution, StopActorExecutionError
 from leapp.libraries.actor import constants
 from leapp.libraries.common import dnfplugin, mounting, overlaygen, repofileutils, rhsm, utils
-from leapp.libraries.common.config import get_env, get_product_type
+from leapp.libraries.common.config import get_distro_id, get_env, get_product_type
 from leapp.libraries.common.config.version import get_target_major_version
 from leapp.libraries.common.gpg import get_path_to_gpg_certs, is_nogpgcheck_set
 from leapp.libraries.stdlib import api, CalledProcessError, config, run
@@ -673,7 +673,15 @@ def _prep_repository_access(context, target_userspace):
 def _get_product_certificate_path():
     """
     Retrieve the required / used product certificate for RHSM.
+
+    Product certificates are only used on RHEL, on non-RHEL systems the function returns None.
+
+    :return: The path to the product certificate or None on non-RHEL systems
+    :raises: StopActorExecution if a certificate cannot be found
     """
+    if get_distro_id() != 'rhel':
+        return None
+
     architecture = api.current_actor().configuration.architecture
     target_version = api.current_actor().configuration.version.target
     target_product_type = get_product_type('target')
