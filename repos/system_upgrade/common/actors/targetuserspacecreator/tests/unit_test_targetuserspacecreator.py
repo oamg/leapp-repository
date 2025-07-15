@@ -876,6 +876,13 @@ def test_get_product_certificate_path(monkeypatch, adjust_cwd, result, dst_ver, 
     assert userspacegen._get_product_certificate_path() in result
 
 
+def test_get_product_certificate_path_nonrhel(monkeypatch):
+    actor = CurrentActorMocked(release_id='notrhel')
+    monkeypatch.setattr(userspacegen.api, 'current_actor', actor)
+    path = userspacegen._get_product_certificate_path()
+    assert path is None
+
+
 @suppress_deprecation(models.RequiredTargetUserspacePackages)
 def _gen_packages_msgs():
     _cfiles = [
@@ -1207,20 +1214,26 @@ def mocked_consume_data():
 
 
 # TODO: come up with additional tests for the main function
-def test_perform_ok(monkeypatch):
+@pytest.mark.parametrize(
+    "distro,cert_path", [("rhel", _DEFAULT_CERT_PATH), ("centos", None)]
+)
+def test_perform_ok(monkeypatch, distro, cert_path):
     repoids = ['repoidX', 'repoidY']
     monkeypatch.setattr(userspacegen, '_InputData', mocked_consume_data)
-    monkeypatch.setattr(userspacegen, '_get_product_certificate_path', lambda: _DEFAULT_CERT_PATH)
+    monkeypatch.setattr(userspacegen, '_get_product_certificate_path', lambda: cert_path)
     monkeypatch.setattr(overlaygen, 'create_source_overlay', MockedMountingBase)
     monkeypatch.setattr(userspacegen, '_gather_target_repositories', lambda *x: repoids)
     monkeypatch.setattr(userspacegen, '_create_target_userspace', lambda *x: None)
     monkeypatch.setattr(userspacegen, 'setup_target_rhui_access_if_needed', lambda *x: None)
-    monkeypatch.setattr(userspacegen.api, 'current_actor', CurrentActorMocked())
+    monkeypatch.setattr(userspacegen.api, 'current_actor', CurrentActorMocked(release_id=distro))
     monkeypatch.setattr(userspacegen.api, 'produce', produce_mocked())
     monkeypatch.setattr(repofileutils, 'get_repodirs', lambda: ['/etc/yum.repos.d'])
+
     userspacegen.perform()
+
     msg_target_repos = models.UsedTargetRepositories(
         repos=[models.UsedTargetRepository(repoid=repo) for repo in repoids])
+
     assert userspacegen.api.produce.called == 3
     assert isinstance(userspacegen.api.produce.model_instances[0], models.TMPTargetRepositoriesFacts)
     assert userspacegen.api.produce.model_instances[1] == msg_target_repos

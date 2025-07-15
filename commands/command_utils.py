@@ -136,6 +136,16 @@ def get_os_release_version_id(filepath):
     return _retrieve_os_release_contents(_os_release_path=filepath).get('VERSION_ID', '')
 
 
+def get_distro_id():
+    """
+    Retrieve the OS release ID from /etc/os-release.
+
+    :return: The OS release ID from /etc/os-release
+    :rtype: str
+    """
+    return _retrieve_os_release_contents('/etc/os-release').get('VERSION_ID', '')
+
+
 def get_upgrade_paths_config():
     # NOTE(ivasilev) Importing here not to have circular dependencies
     from leapp.cli.commands.upgrade import util  # noqa: C415; pylint: disable=import-outside-toplevel
@@ -205,8 +215,7 @@ def get_target_release(args):
 
     target_ver = env_version_override or args.target
     if target_ver:
-        os_release_contents = _retrieve_os_release_contents()
-        distro_id = os_release_contents.get('ID', '')
+        distro_id = get_distro_id()
         expected_version_format = _DISTRO_VERSION_FORMATS.get(distro_id, VersionFormats.MAJOR_MINOR).value
         assert_version_format(target_ver, expected_version_format, _VersionKind.TARGET)
         return (target_ver, flavor)
