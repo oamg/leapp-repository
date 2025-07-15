@@ -97,3 +97,16 @@ def get_target_product_channel(default='ga'):
 def get_consumed_data_stream_id():
     """Get the identifier of the asset family used by leapp."""
     return CONSUMED_DATA_STREAM_ID
+
+
+def get_distro_id():
+    """
+    Retrieve the distro ID.
+
+    This is the ID string from /etc/os_release.
+    E.g. "rhel" for Red Hat Enterprise Linux
+
+    :return: The ID string from /etc/os_release
+    :rtype: str
+    """
+    return api.current_actor().configuration.os_release.release_id
