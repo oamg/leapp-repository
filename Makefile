@@ -12,9 +12,19 @@ REPOS_PATH=repos
 _SYSUPG_REPOS="$(REPOS_PATH)/system_upgrade"
 LIBRARY_PATH=
 REPORT_ARG=
-REPOSITORIES ?= $(shell ls $(_SYSUPG_REPOS) | xargs echo | tr " " ",")
-SYSUPG_TEST_PATHS=$(shell echo $(REPOSITORIES) | sed -r "s|(,\\|^)| $(_SYSUPG_REPOS)/|g")
-TEST_PATHS:=commands repos/common $(SYSUPG_TEST_PATHS)
+
+ifdef ACTOR
+	# If REPOSITORIES is set, the utils/actor_path.py script searches for the
+	# actor only in the specified repositories.
+	# if REPOSITORIES is not set i.e. it's empty, all repositories are searched
+	# - this is broken due to name collisions in repositories (FIXME)
+	TEST_PATHS=`$(_PYTHON_VENV) utils/actor_path.py $(ACTOR) $(REPOSITORIES)`
+	APPROX_TEST_PATHS=$(shell $(_PYTHON_VENV) utils/find_actors.py -C repos $(ACTOR))  # Dev only
+else
+	REPOSITORIES ?= $(shell ls $(_SYSUPG_REPOS) | xargs echo | tr " " ",")
+	SYSUPG_TEST_PATHS=$(shell echo $(REPOSITORIES) | sed -r "s|(,\\|^)| $(_SYSUPG_REPOS)/|g")
+	TEST_PATHS:=commands repos/common $(SYSUPG_TEST_PATHS)
+endif
 
 # Several commands can take arbitrary user supplied arguments from environment
 # variables as well:
@@ -24,11 +34,6 @@ FLAKE8_ARGS ?=
 
 # python version to run test with
 _PYTHON_VENV=$${PYTHON_VENV:-python2.7}
-
-ifdef ACTOR
-	TEST_PATHS=`$(_PYTHON_VENV) utils/actor_path.py $(ACTOR)`
-	APPROX_TEST_PATHS=$(shell $(_PYTHON_VENV) utils/find_actors.py -C repos $(ACTOR))  # Dev only
-endif
 
 ifeq ($(TEST_LIBS),y)
 	LIBRARY_PATH=`python utils/library_path.py`
@@ -375,11 +380,21 @@ lint_fix:
 	echo "--- isort inplace fixing done. ---;"
 
 test_no_lint:
+	@if [ -z "$(REPOSITORIES)" -a -n "$(ACTOR)" ]; then \
+		printf "\033[0;31mWARNING\033[0m: Running tests with ACTOR without"; \
+		printf " specifying REPOSITORIES is currently broken.\n" 2>&1; \
+		printf "         Specify REPOSITORIES with only one elXtoelY repository"; \
+		printf " (e.g. REPOSITORIES=common,el8toel9).\n" 2>&1; \
+	fi
+
+	@echo "============= snactor sanity-check ipu ===============" 2>&1
 	. $(VENVNAME)/bin/activate; \
 	snactor repo find --path repos/; \
 	cd repos/system_upgrade/el7toel8/; \
-	snactor workflow sanity-check ipu && \
-	cd - && \
+	snactor workflow sanity-check ipu
+
+	@echo "==================== unit tests ======================" 2>&1
+	. $(VENVNAME)/bin/activate; \
 	$(_PYTHON_VENV) -m pytest $(REPORT_ARG) $(TEST_PATHS) $(LIBRARY_PATH) $(PYTEST_ARGS)
 
 test: lint test_no_lint
@@ -413,7 +428,7 @@ _test_container_ipu:
 		;; \
 	esac && \
 	$(_CONTAINER_TOOL) exec -w /repocopy $$_CONT_NAME make clean && \
-	$(_CONTAINER_TOOL) exec -w /repocopy -e REPOSITORIES $$_CONT_NAME make $${_TEST_CONT_TARGET:-test}
+	$(_CONTAINER_TOOL) exec -w /repocopy -e ACTOR -e REPOSITORIES $$_CONT_NAME make $${_TEST_CONT_TARGET:-test}
 
 
 # Runs lint in a container
