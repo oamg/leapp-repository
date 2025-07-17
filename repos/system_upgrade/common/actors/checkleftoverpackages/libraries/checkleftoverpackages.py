@@ -3,7 +3,7 @@ import re
 from leapp.libraries.common.config.version import get_source_major_version
 from leapp.libraries.common.rpms import get_installed_rpms, get_leapp_dep_packages, get_leapp_packages
 from leapp.libraries.stdlib import api
-from leapp.models import InstalledUnsignedRPM, LeftoverPackages, RPM
+from leapp.models import LeftoverPackages, RPM, ThirdPartyRPM
 
 
 def process():
@@ -15,7 +15,7 @@ def process():
         return
 
     leftover_pkgs_to_remove = []
-    unsigned = [pkg.name for pkg in next(api.consume(InstalledUnsignedRPM), InstalledUnsignedRPM()).items]
+    unsigned = [pkg.name for pkg in next(api.consume(ThirdPartyRPM), ThirdPartyRPM()).items]
 
     for rpm in installed_rpms:
         rpm = rpm.strip()
