@@ -1,5 +1,6 @@
 from leapp import reporting
 from leapp.libraries.common import rhsm
+from leapp.libraries.common.config import get_distro_id
 from leapp.libraries.stdlib import api
 
 
@@ -49,6 +50,7 @@ def _report_unhandled_release():
 
 def process():
     if rhsm.skip_rhsm():
-        _report_unhandled_release()
+        if get_distro_id() == 'rhel':
+            _report_unhandled_release()
     else:
         _report_set_release()

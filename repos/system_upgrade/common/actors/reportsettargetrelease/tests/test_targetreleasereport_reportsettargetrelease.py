@@ -26,3 +26,13 @@ def test_report_unhandled_release(monkeypatch):
     reportsettargetrelease.process()
     assert reporting.create_report.called == 1
     assert 'is going to be kept' in reporting.create_report.report_fields['title']
+
+
+def test_no_report_on_non_rhel(monkeypatch):
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(release_id='centos'))
+    monkeypatch.setattr(rhsm, 'skip_rhsm', lambda: True)  # this is always the case on nonrhel
+    monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
+
+    reportsettargetrelease.process()
+
+    assert reporting.create_report.called == 0
