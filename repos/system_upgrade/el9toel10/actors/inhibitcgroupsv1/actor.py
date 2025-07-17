@@ -14,7 +14,7 @@ class InhibitCgroupsv1(Actor):
     hierarchy (cgroups-v2) is supported.
     """
 
-    name = 'inhibit_cgroupsv1'
+    name = "inhibit_cgroupsv1"
     consumes = (KernelCmdline,)
     produces = (Report,)
     tags = (ChecksPhaseTag, IPUWorkflowTag)
