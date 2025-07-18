@@ -4,5 +4,7 @@
         "05b555b38483c65d",
         "4eb84e71f2ee9d55"
     ],
-    "obsoleted-keys": {}
+    "obsoleted-keys": {
+        "10": ["gpg-pubkey-8483c65d-5ccc5b19"]
+    }
 }
