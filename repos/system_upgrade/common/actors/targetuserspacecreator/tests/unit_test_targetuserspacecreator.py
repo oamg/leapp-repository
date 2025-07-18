@@ -3,6 +3,7 @@ from __future__ import division, print_function
 import os
 import subprocess
 import sys
+import tempfile
 from collections import namedtuple
 
 import pytest
@@ -39,6 +40,9 @@ class MockedMountingBase(object):
     def __init__(self, **dummy_kwargs):
         self.called_copytree_from = []
         self.target = ''
+
+    def open(self, fullpath, *args, **kwargs):
+        return open(self, fullpath, *args, **kwargs)
 
     def copytree_from(self, src, dst):
         self.called_copytree_from.append((src, dst))
@@ -1325,3 +1329,27 @@ def test__get_files_owned_by_rpms_recursive(monkeypatch):
     )
     assert has_dbgmsg('SKIP the tls/certs/server.crt file: not owned by any rpm')
     assert has_dbgmsg('Found the file owned by an rpm: rpm-gpg/RPM-GPG-KEY-2.')
+
+
+def test_writing_stream_varfile(monkeypatch):
+
+    monkeypatch.setattr(userspacegen.api, 'current_actor', CurrentActorMocked())
+    monkeypatch.setattr(userspacegen, 'get_target_major_version', lambda: '10')
+
+    with tempfile.NamedTemporaryFile(mode='w+') as tmpf:
+        tmpf.write('10-stream\n')
+        tmpf.seek(0)
+        content = tmpf.read()
+
+    userspacegen.adjust_dnf_stream_variable(MockedMountingBase, tmpf.name)
+    assert content == '10-stream\n'
+
+
+def test_failing_stream_varfile_write(monkeypatch):
+    monkeypatch.setattr(userspacegen.api, 'current_actor', CurrentActorMocked())
+    monkeypatch.setattr(userspacegen, 'get_target_major_version', lambda: '10')
+
+    try:
+        userspacegen.adjust_dnf_stream_variable(MockedMountingBase, '/path/not/exists')
+    except StopActorExecutionError:
+        pass

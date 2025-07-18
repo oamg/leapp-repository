@@ -1083,6 +1083,26 @@ def _install_custom_repofiles(context, custom_repofiles):
         context.copy_to(rfile.file, _dst_path)
 
 
+def adjust_dnf_stream_variable(context, varfile='/etci/dnf/vars/stream'):
+    """
+    This is function to adjust the content of vars in centos repositories.
+
+    Centos repositories are containing $stream variable, which are not
+    handled correctly, as i.e. $releasevar. This function is providing
+    correct content of repositories, by replacing $stream variable
+    with corresponding value.
+    """
+
+    target_version = get_target_major_version()
+    try:
+        with context.open(varfile, 'w') as f:
+            f.write(target_version + '-stream')
+    except (FileNotFoundError, OSError) as e:
+        raise StopActorExecutionError(
+            message='Failed to adjust variable in {}.'.format(varfile),
+            details={'details': str(e)})
+
+
 def _gather_target_repositories(context, indata, prod_cert_path):
     """
     This is wrapper function to gather the target repoids.
@@ -1100,6 +1120,9 @@ def _gather_target_repositories(context, indata, prod_cert_path):
     """
     rhsm.set_container_mode(context)
     rhsm.switch_certificate(context, indata.rhsm_info, prod_cert_path)
+
+    if api.current_actor().configuration.os_release.release_id == 'centos':
+        adjust_dnf_stream_variable(context)
 
     _install_custom_repofiles(context, indata.custom_repofiles)
     return gather_target_repositories(context, indata)
