@@ -8,7 +8,7 @@ from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import repofileutils, rhsm
 from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked, logger_mocked
 from leapp.libraries.stdlib import api, CalledProcessError
-from leapp.models import RepositoryData, RepositoryFile
+from leapp.models import RepositoryData, RepositoryFile, RHSMInfo
 from leapp.utils.report import is_inhibitor
 
 Repository = namedtuple('Repository', ['repoid', 'file'])
@@ -67,9 +67,14 @@ class IsolatedActionsMocked(object):
         self.commands_called = []
         self.call_return = {'stdout': call_stdout, 'stderr': None}
         self.raise_err = raise_err
+        self.remove_called = []
+        self.copy_to_called = []
 
         # A map from called commands to their mocked output
         self.mocked_command_call_outputs = dict()
+
+    def is_isolated(self):
+        return True
 
     def call(self, cmd, *args, **dummy_kwargs):
         self.commands_called.append(cmd)
@@ -90,6 +95,12 @@ class IsolatedActionsMocked(object):
 
     def full_path(self, path):
         return path
+
+    def remove(self, path):
+        self.remove_called.append(path)
+
+    def copy_to(self, src, dst):
+        self.copy_to_called.append((src, dst))
 
 
 @pytest.fixture
@@ -409,3 +420,66 @@ def test_is_registered_error(context_mocked):
         rhsm.is_rhsm_registered(context_mocked)
 
     assert 'A subscription-manager command failed to execute' in str(err)
+
+
+def test_set_container_mode(monkeypatch, context_mocked):
+    actor = CurrentActorMocked(release_id='rhel')
+    monkeypatch.setattr(api, 'current_actor', actor)
+    monkeypatch.setattr(
+        os.path, "exists", lambda path: path in ("/etc/rhsm", "/etc/pki/entitlement")
+    )
+
+    rhsm.set_container_mode(context_mocked)
+
+    assert context_mocked.commands_called == [
+        ["ln", "-s", "/etc/rhsm", "/etc/rhsm-host"],
+        ['ln', '-s', '/etc/pki/entitlement', '/etc/pki/entitlement-host'],
+    ]
+
+
+def test_set_container_mode_nonrhel_skip(monkeypatch, context_mocked):
+    actor = CurrentActorMocked(release_id='notrhel')
+    monkeypatch.setattr(api, 'current_actor', actor)
+
+    rhsm.set_container_mode(context_mocked)
+
+    assert context_mocked.commands_called == []
+
+
+def mocked_rhsm_info():
+    return RHSMInfo(
+        attached_skus=['SKU1', 'SKU2'],
+        available_repos=['Repo1', 'Repo2'],
+        enabled_repos=['Repo2'],
+        release='7.9',
+        existing_product_certificates=['Cert1', 'Cert2', 'Cert3'],
+        sca_detected=True,
+    )
+
+
+def test_switch_certificate(monkeypatch, context_mocked, actor_mocked):
+    monkeypatch.setattr(
+        os.path, 'isdir', lambda path: path in ('/etc/pki/product', '/etc/pki/product-default')
+    )
+
+    cert_path = '/etc/leapp/repos.d/system_upgrade/common/files/prod-certs/10/479.pem'
+    rhsm.switch_certificate(context_mocked, mocked_rhsm_info(), cert_path)
+
+    assert context_mocked.remove_called == mocked_rhsm_info().existing_product_certificates
+    assert context_mocked.copy_to_called == [
+        (cert_path, os.path.join(target_path, "479.pem"))
+        for target_path in ("/etc/pki/product", "/etc/pki/product-default")
+    ]
+
+
+def test_switch_certificate_respect_with_rhsm(monkeypatch, context_mocked):
+    """Test whether switch_certificate is skipped when LEAPP_NO_RHSM=1"""
+
+    mocked_actor = CurrentActorMocked(envars={'LEAPP_NO_RHSM': '1'})
+    monkeypatch.setattr(api, 'current_actor', mocked_actor)
+
+    cert_path = '/etc/leapp/repos.d/system_upgrade/common/files/prod-certs/10/479.pem'
+    rhsm.switch_certificate(context_mocked, mocked_rhsm_info(), cert_path)
+
+    assert context_mocked.remove_called == []
+    assert context_mocked.copy_to_called == []
