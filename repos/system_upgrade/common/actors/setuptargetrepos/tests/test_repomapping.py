@@ -75,6 +75,9 @@ def repomap_data_multiple_distros():
             make_pesid_repo("pesid3", "10", "pesid3-repoid-eus", channel="eus"),
             make_pesid_repo("pesid3", "10", "pesid3-repoid-aws", rhui="aws"),
             make_pesid_repo("pesid3", "10", "pesid3-repoid-centos", distro="centos"),
+            make_pesid_repo("pesid1", "9", "pesid1-repoid-almalinux", distro="almalinux"),
+            make_pesid_repo("pesid2", "10", "pesid2-repoid-almalinux", distro="almalinux"),
+            make_pesid_repo("pesid3", "10", "pesid3-repoid-almalinux", distro="almalinux"),
         ],
     )
     return repomap_data
@@ -106,7 +109,7 @@ def test_get_pesid_repo_entry(monkeypatch, repomap_data_for_pesid_repo_retrieval
     assert handler.get_pesid_repo_entry('nonexisting-repo', '7') is None, fail_description
 
 
-@pytest.mark.parametrize('distro', ('rhel', 'centos'))
+@pytest.mark.parametrize('distro', ('rhel', 'centos', 'almalinux'))
 def test_get_pesid_repo_entry_distro(
     monkeypatch, repomap_data_multiple_distros, distro
 ):
@@ -163,7 +166,7 @@ def test_get_target_pesids(monkeypatch, repomap_data_for_pesid_repo_retrieval):
     assert [] == handler.get_target_pesids('pesid_no_mapping'), fail_description
 
 
-@pytest.mark.parametrize('distro', ('rhel', 'centos'))
+@pytest.mark.parametrize('distro', ('rhel', 'centos', 'almalinux'))
 def test_get_target_pesids_distro(
     monkeypatch, repomap_data_multiple_distros, distro
 ):
@@ -199,6 +202,7 @@ def test_get_target_pesids_distro(
     [
         ('rhel', [5, 6, 7], [0, 1]),
         ('centos', [8], [2]),
+        ('almalinux', [11], [9]),
     ]
 )
 def test_get_pesid_repos(
@@ -251,6 +255,7 @@ def test_get_pesid_repos(
     [
         ('rhel', [0, 1]),
         ('centos', []),
+        ('almalinux', []),
     ]
 )
 def test_get_source_pesid_repos(monkeypatch, repomap_data_for_pesid_repo_retrieval, distro, expected_repos_index):
@@ -291,6 +296,7 @@ def test_get_source_pesid_repos(monkeypatch, repomap_data_for_pesid_repo_retriev
     [
         ('rhel', [3, 4, 5]),
         ('centos', []),
+        ('almalinux', []),
     ]
 )
 def test_get_target_pesid_repos(monkeypatch, repomap_data_for_pesid_repo_retrieval, distro, expected_repos_index):

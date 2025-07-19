@@ -15,6 +15,7 @@ from leapp.models import (
 )
 
 RH_PACKAGER = 'Red Hat, Inc. <http://bugzilla.redhat.com/bugzilla>'
+ALMALINUX_PACKAGER = 'AlmaLinux Packaging Team <packager@almalinux.org>'
 
 
 class MockObject(Model):
@@ -108,6 +109,38 @@ def test_actor_execution_with_signed_unsigned_data_centos(current_actor_context)
     assert not current_actor_context.consume(InstalledRedHatSignedRPM)[0].items
     assert current_actor_context.consume(InstalledUnsignedRPM)
     assert len(current_actor_context.consume(InstalledUnsignedRPM)[0].items) == 6
+
+
+def test_actor_execution_with_signed_unsigned_data_almalinux(current_actor_context):
+    config = mock_configs.CONFIG
+
+    config.os_release = OSRelease(
+        release_id='almalinux',
+        name='AlmaLinux',
+        pretty_name='AlmaLinux 8.10 (Cerulean Leopard)',
+        version='8.10 (Cerulean Leopard)',
+        version_id='8.10'
+    )
+
+    installed_rpm = [
+        RPM(name='sample01', version='0.1', release='1.sm01', epoch='1', packager=ALMALINUX_PACKAGER, arch='noarch',
+            pgpsig='RSA/SHA256, Mon 01 Jan 1970 00:00:00 AM -03, Key ID 2ae81e8aced7258b'),
+        RPM(name='sample02', version='0.1', release='1.sm01', epoch='1', packager=ALMALINUX_PACKAGER, arch='noarch',
+            pgpsig='SOME_OTHER_SIG_X'),
+        RPM(name='sample03', version='0.1', release='1.sm01', epoch='1', packager=ALMALINUX_PACKAGER, arch='noarch',
+            pgpsig='RSA/SHA256, Mon 01 Jan 1970 00:00:00 AM -03, Key ID 51d6647ec21ad6ea'),
+        RPM(name='sample04', version='0.1', release='1.sm01', epoch='1', packager=ALMALINUX_PACKAGER, arch='noarch',
+            pgpsig='SOME_OTHER_SIG_X'),
+    ]
+
+    current_actor_context.feed(InstalledRPM(items=installed_rpm))
+    current_actor_context.run(config_model=config)
+    assert current_actor_context.consume(DistributionSignedRPM)
+    assert len(current_actor_context.consume(DistributionSignedRPM)[0].items) == 2
+    assert current_actor_context.consume(InstalledRedHatSignedRPM)
+    assert not current_actor_context.consume(InstalledRedHatSignedRPM)[0].items
+    assert current_actor_context.consume(InstalledUnsignedRPM)
+    assert len(current_actor_context.consume(InstalledUnsignedRPM)[0].items) == 2
 
 
 def test_actor_execution_with_unknown_distro(current_actor_context):
