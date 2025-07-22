@@ -18,6 +18,8 @@ from leapp.models import GpgKey, InstalledRPM, RPM
     ('9.2', 'ga', 'rhel', '../../files/distro/rhel/rpm-gpg/9'),
     ('10.0', 'ga', 'rhel', '../../files/distro/rhel/rpm-gpg/10'),
     ('10', 'ga', 'centos', '../../files/distro/centos/rpm-gpg/10'),
+    ('9.6', 'ga', 'almalinux', '../../files/distro/almalinux/rpm-gpg/9'),
+    ('10.0', 'ga', 'almalinux', '../../files/distro/almalinux/rpm-gpg/10'),
 ])
 def test_get_path_to_gpg_certs(monkeypatch, target, product_type, distro, exp):
     current_actor = CurrentActorMocked(dst_ver=target, release_id=distro,

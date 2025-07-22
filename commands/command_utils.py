@@ -36,11 +36,13 @@ class _VersionKind(str, Enum):
 class DistroIDs(str, Enum):
     RHEL = 'rhel'
     CENTOS = 'centos'
+    ALMALINUX = 'almalinux'
 
 
 _DISTRO_VERSION_FORMATS = {
     DistroIDs.RHEL: VersionFormats.MAJOR_MINOR,
     DistroIDs.CENTOS: VersionFormats.MAJOR_ONLY,
+    DistroIDs.ALMALINUX: VersionFormats.MAJOR_MINOR,
 }
 """
 Maps distro ID to the expected OS version format.
