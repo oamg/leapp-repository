@@ -339,7 +339,7 @@ install-deps-fedora:
 		$(VENVNAME)/bin/pip install -I "git+https://github.com/oamg/leapp.git@refs/pull/$(REQ_LEAPP_PR)/head"; \
 	fi
 
-lint:
+lint: _warn_misssing_repos_if_using_actor
 	. $(VENVNAME)/bin/activate; \
 	echo "--- Linting ... ---" && \
 	SEARCH_PATH="$(TEST_PATHS)" && \
@@ -375,14 +375,7 @@ lint_fix:
 	git diff $(MASTER_BRANCH) --name-only --diff-filter AMR | grep -v "^docs/" | xargs isort && \
 	echo "--- isort inplace fixing done. ---;"
 
-test_no_lint:
-	@if [ -z "$(REPOSITORIES)" -a -n "$(ACTOR)" ]; then \
-		printf "\033[0;31mWARNING\033[0m: Running tests with ACTOR without"; \
-		printf " specifying REPOSITORIES is currently broken.\n" 2>&1; \
-		printf "         Specify REPOSITORIES with only one elXtoelY repository"; \
-		printf " (e.g. REPOSITORIES=common,el8toel9).\n" 2>&1; \
-		exit 1; \	
-	fi
+test_no_lint: _warn_misssing_repos_if_using_actor
 
 	@echo "============= snactor sanity-check ipu ===============" 2>&1
 	. $(VENVNAME)/bin/activate; \
@@ -538,5 +531,14 @@ dashboard_data:
 	$(_PYTHON_VENV) ../../../utils/dashboard-json-dump.py > ../../../discover.json; \
 	popd
 
-.PHONY: help build clean prepare source srpm copr_build _build_local build_container print_release register install-deps install-deps-fedora  lint test_no_lint test dashboard_data fast_lint
+_warn_misssing_repos_if_using_actor:
+	@if [ -z "$(REPOSITORIES)" -a -n "$(ACTOR)" ]; then \
+		printf "\033[0;31mERROR\033[0m: Running linters/tests with ACTOR without"; \
+		printf " specifying REPOSITORIES is currently broken.\n" 2>&1; \
+		printf "         Specify REPOSITORIES with only one elXtoelY repository"; \
+		printf " (e.g. REPOSITORIES=common,el8toel9).\n" 2>&1; \
+		exit 1; \
+	fi
+
+.PHONY: help build clean prepare source srpm copr_build _build_local build_container print_release register install-deps install-deps-fedora  lint test_no_lint test dashboard_data fast_lint _warn_missing_repos_if_using_actor
 .PHONY: test_container test_container_no_lint test_container_all test_container_all_no_lint clean_containers _build_container_image _test_container_ipu dev_test_no_lint
