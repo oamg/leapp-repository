@@ -1,6 +1,6 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import checkleftoverpackages
-from leapp.models import InstalledUnsignedRPM, LeftoverPackages, TransactionCompleted
+from leapp.models import LeftoverPackages, ThirdPartyRPM, TransactionCompleted
 from leapp.tags import IPUWorkflowTag, RPMUpgradePhaseTag
 
 
@@ -13,7 +13,7 @@ class CheckLeftoverPackages(Actor):
     """
 
     name = 'check_leftover_packages'
-    consumes = (TransactionCompleted, InstalledUnsignedRPM)
+    consumes = (TransactionCompleted, ThirdPartyRPM)
     produces = (LeftoverPackages,)
     tags = (RPMUpgradePhaseTag, IPUWorkflowTag)
 
