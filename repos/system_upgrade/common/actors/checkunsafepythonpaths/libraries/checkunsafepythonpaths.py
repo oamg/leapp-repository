@@ -13,17 +13,12 @@ def find_python_executables():
     whereis_result = run(['whereis', '-b', 'python'])['stdout']
     paths = whereis_result.split()[1:]  # Remove the "python: " from start
     for path in paths:
-        if os.path.isfile(path) and os.access(path, os.X_OK):
-            try:
-                # Verify it's a Python executable
-                version = run([path, '--version'], checked=False)
-                if version['exit_code'] != 0:
-                    continue
+        version = run([path, '--version'], checked=False)
+        if version['exit_code'] != 0:
+            continue
 
-                if version['stdout'].startswith('Python'):
-                    python_executables.add(os.path.realpath(path))
-            except Exception as e:
-                api.current_logger().info('Skipping path {path} for inspection of python modules: {e}'
+        if version['stdout'].startswith('Python'):
+            python_executables.add(os.path.realpath(path))
                                           .format(path=path, e=e))
 
     return list(python_executables)
@@ -90,8 +85,6 @@ def identify_third_party_modules(all_paths):
                             processed_module_paths.add(full_item_path)
         except PermissionError:
             api.current_logger().error('Insufficient access permission for path {path}'.format(path=dir_path))
-        except Exception as e:
-            api.current_logger().error('Unexpedted error for path {path}: {e}'.format(path=dir_path, e=e))
 
     api.current_logger().info("Identified 3rd-party modules: {modules} .".format(modules=third_party_modules))
     return third_party_modules
@@ -105,7 +98,7 @@ def process():
 
     all_unsafe_paths = list(third_party_modules.values())
 
-    if all_unsafe_paths: 
+    if all_unsafe_paths:
         sorted_unsafe_paths = sorted(all_unsafe_paths)
         formatted_paths_for_summary = ', '.join(sorted_unsafe_paths)
 
