@@ -28,9 +28,9 @@ _LEAPP_PACKAGES_MAP = {
                                     },
         LeappComponents.REPOSITORY: {'7': {'pkgs': ['leapp-upgrade-el7toel8'],
                                            'deps': ['leapp-upgrade-el7toel8-deps']},
-                                     '8': {'pkgs': ['leapp-upgrade-el8toel9'],
+                                     '8': {'pkgs': ['leapp-upgrade-el8toel9', 'leapp-upgrade-el8toel9-fapolicyd'],
                                            'deps': ['leapp-upgrade-el8toel9-deps']},
-                                     '9': {'pkgs': ['leapp-upgrade-el9toel10'],
+                                     '9': {'pkgs': ['leapp-upgrade-el9toel10', 'leapp-upgrade-el9toel10-fapolicyd'],
                                            'deps': ['leapp-upgrade-el9toel10-deps']}
                                      },
         LeappComponents.COCKPIT: {'7': {'pkgs': ['cockpit-leapp']},
