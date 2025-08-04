@@ -130,6 +130,10 @@ Requires:       leapp
 # uncompressing redhat-release package from the ISO.
 Requires:   cpio
 
+# Subpackage for managing fapolicyd rules for %{lpr_name} installed only if
+# fapolicyd is present on the system
+Requires:       (%{lpr_name}-fapolicyd = %{version}-%{release} if fapolicyd)
+
 # The leapp-repository rpm is renamed to %%{lpr_name}
 Obsoletes:      leapp-repository < 0.14.0-%{release}
 Provides:       leapp-repository = %{version}-%{release}
@@ -227,6 +231,15 @@ Requires:   libdb-utils
 %{summary}
 
 
+%package -n %{lpr_name}-fapolicyd
+Summary:    Manage fapolicyd rules for %{lpr_name} during the upgrade
+
+Requires:   fapolicyd
+
+%description -n %{lpr_name}-fapolicyd
+%{summary}
+
+
 %prep
 %setup -n %{name}-%{version}
 %setup -q  -n %{name}-%{version} -D -T -a 1
@@ -249,6 +262,10 @@ install -m 0755 -d %{buildroot}%{_sysconfdir}/leapp/transaction/
 install -m 0755 -d %{buildroot}%{_sysconfdir}/leapp/files/
 install -m 0644 etc/leapp/transaction/* %{buildroot}%{_sysconfdir}/leapp/transaction
 install -m 0644 etc/leapp/files/* %{buildroot}%{_sysconfdir}/leapp/files
+
+# install rules necessary for fapolicy
+mkdir -p %{buildroot}%{_sysconfdir}/fapolicyd/rules.d/
+install -m 0644 etc/fapolicyd/rules.d/31-leapp-repository.rules %{buildroot}%{_sysconfdir}/fapolicyd/rules.d
 
 # uncomment to install existing configs if any exists
 #install -m 0644 etc/leapp/actor_conf.d/* %%{buildroot}%%{_sysconfdir}/leapp/actor_conf.d
@@ -291,6 +308,12 @@ done;
 %endif
 
 
+%posttrans -n %{lpr_name}-fapolicyd
+if systemctl is-active --quiet fapolicyd; then
+    systemctl restart fapolicyd
+fi
+
+
 %files -n %{lpr_name}
 %doc README.md
 %license LICENSE
@@ -312,6 +335,9 @@ done;
 %files -n %{lpr_name}-deps
 # no files here
 
+
+%files -n %{lpr_name}-fapolicyd
+%attr(644, root, fapolicyd) %config %{_sysconfdir}/fapolicyd/rules.d/31-leapp-repository.rules
 
 # DO NOT TOUCH SECTION BELOW IN UPSTREAM
 %changelog

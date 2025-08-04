@@ -37,10 +37,10 @@ def test_parse_config_modification():
 
 
 @pytest.mark.parametrize('major_version,component,result', [
-   (None, None, ['leapp', 'python3-leapp', 'leapp-upgrade-el8toel9', 'snactor']),
+   (None, None, ['leapp', 'python3-leapp', 'leapp-upgrade-el8toel9', 'leapp-upgrade-el8toel9-fapolicyd', 'snactor']),
    ('7', None, ['leapp', 'python2-leapp', 'leapp-upgrade-el7toel8', 'snactor']),
    (['7', '8'], None, ['leapp', 'python2-leapp', 'leapp-upgrade-el7toel8',
-                       'python3-leapp', 'leapp-upgrade-el8toel9', 'snactor']),
+                       'python3-leapp', 'leapp-upgrade-el8toel9', 'leapp-upgrade-el8toel9-fapolicyd', 'snactor']),
    ('8', 'framework', ['leapp', 'python3-leapp']),
    ])
 def test_get_leapp_packages(major_version, component, result, monkeypatch):
