@@ -3,6 +3,15 @@ from leapp.topics import BootPrepTopic, SystemInfoTopic
 from leapp.utils.deprecation import deprecated
 
 
+# Note that this is the only model about the source (rather than upgrade) initramfs
+class DefaultInitramfsInfo(Model):
+    """ Information about the initramfs image that corresponds to the default source boot entry """
+    topic = SystemInfoTopic
+
+    path = fields.String()
+    used_dracut_modules = fields.List(fields.String(), default=[])
+
+
 class DracutModule(Model):
     """
     Specify a dracut module that should be included into the initramfs
