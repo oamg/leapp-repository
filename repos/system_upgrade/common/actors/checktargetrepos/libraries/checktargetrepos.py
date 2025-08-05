@@ -40,9 +40,10 @@ def process():
 
     rhui_info = next(api.consume(RHUIInfo), None)
 
-    if not rhsm.skip_rhsm() or rhui_info:
-        # getting RH repositories through RHSM or RHUI; resolved by seatbelts
-        # implemented in other actors
+    if config.get_distro_id() != 'rhel' or (not rhsm.skip_rhsm() or rhui_info):
+        # RHEL: getting RH repositories through RHSM or RHUI;
+        #       resolved by seatbelts in other actors
+        # other: distro repos provided by the distro directly, seatbelts elsewhere
         return
 
     # rhsm skipped; take your seatbelts please

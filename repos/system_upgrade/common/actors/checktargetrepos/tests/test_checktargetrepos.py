@@ -65,9 +65,7 @@ _CUSTOM_TARGET_REPOFILE = CustomTargetRepositoryFile(file='/etc/leapp/files/leap
 def test_checktargetrepos_rhsm(monkeypatch):
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
     monkeypatch.setattr(rhsm, 'skip_rhsm', lambda: False)
-    monkeypatch.setattr(api, 'consume', MockedConsume())
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked())
-    monkeypatch.setattr(checktargetrepos, 'get_target_major_version', lambda: '8')
     checktargetrepos.process()
     assert reporting.create_report.called == 0
 
