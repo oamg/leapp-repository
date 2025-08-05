@@ -6,7 +6,9 @@ from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 class Checktargetrepos(Actor):
     """
-    Check whether target yum repositories are specified.
+    Check whether target dnf repositories are specified on RHEL.
+
+    NOTE: this actor does nothing on distros other than RHEL.
 
     RHSM | RHUI | ER | CTR | CTRF || result
     -----+------+----+-----+------++-------
