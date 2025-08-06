@@ -496,6 +496,7 @@ fast_lint:
 	@. $(VENVNAME)/bin/activate; \
 	FILES_TO_LINT="$$(git diff --name-only $(MASTER_BRANCH) --diff-filter AMR | grep '\.py$$')"; \
 	if [[ -n "$$FILES_TO_LINT" ]]; then \
+		isort -c --diff $$FILES_TO_LINT && \
 		pylint -j 0 $$FILES_TO_LINT $(PYLINT_ARGS) && \
 		flake8 $$FILES_TO_LINT $(FLAKE8_ARGS); \
 		LINT_EXIT_CODE="$$?"; \
