@@ -143,7 +143,7 @@ def get_distro_id():
     :return: The OS release ID from /etc/os-release
     :rtype: str
     """
-    return _retrieve_os_release_contents('/etc/os-release').get('VERSION_ID', '')
+    return _retrieve_os_release_contents('/etc/os-release').get('ID', '')
 
 
 def get_upgrade_paths_config():
