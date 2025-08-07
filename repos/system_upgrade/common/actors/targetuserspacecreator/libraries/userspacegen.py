@@ -6,7 +6,7 @@ import shutil
 from leapp import reporting
 from leapp.exceptions import StopActorExecution, StopActorExecutionError
 from leapp.libraries.actor import constants
-from leapp.libraries.common import dnfplugin, mounting, overlaygen, repofileutils, rhsm, utils
+from leapp.libraries.common import distro, dnfplugin, mounting, overlaygen, repofileutils, rhsm, utils
 from leapp.libraries.common.config import get_distro_id, get_env, get_product_type
 from leapp.libraries.common.config.version import get_target_major_version
 from leapp.libraries.common.gpg import get_path_to_gpg_certs, is_nogpgcheck_set
@@ -58,6 +58,7 @@ from leapp.utils.deprecation import suppress_deprecation
 PROD_CERTS_FOLDER = 'prod-certs'
 PERSISTENT_PACKAGE_CACHE_DIR = '/var/lib/leapp/persistent_package_cache'
 DEDICATED_LEAPP_PART_URL = 'https://access.redhat.com/solutions/7011704'
+FMT_LIST_SEPARATOR = '\n    - '
 
 
 def _check_deprecated_rhsm_skip():
@@ -815,20 +816,17 @@ def _get_all_available_repoids(context):
     return set(repoids)
 
 
-def _get_rhsm_available_repoids(context):
-    target_major_version = get_target_major_version()
+def _inhibit_if_no_base_repos(distro_repoids):
     # FIXME: check that required repo IDs (baseos, appstream)
     # + or check that all required RHEL repo IDs are available.
-    if rhsm.skip_rhsm():
-        return set()
-    # Get the RHSM repos available in the target RHEL container
-    # TODO: very similar thing should happens for all other repofiles in container
-    #
-    repoids = rhsm.get_available_repo_ids(context)
+
+    target_major_version = get_target_major_version()
     # NOTE(ivasilev) For the moment at least AppStream and BaseOS repos are required. While we are still
     # contemplating on what can be a generic solution to checking this, let's introduce a minimal check for
     # at-least-one-appstream and at-least-one-baseos among present repoids
-    if not repoids or all("baseos" not in ri for ri in repoids) or all("appstream" not in ri for ri in repoids):
+    no_baseos = all("baseos" not in ri for ri in distro_repoids)
+    no_appstream = all("appstream" not in ri for ri in distro_repoids)
+    if not distro_repoids or no_baseos or no_appstream:
         reporting.create_report([
             reporting.Title('Cannot find required basic RHEL target repositories.'),
             reporting.Summary(
@@ -861,21 +859,6 @@ def _get_rhsm_available_repoids(context):
                 title='Preparing for the upgrade')
             ])
         raise StopActorExecution()
-    return set(repoids)
-
-
-def _get_rhui_available_repoids(context, cloud_repo):
-    repofiles = repofileutils.get_parsed_repofiles(context)
-
-    # TODO: same refactoring as Issue #486?
-    _inhibit_on_duplicate_repos(repofiles)
-    repoids = []
-    for rfile in repofiles:
-        if rfile.file == cloud_repo and rfile.data:
-            repoids = [repo.repoid for repo in rfile.data]
-            repoids.sort()
-            break
-    return set(repoids)
 
 
 def get_copy_location_from_copy_in_task(context_basepath, copy_task):
@@ -886,13 +869,24 @@ def get_copy_location_from_copy_in_task(context_basepath, copy_task):
     return copy_task.dst
 
 
-def _get_rh_available_repoids(context, indata):
+def _get_distro_available_repoids(context, indata):
     """
-    RH repositories are provided either by RHSM or are stored in the expected repo file provided by
-    RHUI special packages (every cloud provider has itw own rpm).
-    """
+    Get repoids provided by the distribution
 
-    rh_repoids = _get_rhsm_available_repoids(context)
+    On RHEL: RH repositories are provided either by RHSM or are stored in the expected repo file provided by
+             RHUI special packages (every cloud provider has itw own rpm).
+             If RHSM is skipped there are no repoids.
+    Others: Repositories are provided in specific repofiles (e.g. centos.repo and centos-addons.repo on CS)
+
+    :return: A list of repoids provided by distribution
+    :rtype: List[String]
+    """
+    if get_distro_id() == 'rhel' and rhsm.skip_rhsm():
+        return []
+
+    distro_repoids = distro.get_distro_repoids(context)
+
+    _inhibit_if_no_base_repos(distro_repoids)
 
     # If we are upgrading a RHUI system, check what repositories are provided by the (already installed) target clients
     if indata and indata.rhui_info:
@@ -948,7 +942,7 @@ def _get_rh_available_repoids(context, indata):
             repolist_result = context.call(dnf_cmd)['stdout']
             repoid_lines = [line for line in repolist_result.split('\n') if line.startswith('Repo-id')]
             rhui_repoids = {extract_repoid_from_line(line) for line in repoid_lines}
-            rh_repoids.update(rhui_repoids)
+            distro_repoids.update(rhui_repoids)
 
         except CalledProcessError as err:
             details = {'err': err.stderr, 'details': str(err)}
@@ -962,10 +956,7 @@ def _get_rh_available_repoids(context, indata):
             for foreign_repofile in foreign_repofiles:
                 os.rename('{0}.back'.format(foreign_repofile), foreign_repofile)
 
-    api.current_logger().debug(
-        'The following repofiles are considered as provided by RedHat: {0}'.format(' '.join(rh_repoids))
-    )
-    return rh_repoids
+    return distro_repoids
 
 
 @suppress_deprecation(RHELTargetRepository)  # member of TargetRepositories
@@ -988,15 +979,29 @@ def gather_target_repositories(context, indata):
     :return: List of target system repoids
     :rtype: List(string)
     """
-    rh_available_repoids = _get_rh_available_repoids(context, indata)
-    all_available_repoids = _get_all_available_repoids(context)
+
+    distro_repoids = _get_distro_available_repoids(context, indata)
+    if distro_repoids:
+        api.current_logger().info(
+            "The following repoids are considered as provided by the '{}' distribution:{}{}".format(
+                get_distro_id(), FMT_LIST_SEPARATOR, FMT_LIST_SEPARATOR.join(distro_repoids)
+            )
+        )
+    else:
+        api.current_logger().info(
+            "The following repoids are considered as provided by the '{}' distribution: []".format(
+                get_distro_id()
+            )
+        )
+
+    all_repoids = _get_all_available_repoids(context)
 
     target_repoids = []
     missing_custom_repoids = []
     for target_repo in api.consume(TargetRepositories):
-        for rhel_repo in target_repo.rhel_repos:
-            if rhel_repo.repoid in rh_available_repoids:
-                target_repoids.append(rhel_repo.repoid)
+        for distro_repo in target_repo.distro_repos:
+            if distro_repo.repoid in distro_repoids:
+                target_repoids.append(distro_repo.repoid)
             else:
                 # TODO: We shall report that the RHEL repos that we deem necessary for
                 # the upgrade are not available; but currently it would just print bunch of
@@ -1005,12 +1010,14 @@ def gather_target_repositories(context, indata):
                 # of the upgrade. Let's skip it for now until it's clear how we will deal
                 # with it.
                 pass
+
         for custom_repo in target_repo.custom_repos:
-            if custom_repo.repoid in all_available_repoids:
+            if custom_repo.repoid in all_repoids:
                 target_repoids.append(custom_repo.repoid)
             else:
                 missing_custom_repoids.append(custom_repo.repoid)
     api.current_logger().debug("Gathered target repositories: {}".format(', '.join(target_repoids)))
+
     if not target_repoids:
         target_major_version = get_target_major_version()
         reporting.create_report([

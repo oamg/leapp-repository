@@ -1115,7 +1115,9 @@ def test_gather_target_repositories_rhui(monkeypatch):
     monkeypatch.setattr(userspacegen.api, 'current_actor', CurrentActorMocked())
     monkeypatch.setattr(userspacegen, '_get_all_available_repoids', lambda x: [])
     monkeypatch.setattr(
-        userspacegen, '_get_rh_available_repoids', lambda x, y: ['rhui-1', 'rhui-2', 'rhui-3']
+        userspacegen,
+        "_get_distro_available_repoids",
+        lambda x, y: ["rhui-1", "rhui-2", "rhui-3"],
     )
     monkeypatch.setattr(rhsm, 'skip_rhsm', lambda: True)
     monkeypatch.setattr(
@@ -1193,6 +1195,20 @@ def test_gather_target_repositories_baseos_appstream_not_available(monkeypatch):
     inhibitors = [m for m in reports if 'inhibitor' in m.get('groups', ())]
     assert len(inhibitors) == 1
     assert inhibitors[0].get('title', '') == 'Cannot find required basic RHEL target repositories.'
+
+
+def test__get_distro_available_repoids_norhsm(monkeypatch):
+    """
+    Empty list should be returned when on rhel and skip_rhsm == Trrue
+    """
+    monkeypatch.setattr(
+        userspacegen.api, "current_actor", CurrentActorMocked(release_id='rhel')
+    )
+
+    monkeypatch.setattr(rhsm, 'skip_rhsm', lambda: True)
+
+    repoids = userspacegen._get_distro_available_repoids(None, None)
+    assert repoids == []
 
 
 def mocked_consume_data():
