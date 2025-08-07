@@ -6,7 +6,7 @@ import shutil
 from leapp import reporting
 from leapp.exceptions import StopActorExecution, StopActorExecutionError
 from leapp.libraries.actor import constants
-from leapp.libraries.common import dnfplugin, mounting, overlaygen, repofileutils, rhsm, utils
+from leapp.libraries.common import distro, dnfplugin, mounting, overlaygen, repofileutils, rhsm, utils
 from leapp.libraries.common.config import get_distro_id, get_env, get_product_type
 from leapp.libraries.common.config.version import get_target_major_version
 from leapp.libraries.common.gpg import get_path_to_gpg_certs, is_nogpgcheck_set
@@ -58,6 +58,7 @@ from leapp.utils.deprecation import suppress_deprecation
 PROD_CERTS_FOLDER = 'prod-certs'
 PERSISTENT_PACKAGE_CACHE_DIR = '/var/lib/leapp/persistent_package_cache'
 DEDICATED_LEAPP_PART_URL = 'https://access.redhat.com/solutions/7011704'
+FMT_LIST_SEPARATOR = '\n    - '
 
 
 def _check_deprecated_rhsm_skip():
@@ -778,7 +779,7 @@ def _inhibit_on_duplicate_repos(repofiles):
     list_separator_fmt = '\n    - '
     api.current_logger().warning(
         'The following repoids are defined multiple times:{0}{1}'
-        .format(list_separator_fmt, list_separator_fmt.join(duplicates))
+        .format(list_separator_fmt, list_separator_fmt.join(sorted(duplicates)))
     )
 
     reporting.create_report([
@@ -786,7 +787,7 @@ def _inhibit_on_duplicate_repos(repofiles):
         reporting.Summary(
             'The following repositories are defined multiple times inside the'
             ' "upgrade" container:{0}{1}'
-            .format(list_separator_fmt, list_separator_fmt.join(duplicates))
+            .format(list_separator_fmt, list_separator_fmt.join(sorted(duplicates)))
         ),
         reporting.Severity(reporting.Severity.MEDIUM),
         reporting.Groups([reporting.Groups.REPOSITORY]),
@@ -815,21 +816,19 @@ def _get_all_available_repoids(context):
     return set(repoids)
 
 
-def _get_rhsm_available_repoids(context):
-    target_major_version = get_target_major_version()
+def _inhibit_if_no_base_repos(distro_repoids):
     # FIXME: check that required repo IDs (baseos, appstream)
     # + or check that all required RHEL repo IDs are available.
-    if rhsm.skip_rhsm():
-        return set()
-    # Get the RHSM repos available in the target RHEL container
-    # TODO: very similar thing should happens for all other repofiles in container
-    #
-    repoids = rhsm.get_available_repo_ids(context)
+
+    target_major_version = get_target_major_version()
     # NOTE(ivasilev) For the moment at least AppStream and BaseOS repos are required. While we are still
     # contemplating on what can be a generic solution to checking this, let's introduce a minimal check for
     # at-least-one-appstream and at-least-one-baseos among present repoids
-    if not repoids or all("baseos" not in ri for ri in repoids) or all("appstream" not in ri for ri in repoids):
+    no_baseos = all("baseos" not in ri for ri in distro_repoids)
+    no_appstream = all("appstream" not in ri for ri in distro_repoids)
+    if no_baseos or no_appstream:
         reporting.create_report([
+            # TODO: Make the report distro agnostic
             reporting.Title('Cannot find required basic RHEL target repositories.'),
             reporting.Summary(
                 'This can happen when a repository ID was entered incorrectly either while using the --enablerepo'
@@ -861,21 +860,6 @@ def _get_rhsm_available_repoids(context):
                 title='Preparing for the upgrade')
             ])
         raise StopActorExecution()
-    return set(repoids)
-
-
-def _get_rhui_available_repoids(context, cloud_repo):
-    repofiles = repofileutils.get_parsed_repofiles(context)
-
-    # TODO: same refactoring as Issue #486?
-    _inhibit_on_duplicate_repos(repofiles)
-    repoids = []
-    for rfile in repofiles:
-        if rfile.file == cloud_repo and rfile.data:
-            repoids = [repo.repoid for repo in rfile.data]
-            repoids.sort()
-            break
-    return set(repoids)
 
 
 def get_copy_location_from_copy_in_task(context_basepath, copy_task):
@@ -886,86 +870,106 @@ def get_copy_location_from_copy_in_task(context_basepath, copy_task):
     return copy_task.dst
 
 
-def _get_rh_available_repoids(context, indata):
+def _get_rhui_available_repoids(context, rhui_info):
     """
-    RH repositories are provided either by RHSM or are stored in the expected repo file provided by
-    RHUI special packages (every cloud provider has itw own rpm).
+    Get repoids provided by the RHUI target clients
+
+    :rtype: set[str]
     """
-
-    rh_repoids = _get_rhsm_available_repoids(context)
-
     # If we are upgrading a RHUI system, check what repositories are provided by the (already installed) target clients
-    if indata and indata.rhui_info:
-        setup_info = indata.rhui_info.target_client_setup_info
-        target_content_access_files = set()
-        if setup_info.bootstrap_target_client:
-            target_content_access_files = _query_rpm_for_pkg_files(context, indata.rhui_info.target_client_pkg_names)
+    setup_info = rhui_info.target_client_setup_info
+    target_content_access_files = set()
+    if setup_info.bootstrap_target_client:
+        target_content_access_files = _query_rpm_for_pkg_files(context, rhui_info.target_client_pkg_names)
 
-        def is_repofile(path):
-            return os.path.dirname(path) == '/etc/yum.repos.d' and os.path.basename(path).endswith('.repo')
+    def is_repofile(path):
+        return os.path.dirname(path) == '/etc/yum.repos.d' and os.path.basename(path).endswith('.repo')
 
-        def extract_repoid_from_line(line):
-            return line.split(':', 1)[1].strip()
+    def extract_repoid_from_line(line):
+        return line.split(':', 1)[1].strip()
 
-        target_ver = api.current_actor().configuration.version.target
-        setup_tasks = indata.rhui_info.target_client_setup_info.preinstall_tasks.files_to_copy_into_overlay
+    target_ver = api.current_actor().configuration.version.target
+    setup_tasks = rhui_info.target_client_setup_info.preinstall_tasks.files_to_copy_into_overlay
 
-        yum_repos_d = context.full_path('/etc/yum.repos.d')
-        all_repofiles = {os.path.join(yum_repos_d, path) for path in os.listdir(yum_repos_d) if path.endswith('.repo')}
-        api.current_logger().debug('(RHUI Setup) All available repofiles: {0}'.format(' '.join(all_repofiles)))
+    yum_repos_d = context.full_path('/etc/yum.repos.d')
+    all_repofiles = {os.path.join(yum_repos_d, path) for path in os.listdir(yum_repos_d) if path.endswith('.repo')}
+    api.current_logger().debug('(RHUI Setup) All available repofiles: {0}'.format(' '.join(all_repofiles)))
 
-        target_access_repofiles = {
-            context.full_path(path) for path in target_content_access_files if is_repofile(path)
-        }
+    target_access_repofiles = {
+        context.full_path(path) for path in target_content_access_files if is_repofile(path)
+    }
 
-        # Exclude repofiles used to setup the target rhui access as on some platforms the repos provided by
-        # the client are not sufficient to install the client into target userspace (GCP)
-        rhui_setup_repofile_tasks = [task for task in setup_tasks if task.src.endswith('repo')]
-        rhui_setup_repofiles = (
-            get_copy_location_from_copy_in_task(context.base_dir, copy) for copy in rhui_setup_repofile_tasks
-        )
-        rhui_setup_repofiles = {context.full_path(repofile) for repofile in rhui_setup_repofiles}
+    # Exclude repofiles used to setup the target rhui access as on some platforms the repos provided by
+    # the client are not sufficient to install the client into target userspace (GCP)
+    rhui_setup_repofile_tasks = [task for task in setup_tasks if task.src.endswith('repo')]
+    rhui_setup_repofiles = (
+        get_copy_location_from_copy_in_task(context.base_dir, copy) for copy in rhui_setup_repofile_tasks
+    )
+    rhui_setup_repofiles = {context.full_path(repofile) for repofile in rhui_setup_repofiles}
 
-        foreign_repofiles = all_repofiles - target_access_repofiles - rhui_setup_repofiles
-
-        api.current_logger().debug(
-            'The following repofiles are considered as unknown to'
-            ' the target RHUI content setup and will be ignored: {0}'.format(' '.join(foreign_repofiles))
-        )
-
-        # Rename non-client repofiles so they will not be recognized when running dnf repolist
-        for foreign_repofile in foreign_repofiles:
-            os.rename(foreign_repofile, '{0}.back'.format(foreign_repofile))
-
-        try:
-            dnf_cmd = [
-                'dnf', 'repolist',
-                '--releasever', target_ver, '-v',
-                '--enablerepo', '*',
-                '--disablerepo', '*-source-*',
-                '--disablerepo', '*-debug-*',
-            ]
-            repolist_result = context.call(dnf_cmd)['stdout']
-            repoid_lines = [line for line in repolist_result.split('\n') if line.startswith('Repo-id')]
-            rhui_repoids = {extract_repoid_from_line(line) for line in repoid_lines}
-            rh_repoids.update(rhui_repoids)
-
-        except CalledProcessError as err:
-            details = {'err': err.stderr, 'details': str(err)}
-            raise StopActorExecutionError(
-                message='Failed to retrieve repoids provided by target RHUI clients.',
-                details=details
-            )
-
-        finally:
-            # Revert the renaming of non-client repofiles
-            for foreign_repofile in foreign_repofiles:
-                os.rename('{0}.back'.format(foreign_repofile), foreign_repofile)
+    foreign_repofiles = all_repofiles - target_access_repofiles - rhui_setup_repofiles
 
     api.current_logger().debug(
-        'The following repofiles are considered as provided by RedHat: {0}'.format(' '.join(rh_repoids))
+        'The following repofiles are considered as unknown to'
+        ' the target RHUI content setup and will be ignored: {0}'.format(' '.join(foreign_repofiles))
     )
-    return rh_repoids
+
+    # Rename non-client repofiles so they will not be recognized when running dnf repolist
+    for foreign_repofile in foreign_repofiles:
+        os.rename(foreign_repofile, '{0}.back'.format(foreign_repofile))
+
+    rhui_repoids = set()
+    try:
+        dnf_cmd = [
+            'dnf', 'repolist',
+            '--releasever', target_ver, '-v',
+            '--enablerepo', '*',
+            '--disablerepo', '*-source-*',
+            '--disablerepo', '*-debug-*',
+        ]
+        repolist_result = context.call(dnf_cmd)['stdout']
+        repoid_lines = [line for line in repolist_result.split('\n') if line.startswith('Repo-id')]
+        rhui_repoids.update({extract_repoid_from_line(line) for line in repoid_lines})
+
+    except CalledProcessError as err:
+        details = {'err': err.stderr, 'details': str(err)}
+        raise StopActorExecutionError(
+            message='Failed to retrieve repoids provided by target RHUI clients.',
+            details=details
+        )
+
+    finally:
+        # Revert the renaming of non-client repofiles
+        for foreign_repofile in foreign_repofiles:
+            os.rename('{0}.back'.format(foreign_repofile), foreign_repofile)
+
+    return rhui_repoids
+
+
+def _get_distro_available_repoids(context, indata):
+    """
+    Get repoids provided by the distribution
+
+    On RHEL: RH repositories are provided either by RHSM or are stored in the
+             expected repo file provided by RHUI special packages (every cloud
+             provider has itw own rpm).
+    On other: Repositories are provided in specific repofiles (e.g. centos.repo
+              and centos-addons.repo on CS)
+
+    :return: A set of repoids provided by distribution
+    :rtype: set[str]
+    """
+    distro_repoids = distro.get_target_distro_repoids(context)
+    distro_id = get_distro_id()
+    rhel_and_rhsm = distro_id == 'rhel' and not rhsm.skip_rhsm()
+    if distro_id != 'rhel' or rhel_and_rhsm:
+        _inhibit_if_no_base_repos(distro_repoids)
+
+    if indata and indata.rhui_info:
+        rhui_repoids = _get_rhui_available_repoids(context, indata.rhui_info)
+        distro_repoids.extend(rhui_repoids)
+
+    return set(distro_repoids)
 
 
 @suppress_deprecation(RHELTargetRepository)  # member of TargetRepositories
@@ -986,17 +990,31 @@ def gather_target_repositories(context, indata):
     :param context: An instance of a mounting.IsolatedActions class
     :type context: mounting.IsolatedActions class
     :return: List of target system repoids
-    :rtype: List(string)
+    :rtype: set[str]
     """
-    rh_available_repoids = _get_rh_available_repoids(context, indata)
-    all_available_repoids = _get_all_available_repoids(context)
 
-    target_repoids = []
-    missing_custom_repoids = []
+    distro_repoids = _get_distro_available_repoids(context, indata)
+    if distro_repoids:
+        api.current_logger().info(
+            "The following repoids are considered as provided by the '{}' distribution:{}{}".format(
+                get_distro_id(),
+                FMT_LIST_SEPARATOR,
+                FMT_LIST_SEPARATOR.join(sorted(distro_repoids)),
+            )
+        )
+    else:
+        api.current_logger().warning(
+            "No repoids provided by the {} distribution have been discovered".format(get_distro_id())
+        )
+
+    all_repoids = _get_all_available_repoids(context)
+
+    target_repoids = set()
+    missing_custom_repoids = set()
     for target_repo in api.consume(TargetRepositories):
-        for rhel_repo in target_repo.rhel_repos:
-            if rhel_repo.repoid in rh_available_repoids:
-                target_repoids.append(rhel_repo.repoid)
+        for distro_repo in target_repo.distro_repos:
+            if distro_repo.repoid in distro_repoids:
+                target_repoids.add(distro_repo.repoid)
             else:
                 # TODO: We shall report that the RHEL repos that we deem necessary for
                 # the upgrade are not available; but currently it would just print bunch of
@@ -1005,12 +1023,16 @@ def gather_target_repositories(context, indata):
                 # of the upgrade. Let's skip it for now until it's clear how we will deal
                 # with it.
                 pass
+
         for custom_repo in target_repo.custom_repos:
-            if custom_repo.repoid in all_available_repoids:
-                target_repoids.append(custom_repo.repoid)
+            if custom_repo.repoid in all_repoids:
+                target_repoids.add(custom_repo.repoid)
             else:
-                missing_custom_repoids.append(custom_repo.repoid)
-    api.current_logger().debug("Gathered target repositories: {}".format(', '.join(target_repoids)))
+                missing_custom_repoids.add(custom_repo.repoid)
+    api.current_logger().debug(
+        "Gathered target repositories: {}".format(", ".join(sorted(target_repoids)))
+    )
+
     if not target_repoids:
         target_major_version = get_target_major_version()
         reporting.create_report([
@@ -1056,7 +1078,7 @@ def gather_target_repositories(context, indata):
                 ' while using the --enablerepo option of leapp, or in a third party actor that produces a'
                 ' CustomTargetRepositoryMessage.\n'
                 'The following repositories IDs could not be found in the target configuration:\n'
-                '- {}\n'.format('\n- '.join(missing_custom_repoids))
+                '- {}\n'.format('\n- '.join(sorted(missing_custom_repoids)))
             ),
             reporting.Groups([reporting.Groups.REPOSITORY]),
             reporting.Groups([reporting.Groups.INHIBITOR]),
@@ -1073,7 +1095,7 @@ def gather_target_repositories(context, indata):
             ))
         ])
         raise StopActorExecution()
-    return set(target_repoids)
+    return target_repoids
 
 
 def _install_custom_repofiles(context, custom_repofiles):
