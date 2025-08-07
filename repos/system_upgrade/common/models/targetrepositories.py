@@ -1,5 +1,6 @@
 from leapp.models import fields, Model
 from leapp.topics import TransactionTopic
+from leapp.reporting import deprecated
 
 
 class TargetRepositoryBase(Model):
@@ -11,7 +12,15 @@ class UsedTargetRepository(TargetRepositoryBase):
     pass
 
 
+@deprecated(
+    since="2025-07-23",
+    message="This model is deprecated, use DistroTargetRepository instead.",
+)
 class RHELTargetRepository(TargetRepositoryBase):
+    pass
+
+
+class DistroTargetRepository(TargetRepositoryBase):
     pass
 
 
@@ -32,12 +41,27 @@ class TargetRepositories(Model):
     are missing, upgrade can still continue.
     """
     topic = TransactionTopic
+
+    # WARN: deprecated, this has been superseded by distro_repos
     rhel_repos = fields.List(fields.Model(RHELTargetRepository))
     """
     Expected target YUM RHEL repositories provided via RHSM
 
     These repositories are stored inside /etc/yum.repos.d/redhat.repo and
     are expected to be used based on the provided repositories mapping.
+    """
+
+    distro_repos = fields.List(fields.Model(DistroTargetRepository))
+    """
+    Expected target DNF repositories provided by the distribution.
+
+    On RHEL these are the repositories provided via RHSM.
+    These repositories are stored inside /etc/yum.repos.d/redhat.repo and
+    are expected to be used based on the provided repositories mapping.
+
+    On other distributions, such as Centos Stream these are repositories
+    in /etc/yum.repos.d/ that are provided by the distribution and are expected
+    to be used based on the provided repositories mapping.
     """
 
     custom_repos = fields.List(fields.Model(CustomTargetRepository), default=[])

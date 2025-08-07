@@ -374,7 +374,7 @@ def request_configured_repos_to_be_enabled(rhui_config):
     config_repos_to_enable = rhui_config[RhuiTargetRepositoriesToUse.name]
     custom_repos = [CustomTargetRepository(repoid=repoid) for repoid in config_repos_to_enable]
     if custom_repos:
-        target_repos = TargetRepositories(custom_repos=custom_repos, rhel_repos=[])
+        target_repos = TargetRepositories(custom_repos=custom_repos, rhel_repos=[], distro_repos=[])
         api.produce(target_repos)
 
 

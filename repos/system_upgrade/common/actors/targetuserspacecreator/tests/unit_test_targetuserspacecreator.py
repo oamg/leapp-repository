@@ -1104,6 +1104,7 @@ def test_gather_target_repositories_none_available(monkeypatch):
         assert inhibitors[0].get('title', '') == 'Cannot find required basic RHEL target repositories.'
 
 
+@suppress_deprecation(models.RHELTargetRepository)
 def test_gather_target_repositories_rhui(monkeypatch):
 
     indata = testInData(
@@ -1122,6 +1123,10 @@ def test_gather_target_repositories_rhui(monkeypatch):
                 rhel_repos=[
                     models.RHELTargetRepository(repoid='rhui-1'),
                     models.RHELTargetRepository(repoid='rhui-2')
+                ],
+                distro_repos=[
+                    models.DistroTargetRepository(repoid='rhui-1'),
+                    models.DistroTargetRepository(repoid='rhui-2')
                 ]
             )
             ])

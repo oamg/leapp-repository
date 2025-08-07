@@ -1,3 +1,4 @@
+from leapp.utils.deprecation import suppress_deprecation
 import pytest
 
 from leapp import reporting
@@ -8,6 +9,7 @@ from leapp.libraries.stdlib import api
 from leapp.models import (
     CustomTargetRepository,
     CustomTargetRepositoryFile,
+    DistroTargetRepository,
     EnvVar,
     Report,
     RepositoryData,
@@ -32,11 +34,20 @@ class MockedConsume(object):
         return iter([msg for msg in self._msgs if isinstance(msg, model)])
 
 
-_RHEL_REPOS = [
-    RHELTargetRepository(repoid='repo1'),
-    RHELTargetRepository(repoid='repo2'),
-    RHELTargetRepository(repoid='repo3'),
-    RHELTargetRepository(repoid='repo4'),
+@suppress_deprecation(RHELTargetRepository)
+def _test_rhel_repos():
+    return [
+        RHELTargetRepository(repoid='repo1'),
+        RHELTargetRepository(repoid='repo2'),
+        RHELTargetRepository(repoid='repo3'),
+        RHELTargetRepository(repoid='repo4'),
+    ]
+
+_DISTRO_REPOS = [
+    DistroTargetRepository(repoid='repo1'),
+    DistroTargetRepository(repoid='repo2'),
+    DistroTargetRepository(repoid='repo3'),
+    DistroTargetRepository(repoid='repo4'),
 ]
 
 _CUSTOM_REPOS = [
@@ -46,8 +57,10 @@ _CUSTOM_REPOS = [
     CustomTargetRepository(repoid='repo4', name='repo4name', baseurl=None, enabled=True),
 ]
 
-_TARGET_REPOS_CUSTOM = TargetRepositories(rhel_repos=_RHEL_REPOS, custom_repos=_CUSTOM_REPOS)
-_TARGET_REPOS_NO_CUSTOM = TargetRepositories(rhel_repos=_RHEL_REPOS)
+_TARGET_REPOS_CUSTOM = TargetRepositories(
+    rhel_repos=_test_rhel_repos(), distro_repos=_DISTRO_REPOS, custom_repos=_CUSTOM_REPOS
+)
+_TARGET_REPOS_NO_CUSTOM = TargetRepositories(rhel_repos=_test_rhel_repos(), distro_repos=_DISTRO_REPOS)
 _CUSTOM_TARGET_REPOFILE = CustomTargetRepositoryFile(file='/etc/leapp/files/leapp_upgrade_repositories.repo')
 
 
