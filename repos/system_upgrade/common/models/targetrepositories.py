@@ -1,6 +1,6 @@
 from leapp.models import fields, Model
-from leapp.topics import TransactionTopic
 from leapp.reporting import deprecated
+from leapp.topics import TransactionTopic
 
 
 class TargetRepositoryBase(Model):
@@ -35,14 +35,16 @@ class TargetRepositories(Model):
     Repositories supposed to be used during the IPU process
 
     The list of the actually used repositories could be just subset
-    of these repositoies. In case of `custom_repositories`, all such repositories
+    of these repositories. In case of `custom_repositories`, all such repositories
     must be available otherwise the upgrade is inhibited. But in case of
-    `rhel_repos`, only BaseOS and Appstream repos are required now. If others
+    `distro_repos`, only BaseOS and Appstream repos are required now. If others
     are missing, upgrade can still continue.
+
+    Note: `rhel_repos` are deprecated, use `distro_repos` instead.
     """
     topic = TransactionTopic
 
-    # WARN: deprecated, this has been superseded by distro_repos
+    # DEPRECATED:, this has been superseded by distro_repos
     rhel_repos = fields.List(fields.Model(RHELTargetRepository))
     """
     Expected target YUM RHEL repositories provided via RHSM
