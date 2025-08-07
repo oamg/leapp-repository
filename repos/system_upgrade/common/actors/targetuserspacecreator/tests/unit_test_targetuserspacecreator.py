@@ -11,9 +11,9 @@ import pytest
 from leapp import models, reporting
 from leapp.exceptions import StopActorExecution, StopActorExecutionError
 from leapp.libraries.actor import userspacegen
-from leapp.libraries.common import overlaygen, repofileutils, rhsm
+from leapp.libraries.common import distro, overlaygen, repofileutils, rhsm
 from leapp.libraries.common.config import architecture
-from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked, produce_mocked
+from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked, logger_mocked, produce_mocked
 from leapp.libraries.stdlib import api, CalledProcessError
 from leapp.utils.deprecation import suppress_deprecation
 
@@ -1115,7 +1115,9 @@ def test_gather_target_repositories_rhui(monkeypatch):
     monkeypatch.setattr(userspacegen.api, 'current_actor', CurrentActorMocked())
     monkeypatch.setattr(userspacegen, '_get_all_available_repoids', lambda x: [])
     monkeypatch.setattr(
-        userspacegen, '_get_rh_available_repoids', lambda x, y: ['rhui-1', 'rhui-2', 'rhui-3']
+        userspacegen,
+        "_get_distro_available_repoids",
+        lambda dummy_context, dummy_indata: {"rhui-1", "rhui-2", "rhui-3"},
     )
     monkeypatch.setattr(rhsm, 'skip_rhsm', lambda: True)
     monkeypatch.setattr(
@@ -1193,6 +1195,54 @@ def test_gather_target_repositories_baseos_appstream_not_available(monkeypatch):
     inhibitors = [m for m in reports if 'inhibitor' in m.get('groups', ())]
     assert len(inhibitors) == 1
     assert inhibitors[0].get('title', '') == 'Cannot find required basic RHEL target repositories.'
+
+
+def test__get_distro_available_repoids_norhsm_norhui(monkeypatch):
+    """
+    Empty set should be returned when on rhel and skip_rhsm == True.
+    """
+    monkeypatch.setattr(
+        userspacegen.api, "current_actor", CurrentActorMocked(release_id="rhel")
+    )
+    monkeypatch.setattr(userspacegen.api.current_actor(), 'produce', produce_mocked())
+
+    monkeypatch.setattr(rhsm, 'skip_rhsm', lambda: True)
+    monkeypatch.setattr(distro, 'get_target_distro_repoids', lambda ctx: [])
+
+    indata = testInData(_PACKAGES_MSGS, None, None, _XFS_MSG, _STORAGEINFO_MSG, None)
+    # NOTE: context is not used without rhsm, for simplicity setting to None
+    repoids = userspacegen._get_distro_available_repoids(None, indata)
+    assert repoids == set()
+
+
+@pytest.mark.parametrize(
+    "distro_id,skip_rhsm", [("rhel", False), ("centos", True), ("almalinux", True)]
+)
+def test__get_distro_available_repoids_nobaserepos_inhibit(
+    monkeypatch, distro_id, skip_rhsm
+):
+    """
+    Test that get_distro_available repoids reports and raises if there are no base repos.
+    """
+    monkeypatch.setattr(
+        userspacegen.api, "current_actor", CurrentActorMocked(release_id=distro_id)
+    )
+    monkeypatch.setattr(userspacegen.api.current_actor(), 'produce', produce_mocked())
+    monkeypatch.setattr(reporting, "create_report", create_report_mocked())
+
+    monkeypatch.setattr(rhsm, 'skip_rhsm', lambda: skip_rhsm)
+    monkeypatch.setattr(distro, 'get_target_distro_repoids', lambda ctx: [])
+
+    indata = testInData(_PACKAGES_MSGS, None, None, _XFS_MSG, _STORAGEINFO_MSG, None)
+    with pytest.raises(StopActorExecution):
+        # NOTE: context is not used without rhsm, for simplicity setting to None
+        userspacegen._get_distro_available_repoids(None, indata)
+
+        # TODO adjust the asserts when the report is made distro agnostic
+        assert reporting.create_report.called == 1
+        report = reporting.create_report.reports[0]
+        assert "Cannot find required basic RHEL target repositories" in report["title"]
+        assert reporting.Groups.INHIBITOR in report["groups"]
 
 
 def mocked_consume_data():
