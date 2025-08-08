@@ -3,7 +3,7 @@ import pytest
 from leapp.libraries.actor import checkleftoverpackages
 from leapp.libraries.common.testutils import CurrentActorMocked, produce_mocked
 from leapp.libraries.stdlib import api
-from leapp.models import InstalledUnsignedRPM, LeftoverPackages, RPM
+from leapp.models import LeftoverPackages, RPM, ThirdPartyRPM
 
 
 @pytest.mark.parametrize(
@@ -44,7 +44,7 @@ def test_package_to_be_removed(monkeypatch, source_major_version, rpm_name, rele
     UnsignedRPM = RPM(name='unsigned', version='0.1', release=release, epoch='0',
                       packager='packager', arch='noarch', pgpsig='OTHER_SIG')
 
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[InstalledUnsignedRPM(items=[UnsignedRPM])]))
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[ThirdPartyRPM(items=[UnsignedRPM])]))
     monkeypatch.setattr(checkleftoverpackages, 'get_installed_rpms', get_installed_rpms_mocked)
     monkeypatch.setattr(checkleftoverpackages, 'get_source_major_version', lambda: str(source_major_version))
     monkeypatch.setattr(api, 'produce', produce_mocked())
