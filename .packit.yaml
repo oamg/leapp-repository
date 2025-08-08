@@ -168,6 +168,7 @@ jobs:
   env:
     SOURCE_RELEASE: "8.10"
     TARGET_RELEASE: "9.4"
+    LEAPP_TARGET_PRODUCT_CHANNEL: "EUS"
 
 # On-demand minimal beaker tests
 - &beaker-minimal-810to94
@@ -194,6 +195,7 @@ jobs:
   env:
     SOURCE_RELEASE: "8.10"
     TARGET_RELEASE: "9.4"
+    LEAPP_TARGET_PRODUCT_CHANNEL: "EUS"
 
 # On-demand kernel-rt tests
 - &kernel-rt-810to94
@@ -220,6 +222,7 @@ jobs:
   env:
     SOURCE_RELEASE: "8.10"
     TARGET_RELEASE: "9.4"
+    LEAPP_TARGET_PRODUCT_CHANNEL: "EUS"
 
 # Tests: 8.10 -> 9.6
 - &sanity-810to96
