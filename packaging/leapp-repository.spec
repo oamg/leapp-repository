@@ -258,6 +258,11 @@ install -m 0755 -d %{buildroot}%{leapp_python_sitelib}/leapp/cli/
 cp -r commands %{buildroot}%{leapp_python_sitelib}/leapp/cli/
 rm -rf %{buildroot}%{leapp_python_sitelib}/leapp/cli/commands/tests
 
+# install rules necessary for fapolicy
+mkdir -p %{buildroot}/etc/fapolicyd/rules.d/
+echo "allow perm=any all : dir=/var/lib/leapp/" > %{buildroot}/etc/fapolicyd/rules.d/31-fapolicy.rules
+chmod 644 %{buildroot}/etc/fapolicyd/rules.d/31-fapolicy.rules
+
 # Remove irrelevant repositories - We don't want to ship them for the particular
 # RHEL version
 for i in el7toel8 el8toel9 el9toel10;
@@ -290,6 +295,10 @@ done;
 %py_byte_compile %{__python3} %{buildroot}%{repositorydir}/*
 %endif
 
+%posttrans
+if systemctl is-active --quiet fapolicyd; then
+    systemctl restart fapolicyd
+fi
 
 %files -n %{lpr_name}
 %doc README.md
@@ -307,7 +316,7 @@ done;
 %{_sysconfdir}/leapp/transaction/*
 %{repositorydir}/*
 %{leapp_python_sitelib}/leapp/cli/commands/*
-
+/etc/fapolicyd/rules.d/31-fapolicy.rules
 
 %files -n %{lpr_name}-deps
 # no files here
