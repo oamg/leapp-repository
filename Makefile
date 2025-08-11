@@ -12,23 +12,28 @@ REPOS_PATH=repos
 _SYSUPG_REPOS="$(REPOS_PATH)/system_upgrade"
 LIBRARY_PATH=
 REPORT_ARG=
-REPOSITORIES ?= $(shell ls $(_SYSUPG_REPOS) | xargs echo | tr " " ",")
-SYSUPG_TEST_PATHS=$(shell echo $(REPOSITORIES) | sed -r "s|(,\\|^)| $(_SYSUPG_REPOS)/|g")
-TEST_PATHS:=commands repos/common $(SYSUPG_TEST_PATHS)
+
+# python version to run test with
+_PYTHON_VENV=$${PYTHON_VENV:-python3.6}
+
+ifdef ACTOR
+	# If REPOSITORIES is set, the utils/actor_path.py script searches for the
+	# actor only in the specified repositories.
+	# if REPOSITORIES is not set i.e. it's empty, all repositories are searched
+	# - this is broken due to name collisions in repositories (FIXME)
+	TEST_PATHS=$(shell . $(VENVNAME)/bin/activate && $(_PYTHON_VENV) utils/actor_path.py $(ACTOR) $(REPOSITORIES))
+	APPROX_TEST_PATHS=$(shell $(_PYTHON_VENV) utils/find_actors.py -C repos $(ACTOR))  # Dev only
+else
+	REPOSITORIES ?= $(shell ls $(_SYSUPG_REPOS) | xargs echo | tr " " ",")
+	SYSUPG_TEST_PATHS=$(shell echo $(REPOSITORIES) | sed -r "s|(,\\|^)| $(_SYSUPG_REPOS)/|g")
+	TEST_PATHS:=commands repos/common $(SYSUPG_TEST_PATHS)
+endif
 
 # Several commands can take arbitrary user supplied arguments from environment
 # variables as well:
 PYTEST_ARGS ?=
 PYLINT_ARGS ?=
 FLAKE8_ARGS ?=
-
-# python version to run test with
-_PYTHON_VENV=$${PYTHON_VENV:-python3.6}
-
-ifdef ACTOR
-	TEST_PATHS=`$(_PYTHON_VENV) utils/actor_path.py $(ACTOR)`
-	APPROX_TEST_PATHS=$(shell $(_PYTHON_VENV) utils/find_actors.py -C repos $(ACTOR))  # Dev only
-endif
 
 ifeq ($(TEST_LIBS),y)
 	LIBRARY_PATH=`python utils/library_path.py`
@@ -371,12 +376,24 @@ lint_fix:
 	echo "--- isort inplace fixing done. ---;"
 
 test_no_lint:
-	@. $(VENVNAME)/bin/activate; \
+	@if [ -z "$(REPOSITORIES)" -a -n "$(ACTOR)" ]; then \
+		printf "\033[0;31mWARNING\033[0m: Running tests with ACTOR without"; \
+		printf " specifying REPOSITORIES is currently broken.\n" 2>&1; \
+		printf "         Specify REPOSITORIES with only one elXtoelY repository"; \
+		printf " (e.g. REPOSITORIES=common,el8toel9).\n" 2>&1; \
+		exit 1; \	
+	fi
+
+	@echo "============= snactor sanity-check ipu ===============" 2>&1
+	. $(VENVNAME)/bin/activate; \
 	snactor repo find --path repos/; \
 	for dir in $$(echo $(REPOSITORIES) | tr "," " "); do \
 		echo "Running sanity-check in $(_SYSUPG_REPOS)/$$dir"; \
 		(cd $(_SYSUPG_REPOS)/$$dir && snactor workflow sanity-check ipu); \
-	done; \
+	done
+
+	@echo "==================== unit tests ======================" 2>&1
+	. $(VENVNAME)/bin/activate; \
 	$(_PYTHON_VENV) -m pytest $(REPORT_ARG) $(TEST_PATHS) $(LIBRARY_PATH) $(PYTEST_ARGS)
 
 test: lint test_no_lint
@@ -407,7 +424,7 @@ _test_container_ipu:
 		;; \
 	esac && \
 	$(_CONTAINER_TOOL) exec -w /repocopy $$_CONT_NAME make clean && \
-	$(_CONTAINER_TOOL) exec -w /repocopy -e REPOSITORIES $$_CONT_NAME make $${_TEST_CONT_TARGET:-test}
+	$(_CONTAINER_TOOL) exec -w /repocopy -e ACTOR -e REPOSITORIES $$_CONT_NAME make $${_TEST_CONT_TARGET:-test}
 
 
 # Runs lint in a container
@@ -449,6 +466,7 @@ test_container:
 	$(_CONTAINER_TOOL) run -di --name $$_CONT_NAME -v "$$PWD":/repo:Z -e PYTHON_VENV=$$_VENV $$TEST_IMAGE && \
 	$(_CONTAINER_TOOL) exec $$_CONT_NAME rsync -aur --delete --exclude 'tut/' --exclude 'docs/' --exclude '**/__pycache__/' --exclude 'packaging/' --exclude '.git/' /repo/ /repocopy && \
 	$(_CONTAINER_TOOL) exec $$_CONT_NAME rsync -aur --delete --exclude '**/__pycache__/' /repo/commands/ /repocopy/tut/lib/$$_VENV/site-packages/leapp/cli/commands/ && \
+	$(_CONTAINER_TOOL) exec -w /repocopy $$_CONT_NAME bash -c '. $(VENVNAME)/bin/activate && snactor repo find --path repos' && \
 	export res=0; \
 	case $$_VENV in \
 	python3.6) \
