@@ -1,5 +1,5 @@
 {
-    "datetime": "202507171303Z",
+    "datetime": "202508131404Z",
     "version_format": "1.3.0",
     "provided_data_streams": [
         "4.0"
@@ -312,6 +312,24 @@
                     "target": [
                         "rhel10-rhui-custom-client-at-alibaba"
                     ]
+                },
+                {
+                    "source": "rhel9-rhui-client-config-server-9-sap",
+                    "target": [
+                        "rhel10-rhui-client-config-server-10-sap"
+                    ]
+                },
+                {
+                    "source": "rhel9-rhui-microsoft-azure-sap-apps",
+                    "target": [
+                        "rhel10-rhui-microsoft-azure-sap-apps"
+                    ]
+                },
+                {
+                    "source": "rhel9-rhui-microsoft-sap-ha",
+                    "target": [
+                        "rhel10-rhui-microsoft-sap-ha"
+                    ]
                 }
             ]
         }
@@ -503,11 +521,29 @@
                 },
                 {
                     "major_version": "10",
+                    "repoid": "rhel-10-for-x86_64-baseos-e4s-rhui-rpms",
+                    "arch": "x86_64",
+                    "channel": "e4s",
+                    "repo_type": "rpm",
+                    "distro": "rhel",
+                    "rhui": "azure"
+                },
+                {
+                    "major_version": "10",
                     "repoid": "rhel-10-for-x86_64-baseos-e4s-rpms",
                     "arch": "x86_64",
                     "channel": "e4s",
                     "repo_type": "rpm",
                     "distro": "rhel"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-for-x86_64-baseos-eus-rhui-rpms",
+                    "arch": "x86_64",
+                    "channel": "eus",
+                    "repo_type": "rpm",
+                    "distro": "rhel",
+                    "rhui": "azure"
                 },
                 {
                     "major_version": "10",
@@ -731,11 +767,29 @@
                 },
                 {
                     "major_version": "10",
+                    "repoid": "rhel-10-for-x86_64-appstream-e4s-rhui-rpms",
+                    "arch": "x86_64",
+                    "channel": "e4s",
+                    "repo_type": "rpm",
+                    "distro": "rhel",
+                    "rhui": "azure"
+                },
+                {
+                    "major_version": "10",
                     "repoid": "rhel-10-for-x86_64-appstream-e4s-rpms",
                     "arch": "x86_64",
                     "channel": "e4s",
                     "repo_type": "rpm",
                     "distro": "rhel"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-for-x86_64-appstream-eus-rhui-rpms",
+                    "arch": "x86_64",
+                    "channel": "eus",
+                    "repo_type": "rpm",
+                    "distro": "rhel",
+                    "rhui": "azure"
                 },
                 {
                     "major_version": "10",
@@ -1305,11 +1359,29 @@
                 },
                 {
                     "major_version": "10",
+                    "repoid": "rhel-10-for-x86_64-sap-netweaver-e4s-rhui-rpms",
+                    "arch": "x86_64",
+                    "channel": "e4s",
+                    "repo_type": "rpm",
+                    "distro": "rhel",
+                    "rhui": "azure"
+                },
+                {
+                    "major_version": "10",
                     "repoid": "rhel-10-for-x86_64-sap-netweaver-e4s-rpms",
                     "arch": "x86_64",
                     "channel": "e4s",
                     "repo_type": "rpm",
                     "distro": "rhel"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-for-x86_64-sap-netweaver-eus-rhui-rpms",
+                    "arch": "x86_64",
+                    "channel": "eus",
+                    "repo_type": "rpm",
+                    "distro": "rhel",
+                    "rhui": "azure"
                 },
                 {
                     "major_version": "10",
@@ -1356,6 +1428,15 @@
                     "repo_type": "rpm",
                     "distro": "rhel",
                     "rhui": "aws"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "rhel-10-for-x86_64-sap-solutions-e4s-rhui-rpms",
+                    "arch": "x86_64",
+                    "channel": "e4s",
+                    "repo_type": "rpm",
+                    "distro": "rhel",
+                    "rhui": "azure"
                 },
                 {
                     "major_version": "10",
@@ -1525,6 +1606,15 @@
                 },
                 {
                     "major_version": "10",
+                    "repoid": "rhel-10-for-x86_64-highavailability-e4s-rhui-rpms",
+                    "arch": "x86_64",
+                    "channel": "e4s",
+                    "repo_type": "rpm",
+                    "distro": "rhel",
+                    "rhui": "azure"
+                },
+                {
+                    "major_version": "10",
                     "repoid": "rhel-10-for-x86_64-highavailability-e4s-rpms",
                     "arch": "x86_64",
                     "channel": "e4s",
@@ -1615,6 +1705,48 @@
                     "repo_type": "rpm",
                     "distro": "rhel",
                     "rhui": "alibaba"
+                }
+            ]
+        },
+        {
+            "pesid": "rhel10-rhui-client-config-server-10-sap",
+            "entries": [
+                {
+                    "major_version": "10",
+                    "repoid": "rhui-client-config-server-10-sap-bundle",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel",
+                    "rhui": "aws"
+                }
+            ]
+        },
+        {
+            "pesid": "rhel10-rhui-microsoft-azure-sap-apps",
+            "entries": [
+                {
+                    "major_version": "10",
+                    "repoid": "rhui-microsoft-azure-rhel10-sapapps",
+                    "arch": "x86_64",
+                    "channel": "eus",
+                    "repo_type": "rpm",
+                    "distro": "rhel",
+                    "rhui": "azure"
+                }
+            ]
+        },
+        {
+            "pesid": "rhel10-rhui-microsoft-sap-ha",
+            "entries": [
+                {
+                    "major_version": "10",
+                    "repoid": "rhui-microsoft-azure-rhel10-sap-ha",
+                    "arch": "x86_64",
+                    "channel": "e4s",
+                    "repo_type": "rpm",
+                    "distro": "rhel",
+                    "rhui": "azure"
                 }
             ]
         },
@@ -4163,6 +4295,14 @@
                     "repoid": "rhel-8-for-s390x-highavailability-rpms",
                     "arch": "s390x",
                     "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
+                },
+                {
+                    "major_version": "8",
+                    "repoid": "rhel-8-for-x86_64-highavailability-aus-rpms",
+                    "arch": "x86_64",
+                    "channel": "aus",
                     "repo_type": "rpm",
                     "distro": "rhel"
                 },
