@@ -373,9 +373,9 @@ lint_fix:
 test_no_lint:
 	@. $(VENVNAME)/bin/activate; \
 	snactor repo find --path repos/; \
-	for dir in repos/system_upgrade/*/; do \
-		echo "Running sanity-check in $$dir"; \
-		(cd $$dir && snactor workflow sanity-check ipu); \
+	for dir in $$(echo $(REPOSITORIES) | tr "," " "); do \
+		echo "Running sanity-check in $(_SYSUPG_REPOS)/$$dir"; \
+		(cd $(_SYSUPG_REPOS)/$$dir && snactor workflow sanity-check ipu); \
 	done; \
 	$(_PYTHON_VENV) -m pytest $(REPORT_ARG) $(TEST_PATHS) $(LIBRARY_PATH) $(PYTEST_ARGS)
 
