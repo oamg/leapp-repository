@@ -40,9 +40,7 @@ class SELinuxApplyCustom(Actor):
             return
 
         # get list of policy modules after the upgrade
-        installed_modules = set(
-            [module[0] for module in selinuxapplycustom.list_selinux_modules()]
-        )
+        installed_modules = {module[0] for module in selinuxapplycustom.list_selinux_modules()}
 
         # import custom SElinux modules
         for semodules in self.consume(SELinuxModules):

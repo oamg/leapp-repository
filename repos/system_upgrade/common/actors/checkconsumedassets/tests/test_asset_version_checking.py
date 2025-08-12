@@ -44,4 +44,4 @@ def test_make_report_entries_with_unique_urls():
     docs_url_to_title_map = {'/path/to/asset1': ['asset1_title1', 'asset1_title2'],
                              '/path/to/asset2': ['asset2_title']}
     report_urls = check_consumed_assets_lib.make_report_entries_with_unique_urls(docs_url_to_title_map)
-    assert set([ru.value['url'] for ru in report_urls]) == {'/path/to/asset1', '/path/to/asset2'}
+    assert {ru.value['url'] for ru in report_urls} == {'/path/to/asset1', '/path/to/asset2'}
