@@ -252,6 +252,17 @@ RHUI_SETUPS = {
                         ('cdn.redhat.com-chain.crt', RHUI_PKI_DIR),
                         ('content-rhel9-sap-bundle-e4s.crt', RHUI_PKI_PRODUCT_DIR)
                       ], os_version='9', content_channel=ContentChannel.E4S),
+        mk_rhui_setup(clients={'rh-amazon-rhui-client-sap-bundle-e4s'}, leapp_pkg='leapp-rhui-aws-sap-e4s',
+                      mandatory_files=[
+                        ('rhui-client-config-server-10-sap-bundle.crt', RHUI_PKI_PRODUCT_DIR),
+                        ('rhui-client-config-server-10-sap-bundle.key', RHUI_PKI_DIR),
+                        ('leapp-aws-sap-e4s.repo', YUM_REPOS_PATH)
+                      ],
+                      optional_files=[
+                        ('content-rhel10-sap-bundle-e4s.key', RHUI_PKI_DIR),
+                        ('cdn.redhat.com-chain.crt', RHUI_PKI_DIR),
+                        ('content-rhel10-sap-bundle-e4s.crt', RHUI_PKI_PRODUCT_DIR)
+                      ], os_version='10', content_channel=ContentChannel.E4S),
     ],
     RHUIFamily(RHUIProvider.AZURE, client_files_folder='azure'): [
         mk_rhui_setup(clients={'rhui-azure-rhel7'}, os_version='7',
@@ -312,6 +323,17 @@ RHUI_SETUPS = {
                       ],
                       extra_info={'agent_pkg': 'WALinuxAgent'},
                       os_version='9', content_channel=ContentChannel.EUS),
+        mk_rhui_setup(clients={'rhui-azure-rhel10-sapapps'}, leapp_pkg='leapp-rhui-azure-sap',
+                      mandatory_files=[
+                          ('leapp-azure-sap-apps.repo', YUM_REPOS_PATH),
+                          ('RPM-GPG-KEY-microsoft-azure-release-new', '/etc/pki/rpm-gpg/')
+                      ],
+                      optional_files=[
+                        ('key-sapapps.pem', RHUI_PKI_DIR),
+                        ('content-sapapps.crt', RHUI_PKI_PRODUCT_DIR)
+                      ],
+                      extra_info={'agent_pkg': 'WALinuxAgent'},
+                      os_version='10', content_channel=ContentChannel.EUS),
     ],
     RHUIFamily(RHUIProvider.AZURE, variant=RHUIVariant.SAP_HA, client_files_folder='azure-sap-ha'): [
         mk_rhui_setup(clients={'rhui-azure-rhel7-base-sap-ha'}, os_version='7', content_channel=ContentChannel.E4S),
@@ -339,6 +361,17 @@ RHUI_SETUPS = {
                       ],
                       extra_info={'agent_pkg': 'WALinuxAgent'},
                       os_version='9', content_channel=ContentChannel.E4S),
+        mk_rhui_setup(clients={'rhui-azure-rhel10-sap-ha'}, leapp_pkg='leapp-rhui-azure-sap',
+                      mandatory_files=[
+                          ('leapp-azure-sap-ha.repo', YUM_REPOS_PATH),
+                          ('RPM-GPG-KEY-microsoft-azure-release-new', '/etc/pki/rpm-gpg/')
+                      ],
+                      optional_files=[
+                        ('key-sap-ha.pem', RHUI_PKI_DIR),
+                        ('content-sap-ha.crt', RHUI_PKI_PRODUCT_DIR)
+                      ],
+                      extra_info={'agent_pkg': 'WALinuxAgent'},
+                      os_version='10', content_channel=ContentChannel.E4S),
     ],
     RHUIFamily(RHUIProvider.GOOGLE, client_files_folder='google'): [
         mk_rhui_setup(clients={'google-rhui-client-rhel7'}, os_version='7'),
