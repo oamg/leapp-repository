@@ -53,7 +53,6 @@ def _get_main_dump(context, disable_plugins):
             # to continue.
             api.current_logger().warning(
                 'Cannot parse the dnf dump correctly, line: {}'.format(line))
-            pass
         output_data[key] = val
 
     return output_data
