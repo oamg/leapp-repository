@@ -40,7 +40,6 @@ class PersistentNetNamesFactsInitramfs(PersistentNetNamesFacts):
     """
     Information about network interfaces gather from initramfs with the kernel of target system
     """
-    pass
 
 
 class RenamedInterface(Model):

@@ -107,4 +107,3 @@ def process():
         # This is not expected, however, we are past the point that raising an exception would do any good.
         # It is better to finish the upgrade with 80% things done rather than falling into emergency mode
         api.current_logger().warning('Failed to identify package providing the target kernel.')
-        pass
