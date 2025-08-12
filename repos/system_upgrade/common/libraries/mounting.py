@@ -60,11 +60,9 @@ class IsolationType(object):
 
         def create(self):
             """ Create the isolation context """
-            pass
 
         def close(self):
             """ Release the isolation context """
-            pass
 
         def make_command(self, cmd):
             """ Transform the given command to the isolated environment """
