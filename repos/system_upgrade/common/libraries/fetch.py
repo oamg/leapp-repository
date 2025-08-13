@@ -56,8 +56,8 @@ def _request_data(service_path, cert, proxies, timeout=REQUEST_TIMEOUT):
                 timeout = (timeout[0], timeout[1] + 10)
             if attempt > MAX_ATTEMPTS:
                 logger.warning(
-                    'Attempt {} of {} to get {} failed: {}.'
-                    .format(MAX_ATTEMPTS, MAX_ATTEMPTS, service_path, etype_msg)
+                    'Attempt {max} of {max} to get {service} failed: {error}.'
+                    .format(max=MAX_ATTEMPTS, service=service_path, error=etype_msg)
                 )
                 raise
 
