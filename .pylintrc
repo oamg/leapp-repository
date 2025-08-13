@@ -51,7 +51,6 @@ disable=
  super-with-arguments,  # required in python 2
  raise-missing-from,  # no 'raise from' in python 2
  use-a-generator,  # cannot be modified because of Python2 support
- duplicate-string-formatting-argument,  # TMP: will be fixed in close future
  consider-using-f-string,  # sorry, not gonna happen, still have to support py2
  use-dict-literal,
  redundant-u-string-prefix,  # still have py2 to support
