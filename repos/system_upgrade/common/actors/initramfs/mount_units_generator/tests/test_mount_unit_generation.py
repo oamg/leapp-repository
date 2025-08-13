@@ -196,8 +196,7 @@ def test_copy_units_mixed_content(monkeypatch):
             ('/source/dir', ['local-fs.target.requires'], ['unit1.mount', 'unit2.mount']),
             ('/source/dir/local-fs.target.requires', [], ['unit1.mount', 'unit2.mount']),
         ]
-        for i in tuples_to_yield:
-            yield i
+        yield from tuples_to_yield
 
     def mock_isdir(path):
         return 'local-fs.target.requires' in path

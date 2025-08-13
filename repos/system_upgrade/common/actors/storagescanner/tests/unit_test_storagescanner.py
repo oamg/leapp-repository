@@ -268,8 +268,7 @@ def test_get_lsblk_info(monkeypatch):
                     'crypt', '', '/dev/nvme0n1p1'],
                 ['/dev/nvme0n1p1', '259:1', '0', str(39 * bytes_per_gb), '0', 'part', '', '/dev/nvme0n1'],
             ]
-            for output_line_parts in output_lines_split_on_whitespace:
-                yield output_line_parts
+            yield from output_lines_split_on_whitespace
         elif len(cmd) == 5 and cmd[:4] == ['lsblk', '-nr', '--output', 'NAME,KNAME,SIZE']:
             # We cannot have the output in a list, since the command is called per device. Therefore, we have to map
             # each device path to its output.
