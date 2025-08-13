@@ -95,8 +95,7 @@ def traverse_structure(structure, root=Path('/')):
         filepath = root / filename
 
         if isinstance(links_to, dict):
-            for pair in traverse_structure(links_to, filepath):
-                yield pair
+            yield from traverse_structure(links_to, root=filepath)
         else:
             yield (filepath, links_to)
 
