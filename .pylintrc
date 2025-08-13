@@ -53,7 +53,6 @@ disable=
  use-a-generator,  # cannot be modified because of Python2 support
  consider-using-f-string,  # sorry, not gonna happen, still have to support py2
  logging-format-interpolation,
- logging-not-lazy,
  use-yield-from  # yield from cannot be used until we require python 3.3 or greater
 
 [FORMAT]

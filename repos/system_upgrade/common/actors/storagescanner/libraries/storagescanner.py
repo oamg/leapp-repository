@@ -35,7 +35,7 @@ def _is_file_readable(path):
 def _get_cmd_output(cmd, delim, expected_len):
     """ Verify if command exists and return output """
     if not any(os.access(os.path.join(path, cmd[0]), os.X_OK) for path in os.environ['PATH'].split(os.pathsep)):
-        api.current_logger().warning("'%s': command not found" % cmd[0])
+        api.current_logger().warning("'%s': command not found", cmd[0])
         return
 
     try:
@@ -45,7 +45,11 @@ def _get_cmd_output(cmd, delim, expected_len):
         output = subprocess.check_output(cmd, env={'LVM_SUPPRESS_FD_WARNINGS': '1', 'PATH': os.environ['PATH']})
 
     except subprocess.CalledProcessError as e:
-        api.current_logger().debug("Command '%s' return non-zero exit status: %s" % (" ".join(cmd), e.returncode))
+        api.current_logger().debug(
+            "Command '%s' returned non-zero exit status: %s",
+            " ".join(cmd),
+            e.returncode
+        )
         return
 
     if bytes is not str:

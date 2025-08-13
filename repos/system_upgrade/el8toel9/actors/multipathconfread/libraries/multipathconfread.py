@@ -68,12 +68,16 @@ def _parse_config_dir(config_dir):
                 res.append(conf)
     except OSError as e:
         if e.errno == errno.ENOENT:
-            api.current_logger().debug('Multipath conf directory ' +
-                                       '"{}" doesn\'t exist'.format(config_dir))
+            api.current_logger().debug(
+                'Multipath conf directory "%s" doesn\'t exist',
+                config_dir
+            )
         else:
-            api.current_logger().warning('Failed to read multipath config ' +
-                                         'directory ' +
-                                         '"{}": {}'.format(config_dir, e))
+            api.current_logger().warning(
+                'Failed to read multipath config directory "%s": %s',
+                config_dir,
+                e
+            )
     return res
 
 
