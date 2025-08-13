@@ -1,5 +1,6 @@
 import errno
 import textwrap
+from io import StringIO
 from os.path import basename
 
 import mock
@@ -63,8 +64,7 @@ def test_ifcfg1(monkeypatch):
         KEY_TYPE=key
     """)
 
-    mock_config = mock.mock_open(read_data=ifcfg_file)
-    with mock.patch(_builtins_open, mock_config):
+    with mock.patch(_builtins_open, return_value=StringIO(ifcfg_file)):
         monkeypatch.setattr(ifcfgscanner, "listdir", _listdir_ifcfg)
         monkeypatch.setattr(ifcfgscanner.path, "exists", _exists_ifcfg)
         monkeypatch.setattr(api, "produce", produce_mocked())
@@ -110,8 +110,8 @@ def test_ifcfg_key(monkeypatch):
     Report ifcfg secrets from keys- file.
     """
 
-    mock_config = mock.mock_open(read_data="KEY_PASSPHRASE1=Hell0")
-    with mock.patch(_builtins_open, mock_config):
+    file_data = "KEY_PASSPHRASE1=Hell0"
+    with mock.patch(_builtins_open, side_effect=lambda *a, **k: StringIO(file_data)):
         monkeypatch.setattr(ifcfgscanner, "listdir", _listdir_ifcfg)
         monkeypatch.setattr(ifcfgscanner.path, "exists", _exists_keys)
         monkeypatch.setattr(api, "produce", produce_mocked())

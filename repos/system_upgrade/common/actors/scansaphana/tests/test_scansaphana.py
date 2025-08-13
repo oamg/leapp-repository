@@ -77,9 +77,9 @@ class SubprocessCall(object):
         assert args[0][0:3] == ['sudo', '-u', self.admusername]
         cmd = args[0][3:]
         kwargs.pop('checked', None)
-        p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-        p.wait()
-        return {'exit_code': p.returncode, 'stdout': p.stdout.read()}
+        with subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as p:
+            stdout, stderr = p.communicate()
+            return {'exit_code': p.returncode, 'stdout': stdout.decode('utf-8'), 'stderr': stderr.decode('utf-8')}
 
 
 def test_scansaphana_get_instance_status(monkeypatch):
