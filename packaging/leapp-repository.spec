@@ -51,7 +51,7 @@ py2_byte_compile "%1" "%2"}
 # RHEL 8+ packages to be consistent with other leapp projects in future.
 
 Name:           leapp-repository
-Version:        0.22.0
+Version:        0.23.0
 Release:        1%{?dist}
 Summary:        Repositories for leapp
 
@@ -85,7 +85,7 @@ Obsoletes:      leapp-repository-data <= 0.6.1
 Provides:       leapp-repository-data <= 0.6.1
 
 # Former leapp subpackage that is part of the sos package since RHEL 7.8
-Obsoletes:      leapp-repository-sos-plugin <= 0.9.0
+Obsoletes:      leapp-repository-sos-plugin <= 0.10.0
 
 # Set the conflict to be sure this RPM is not upgraded automatically to
 # the one from the target (upgraded) RHEL. The RPM has to stay untouched
@@ -287,6 +287,7 @@ rm -rf %{buildroot}%{repositorydir}/common/actors/testactor
 find %{buildroot}%{repositorydir}/common -name "test.py" -delete
 rm -rf `find %{buildroot}%{repositorydir} -name "tests" -type d`
 find %{buildroot}%{repositorydir} -name "Makefile" -delete
+find %{buildroot} -name "*.py.orig" -delete
 # .gitkeep file is used to have a directory in the repo. but we do not want these
 # files in the resulting RPM
 find %{buildroot} -name .gitkeep -delete

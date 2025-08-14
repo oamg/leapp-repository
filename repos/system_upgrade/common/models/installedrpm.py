@@ -47,6 +47,6 @@ class ThirdPartyRPM(InstalledRPM):
     pass
 
 
-@deprecated(since='2025-07-09', message='Replaced by ThirdPartyRPM')
+@deprecated(since='2025-08-14', message='Replaced by ThirdPartyRPM')
 class InstalledUnsignedRPM(InstalledRPM):
     pass
