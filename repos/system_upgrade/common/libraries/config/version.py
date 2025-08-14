@@ -314,7 +314,7 @@ def is_sap_hana_flavour():
     return api.current_actor().configuration.flavour == 'saphana'
 
 
-@deprecated(since='2025-05-31', message=(
+@deprecated(since='2025-08-14', message=(
     'RHEL-ALT reached EOL years ago and it is connected just to RHEL 7 systems.'
     'As such the function is useless nowadays and will return always False.'
     'The function is going to be removed in the next leapp-repository release.'
