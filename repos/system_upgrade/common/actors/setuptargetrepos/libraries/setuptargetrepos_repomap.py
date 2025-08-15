@@ -1,4 +1,4 @@
-from leapp.libraries.common.config import get_target_product_channel
+from leapp.libraries.common.config import get_distro_id, get_target_product_channel
 from leapp.libraries.common.config.version import get_source_major_version, get_target_major_version
 from leapp.libraries.stdlib import api
 
@@ -44,7 +44,7 @@ class RepoMapDataHandler(object):
         # ideal for work, but there is not any significant impact..
         self.repositories = repo_map.repositories
         self.mapping = repo_map.mapping
-        self.distro = distro or api.current_actor().configuration.os_release.release_id
+        self.distro = distro or get_distro_id()
         # FIXME(pstodulk): what about default_channel -> fallback_channel
         # hardcoded always as ga? instead of list of channels..
         # it'd be possibly confusing naming now...
