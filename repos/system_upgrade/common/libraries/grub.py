@@ -34,7 +34,6 @@ class EFIBootLoaderEntry:
     """
     Representation of an UEFI boot loader entry.
     """
-    # pylint: disable=eq-without-hash
 
     def __init__(self, boot_number, label, active, efi_bin_source):
         self.boot_number = boot_number
