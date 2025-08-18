@@ -40,7 +40,7 @@ class RhelUpgradeCommand(dnf.cli.Command):
     summary = 'Plugin for upgrading to the next RHEL major release'
 
     def __init__(self, cli):
-        super(RhelUpgradeCommand, self).__init__(cli)
+        super().__init__(cli)
         self.plugin_data = {}
 
     @staticmethod
@@ -225,6 +225,6 @@ class RhelUpgradePlugin(dnf.Plugin):
     name = 'rhel-upgrade'
 
     def __init__(self, base, cli):
-        super(RhelUpgradePlugin, self).__init__(base, cli)
+        super().__init__(base, cli)
         if cli:
             cli.register_command(RhelUpgradeCommand)

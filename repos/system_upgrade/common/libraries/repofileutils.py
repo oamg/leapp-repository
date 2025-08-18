@@ -16,7 +16,7 @@ class InvalidRepoDefinition(Exception):
     def __init__(self, msg, repofile, repoid):
         message = 'Invalid repository definition: {repoid} in: {repofile}: {msg}'.format(
                     repoid=repoid, repofile=repofile, msg=msg)
-        super(InvalidRepoDefinition, self).__init__(message)
+        super().__init__(message)
         self.repofile = repofile
         self.repoid = repoid
 

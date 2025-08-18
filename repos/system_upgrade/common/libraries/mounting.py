@@ -46,7 +46,7 @@ class MountError(Exception):
     """ Exception that is thrown when a mount related operation failed """
 
     def __init__(self, message, details):
-        super(MountError, self).__init__(message)
+        super().__init__(message)
         self.details = details
 
 
@@ -75,7 +75,7 @@ class IsolationType:
         """ systemd-nspawn implementation """
 
         def __init__(self, target, binds=(), env_vars=None):
-            super(IsolationType.NSPAWN, self).__init__(target=target)
+            super().__init__(target=target)
             self.binds = list(binds) + ALWAYS_BIND
             self.env_vars = env_vars or get_all_envs()
 
@@ -98,7 +98,7 @@ class IsolationType:
         """ chroot implementation """
 
         def __init__(self, target):
-            super(IsolationType.CHROOT, self).__init__(target)
+            super().__init__(target)
             self.context = None
 
         def create(self):
@@ -262,14 +262,14 @@ class ChrootActions(IsolatedActions):
     """ Isolation with chroot """
 
     def __init__(self, base_dir):
-        super(ChrootActions, self).__init__(base_dir=base_dir, implementation=IsolationType.CHROOT)
+        super().__init__(base_dir=base_dir, implementation=IsolationType.CHROOT)
 
 
 class NspawnActions(IsolatedActions):
     """ Isolation with systemd-nspawn """
 
     def __init__(self, base_dir, binds=(), env_vars=None):
-        super(NspawnActions, self).__init__(
+        super().__init__(
             base_dir=base_dir, implementation=IsolationType.NSPAWN, binds=binds, env_vars=env_vars)
 
 
@@ -278,7 +278,7 @@ class NotIsolatedActions(IsolatedActions):
     _isolated = False
 
     def __init__(self, base_dir):
-        super(NotIsolatedActions, self).__init__(base_dir=base_dir, implementation=IsolationType.NONE)
+        super().__init__(base_dir=base_dir, implementation=IsolationType.NONE)
 
 
 class MountConfig:
@@ -375,7 +375,7 @@ class NullMount(MountingBase):
     """ This is basically a NoOp for compatibility with other mount operations, in case a mount is optional """
 
     def __init__(self, target, config=MountConfig.AttachOnly):
-        super(NullMount, self).__init__(source=target, target=target, mode=MountingMode.NONE, config=config)
+        super().__init__(source=target, target=target, mode=MountingMode.NONE, config=config)
 
     def __enter__(self):
         return self
@@ -388,21 +388,21 @@ class LoopMount(MountingBase):
     """ Performs loop mounts """
 
     def __init__(self, source, target, config=MountConfig.Mount):
-        super(LoopMount, self).__init__(source=source, target=target, mode=MountingMode.LOOP, config=config)
+        super().__init__(source=source, target=target, mode=MountingMode.LOOP, config=config)
 
 
 class BindMount(MountingBase):
     """ Performs bind mounts """
 
     def __init__(self, source, target, config=MountConfig.Mount):
-        super(BindMount, self).__init__(source=source, target=target, mode=MountingMode.BIND, config=config)
+        super().__init__(source=source, target=target, mode=MountingMode.BIND, config=config)
 
 
 class TypedMount(MountingBase):
     """ Performs a typed mounts """
 
     def __init__(self, fstype, source, target, config=MountConfig.Mount):
-        super(TypedMount, self).__init__(source=source, target=target, mode=MountingMode.FSTYPE, config=config)
+        super().__init__(source=source, target=target, mode=MountingMode.FSTYPE, config=config)
         self.fstype = fstype
 
     def _mount_options(self):
@@ -416,8 +416,12 @@ class OverlayMount(MountingBase):
     """ Performs an overlayfs mount """
 
     def __init__(self, name, source, workdir, config=MountConfig.Mount):
-        super(OverlayMount, self).__init__(source=source, target=os.path.join(workdir, name),
-                                           mode=MountingMode.OVERLAY, config=config)
+        super().__init__(
+            source=source,
+            target=os.path.join(workdir, name),
+            mode=MountingMode.OVERLAY,
+            config=config
+        )
         self._upper_dir = os.path.join(workdir, 'upper')
         self._work_dir = os.path.join(workdir, 'work')
         self.additional_directories = (self._upper_dir, self._work_dir)
