@@ -14,7 +14,7 @@ TESTLINK = "linkca.cert"
 SUBDIR = "casdir"
 
 
-class MockedGetFiles(object):
+class MockedGetFiles:
     def __init__(self, files=None, error=None):
         self.called = 0
         self.files = files
@@ -33,7 +33,7 @@ class MockedGetFiles(object):
         return ret
 
 
-class MockedGetDirs(object):
+class MockedGetDirs:
     def __init__(self, dirs):
         self.called = 0
         self.dirs = dirs

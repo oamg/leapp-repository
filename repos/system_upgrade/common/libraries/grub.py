@@ -30,11 +30,10 @@ def canonical_path_to_efi_format(canonical_path):
     return canonical_path.replace(EFI_MOUNTPOINT[:-1], "").replace("/", "\\")
 
 
-class EFIBootLoaderEntry(object):
+class EFIBootLoaderEntry:
     """
     Representation of an UEFI boot loader entry.
     """
-    # pylint: disable=eq-without-hash
 
     def __init__(self, boot_number, label, active, efi_bin_source):
         self.boot_number = boot_number
@@ -102,7 +101,7 @@ class EFIBootLoaderEntry(object):
         return EFIBootLoaderEntry._efi_path_to_canonical(match.groups('path')[0])
 
 
-class EFIBootInfo(object):
+class EFIBootInfo:
     """
     Data about the current UEFI boot configuration.
 

@@ -41,5 +41,3 @@ class TMPTargetRepositoriesFacts(RepositoriesFacts):
 
     The model is temporary and will be removed in close future
     """
-
-    pass

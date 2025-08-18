@@ -36,7 +36,7 @@ def _flattened(d):
     return dict(items)
 
 
-class _BreadCrumbs(object):
+class _BreadCrumbs:
     def __init__(self, activity):
         self._crumbs = {
             'activity': activity,

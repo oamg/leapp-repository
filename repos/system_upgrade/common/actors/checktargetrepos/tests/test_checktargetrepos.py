@@ -17,7 +17,7 @@ from leapp.models import (
 from leapp.utils.report import is_inhibitor
 
 
-class MockedConsume(object):
+class MockedConsume:
     def __init__(self, *args):
         self._msgs = []
         for arg in args:

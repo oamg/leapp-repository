@@ -38,7 +38,7 @@ def write_config(path, contents):
         )
 
 
-class LineData(object):
+class LineData:
     TYPE_BLANK = 0
     TYPE_SECTION_START = 1
     TYPE_SECTION_END = 2
