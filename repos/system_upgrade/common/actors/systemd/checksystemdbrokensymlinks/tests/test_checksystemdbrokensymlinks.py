@@ -38,7 +38,7 @@ def test_report_enabled_services_broken_symlinks(monkeypatch):
     assert all([s in created_reports.report_fields['summary'] for s in symlinks])
 
 
-class ReportBrokenSymlinks(object):
+class ReportBrokenSymlinks:
     def __init__(self):
         self.symlinks = []
 

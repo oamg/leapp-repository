@@ -21,7 +21,7 @@ def interface_mocked(i=0):
     )
 
 
-class interfaces_mocked(object):
+class interfaces_mocked:
     def __init__(self, count):
         self.count = count
 

@@ -10,7 +10,7 @@ from leapp.models import (
 )
 
 
-class MockedSystemdCmd(object):
+class MockedSystemdCmd:
     def __init__(self):
         self.units = []
 

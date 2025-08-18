@@ -8,7 +8,7 @@ from leapp.libraries.stdlib import api, CalledProcessError
 from leapp.models import SystemdServicesTasks
 
 
-class MockedSystemdCmd(object):
+class MockedSystemdCmd:
     def __init__(self):
         self.units = []
 

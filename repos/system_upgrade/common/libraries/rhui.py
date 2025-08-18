@@ -21,7 +21,7 @@ RHUI_PKI_PRIVATE_DIR = os.path.join(RHUI_PKI_DIR, 'private')
 AWS_DNF_PLUGIN_NAME = 'amazon-id.py'
 
 
-class ContentChannel(object):
+class ContentChannel:
     GA = 'ga'
     TUV = 'tuv'
     E4S = 'e4s'
@@ -30,14 +30,14 @@ class ContentChannel(object):
     BETA = 'beta'
 
 
-class RHUIVariant(object):
+class RHUIVariant:
     ORDINARY = 'ordinary'  # Special value - not displayed in report/errors
     SAP = 'sap'
     SAP_APPS = 'sap-apps'
     SAP_HA = 'sap-ha'
 
 
-class RHUIProvider(object):
+class RHUIProvider:
     GOOGLE = 'Google'
     AZURE = 'Azure'
     AWS = 'AWS'
@@ -74,7 +74,7 @@ RHUISetup = namedtuple(
 """
 
 
-class RHUIFamily(object):
+class RHUIFamily:
     def __init__(self, provider, client_files_folder='', variant=RHUIVariant.ORDINARY, arch=arch.ARCH_X86_64,):
         self.provider = provider
         self.client_files_folder = client_files_folder

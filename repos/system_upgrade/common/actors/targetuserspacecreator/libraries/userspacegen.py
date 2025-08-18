@@ -79,7 +79,7 @@ class BrokenSymlinkError(Exception):
     """Raised when we encounter a broken symlink where we weren't expecting it."""
 
 
-class _InputData(object):
+class _InputData:
     def __init__(self):
         self._consume_data()
 

@@ -10,7 +10,7 @@ from leapp.libraries.common.testutils import create_report_mocked
 from leapp.utils.report import is_inhibitor
 
 
-class fake_get_avail_bytes_on_boot(object):
+class fake_get_avail_bytes_on_boot:
     def __init__(self, size):
         self.size = size
 

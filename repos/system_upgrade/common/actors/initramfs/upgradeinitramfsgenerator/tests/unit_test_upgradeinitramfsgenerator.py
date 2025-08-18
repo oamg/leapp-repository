@@ -82,7 +82,7 @@ def gen_UDM_list(data):
     return [UpgradeDracutModule(name=i[0], module_path=i[1]) for i in data]
 
 
-class MockedContext(object):
+class MockedContext:
     def __init__(self):
         self.called_copy_from = []
         self.called_copytree_from = []
@@ -174,7 +174,7 @@ def test_copy_boot_files(monkeypatch, arch):
     assert actual_boot_content == bootc
 
 
-class MockedCopyArgs(object):
+class MockedCopyArgs:
     def __init__(self):
         self.args = None
 
@@ -250,7 +250,7 @@ def test_prepare_userspace_for_initram(monkeypatch, adjust_cwd, input_msgs, pkgs
     assert _sort_files(upgradeinitramfsgenerator._copy_files.args[1]) == _files
 
 
-class MockedGetFspace(object):
+class MockedGetFspace:
     def __init__(self, space):
         self.space = space
 

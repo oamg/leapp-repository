@@ -3,7 +3,7 @@ from leapp.libraries.common.config.version import get_source_major_version
 from leapp.models import InstalledRPM
 
 
-class LeappComponents(object):
+class LeappComponents:
     """
     Supported component values to be used with get_packages_function:
     * FRAMEWORK - the core of the leapp project: the leapp executable and

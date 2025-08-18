@@ -8,7 +8,7 @@ from leapp.libraries.stdlib import api
 from leapp.models import ArmWorkaroundEFIBootloaderInfo, BootContent, EFIBootEntry, FirmwareFacts
 
 
-class run_mocked(object):
+class run_mocked:
     def __init__(self):
         self.args = []
 

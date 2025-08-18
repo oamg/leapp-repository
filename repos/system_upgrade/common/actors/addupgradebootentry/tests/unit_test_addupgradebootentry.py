@@ -24,7 +24,7 @@ from leapp.models import (
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
-class run_mocked(object):
+class run_mocked:
     def __init__(self):
         self.args = []
 
@@ -32,7 +32,7 @@ class run_mocked(object):
         self.args.append(args)
 
 
-class write_to_file_mocked(object):
+class write_to_file_mocked:
     def __init__(self):
         self.content = None
 

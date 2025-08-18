@@ -7,7 +7,7 @@ from leapp.libraries.actor import verifycheckresults
 from leapp.libraries.stdlib import api
 
 
-class Report(object):
+class Report:
     def __init__(self, message):
         self.message = message
 

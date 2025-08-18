@@ -9,7 +9,7 @@ KernelPkgInfo = namedtuple('KernelPkgInfo', ('name', 'version', 'release', 'arch
 KERNEL_UNAME_R_PROVIDES = ['kernel-uname-r', 'kernel-rt-uname-r']
 
 
-class KernelType(object):
+class KernelType:
     ORDINARY = 'ordinary'
     REALTIME = 'realtime'
 

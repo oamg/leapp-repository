@@ -77,7 +77,7 @@ ARTIFACTS_SUBVERSION_113 = [
 ]
 
 
-class ModuleMocked(object):
+class ModuleMocked:
     def __init__(self, name, stream, artifacts):
         self.name = name
         self.stream = stream

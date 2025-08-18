@@ -16,7 +16,7 @@ from leapp.models import (
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
-class mocked_set_releasever(object):
+class mocked_set_releasever:
     def __init__(self):
         self.content = None
 
