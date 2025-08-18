@@ -6,7 +6,7 @@ from leapp.models import SelinuxPermissiveDecision
 
 
 @pytest.mark.skipif(
-    os.getenv("DESTRUCTIVE_TESTING", False) in [False, "0"],
+    os.getenv("DESTRUCTIVE_TESTING", "0").lower() in ["0", "false"],
     reason='Test disabled by default because it would modify the system')
 def check_permissive_in_conf():
     """ Check if we have set permissive in SElinux conf file """
@@ -19,7 +19,7 @@ def check_permissive_in_conf():
 
 
 @pytest.mark.skipif(
-    os.getenv("DESTRUCTIVE_TESTING", False) in [False, "0"],
+    os.getenv("DESTRUCTIVE_TESTING", "false").lower() in ["0", "false"],
     reason='Test disabled by default because it would modify the system')
 def test_set_selinux_permissive(current_actor_context):
     current_actor_context.feed(SelinuxPermissiveDecision(set_permissive=True))

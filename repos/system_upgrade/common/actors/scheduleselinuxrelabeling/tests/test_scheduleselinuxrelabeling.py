@@ -9,7 +9,7 @@ from leapp.snactor.fixture import current_actor_context
 
 
 @pytest.mark.skipif(
-    os.getenv("DESTRUCTIVE_TESTING", False) in [False, "0"],
+    os.getenv("DESTRUCTIVE_TESTING", "0").lower() in ["false", "0"],
     reason='Test disabled by default because it would modify the system',
 )
 def test_schedule_no_relabel(current_actor_context):
@@ -19,7 +19,7 @@ def test_schedule_no_relabel(current_actor_context):
 
 
 @pytest.mark.skipif(
-    os.getenv("DESTRUCTIVE_TESTING", False) in [False, "0"],
+    os.getenv("DESTRUCTIVE_TESTING", "0").lower() in ["false", "0"],
     reason='Test disabled by default because it would modify the system',
 )
 def test_schedule_relabel(current_actor_context):

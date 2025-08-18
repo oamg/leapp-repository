@@ -72,7 +72,7 @@ def destructive_selinux_env():
                  "Failed to remove SELinux customizations after testing")
 
 
-@pytest.mark.skipif(os.getenv("DESTRUCTIVE_TESTING", False) in [False, "0"],
+@pytest.mark.skipif(os.getenv("DESTRUCTIVE_TESTING", "0").lower() in ["false", "0"],
                     reason='Test disabled by default because it would modify the system')
 def test_SELinuxApplyCustom(current_actor_context, destructive_selinux_teardown):
 

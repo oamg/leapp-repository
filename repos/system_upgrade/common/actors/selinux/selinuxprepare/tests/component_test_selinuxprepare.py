@@ -76,7 +76,7 @@ def destructive_selinux_env():
     _run_cmd(semodule_command)
 
 
-@pytest.mark.skipif(os.getenv('DESTRUCTIVE_TESTING', False) in [False, '0'],
+@pytest.mark.skipif(os.getenv('DESTRUCTIVE_TESTING', '0').lower() in ['false', '0'],
                     reason='Test disabled by default because it would modify the system')
 def test_SELinuxPrepare(current_actor_context, semodule_lfull_initial, semanage_export_initial,
                         destructive_selinux_env):
