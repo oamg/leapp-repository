@@ -40,7 +40,6 @@ disable=
  too-many-positional-arguments,
 # new for python3 version of pylint
  unnecessary-pass,
- super-with-arguments,  # required in python 2
  raise-missing-from,  # no 'raise from' in python 2
  use-a-generator,  # cannot be modified because of Python2 support
  consider-using-f-string,  # sorry, not gonna happen, still have to support py2
