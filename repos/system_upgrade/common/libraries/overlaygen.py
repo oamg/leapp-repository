@@ -185,7 +185,7 @@ def _get_fspace(path, convert_to_mibs=False, coefficient=1):
     coefficient = min(coefficient, 1)
     fspace_bytes = int(stat.f_frsize * stat.f_bavail * coefficient)
     if convert_to_mibs:
-        return int(fspace_bytes / 1024 / 1024)  # noqa: W1619; pylint: disable=old-division
+        return int(fspace_bytes / 1024 / 1024)  # noqa: W1619
     return fspace_bytes
 
 
@@ -325,9 +325,7 @@ def _prepare_required_mounts(scratch_dir, mounts_dir, storage_info, scratch_rese
 
 @contextlib.contextmanager
 def _build_overlay_mount(root_mount, mounts):
-    # noqa: W0135; pylint: disable=contextmanager-generator-missing-cleanup
-    # NOTE(pstodulk): the pylint check is not valid in this case - finally is covered
-    # implicitly
+    # noqa: W0135
     if not root_mount:
         raise StopActorExecutionError('Root mount point has not been prepared for overlayfs.')
     if not mounts:
@@ -341,7 +339,10 @@ def _build_overlay_mount(root_mount, mounts):
                 with mounting.BindMount(source=overlay.target,
                                         target=os.path.join(root_mount.target, current.lstrip('/'))):
                     with _build_overlay_mount(root_mount, mounts) as mount:
-                        yield mount
+                        try:
+                            yield mount
+                        finally:
+                            pass  # cleanup handled by the nested context managers
 
 
 def cleanup_scratch(scratch_dir, mounts_dir):
@@ -393,23 +394,30 @@ def _format_disk_image_ext4(diskimage_path):
     us to estimate better the needed amount of the space for other actions
     done later.
     """
-    api.current_logger().debug('Creating ext4 filesystem in disk image at %s', diskimage_path)
+    api.current_logger().debug(
+        "Creating ext4 filesystem in disk image at %s", diskimage_path
+    )
     cmd = [
-        '/sbin/mkfs.ext4',
-        '-J', 'size=32',
-        '-E', 'lazy_itable_init=0,lazy_journal_init=0',
-        '-F', diskimage_path
+        "/sbin/mkfs.ext4",
+        "-J",
+        "size=32",
+        "-E",
+        "lazy_itable_init=0,lazy_journal_init=0",
+        "-F",
+        diskimage_path,
     ]
     try:
         utils.call_with_oserror_handled(cmd=cmd)
     except CalledProcessError as e:
         # FIXME(pstodulk): taken from original, but %s seems to me invalid here
-        api.current_logger().error('Failed to create ext4 filesystem in %s', diskimage_path, exc_info=True)
+        api.current_logger().error(
+            "Failed to create ext4 filesystem in %s", diskimage_path, exc_info=True
+        )
         raise StopActorExecutionError(
-            message='Cannot create Ext4 filesystem in {}'.format(diskimage_path),
+            message="Cannot create Ext4 filesystem in {}".format(diskimage_path),
             details={
-                'error message': str(e),
-            }
+                "error message": str(e),
+            },
         )
 
 
@@ -420,18 +428,22 @@ def _format_disk_image_xfs(diskimage_path):
     Set journal just to 32MiB always as we will not need to do too many operation
     inside, so 32MiB should enough for us.
     """
-    api.current_logger().debug('Creating XFS filesystem in disk image at %s', diskimage_path)
-    cmd = ['/sbin/mkfs.xfs', '-l', 'size=32m', '-f', diskimage_path]
+    api.current_logger().debug(
+        "Creating XFS filesystem in disk image at %s", diskimage_path
+    )
+    cmd = ["/sbin/mkfs.xfs", "-l", "size=32m", "-f", diskimage_path]
     try:
         utils.call_with_oserror_handled(cmd=cmd)
     except CalledProcessError as e:
         # FIXME(pstodulk): taken from original, but %s seems to me invalid here
-        api.current_logger().error('Failed to create XFS filesystem %s', diskimage_path, exc_info=True)
+        api.current_logger().error(
+            "Failed to create XFS filesystem %s", diskimage_path, exc_info=True
+        )
         raise StopActorExecutionError(
-            message='Cannot create XFS filesystem in {}'.format(diskimage_path),
+            message="Cannot create XFS filesystem in {}".format(diskimage_path),
             details={
-                'error message': str(e),
-            }
+                "error message": str(e),
+            },
         )
 
 
@@ -480,27 +492,30 @@ def _create_mount_disk_image(disk_images_directory, path, disk_size):
         # NOTE(pstodulk): In case the formatting params are modified,
         # the minimal required size could be different
         api.current_logger().warning(
-            'The apparent size for the disk image representing {path}'
-            ' is too small ({disk_size} MiBs) for a formatting. Setting 130 MiBs instead.'
-            .format(path=path, disk_size=disk_size)
+            "The apparent size for the disk image representing {path}"
+            " is too small ({disk_size} MiBs) for a formatting. Setting 130 MiBs instead.".format(
+                path=path, disk_size=disk_size
+            )
         )
         disk_size = 130
     diskimage_path = os.path.join(disk_images_directory, _mount_name(path))
     cmd = [
-        '/bin/dd',
-        'if=/dev/zero', 'of={}'.format(diskimage_path),
-        'bs=1M', 'count=0', 'seek={}'.format(disk_size)
+        "/bin/dd",
+        "if=/dev/zero",
+        "of={}".format(diskimage_path),
+        "bs=1M",
+        "count=0",
+        "seek={}".format(disk_size),
     ]
     hint = (
-        'Please ensure that there is enough diskspace on the partition hosting'
-        'the {} directory.'
-        .format(disk_images_directory)
+        "Please ensure that there is enough diskspace on the partition hosting"
+        "the {} directory.".format(disk_images_directory)
     )
 
-    api.current_logger().debug('Attempting to create disk image at %s', diskimage_path)
+    api.current_logger().debug("Attempting to create disk image at %s", diskimage_path)
     utils.call_with_failure_hint(cmd=cmd, hint=hint)
 
-    if get_env('LEAPP_OVL_IMG_FS_EXT4', '0') == '1':
+    if get_env("LEAPP_OVL_IMG_FS_EXT4", "0") == "1":
         # This is alternative to XFS in case we find some issues, to be able
         # to switch simply to Ext4, so we will be able to simple investigate
         # possible issues between overlay <-> XFS if any happens.
@@ -515,19 +530,23 @@ def _create_diskimages_dir(scratch_dir, diskimages_dir):
     """
     Prepares directories for disk images
     """
-    api.current_logger().debug('Creating disk images directory.')
+    api.current_logger().debug("Creating disk images directory.")
     try:
         utils.makedirs(diskimages_dir)
-        api.current_logger().debug('Done creating disk images directory.')
+        api.current_logger().debug("Done creating disk images directory.")
     except OSError:
-        api.current_logger().error('Failed to create disk images directory %s', diskimages_dir, exc_info=True)
+        api.current_logger().error(
+            "Failed to create disk images directory %s", diskimages_dir, exc_info=True
+        )
 
         # This is an attempt for giving the user a chance to resolve it on their own
         raise StopActorExecutionError(
-            message='Failed to prepare environment for package download while creating directories.',
+            message="Failed to prepare environment for package download while creating directories.",
             details={
-                'hint': 'Please ensure that {scratch_dir} is empty and modifiable.'.format(scratch_dir=scratch_dir)
-            }
+                "hint": "Please ensure that {scratch_dir} is empty and modifiable.".format(
+                    scratch_dir=scratch_dir
+                )
+            },
         )
 
 
@@ -535,19 +554,23 @@ def _create_mounts_dir(scratch_dir, mounts_dir):
     """
     Prepares directories for mounts
     """
-    api.current_logger().debug('Creating mount directories.')
+    api.current_logger().debug("Creating mount directories.")
     try:
         utils.makedirs(mounts_dir)
-        api.current_logger().debug('Done creating mount directories.')
+        api.current_logger().debug("Done creating mount directories.")
     except OSError:
-        api.current_logger().error('Failed to create mounting directories %s', mounts_dir, exc_info=True)
+        api.current_logger().error(
+            "Failed to create mounting directories %s", mounts_dir, exc_info=True
+        )
 
         # This is an attempt for giving the user a chance to resolve it on their own
         raise StopActorExecutionError(
-            message='Failed to prepare environment for package download while creating directories.',
+            message="Failed to prepare environment for package download while creating directories.",
             details={
-                'hint': 'Please ensure that {scratch_dir} is empty and modifiable.'.format(scratch_dir=scratch_dir)
-            }
+                "hint": "Please ensure that {scratch_dir} is empty and modifiable.".format(
+                    scratch_dir=scratch_dir
+                )
+            },
         )
 
 
@@ -556,17 +579,26 @@ def _mount_dnf_cache(overlay_target):
     """
     Convenience context manager to ensure bind mounted /var/cache/dnf and removal of the mount.
     """
-    # noqa: W0135; pylint: disable=contextmanager-generator-missing-cleanup
-    # NOTE(pstodulk): the pylint check is not valid in this case - finally is covered
-    # implicitly
+    # noqa: W0135
     with mounting.BindMount(
-            source='/var/cache/dnf',
-            target=os.path.join(overlay_target, 'var', 'cache', 'dnf')) as cache_mount:
-        yield cache_mount
+        source="/var/cache/dnf",
+        target=os.path.join(overlay_target, "var", "cache", "dnf"),
+    ) as cache_mount:
+        try:
+            yield cache_mount
+        finally:
+            pass  # cleanup is handled by BindMount.__exit__()
 
 
 @contextlib.contextmanager
-def create_source_overlay(mounts_dir, scratch_dir, xfs_info, storage_info, mount_target=None, scratch_reserve=0):
+def create_source_overlay(
+    mounts_dir,
+    scratch_dir,
+    xfs_info,
+    storage_info,
+    mount_target=None,
+    scratch_reserve=0,
+):
     """
     Context manager that prepares the source system overlay and yields the mount.
 
@@ -610,9 +642,7 @@ def create_source_overlay(mounts_dir, scratch_dir, xfs_info, storage_info, mount
     :type scratch_reserve: Optional[int]
     :rtype: mounting.BindMount or mounting.NullMount
     """
-    # noqa: W0135; pylint: disable=contextmanager-generator-missing-cleanup
-    # NOTE(pstodulk): the pylint check is not valid in this case - finally is covered
-    # implicitly
+    # noqa: W0135;
     api.current_logger().debug('Creating source overlay in {scratch_dir} with mounts in {mounts_dir}'.format(
         scratch_dir=scratch_dir, mounts_dir=mounts_dir))
     try:

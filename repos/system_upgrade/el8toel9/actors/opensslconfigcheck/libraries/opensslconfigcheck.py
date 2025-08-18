@@ -115,7 +115,8 @@ def _openssl_reachable_key(config, key, value=None):
     return False
 
 
-# pylint: disable=too-many-return-statements -- could not simplify more
+# pylint: disable=too-many-return-statements
+# could not simplify more
 def _openssl_reachable_path(config, path, value=None):
     """
     Check if the given path is reachable in OpenSSL configuration

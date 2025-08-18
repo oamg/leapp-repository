@@ -18,7 +18,8 @@ class PersistentNetNamesDisable(Actor):
     produces = (KernelCmdlineArg, Report)
     tags = (FactsPhaseTag, IPUWorkflowTag)
 
-    def ethX_count(self, interfaces):
+    @staticmethod
+    def ethX_count(interfaces):
         ethX = re.compile('eth[0-9]+')
         count = 0
 
@@ -27,7 +28,8 @@ class PersistentNetNamesDisable(Actor):
                 count = count + 1
         return count
 
-    def single_eth0(self, interfaces):
+    @staticmethod
+    def single_eth0(interfaces):
         return len(interfaces) == 1 and interfaces[0].name == 'eth0'
 
     def disable_persistent_naming(self):
