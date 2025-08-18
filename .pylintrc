@@ -9,23 +9,19 @@ disable=
  raising-bad-type,
  redundant-keyword-arg,  # it's one or the other, this one is not so bad at all
 # "W" Warnings for stylistic problems or minor programming issues
- no-absolute-import,
  arguments-differ,
  cell-var-from-loop,
  fixme,
  lost-exception,
- no-init,
  pointless-string-statement,
  protected-access,
  redefined-outer-name,
- relative-import,
  undefined-loop-variable,
  unsubscriptable-object,
  unused-argument,
  unused-import,
  unspecified-encoding,
 # "C" Coding convention violations
- bad-continuation,
  missing-docstring,
  wrong-import-order,
  use-maxsplit-arg,
@@ -33,7 +29,6 @@ disable=
  consider-using-enumerate,
 # "R" Refactor recommendations
  duplicate-code,
- no-self-use,
  too-few-public-methods,
  too-many-branches,
  too-many-locals,
@@ -42,10 +37,9 @@ disable=
  use-list-literal,
  use-dict-literal,
  too-many-lines,  # we do not want to take care about that one
- too-many-positional-arguments,  # we cannot set yet max-possitional-arguments unfortunately
+ too-many-positional-arguments,
 # new for python3 version of pylint
  unnecessary-pass,
- bad-option-value,  # python 2 doesn't have import-outside-toplevel, but in some case we need to import outside toplevel
  super-with-arguments,  # required in python 2
  raise-missing-from,  # no 'raise from' in python 2
  use-a-generator,  # cannot be modified because of Python2 support

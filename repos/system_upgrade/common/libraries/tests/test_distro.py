@@ -168,7 +168,8 @@ def test_get_distro_repoids(
     monkeypatch.setattr(os.path, 'exists', lambda f: f in _CENTOS_REPOFILES)
 
     class MockedContext:
-        def full_path(self, path):
+        @staticmethod
+        def full_path(path):
             return path
 
     repoids = get_distro_repoids(MockedContext(), distro_id, '9', 'x86_64')

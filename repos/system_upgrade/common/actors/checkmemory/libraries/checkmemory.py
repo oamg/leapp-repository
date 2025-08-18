@@ -34,8 +34,8 @@ def process():
     if minimum_req_error:
         title = 'Minimum memory requirements for RHEL {} are not met'.format(version.get_target_major_version())
         summary = 'Memory detected: {} MiB, required: {} MiB'.format(
-            int(minimum_req_error['detected'] / 1024),  # noqa: W1619; pylint: disable=old-division
-            int(minimum_req_error['minimal_req'] / 1024),  # noqa: W1619; pylint: disable=old-division
+            int(minimum_req_error['detected'] / 1024),
+            int(minimum_req_error['minimal_req'] / 1024),
         )
         reporting.create_report([
                           reporting.Title(title),

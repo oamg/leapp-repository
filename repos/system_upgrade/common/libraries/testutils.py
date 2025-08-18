@@ -120,7 +120,7 @@ class CurrentActorMocked:  # pylint:disable=R0904
         return os.path.join(self._common_tools_folder, name)
 
     def consume(self, model):
-        return iter(filter(  # pylint:disable=W0110,W1639
+        return iter(filter(
             lambda msg: isinstance(msg, model), self._msgs
         ))
 

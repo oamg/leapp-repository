@@ -271,7 +271,7 @@ def _get_fspace(path, convert_to_mibs=False, coefficient=1):
     coefficient = min(coefficient, 1)
     fspace_bytes = int(stat.f_frsize * stat.f_bavail * coefficient)
     if convert_to_mibs:
-        return int(fspace_bytes / 1024 / 1024)  # noqa: W1619; pylint: disable=old-division
+        return int(fspace_bytes / 1024 / 1024)
     return fspace_bytes
 
 
