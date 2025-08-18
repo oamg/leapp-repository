@@ -7,7 +7,7 @@ from leapp.models import DNFWorkaround
 
 class ShowMessageCurrentActorMocked(CurrentActorMocked):
     def __init__(self, *args, **kwargs):
-        super(ShowMessageCurrentActorMocked, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._show_messages = []
 
     @property
