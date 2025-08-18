@@ -50,7 +50,8 @@ class MockedMountingBase:
     def __call__(self, **dummy_kwarg):
         yield self
 
-    def call(self, *args, **kwargs):
+    @staticmethod
+    def call(*args, **kwargs):
         return {'stdout': ''}
 
     def nspawn(self):

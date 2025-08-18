@@ -66,7 +66,8 @@ class IsolationType:
             """ Release the isolation context """
             pass
 
-        def make_command(self, cmd):
+        @staticmethod
+        def make_command(cmd):
             """ Transform the given command to the isolated environment """
             return cmd
 
