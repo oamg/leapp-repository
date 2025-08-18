@@ -23,7 +23,7 @@ INVALID_DD = b'Nothing to see here!'
 
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# pylint: disable=E501
+# pylint: disable=line-too-long
 # flake8: noqa: E501
 EFIBOOTMGR_OUTPUT = r"""
 BootCurrent: 0006

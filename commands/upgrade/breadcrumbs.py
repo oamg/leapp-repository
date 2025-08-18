@@ -80,7 +80,8 @@ class _BreadCrumbs:
             # even though it shouldn't though, just ignore it
             pass
 
-    def _commit_rhsm_facts(self):
+    @staticmethod
+    def _commit_rhsm_facts():
         if runs_in_container():
             return
         cmd = ['/usr/sbin/subscription-manager', 'facts', '--update']
@@ -122,7 +123,8 @@ class _BreadCrumbs:
         except OSError:
             sys.stderr.write('WARNING: Could not write to /etc/migration-results\n')
 
-    def _get_packages(self):
+    @staticmethod
+    def _get_packages():
         cmd = ['/bin/bash', '-c', 'rpm -qa --queryformat="%{nevra} %{SIGPGP:pgpsig}\n" | grep -Ee "leapp|snactor"']
         res = _call(cmd, lambda x, y: None, lambda x, y: None)
         if res.get('exit_code', None) == 0:
@@ -131,7 +133,8 @@ class _BreadCrumbs:
                         for t in [line.strip().split(' ', 1) for line in res['stdout'].split('\n') if line.strip()]]
         return []
 
-    def _verify_leapp_pkgs(self):
+    @staticmethod
+    def _verify_leapp_pkgs():
         if not os.environ.get('LEAPP_IPU_IN_PROGRESS'):
             return []
         upg_path = os.environ.get('LEAPP_IPU_IN_PROGRESS').split('to')

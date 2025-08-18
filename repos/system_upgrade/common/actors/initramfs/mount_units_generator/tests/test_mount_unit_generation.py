@@ -249,7 +249,8 @@ def test_copy_units_mixed_content(monkeypatch):
         def __init__(self):
             self.base_dir = '/container'
 
-        def full_path(self, path):
+        @staticmethod
+        def full_path(path):
             return os.path.join('/container', path.lstrip('/'))
 
     mock_container = MockedContainerContext()
