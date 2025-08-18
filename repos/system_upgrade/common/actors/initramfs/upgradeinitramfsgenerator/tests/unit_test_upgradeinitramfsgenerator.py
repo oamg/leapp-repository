@@ -257,7 +257,7 @@ class MockedGetFspace:
     def __call__(self, dummy_path, convert_to_mibs=False):
         if not convert_to_mibs:
             return self.space
-        return int(self.space / 1024 / 1024)  # noqa: W1619; pylint: disable=old-division
+        return int(self.space / 1024 / 1024)
 
 
 @pytest.mark.parametrize('input_msgs,dracut_modules,kernel_modules', [

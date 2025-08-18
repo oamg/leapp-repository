@@ -185,7 +185,7 @@ def _get_fspace(path, convert_to_mibs=False, coefficient=1):
     coefficient = min(coefficient, 1)
     fspace_bytes = int(stat.f_frsize * stat.f_bavail * coefficient)
     if convert_to_mibs:
-        return int(fspace_bytes / 1024 / 1024)  # noqa: W1619; pylint: disable=old-division
+        return int(fspace_bytes / 1024 / 1024)
     return fspace_bytes
 
 
@@ -325,7 +325,7 @@ def _prepare_required_mounts(scratch_dir, mounts_dir, storage_info, scratch_rese
 
 @contextlib.contextmanager
 def _build_overlay_mount(root_mount, mounts):
-    # noqa: W0135; pylint: disable=contextmanager-generator-missing-cleanup
+    # noqa: W0135; pylint: disable=bad-option-value,contextmanager-generator-missing-cleanup
     # NOTE(pstodulk): the pylint check is not valid in this case - finally is covered
     # implicitly
     if not root_mount:
@@ -480,8 +480,8 @@ def _create_mount_disk_image(disk_images_directory, path, disk_size):
         # NOTE(pstodulk): In case the formatting params are modified,
         # the minimal required size could be different
         api.current_logger().warning(
-            'The apparent size for the disk image representing {path}'
-            ' is too small ({disk_size} MiBs) for a formatting. Setting 130 MiBs instead.'
+            'The apparent size for the disk image representing {path} '
+            'is too small ({disk_size} MiBs) for a formatting. Setting 130 MiBs instead.'
             .format(path=path, disk_size=disk_size)
         )
         disk_size = 130
@@ -489,12 +489,11 @@ def _create_mount_disk_image(disk_images_directory, path, disk_size):
     cmd = [
         '/bin/dd',
         'if=/dev/zero', 'of={}'.format(diskimage_path),
-        'bs=1M', 'count=0', 'seek={}'.format(disk_size)
+        'bs=1M', 'count=0', 'seek={}'.format(disk_size),
     ]
     hint = (
         'Please ensure that there is enough diskspace on the partition hosting'
-        'the {} directory.'
-        .format(disk_images_directory)
+        'the {} directory.'.format(disk_images_directory)
     )
 
     api.current_logger().debug('Attempting to create disk image at %s', diskimage_path)
@@ -540,7 +539,9 @@ def _create_mounts_dir(scratch_dir, mounts_dir):
         utils.makedirs(mounts_dir)
         api.current_logger().debug('Done creating mount directories.')
     except OSError:
-        api.current_logger().error('Failed to create mounting directories %s', mounts_dir, exc_info=True)
+        api.current_logger().error(
+            'Failed to create mounting directories %s', mounts_dir, exc_info=True
+        )
 
         # This is an attempt for giving the user a chance to resolve it on their own
         raise StopActorExecutionError(
@@ -556,17 +557,25 @@ def _mount_dnf_cache(overlay_target):
     """
     Convenience context manager to ensure bind mounted /var/cache/dnf and removal of the mount.
     """
-    # noqa: W0135; pylint: disable=contextmanager-generator-missing-cleanup
+    # noqa: W0135; pylint: disable=bad-option-value,contextmanager-generator-missing-cleanup
     # NOTE(pstodulk): the pylint check is not valid in this case - finally is covered
     # implicitly
     with mounting.BindMount(
-            source='/var/cache/dnf',
-            target=os.path.join(overlay_target, 'var', 'cache', 'dnf')) as cache_mount:
+        source='/var/cache/dnf',
+        target=os.path.join(overlay_target, 'var', 'cache', 'dnf'),
+    ) as cache_mount:
         yield cache_mount
 
 
 @contextlib.contextmanager
-def create_source_overlay(mounts_dir, scratch_dir, xfs_info, storage_info, mount_target=None, scratch_reserve=0):
+def create_source_overlay(
+    mounts_dir,
+    scratch_dir,
+    xfs_info,
+    storage_info,
+    mount_target=None,
+    scratch_reserve=0,
+):
     """
     Context manager that prepares the source system overlay and yields the mount.
 
@@ -610,7 +619,7 @@ def create_source_overlay(mounts_dir, scratch_dir, xfs_info, storage_info, mount
     :type scratch_reserve: Optional[int]
     :rtype: mounting.BindMount or mounting.NullMount
     """
-    # noqa: W0135; pylint: disable=contextmanager-generator-missing-cleanup
+    # noqa: W0135; pylint: disable=bad-option-value,contextmanager-generator-missing-cleanup
     # NOTE(pstodulk): the pylint check is not valid in this case - finally is covered
     # implicitly
     api.current_logger().debug('Creating source overlay in {scratch_dir} with mounts in {mounts_dir}'.format(

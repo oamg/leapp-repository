@@ -17,7 +17,8 @@ def not_isolated_actions(raise_err=False):
         def __init__(self, base_dir=None):
             pass
 
-        def call(self, cmd, **kwargs):
+        @staticmethod
+        def call(cmd, **kwargs):
             commands_called.append((cmd, kwargs))
             if raise_err:
                 raise_call_error()

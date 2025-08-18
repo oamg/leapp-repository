@@ -15,7 +15,7 @@ from leapp.models import InstalledTargetKernelInfo, KernelCmdlineArg, TargetKern
 
 TARGET_KERNEL_NEVRA = 'kernel-core-1.2.3-4.x86_64.el8.x64_64'
 
-# pylint: disable=E501
+# pylint: disable=line-too-long
 SAMPLE_KERNEL_ARGS = ('ro rootflags=subvol=root'
                       ' resume=/dev/mapper/luks-2c0df999-81ec-4a35-a1f9-b93afee8c6ad'
                       ' rd.luks.uuid=luks-90a6412f-c588-46ca-9118-5aca35943d25'
@@ -31,7 +31,7 @@ title="Fedora Linux (6.5.13-100.fc37.x86_64) 37 (Thirty Seven)"
 id="a3018267cdd8451db7c77bb3e5b1403d-6.5.13-100.fc37.x86_64"
 """  # noqa: E501
 SAMPLE_GRUBBY_INFO_OUTPUT = TEMPLATE_GRUBBY_INFO_OUTPUT.format(SAMPLE_KERNEL_ARGS, SAMPLE_KERNEL_ROOT)
-# pylint: enable=E501
+# pylint: enable=line-too-long
 
 
 class MockedRun:
