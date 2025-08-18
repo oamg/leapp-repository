@@ -18,7 +18,7 @@ class ShowMessageCurrentActorMocked(CurrentActorMocked):
         self._show_messages.append(message)
 
 
-class MockedNotIsolatedActions(object):
+class MockedNotIsolatedActions:
     def __init__(self):
         self.called = 0
         self.args = None

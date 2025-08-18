@@ -36,7 +36,7 @@ def adjust_cwd():
     os.chdir(previous_cwd)
 
 
-class MockedMountingBase(object):
+class MockedMountingBase:
     def __init__(self, **dummy_kwargs):
         self.called_copytree_from = []
         self.target = ''
@@ -923,7 +923,7 @@ _SAEE = StopActorExecutionError
 _SAE = StopActorExecution
 
 
-class MockedConsume(object):
+class MockedConsume:
     def __init__(self, *args):
         self._msgs = []
         for arg in args:

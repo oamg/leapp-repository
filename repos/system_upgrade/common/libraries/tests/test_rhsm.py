@@ -62,7 +62,7 @@ RHSM_ENABLED_REPOS = [
 ]
 
 
-class IsolatedActionsMocked(object):
+class IsolatedActionsMocked:
     def __init__(self, call_stdout=None, raise_err=False):
         self.commands_called = []
         self.call_return = {'stdout': call_stdout, 'stderr': None}
