@@ -11,7 +11,7 @@ import pytest
            'under the root user.',
 )
 # TODO make the test not destructive
-@pytest.mark.skipif(os.getenv("DESTRUCTIVE_TESTING", False) in [False, "0"],
+@pytest.mark.skipif(os.getenv("DESTRUCTIVE_TESTING", "0").lower() in ["false", "0"],
                     reason='Test disabled by default because it would modify the system')
 def test_remove_resume_service(current_actor_context):
     service_name = 'leapp_resume.service'
