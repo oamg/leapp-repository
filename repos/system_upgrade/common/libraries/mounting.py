@@ -16,7 +16,7 @@ ALWAYS_BIND = []
 ErrorData = namedtuple('ErrorData', ['summary', 'details'])
 
 
-class MountingMode(object):
+class MountingMode:
     """
     MountingMode are types of mounts supported by the library
     """
@@ -50,9 +50,9 @@ class MountError(Exception):
         self.details = details
 
 
-class IsolationType(object):
+class IsolationType:
     """ Implementations for the different isolated actions types """
-    class _Implementation(object):
+    class _Implementation:
         """ Base class for all isolated actions """
 
         def __init__(self, target, **kwargs):
@@ -129,7 +129,7 @@ class IsolationType(object):
         """ Execute the given commands and perform the given operations on the real system and not isolated. """
 
 
-class IsolatedActions(object):
+class IsolatedActions:
     """ This class allows to perform actions in a manner as if the given base_dir would be the current root """
 
     _isolated = True
@@ -280,7 +280,7 @@ class NotIsolatedActions(IsolatedActions):
         super(NotIsolatedActions, self).__init__(base_dir=base_dir, implementation=IsolationType.NONE)
 
 
-class MountConfig(object):
+class MountConfig:
     """ Options for Mount """
     _Options = namedtuple('_Options', ('should_create', 'should_cleanup'))
     AttachOnly = _Options(should_create=False, should_cleanup=False)
@@ -293,7 +293,7 @@ class MountConfig(object):
     """ Create all necessary directories and perform mount calls and cleanup afterwards """
 
 
-class MountingBase(object):
+class MountingBase:
     """ Base class for all mount operations """
 
     def __init__(self, source, target, mode, config=MountConfig.Mount):

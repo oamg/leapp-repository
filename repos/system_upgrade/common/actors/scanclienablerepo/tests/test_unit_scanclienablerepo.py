@@ -6,7 +6,7 @@ from leapp.libraries.stdlib import api
 from leapp.models import CustomTargetRepository
 
 
-class LoggerMocked(object):
+class LoggerMocked:
     def __init__(self):
         self.infomsg = None
         self.debugmsg = None

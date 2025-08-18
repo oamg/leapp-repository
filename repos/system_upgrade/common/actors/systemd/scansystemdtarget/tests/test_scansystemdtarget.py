@@ -73,7 +73,7 @@ _CALL_PROC_ERR = CalledProcessError(
 )
 
 
-class GetOrRaise(object):
+class GetOrRaise:
     def __init__(self, value):
         self.value = value
 

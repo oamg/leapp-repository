@@ -35,7 +35,7 @@ class MockEFIBootInfo:
         }
 
 
-class IsolatedActionsMocked(object):
+class IsolatedActionsMocked:
     def __init__(self):
         self.copytree_from_calls = []
 

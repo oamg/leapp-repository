@@ -4,7 +4,7 @@ from leapp.libraries.actor import systemfacts
 from leapp.models import DefaultGrub
 
 
-class RunMocked(object):
+class RunMocked:
     def __init__(self, cmd_result):
         self.called = 0
         self.cmd_result = cmd_result

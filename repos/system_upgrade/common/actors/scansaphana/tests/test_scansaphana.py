@@ -59,7 +59,7 @@ compiler-version: GCC 9
 lcmserver-artifact-version: 2.5.46'''))
 
 
-class CallMock(object):
+class CallMock:
     def __init__(self, ret):
         self.args = None
         self.ret = ret
@@ -69,7 +69,7 @@ class CallMock(object):
         return self.ret
 
 
-class SubprocessCall(object):
+class SubprocessCall:
     def __init__(self, admusername):
         self.admusername = admusername
 
@@ -108,7 +108,7 @@ def test_scansaphana_get_instance_status(monkeypatch):
 
 
 def test_scansaphana_parse_manifest(monkeypatch):
-    class _mock_open(object):
+    class _mock_open:
         def __init__(self, path, mode):
             self._fp = BytesIO(SAPHANA2_MANIFEST.encode('utf-8'))
 

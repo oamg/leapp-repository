@@ -34,7 +34,7 @@ SAMPLE_GRUBBY_INFO_OUTPUT = TEMPLATE_GRUBBY_INFO_OUTPUT.format(SAMPLE_KERNEL_ARG
 # pylint: enable=E501
 
 
-class MockedRun(object):
+class MockedRun:
     def __init__(self, outputs=None):
         """
         Mock stdlib.run().

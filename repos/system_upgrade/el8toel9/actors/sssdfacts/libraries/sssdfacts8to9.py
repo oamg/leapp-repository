@@ -1,7 +1,7 @@
 from leapp.models import SSSDConfig8to9
 
 
-class SSSDFactsLibrary(object):
+class SSSDFactsLibrary:
     """
     Helper library from SSSDFacts actor to allow unit testing.
     """

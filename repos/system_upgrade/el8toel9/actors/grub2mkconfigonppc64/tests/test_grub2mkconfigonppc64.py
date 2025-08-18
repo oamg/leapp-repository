@@ -12,7 +12,7 @@ from leapp.models import DefaultGrub, DefaultGrubInfo, FirmwareFacts
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
-class MockedRun(object):
+class MockedRun:
     def __init__(self):
         self.commands = []
 
@@ -36,7 +36,7 @@ def test_run_grub2mkconfig(monkeypatch, cmd_issued):
         'menuentry "Red Hat Enterprise Linux Server (3.10.0-1160.45.1.el7.x86_64) 7.9 (Maipo)"'
     )
 
-    class _mock_open(object):
+    class _mock_open:
         def __init__(self, path, mode):
             input_ = grub2_cfg_non_bls_excerpt if cmd_issued else grub2_cfg_bls_excerpt
             self._fp = StringIO(input_)

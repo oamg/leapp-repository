@@ -56,7 +56,7 @@ LSCPU = {
 }
 
 
-class mocked_get_cpuinfo(object):
+class mocked_get_cpuinfo:
 
     def __init__(self, filename):
         self.filename = filename

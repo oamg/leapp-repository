@@ -32,7 +32,7 @@ def _get_test_installed_rmps(fps):
     return InstalledRPM(items=rpms)
 
 
-class MockedGetGpgFromFile(object):
+class MockedGetGpgFromFile:
     def __init__(self, file_fps_tuples):
         # e.g. file_fps_tuple = [('/mydir/myfile', ['0000ff31', '0000ff32'])]
         self._data = {}

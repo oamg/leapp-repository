@@ -18,7 +18,7 @@ def _get_channel_prio(pesid_repo):
     return priorities.get(pesid_repo.channel, 10)
 
 
-class RepoMapDataHandler(object):
+class RepoMapDataHandler:
     """
     Provide the basic functionality to work with the repository data easily.
     """

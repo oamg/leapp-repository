@@ -1,10 +1,10 @@
-class LuksDumpParser(object):
+class LuksDumpParser:
     """
     Class for parsing "cryptsetup luksDump" output. Given a list of lines, it
     generates a dictionary representing the dump.
     """
 
-    class Node(object):
+    class Node:
         """
         Helper class, every line is represented as a node. The node depth is
         based on the indentation of the line. A dictionary is produced after

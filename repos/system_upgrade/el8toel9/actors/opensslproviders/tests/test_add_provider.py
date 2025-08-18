@@ -64,7 +64,7 @@ def test_append(lines, add, comment, expected):
     assert r == expected
 
 
-class MockFile(object):
+class MockFile:
     def __init__(self, content=None):
         self.content = content
         self.error = False

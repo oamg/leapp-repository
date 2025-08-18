@@ -61,7 +61,7 @@ def test_aslist(current_actor_libraries):
 )
 def test_get_system_users(monkeypatch, etc_passwd_names, etc_passwd_directory, skipped_user_names):
 
-    class MockedPwdEntry(object):
+    class MockedPwdEntry:
         def __init__(self, pw_name, pw_uid, pw_gid, pw_dir):
             self.pw_name = pw_name
             self.pw_uid = pw_uid
@@ -99,7 +99,7 @@ def test_get_system_users(monkeypatch, etc_passwd_names, etc_passwd_directory, s
 )
 def test_get_system_groups(monkeypatch, etc_group_names, skipped_group_names):
 
-    class MockedGrpEntry(object):
+    class MockedGrpEntry:
         def __init__(self, gr_name, gr_gid, gr_mem):
             self.gr_name = gr_name
             self.gr_gid = gr_gid

@@ -29,7 +29,7 @@ CLEVIS_KEYSLOTS = {
 }
 
 
-class MockedRun(object):
+class MockedRun:
     """Simple mock class for leapp.libraries.stdlib.run."""
 
     def __init__(self, variant, clevis_keyslots):

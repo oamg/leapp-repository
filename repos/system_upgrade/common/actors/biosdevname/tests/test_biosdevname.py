@@ -9,7 +9,7 @@ from leapp.libraries.stdlib import api
 from leapp.models import Interface, PCIAddress
 
 
-class LoggerMocked(object):
+class LoggerMocked:
     def __init__(self):
         self.infomsg = None
 
@@ -32,12 +32,12 @@ def test_biosdevname_enabled(monkeypatch):
         assert not biosdevname.is_biosdevname_disabled()
 
 
-class pyudev_enum_mock(object):
+class pyudev_enum_mock:
     def __init__(self, vendor):
         self.vendor = vendor
 
     def match_sys_name(self, _):
-        class dev(object):
+        class dev:
             attributes = {'sys_vendor': self.vendor}
 
         return [dev()]

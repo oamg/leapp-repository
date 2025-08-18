@@ -69,7 +69,7 @@ initrd=/boot/initramfs-{kernel_version}.img
 '''
 
 
-class MockedRun(object):
+class MockedRun:
     def __init__(self, case):
         self.case = case
         self.called_setdefault = False
