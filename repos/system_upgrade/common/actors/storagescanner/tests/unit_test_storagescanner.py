@@ -459,7 +459,7 @@ def test_get_lvdisplay_info(monkeypatch):
 
 def test_get_systemd_mount_info(monkeypatch):
 
-    class UdevDeviceMocked(object):
+    class UdevDeviceMocked:
         def __init__(self, device_node, path, model, wwn, fs_type, label, uuid):
             self.device_node = device_node
             # Simulate udev device attributes that should be queried
@@ -481,7 +481,7 @@ def test_get_systemd_mount_info(monkeypatch):
 
             return self.device_attributes[attribute]
 
-    class UdevContextMocked(object):
+    class UdevContextMocked:
         def __init__(self, mocked_devices):
             self.mocked_devices = mocked_devices
 

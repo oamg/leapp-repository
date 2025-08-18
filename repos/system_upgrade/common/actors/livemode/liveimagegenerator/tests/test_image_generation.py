@@ -68,7 +68,7 @@ def test_generate_live_image_if_enabled(monkeypatch, livemode_config, should_pro
     actor_mock = CurrentActorMocked(msgs=messages)
     monkeypatch.setattr(api, 'current_actor', actor_mock)
 
-    class NspawnMock(object):
+    class NspawnMock:
         def __init__(self, *args, **kwargs):
             pass
 
