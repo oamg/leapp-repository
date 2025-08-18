@@ -7,7 +7,7 @@ from leapp.libraries.stdlib import api
 from leapp.models import BootContent
 
 
-class remove_file_mocked(object):
+class remove_file_mocked:
     def __init__(self):
         self.called = 0
         self.files_to_remove = []

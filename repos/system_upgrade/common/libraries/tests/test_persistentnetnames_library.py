@@ -3,7 +3,7 @@ from leapp.libraries.common.testutils import produce_mocked
 from leapp.libraries.stdlib import api
 
 
-class AttributesTest(object):
+class AttributesTest:
     def __init__(self):
         self.attributes = {
             'address': b'fa:16:3e:cd:26:5a'
@@ -15,7 +15,7 @@ class AttributesTest(object):
         raise KeyError
 
 
-class DeviceTest(object):
+class DeviceTest:
     def __init__(self):
         self.dict_data = {
              'ID_NET_DRIVER': 'virtio_net',

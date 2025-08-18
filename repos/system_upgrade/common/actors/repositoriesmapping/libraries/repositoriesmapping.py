@@ -16,7 +16,7 @@ REPOMAP_FILE = 'repomap.json'
 """The name of the new repository mapping file."""
 
 
-class RepoMapData(object):
+class RepoMapData:
     VERSION_FORMAT = '1.3.0'
 
     def __init__(self):

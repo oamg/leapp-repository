@@ -20,7 +20,7 @@ def raise_call_error(args=None):
     )
 
 
-class run_mocked(object):
+class run_mocked:
     def __init__(self, raise_err=False, raise_callback=raise_call_error):
         self.called = 0
         self.args = []

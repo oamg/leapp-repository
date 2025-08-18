@@ -10,7 +10,7 @@ from leapp.models import EnvVar, IPUSourceToPossibleTargets
 from leapp.utils.deprecation import deprecated
 
 
-class produce_mocked(object):
+class produce_mocked:
     def __init__(self):
         self.called = 0
         self.model_instances = []
@@ -20,7 +20,7 @@ class produce_mocked(object):
         self.model_instances.extend(list(model_instances))
 
 
-class create_report_mocked(object):
+class create_report_mocked:
     def __init__(self):
         self.called = 0
         self.reports = []
@@ -38,7 +38,7 @@ class create_report_mocked(object):
         return {}
 
 
-class logger_mocked(object):
+class logger_mocked:
     def __init__(self):
         self.dbgmsg = []
         self.infomsg = []
@@ -77,7 +77,7 @@ def _make_default_config(actor_config_schema):
 # Note: The constructor of the following class takes in too many arguments (R0913). A builder-like
 # pattern would be nice here. Ideally, the builder should actively prevent the developer from setting fields
 # that do not affect actor's behavior in __setattr__.
-class CurrentActorMocked(object):  # pylint:disable=R0904
+class CurrentActorMocked:  # pylint:disable=R0904
     def __init__(self, arch=architecture.ARCH_X86_64, envars=None,  # pylint:disable=R0913
                  kernel='3.10.0-957.43.1.el7.x86_64',
                  release_id='rhel', src_ver='7.8', dst_ver='8.1', msgs=None, flavour='default', config=None,

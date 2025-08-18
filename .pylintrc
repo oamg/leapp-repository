@@ -44,7 +44,6 @@ disable=
  too-many-lines,  # we do not want to take care about that one
  too-many-positional-arguments,  # we cannot set yet max-possitional-arguments unfortunately
 # new for python3 version of pylint
- useless-object-inheritance,
  unnecessary-pass,
  invalid-envvar-default,  # pylint3 warnings envvar returns str/none by default
  bad-option-value,  # python 2 doesn't have import-outside-toplevel, but in some case we need to import outside toplevel

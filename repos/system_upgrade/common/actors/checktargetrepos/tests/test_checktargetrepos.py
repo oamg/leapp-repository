@@ -16,7 +16,7 @@ from leapp.utils.deprecation import suppress_deprecation
 from leapp.utils.report import is_inhibitor
 
 
-class MockedConsume(object):
+class MockedConsume:
     def __init__(self, *args):
         self._msgs = []
         for arg in args:
