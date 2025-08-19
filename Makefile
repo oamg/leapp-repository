@@ -165,7 +165,7 @@ help:
 	@echo "  MR=6 COPR_CONFIG='path/to/the/config/copr/file' make <target>"
 	@echo "  ACTOR=<actor> TEST_LIBS=y make test"
 	@echo "  BUILD_CONTAINER=rhel8 make build_container"
-	@echo "  TEST_CONTAINER=f34 make test_container"
+	@echo "  TEST_CONTAINER=f42 make test_container"
 	@echo "  CONTAINER_TOOL=docker TEST_CONTAINER=rhel8 make test_container_no_lint"
 	@echo ""
 
@@ -379,7 +379,6 @@ test_no_lint:
 	done; \
 	$(_PYTHON_VENV) -m pytest $(REPORT_ARG) $(TEST_PATHS) $(LIBRARY_PATH) $(PYTEST_ARGS)
 
-
 test: lint test_no_lint
 
 # container images act like a cache so that dependencies can only be downloaded once
@@ -416,7 +415,7 @@ lint_container:
 	@_TEST_CONT_TARGET="lint" $(MAKE) test_container
 
 lint_container_all:
-	@for container in "f34" "rhel8" "rhel9"; do \
+	@for container in "f42" "rhel8" "rhel9"; do \
 		TEST_CONTAINER=$$container $(MAKE) lint_container || exit 1; \
 	done
 
@@ -426,9 +425,9 @@ lint_container_all:
 # because e.g RHEL8 to RHEL9 IPU must work on python3.6 and python3.9.
 test_container:
 	@case $(_TEST_CONTAINER) in \
-	f34) \
-		export CONT_FILE="utils/container-tests/Containerfile.f34"; \
-		export _VENV="python3.9"; \
+	f42) \
+		export CONT_FILE="utils/container-tests/Containerfile.f42"; \
+		export _VENV="python3.13"; \
 		;; \
 	rhel8) \
 		export CONT_FILE="utils/container-tests/Containerfile.rhel8"; \
@@ -439,7 +438,7 @@ test_container:
 		export _VENV="python3.9"; \
 		;; \
 	*) \
-		echo "Error: Available containers are: f34, rhel8, rhel9"; exit 1; \
+		echo "Error: Available containers are: f42, rhel8, rhel9"; exit 1; \
 		;; \
 	esac; \
 	export TEST_IMAGE="leapp-repo-tests-$(_TEST_CONTAINER)"; \
@@ -471,7 +470,7 @@ test_container:
 	exit $$res
 
 test_container_all:
-	@for container in "f34" "rhel8" "rhel9"; do \
+	@for container in "f42" "rhel8" "rhel9"; do \
 		TEST_CONTAINER=$$container $(MAKE) test_container || exit 1; \
 	done
 
@@ -479,13 +478,13 @@ test_container_no_lint:
 	@_TEST_CONT_TARGET="test_no_lint" $(MAKE) test_container
 
 test_container_all_no_lint:
-	@for container in "f34" "rhel8" "rhel9"; do \
+	@for container in "f42" "rhel8" "rhel9"; do \
 		TEST_CONTAINER=$$container $(MAKE) test_container_no_lint || exit 1; \
 	done
 
 # clean all testing and building containers and their images
 clean_containers:
-	@for i in "leapp-repo-tests-f34" "leapp-repo-tests-rhel8" \
+	@for i in "leapp-repo-tests-f42" "leapp-repo-tests-rhel8" \
 	"leapp-repo-tests-rhel9" "leapp-repo-build-el8"; do \
 		$(_CONTAINER_TOOL) kill "$$i-cont" || :; \
 		$(_CONTAINER_TOOL) rm "$$i-cont" || :; \
