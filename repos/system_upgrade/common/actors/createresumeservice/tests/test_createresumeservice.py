@@ -6,7 +6,7 @@ import pytest
 
 @pytest.mark.skipif(os.getuid() != 0, reason='User is not a root')
 @pytest.mark.skipif(
-    distro.linux_distribution()[0] == 'Fedora',
+    distro.id() == 'fedora',
     reason='default.target.wants does not exists on Fedora distro',
 )
 def test_create_resume_service(current_actor_context):
