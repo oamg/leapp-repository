@@ -42,6 +42,11 @@ def test_get_target_version(mock_open, monkeypatch):
     },
 )
 def test_get_target_release(mock_open, monkeypatch):  # do not remove mock_open
+    # Make it look like it's RHEL even on centos, because that's what the test
+    # assumes.
+    # Otherwise the test, when ran on Centos, fails because it works
+    # with MAJOR.MINOR version format while Centos uses MAJOR format.
+    monkeypatch.setattr(command_utils, 'get_distro_id', lambda: 'rhel')
     monkeypatch.setattr(command_utils, 'get_os_release_version_id', lambda x: '8.6')
 
     # make sure env var LEAPP_DEVEL_TARGET_RELEASE takes precedence
