@@ -1,9 +1,15 @@
-FROM registry.access.redhat.com/ubi8/ubi:latest
+FROM centos:8
+
+RUN sed -i s/mirror.centos.org/vault.centos.org/ /etc/yum.repos.d/CentOS-*.repo
+RUN sed -i s/^#\s*baseurl=http/baseurl=http/ /etc/yum.repos.d/CentOS-*.repo
+RUN sed -i s/^mirrorlist=http/#mirrorlist=http/ /etc/yum.repos.d/CentOS-*.repo
 
 VOLUME /repo
 
 RUN dnf update -y && \
-    dnf install -y python3-virtualenv python3-setuptools python3-pip make git rsync
+    dnf install -y git make rsync \
+    python3-virtualenv python3-setuptools python3-pip \
+    python3-gobject NetworkManager-libnm
 
 ENV PYTHON_VENV python3.6
 
