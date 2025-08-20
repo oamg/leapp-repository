@@ -1,11 +1,11 @@
-FROM fedora:34
+FROM fedora:42
 
 VOLUME /repo
 
 RUN dnf update -y && \
     dnf install -y findutils make rsync python3-gobject-base NetworkManager-libnm
 
-ENV PYTHON_VENV python3.9
+ENV PYTHON_VENV python3.13
 
 COPY . /repocopy
 
