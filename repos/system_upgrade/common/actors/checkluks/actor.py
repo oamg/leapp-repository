@@ -9,9 +9,8 @@ class CheckLuks(Actor):
     """
     Check if any encrypted partitions are in use and whether they are supported for the upgrade.
 
-    Upgrading EL7 system with encrypted partition is not supported (but ceph OSDs).
     For EL8+ it's ok if the discovered used encrypted storage has LUKS2 format
-    and it's bounded to clevis-tpm2 token (so it can be automatically unlocked
+    and it's bound to clevis-tpm2 token (so it can be automatically unlocked
     during the process).
     """
 
