@@ -2,17 +2,15 @@ import json
 import re
 
 from leapp.libraries.common.config import architecture
-from leapp.libraries.common.config.version import get_source_major_version
 from leapp.libraries.stdlib import api, CalledProcessError, run
 from leapp.models import CPUInfo, DetectedDeviceOrDriver, DeviceDriverDeprecationData
 
-LSCPU_NAME_VALUE = re.compile(r'^(?P<name>[^:]+):[^\S\n]+(?P<value>.+)\n?', flags=re.MULTILINE)
 PPC64LE_MODEL = re.compile(r'\d+\.\d+ \(pvr (?P<family>[0-9a-fA-F]+) 0*[0-9a-fA-F]+\)')
 
 
-def _get_lscpu_output(output_json=False):
+def _get_lscpu_output():
     try:
-        result = run(['lscpu'] + (['-J'] if output_json else []))
+        result = run(['lscpu', '-J'])
         return result.get('stdout', '')
     except (OSError, CalledProcessError):
         api.current_logger().debug('Executing `lscpu` failed', exc_info=True)
@@ -20,10 +18,7 @@ def _get_lscpu_output(output_json=False):
 
 
 def _parse_lscpu_output():
-    if get_source_major_version() == '7':
-        return dict(LSCPU_NAME_VALUE.findall(_get_lscpu_output()))
-
-    lscpu = _get_lscpu_output(output_json=True)
+    lscpu = _get_lscpu_output()
     try:
         parsed_json = json.loads(lscpu)
         # The json contains one entry "lscpu" which is a list of dictionaries
