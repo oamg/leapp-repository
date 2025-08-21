@@ -21,7 +21,7 @@ def test_check_memory_high(monkeypatch):
 
 
 def test_report(monkeypatch):
-    title_msg = 'Minimum memory requirements for RHEL 8 are not met'
+    title_msg = 'Minimum memory requirements for RHEL 9 are not met'
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked())
     monkeypatch.setattr(api, 'consume', lambda x: iter([MemoryInfo(mem_total=129)]))
     monkeypatch.setattr(reporting, "create_report", create_report_mocked())
