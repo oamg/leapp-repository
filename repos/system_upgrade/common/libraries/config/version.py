@@ -14,11 +14,7 @@ OP_MAP = {
     '<=': operator.le
 }
 
-# TODO(pstodulk): drop 9.4 & 9.5 before May 2025 release
-# These will not be supported fo IPU 9 -> 10
 _SUPPORTED_VERSIONS = {
-    # Note: 'rhel-alt' is detected when on 'rhel' with kernel 4.x
-    '7': {'rhel': ['7.9'], 'rhel-alt': [], 'rhel-saphana': ['7.9']},
     '8': {'rhel': ['8.10'], 'rhel-saphana': ['8.10']},
     '9': {'rhel': ['9.6'], 'rhel-saphana': ['9.6']},
 }
