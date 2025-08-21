@@ -1,6 +1,5 @@
 import re
 
-from leapp.libraries.common.config.version import get_source_major_version
 from leapp.libraries.stdlib import run
 
 # When the output spans multiple lines, each of the lines after the first one
@@ -50,7 +49,7 @@ def _parse_loaded_plugins(package_manager_output):
 
 def scan_enabled_package_manager_plugins():
     """
-    Runs package manager (yum/dnf) command and parses its output for enabled/loaded plugins.
+    Runs package manager (dnf) command and parses its output for enabled/loaded plugins.
 
     :return: A list of enabled plugins.
     :rtype: List
@@ -60,16 +59,8 @@ def scan_enabled_package_manager_plugins():
     # An alternative approach would be to check the install path for package manager plugins
     # and parse corresponding plugin configuration files.
 
-    if get_source_major_version() == '7':
-        # in case of yum, set debuglevel=2 to be sure the output is always
-        # same. The format of data is different for various debuglevels
-        cmd = ['yum', '--setopt=debuglevel=2']
-    else:
-        # the verbose mode in dnf always set particular debuglevel, so the
-        # output is not affected by the default debug level set on the
-        # system
-        cmd = ['dnf', '-v']  # On RHEL8 we need to supply an extra switch
-
-    pkg_manager_output = run(cmd, split=True, checked=False)  # The command will certainly fail (does not matter).
-
-    return _parse_loaded_plugins(pkg_manager_output)
+    # the verbose mode in dnf always set particular debuglevel, so the
+    # output is not affected by the default debug level set on the
+    # system
+    output = run(['dnf', '-v'], split=True, checked=False)  # The command will certainly fail (does not matter).
+    return _parse_loaded_plugins(output)

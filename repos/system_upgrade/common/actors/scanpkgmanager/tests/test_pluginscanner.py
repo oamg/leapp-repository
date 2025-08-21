@@ -21,18 +21,11 @@ def assert_plugins_identified_as_enabled(expected_plugins, identified_plugins):
         assert expected_enabled_plugin in identified_plugins, fail_description
 
 
-@pytest.mark.parametrize(
-    ('source_major_version', 'command'),
-    [
-        ('7', ['yum', '--setopt=debuglevel=2']),
-        ('8', ['dnf', '-v']),
-    ]
-)
-def test_scan_enabled_plugins(monkeypatch, source_major_version, command):
+def test_scan_enabled_plugins(monkeypatch):
     """Tests whether the enabled plugins are correctly retrieved from the package manager output."""
 
     def run_mocked(cmd, **kwargs):
-        if cmd == command:
+        if cmd == ['dnf', '-v']:
             return {
                 'stdout': CMD_YUM_OUTPUT.split('\n'),
                 'stderr': 'You need to give some command',
@@ -40,13 +33,9 @@ def test_scan_enabled_plugins(monkeypatch, source_major_version, command):
             }
         raise ValueError('Tried to run an unexpected command.')
 
-    def get_source_major_version_mocked():
-        return source_major_version
-
     # The library imports `run` all the way into its namespace (from ...stdlib import run),
     # we must overwrite it there then:
     monkeypatch.setattr(pluginscanner, 'run', run_mocked)
-    monkeypatch.setattr(pluginscanner, 'get_source_major_version', get_source_major_version_mocked)
 
     enabled_plugins = pluginscanner.scan_enabled_package_manager_plugins()
     assert_plugins_identified_as_enabled(
@@ -72,7 +61,6 @@ def test_yum_loaded_plugins_multiline_output(yum_output, monkeypatch):
         }
 
     monkeypatch.setattr(pluginscanner, 'run', run_mocked)
-    monkeypatch.setattr(pluginscanner, 'get_source_major_version', lambda: '7')
 
     enabled_plugins = pluginscanner.scan_enabled_package_manager_plugins()
 
