@@ -53,16 +53,6 @@ def mk_setup_info():
     return TargetRHUISetupInfo(preinstall_tasks=pre_tasks, postinstall_tasks=post_tasks)
 
 
-def iter_known_rhui_setups():
-    for upgrade_path, providers in rhui.RHUI_CLOUD_MAP.items():
-        for provider_variant, variant_description in providers.items():
-            src_clients = variant_description['src_pkg']
-            if isinstance(src_clients, str):
-                src_clients = {src_clients, }
-
-            yield provider_variant, upgrade_path, src_clients
-
-
 def mk_cloud_map(variants):
     upg_path = {}
     for variant_desc in variants:
