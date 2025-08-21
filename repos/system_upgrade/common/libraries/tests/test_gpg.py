@@ -12,8 +12,6 @@ from leapp.models import GpgKey, InstalledRPM, RPM
 
 
 @pytest.mark.parametrize('target, product_type, distro, exp', [
-    ('8.6', 'beta', 'rhel', '../../files/distro/rhel/rpm-gpg/8beta'),
-    ('8.8', 'htb', 'rhel', '../../files/distro/rhel/rpm-gpg/8'),
     ('9.0', 'beta', 'rhel', '../../files/distro/rhel/rpm-gpg/9beta'),
     ('9.2', 'ga', 'rhel', '../../files/distro/rhel/rpm-gpg/9'),
     ('10.0', 'ga', 'rhel', '../../files/distro/rhel/rpm-gpg/10'),
@@ -30,14 +28,9 @@ def test_get_path_to_gpg_certs(monkeypatch, target, product_type, distro, exp):
     assert p == exp
 
 
-def is_rhel7():
-    return int(distro.major_version()) < 8
-
-
 @pytest.mark.skipif(distro.id() not in ("rhel", "centos"), reason="Requires RHEL or CentOS for valid results.")
 def test_gpg_show_keys(loaded_leapp_repository, monkeypatch):
-    src = '7.9' if is_rhel7() else '8.6'
-    current_actor = CurrentActorMocked(src_ver=src, release_id='rhel')
+    current_actor = CurrentActorMocked(src_ver='8.10', release_id='rhel')
     monkeypatch.setattr(api, 'current_actor', current_actor)
 
     # python2 compatibility :/
@@ -50,11 +43,8 @@ def test_gpg_show_keys(loaded_leapp_repository, monkeypatch):
         # non-existing file
         non_existent_path = os.path.join(dirpath, 'nonexistent')
         res = gpg._gpg_show_keys(non_existent_path)
-        if is_rhel7():
-            err_msg = "gpg: can't open `{}'".format(non_existent_path)
-        else:
-            err_msg = "gpg: can't open '{}': No such file or directory\n".format(non_existent_path)
         assert not res['stdout']
+        err_msg = "gpg: can't open '{}': No such file or directory\n".format(non_existent_path)
         assert err_msg in res['stderr']
         assert res['exit_code'] == 2
 
@@ -67,13 +57,8 @@ def test_gpg_show_keys(loaded_leapp_repository, monkeypatch):
             f.write('test')
 
         res = gpg._gpg_show_keys(no_key_path)
-        if is_rhel7():
-            err_msg = ('gpg: no valid OpenPGP data found.\n'
-                       'gpg: processing message failed: Unknown system error\n')
-        else:
-            err_msg = 'gpg: no valid OpenPGP data found.\n'
         assert not res['stdout']
-        assert res['stderr'] == err_msg
+        assert res['stderr'] == 'gpg: no valid OpenPGP data found.\n'
         assert res['exit_code'] == 2
 
         fp = gpg._parse_fp_from_gpg(res)
@@ -89,24 +74,15 @@ def test_gpg_show_keys(loaded_leapp_repository, monkeypatch):
     finally:
         shutil.rmtree(dirpath)
 
-    if is_rhel7():
-        assert len(res['stdout']) == 4
-        assert res['stdout'][0] == ('pub:-:4096:1:199E2F91FD431D51:1256212795:::-:'
-                                    'Red Hat, Inc. (release key 2) <security@redhat.com>:')
-        assert res['stdout'][1] == 'fpr:::::::::567E347AD0044ADE55BA8A5F199E2F91FD431D51:'
-        assert res['stdout'][2] == ('pub:-:4096:1:5054E4A45A6340B3:1646863006:::-:'
-                                    'Red Hat, Inc. (auxiliary key 3) <security@redhat.com>:')
-        assert res['stdout'][3] == 'fpr:::::::::7E4624258C406535D56D6F135054E4A45A6340B3:'
-    else:
-        assert len(res['stdout']) == 6
-        assert res['stdout'][0] == 'pub:-:4096:1:199E2F91FD431D51:1256212795:::-:::scSC::::::23::0:'
-        assert res['stdout'][1] == 'fpr:::::::::567E347AD0044ADE55BA8A5F199E2F91FD431D51:'
-        assert res['stdout'][2] == ('uid:-::::1256212795::DC1CAEC7997B3575101BB0FCAAC6191792660D8F::'
-                                    'Red Hat, Inc. (release key 2) <security@redhat.com>::::::::::0:')
-        assert res['stdout'][3] == 'pub:-:4096:1:5054E4A45A6340B3:1646863006:::-:::scSC::::::23::0:'
-        assert res['stdout'][4] == 'fpr:::::::::7E4624258C406535D56D6F135054E4A45A6340B3:'
-        assert res['stdout'][5] == ('uid:-::::1646863006::DA7F68E3872D6E7BDCE05225E7EB5F3ACDD9699F::'
-                                    'Red Hat, Inc. (auxiliary key 3) <security@redhat.com>::::::::::0:')
+    assert len(res['stdout']) == 6
+    assert res['stdout'][0] == 'pub:-:4096:1:199E2F91FD431D51:1256212795:::-:::scSC::::::23::0:'
+    assert res['stdout'][1] == 'fpr:::::::::567E347AD0044ADE55BA8A5F199E2F91FD431D51:'
+    assert res['stdout'][2] == ('uid:-::::1256212795::DC1CAEC7997B3575101BB0FCAAC6191792660D8F::'
+                                'Red Hat, Inc. (release key 2) <security@redhat.com>::::::::::0:')
+    assert res['stdout'][3] == 'pub:-:4096:1:5054E4A45A6340B3:1646863006:::-:::scSC::::::23::0:'
+    assert res['stdout'][4] == 'fpr:::::::::7E4624258C406535D56D6F135054E4A45A6340B3:'
+    assert res['stdout'][5] == ('uid:-::::1646863006::DA7F68E3872D6E7BDCE05225E7EB5F3ACDD9699F::'
+                                'Red Hat, Inc. (auxiliary key 3) <security@redhat.com>::::::::::0:')
 
     err = '{}/trustdb.gpg: trustdb created'.format(dirpath)
     assert err in res['stderr']
