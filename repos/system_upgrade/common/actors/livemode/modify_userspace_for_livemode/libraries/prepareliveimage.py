@@ -6,7 +6,7 @@ import os.path
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import mounting
 from leapp.libraries.common.config.version import get_target_major_version
-from leapp.libraries.stdlib import api, CalledProcessError
+from leapp.libraries.stdlib import api
 from leapp.models import LiveImagePreparationInfo
 
 LEAPP_UPGRADE_SERVICE_FILE = 'upgrade.service'
@@ -380,34 +380,6 @@ def setup_sshd(context, authorized_keys):
                 'Failed to enable the sshd service in the upgrade image (failed to create a symlink). Full error: %s',
                 error
             )
-
-# stolen from upgradeinitramfsgenerator.py
-def _get_target_kernel_version(context):
-    """
-    Get the version of the most recent kernel version within the container.
-    """
-    try:
-        results = context.call(['rpm', '-qa', 'kernel-core'], split=True)['stdout']
-
-    except CalledProcessError as error:
-        problem = 'Could not query the target userspace kernel version through rpm. Full error: {0}'.format(error)
-        raise StopActorExecutionError(
-            'Cannot get the version of the installed kernel.',
-            details={'Problem': problem})
-
-    if len(results) > 1:
-        raise StopActorExecutionError(
-            'Cannot detect the version of the target userspace kernel.',
-            details={'Problem': 'Detected unexpectedly multiple kernels inside target userspace container.'})
-    if not results:
-        raise StopActorExecutionError(
-            'Cannot detect the version of the target userspace kernel.',
-            details={'Problem': 'An rpm query for the available kernels did not produce any results.'})
-
-    kernel_version = '-'.join(results[0].rsplit("-", 2)[-2:])
-    api.current_logger().debug('Detected kernel version inside container: {}.'.format(kernel_version))
-
-    return kernel_version
 
 
 def fakerootfs():
