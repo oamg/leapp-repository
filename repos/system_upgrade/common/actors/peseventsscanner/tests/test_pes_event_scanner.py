@@ -214,22 +214,22 @@ def test_actor_performs(monkeypatch):
 
     events = [
         Event(1, Action.SPLIT,
-              {Pkg('split-in', 'rhel7-base')},
-              {Pkg('split-out0', 'rhel8-BaseOS'), Pkg('split-out1', 'rhel8-BaseOS')},
-              (7, 9), (8, 0), []),
+              {Pkg('split-in', 'rhel8-BaseOS')},
+              {Pkg('split-out0', 'rhel9-Baseos'), Pkg('split-out1', 'rhel9-Baseos')},
+              (8, 10), (9, 0), []),
         Event(2, Action.MERGED,
-              {Pkg('split-out0', 'rhel8-BaseOS'), Pkg('split-out1', 'rhel8-BaseOS')},
-              {Pkg('merged-out', 'rhel8-BaseOS')},
-              (8, 0), (8, 1), []),
+              {Pkg('split-out0', 'rhel9-Baseos'), Pkg('split-out1', 'rhel9-Baseos')},
+              {Pkg('merged-out', 'rhel9-Baseos')},
+              (9, 0), (9, 1), []),
         Event(3, Action.MOVED,
-              {Pkg('moved-in', 'rhel7-base')}, {Pkg('moved-out', 'rhel8-BaseOS')},
-              (7, 9), (8, 0), []),
+              {Pkg('moved-in', 'rhel8-BaseOS')}, {Pkg('moved-out', 'rhel9-Baseos')},
+              (8, 10), (9, 0), []),
         Event(4, Action.REMOVED,
-              {Pkg('removed', 'rhel7-base')}, set(),
-              (8, 0), (8, 1), []),
+              {Pkg('removed', 'rhel8-BaseOS')}, set(),
+              (9, 0), (9, 1), []),
         Event(5, Action.DEPRECATED,
-              {Pkg('irrelevant', 'rhel7-base')}, set(),
-              (8, 0), (8, 1), []),
+              {Pkg('irrelevant', 'rhel8-BaseOS')}, set(),
+              (9, 0), (9, 1), []),
     ]
 
     monkeypatch.setattr(pes_events_scanner, 'get_pes_events', lambda data_folder, json_filename: events)
@@ -242,23 +242,29 @@ def test_actor_performs(monkeypatch):
 
     repositories_mapping = RepositoriesMapping(
         mapping=[
-            RepoMapEntry(source='rhel7-base', target=['rhel8-BaseOS'], ),
+            RepoMapEntry(source='rhel8-BaseOS', target=['rhel9-Baseos'], ),
         ],
         repositories=[
-            PESIDRepositoryEntry(pesid='rhel7-base', major_version='7', repoid='rhel7-repo', arch='x86_64',
-                                 repo_type='rpm', channel='ga', rhui='', distro='rhel'),
             PESIDRepositoryEntry(pesid='rhel8-BaseOS', major_version='8', repoid='rhel8-repo', arch='x86_64',
+                                 repo_type='rpm', channel='ga', rhui='', distro='rhel'),
+            PESIDRepositoryEntry(pesid='rhel9-Baseos', major_version='9', repoid='rhel9-repo', arch='x86_64',
                                  repo_type='rpm', channel='ga', rhui='', distro='rhel')]
     )
 
     enabled_modules = EnabledModules(modules=[])
     repo_facts = RepositoriesFacts(
-        repositories=[RepositoryFile(file='', data=[RepositoryData(repoid='rhel7-repo', name='RHEL7 repo')])]
+        repositories=[RepositoryFile(file='', data=[RepositoryData(repoid='rhel8-repo', name='RHEL8 repo')])]
     )
 
-    monkeypatch.setattr(api, 'current_actor',
-                        CurrentActorMocked(msgs=[installed_pkgs, repositories_mapping, enabled_modules, repo_facts],
-                                           src_ver='7.9', dst_ver='8.1'))
+    monkeypatch.setattr(
+        api,
+        "current_actor",
+        CurrentActorMocked(
+            msgs=[installed_pkgs, repositories_mapping, enabled_modules, repo_facts],
+            src_ver="8.10",
+            dst_ver="9.1",
+        ),
+    )
 
     produced_messages = produce_mocked()
     created_report = create_report_mocked()
