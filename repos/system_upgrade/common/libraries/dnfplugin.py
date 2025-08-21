@@ -19,7 +19,6 @@ _DEDICATED_URL = 'https://access.redhat.com/solutions/7011704'
 
 class _DnfPluginPathStr(str):
     _PATHS = {
-        "8": os.path.join('/lib/python3.6/site-packages/dnf-plugins', DNF_PLUGIN_NAME),
         "9": os.path.join('/lib/python3.9/site-packages/dnf-plugins', DNF_PLUGIN_NAME),
         "10": os.path.join('/lib/python3.12/site-packages/dnf-plugins', DNF_PLUGIN_NAME),
     }
@@ -405,13 +404,9 @@ def perform_transaction_install(target_userspace_info, storage_info, used_repos,
         '/run/udev:/installroot/run/udev',
     ]
 
-    if get_target_major_version() == '8':
-        bind_mounts.append('/sys:/installroot/sys')
-    else:
-        # the target major version is RHEL 9+
-        # we are bindmounting host's "/sys" to the intermediate "/hostsys"
-        # in the upgrade initramdisk to avoid cgroups tree layout clash
-        bind_mounts.append('/hostsys:/installroot/sys')
+    # we are bindmounting host's "/sys" to the intermediate "/hostsys"
+    # in the upgrade initramdisk to avoid cgroups tree layout clash
+    bind_mounts.append('/hostsys:/installroot/sys')
 
     already_mounted = {entry.split(':')[0] for entry in bind_mounts}
     for entry in storage_info.fstab:
