@@ -381,19 +381,6 @@ def setup_sshd(context, authorized_keys):
                 error
             )
 
-    # @Todo(mhecko): This is hazardous. I guess we are setting this so that we can use weaker SSH keys from RHEL7,
-    # #              but this way we change crypto settings system-wise (could be a problem for FIPS). Instead, we
-    # #              should check whether the keys will be OK on RHEL8, and inform the user otherwise.
-    if get_target_major_version() == '8':  # set to LEGACY for 7>8 only
-        try:
-            with context.open('/etc/crypto-policies/config', 'w+') as f:
-                f.write('LEGACY\n')
-        except OSError as error:
-            api.current_logger().warning('Cannot set crypto policy to LEGACY')
-            details = {'details': 'Failed to set crypto-policies to LEGACY due to the error: {0}'.format(error)}
-            raise StopActorExecutionError('Failed to set up livemode SSHD', details=details)
-
-
 # stolen from upgradeinitramfsgenerator.py
 def _get_target_kernel_version(context):
     """
