@@ -670,8 +670,8 @@ def _overlay_disk_size_old():
     """
     Convenient function to retrieve the overlay disk size
     """
+    env_size = get_env('LEAPP_OVL_SIZE', '2048')
     try:
-        env_size = get_env('LEAPP_OVL_SIZE', '2048')
         disk_size = int(env_size)
     except ValueError:
         disk_size = 2048
