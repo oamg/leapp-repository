@@ -142,15 +142,6 @@ def test_produce_config():
     assert cfg.blocks[2].pairs[0].value == "/etc/crypto-policies/back-ends/opensslcnf.config"
 
 
-@pytest.mark.parametrize(('source_version', 'should_run'), [
-    ('7', False),
-    ('8', True),
-    ('9', True),
-])
-def test_actor_execution(monkeypatch, current_actor_context, source_version, should_run):
-    monkeypatch.setattr(version, 'get_source_major_version', lambda: source_version)
+def test_actor_execution(current_actor_context):
     current_actor_context.run()
-    if should_run:
-        assert current_actor_context.consume(OpenSslConfig)
-    else:
-        assert not current_actor_context.consume(OpenSslConfig)
+    assert current_actor_context.consume(OpenSslConfig)
