@@ -5,7 +5,7 @@ import shutil
 from collections import namedtuple
 
 from leapp.libraries.common.config import get_all_envs
-from leapp.libraries.common.config.version import get_source_major_version, matches_source_version
+from leapp.libraries.common.config.version import matches_source_version
 from leapp.libraries.stdlib import api, CalledProcessError, run
 
 # Using ALWAYS_BIND will crash the upgrade process if the file does not exist.
@@ -82,12 +82,13 @@ class IsolationType(object):
             """ Transform the command to be executed with systemd-nspawn """
             binds = ['--bind={}'.format(bind) for bind in self.binds]
             setenvs = ['--setenv={}={}'.format(env.name, env.value) for env in self.env_vars]
-            final_cmd = ['systemd-nspawn', '--register=no', '--quiet']
-            if get_source_major_version() != '7':
-                # TODO: check whether we could use the --keep unit on el7 too.
-                # in such a case, just add line into the previous solution..
-                # TODO: the same about --capability=all
-                final_cmd += ['--keep-unit', '--capability=all']
+            final_cmd = [
+                "systemd-nspawn",
+                "--register=no",
+                "--quiet",
+                "--keep-unit",
+                "--capability=all",
+            ]
             if matches_source_version('>= 9.0'):
                 # Disable pseudo-TTY in container
                 final_cmd += ['--pipe']

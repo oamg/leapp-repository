@@ -684,14 +684,14 @@ def test_get_default_repository_channels_simple(monkeypatch):
     where there is only one repository enabled from the pesid family in which are
     the default repositories searched in.
     """
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(arch='x86_64', src_ver='7.9', dst_ver='8.4'))
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(arch='x86_64', src_ver='8.10', dst_ver='9.6'))
     repository_mapping = RepositoriesMapping(
         mapping=[],
-        repositories=[make_pesid_repo('rhel7-base', '7', 'rhel7-repoid-ga', channel='ga')]
+        repositories=[make_pesid_repo('rhel8-BaseOS', '8', 'rhel8-repoid-ga', channel='ga')]
     )
     handler = RepoMapDataHandler(repository_mapping)
 
-    assert ['ga'] == get_default_repository_channels(handler, ['rhel7-repoid-ga'])
+    assert ['ga'] == get_default_repository_channels(handler, ['rhel8-repoid-ga'])
 
 
 def test_get_default_repository_channels_highest_priority_channel(monkeypatch):
@@ -701,17 +701,17 @@ def test_get_default_repository_channels_highest_priority_channel(monkeypatch):
     Verifies that the returned list contains the highest priority channel if there is a repository
     with the channel enabled on the source system.
     """
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(arch='x86_64', src_ver='7.9', dst_ver='8.4'))
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(arch='x86_64', src_ver='8.10', dst_ver='9.6'))
     repository_mapping = RepositoriesMapping(
         mapping=[],
         repositories=[
-            make_pesid_repo('rhel7-base', '7', 'rhel7-repoid-ga', channel='ga'),
-            make_pesid_repo('rhel7-base', '7', 'rhel7-repoid-eus', channel='eus'),
+            make_pesid_repo('rhel8-BaseOS', '8', 'rhel8-repoid-ga', channel='ga'),
+            make_pesid_repo('rhel8-BaseOS', '8', 'rhel8-repoid-eus', channel='eus'),
         ]
     )
     handler = RepoMapDataHandler(repository_mapping)
 
-    assert ['eus', 'ga'] == get_default_repository_channels(handler, ['rhel7-repoid-ga', 'rhel7-repoid-eus'])
+    assert ['eus', 'ga'] == get_default_repository_channels(handler, ['rhel8-repoid-ga', 'rhel8-repoid-eus'])
 
 
 def test_get_default_repository_channels_no_default_pesid_repo(monkeypatch):
@@ -721,12 +721,12 @@ def test_get_default_repository_channels_no_default_pesid_repo(monkeypatch):
     Verifies that the returned list contains some fallback channel even if no repository from the default
     pesid family in which are the channels searched is enabled.
     """
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(arch='x86_64', src_ver='7.9', dst_ver='8.4'))
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(arch='x86_64', src_ver='8.10', dst_ver='9.6'))
     repository_mapping = RepositoriesMapping(
         mapping=[],
         repositories=[
-            make_pesid_repo('rhel7-base', '7', 'rhel7-repoid-ga', channel='ga'),
-            make_pesid_repo('rhel7-base', '7', 'rhel7-repoid-eus', channel='eus'),
+            make_pesid_repo('rhel8-BaseOS', '8', 'rhel8-repoid-ga', channel='ga'),
+            make_pesid_repo('rhel8-BaseOS', '8', 'rhel8-repoid-eus', channel='eus'),
         ]
     )
     handler = RepoMapDataHandler(repository_mapping)
