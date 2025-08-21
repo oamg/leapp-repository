@@ -20,16 +20,10 @@ def get_kernel_pkg_name(rhel_major_version, kernel_type):
     :returns: Kernel package name
     :rtype: str
     """
-    if rhel_major_version == '7':
-        kernel_pkg_name_table = {
-            kernel_lib.KernelType.ORDINARY: 'kernel',
-            kernel_lib.KernelType.REALTIME: 'kernel-rt'
-        }
-    else:
-        kernel_pkg_name_table = {
-            kernel_lib.KernelType.ORDINARY: 'kernel-core',
-            kernel_lib.KernelType.REALTIME: 'kernel-rt-core'
-        }
+    kernel_pkg_name_table = {
+        kernel_lib.KernelType.ORDINARY: 'kernel-core',
+        kernel_lib.KernelType.REALTIME: 'kernel-rt-core'
+    }
     return kernel_pkg_name_table[kernel_type]
 
 
