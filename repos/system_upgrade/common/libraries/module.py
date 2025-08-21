@@ -26,14 +26,6 @@ def _create_or_get_dnf_base(base=None):
         # preload releasever from what we know, this will be our fallback
         conf.substitutions['releasever'] = get_source_major_version()
 
-        # dnf on EL7 doesn't load vars from /etc/yum, so we need to help it a bit
-        if get_source_major_version() == '7':
-            try:
-                with open('/etc/yum/vars/releasever') as releasever_file:
-                    conf.substitutions['releasever'] = releasever_file.read().strip()
-            except IOError:
-                pass
-
         # load all substitutions from etc
         conf.substitutions.update_from_etc('/')
 
