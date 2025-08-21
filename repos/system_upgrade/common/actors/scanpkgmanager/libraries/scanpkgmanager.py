@@ -2,17 +2,13 @@ import os
 import re
 
 from leapp.libraries.actor import pluginscanner
-from leapp.libraries.common.config.version import get_source_major_version
 from leapp.libraries.stdlib import api
 from leapp.models import PkgManagerInfo
 
 YUM_CONFIG_PATH = '/etc/yum.conf'
 DNF_CONFIG_PATH = '/etc/dnf/dnf.conf'
 
-
-def _get_releasever_path():
-    default_manager = 'yum' if get_source_major_version() == '7' else 'dnf'
-    return '/etc/{}/vars/releasever'.format(default_manager)
+RELEASEVER_PATH = '/etc/dnf/vars/releasever'
 
 
 def _releasever_exists(releasever_path):
@@ -20,13 +16,12 @@ def _releasever_exists(releasever_path):
 
 
 def get_etc_releasever():
-    """ Get release version from "/etc/{yum,dnf}/vars/releasever" file """
+    """ Get release version from "/etc/dnf/vars/releasever" file """
 
-    releasever_path = _get_releasever_path()
-    if not _releasever_exists(releasever_path):
+    if not _releasever_exists(RELEASEVER_PATH):
         return None
 
-    with open(releasever_path, 'r') as fo:
+    with open(RELEASEVER_PATH, 'r') as fo:
         # we care about the first line only
         releasever = fo.readline().strip()
 
