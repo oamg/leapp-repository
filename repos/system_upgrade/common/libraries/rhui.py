@@ -8,9 +8,6 @@ from leapp.libraries.common.config.version import get_source_major_version, get_
 from leapp.libraries.stdlib import api
 from leapp.utils.deprecation import deprecated
 
-# when on AWS and upgrading from RHEL 7, we need also Python2 version of "Amazon-id" dnf
-# plugin which is served by "leapp-rhui-aws" rpm package (please note this package is not
-# in any RH official repository but only in "rhui-client-config-*" repo)
 DNF_PLUGIN_PATH_PY2 = '/usr/lib/python2.7/site-packages/dnf-plugins/'
 YUM_REPOS_PATH = '/etc/yum.repos.d'
 
@@ -101,7 +98,7 @@ class RHUIFamily:
 
 
 def mk_rhui_setup(clients=None, leapp_pkg='', mandatory_files=None, optional_files=None,
-                  extra_info=None, os_version='7.0', arch=arch.ARCH_X86_64, content_channel=ContentChannel.GA,
+                  extra_info=None, os_version='8.0', arch=arch.ARCH_X86_64, content_channel=ContentChannel.GA,
                   files_supporting_client_operation=None):
 
     os_version_fragments = os_version.split('.')
@@ -131,7 +128,6 @@ def mk_rhui_setup(clients=None, leapp_pkg='', mandatory_files=None, optional_fil
 # the search for target equivalent to setups sharing the same family, and thus reducing a chance of error.
 RHUI_SETUPS = {
     RHUIFamily(RHUIProvider.AWS, client_files_folder='aws'): [
-        mk_rhui_setup(clients={'rh-amazon-rhui-client'}, optional_files=[], os_version='7'),
         mk_rhui_setup(clients={'rh-amazon-rhui-client'}, leapp_pkg='leapp-rhui-aws',
                       mandatory_files=[
                         ('rhui-client-config-server-8.crt', RHUI_PKI_PRODUCT_DIR),
@@ -171,7 +167,6 @@ RHUI_SETUPS = {
                       ], os_version='10'),
     ],
     RHUIFamily(RHUIProvider.AWS, arch=arch.ARCH_ARM64, client_files_folder='aws'): [
-        mk_rhui_setup(clients={'rh-amazon-rhui-client-arm'}, optional_files=[], os_version='7', arch=arch.ARCH_ARM64),
         mk_rhui_setup(clients={'rh-amazon-rhui-client'}, leapp_pkg='leapp-rhui-aws',
                       mandatory_files=[
                         ('rhui-client-config-server-8.crt', RHUI_PKI_PRODUCT_DIR),
@@ -209,8 +204,6 @@ RHUI_SETUPS = {
                       ], os_version='10'),
     ],
     RHUIFamily(RHUIProvider.AWS, variant=RHUIVariant.SAP, client_files_folder='aws-sap-e4s'): [
-        mk_rhui_setup(clients={'rh-amazon-rhui-client-sap-bundle'}, optional_files=[], os_version='7',
-                      content_channel=ContentChannel.E4S),
         mk_rhui_setup(clients={'rh-amazon-rhui-client-sap-bundle-e4s'}, leapp_pkg='leapp-rhui-aws-sap-e4s',
                       mandatory_files=[
                         ('rhui-client-config-server-8-sap-bundle.crt', RHUI_PKI_PRODUCT_DIR),
@@ -265,8 +258,6 @@ RHUI_SETUPS = {
                       ], os_version='10', content_channel=ContentChannel.E4S),
     ],
     RHUIFamily(RHUIProvider.AZURE, client_files_folder='azure'): [
-        mk_rhui_setup(clients={'rhui-azure-rhel7'}, os_version='7',
-                      extra_info={'agent_pkg': 'WALinuxAgent'}),
         mk_rhui_setup(clients={'rhui-azure-rhel8'}, leapp_pkg='leapp-rhui-azure',
                       mandatory_files=[('leapp-azure.repo', YUM_REPOS_PATH)],
                       optional_files=[
@@ -298,7 +289,6 @@ RHUI_SETUPS = {
                       os_version='10'),
     ],
     RHUIFamily(RHUIProvider.AZURE, variant=RHUIVariant.SAP_APPS, client_files_folder='azure-sap-apps'): [
-        mk_rhui_setup(clients={'rhui-azure-rhel7-base-sap-apps'}, os_version='7', content_channel=ContentChannel.EUS),
         mk_rhui_setup(clients={'rhui-azure-rhel8-sapapps'}, leapp_pkg='leapp-rhui-azure-sap',
                       mandatory_files=[('leapp-azure-sap-apps.repo', YUM_REPOS_PATH)],
                       optional_files=[
@@ -336,7 +326,6 @@ RHUI_SETUPS = {
                       os_version='10', content_channel=ContentChannel.EUS),
     ],
     RHUIFamily(RHUIProvider.AZURE, variant=RHUIVariant.SAP_HA, client_files_folder='azure-sap-ha'): [
-        mk_rhui_setup(clients={'rhui-azure-rhel7-base-sap-ha'}, os_version='7', content_channel=ContentChannel.E4S),
         mk_rhui_setup(clients={'rhui-azure-rhel8-sap-ha'}, leapp_pkg='leapp-rhui-azure-sap',
                       mandatory_files=[('leapp-azure-sap-ha.repo', YUM_REPOS_PATH)],
                       optional_files=[
@@ -374,8 +363,6 @@ RHUI_SETUPS = {
                       os_version='10', content_channel=ContentChannel.E4S),
     ],
     RHUIFamily(RHUIProvider.GOOGLE, client_files_folder='google'): [
-        mk_rhui_setup(clients={'google-rhui-client-rhel7'}, os_version='7'),
-        mk_rhui_setup(clients={'google-rhui-client-rhel7-els'}, os_version='7'),
         mk_rhui_setup(clients={'google-rhui-client-rhel8'}, leapp_pkg='leapp-rhui-google',
                       mandatory_files=[('leapp-google.repo', YUM_REPOS_PATH)],
                       files_supporting_client_operation=['leapp-google.repo'],
@@ -386,7 +373,6 @@ RHUI_SETUPS = {
                       os_version='9'),
     ],
     RHUIFamily(RHUIProvider.GOOGLE, variant=RHUIVariant.SAP, client_files_folder='google-sap'): [
-        mk_rhui_setup(clients={'google-rhui-client-rhel79-sap'}, os_version='7', content_channel=ContentChannel.E4S),
         mk_rhui_setup(clients={'google-rhui-client-rhel8-sap'}, leapp_pkg='leapp-rhui-google-sap',
                       mandatory_files=[('leapp-google-sap.repo', YUM_REPOS_PATH)],
                       files_supporting_client_operation=['leapp-google-sap.repo'],
@@ -401,7 +387,6 @@ RHUI_SETUPS = {
                       os_version='9', content_channel=ContentChannel.E4S),
     ],
     RHUIFamily(RHUIProvider.ALIBABA, client_files_folder='alibaba'): [
-        mk_rhui_setup(clients={'client-rhel7'}, os_version='7'),
         mk_rhui_setup(clients={'aliyun_rhui_rhel8'}, leapp_pkg='leapp-rhui-alibaba',
                       mandatory_files=[('leapp-alibaba.repo', YUM_REPOS_PATH)],
                       optional_files=[
