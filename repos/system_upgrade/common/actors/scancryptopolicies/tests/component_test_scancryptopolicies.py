@@ -8,7 +8,6 @@ from leapp.models import CryptoPolicyInfo
 
 
 @pytest.mark.parametrize(('source_version', 'should_run'), [
-    ('7', False),
     ('8', True),
     ('9', True),
 ])
