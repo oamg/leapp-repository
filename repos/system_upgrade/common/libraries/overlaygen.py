@@ -7,7 +7,6 @@ from collections import namedtuple
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import mounting, utils
 from leapp.libraries.common.config import get_env
-from leapp.libraries.common.config.version import get_target_major_version
 from leapp.libraries.stdlib import api, CalledProcessError, run
 
 OVERLAY_DO_NOT_MOUNT = ('tmpfs', 'devtmpfs', 'devpts', 'sysfs', 'proc', 'cramfs', 'sysv', 'vfat')
@@ -31,9 +30,9 @@ write operations consume just ~ 33MB. However, I decided to keep it as it is
 for now to stay on the safe side.
 """
 
-_MAGICAL_CONSTANT_MIN_CONTAINER_SIZE_8 = 3200
+_MAGICAL_CONSTANT_MIN_CONTAINER_SIZE = 2200
 """
-Average space consumed to create target el8userspace container installation + pkg downloads.
+Average space consumed to create target userspace container installation + pkg downloads.
 
 Minimal container size is approx. 1GiB without download of packages for the upgrade
 (and without pkgs for the initramfs creation). The total size of the container
@@ -41,22 +40,14 @@ Minimal container size is approx. 1GiB without download of packages for the upgr
   * final initramfs installed package set
   * created the upgrade initramfs
 is for the minimal system
-  * ~ 2.9 GiB for IPU 7 -> 8
-  * ~ 1.8 GiB for IPU 8 -> 9
+  * ~ 1.8 GiB for IPU 8 -> 9 and IPU 9 -> 10
 when no other extra packages are installed for the needs of the upgrade.
-Keeping in mind that during the upgrade initramfs creation another 400+ MiB
-is consumed temporarily.
+Keeping in mind that during the upgrade another 400+ MiB is consumed
+temporarily during initramfs creation.
 
 Using higher value to cover also the space that consumes leapp.db records.
 
 This constant is really magical and the value can be changed in future.
-"""
-
-_MAGICAL_CONSTANT_MIN_CONTAINER_SIZE_9 = 2200
-"""
-Average space consumed to create target el9userspace container installation + pkg downloads.
-
-See _MAGICAL_CONSTANT_MIN_CONTAINER_SIZE_8 for more details.
 """
 
 _MAGICAL_CONSTANT_MIN_PROTECTED_SIZE = 200
@@ -94,9 +85,7 @@ MountPoints = namedtuple('MountPoints', ['fs_file', 'fs_vfstype'])
 
 
 def _get_min_container_size():
-    if get_target_major_version() == '8':
-        return _MAGICAL_CONSTANT_MIN_CONTAINER_SIZE_8
-    return _MAGICAL_CONSTANT_MIN_CONTAINER_SIZE_9
+    return _MAGICAL_CONSTANT_MIN_CONTAINER_SIZE
 
 
 def get_recommended_leapp_free_space(userspace_path=None):
@@ -163,7 +152,7 @@ def get_recommended_leapp_free_space(userspace_path=None):
     return prot_size
 
 
-def _get_fspace(path, convert_to_mibs=False, coefficient=1):
+def _get_fspace(path, convert_to_mibs=False, coefficient=1.0):
     """
     Return the free disk space on given path.
 
