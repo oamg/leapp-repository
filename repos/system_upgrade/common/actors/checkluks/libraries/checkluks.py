@@ -6,7 +6,6 @@ from leapp.models import (
     CopyFile,
     DracutModule,
     LuksDumps,
-    StorageInfo,
     TargetUserSpaceUpgradeTasks,
     UpgradeInitramfsTasks
 )
@@ -33,21 +32,6 @@ def _at_least_one_tpm_token(luks_dump):
 def _get_ceph_volumes():
     ceph_info = next(api.consume(CephInfo), None)
     return ceph_info.encrypted_volumes[:] if ceph_info else []
-
-
-def apply_obsoleted_check_ipu_7_8():
-    ceph_vol = _get_ceph_volumes()
-    for storage_info in api.consume(StorageInfo):
-        for blk in storage_info.lsblk:
-            if blk.tp == 'crypt' and blk.name not in ceph_vol:
-                create_report([
-                    reporting.Title('LUKS encrypted partition detected'),
-                    reporting.Summary('Upgrading system with encrypted partitions is not supported'),
-                    reporting.Severity(reporting.Severity.HIGH),
-                    reporting.Groups([reporting.Groups.BOOT, reporting.Groups.ENCRYPTION]),
-                    reporting.Groups([reporting.Groups.INHIBITOR]),
-                ])
-                break
 
 
 def report_inhibitor(luks1_partitions, no_tpm2_partitions):
@@ -119,11 +103,6 @@ def report_inhibitor(luks1_partitions, no_tpm2_partitions):
 
 
 def check_invalid_luks_devices():
-    if get_source_major_version() == '7':
-        # NOTE: keeping unchanged behaviour for IPU 7 -> 8
-        apply_obsoleted_check_ipu_7_8()
-        return
-
     luks_dumps = next(api.consume(LuksDumps), None)
     if not luks_dumps:
         api.current_logger().debug('No LUKS volumes detected. Skipping.')
