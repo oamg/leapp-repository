@@ -1,8 +1,8 @@
 {
-    "datetime": "202508131404Z",
+    "datetime": "202511121444Z",
     "version_format": "1.3.0",
     "provided_data_streams": [
-        "4.0"
+        "4.1"
     ],
     "mapping": [
         {
@@ -233,6 +233,24 @@
                     "source": "rhel8-rhui-custom-client-at-alibaba",
                     "target": [
                         "rhel9-rhui-custom-client-at-alibaba"
+                    ]
+                },
+                {
+                    "source": "rhel8-jbeap-7.4",
+                    "target": [
+                        "rhel9-jbeap-7.4"
+                    ]
+                },
+                {
+                    "source": "rhel8-jbeap-8.0",
+                    "target": [
+                        "rhel9-jbeap-8.0"
+                    ]
+                },
+                {
+                    "source": "rhel8-jbeap-8.1",
+                    "target": [
+                        "rhel9-jbeap-8.1"
                     ]
                 }
             ]
@@ -4418,6 +4436,45 @@
             ]
         },
         {
+            "pesid": "rhel8-jbeap-7.4",
+            "entries": [
+                {
+                    "major_version": "8",
+                    "repoid": "jb-eap-7.4-for-rhel-8-x86_64-rpms",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
+                }
+            ]
+        },
+        {
+            "pesid": "rhel8-jbeap-8.0",
+            "entries": [
+                {
+                    "major_version": "8",
+                    "repoid": "jb-eap-8.0-for-rhel-8-x86_64-rpms",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
+                }
+            ]
+        },
+        {
+            "pesid": "rhel8-jbeap-8.1",
+            "entries": [
+                {
+                    "major_version": "8",
+                    "repoid": "jb-eap-8.1-for-rhel-8-x86_64-rpms",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
+                }
+            ]
+        },
+        {
             "pesid": "rhel8-rhui-client-config-server-8",
             "entries": [
                 {
@@ -6231,6 +6288,45 @@
                     "repo_type": "rpm",
                     "distro": "rhel",
                     "rhui": "alibaba"
+                }
+            ]
+        },
+        {
+            "pesid": "rhel9-jbeap-7.4",
+            "entries": [
+                {
+                    "major_version": "9",
+                    "repoid": "jb-eap-7.4-for-rhel-9-x86_64-rpms",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
+                }
+            ]
+        },
+        {
+            "pesid": "rhel9-jbeap-8.0",
+            "entries": [
+                {
+                    "major_version": "9",
+                    "repoid": "jb-eap-8.0-for-rhel-9-x86_64-rpms",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
+                }
+            ]
+        },
+        {
+            "pesid": "rhel9-jbeap-8.1",
+            "entries": [
+                {
+                    "major_version": "9",
+                    "repoid": "jb-eap-8.1-for-rhel-9-x86_64-rpms",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
                 }
             ]
         }
