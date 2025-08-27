@@ -51,7 +51,7 @@ _COPR_CONFIG=$${COPR_CONFIG:-~/.config/copr_rh_oamg.conf}
 _CONTAINER_TOOL=$${CONTAINER_TOOL:-podman}
 
 # container to run tests in
-_TEST_CONTAINER=$${TEST_CONTAINER:-rhel8}
+_TEST_CONTAINER=$${TEST_CONTAINER:-el8}
 
 # In case just specific CHROOTs should be used for the COPR build, you can
 # set the multiple CHROOTs separated by comma in the COPR_CHROOT envar, e.g.
@@ -129,7 +129,7 @@ help:
 	@echo "  test                        lint source code and run tests"
 	@echo "  test_no_lint                run tests without linting the source code"
 	@echo "  test_container              run lint and tests in container"
-	@echo "                              - default container is 'rhel8'"
+	@echo "                              - default container is 'el8'"
 	@echo "                              - can be changed by setting TEST_CONTAINER env"
 	@echo "  test_container_all          run lint and tests in all available containers"
 	@echo "  test_container_no_lint      run tests without linting in container, see test_container"
@@ -164,9 +164,9 @@ help:
 	@echo "  PR=7 SUFFIX='my_additional_suffix' make <target>"
 	@echo "  MR=6 COPR_CONFIG='path/to/the/config/copr/file' make <target>"
 	@echo "  ACTOR=<actor> TEST_LIBS=y make test"
-	@echo "  BUILD_CONTAINER=rhel8 make build_container"
+	@echo "  BUILD_CONTAINER=el8 make build_container"
 	@echo "  TEST_CONTAINER=f42 make test_container"
-	@echo "  CONTAINER_TOOL=docker TEST_CONTAINER=rhel8 make test_container_no_lint"
+	@echo "  CONTAINER_TOOL=docker TEST_CONTAINER=el8 make test_container_no_lint"
 	@echo ""
 
 clean:
@@ -252,10 +252,10 @@ build_container:
 	echo "--- Build RPM ${PKGNAME}-${VERSION}-${RELEASE}.el$(DIST_VERSION).rpm in container ---";
 	case "$(BUILD_CONTAINER)" in \
 		el8) \
-			CONT_FILE="utils/container-builds/Containerfile.ubi8"; \
+			CONT_FILE="utils/container-builds/Containerfile.el8"; \
 			;; \
 		el9) \
-			CONT_FILE="utils/container-builds/Containerfile.ubi9"; \
+			CONT_FILE="utils/container-builds/Containerfile.el9"; \
 			;; \
 		"") \
 			echo "BUILD_CONTAINER must be set"; \
@@ -415,7 +415,7 @@ lint_container:
 	@_TEST_CONT_TARGET="lint" $(MAKE) test_container
 
 lint_container_all:
-	@for container in "f42" "rhel8" "rhel9"; do \
+	@for container in f42 el{8,9}; do \
 		TEST_CONTAINER=$$container $(MAKE) lint_container || exit 1; \
 	done
 
@@ -429,16 +429,16 @@ test_container:
 		export CONT_FILE="utils/container-tests/Containerfile.f42"; \
 		export _VENV="python3.13"; \
 		;; \
-	rhel8) \
-		export CONT_FILE="utils/container-tests/Containerfile.rhel8"; \
+	el8) \
+		export CONT_FILE="utils/container-tests/Containerfile.el8"; \
 		export _VENV="python3.6"; \
 		;; \
-	rhel9) \
-		export CONT_FILE="utils/container-tests/Containerfile.rhel9"; \
+	el9) \
+		export CONT_FILE="utils/container-tests/Containerfile.el9"; \
 		export _VENV="python3.9"; \
 		;; \
 	*) \
-		echo "Error: Available containers are: f42, rhel8, rhel9"; exit 1; \
+		echo "Error: Available containers are: f42, el8, el9"; exit 1; \
 		;; \
 	esac; \
 	export TEST_IMAGE="leapp-repo-tests-$(_TEST_CONTAINER)"; \
@@ -470,7 +470,7 @@ test_container:
 	exit $$res
 
 test_container_all:
-	@for container in "f42" "rhel8" "rhel9"; do \
+	@for container in "f42" "el8" "el9"; do \
 		TEST_CONTAINER=$$container $(MAKE) test_container || exit 1; \
 	done
 
@@ -478,14 +478,13 @@ test_container_no_lint:
 	@_TEST_CONT_TARGET="test_no_lint" $(MAKE) test_container
 
 test_container_all_no_lint:
-	@for container in "f42" "rhel8" "rhel9"; do \
+	@for container in f42 el{8,9}; do \
 		TEST_CONTAINER=$$container $(MAKE) test_container_no_lint || exit 1; \
 	done
 
 # clean all testing and building containers and their images
 clean_containers:
-	@for i in "leapp-repo-tests-f42" "leapp-repo-tests-rhel8" \
-	"leapp-repo-tests-rhel9" "leapp-repo-build-el8"; do \
+	@for i in leapp-repo-tests-f42 leapp-repo-tests-el{8,9} leapp-repo-build-el{8,9}; do \
 		$(_CONTAINER_TOOL) kill "$$i-cont" || :; \
 		$(_CONTAINER_TOOL) rm "$$i-cont" || :; \
 		$(_CONTAINER_TOOL) rmi "$$i" || :;  \
