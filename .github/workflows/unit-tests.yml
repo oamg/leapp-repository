@@ -19,36 +19,36 @@ jobs:
           - name: 'Unit tests (python:3.12; repos:el9toel10,common)'
             python: python3.12
             repos: 'el9toel10,common'
-            container: ubi9
+            container: el9
           - name: 'Linters (python:3.12; repos:el9toel10,common)'
             python: python3.12
             repos: 'el9toel10,common'
-            container: ubi9-lint
+            container: el9-lint
           - name: 'Unit tests (python:3.9; repos:el9toel10,common)'
             python: python3.9
             repos: 'el9toel10,common'
-            container: ubi9
+            container: el9
           - name: 'Linters (python:3.9; repos:el9toel10,common)'
             python: python3.9
             repos: 'el9toel10,common'
-            container: ubi9-lint
+            container: el9-lint
           # 8to9
           - name: 'Unit tests (python:3.9; repos:el8toel9,common)'
             python: python3.9
             repos: 'el8toel9,common'
-            container: ubi9
+            container: el9
           - name: 'Linters (python:3.9; repos:el8toel9,common)'
             python: python3.9
             repos: 'el8toel9,common'
-            container: ubi9-lint
+            container: el9-lint
           - name: 'Unit tests (python:3.6; repos:el8toel9,common)'
             python: python3.6
             repos: 'el8toel9,common'
-            container: ubi8
+            container: el8
           - name: 'Linters (python:3.6; repos:el8toel9,common)'
             python: python3.6
             repos: 'el8toel9,common'
-            container: ubi8-lint
+            container: el8-lint
 
     steps:
       - name: Checkout code
@@ -63,4 +63,10 @@ jobs:
         run: |
           git branch -f main origin/main
       - name: ${{matrix.scenarios.name}}
-        run: script -e -c /bin/bash -c 'TERM=xterm podman build --security-opt=seccomp=unconfined -t leapp-tests -f utils/container-tests/Containerfile.${{matrix.scenarios.container}} utils/container-tests && PYTHON_VENV=${{matrix.scenarios.python}} REPOSITORIES=${{matrix.scenarios.repos}} podman run --security-opt=seccomp=unconfined --rm -ti -v ${PWD}:/payload --env=PYTHON_VENV --env=REPOSITORIES leapp-tests'
+        run: |
+          script -e -c /bin/bash -c \
+          'TERM=xterm \
+          podman build -t leapp-tests -f utils/container-tests/ci/Containerfile.${{matrix.scenarios.container}} . && \
+          PYTHON_VENV=${{matrix.scenarios.python}} \
+          REPOSITORIES=${{matrix.scenarios.repos}} \
+          podman run --rm -ti -v ${PWD}:/payload --env=PYTHON_VENV --env=REPOSITORIES leapp-tests'
