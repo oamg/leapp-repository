@@ -63,4 +63,10 @@ jobs:
         run: |
           git branch -f main origin/main
       - name: ${{matrix.scenarios.name}}
-        run: script -e -c /bin/bash -c 'TERM=xterm podman build --security-opt=seccomp=unconfined -t leapp-tests -f utils/container-tests/ci/Containerfile.${{matrix.scenarios.container}} . && PYTHON_VENV=${{matrix.scenarios.python}} REPOSITORIES=${{matrix.scenarios.repos}} podman run --security-opt=seccomp=unconfined --rm -ti -v ${PWD}:/payload --env=PYTHON_VENV --env=REPOSITORIES leapp-tests'
+        run: |
+          script -e -c /bin/bash -c \
+          'TERM=xterm \
+          podman build  -t leapp-tests -f utils/container-tests/ci/Containerfile.${{matrix.scenarios.container}} . && \
+          PYTHON_VENV=${{matrix.scenarios.python}} \
+          REPOSITORIES=${{matrix.scenarios.repos}} \
+          podman run --rm -ti -v ${PWD}:/payload --env=PYTHON_VENV --env=REPOSITORIES leapp-tests'
