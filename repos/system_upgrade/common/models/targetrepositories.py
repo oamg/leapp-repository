@@ -1,6 +1,6 @@
 from leapp.models import fields, Model
-from leapp.topics import TransactionTopic
 from leapp.reporting import deprecated
+from leapp.topics import TransactionTopic
 
 
 class TargetRepositoryBase(Model):

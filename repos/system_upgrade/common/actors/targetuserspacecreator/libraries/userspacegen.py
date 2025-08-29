@@ -6,7 +6,7 @@ import shutil
 from leapp import reporting
 from leapp.exceptions import StopActorExecution, StopActorExecutionError
 from leapp.libraries.actor import constants
-from leapp.libraries.common import dnfplugin, mounting, overlaygen, repofileutils, rhsm, utils
+from leapp.libraries.common import distro, dnfplugin, mounting, overlaygen, repofileutils, rhsm, utils
 from leapp.libraries.common.config import get_distro_id, get_env, get_product_type
 from leapp.libraries.common.config.version import get_target_major_version
 from leapp.libraries.common.gpg import get_path_to_gpg_certs, is_nogpgcheck_set
@@ -57,6 +57,7 @@ from leapp.utils.deprecation import suppress_deprecation
 PROD_CERTS_FOLDER = 'prod-certs'
 PERSISTENT_PACKAGE_CACHE_DIR = '/var/lib/leapp/persistent_package_cache'
 DEDICATED_LEAPP_PART_URL = 'https://access.redhat.com/solutions/7011704'
+FMT_LIST_SEPARATOR = '\n    - '
 
 
 def _check_deprecated_rhsm_skip():
@@ -875,40 +876,7 @@ def _get_distro_available_repoids(context, indata):
              RHUI special packages (every cloud provider has itw own rpm).
     Others: Repositories are provided in specific repofiles (e.g. centos.repo and centos-addons.repo on CS)
     """
-    if get_distro_id() == 'rhel':
-        if rhsm.skip_rhsm():
-            return set()
-
-        # Get the RHSM repos available in the target RHEL container
-        # TODO: very similar thing should happens for all other repofiles in container
-        #
-        distro_repoids = rhsm.get_available_repo_ids(context)
-    else:
-        # TODO this is almost exactly what rhsm.get_available_repo_ids does, but generalized
-        distro_provided_repofiles = {
-            "centos": (
-                "/etc/yum.repos.d/centos.repo",
-                "/etc/yum.repos.d/centos-addons.repo",
-            )
-        }
-        repofiles = repofileutils.get_parsed_repofiles(context)
-        _inhibit_on_duplicate_repos(repofiles)
-        distro_repoids = []
-        for rfile in repofiles:
-            if rfile.file in distro_provided_repofiles[get_distro_id()] and rfile.data:
-                distro_repoids.extend([repo.repoid for repo in rfile.data])
-
-        distro_repoids.sort()
-
-        list_separator_fmt = '\n    - '
-        if distro_repoids:
-            api.current_logger().info(
-                "The following repoids are provided by the distribution:{0}{1}".format(
-                    list_separator_fmt, list_separator_fmt.join(distro_repoids)
-                )
-            )
-        else:
-            api.current_logger().info('There are no repos provided by the distribution.')
+    distro_repoids = distro.get_distro_repoids(context)
 
     _inhibit_if_no_base_repos(distro_repoids)
 
@@ -1008,14 +976,19 @@ def gather_target_repositories(context, indata):
     :rtype: List(string)
     """
 
-    distro_available_repoids = _get_distro_available_repoids(context, indata)
-    all_available_repoids = _get_all_available_repoids(context)
+    distro_repoids = _get_distro_available_repoids(context, indata)
+    api.current_actor.info(
+        "The following repoids are considered as provided by the '{}' distribution:{}{}".format(
+            get_distro_id(), FMT_LIST_SEPARATOR, FMT_LIST_SEPARATOR.join(distro_repoids)
+        )
+    )
+    all_repoids = _get_all_available_repoids(context)
 
     target_repoids = []
     missing_custom_repoids = []
     for target_repo in api.consume(TargetRepositories):
         for distro_repo in target_repo.distro_repos:
-            if distro_repo.repoid in distro_available_repoids:
+            if distro_repo.repoid in distro_repoids:
                 target_repoids.append(distro_repo.repoid)
             else:
                 # TODO: We shall report that the RHEL repos that we deem necessary for
@@ -1027,11 +1000,12 @@ def gather_target_repositories(context, indata):
                 pass
 
         for custom_repo in target_repo.custom_repos:
-            if custom_repo.repoid in all_available_repoids:
+            if custom_repo.repoid in all_repoids:
                 target_repoids.append(custom_repo.repoid)
             else:
                 missing_custom_repoids.append(custom_repo.repoid)
     api.current_logger().debug("Gathered target repositories: {}".format(', '.join(target_repoids)))
+
     if not target_repoids:
         target_major_version = get_target_major_version()
         reporting.create_report([
