@@ -977,7 +977,7 @@ def gather_target_repositories(context, indata):
     """
 
     distro_repoids = _get_distro_available_repoids(context, indata)
-    api.current_actor.info(
+    api.current_logger().info(
         "The following repoids are considered as provided by the '{}' distribution:{}{}".format(
             get_distro_id(), FMT_LIST_SEPARATOR, FMT_LIST_SEPARATOR.join(distro_repoids)
         )
