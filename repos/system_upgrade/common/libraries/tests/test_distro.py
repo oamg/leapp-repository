@@ -1,10 +1,11 @@
+import json
+import os
+
 import pytest
 
-from leapp.libraries.common.distro import (
-    get_distro_repofiles,
-    get_distro_repoids,
-)
+from leapp.actors import StopActorExecutionError
 from leapp.libraries.common import repofileutils, rhsm
+from leapp.libraries.common.distro import get_distribution_data, get_distro_repofiles, get_distro_repoids
 from leapp.libraries.common.testutils import CurrentActorMocked
 from leapp.libraries.stdlib import api
 from leapp.models import RepositoryData, RepositoryFile
@@ -13,6 +14,50 @@ _RHEL_REPOFILES = ['/etc/yum.repos.d/redhat.repo']
 _CENTOS_REPOFILES = [
     "/etc/yum.repos.d/centos.repo", "/etc/yum.repos.d/centos-addons.repo"
 ]
+
+_CUR_DIR = os.path.dirname(os.path.abspath(__file__))
+
+
+@pytest.mark.parametrize('distro', ['rhel', 'centos'])
+def test_get_distribution_data(monkeypatch, distro):
+    common_path = os.path.join(_CUR_DIR, "../../files/", 'distro')
+    monkeypatch.setattr(
+        api,
+        "get_common_folder_path",
+        lambda folder: common_path
+    )
+    data_path = os.path.join(common_path, distro, "gpg-signatures.json")
+
+    def exists_mocked(path):
+        assert path == data_path
+        return True
+
+    monkeypatch.setattr(os.path, 'exists', exists_mocked)
+    ret = get_distribution_data(distro)
+
+    with open(data_path) as fp:
+        assert ret == json.load(fp)
+
+
+@pytest.mark.parametrize('distro', ['rhel', 'centos'])
+def test_get_distribution_data_not_exists(monkeypatch, distro):
+    common_path = os.path.join(_CUR_DIR, "../../files/", 'distro')
+    monkeypatch.setattr(
+        api,
+        "get_common_folder_path",
+        lambda folder: common_path
+    )
+    data_path = os.path.join(common_path, distro, "gpg-signatures.json")
+
+    def exists_mocked(path):
+        assert path == data_path
+        return False
+
+    monkeypatch.setattr(os.path, 'exists', exists_mocked)
+
+    with pytest.raises(StopActorExecutionError) as err:
+        get_distribution_data(distro)
+        assert 'Cannot find distribution signature configuration.' in err
 
 
 @pytest.mark.parametrize(
