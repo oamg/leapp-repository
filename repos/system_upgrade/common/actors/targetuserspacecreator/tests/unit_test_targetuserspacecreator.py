@@ -1114,7 +1114,9 @@ def test_gather_target_repositories_rhui(monkeypatch):
     monkeypatch.setattr(userspacegen.api, 'current_actor', CurrentActorMocked())
     monkeypatch.setattr(userspacegen, '_get_all_available_repoids', lambda x: [])
     monkeypatch.setattr(
-        userspacegen, '_get_rh_available_repoids', lambda x, y: ['rhui-1', 'rhui-2', 'rhui-3']
+        userspacegen,
+        "_get_distro_available_repoids",
+        lambda x, y: ["rhui-1", "rhui-2", "rhui-3"],
     )
     monkeypatch.setattr(rhsm, 'skip_rhsm', lambda: True)
     monkeypatch.setattr(

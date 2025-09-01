@@ -1,4 +1,3 @@
-from leapp.utils.deprecation import suppress_deprecation
 import pytest
 
 from leapp import reporting
@@ -10,12 +9,10 @@ from leapp.models import (
     CustomTargetRepository,
     CustomTargetRepositoryFile,
     DistroTargetRepository,
-    EnvVar,
-    Report,
-    RepositoryData,
     RHELTargetRepository,
     TargetRepositories
 )
+from leapp.utils.deprecation import suppress_deprecation
 from leapp.utils.report import is_inhibitor
 
 
@@ -43,6 +40,7 @@ def _test_rhel_repos():
         RHELTargetRepository(repoid='repo4'),
     ]
 
+
 _DISTRO_REPOS = [
     DistroTargetRepository(repoid='repo1'),
     DistroTargetRepository(repoid='repo2'),
@@ -68,6 +66,7 @@ def test_checktargetrepos_rhsm(monkeypatch):
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
     monkeypatch.setattr(rhsm, 'skip_rhsm', lambda: False)
     monkeypatch.setattr(api, 'consume', MockedConsume())
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked())
     monkeypatch.setattr(checktargetrepos, 'get_target_major_version', lambda: '8')
     checktargetrepos.process()
     assert reporting.create_report.called == 0
