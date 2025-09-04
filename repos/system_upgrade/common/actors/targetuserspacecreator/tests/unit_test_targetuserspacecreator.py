@@ -1195,6 +1195,20 @@ def test_gather_target_repositories_baseos_appstream_not_available(monkeypatch):
     assert inhibitors[0].get('title', '') == 'Cannot find required basic RHEL target repositories.'
 
 
+def test__get_distro_available_repoids_norhsm(monkeypatch):
+    """
+    Empty list should be returned when on rhel and skip_rhsm == Trrue
+    """
+    monkeypatch.setattr(
+        userspacegen.api, "current_actor", CurrentActorMocked(release_id='rhel')
+    )
+
+    monkeypatch.setattr(rhsm, 'skip_rhsm', lambda: True)
+
+    repoids = userspacegen._get_distro_available_repoids(None, None)
+    assert repoids == []
+
+
 def mocked_consume_data():
     packages = {'dnf', 'dnf-command(config-manager)', 'pkgA', 'pkgB'}
     rhsm_info = _RHSMINFO_MSG

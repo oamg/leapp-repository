@@ -874,8 +874,15 @@ def _get_distro_available_repoids(context, indata):
 
     On RHEL: RH repositories are provided either by RHSM or are stored in the expected repo file provided by
              RHUI special packages (every cloud provider has itw own rpm).
+             If RHSM is skipped there are no repoids.
     Others: Repositories are provided in specific repofiles (e.g. centos.repo and centos-addons.repo on CS)
+
+    :return: A list of repoids provided by distribution
+    :rtype: List[String]
     """
+    if get_distro_id() == 'rhel' and rhsm.skip_rhsm():
+        return []
+
     distro_repoids = distro.get_distro_repoids(context)
 
     _inhibit_if_no_base_repos(distro_repoids)
