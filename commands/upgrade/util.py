@@ -221,9 +221,12 @@ def prepare_configuration(args):
     if args.enable_experimental_feature:
         os.environ['LEAPP_EXPERIMENTAL'] = '1'
 
-    os.environ["LEAPP_TARGET_OS"] = os.getenv(
-        "LEAPP_DEVEL_TARGET_OS", command_utils.get_distro_id()
-    )
+    if os.getenv('LEAPP_DEVEL_TARGET_OS'):
+        os.environ['LEAPP_TARGET_OS'] = os.environ['LEAPP_DEVEL_TARGET_OS']
+    elif args.target_os:
+        os.environ['LEAPP_TARGET_OS'] = args.target_os
+    else:
+        os.environ["LEAPP_TARGET_OS"] = command_utils.get_source_distro_id()
 
     os.environ['LEAPP_UNSUPPORTED'] = '0' if os.getenv('LEAPP_UNSUPPORTED', '0') == '0' else '1'
     # force no rhsm on non-rhel systems, regardless of whether the binary is there
