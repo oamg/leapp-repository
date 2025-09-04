@@ -106,10 +106,11 @@ def process():
     # installed packages that have mapping to prevent missing repositories that are disabled during the upgrade, but
     # can be used to upgrade installed packages.
     repoids_to_map = enabled_repoids.union(repoids_from_installed_packages_with_mapping)
+    is_rhel = get_distro_id() == 'rhel'
 
     # RHEL8.10 use a different repoid for client repository, but the repomapping mechanism cannot distinguish these
     # as it does not use minor versions. Therefore, we have to hardcode these changes.
-    if get_distro_id() == 'rhel' and get_source_version() == '8.10':
+    if is_rhel and get_source_version() == '8.10':
         for rhel88_rhui_client_repoid, rhel810_rhui_client_repoid in RHUI_CLIENT_REPOIDS_RHEL88_TO_RHEL810.items():
             if rhel810_rhui_client_repoid in repoids_to_map:
                 # Replace RHEL8.10 rhui client repoids with RHEL8.8 repoids,
@@ -160,14 +161,17 @@ def process():
     # Although such situation could be avoided (having another client repo when a single
     # repo can hold more than one RPM), we have to deal with it here. This is not a proper
     # solution.
-    if get_distro_id() == 'rhel' and get_target_version() == '8.10':
+    if is_rhel and get_target_version() == '8.10':
         for pre_810_repoid, post_810_repoid in RHUI_CLIENT_REPOIDS_RHEL88_TO_RHEL810.items():
             if pre_810_repoid in target_distro_repoids:
                 target_distro_repoids.remove(pre_810_repoid)
                 target_distro_repoids.add(post_810_repoid)
 
     # create the final lists and sort them (for easier testing)
-    rhel_repos = [RHELTargetRepository(repoid=repoid) for repoid in sorted(target_distro_repoids)]
+    if is_rhel:
+        rhel_repos = [RHELTargetRepository(repoid=repoid) for repoid in sorted(target_distro_repoids)]
+    else:
+        rhel_repos = []
     distro_repos = [DistroTargetRepository(repoid=repoid) for repoid in sorted(target_distro_repoids)]
     custom_repos = [repo for repo in custom_repos if repo.repoid not in excluded_repoids]
     custom_repos = sorted(custom_repos, key=lambda x: x.repoid)
