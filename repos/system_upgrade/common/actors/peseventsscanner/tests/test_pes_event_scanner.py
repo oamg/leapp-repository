@@ -325,18 +325,18 @@ def test_blacklisted_repoid_is_not_produced(monkeypatch):
     Test that upgrade with a package that would be from a blacklisted repository on the target system does not remove
     the package as it was already installed, however, the blacklisted repoid should not be produced.
     """
-    installed_pkgs = {Package('pkg-a', 'blacklisted-rhel7', None), Package('pkg-b', 'repoid-rhel7', None)}
+    installed_pkgs = {Package('pkg-a', 'blacklisted-rhel8', None), Package('pkg-b', 'repoid-rhel8', None)}
     events = [
-        Event(1, Action.MOVED, {Package('pkg-b', 'repoid-rhel7', None)}, {Package('pkg-b', 'repoid-rhel8', None)},
-              (8, 0), (8, 1), []),
-        Event(2, Action.MOVED, {Package('pkg-a', 'repoid-rhel7', None)}, {Package('pkg-a', 'blacklisted-rhel8', None)},
-              (8, 0), (8, 1), []),
+        Event(1, Action.MOVED, {Package('pkg-b', 'repoid-rhel8', None)}, {Package('pkg-b', 'repoid-rhel9', None)},
+              (9, 0), (9, 1), []),
+        Event(2, Action.MOVED, {Package('pkg-a', 'repoid-rhel8', None)}, {Package('pkg-a', 'blacklisted-rhel9', None)},
+              (9, 0), (9, 1), []),
     ]
 
     monkeypatch.setattr(pes_events_scanner, 'get_installed_pkgs', lambda: installed_pkgs)
     monkeypatch.setattr(pes_events_scanner, 'get_pes_events', lambda folder, filename: events)
     monkeypatch.setattr(pes_events_scanner, 'apply_transaction_configuration', lambda pkgs, transaction_cfg: pkgs)
-    monkeypatch.setattr(pes_events_scanner, 'get_blacklisted_repoids', lambda: {'blacklisted-rhel8'})
+    monkeypatch.setattr(pes_events_scanner, 'get_blacklisted_repoids', lambda: {'blacklisted-rhel9'})
     monkeypatch.setattr(pes_events_scanner, 'replace_pesids_with_repoids_in_packages',
                         lambda pkgs, src_pkgs_repoids: pkgs)
 
@@ -357,7 +357,7 @@ def test_blacklisted_repoid_is_not_produced(monkeypatch):
 
     repo_setup_tasks = [msg for msg in api.produce.model_instances if isinstance(msg, RepositoriesSetupTasks)]
     assert len(repo_setup_tasks) == 1
-    assert repo_setup_tasks[0].to_enable == ['repoid-rhel8']
+    assert repo_setup_tasks[0].to_enable == ['repoid-rhel9']
 
 
 @pytest.mark.parametrize(

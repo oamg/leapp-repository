@@ -80,7 +80,7 @@ def _make_default_config(actor_config_schema):
 class CurrentActorMocked(object):  # pylint:disable=R0904
     def __init__(self, arch=architecture.ARCH_X86_64, envars=None,  # pylint:disable=R0913
                  kernel='3.10.0-957.43.1.el7.x86_64',
-                 release_id='rhel', src_ver='7.8', dst_ver='8.1', msgs=None, flavour='default', config=None,
+                 release_id='rhel', src_ver='8.10', dst_ver='9.6', msgs=None, flavour='default', config=None,
                  virtual_source_version=None, virtual_target_version=None,
                  supported_upgrade_paths=None):
         """
