@@ -284,7 +284,7 @@ def test_checksaphana_perform_check(monkeypatch):
     # Expected 3 reports due to v1names + v2lownames + running
     assert len(reports) == 3
     # Verifies that all expected title patterns are within the reports and not just coincidentally 3
-    assert all([any([pattern(report) for report in reports]) for pattern in EXPECTED_TITLE_PATTERNS.values()])
+    assert all(any(pattern(report) for report in reports) for pattern in EXPECTED_TITLE_PATTERNS.values())
 
     list_clear(reports)
     monkeypatch.setattr(checksaphana.api, 'consume', _consume_mock_sap_hana_info(
@@ -294,4 +294,7 @@ def test_checksaphana_perform_check(monkeypatch):
     # Expected 2 reports due to v1names + v2lownames
     assert len(reports) == 2
     # Verifies that all expected title patterns are within the reports and not just coincidentally 2
-    assert all([any([EXPECTED_TITLE_PATTERNS[pattern](report) for report in reports]) for pattern in ['v1', 'low']])
+    assert all(
+        any(EXPECTED_TITLE_PATTERNS[pattern](report) for report in reports)
+        for pattern in ['v1', 'low']
+    )

@@ -177,7 +177,7 @@ def test_bz_1899455_crash_iface(monkeypatch, adjust_cwd):
 
     for prod_models in [RenamedInterfaces, InitrdIncludes, TargetInitramfsTasks]:
         any(isinstance(i, prod_models) for i in persistentnetnamesconfig.api.produce.model_instances)
-    assert any(['Some network devices' in x for x in persistentnetnamesconfig.api.current_logger.warnmsg])
+    assert any('Some network devices' in x for x in persistentnetnamesconfig.api.current_logger.warnmsg)
 
 
 def test_no_network_renaming(monkeypatch):
