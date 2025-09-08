@@ -205,9 +205,7 @@ def test_report_kept_enabled(monkeypatch, tasks, expect_extended_summary):
     assert created_reports.called
     if expect_extended_summary:
         assert extended_summary_str in created_reports.report_fields["summary"]
-        assert all(
-            [s in created_reports.report_fields["summary"] for s in tasks.to_enable]
-        )
+        all(s in created_reports.report_fields['summary'] for s in tasks.to_enable)
     else:
         assert extended_summary_str not in created_reports.report_fields["summary"]
 
@@ -238,7 +236,7 @@ def test_report_newly_enabled(monkeypatch):
     transitionsystemdservicesstates._report_newly_enabled(newly_enabled)
 
     assert created_reports.called
-    assert all([s in created_reports.report_fields["summary"] for s in newly_enabled])
+    assert all(s in created_reports.report_fields["summary"] for s in newly_enabled)
 
 
 @pytest.mark.parametrize(
