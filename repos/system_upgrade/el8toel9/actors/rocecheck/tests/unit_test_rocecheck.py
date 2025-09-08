@@ -91,7 +91,10 @@ def test_roce_old_rhel(monkeypatch, msgs, version):
     monkeypatch.setattr(reporting, "create_report", create_report_mocked())
     rocecheck.process()
     assert reporting.create_report.called
-    assert any(['version of RHEL' in report['title'] for report in reporting.create_report.reports])
+    assert any(
+        'version of RHEL' in report['title']
+        for report in reporting.create_report.reports
+    )
 
 
 # NOTE: what about the situation when net.naming-scheme is configured multiple times???
@@ -113,4 +116,7 @@ def test_roce_wrong_configuration(monkeypatch, msgs, version):
     monkeypatch.setattr(reporting, "create_report", create_report_mocked())
     rocecheck.process()
     assert reporting.create_report.called
-    assert any(['RoCE configuration' in report['title'] for report in reporting.create_report.reports])
+    assert any(
+        'RoCE configuration' in report['title']
+        for report in reporting.create_report.reports
+    )
