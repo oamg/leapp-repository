@@ -15,13 +15,15 @@ from leapp.utils.report import is_inhibitor
 
 # Mock actor base for CheckVdo tests.
 class MockedActorCheckVdo(CurrentActorMocked):
-    def get_vdo_answer(self):
+    @staticmethod
+    def get_vdo_answer():
         return False
 
 
 # Mock actor for all_vdo_converted dialog response.
 class MockedActorAllVdoConvertedTrue(MockedActorCheckVdo):
-    def get_vdo_answer(self):
+    @staticmethod
+    def get_vdo_answer():
         return True
 
 

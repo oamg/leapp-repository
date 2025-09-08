@@ -62,7 +62,7 @@ RHSM_ENABLED_REPOS = [
 ]
 
 
-class IsolatedActionsMocked(object):
+class IsolatedActionsMocked:
     def __init__(self, call_stdout=None, raise_err=False):
         self.commands_called = []
         self.call_return = {'stdout': call_stdout, 'stderr': None}
@@ -73,7 +73,8 @@ class IsolatedActionsMocked(object):
         # A map from called commands to their mocked output
         self.mocked_command_call_outputs = dict()
 
-    def is_isolated(self):
+    @staticmethod
+    def is_isolated():
         return True
 
     def call(self, cmd, *args, **dummy_kwargs):
@@ -93,7 +94,8 @@ class IsolatedActionsMocked(object):
             'exit_code': exit_code
         }
 
-    def full_path(self, path):
+    @staticmethod
+    def full_path(path):
         return path
 
     def remove(self, path):

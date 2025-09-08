@@ -34,7 +34,8 @@ def guarded_execution(*guards):
 def connection_guard(url='https://example.com'):
     def closure():
         try:
-            urlopen(url)
+            with urlopen(url):
+                pass
             return None
         except URLError as e:
             cause = '''Failed to open url '{url}' with error: {error}'''.format(url=url, error=e)

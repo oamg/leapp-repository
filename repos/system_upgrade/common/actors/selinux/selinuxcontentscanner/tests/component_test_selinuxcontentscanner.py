@@ -76,7 +76,7 @@ def find_semanage_rule(rules, rule):
     return next((r for r in rules if all(word in r for word in rule)), None)
 
 
-@pytest.mark.skipif(os.getenv("DESTRUCTIVE_TESTING", False) in [False, "0"],
+@pytest.mark.skipif(os.getenv("DESTRUCTIVE_TESTING", "false") in ["False", "false", "0"],
                     reason='Test disabled by default because it would modify the system')
 def test_SELinuxContentScanner(current_actor_context, destructive_selinux_env):
 

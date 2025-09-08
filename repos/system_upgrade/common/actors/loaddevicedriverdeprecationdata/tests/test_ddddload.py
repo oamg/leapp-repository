@@ -60,7 +60,7 @@ def test_filtered_load(monkeypatch):
 
     assert produced
     assert len(produced[0].entries) == 3
-    assert not any([e.device_type == 'unsupported' for e in produced[0].entries])
+    assert not any(e.device_type == 'unsupported' for e in produced[0].entries)
 
 
 @pytest.mark.parametrize('data', (
