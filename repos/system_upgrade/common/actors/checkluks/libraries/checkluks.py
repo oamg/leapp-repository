@@ -27,7 +27,7 @@ def _formatted_list_output(input_list, sep=FMT_LIST_SEPARATOR):
 
 
 def _at_least_one_tpm_token(luks_dump):
-    return any([token.token_type == "clevis-tpm2" for token in luks_dump.tokens])
+    return any(token.token_type == "clevis-tpm2" for token in luks_dump.tokens)
 
 
 def _get_ceph_volumes():

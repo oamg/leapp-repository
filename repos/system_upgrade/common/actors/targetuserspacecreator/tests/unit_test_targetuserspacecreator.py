@@ -1068,7 +1068,7 @@ def test_consume_data(monkeypatch, raised, no_rhsm, testdata):
             assert raised[1] in err.value.message
         else:
             assert userspacegen.api.current_logger.warnmsg
-            assert any([raised[1] in x for x in userspacegen.api.current_logger.warnmsg])
+            assert any(raised[1] in x for x in userspacegen.api.current_logger.warnmsg)
 
 
 @pytest.mark.skip(reason="Currently not implemented in the actor. It's TODO.")
@@ -1390,7 +1390,7 @@ def test__get_files_owned_by_rpms_recursive(monkeypatch):
     assert sorted(owned[0:4]) == sorted(out)
 
     def has_dbgmsg(substr):
-        return any([substr in log for log in logger.dbgmsg])
+        return any(substr in log for log in logger.dbgmsg)
 
     # test a few
     assert has_dbgmsg(
