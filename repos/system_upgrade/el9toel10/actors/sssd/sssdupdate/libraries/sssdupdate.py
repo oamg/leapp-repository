@@ -1,7 +1,7 @@
 import os
 import re
 
-from leapp.exceptions import StopActorExecutionError
+from leapp.libraries.stdlib import api
 
 
 def _process_knownhosts(line: str) -> str:
@@ -29,30 +29,26 @@ def _process_enable_svc(line: str) -> str:
 
 
 def _update_file(filename, process_function):
-    newname = filename + '.new'
-    oldname = filename + '.old'
+    newname = '{}.leappnew'.format(filename)
+    oldname = '{}.leappsave'.format(filename)
     try:
-        with open(filename, 'r') as input_file, open(newname, 'x') as output_file:
+        with open(filename, 'r') as input_file, open(newname, 'w') as output_file:
             istat = os.fstat(input_file.fileno())
             os.fchmod(output_file.fileno(), istat.st_mode)
             for line in input_file:
                 try:
                     output_file.write(process_function(line))
                 except OSError as e:
-                    raise StopActorExecutionError('Failed to write to {}'.format(newname),
-                                                  details={'details': str(e)})
+                    api.current_logger().warning('Failed to write to {}'.format(newname), details={'details': str(e)})
 
-    except FileExistsError as e:
-        raise StopActorExecutionError('Temporary file already exists: {}'.format(newname),
-                                      details={'details': str(e)})
     except OSError as e:
         try:
             os.unlink(newname)
         except FileNotFoundError:
             pass
-        raise StopActorExecutionError('Failed to access the required files', details={'details': str(e)})
+        api.current_logger().error('Failed to access the required files', details={'details': str(e)})
 
-    # Let's make sure the old configuration is preserverd if something goes wrong
+    # Let's make sure the old configuration is preserved if something goes wrong
     os.replace(filename, oldname)
     os.replace(newname, filename)
     os.unlink(oldname)
