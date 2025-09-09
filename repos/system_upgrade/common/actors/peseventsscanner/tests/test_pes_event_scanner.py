@@ -214,22 +214,22 @@ def test_actor_performs(monkeypatch):
 
     events = [
         Event(1, Action.SPLIT,
-              {Pkg('split-in', 'rhel7-base')},
-              {Pkg('split-out0', 'rhel8-BaseOS'), Pkg('split-out1', 'rhel8-BaseOS')},
-              (7, 9), (8, 0), []),
+              {Pkg('split-in', 'rhel8-BaseOS')},
+              {Pkg('split-out0', 'rhel9-Baseos'), Pkg('split-out1', 'rhel9-Baseos')},
+              (8, 10), (9, 0), []),
         Event(2, Action.MERGED,
-              {Pkg('split-out0', 'rhel8-BaseOS'), Pkg('split-out1', 'rhel8-BaseOS')},
-              {Pkg('merged-out', 'rhel8-BaseOS')},
-              (8, 0), (8, 1), []),
+              {Pkg('split-out0', 'rhel9-Baseos'), Pkg('split-out1', 'rhel9-Baseos')},
+              {Pkg('merged-out', 'rhel9-Baseos')},
+              (9, 0), (9, 1), []),
         Event(3, Action.MOVED,
-              {Pkg('moved-in', 'rhel7-base')}, {Pkg('moved-out', 'rhel8-BaseOS')},
-              (7, 9), (8, 0), []),
+              {Pkg('moved-in', 'rhel8-BaseOS')}, {Pkg('moved-out', 'rhel9-Baseos')},
+              (8, 10), (9, 0), []),
         Event(4, Action.REMOVED,
-              {Pkg('removed', 'rhel7-base')}, set(),
-              (8, 0), (8, 1), []),
+              {Pkg('removed', 'rhel8-BaseOS')}, set(),
+              (9, 0), (9, 1), []),
         Event(5, Action.DEPRECATED,
-              {Pkg('irrelevant', 'rhel7-base')}, set(),
-              (8, 0), (8, 1), []),
+              {Pkg('irrelevant', 'rhel8-BaseOS')}, set(),
+              (9, 0), (9, 1), []),
     ]
 
     monkeypatch.setattr(pes_events_scanner, 'get_pes_events', lambda data_folder, json_filename: events)
@@ -242,23 +242,29 @@ def test_actor_performs(monkeypatch):
 
     repositories_mapping = RepositoriesMapping(
         mapping=[
-            RepoMapEntry(source='rhel7-base', target=['rhel8-BaseOS'], ),
+            RepoMapEntry(source='rhel8-BaseOS', target=['rhel9-Baseos'], ),
         ],
         repositories=[
-            PESIDRepositoryEntry(pesid='rhel7-base', major_version='7', repoid='rhel7-repo', arch='x86_64',
-                                 repo_type='rpm', channel='ga', rhui='', distro='rhel'),
             PESIDRepositoryEntry(pesid='rhel8-BaseOS', major_version='8', repoid='rhel8-repo', arch='x86_64',
+                                 repo_type='rpm', channel='ga', rhui='', distro='rhel'),
+            PESIDRepositoryEntry(pesid='rhel9-Baseos', major_version='9', repoid='rhel9-repo', arch='x86_64',
                                  repo_type='rpm', channel='ga', rhui='', distro='rhel')]
     )
 
     enabled_modules = EnabledModules(modules=[])
     repo_facts = RepositoriesFacts(
-        repositories=[RepositoryFile(file='', data=[RepositoryData(repoid='rhel7-repo', name='RHEL7 repo')])]
+        repositories=[RepositoryFile(file='', data=[RepositoryData(repoid='rhel8-repo', name='RHEL8 repo')])]
     )
 
-    monkeypatch.setattr(api, 'current_actor',
-                        CurrentActorMocked(msgs=[installed_pkgs, repositories_mapping, enabled_modules, repo_facts],
-                                           src_ver='7.9', dst_ver='8.1'))
+    monkeypatch.setattr(
+        api,
+        "current_actor",
+        CurrentActorMocked(
+            msgs=[installed_pkgs, repositories_mapping, enabled_modules, repo_facts],
+            src_ver="8.10",
+            dst_ver="9.1",
+        ),
+    )
 
     produced_messages = produce_mocked()
     created_report = create_report_mocked()
@@ -325,18 +331,18 @@ def test_blacklisted_repoid_is_not_produced(monkeypatch):
     Test that upgrade with a package that would be from a blacklisted repository on the target system does not remove
     the package as it was already installed, however, the blacklisted repoid should not be produced.
     """
-    installed_pkgs = {Package('pkg-a', 'blacklisted-rhel7', None), Package('pkg-b', 'repoid-rhel7', None)}
+    installed_pkgs = {Package('pkg-a', 'blacklisted-rhel8', None), Package('pkg-b', 'repoid-rhel8', None)}
     events = [
-        Event(1, Action.MOVED, {Package('pkg-b', 'repoid-rhel7', None)}, {Package('pkg-b', 'repoid-rhel8', None)},
-              (8, 0), (8, 1), []),
-        Event(2, Action.MOVED, {Package('pkg-a', 'repoid-rhel7', None)}, {Package('pkg-a', 'blacklisted-rhel8', None)},
-              (8, 0), (8, 1), []),
+        Event(1, Action.MOVED, {Package('pkg-b', 'repoid-rhel8', None)}, {Package('pkg-b', 'repoid-rhel9', None)},
+              (9, 0), (9, 1), []),
+        Event(2, Action.MOVED, {Package('pkg-a', 'repoid-rhel8', None)}, {Package('pkg-a', 'blacklisted-rhel9', None)},
+              (9, 0), (9, 1), []),
     ]
 
     monkeypatch.setattr(pes_events_scanner, 'get_installed_pkgs', lambda: installed_pkgs)
     monkeypatch.setattr(pes_events_scanner, 'get_pes_events', lambda folder, filename: events)
     monkeypatch.setattr(pes_events_scanner, 'apply_transaction_configuration', lambda pkgs, transaction_cfg: pkgs)
-    monkeypatch.setattr(pes_events_scanner, 'get_blacklisted_repoids', lambda: {'blacklisted-rhel8'})
+    monkeypatch.setattr(pes_events_scanner, 'get_blacklisted_repoids', lambda: {'blacklisted-rhel9'})
     monkeypatch.setattr(pes_events_scanner, 'replace_pesids_with_repoids_in_packages',
                         lambda pkgs, src_pkgs_repoids: pkgs)
 
@@ -357,7 +363,7 @@ def test_blacklisted_repoid_is_not_produced(monkeypatch):
 
     repo_setup_tasks = [msg for msg in api.produce.model_instances if isinstance(msg, RepositoriesSetupTasks)]
     assert len(repo_setup_tasks) == 1
-    assert repo_setup_tasks[0].to_enable == ['repoid-rhel8']
+    assert repo_setup_tasks[0].to_enable == ['repoid-rhel9']
 
 
 @pytest.mark.parametrize(

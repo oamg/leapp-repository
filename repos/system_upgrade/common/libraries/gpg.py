@@ -1,7 +1,7 @@
 import os
 
 from leapp.libraries.common import config
-from leapp.libraries.common.config.version import get_source_major_version, get_target_major_version
+from leapp.libraries.common.config.version import get_target_major_version
 from leapp.libraries.stdlib import api, run
 from leapp.models import GpgKey
 
@@ -28,18 +28,11 @@ def _gpg_show_keys(key_path):
     """
     Show keys in given file in version-agnostic manner
 
-    This runs gpg --show-keys (EL8) or gpg --with-fingerprints (EL7)
-    to verify the given file exists, is readable and contains valid
-    OpenPGP key data, which is printed in parsable format (--with-colons).
+    This runs gpg --show-keys to verify the given file exists, is readable and
+    contains valid OpenPGP key data, which is printed in parsable format (--with-colons).
     """
     try:
-        cmd = ['gpg2']
-        # RHEL7 gnupg requires different switches to get the same output
-        if get_source_major_version() == '7':
-            cmd.append('--with-fingerprint')
-        else:
-            cmd.append('--show-keys')
-        cmd += ['--with-colons', key_path]
+        cmd = ['gpg2', '--show-keys', '--with-colons', key_path]
         # TODO: discussed, most likely the checked=False will be dropped
         # and error will be handled in other functions
         return run(cmd, split=True, checked=False)
@@ -121,7 +114,7 @@ def get_path_to_gpg_certs():
     # only beta is special in regards to the GPG signing keys
     if target_product_type == 'beta':
         certs_dir = '{}beta'.format(target_major_version)
-    distro = api.current_actor().configuration.os_release.release_id
+    distro = config.get_distro_id()
     return os.path.join(
         api.get_common_folder_path('distro'),
         distro,

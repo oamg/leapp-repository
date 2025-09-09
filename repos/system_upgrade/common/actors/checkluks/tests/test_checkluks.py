@@ -1,11 +1,3 @@
-"""
-Unit tests for inhibitwhenluks actor
-
-Skip isort as it's kind of broken when mixing grid import and one line imports
-
-isort:skip_file
-"""
-
 from leapp.libraries.common.config import version
 from leapp.models import (
     CephInfo,
@@ -13,7 +5,6 @@ from leapp.models import (
     LuksDump,
     LuksDumps,
     LuksToken,
-    StorageInfo,
     TargetUserSpaceUpgradeTasks,
     UpgradeInitramfsTasks
 )
@@ -148,26 +139,3 @@ LSBLK_ENTRY = LsblkEntry(
     parent_name="",
     parent_path=""
 )
-
-
-def test_inhibitor_on_el7(monkeypatch, current_actor_context):
-    # NOTE(pstodulk): consider it good enough as el7 stuff is going to be removed
-    # soon.
-    monkeypatch.setattr(version, 'get_source_major_version', lambda: '7')
-
-    luks_dump = LuksDump(
-        version=2,
-        uuid='83050bd9-61c6-4ff0-846f-bfd3ac9bfc67',
-        device_path='/dev/sda',
-        device_name='sda',
-        tokens=[LuksToken(token_id=0, keyslot=1, token_type='clevis-tpm2')])
-    current_actor_context.feed(LuksDumps(dumps=[luks_dump]))
-    current_actor_context.feed(CephInfo(encrypted_volumes=[]))
-
-    current_actor_context.feed(StorageInfo(lsblk=[LSBLK_ENTRY]))
-    current_actor_context.run()
-    assert current_actor_context.consume(Report)
-
-    report_fields = current_actor_context.consume(Report)[0].report
-    assert is_inhibitor(report_fields)
-    assert report_fields['title'] == 'LUKS encrypted partition detected'

@@ -492,15 +492,16 @@ def apply_transaction_configuration(source_pkgs, transaction_configuration):
 
 
 def remove_leapp_related_events(events):
-    # NOTE(ivasilev) Need to revisit this once rhel9->rhel10 upgrades become a thing
-    leapp_pkgs = rpms.get_leapp_dep_packages(
-            major_version=['7', '8']) + rpms.get_leapp_packages(major_version=['7', '8'])
+    major_vers = ['7', '8', '9']
+    leapp_pkgs = rpms.get_leapp_dep_packages(major_vers) + rpms.get_leapp_packages(major_vers)
     res = []
     for event in events:
         if not any(pkg.name in leapp_pkgs for pkg in event.in_pkgs):
             res.append(event)
         else:
-            api.current_logger().debug('Filtered out leapp related event, event id: {}'.format(event.id))
+            api.current_logger().debug(
+                "Filtered out leapp related event, event id: {}".format(event.id)
+            )
     return res
 
 

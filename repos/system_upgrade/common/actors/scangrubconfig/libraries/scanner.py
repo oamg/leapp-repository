@@ -1,7 +1,7 @@
 import os
 import re
 
-from leapp.libraries.common.config import architecture, version
+from leapp.libraries.common.config import architecture
 from leapp.models import GrubConfigError
 
 
@@ -57,13 +57,13 @@ def scan():
     config = '/etc/default/grub'
     # Check for GRUB_CMDLINE_LINUX syntax errors
     # XXX FIXME(ivasilev) Can we make this check a common one? For now let's limit it to rhel7->rhel8 only
-    if version.get_source_major_version() == '7':
-        if not architecture.matches_architecture(architecture.ARCH_S390X):
-            # For now, skip just s390x, that's only one that is failing now
-            # because ZIPL is used there
-            if detect_config_error(config):
-                errors.append(GrubConfigError(error_detected=True, files=[config],
-                                              error_type=GrubConfigError.ERROR_GRUB_CMDLINE_LINUX_SYNTAX))
+    # if version.get_source_major_version() == '7':
+    #     if not architecture.matches_architecture(architecture.ARCH_S390X):
+    #         # For now, skip just s390x, that's only one that is failing now
+    #         # because ZIPL is used there
+    #         if detect_config_error(config):
+    #             errors.append(GrubConfigError(error_detected=True, files=[config],
+    #                                           error_type=GrubConfigError.ERROR_GRUB_CMDLINE_LINUX_SYNTAX))
 
     # Check for missing newline errors
     if is_grub_config_missing_final_newline(config):
