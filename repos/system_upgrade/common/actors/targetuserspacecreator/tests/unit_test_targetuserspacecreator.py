@@ -1072,6 +1072,7 @@ def test_consume_data(monkeypatch, raised, no_rhsm, testdata):
 
 
 @pytest.mark.skip(reason="Currently not implemented in the actor. It's TODO.")
+@suppress_deprecation(models.RHELTargetRepository)
 def test_gather_target_repositories(monkeypatch):
     monkeypatch.setattr(userspacegen.api, 'current_actor', CurrentActorMocked())
     # The available RHSM repos
@@ -1137,6 +1138,7 @@ def test_gather_target_repositories_rhui(monkeypatch):
     assert target_repoids == set(['rhui-1', 'rhui-2'])
 
 
+@suppress_deprecation(models.RHELTargetRepository)
 def test_gather_target_repositories_baseos_appstream_not_available(monkeypatch):
     # If the repos that Leapp identifies as required for the upgrade (based on the repo mapping and PES data) are not
     # available, an exception shall be raised

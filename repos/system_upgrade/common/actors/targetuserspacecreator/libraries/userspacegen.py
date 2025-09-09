@@ -17,6 +17,7 @@ from leapp.models import (
     CustomTargetRepositoryFile,
     PkgManagerInfo,
     RepositoriesFacts,
+    RHELTargetRepository,
     RHSMInfo,
     RHUIInfo,
     StorageInfo,
@@ -963,6 +964,7 @@ def _get_distro_available_repoids(context, indata):
     return distro_repoids
 
 
+@suppress_deprecation(RHELTargetRepository)  # member of TargetRepositories
 def gather_target_repositories(context, indata):
     """
     Get available required target repositories and inhibit or raise error if basic checks do not pass.
