@@ -19,7 +19,10 @@ def _does_file_contain_expression(file_path, expression):
         )
         return False
     except OSError as e:
-        raise StopActorExecutionError('Could not open file ' + file_path, details={'details': str(e)})
+        raise StopActorExecutionError(
+            'Could not open configuration file',
+            details={'details': 'Coudn\'t open {} file with error: {}.'.format(file_path, str(e))}
+            )
 
 
 def _look_for_files(expression: str, path_list: list[str]) -> list[str]:

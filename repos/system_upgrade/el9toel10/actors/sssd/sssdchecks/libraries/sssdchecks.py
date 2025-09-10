@@ -15,8 +15,8 @@ def check_config(model):
         'SSSD\'s sss_ssh_knownhostsproxy tool is replaced by the more '
         'reliable sss_ssh_knownhosts tool. SSH\'s configuration will be updated '
         'to reflect this by updating every mention of sss_ssh_knownhostsproxy by '
-        'the corresponding mention of sss_ssh_knownhosts, even those commented out.\n'
-        'SSSD\'s ssh service will be enabled if not already done.\n'
+        'the corresponding mention of sss_ssh_knownhosts, even those commented out. '
+        'SSSD\'s ssh service will be enabled if not already done.\n\n'
         'The following files will be updated:{}{}'.format(
             FMT_LIST_SEPARATOR,
             FMT_LIST_SEPARATOR.join(model.sssd_config_files + model.ssh_config_files)
