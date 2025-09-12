@@ -4,6 +4,7 @@ from leapp.libraries.common import rpms
 from leapp.libraries.common.config import mock_configs
 from leapp.models import (
     DistributionSignedRPM,
+    Distro,
     fields,
     InstalledRPM,
     InstalledUnsignedRPM,
@@ -79,6 +80,7 @@ def test_actor_execution_with_signed_and_third_party_pkgs_centos(current_actor_c
         version='7 (Core)',
         version_id='7'
     )
+    config.distro = Distro(source='centos', target='centos')
 
     installed_rpm = [
         RPM(name='sample01', version='0.1', release='1.sm01', epoch='1', packager=CENTOS_PACKAGER, arch='noarch',
@@ -121,6 +123,7 @@ def test_actor_execution_with_signed_unsigned_data_almalinux(current_actor_conte
         version='8.10 (Cerulean Leopard)',
         version_id='8.10'
     )
+    config.distro = Distro(source='almalinux', target='almalinux')
 
     installed_rpm = [
         RPM(name='sample01', version='0.1', release='1.sm01', epoch='1', packager=ALMALINUX_PACKAGER, arch='noarch',
@@ -151,6 +154,7 @@ def test_actor_execution_with_unknown_distro(current_actor_context):
         version='7 (Core)',
         version_id='7'
     )
+    config.distro = Distro(source='myos', target='myos')
 
     current_actor_context.feed(InstalledRPM(items=[]))
     current_actor_context.run(config_model=config)

@@ -1,4 +1,4 @@
-from leapp.libraries.common.config import get_target_product_channel
+from leapp.libraries.common import config
 from leapp.libraries.common.config.version import get_source_major_version, get_target_major_version
 from leapp.libraries.stdlib import api
 
@@ -23,7 +23,7 @@ class RepoMapDataHandler(object):
     Provide the basic functionality to work with the repository data easily.
     """
 
-    def __init__(self, repo_map, distro='', cloud_provider='', default_channels=None):
+    def __init__(self, repo_map, src_distro='', dst_distro='', cloud_provider='', default_channels=None):
         """
         Initialize the object based on the given RepositoriesMapping msg.
 
@@ -32,8 +32,10 @@ class RepoMapDataHandler(object):
 
         :param repo_map: A valid RepositoryMapping message.
         :type repo_map: RepositoryMapping
-        :param distro: Which distribution's mappings to use, default to current
-        :type distro: str
+        :param src_distro: The distribution to map repos from, default to current
+        :type src_distro: str
+        :param dst_distro: The distribution to map repos to, default to current
+        :type dst_distro: str
         :param default_channels: A list of default channels to use when a target repository
                                  equivalent exactly matching a source repository was not found.
         :type default_channels: List[str]
@@ -44,7 +46,9 @@ class RepoMapDataHandler(object):
         # ideal for work, but there is not any significant impact..
         self.repositories = repo_map.repositories
         self.mapping = repo_map.mapping
-        self.distro = distro or api.current_actor().configuration.os_release.release_id
+
+        self.src_distro = src_distro or config.get_source_distro_id()
+        self.dst_distro = dst_distro or config.get_target_distro_id()
         # FIXME(pstodulk): what about default_channel -> fallback_channel
         # hardcoded always as ga? instead of list of channels..
         # it'd be possibly confusing naming now...
@@ -52,7 +56,7 @@ class RepoMapDataHandler(object):
 
         # Make self.prio_channel None if the user did not specify any target channels, so that self.default_channels
         # will be used instead
-        self.prio_channel = get_target_product_channel(default=None)
+        self.prio_channel = config.get_target_product_channel(default=None)
 
         self.cloud_provider = cloud_provider
 
@@ -96,7 +100,8 @@ class RepoMapDataHandler(object):
         If multiple pesid repo entries with the same repoid were found, the entry with rhui matching the source
         system's rhui info will be returned. If no entry with matching rhui exists, the CDN one is returned if any.
 
-        Note that repositories are automatically filtered based on the specified OS release ID (self.distro).
+        Note that repositories are automatically filtered based on the specified source and target OS release ID
+        (self.src_distro, self.dst_distro).
 
         :param repoid: RepoID that should the PESIDRepositoryEntry match.
         :type repoid: str
@@ -109,8 +114,8 @@ class RepoMapDataHandler(object):
         matching_pesid_repos = []
         for pesid_repo in self.repositories:
             # FIXME(pstodulk): Why we do not check actually architecture here?
-            # It seems obvious we should check it but the fixme comment below
-            # suggests that it's expected - for not obvious reason.
+            # It seems obvious we should check it, but it's not clear why we
+            # don't and investigation might be required.
             # For the investigation:
             # # check repoids matching various architectures
             # # check repoids without $arch in substring on how many architectures they are present
@@ -119,12 +124,13 @@ class RepoMapDataHandler(object):
             if (
                 pesid_repo.repoid == repoid
                 and pesid_repo.major_version == major_version
-                and pesid_repo.distro == self.distro
+                and pesid_repo.distro == self.dst_distro
             ):
                 matching_pesid_repos.append(pesid_repo)
 
         # FIXME: when a PESID is present for multiple architectures, there
-        # multiple matching repos even though there should really be just one
+        # are multiple matching repos even though there should really be just
+        # one, the condition below fails even though it shouldn't
         if len(matching_pesid_repos) == 1:
             # Perform no heuristics if only a single pesid repository with matching repoid found
             return matching_pesid_repos[0]
@@ -190,7 +196,7 @@ class RepoMapDataHandler(object):
                  the OS Major version same as the source OS.
         :rtype: List[PESIDRepositoryEntry]
         """
-        return self.get_pesid_repos(pesid, get_source_major_version(), self.distro)
+        return self.get_pesid_repos(pesid, get_source_major_version(), self.src_distro)
 
     def get_target_pesid_repos(self, pesid):
         """
@@ -203,7 +209,7 @@ class RepoMapDataHandler(object):
                  the OS Major version same as the target OS.
         :rtype: List[PESIDRepositoryEntry]
         """
-        return self.get_pesid_repos(pesid, get_target_major_version(), self.distro)
+        return self.get_pesid_repos(pesid, get_target_major_version(), self.dst_distro)
 
     def _find_repository_target_equivalent(self, src_pesidrepo, target_pesid):
         """
@@ -223,7 +229,7 @@ class RepoMapDataHandler(object):
             matches_rhui = candidate.rhui == src_pesidrepo.rhui
             matches_repo_type = candidate.repo_type == 'rpm'
             matches_arch = candidate.arch == api.current_actor().configuration.architecture
-            matches_distro = candidate.distro == self.distro
+            matches_distro = candidate.distro == self.dst_distro
 
             if matches_rhui and matches_arch and matches_distro and matches_repo_type:
                 # user can specify in future the specific channel should be
