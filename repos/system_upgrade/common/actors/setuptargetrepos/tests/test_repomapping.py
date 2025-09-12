@@ -98,15 +98,15 @@ def test_get_pesid_repo_entry(monkeypatch, repomap_data_for_pesid_repo_retrieval
     fail_description = (
         'get_pesid_repo_entry method failed to find correct pesid repository that matches given parameters.')
     for exp_repo in repositories:
-        result_repo = handler.get_pesid_repo_entry(exp_repo.repoid, exp_repo.major_version)
+        result_repo = handler.get_pesid_repo_entry(exp_repo.repoid, exp_repo.major_version, exp_repo.distro)
         assert result_repo == exp_repo, fail_description
 
     fail_description = (
         'get_pesid_repo_entry method found a pesid repository, but no repository should match given parameters.')
-    assert handler.get_pesid_repo_entry('pesid1-repoid', '6') is None, fail_description
-    assert handler.get_pesid_repo_entry('pesid1-repoid', '8') is None, fail_description
-    assert handler.get_pesid_repo_entry('pesid1-repoid', '9') is None, fail_description
-    assert handler.get_pesid_repo_entry('nonexisting-repo', '7') is None, fail_description
+    assert handler.get_pesid_repo_entry('pesid1-repoid', '6', 'rhel') is None, fail_description
+    assert handler.get_pesid_repo_entry('pesid1-repoid', '8', 'rhel') is None, fail_description
+    assert handler.get_pesid_repo_entry('pesid1-repoid', '9', 'rhel') is None, fail_description
+    assert handler.get_pesid_repo_entry('nonexisting-repo', '7', 'rhel') is None, fail_description
 
 
 @pytest.mark.parametrize('distro', ('rhel', 'centos', 'almalinux'))
@@ -117,13 +117,18 @@ def test_get_pesid_repo_entry_distro(
     Test for the RepoMapDataHandler.get_pesid_repo_entry method.
 
     Verifies that the method correctly retrieves PESIDRepositoryEntry that are
-    matching the OS major version, repoid and the distro.
+    matching the OS major version, repoid and the distro, regardless of the
+    actual distro.
     """
     monkeypatch.setattr(
         api,
         "current_actor",
         CurrentActorMocked(
-            arch="x86_64", src_ver="9.6", dst_ver="10.2", release_id=distro
+            arch="x86_64",
+            src_ver="9.6",
+            dst_ver="10.2",
+            src_distro=distro,
+            dst_distro=distro,
         ),
     )
     handler = RepoMapDataHandler(repomap_data_multiple_distros)
@@ -138,7 +143,7 @@ def test_get_pesid_repo_entry_distro(
     )
     for exp_repo in repositories:
         result_repo = handler.get_pesid_repo_entry(
-            exp_repo.repoid, exp_repo.major_version
+            exp_repo.repoid, exp_repo.major_version, exp_repo.distro
         )
         assert result_repo == exp_repo, fail_description
 

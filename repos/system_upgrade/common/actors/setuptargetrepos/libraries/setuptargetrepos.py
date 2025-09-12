@@ -76,8 +76,9 @@ def _get_used_repo_dict():
 def _get_mapped_repoids(repomap, src_repoids):
     mapped_repoids = set()
     src_maj_ver = get_source_major_version()
+    src_distro = get_source_distro_id()
     for repoid in src_repoids:
-        if repomap.get_pesid_repo_entry(repoid, src_maj_ver):
+        if repomap.get_pesid_repo_entry(repoid, src_maj_ver, src_distro):
             mapped_repoids.add(repoid)
     return mapped_repoids
 
