@@ -109,4 +109,4 @@ def get_distro_id():
     :return: The ID string from /etc/os_release
     :rtype: str
     """
-    return api.current_actor().configuration.os_release.release_id
+    return api.current_actor().configuration.distro.source
