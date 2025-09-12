@@ -64,6 +64,16 @@ class IPUSourceToPossibleTargets(Model):
     """List of defined target system versions for the `source_version` system."""
 
 
+class Distro(Model):
+    topic = SystemInfoTopic
+
+    source = fields.String()
+    """Release id of the source system (e.g. rhel, centos, almalinux)."""
+
+    target = fields.String()
+    """Release id of the target system (e.g. rhel, centos, almalinux)."""
+
+
 class IPUConfig(Model):
     """
     IPU workflow configuration model
@@ -96,3 +106,6 @@ class IPUConfig(Model):
 
     The list contains only upgrade paths for the `flavour` of the source system.
     """
+
+    distro = fields.Model(Distro)
+    """Release IDs of the source and target system."""

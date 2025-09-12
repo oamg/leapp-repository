@@ -78,12 +78,27 @@ def _make_default_config(actor_config_schema):
 # pattern would be nice here. Ideally, the builder should actively prevent the developer from setting fields
 # that do not affect actor's behavior in __setattr__.
 class CurrentActorMocked:  # pylint:disable=R0904
-    def __init__(self, arch=architecture.ARCH_X86_64, envars=None,  # pylint:disable=R0913
-                 kernel='3.10.0-957.43.1.el7.x86_64',
-                 release_id='rhel', src_ver='8.10', dst_ver='9.6', msgs=None, flavour='default', config=None,
-                 virtual_source_version=None, virtual_target_version=None,
-                 supported_upgrade_paths=None):
+
+    def __init__(  # pylint: disable=too-many-arguments
+        self,
+        arch=architecture.ARCH_X86_64,
+        envars=None,  # pylint:disable=R0913
+        kernel="3.10.0-957.43.1.el7.x86_64",
+        release_id="rhel",
+        src_ver="8.10",
+        dst_ver="9.6",
+        msgs=None,
+        flavour="default",
+        config=None,
+        virtual_source_version=None,
+        virtual_target_version=None,
+        supported_upgrade_paths=None,
+        src_distro=None,
+        dst_distro=None,
+    ):
         """
+        Note: src_distro and release_id specify the same thing, but src_distro takes priority.
+
         :param List[IPUSourceToPossibleTargets] supported_upgrade_paths: List of supported upgrade paths.
         """
         envarsList = [EnvVar(name=k, value=v) for k, v in envars.items()] if envars else []
@@ -92,7 +107,11 @@ class CurrentActorMocked:  # pylint:disable=R0904
         version_values = [src_ver, dst_ver, virtual_source_version or src_ver, virtual_target_version or dst_ver]
         version = namedtuple('Version', version_fields)(*version_values)
 
-        release = namedtuple('OS_release', ['release_id', 'version_id'])(release_id, src_ver)
+        release = namedtuple('OS_release', ['release_id', 'version_id'])(src_distro or release_id, src_ver)
+
+        distro = namedtuple("Distro", ["source", "target"])(
+            src_distro or release_id, dst_distro or release_id
+        )
 
         self._common_folder = '../../files'
         self._common_tools_folder = '../../tools'
@@ -103,9 +122,18 @@ class CurrentActorMocked:  # pylint:disable=R0904
             supported_upgrade_paths = [IPUSourceToPossibleTargets(source_version=src_ver, target_versions=[dst_ver])]
 
         ipu_conf_fields = ['architecture', 'kernel', 'leapp_env_vars', 'os_release',
-                           'version', 'flavour', 'supported_upgrade_paths']
+                           'version', 'flavour', 'supported_upgrade_paths', 'distro']
         config_type = namedtuple('configuration', ipu_conf_fields)
-        self.configuration = config_type(arch, kernel, envarsList, release, version, flavour, supported_upgrade_paths)
+        self.configuration = config_type(
+            arch,
+            kernel,
+            envarsList,
+            release,
+            version,
+            flavour,
+            supported_upgrade_paths,
+            distro,
+        )
 
         self._msgs = msgs or []
         self.config = {} if config is None else config

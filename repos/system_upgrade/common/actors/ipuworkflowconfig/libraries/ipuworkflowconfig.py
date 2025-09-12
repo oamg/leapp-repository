@@ -4,7 +4,7 @@ import platform
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.stdlib import api, CalledProcessError, run
-from leapp.models import EnvVar, IPUConfig, IPUSourceToPossibleTargets, OSRelease, Version
+from leapp.models import Distro, EnvVar, IPUConfig, IPUSourceToPossibleTargets, OSRelease, Version
 
 ENV_IGNORE = ('LEAPP_CURRENT_PHASE', 'LEAPP_CURRENT_ACTOR', 'LEAPP_VERBOSE',
               'LEAPP_DEBUG')
@@ -169,6 +169,7 @@ def produce_ipu_config(actor):
                                                                                 os_release.release_id,
                                                                                 source_version,
                                                                                 target_version)
+    target_distro = os.environ.get('LEAPP_TARGET_OS')
 
     actor.produce(IPUConfig(
         leapp_env_vars=get_env_vars(),
@@ -182,5 +183,9 @@ def produce_ipu_config(actor):
         ),
         kernel=get_booted_kernel(),
         flavour=flavour,
-        supported_upgrade_paths=exposed_supported_paths
+        supported_upgrade_paths=exposed_supported_paths,
+        distro=Distro(
+            source=os_release.release_id,
+            target=target_distro,
+        ),
     ))
