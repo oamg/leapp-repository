@@ -7,7 +7,7 @@ from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 class CheckInsightsAutoregister(Actor):
     """
-    Checks if system can be automatically registered into Red Hat Insights
+    Checks if system can be automatically registered into Red Hat Lightspeed
 
     The registration is skipped if NO_INSIGHTS_REGISTER=1 environment variable
     is set, the --no-insights-register command line argument present. if the
