@@ -956,11 +956,6 @@ def _get_distro_available_repoids(context, indata):
             for foreign_repofile in foreign_repofiles:
                 os.rename('{0}.back'.format(foreign_repofile), foreign_repofile)
 
-    api.current_logger().debug(
-        "The following repofiles are considered as provided by the distribution: {0}".format(
-            " ".join(distro_repoids)
-        )
-    )
     return distro_repoids
 
 
@@ -986,11 +981,19 @@ def gather_target_repositories(context, indata):
     """
 
     distro_repoids = _get_distro_available_repoids(context, indata)
-    api.current_logger().info(
-        "The following repoids are considered as provided by the '{}' distribution:{}{}".format(
-            get_distro_id(), FMT_LIST_SEPARATOR, FMT_LIST_SEPARATOR.join(distro_repoids)
+    if distro_repoids:
+        api.current_logger().info(
+            "The following repoids are considered as provided by the '{}' distribution:{}{}".format(
+                get_distro_id(), FMT_LIST_SEPARATOR, FMT_LIST_SEPARATOR.join(distro_repoids)
+            )
         )
-    )
+    else:
+        api.current_logger().info(
+            "The following repoids are considered as provided by the '{}' distribution: []".format(
+                get_distro_id()
+            )
+        )
+
     all_repoids = _get_all_available_repoids(context)
 
     target_repoids = []
