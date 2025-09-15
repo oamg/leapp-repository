@@ -2,12 +2,14 @@ from leapp import reporting
 from leapp.libraries.common import config, rhsm
 from leapp.libraries.common.config.version import get_target_major_version
 from leapp.libraries.stdlib import api
-from leapp.models import CustomTargetRepositoryFile, RHUIInfo, TargetRepositories
+from leapp.models import CustomTargetRepositoryFile, RHELTargetRepository, RHUIInfo, TargetRepositories
+from leapp.utils.deprecation import suppress_deprecation
 
 # TODO: we need to provide this path in a shared library
 CUSTOM_REPO_PATH = '/etc/leapp/files/leapp_upgrade_repositories.repo'
 
 
+@suppress_deprecation(RHELTargetRepository)  # member of TargetRepositories
 def _any_custom_repo_defined():
     for tr in api.consume(TargetRepositories):
         if tr.custom_repos:
