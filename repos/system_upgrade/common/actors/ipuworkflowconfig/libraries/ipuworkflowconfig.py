@@ -117,9 +117,9 @@ def construct_models_for_paths_matching_source_major(raw_paths, src_major_versio
     return multipaths_matching_source
 
 
-def construct_virtual_versions(all_upgrade_path_defs, distro_id, source_version, target_version):
-    if distro_id.lower() != 'centos':
-        return (source_version, target_version)
+def construct_virtual_version(all_upgrade_path_defs, distro, version):
+    if distro.lower() != 'centos':
+        return version
 
     centos_upgrade_paths = all_upgrade_path_defs.get('centos', {})
     if not centos_upgrade_paths:
@@ -127,27 +127,24 @@ def construct_virtual_versions(all_upgrade_path_defs, distro_id, source_version,
 
     virtual_versions = centos_upgrade_paths.get(CENTOS_VIRTUAL_VERSIONS_KEY, {})
     if not virtual_versions:  # Unlikely, only if using old upgrade_paths.json, but the user should not touch the file
-        details = {'details': 'The file does not contain any information about virtual versions of CentOS'}
-        raise StopActorExecutionError('The internal upgrade_paths.json file is malformed.')
+        details = {
+            "details": "The file does not contain any information about virtual versions of CentOS"
+        }
+        raise StopActorExecutionError(
+            "The internal upgrade_paths.json file is invalid.", details=details
+        )
 
-    source_virtual_version = virtual_versions.get(source_version)
-    target_virtual_version = virtual_versions.get(target_version)
-
-    if not source_virtual_version or not target_virtual_version:
-        if not source_virtual_version and not target_virtual_version:
-            what_is_missing = 'CentOS {} (source) and CentOS {} (target)'.format(source_virtual_version,
-                                                                                 target_virtual_version)
-        elif not source_virtual_version:
-            what_is_missing = 'CentOS {} (source)'.format(source_virtual_version)
-        else:
-            what_is_missing = 'CentOS {} (target)'.format(target_virtual_version)
-
-        details_msg = 'The {} field in upgrade path definitions does not provide any information for {}'
-        details = {'details': details_msg.format(CENTOS_VIRTUAL_VERSIONS_KEY, what_is_missing)}
-        raise StopActorExecutionError('Failed to identify virtual minor version number for the system.',
-                                      details=details)
-
-    return (source_virtual_version, target_virtual_version)
+    virtual_version = virtual_versions.get(version)
+    if not virtual_version:
+        details = (
+            'The {} field in upgrade path definitions for \'centos\' does not'
+            ' provide any virtual version for version {}'
+        ).format(CENTOS_VIRTUAL_VERSIONS_KEY, version)
+        raise StopActorExecutionError(
+            "Failed to identify virtual minor version number for the system.",
+            details={"details": details},
+        )
+    return virtual_version
 
 
 def produce_ipu_config(actor):
@@ -165,11 +162,10 @@ def produce_ipu_config(actor):
     source_major_version = source_version.split('.')[0]
     exposed_supported_paths = construct_models_for_paths_matching_source_major(raw_upgrade_paths, source_major_version)
 
-    virtual_source_version, virtual_target_version = construct_virtual_versions(all_upgrade_path_defs,
-                                                                                os_release.release_id,
-                                                                                source_version,
-                                                                                target_version)
     target_distro = os.environ.get('LEAPP_TARGET_OS')
+
+    virtual_source_version = construct_virtual_version(all_upgrade_path_defs, os_release.release_id, source_version)
+    virtual_target_version = construct_virtual_version(all_upgrade_path_defs, target_distro, target_version)
 
     actor.produce(IPUConfig(
         leapp_env_vars=get_env_vars(),
