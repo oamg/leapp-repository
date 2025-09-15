@@ -468,6 +468,7 @@ def test_request_configured_repos_to_be_enabled(monkeypatch):
 
     target_repos = api.produce.model_instances[0]
     assert isinstance(target_repos, TargetRepositories)
+    assert not target_repos.distro_repos
     assert not target_repos.rhel_repos
 
     custom_repoids = sorted(custom_repo_model.repoid for custom_repo_model in target_repos.custom_repos)

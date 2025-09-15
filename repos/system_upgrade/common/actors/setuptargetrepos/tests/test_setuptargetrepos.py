@@ -198,11 +198,23 @@ def test_repos_mapping_for_distro(monkeypatch, distro_id):
     setuptargetrepos.process()
     assert api.produce.called
 
+    distro_repos = api.produce.model_instances[0].distro_repos
     rhel_repos = api.produce.model_instances[0].rhel_repos
-    assert len(rhel_repos) == 3
 
+    assert len(distro_repos) == 3
+
+    produced_distro_repoids = {repo.repoid for repo in distro_repos}
     produced_rhel_repoids = {repo.repoid for repo in rhel_repos}
-    expected_rhel_repoids = {'{0}-8-for-x86_64-baseos-htb-rpms'.format(distro_id),
-                             '{0}-8-for-x86_64-appstream-htb-rpms'.format(distro_id),
-                             '{0}-8-for-x86_64-satellite-extras-rpms'.format(distro_id)}
-    assert produced_rhel_repoids == expected_rhel_repoids
+
+    expected_repoids = {
+        "{0}-8-for-x86_64-baseos-htb-rpms".format(distro_id),
+        "{0}-8-for-x86_64-appstream-htb-rpms".format(distro_id),
+        "{0}-8-for-x86_64-satellite-extras-rpms".format(distro_id),
+    }
+
+    assert produced_distro_repoids == expected_repoids
+    if distro_id == 'rhel':
+        assert len(rhel_repos) == 3
+        assert produced_rhel_repoids == expected_repoids
+    else:
+        assert len(rhel_repos) == 0

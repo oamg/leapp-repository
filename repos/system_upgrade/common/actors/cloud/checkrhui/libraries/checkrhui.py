@@ -22,6 +22,7 @@ from leapp.models import (
     CustomTargetRepository,
     DNFPluginTask,
     InstalledRPM,
+    RHELTargetRepository,
     RHUIInfo,
     RpmTransactionTasks,
     TargetRepositories,
@@ -30,6 +31,7 @@ from leapp.models import (
     TargetRHUISetupInfo,
     TargetUserSpacePreupgradeTasks
 )
+from leapp.utils.deprecation import suppress_deprecation
 
 MatchingSetup = namedtuple('MatchingSetup', ['family', 'description'])
 
@@ -370,11 +372,12 @@ def emit_rhui_setup_tasks_based_on_config(rhui_config_dict):
     api.produce(rhui_info)
 
 
+@suppress_deprecation(RHELTargetRepository)  # member of TargetRepositories
 def request_configured_repos_to_be_enabled(rhui_config):
     config_repos_to_enable = rhui_config[RhuiTargetRepositoriesToUse.name]
     custom_repos = [CustomTargetRepository(repoid=repoid) for repoid in config_repos_to_enable]
     if custom_repos:
-        target_repos = TargetRepositories(custom_repos=custom_repos, rhel_repos=[])
+        target_repos = TargetRepositories(custom_repos=custom_repos, rhel_repos=[], distro_repos=[])
         api.produce(target_repos)
 
 
