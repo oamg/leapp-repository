@@ -1,6 +1,6 @@
 
 from leapp.libraries.actor import setuptargetrepos_repomap
-from leapp.libraries.common.config.version import get_source_major_version, get_source_version, get_target_version
+from leapp.libraries.common.config.version import get_source_major_version, get_source_version
 from leapp.libraries.stdlib import api
 from leapp.models import (
     CustomTargetRepository,
@@ -152,16 +152,6 @@ def process():
                 api.current_logger().debug('Skipping the {} repo from setup task (excluded).'.format(repo))
                 continue
             target_rhel_repoids.add(repo)
-
-    # On 8.10, some RHUI setups have different names than the one computed by repomapping.
-    # Although such situation could be avoided (having another client repo when a single
-    # repo can hold more than one RPM), we have to deal with it here. This is not a proper
-    # solution.
-    if get_target_version() == '8.10':
-        for pre_810_repoid, post_810_repoid in RHUI_CLIENT_REPOIDS_RHEL88_TO_RHEL810.items():
-            if pre_810_repoid in target_rhel_repoids:
-                target_rhel_repoids.remove(pre_810_repoid)
-                target_rhel_repoids.add(post_810_repoid)
 
     # create the final lists and sort them (for easier testing)
     rhel_repos = [RHELTargetRepository(repoid=repoid) for repoid in sorted(target_rhel_repoids)]
