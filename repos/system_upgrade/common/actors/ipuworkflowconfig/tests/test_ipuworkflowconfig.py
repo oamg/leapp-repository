@@ -171,9 +171,12 @@ def test_load_raw_upgrade_paths_for_distro_and_flavour(monkeypatch, distro, flav
 @pytest.mark.parametrize(
     ('construction_params', 'expected_versions'),
     [
-        (('centos', '8', '9'), ('8.10', '9.5')),
-        (('rhel', '8.10', '9.4'), ('8.10', '9.4')),
-        (('almalinux', '8.10', '9.6'), ('8.10', '9.6')),
+        (('centos', '8'), '8.10'),
+        (('centos', '9'), '9.5'),
+        (('rhel', '8.10'), '8.10'),
+        (('rhel', '9.4'), '9.4'),
+        (('almalinux', '8.10'), '8.10'),
+        (('almalinux', '9.6'), '9.6'),
     ]
 )
 def test_virtual_version_construction(construction_params, expected_versions):
@@ -208,5 +211,5 @@ def test_virtual_version_construction(construction_params, expected_versions):
         },
     }
 
-    result = ipuworkflowconfig.construct_virtual_versions(defined_upgrade_paths, *construction_params)
+    result = ipuworkflowconfig.construct_virtual_version(defined_upgrade_paths, *construction_params)
     assert result == expected_versions
