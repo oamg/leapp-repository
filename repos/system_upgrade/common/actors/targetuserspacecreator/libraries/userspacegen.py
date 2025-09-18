@@ -884,7 +884,7 @@ def _get_distro_available_repoids(context, indata):
     if get_distro_id() == 'rhel' and rhsm.skip_rhsm():
         return []
 
-    distro_repoids = distro.get_distro_repoids(context)
+    distro_repoids = distro.get_target_distro_repoids(context)
 
     _inhibit_if_no_base_repos(distro_repoids)
 
