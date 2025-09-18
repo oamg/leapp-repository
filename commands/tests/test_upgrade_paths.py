@@ -8,26 +8,54 @@ from leapp.cli.commands import command_utils
 from leapp.exceptions import CommandError
 
 
-@mock.patch("leapp.cli.commands.command_utils.get_upgrade_paths_config",
-            return_value={'rhel': {"default": {"7.9": ["8.4"], "8.6": ["9.0"], "7": ["8.4"], "8": ["9.0"]}}})
+@mock.patch(
+    "leapp.cli.commands.command_utils.get_upgrade_paths_config",
+    return_value={
+        "rhel": {
+            "default": {"7.9": ["8.4"], "8.6": ["9.0"], "8.7": ["9.1"], "7": ["8.4"], "8": ["9.0"]}
+        },
+        "centos": {
+            "default": {"8": ["9"], "9": ["10"]},
+            "_virtual_versions": {"8": "8.7", "9": "9.8", "10": "10.2"},
+        },
+        "alma": {
+            "default": {"7.9": ["8.4"], "8.6": ["9.0"], "8.7": ["9.1"]}
+        },
+    },
+)
 def test_get_target_version(mock_open, monkeypatch):
-    etc_os_release_contents = {'ID': 'rhel', 'VERSION_ID': '8.6'}
-    monkeypatch.setattr(command_utils, '_retrieve_os_release_contents',
-                        lambda *args, **kwargs: etc_os_release_contents)
-    assert command_utils.get_target_version('default') == '9.0'
 
+    def set_etc_osrelease(distro_id, version_id):
+        etc_os_release_contents = {"ID": distro_id, "VERSION_ID": version_id}
+        monkeypatch.setattr(
+            command_utils,
+            "_retrieve_os_release_contents",
+            lambda *args, **kwargs: etc_os_release_contents,
+        )
+
+    set_etc_osrelease('rhel', '8.6')
+    assert command_utils.get_target_version('default', 'rhel') == '9.0'
+
+    # the envar should not affect this function
     monkeypatch.setenv('LEAPP_DEVEL_TARGET_RELEASE', '')
-    etc_os_release_contents = {'ID': 'rhel', 'VERSION_ID': '8.6'}
-    monkeypatch.setattr(command_utils, '_retrieve_os_release_contents',
-                        lambda *args, **kwargs: etc_os_release_contents)
-    assert command_utils.get_target_version('default') == '9.0'
+    assert command_utils.get_target_version('default', 'rhel') == '9.0'
 
+    # unsupported path, matches because of the major version fallback
     monkeypatch.delenv('LEAPP_DEVEL_TARGET_RELEASE', raising=True)
-    # unsupported path
-    etc_os_release_contents = {'ID': 'rhel', 'VERSION_ID': '8.5'}
-    monkeypatch.setattr(command_utils, '_retrieve_os_release_contents',
-                        lambda *args, **kwargs: etc_os_release_contents)
-    assert command_utils.get_target_version('default') == '9.0'
+    set_etc_osrelease('rhel', '8.5')
+    assert command_utils.get_target_version('default', 'rhel') == '9.0'
+
+    # centos->centos
+    set_etc_osrelease('centos', '9')
+    assert command_utils.get_target_version('default', 'centos') == '10'
+
+    # centos->rhel, lookup based on virtual versions
+    set_etc_osrelease('centos', '8')
+    assert command_utils.get_target_version('default', 'rhel') == '9.1'
+
+    # rhel->centos, reverse virtual versions lookup
+    set_etc_osrelease('rhel', '8.6')
+    assert command_utils.get_target_version('default', 'centos') == '9'
 
 
 @mock.patch(
@@ -42,6 +70,11 @@ def test_get_target_version(mock_open, monkeypatch):
     },
 )
 def test_get_target_release(mock_open, monkeypatch):  # do not remove mock_open
+    # NOTE Not testing with other distros, the tested function is mainly about
+    # handling of the CLI option, envar and format checking, the real target
+    # release retrieval is handled in get_target_version which is tested with
+    # different source/target distro combinanations elsewhere.
+
     # Make it look like it's RHEL even on centos, because that's what the test
     # assumes.
     # Otherwise the test, when ran on Centos, fails because it works
