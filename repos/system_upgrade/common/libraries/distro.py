@@ -47,38 +47,38 @@ def _get_distro_repofiles(distro, major_version, arch):
     # <architecture spec> - either the string 'all' if present on all or
     #                       a list of specific archs the repofile is present on
     distro_repofiles_map = {
-        "rhel": {
-            "8": {"/etc/yum.repos.d/redhat.repo": "all"},
-            "9": {"/etc/yum.repos.d/redhat.repo": "all"},
-            "10": {"/etc/yum.repos.d/redhat.repo": "all"},
+        'rhel': {
+            '8': {'/etc/yum.repos.d/redhat.repo': 'all'},
+            '9': {'/etc/yum.repos.d/redhat.repo': 'all'},
+            '10': {'/etc/yum.repos.d/redhat.repo': 'all'},
         },
-        "centos": {
-            "8": {
+        'centos': {
+            '8': {
                 # TODO is this true on all archs?
-                "CentOS-Linux-AppStream.repo": "all",
-                "CentOS-Linux-BaseOS.repo": "all",
-                "CentOS-Linux-ContinuousRelease.repo": "all",
-                "CentOS-Linux-Debuginfo.repo": "all",
-                "CentOS-Linux-Devel.repo": "all",
-                "CentOS-Linux-Extras.repo": "all",
-                "CentOS-Linux-FastTrack.repo": "all",
-                "CentOS-Linux-HighAvailability.repo": "all",
-                "CentOS-Linux-Media.repo": "all",
-                "CentOS-Linux-Plus.repo": "all",
-                "CentOS-Linux-PowerTools.repo": "all",
-                "CentOS-Linux-Sources.repo": "all",
+                'CentOS-Linux-AppStream.repo': 'all',
+                'CentOS-Linux-BaseOS.repo': 'all',
+                'CentOS-Linux-ContinuousRelease.repo': 'all',
+                'CentOS-Linux-Debuginfo.repo': 'all',
+                'CentOS-Linux-Devel.repo': 'all',
+                'CentOS-Linux-Extras.repo': 'all',
+                'CentOS-Linux-FastTrack.repo': 'all',
+                'CentOS-Linux-HighAvailability.repo': 'all',
+                'CentOS-Linux-Media.repo': 'all',
+                'CentOS-Linux-Plus.repo': 'all',
+                'CentOS-Linux-PowerTools.repo': 'all',
+                'CentOS-Linux-Sources.repo': 'all',
             },
-            "9": {
-                "/etc/yum.repos.d/centos.repo": "all",
-                "/etc/yum.repos.d/centos-addons.repo": "all",
+            '9': {
+                '/etc/yum.repos.d/centos.repo': 'all',
+                '/etc/yum.repos.d/centos-addons.repo': 'all',
             },
-            "10": {
-                "/etc/yum.repos.d/centos.repo": "all",
-                "/etc/yum.repos.d/centos-addons.repo": "all",
+            '10': {
+                '/etc/yum.repos.d/centos.repo': 'all',
+                '/etc/yum.repos.d/centos-addons.repo': 'all',
             },
         },
-        "almalinux": {
-            "8": {
+        'almalinux': {
+            '8': {
                 # TODO is this true on all archs?
                 '/etc/yum.repos.d/almalinux-ha.repo': 'all',
                 '/etc/yum.repos.d/almalinux-nfv.repo': 'all',
@@ -90,33 +90,33 @@ def _get_distro_repofiles(distro, major_version, arch):
                 '/etc/yum.repos.d/almalinux-saphana.repo': 'all',
                 '/etc/yum.repos.d/almalinux.repo': 'all',
             },
-            "9": {
-                "/etc/yum.repos.d/almalinux-appstream.repo": "all",
-                "/etc/yum.repos.d/almalinux-baseos.repo": "all",
-                "/etc/yum.repos.d/almalinux-crb.repo": "all",
-                "/etc/yum.repos.d/almalinux-extras.repo": "all",
-                "/etc/yum.repos.d/almalinux-highavailability.repo": "all",
-                "/etc/yum.repos.d/almalinux-plus.repo": "all",
-                "/etc/yum.repos.d/almalinux-resilientstorage.repo": "all",
-                "/etc/yum.repos.d/almalinux-sap.repo": "all",
-                "/etc/yum.repos.d/almalinux-saphana.repo": "all",
+            '9': {
+                '/etc/yum.repos.d/almalinux-appstream.repo': 'all',
+                '/etc/yum.repos.d/almalinux-baseos.repo': 'all',
+                '/etc/yum.repos.d/almalinux-crb.repo': 'all',
+                '/etc/yum.repos.d/almalinux-extras.repo': 'all',
+                '/etc/yum.repos.d/almalinux-highavailability.repo': 'all',
+                '/etc/yum.repos.d/almalinux-plus.repo': 'all',
+                '/etc/yum.repos.d/almalinux-resilientstorage.repo': 'all',
+                '/etc/yum.repos.d/almalinux-sap.repo': 'all',
+                '/etc/yum.repos.d/almalinux-saphana.repo': 'all',
                 # RT and NFV are only on x86_64 on almalinux 9
-                "/etc/yum.repos.d/almalinux-nfv.repo": ["x86_64"],
-                "/etc/yum.repos.d/almalinux-rt.repo": ["x86_64"],
+                '/etc/yum.repos.d/almalinux-nfv.repo': ['x86_64'],
+                '/etc/yum.repos.d/almalinux-rt.repo': ['x86_64'],
             },
-            "10": {
+            '10': {
                 # no resilientstorage on 10
-                "/etc/yum.repos.d/almalinux-appstream.repo": "all",
-                "/etc/yum.repos.d/almalinux-baseos.repo": "all",
-                "/etc/yum.repos.d/almalinux-crb.repo": "all",
-                "/etc/yum.repos.d/almalinux-extras.repo": "all",
-                "/etc/yum.repos.d/almalinux-highavailability.repo": "all",
-                "/etc/yum.repos.d/almalinux-plus.repo": "all",
-                "/etc/yum.repos.d/almalinux-sap.repo": "all",
-                "/etc/yum.repos.d/almalinux-saphana.repo": "all",
+                '/etc/yum.repos.d/almalinux-appstream.repo': 'all',
+                '/etc/yum.repos.d/almalinux-baseos.repo': 'all',
+                '/etc/yum.repos.d/almalinux-crb.repo': 'all',
+                '/etc/yum.repos.d/almalinux-extras.repo': 'all',
+                '/etc/yum.repos.d/almalinux-highavailability.repo': 'all',
+                '/etc/yum.repos.d/almalinux-plus.repo': 'all',
+                '/etc/yum.repos.d/almalinux-sap.repo': 'all',
+                '/etc/yum.repos.d/almalinux-saphana.repo': 'all',
                 # RT and NFV are only on x86_64 on almalinux 10
-                "/etc/yum.repos.d/almalinux-nfv.repo": ["x86_64"],
-                "/etc/yum.repos.d/almalinux-rt.repo": ["x86_64"],
+                '/etc/yum.repos.d/almalinux-nfv.repo': ['x86_64'],
+                '/etc/yum.repos.d/almalinux-rt.repo': ['x86_64'],
             },
         },
     }
@@ -130,7 +130,7 @@ def _get_distro_repofiles(distro, major_version, arch):
     # on our side, so let's warn and return empty
     version_repofiles = distro_repofiles.get(major_version, {})
     api.current_logger().warning(
-        "No distro repofiles mapped for {} for major version {}".format(
+        'No distro repofiles mapped for {} for major version {}'.format(
             distro, major_version
         )
     )
@@ -142,7 +142,7 @@ def _get_distro_repofiles(distro, major_version, arch):
             repofiles.append(repofile)
         else:
             raise ValueError(
-                "Unexpected value for architecture spec for repofile {}: {}".format(
+                'Unexpected value for architecture spec for repofile {}: {}'.format(
                     repofile, archs
                 )
             )
@@ -205,7 +205,7 @@ def get_distro_repoids(context, distro, major_version, arch):
     for rfile in repofiles:
         if not os.path.exists(context.full_path(rfile)):
             api.current_logger().debug(
-                "Expected distribution provided repofile does not exists: {}".format(
+                'Expected distribution provided repofile does not exists: {}'.format(
                     rfile
                 )
             )
