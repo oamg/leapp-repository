@@ -62,9 +62,9 @@ def assert_version_format(version_str, desired_format, version_kind):
     """
     if not re.match(desired_format.regex, version_str):
         error_str = (
-            'Unexpected format of target version: {0}. The required format is \'{1}\'.'
-        )
-        raise CommandError(error_str.format(version_str, desired_format.human_readable))
+            "Unexpected format of {} version: {}. The required format is '{}'."
+        ).format(version_kind.value, version_str, desired_format.human_readable)
+        raise CommandError(error_str)
 
 
 def get_major_version_from_a_valid_version(version):
@@ -165,7 +165,17 @@ def get_target_versions_from_config(src_version_id, distro, flavor):
     return upgrade_paths_map.get(distro, {}).get(flavor, {}).get(src_version_id, [])
 
 
-def get_supported_target_versions(flavour=get_upgrade_flavour()):
+def get_virtual_version_from_config(src_version_id, distro):
+    """
+    Retrieve the virtual version for the given version from upgrade_paths_map.
+
+    :return: The virtual version or None if no match.
+    """
+    upgrade_paths_map = get_upgrade_paths_config()
+    return upgrade_paths_map.get(distro, {}).get('_virtual_versions').get(src_version_id)
+
+
+def get_supported_target_versions(target_distro, flavour=get_upgrade_flavour()):
     """
     Return a list of supported target versions for the given `flavour` of upgrade.
     The default value for `flavour` is `default`.
@@ -173,26 +183,30 @@ def get_supported_target_versions(flavour=get_upgrade_flavour()):
 
     os_release_contents = _retrieve_os_release_contents()
     current_version_id = os_release_contents.get('VERSION_ID', '')
-    distro_id = os_release_contents.get('ID', '')
+    source_distro = os_release_contents.get('ID', '')
 
     # We want to guarantee our actors that if they see 'centos'/'rhel'/...
     # then they will always see expected version format
-    expected_version_format = _DISTRO_VERSION_FORMATS.get(distro_id, VersionFormats.MAJOR_MINOR).value
-    assert_version_format(current_version_id, expected_version_format, _VersionKind.SOURCE)
+    expected_version_format = _DISTRO_VERSION_FORMATS.get(source_distro, VersionFormats.MAJOR_MINOR)
+    assert_version_format(current_version_id, expected_version_format.value, _VersionKind.SOURCE)
+    if source_distro == 'centos' and target_distro != 'centos':
+        # when upconverting from centos, we need to lookup by virtual version
+        current_version_id = get_virtual_version_from_config(current_version_id, source_distro)
 
-    target_versions = get_target_versions_from_config(current_version_id, distro_id, flavour)
+    target_versions = get_target_versions_from_config(current_version_id, target_distro, flavour)
     if not target_versions:
         # If we cannot find a particular major.minor version in the map,
         # we fallback to pick a target version just based on a major version.
-        # This can happen for example when testing not yet released versions
+        # This can happen for example when testing not yet released versions.
+        # But also removes the need to handle virtual versions on X->centos upgrades.
         major_version = get_major_version_from_a_valid_version(current_version_id)
-        target_versions = get_target_versions_from_config(major_version, distro_id, flavour)
+        target_versions = get_target_versions_from_config(major_version, target_distro, flavour)
 
     return target_versions
 
 
-def get_target_version(flavour):
-    target_versions = get_supported_target_versions(flavour)
+def get_target_version(flavour, target_distro):
+    target_versions = get_supported_target_versions(target_distro, flavour)
     return target_versions[-1] if target_versions else None
 
 
@@ -214,13 +228,15 @@ def get_target_release(args):
     env_version_override = os.getenv('LEAPP_DEVEL_TARGET_RELEASE')
 
     target_ver = env_version_override or args.target
+    target_distro_id = os.getenv('LEAPP_TARGET_OS')
     if target_ver:
-        distro_id = get_distro_id()
-        expected_version_format = _DISTRO_VERSION_FORMATS.get(distro_id, VersionFormats.MAJOR_MINOR).value
-        assert_version_format(target_ver, expected_version_format, _VersionKind.TARGET)
+        expected_version_format = _DISTRO_VERSION_FORMATS.get(
+            target_distro_id, VersionFormats.MAJOR_MINOR
+        )
+        assert_version_format(target_ver, expected_version_format.value, _VersionKind.TARGET)
         return (target_ver, flavor)
 
-    return (get_target_version(flavor), flavor)
+    return (get_target_version(flavor, target_distro_id), flavor)
 
 
 def set_resource_limits():
