@@ -151,7 +151,8 @@ def _backup_to_persistent_package_cache(userspace_dir):
 
 def _import_gpg_keys(context, install_root_dir, target_major_version):
     certs_path = get_path_to_gpg_certs()
-    # Import the RHEL X+1 GPG key to be able to verify the installation of initial packages
+    # Import the target distro target version GPG key to be able to verify the
+    # installation of initial packages
     try:
         # Import also any other keys provided by the customer in the same directory
         for certname in os.listdir(certs_path):
