@@ -93,31 +93,7 @@ def load_upgrade_paths_definitions(paths_definition_file):
     return definitions
 
 
-def extract_upgrade_paths_for_distro_and_flavour(all_definitions, distro_id, flavour):
-    raw_upgrade_paths_for_distro = all_definitions.get(distro_id, {})
-
-    if not raw_upgrade_paths_for_distro:
-        api.current_logger().warning('No upgrade paths defined for distro \'{}\''.format(distro_id))
-
-    raw_upgrade_paths_for_flavour = raw_upgrade_paths_for_distro.get(flavour, {})
-
-    if not raw_upgrade_paths_for_flavour:
-        api.current_logger().warning('Cannot discover any upgrade paths for flavour: {}/{}'.format(distro_id, flavour))
-
-    return raw_upgrade_paths_for_flavour
-
-
-def construct_models_for_paths_matching_source_major(raw_paths, src_major_version):
-    multipaths_matching_source = []
-    for src_version, target_versions in raw_paths.items():
-        if src_version.split('.')[0] == src_major_version:
-            source_to_targets = IPUSourceToPossibleTargets(source_version=src_version,
-                                                           target_versions=target_versions)
-            multipaths_matching_source.append(source_to_targets)
-    return multipaths_matching_source
-
-
-def construct_virtual_version(all_upgrade_path_defs, distro, version):
+def get_virtual_version(all_upgrade_path_defs, distro, version):
     if distro.lower() != 'centos':
         return version
 
@@ -147,11 +123,78 @@ def construct_virtual_version(all_upgrade_path_defs, distro, version):
     return virtual_version
 
 
+def extract_upgrade_paths_for_distro_and_flavour(all_definitions, distro, flavour):
+    distro_paths = all_definitions.get(distro, {})
+    if not distro_paths:
+        api.current_logger().warning(
+            "No upgrade paths defined for distro '{}'".format(distro)
+        )
+
+    distro_paths = distro_paths.get(flavour, {})
+    if not distro_paths:
+        api.current_logger().warning(
+            "Cannot discover any upgrade paths for flavour: {}/{}".format(
+                distro, flavour
+            )
+        )
+    return distro_paths
+
+
+def make_cross_distro_paths(all_paths, source_distro, target_distro, flavour):
+    """
+    Make paths for upgrade + conversion.
+
+    :param all_paths: The raw upgrade paths retrieved from upgrade_paths.json
+    :type all_paths: dict
+    :param source_distro: The source distro.
+    :type source_distro: str
+    :param target_distro: The target distro.
+    :type target_distro: str
+    :param flavour: The flavour to find paths for.
+    :type target_distro: str
+    :return: A dictionary with conversion paths for upgrade + conversion between
+             source and target distro.
+    :rtype: dict
+    """
+    # using source and target for both distro and version gets confusing, using
+    # a and b for distro instead
+    paths_a = extract_upgrade_paths_for_distro_and_flavour(
+        all_paths, source_distro, flavour
+    )
+    paths_b = extract_upgrade_paths_for_distro_and_flavour(
+        all_paths, target_distro, flavour
+    )
+
+    conversion_paths = {}
+    for source_ver_a, _ in paths_a.items():
+        virt_source_ver_a = get_virtual_version(all_paths, source_distro, source_ver_a)
+
+        for source_ver_b, target_ver_b in paths_b.items():
+            virt_source_ver_b = get_virtual_version(all_paths, target_distro, source_ver_b)
+            if virt_source_ver_a == virt_source_ver_b:
+                conversion_paths[source_ver_a] = target_ver_b
+
+    return conversion_paths
+
+
+def construct_models_for_paths_matching_source_major(
+    raw_paths, src_major_version
+):
+    multipaths_matching_source = []
+    for src_version, target_versions in raw_paths.items():
+        if src_version.split('.')[0] == src_major_version:
+            source_to_targets = IPUSourceToPossibleTargets(source_version=src_version,
+                                                           target_versions=target_versions)
+            multipaths_matching_source.append(source_to_targets)
+    return multipaths_matching_source
+
+
 def produce_ipu_config(actor):
     flavour = os.environ.get('LEAPP_UPGRADE_PATH_FLAVOUR')
     target_version = os.environ.get('LEAPP_UPGRADE_PATH_TARGET_RELEASE')
     os_release = get_os_release('/etc/os-release')
     source_version = os_release.version_id
+    target_distro = os.environ.get('LEAPP_TARGET_OS')
 
     check_target_major_version(source_version, target_version)
 
@@ -159,13 +202,22 @@ def produce_ipu_config(actor):
     raw_upgrade_paths = extract_upgrade_paths_for_distro_and_flavour(all_upgrade_path_defs,
                                                                      os_release.release_id,
                                                                      flavour)
+    if os_release.release_id == target_distro:
+        raw_upgrade_paths = extract_upgrade_paths_for_distro_and_flavour(
+            all_upgrade_path_defs, os_release.release_id, flavour
+        )
+    else:
+        raw_upgrade_paths = make_cross_distro_paths(
+            all_upgrade_path_defs, os_release.release_id, target_distro, flavour
+        )
+
+    virtual_source_version = get_virtual_version(all_upgrade_path_defs, os_release.release_id, source_version)
+    virtual_target_version = get_virtual_version(all_upgrade_path_defs, target_distro, target_version)
+
     source_major_version = source_version.split('.')[0]
-    exposed_supported_paths = construct_models_for_paths_matching_source_major(raw_upgrade_paths, source_major_version)
-
-    target_distro = os.environ.get('LEAPP_TARGET_OS')
-
-    virtual_source_version = construct_virtual_version(all_upgrade_path_defs, os_release.release_id, source_version)
-    virtual_target_version = construct_virtual_version(all_upgrade_path_defs, target_distro, target_version)
+    exposed_supported_paths = construct_models_for_paths_matching_source_major(
+        raw_upgrade_paths, source_major_version
+    )
 
     actor.produce(IPUConfig(
         leapp_env_vars=get_env_vars(),
