@@ -870,14 +870,89 @@ def get_copy_location_from_copy_in_task(context_basepath, copy_task):
     return copy_task.dst
 
 
+def _get_rhui_available_repoids(context, rhui_info):
+    """
+    Get repoids provided by the RHUI target clients
+    """
+    # If we are upgrading a RHUI system, check what repositories are provided by the (already installed) target clients
+    setup_info = rhui_info.target_client_setup_info
+    target_content_access_files = set()
+    if setup_info.bootstrap_target_client:
+        target_content_access_files = _query_rpm_for_pkg_files(context, rhui_info.target_client_pkg_names)
+
+    def is_repofile(path):
+        return os.path.dirname(path) == '/etc/yum.repos.d' and os.path.basename(path).endswith('.repo')
+
+    def extract_repoid_from_line(line):
+        return line.split(':', 1)[1].strip()
+
+    target_ver = api.current_actor().configuration.version.target
+    setup_tasks = rhui_info.target_client_setup_info.preinstall_tasks.files_to_copy_into_overlay
+
+    yum_repos_d = context.full_path('/etc/yum.repos.d')
+    all_repofiles = {os.path.join(yum_repos_d, path) for path in os.listdir(yum_repos_d) if path.endswith('.repo')}
+    api.current_logger().debug('(RHUI Setup) All available repofiles: {0}'.format(' '.join(all_repofiles)))
+
+    target_access_repofiles = {
+        context.full_path(path) for path in target_content_access_files if is_repofile(path)
+    }
+
+    # Exclude repofiles used to setup the target rhui access as on some platforms the repos provided by
+    # the client are not sufficient to install the client into target userspace (GCP)
+    rhui_setup_repofile_tasks = [task for task in setup_tasks if task.src.endswith('repo')]
+    rhui_setup_repofiles = (
+        get_copy_location_from_copy_in_task(context.base_dir, copy) for copy in rhui_setup_repofile_tasks
+    )
+    rhui_setup_repofiles = {context.full_path(repofile) for repofile in rhui_setup_repofiles}
+
+    foreign_repofiles = all_repofiles - target_access_repofiles - rhui_setup_repofiles
+
+    api.current_logger().debug(
+        'The following repofiles are considered as unknown to'
+        ' the target RHUI content setup and will be ignored: {0}'.format(' '.join(foreign_repofiles))
+    )
+
+    # Rename non-client repofiles so they will not be recognized when running dnf repolist
+    for foreign_repofile in foreign_repofiles:
+        os.rename(foreign_repofile, '{0}.back'.format(foreign_repofile))
+
+    rhui_repoids = set()
+    try:
+        dnf_cmd = [
+            'dnf', 'repolist',
+            '--releasever', target_ver, '-v',
+            '--enablerepo', '*',
+            '--disablerepo', '*-source-*',
+            '--disablerepo', '*-debug-*',
+        ]
+        repolist_result = context.call(dnf_cmd)['stdout']
+        repoid_lines = [line for line in repolist_result.split('\n') if line.startswith('Repo-id')]
+        rhui_repoids.update({extract_repoid_from_line(line) for line in repoid_lines})
+
+    except CalledProcessError as err:
+        details = {'err': err.stderr, 'details': str(err)}
+        raise StopActorExecutionError(
+            message='Failed to retrieve repoids provided by target RHUI clients.',
+            details=details
+        )
+
+    finally:
+        # Revert the renaming of non-client repofiles
+        for foreign_repofile in foreign_repofiles:
+            os.rename('{0}.back'.format(foreign_repofile), foreign_repofile)
+
+    return rhui_repoids
+
+
 def _get_distro_available_repoids(context, indata):
     """
     Get repoids provided by the distribution
 
-    On RHEL: RH repositories are provided either by RHSM or are stored in the expected repo file provided by
-             RHUI special packages (every cloud provider has itw own rpm).
-             If RHSM is skipped there are no repoids.
-    Others: Repositories are provided in specific repofiles (e.g. centos.repo and centos-addons.repo on CS)
+    On RHEL: RH repositories are provided either by RHSM or are stored in the
+             expected repo file provided by RHUI special packages (every cloud
+             provider has itw own rpm).
+    On other: Repositories are provided in specific repofiles (e.g. centos.repo
+              and centos-addons.repo on CS)
 
     :return: A list of repoids provided by distribution
     :rtype: List[String]
@@ -888,73 +963,9 @@ def _get_distro_available_repoids(context, indata):
     if distro_id != 'rhel' or rhel_and_rhsm:
         _inhibit_if_no_base_repos(distro_repoids)
 
-    # If we are upgrading a RHUI system, check what repositories are provided by the (already installed) target clients
     if indata and indata.rhui_info:
-        setup_info = indata.rhui_info.target_client_setup_info
-        target_content_access_files = set()
-        if setup_info.bootstrap_target_client:
-            target_content_access_files = _query_rpm_for_pkg_files(context, indata.rhui_info.target_client_pkg_names)
-
-        def is_repofile(path):
-            return os.path.dirname(path) == '/etc/yum.repos.d' and os.path.basename(path).endswith('.repo')
-
-        def extract_repoid_from_line(line):
-            return line.split(':', 1)[1].strip()
-
-        target_ver = api.current_actor().configuration.version.target
-        setup_tasks = indata.rhui_info.target_client_setup_info.preinstall_tasks.files_to_copy_into_overlay
-
-        yum_repos_d = context.full_path('/etc/yum.repos.d')
-        all_repofiles = {os.path.join(yum_repos_d, path) for path in os.listdir(yum_repos_d) if path.endswith('.repo')}
-        api.current_logger().debug('(RHUI Setup) All available repofiles: {0}'.format(' '.join(all_repofiles)))
-
-        target_access_repofiles = {
-            context.full_path(path) for path in target_content_access_files if is_repofile(path)
-        }
-
-        # Exclude repofiles used to setup the target rhui access as on some platforms the repos provided by
-        # the client are not sufficient to install the client into target userspace (GCP)
-        rhui_setup_repofile_tasks = [task for task in setup_tasks if task.src.endswith('repo')]
-        rhui_setup_repofiles = (
-            get_copy_location_from_copy_in_task(context.base_dir, copy) for copy in rhui_setup_repofile_tasks
-        )
-        rhui_setup_repofiles = {context.full_path(repofile) for repofile in rhui_setup_repofiles}
-
-        foreign_repofiles = all_repofiles - target_access_repofiles - rhui_setup_repofiles
-
-        api.current_logger().debug(
-            'The following repofiles are considered as unknown to'
-            ' the target RHUI content setup and will be ignored: {0}'.format(' '.join(foreign_repofiles))
-        )
-
-        # Rename non-client repofiles so they will not be recognized when running dnf repolist
-        for foreign_repofile in foreign_repofiles:
-            os.rename(foreign_repofile, '{0}.back'.format(foreign_repofile))
-
-        try:
-            dnf_cmd = [
-                'dnf', 'repolist',
-                '--releasever', target_ver, '-v',
-                '--enablerepo', '*',
-                '--disablerepo', '*-source-*',
-                '--disablerepo', '*-debug-*',
-            ]
-            repolist_result = context.call(dnf_cmd)['stdout']
-            repoid_lines = [line for line in repolist_result.split('\n') if line.startswith('Repo-id')]
-            rhui_repoids = {extract_repoid_from_line(line) for line in repoid_lines}
-            distro_repoids.update(rhui_repoids)
-
-        except CalledProcessError as err:
-            details = {'err': err.stderr, 'details': str(err)}
-            raise StopActorExecutionError(
-                message='Failed to retrieve repoids provided by target RHUI clients.',
-                details=details
-            )
-
-        finally:
-            # Revert the renaming of non-client repofiles
-            for foreign_repofile in foreign_repofiles:
-                os.rename('{0}.back'.format(foreign_repofile), foreign_repofile)
+        rhui_repoids = _get_rhui_available_repoids(context, indata.rhui_info)
+        distro_repoids.update(rhui_repoids)
 
     return distro_repoids
 
