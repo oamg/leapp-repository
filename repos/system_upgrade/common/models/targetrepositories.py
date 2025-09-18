@@ -44,10 +44,12 @@ class TargetRepositories(Model):
     """
     topic = TransactionTopic
 
-    # DEPRECATED:, this has been superseded by distro_repos
+    # DEPRECATED: this has been superseded by distro_repos
     rhel_repos = fields.List(fields.Model(RHELTargetRepository))
     """
     Expected target YUM RHEL repositories provided via RHSM
+
+    DEPRECATED - use distro_repos instead.
 
     These repositories are stored inside /etc/yum.repos.d/redhat.repo and
     are expected to be used based on the provided repositories mapping.
