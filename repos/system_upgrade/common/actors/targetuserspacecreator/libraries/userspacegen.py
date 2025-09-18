@@ -826,7 +826,7 @@ def _inhibit_if_no_base_repos(distro_repoids):
     # at-least-one-appstream and at-least-one-baseos among present repoids
     no_baseos = all("baseos" not in ri for ri in distro_repoids)
     no_appstream = all("appstream" not in ri for ri in distro_repoids)
-    if not distro_repoids or no_baseos or no_appstream:
+    if no_baseos or no_appstream:
         reporting.create_report([
             reporting.Title('Cannot find required basic RHEL target repositories.'),
             reporting.Summary(
@@ -881,12 +881,10 @@ def _get_distro_available_repoids(context, indata):
     :return: A list of repoids provided by distribution
     :rtype: List[String]
     """
-    if get_distro_id() == 'rhel' and rhsm.skip_rhsm():
-        return []
-
     distro_repoids = distro.get_target_distro_repoids(context)
-
-    _inhibit_if_no_base_repos(distro_repoids)
+    rhel_and_rhsm = distro == 'rhel' and not rhsm.skip_rhsm()
+    if distro != 'rhel' or rhel_and_rhsm:
+        _inhibit_if_no_base_repos(distro_repoids)
 
     # If we are upgrading a RHUI system, check what repositories are provided by the (already installed) target clients
     if indata and indata.rhui_info:
