@@ -198,9 +198,12 @@ def matches_version(match_list, detected):
         raise TypeError("Detected version has to be a string "
                         "but provided was {}: '{}'".format(type(detected), detected))
 
-    # If we are on CentOS, and we are provided with a version of the form MAJOR, try to correct
-    # the version into MAJOR.MINOR using virtual versions
-    if api.current_actor().configuration.os_release.release_id == 'centos':
+    # If we are on CentOS, or the target is CentOS and we are provided with a
+    # version of the form MAJOR, try to correct the version into MAJOR.MINOR
+    # using virtual versions
+    # Cannot use get_source_distro_id and get_target_distro_id here because of circular imports
+    distro_config = api.current_actor().configuration.distro
+    if distro_config.source == 'centos' or distro_config.target == 'centos':
         new_detected = _autocorrect_centos_version(detected)
         # We might have a matchlist ['> 8', '<= 9'] that, e.g., results from blindly using source/target versions
         # to make a matchlist. Our `detected` version might be some fixed string, e.g., `9.1`. So we need to
