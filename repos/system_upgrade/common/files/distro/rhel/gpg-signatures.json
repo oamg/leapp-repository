@@ -9,6 +9,16 @@
         "5054e4a45a6340b3",
         "219180cddb42a60e"
     ],
+    "key-rpms": [
+        "gpg-pubkey-fd431d51-4ae0493b",
+        "gpg-pubkey-37017186-45761324",
+        "gpg-pubkey-f21541eb-4a5233e8",
+        "gpg-pubkey-897da07a-3c979a7f",
+        "gpg-pubkey-2fa658e0-45700c69",
+        "gpg-pubkey-d4082792-5b32db75",
+        "gpg-pubkey-5a6340b3-6229229e",
+        "gpg-pubkey-db42a60e-37ea5438"
+    ],
     "obsoleted-keys": {
         "7": [],
         "8": [
