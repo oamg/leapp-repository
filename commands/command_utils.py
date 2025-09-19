@@ -215,8 +215,8 @@ def get_target_release(args):
     Return the user selected target release or choose one from config.
 
     A target release can be specified, ordered by priority, by the
-    LEAPP_DEVEL_TARGET_RELEASE or args.target (--target cmdline arg) or in the
-    config file.
+    LEAPP_DEVEL_TARGET_RELEASE or args.target_version (--target cmdline arg) or
+    in the config file.
 
     NOTE: when specified via the env var or cmdline arg, the version isn't
     checked against supported versions, this is done later by an actor in the
@@ -227,7 +227,7 @@ def get_target_release(args):
     flavor = get_upgrade_flavour()
     env_version_override = os.getenv('LEAPP_DEVEL_TARGET_RELEASE')
 
-    target_ver = env_version_override or args.target
+    target_ver = env_version_override or args.target_version
     target_distro_id = os.getenv('LEAPP_TARGET_OS')
     if target_ver:
         expected_version_format = _DISTRO_VERSION_FORMATS.get(
