@@ -83,7 +83,7 @@ def test_get_target_release(mock_open, monkeypatch):  # do not remove mock_open
     monkeypatch.setattr(command_utils, 'get_os_release_version_id', lambda x: '8.6')
 
     # make sure env var LEAPP_DEVEL_TARGET_RELEASE takes precedence
-    args = mock.Mock(target='9.0')
+    args = mock.Mock(target_version='9.0')
     monkeypatch.setenv('LEAPP_DEVEL_TARGET_RELEASE', '9.2')
     print(os.getenv('LEAPP_DEVEL_TARGET_RELEASE'))
     assert command_utils.get_target_release(args) == ('9.2', 'default')
@@ -100,12 +100,12 @@ def test_get_target_release(mock_open, monkeypatch):  # do not remove mock_open
     assert command_utils.get_target_release(args) == ('1.2', 'default')
 
     # no env var set, --target is set to proper version - use it
-    args = mock.Mock(target='9.0')
+    args = mock.Mock(target_version='9.0')
     monkeypatch.delenv('LEAPP_DEVEL_TARGET_RELEASE', raising=False)
     assert command_utils.get_target_release(args) == ('9.0', 'default')
 
     # --target set with incorrectly formatted version, env var not set, fail
-    args = mock.Mock(target='9.0a')
+    args = mock.Mock(target_version='9.0a')
     with pytest.raises(CommandError) as err:
         command_utils.get_target_release(args)
         assert 'Unexpected format of target version' in err
@@ -113,7 +113,7 @@ def test_get_target_release(mock_open, monkeypatch):  # do not remove mock_open
     # env var is set to proper version, --target set to a bad one:
     # env var has priority, use it and go on with the upgrade
     monkeypatch.setenv('LEAPP_DEVEL_TARGET_RELEASE', '9.0')
-    args = mock.Mock(target='9.0.0')
+    args = mock.Mock(target_version='9.0.0')
     assert command_utils.get_target_release(args) == ('9.0', 'default')
 
 
