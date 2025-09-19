@@ -1,10 +1,10 @@
 {
-    "keys": [
-        "24c6a8a7f4a80eb5",
-        "4eb84e71f2ee9d55",
-        "05b555b38483c65d",
-        "1ff6a2171d997668"
-    ],
+    "keys": {
+        "24c6a8a7f4a80eb5": [],
+        "4eb84e71f2ee9d55": [],
+        "05b555b38483c65d": ["gpg-pubkey-8483c65d-5ccc5b19"],
+        "1ff6a2171d997668": ["gpg-pubkey-1d997668-621e3cac", "gpg-pubkey-1d997668-61bae63b"]
+    },
     "obsoleted-keys": {
         "10": ["gpg-pubkey-8483c65d-5ccc5b19"]
     }
