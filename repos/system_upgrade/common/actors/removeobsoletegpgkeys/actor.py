@@ -8,9 +8,14 @@ class RemoveObsoleteGpgKeys(Actor):
     """
     Remove obsoleted RPM GPG keys.
 
-    New version might make existing RPM GPG keys obsolete. This might be caused
-    for example by the hashing algorithm becoming deprecated or by the key
-    getting replaced.
+    The definition of what keys are considered obsolete depends on whether the
+    upgrade also does a conversion:
+    - If not converting, the obsolete keys are those that are no longer valid
+      on the target version. This might be caused for example by the hashing
+      algorithm becoming deprecated or by the key getting replaced. Note that
+      only keys provided by the vendor of the OS are handled.
+    - If converting, the obsolete keys are all of the keys provided by the
+      vendor of the source distribution.
 
     A DNFWorkaround is registered to actually remove the keys.
     """
