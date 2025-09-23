@@ -1,5 +1,5 @@
 from leapp.libraries.common import rhui
-from leapp.libraries.common.config import get_env
+from leapp.libraries.common.config import get_env, get_source_distro_id
 from leapp.libraries.common.distro import get_distribution_data
 from leapp.libraries.stdlib import api
 from leapp.models import DistributionSignedRPM, InstalledRPM, InstalledUnsignedRPM, ThirdPartyRPM
@@ -32,8 +32,8 @@ def is_exceptional(pkg, allowlist):
 
 @suppress_deprecation(InstalledUnsignedRPM)
 def process():
-    distribution = api.current_actor().configuration.os_release.release_id
-    distro_keys = get_distribution_data(distribution).get('keys', [])
+    distro = get_source_distro_id()
+    distro_keys = get_distribution_data(distro).get('keys', [])
     all_signed = get_env('LEAPP_DEVEL_RPMS_ALL_SIGNED', '0') == '1'
     rhui_pkgs = rhui.get_all_known_rhui_pkgs_for_current_upg()
 

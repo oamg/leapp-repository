@@ -1,6 +1,6 @@
 from leapp.libraries.actor import setuptargetrepos_repomap
-from leapp.libraries.common.config import get_distro_id
-from leapp.libraries.common.config.version import get_source_major_version, get_source_version, get_target_version
+from leapp.libraries.common.config import get_source_distro_id, get_target_distro_id
+from leapp.libraries.common.config.version import get_source_major_version, get_source_version
 from leapp.libraries.stdlib import api
 from leapp.models import (
     CustomTargetRepository,
@@ -76,8 +76,9 @@ def _get_used_repo_dict():
 def _get_mapped_repoids(repomap, src_repoids):
     mapped_repoids = set()
     src_maj_ver = get_source_major_version()
+    src_distro = get_source_distro_id()
     for repoid in src_repoids:
-        if repomap.get_pesid_repo_entry(repoid, src_maj_ver):
+        if repomap.get_pesid_repo_entry(repoid, src_maj_ver, src_distro):
             mapped_repoids.add(repoid)
     return mapped_repoids
 
@@ -106,11 +107,10 @@ def process():
     # installed packages that have mapping to prevent missing repositories that are disabled during the upgrade, but
     # can be used to upgrade installed packages.
     repoids_to_map = enabled_repoids.union(repoids_from_installed_packages_with_mapping)
-    is_rhel = get_distro_id() == 'rhel'
 
     # RHEL8.10 use a different repoid for client repository, but the repomapping mechanism cannot distinguish these
     # as it does not use minor versions. Therefore, we have to hardcode these changes.
-    if is_rhel and get_source_version() == '8.10':
+    if get_source_distro_id() == 'rhel' and get_source_version() == '8.10':
         for rhel88_rhui_client_repoid, rhel810_rhui_client_repoid in RHUI_CLIENT_REPOIDS_RHEL88_TO_RHEL810.items():
             if rhel810_rhui_client_repoid in repoids_to_map:
                 # Replace RHEL8.10 rhui client repoids with RHEL8.8 repoids,
@@ -157,18 +157,8 @@ def process():
                 continue
             target_distro_repoids.add(repo)
 
-    # On 8.10, some RHUI setups have different names than the one computed by repomapping.
-    # Although such situation could be avoided (having another client repo when a single
-    # repo can hold more than one RPM), we have to deal with it here. This is not a proper
-    # solution.
-    if get_target_version() == '8.10':
-        for pre_810_repoid, post_810_repoid in RHUI_CLIENT_REPOIDS_RHEL88_TO_RHEL810.items():
-            if pre_810_repoid in target_distro_repoids:
-                target_distro_repoids.remove(pre_810_repoid)
-                target_distro_repoids.add(post_810_repoid)
-
     # create the final lists and sort them (for easier testing)
-    if is_rhel:
+    if get_target_distro_id() == 'rhel':
         rhel_repos = [RHELTargetRepository(repoid=repoid) for repoid in sorted(target_distro_repoids)]
     else:
         rhel_repos = []

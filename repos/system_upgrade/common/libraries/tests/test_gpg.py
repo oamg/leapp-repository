@@ -22,7 +22,7 @@ from leapp.models import GpgKey, InstalledRPM, RPM
     ('10.0', 'ga', 'almalinux', '../../files/distro/almalinux/rpm-gpg/10'),
 ])
 def test_get_path_to_gpg_certs(monkeypatch, target, product_type, distro, exp):
-    current_actor = CurrentActorMocked(dst_ver=target, release_id=distro,
+    current_actor = CurrentActorMocked(dst_ver=target, dst_distro=distro,
                                        envars={'LEAPP_DEVEL_TARGET_PRODUCT_TYPE': product_type})
     monkeypatch.setattr(api, 'current_actor', current_actor)
 

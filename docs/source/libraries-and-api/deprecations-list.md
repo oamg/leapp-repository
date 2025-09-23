@@ -13,8 +13,8 @@ framework, see {ref}`deprecation:list of the deprecated functionality in leapp`.
 Only the versions in which a deprecation has been made are listed.
 
 ## Next release <span style="font-size:0.5em; font-weight:normal">(till TODO date)</span>
-
-- Note: nothing new deprecated yet
+- Shared libraries
+  - **`leapp.libraries.common.config.get_distro_id()`** - The function has been replaced by variants for source and target distros - `leapp.libraries.common.config.get_source_distro_id()` and `leapp.libraries.common.config.get_target_distro_id()`.
 
 ## v0.23.0 <span style="font-size:0.5em; font-weight:normal">(till March 2026)</span>
 
