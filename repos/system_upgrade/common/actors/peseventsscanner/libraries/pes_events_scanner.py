@@ -6,7 +6,7 @@ from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import peseventsscanner_repomap
 from leapp.libraries.actor.pes_event_parsing import Action, get_pes_events, Package
 from leapp.libraries.common import rpms
-from leapp.libraries.common.config import version
+from leapp.libraries.common.config import get_target_distro_id, version
 from leapp.libraries.stdlib import api
 from leapp.libraries.stdlib.config import is_verbose
 from leapp.models import (
@@ -400,7 +400,7 @@ def get_pesid_to_repoid_map(target_pesids):
             repo_type='rpm',
             channel='ga',
             rhui='',
-            distro=api.current_actor().configuration.os_release.release_id,
+            distro=get_target_distro_id(),
         )
 
     for pesid in target_pesids:
