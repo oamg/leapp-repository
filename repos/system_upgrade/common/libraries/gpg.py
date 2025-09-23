@@ -105,6 +105,8 @@ def get_gpg_fp_from_file(key_path):
     return fp
 
 
+# TODO when a need for the same function for source arises, or when there is
+# reason to deprecate this (re)name this to include "target"
 def get_path_to_gpg_certs():
     """
     Get path to the directory with trusted target gpg keys in the common leapp repository.
@@ -121,7 +123,7 @@ def get_path_to_gpg_certs():
     # only beta is special in regards to the GPG signing keys
     if target_product_type == 'beta':
         certs_dir = '{}beta'.format(target_major_version)
-    distro = api.current_actor().configuration.os_release.release_id
+    distro = config.get_target_distro_id()
     return os.path.join(
         api.get_common_folder_path('distro'),
         distro,

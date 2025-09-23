@@ -425,7 +425,7 @@ def test_is_registered_error(context_mocked):
 
 
 def test_set_container_mode(monkeypatch, context_mocked):
-    actor = CurrentActorMocked(release_id='rhel')
+    actor = CurrentActorMocked(dst_distro='rhel')
     monkeypatch.setattr(api, 'current_actor', actor)
     monkeypatch.setattr(
         os.path, "exists", lambda path: path in ("/etc/rhsm", "/etc/pki/entitlement")
@@ -440,7 +440,7 @@ def test_set_container_mode(monkeypatch, context_mocked):
 
 
 def test_set_container_mode_nonrhel_skip(monkeypatch, context_mocked):
-    actor = CurrentActorMocked(release_id='notrhel')
+    actor = CurrentActorMocked(dst_distro='notrhel')
     monkeypatch.setattr(api, 'current_actor', actor)
 
     rhsm.set_container_mode(context_mocked)

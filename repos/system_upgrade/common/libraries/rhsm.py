@@ -7,7 +7,7 @@ import time
 from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import repofileutils
-from leapp.libraries.common.config import get_distro_id, get_env
+from leapp.libraries.common.config import get_env, get_target_distro_id
 from leapp.libraries.stdlib import api, CalledProcessError
 from leapp.models import RHSMInfo
 
@@ -337,8 +337,8 @@ def set_container_mode(context):
     :param context: An instance of a mounting.IsolatedActions class
     :type context: mounting.IsolatedActions class
     """
-    # this has to happen even with skip_rhsm, but only on RHEL
-    if get_distro_id() != 'rhel':
+    # this has to happen even with skip_rhsm, but only on RHEL target
+    if get_target_distro_id() != 'rhel':
         api.current_logger().info(
             'Skipping setting RHSM into container mode on non-RHEL systems.'
         )
