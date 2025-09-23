@@ -307,7 +307,7 @@ def test_get_target_pesid_repos(monkeypatch, repomap_data_for_pesid_repo_retriev
     have the same major version and distro as the source system.
     """
     monkeypatch.setattr(api, 'current_actor',
-                        CurrentActorMocked(arch='x86_64', src_ver='7.9', dst_ver='8.4', release_id=distro))
+                        CurrentActorMocked(arch='x86_64', src_ver='7.9', dst_ver='8.4', dst_distro=distro))
     handler = RepoMapDataHandler(repomap_data_for_pesid_repo_retrieval)
     repositories = repomap_data_for_pesid_repo_retrieval.repositories
 
@@ -324,7 +324,7 @@ def test_get_target_pesid_repos(monkeypatch, repomap_data_for_pesid_repo_retriev
         'The get_target_pesid_repos method doesn\'t take into account the target system version correctly.'
     )
     monkeypatch.setattr(api, 'current_actor',
-                        CurrentActorMocked(arch='x86_64', src_ver='9.4', dst_ver='10.0', release_id=distro))
+                        CurrentActorMocked(arch='x86_64', src_ver='9.4', dst_ver='10.0', dst_distro=distro))
 
     # Repeat the same test as above to make sure it respects the target OS major version
     assert [] == handler.get_target_pesid_repos('pesid3'), fail_description
@@ -372,7 +372,7 @@ def test_find_repository_target_equivalent_fullmatch(
     pesid repo parameters exactly when such repository is available in the repository mapping data.
     """
     monkeypatch.setattr(api, 'current_actor',
-                        CurrentActorMocked(arch='x86_64', src_ver='7.9', dst_ver='8.4', release_id=distro))
+                        CurrentActorMocked(arch='x86_64', src_ver='7.9', dst_ver='8.4', dst_distro=distro))
 
     handler = RepoMapDataHandler(mapping_data_for_find_repository_equiv)
 

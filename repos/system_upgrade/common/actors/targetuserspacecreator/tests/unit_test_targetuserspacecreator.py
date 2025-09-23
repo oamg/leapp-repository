@@ -880,8 +880,9 @@ def test_get_product_certificate_path(monkeypatch, adjust_cwd, result, dst_ver, 
     assert userspacegen._get_product_certificate_path() in result
 
 
-def test_get_product_certificate_path_nonrhel(monkeypatch):
-    actor = CurrentActorMocked(release_id='notrhel')
+@pytest.mark.parametrize('src_distro', ('rhel', 'centos'))
+def test_get_product_certificate_path_nonrhel(monkeypatch, src_distro):
+    actor = CurrentActorMocked(src_distro=src_distro, dst_distro='notrhel')
     monkeypatch.setattr(userspacegen.api, 'current_actor', actor)
     path = userspacegen._get_product_certificate_path()
     assert path is None
@@ -1225,7 +1226,7 @@ def test__get_distro_available_repoids_nobaserepos_inhibit(
     Test that get_distro_available repoids reports and raises if there are no base repos.
     """
     monkeypatch.setattr(
-        userspacegen.api, "current_actor", CurrentActorMocked(release_id=distro_id)
+        userspacegen.api, "current_actor", CurrentActorMocked(dst_distro=distro_id)
     )
     monkeypatch.setattr(userspacegen.api.current_actor(), 'produce', produce_mocked())
     monkeypatch.setattr(reporting, "create_report", create_report_mocked())
@@ -1425,8 +1426,11 @@ def test_failing_stream_varfile_write(monkeypatch):
     assert 'Failed to adjust dnf variable' in str(err.value)
 
 
-@pytest.mark.parametrize("distro,should_adjust", [('rhel', False), ('centos', True)])
-def test_if_adjust_dnf_stream_variable_only_for_centos(monkeypatch, distro, should_adjust):
+@pytest.mark.parametrize('src_distro', ('rhel', 'centos'))
+@pytest.mark.parametrize("dst_distro,should_adjust", [('rhel', False), ('centos', True)])
+def test_if_adjust_dnf_stream_variable_only_for_centos(
+    monkeypatch, src_distro, dst_distro, should_adjust
+):
 
     def do_nothing(*args, **kwargs):
         pass
@@ -1436,7 +1440,11 @@ def test_if_adjust_dnf_stream_variable_only_for_centos(monkeypatch, distro, shou
         nonlocal adjust_called
         adjust_called = True
 
-    monkeypatch.setattr(userspacegen.api, 'current_actor', CurrentActorMocked(release_id=distro))
+    monkeypatch.setattr(
+        userspacegen.api,
+        "current_actor",
+        CurrentActorMocked(src_distro=src_distro, dst_distro=dst_distro),
+    )
     monkeypatch.setattr(userspacegen, 'get_target_major_version', lambda: '10')
     monkeypatch.setattr(rhsm, 'set_container_mode', do_nothing)
     monkeypatch.setattr(rhsm, 'switch_certificate', do_nothing)
