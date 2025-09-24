@@ -24,9 +24,9 @@ def _ensure_package(package):
 def _report_registration_info(installing_client):
     pkg_msg = " The '{}' package required for the registration will be installed during the upgrade."
 
-    title = "Automatic registration into Red Hat Insights"
+    title = "Automatic registration into Red Hat Lightspeed"
     summary = (
-        "After the upgrade, this system will be automatically registered into Red Hat Insights."
+        "After the upgrade, this system will be automatically registered into Red Hat Lightspeed."
         "{}"
         " To skip the automatic registration, use the '--no-insights-register' command line option or"
         " set the LEAPP_NO_INSIGHTS_REGISTER environment variable."
@@ -38,6 +38,7 @@ def _report_registration_info(installing_client):
             reporting.Summary(summary),
             reporting.Severity(reporting.Severity.INFO),
             reporting.Groups([reporting.Groups.SERVICES]),
+            reporting.Key('693963253195f418526f045b6d630a1f4c7a193d'),
         ]
     )
 
