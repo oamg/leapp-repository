@@ -134,21 +134,37 @@ def test_prefix_all_mount_units_with_sysroot(monkeypatch):
         assert should_be_deleted == was_deleted
 
 
-def test_fix_local_fs_requires(monkeypatch):
+@pytest.mark.parametrize('dirname', (
+    'local-fs.target.requires',
+    'local-fs.target.wants',
+    'local-fs-pre.target.requires',
+    'local-fs-pre.target.wants',
+    'remote-fs.target.requires'
+    'remote-fs.target.wants',
+    'remote-fs-pre.target.requires'
+    'remote-fs-pre.target.wants',
+))
+def test_fix_symlinks_in_dir(monkeypatch, dirname):
     """Test fixing local-fs.target.requires symlinks."""
 
+    DIR_PATH = os.path.join('/test/dir/', dirname)
+
     def mock_rmtree(dir_path):
-        assert dir_path == '/test/dir/local-fs.target.requires'
+        assert dir_path == DIR_PATH
 
     def mock_mkdir(dir_path):
-        assert dir_path == '/test/dir/local-fs.target.requires'
+        assert dir_path == DIR_PATH
 
     def mock_listdir(dir_path):
         return ['sysroot-home.mount', 'sysroot-var.mount', 'not-a-mount.service']
 
+    def mock_os_path_exist(dir_path):
+        assert dir_path == DIR_PATH
+        return dir_path == DIR_PATH
+
     expected_calls = [
-        ['ln', '-s', '../sysroot-home.mount', '/test/dir/local-fs.target.requires/sysroot-home.mount'],
-        ['ln', '-s', '../sysroot-var.mount', '/test/dir/local-fs.target.requires/sysroot-var.mount']
+        ['ln', '-s', '../sysroot-home.mount', os.path.join(DIR_PATH, 'sysroot-home.mount')],
+        ['ln', '-s', '../sysroot-var.mount', os.path.join(DIR_PATH, 'sysroot-var.mount')]
     ]
     call_count = 0
 
@@ -165,61 +181,70 @@ def test_fix_local_fs_requires(monkeypatch):
     monkeypatch.setattr('shutil.rmtree', mock_rmtree)
     monkeypatch.setattr('os.mkdir', mock_mkdir)
     monkeypatch.setattr('os.listdir', mock_listdir)
+    monkeypatch.setattr('os.path.exists', mock_os_path_exist)
     monkeypatch.setattr(mount_unit_generator, 'run', mock_run)
 
-    mount_unit_generator._fix_local_fs_requires('/test/dir')
-
-
-def test_collect_copied_files(monkeypatch):
-    """Test collecting copied files from directory tree."""
-    def mock_walk(dir_path):
-        return [
-            ('/container/usr/lib/systemd/system', ['local-fs.target.requires'], ['unit1.mount', 'unit2.mount']),
-            ('/container/usr/lib/systemd/system/local-fs.target.requires', [], ['unit1.mount', 'unit2.mount'])
-        ]
-
-    monkeypatch.setattr('os.walk', mock_walk)
-
-    files = mount_unit_generator._collect_copied_files(
-        '/container/usr/lib/systemd/system',
-        '/container'
-    )
-
-    expected_files = [
-        '/usr/lib/systemd/system/unit1.mount',
-        '/usr/lib/systemd/system/unit2.mount',
-        '/usr/lib/systemd/system/local-fs.target.requires/unit1.mount',
-        '/usr/lib/systemd/system/local-fs.target.requires/unit2.mount'
-    ]
-    assert sorted(files) == sorted(expected_files)
+    mount_unit_generator._fix_symlinks_in_dir('/test/dir', dirname)
 
 
 # Test the copy_units_into_system_location function
 def test_copy_units_mixed_content(monkeypatch):
     """Test copying units with mixed files and directories."""
-    def mock_listdir(dir_path):
-        return ['unit1.mount', 'local-fs.target.requires']
+
+    def mock_walk(dir_path):
+        tuples_to_yield = [
+            ('/source/dir', ['local-fs.target.requires'], ['unit1.mount', 'unit2.mount']),
+            ('/source/dir/local-fs.target.requires', [], ['unit1.mount', 'unit2.mount']),
+        ]
+        for i in tuples_to_yield:
+            yield i
 
     def mock_isdir(path):
         return 'local-fs.target.requires' in path
 
-    def mock_collect_copied_files(root, prefix_path_to_strip):
-        return ['/usr/lib/systemd/system/local-fs.target.requires/unit1.mount']
+    def _make_couple(sub_path):
+        return (
+            os.path.join('/source/dir/', sub_path),
+            os.path.join('/container/usr/lib/systemd/system/', sub_path)
+        )
 
-    def mock_copytree(src, dst, symlinks=None):
-        assert src == '/source/dir/local-fs.target.requires'
-        assert dst == '/container/usr/lib/systemd/system/local-fs.target.requires'
-        assert symlinks is True
+    def mock_copy2(src, dst, follow_symlinks=True):
+        valid_combinations = [
+            _make_couple('unit1.mount'),
+            _make_couple('unit2.mount'),
+            _make_couple('local-fs.target.requires/unit1.mount'),
+            _make_couple('local-fs.target.requires/unit2.mount'),
+        ]
+        assert not follow_symlinks
+        assert (src, dst) in valid_combinations
 
-    def mock_copy2(src, dst):
-        assert src == '/source/dir/unit1.mount'
-        assert dst == '/container/usr/lib/systemd/system/unit1.mount'
+    def mock_islink(file_path):
+        return file_path == '/container/usr/lib/systemd/system/local-fs.target.requires/unit2.mount'
 
-    monkeypatch.setattr(os, 'listdir', mock_listdir)
+    class MockedDeleteFile:
+        def __init__(self):
+            self.removal_called = False
+
+        def __call__(self, file_path):
+            assert file_path == '/container/usr/lib/systemd/system/local-fs.target.requires/unit2.mount'
+            self.removal_called = True
+
+    def mock_makedirs(dst_dir, mode=0o777, exist_ok=False):
+        assert exist_ok
+        assert mode == 0o755
+
+        allowed_paths = [
+            '/container/usr/lib/systemd/system',
+            '/container/usr/lib/systemd/system/local-fs.target.requires'
+        ]
+        assert dst_dir.rstrip('/') in allowed_paths
+
+    monkeypatch.setattr(os, 'walk', mock_walk)
+    monkeypatch.setattr(os, 'makedirs', mock_makedirs)
     monkeypatch.setattr(os.path, 'isdir', mock_isdir)
-    monkeypatch.setattr(shutil, 'copytree', mock_copytree)
+    monkeypatch.setattr(os.path, 'islink', mock_islink)
+    monkeypatch.setattr(mount_unit_generator, '_delete_file', MockedDeleteFile())
     monkeypatch.setattr(shutil, 'copy2', mock_copy2)
-    monkeypatch.setattr(mount_unit_generator, '_collect_copied_files', mock_collect_copied_files)
 
     class MockedContainerContext:
         def __init__(self):
@@ -235,7 +260,10 @@ def test_copy_units_mixed_content(monkeypatch):
     )
 
     expected_files = [
+        '/usr/lib/systemd/system/unit1.mount',
+        '/usr/lib/systemd/system/unit2.mount',
         '/usr/lib/systemd/system/local-fs.target.requires/unit1.mount',
-        '/usr/lib/systemd/system/unit1.mount'
+        '/usr/lib/systemd/system/local-fs.target.requires/unit2.mount',
     ]
     assert sorted(files) == sorted(expected_files)
+    assert mount_unit_generator._delete_file.removal_called

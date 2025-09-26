@@ -56,6 +56,9 @@ def _prefix_mount_unit_with_sysroot(mount_unit_path, new_unit_destination):
 
     A new mount unit file is written to new_unit_destination.
     """
+    # NOTE(pstodulk): Note that right now we update just the 'Where' key, however
+    # what about RequiresMountsFor, .. there could be some hidden dragons.
+    # In case of issues, investigate these values in generated unit files.
     api.current_logger().debug(
         'Prefixing {}\'s mount target with /sysroot. Output will be written to {}'.format(
             mount_unit_path,
@@ -105,32 +108,39 @@ def prefix_all_mount_units_with_sysroot(dir_containing_units):
         api.current_logger().debug('Original mount unit {} removed.'.format(unit_file_path))
 
 
-def _fix_local_fs_requires(dir_containing_mount_units):
+def _fix_symlinks_in_dir(dir_containing_mount_units, target_dir):
     """
-    Fix broken symlinks in local-fs.target.requires due to us modifying (renaming) the mount units.
+    Fix broken symlinks in given target_dir due to us modifying (renaming) the mount units.
 
-    The directory local-fs.target.requires contains symlinks to the (mount) units that are required
+    The target_dir contains symlinks to the (mount) units that are required
     in order for the local-fs.target to be reached. However, we renamed these units to reflect
     that we have changed their mount destinations by prefixing the mount destination with /sysroot.
     Hence, we regenerate the symlinks.
     """
 
+    target_dir_path = os.path.join(dir_containing_mount_units, target_dir)
+    if not os.path.exists(target_dir_path):
+        api.current_logger().debug(
+            'The {} directory does not exist. Skipping'
+            .format(target_dir)
+        )
+        return
+
     api.current_logger().debug(
-        'Removing the old local-fs.target.requires directory from {}.'.format(dir_containing_mount_units)
+        'Removing the old {} directory from {}.'
+        .format(target_dir, dir_containing_mount_units)
     )
 
-    localfs_requires_dir = os.path.join(dir_containing_mount_units, 'local-fs.target.requires')
+    shutil.rmtree(target_dir_path)
+    os.mkdir(target_dir_path)
 
-    shutil.rmtree(localfs_requires_dir)
-    os.mkdir(localfs_requires_dir)
-
-    api.current_logger().debug('Populating local-fs.target.requires with new symlinks.')
+    api.current_logger().debug('Populating {} with new symlinks.'.format(target_dir))
 
     for unit_file in os.listdir(dir_containing_mount_units):
         if not unit_file.endswith('.mount'):
             continue
 
-        place_fastlink_at = os.path.join(localfs_requires_dir, unit_file)
+        place_fastlink_at = os.path.join(target_dir_path, unit_file)
         fastlink_points_to = os.path.join('../', unit_file)
         try:
             run(['ln', '-s', fastlink_points_to, place_fastlink_at])
@@ -139,21 +149,57 @@ def _fix_local_fs_requires(dir_containing_mount_units):
                 'Dependency on {} created.'.format(unit_file)
             )
         except CalledProcessError as err:
-            err_descr = 'Failed to required unit dependencies for local-fs.target in upgrade initramfs.'
+            err_descr = (
+                'Failed to create required unit dependencies under {} for the upgrade initramfs.'
+                .format(target_dir)
+            )
             details = {'details': str(err)}
             raise StopActorExecutionError(err_descr, details=details)
 
 
-def _collect_copied_files(root, prefix_path_to_strip):
-    collected_files = []
+def fix_symlinks_in_targets(dir_containing_mount_units):
+    """
+    Fix broken symlinks in *.target.* directories caused by earlier modified mount units.
 
-    for current_root, _, files in os.walk(root):
-        for file_name in files:
-            file_path = os.path.join(current_root, file_name)
-            file_path = file_path[len(prefix_path_to_strip):]
-            collected_files.append(file_path)
+    Generated mount unit files are part of one of systemd targets (list below),
+    which means that a symlink from a systemd target to exists for each of
+    them. Based on this, systemd knows when (local or remote file systems?)
+    they must (".requires" suffix") or could (".wants" suffix) be mounted.
+    See the man 5 systemd.mount for more details how mount units are split into
+    these targets.
 
-    return collected_files
+    The list of possible target directories where these mount units could end:
+        * local-fs.target.requires
+        * local-fs.target.wants
+        * local-fs-pre.target.requires
+        * local-fs-pre.target.wants
+        * remote-fs.target.requires
+        * remote-fs.target.wants
+        * remote-fs-pre.target.requires
+        * remote-fs-pre.target.wants
+    Most likely, unit files are not generated for "*pre*" targets, but to be
+    sure really. Longer list does not cause any issues in this code.
+
+    In most cases, "local-fs.target.requires" is the only important directory
+    for us during the upgrade. But in some (sometimes common) cases we will
+    need some of the others as well.
+
+    These directories do not have to necessarily exists if there are no mount
+    unit files that could be put there. But most likely "local-fs.target.requires"
+    will always exists.
+    """
+    dir_list = [
+        'local-fs.target.requires',
+        'local-fs.target.wants',
+        'local-fs-pre.target.requires',
+        'local-fs-pre.target.wants',
+        'remote-fs.target.requires'
+        'remote-fs.target.wants',
+        'remote-fs-pre.target.requires'
+        'remote-fs-pre.target.wants',
+    ]
+    for tdir in dir_list:
+        _fix_symlinks_in_dir(dir_containing_mount_units, tdir)
 
 
 def copy_units_into_system_location(upgrade_container_ctx, dir_with_our_mount_units):
@@ -166,28 +212,43 @@ def copy_units_into_system_location(upgrade_container_ctx, dir_with_our_mount_un
     dest_inside_container = '/usr/lib/systemd/system'
 
     api.current_logger().debug(
-        'Copying our mount units from {} to container\'s {}'.format(
+        'Copying generated mount units for upgrade from {} to {}'.format(
             dir_with_our_mount_units,
-            dest_inside_container
+            upgrade_container_ctx.full_path(dest_inside_container)
         )
     )
 
     copied_files = []
+    prefix_len_to_drop = len(upgrade_container_ctx.base_dir)
 
     # We cannot rely on mounting library when copying into container
-    # as we want to control what happens to symlinks
-    for _src_path in os.listdir(dir_with_our_mount_units):
-        src_path = os.path.join(dir_with_our_mount_units, _src_path)
-        dst_path = upgrade_container_ctx.full_path(os.path.join(dest_inside_container, _src_path))
+    # as we want to control what happens to symlinks and
+    # shutil.copytree in Python3.6 fails if dst directory exists already
+    # - which happens in some cases when copying these files.
+    for root, dummy_dirs, files in os.walk(dir_with_our_mount_units):
+        rel_path = os.path.relpath(root, dir_with_our_mount_units)
+        if rel_path == '.':
+            rel_path = ''
+        dst_dir = os.path.join(upgrade_container_ctx.full_path(dest_inside_container), rel_path)
+        os.makedirs(dst_dir, mode=0o755, exist_ok=True)
 
-        if os.path.isdir(src_path):
-            shutil.copytree(src_path, dst_path, symlinks=True)
-            copied_files += _collect_copied_files(dst_path, upgrade_container_ctx.base_dir)
-        else:
-            shutil.copy2(src_path, dst_path)
+        for file in files:
+            src_file = os.path.join(root, file)
+            dst_file = os.path.join(dst_dir, file)
+            api.current_logger().debug(
+                'Copying mount unit file {} to {}'.format(src_file, dst_file)
+            )
+            if os.path.islink(dst_file):
+                # If the target file already exists and it is a symlink, it will
+                # fail and we want to overwrite this.
+                # NOTE(pstodulk): You could think that it cannot happen, but
+                # in future possibly it could happen, so let's rather be careful
+                # and handle it. If the dst file exists, we want to overwrite it
+                # for sure
+                _delete_file(dst_file)
+            shutil.copy2(src_file, dst_file, follow_symlinks=False)
+            copied_files.append(dst_file[prefix_len_to_drop:])
 
-            dst_relative_to_container_root = dst_path[len(upgrade_container_ctx.base_dir):]
-            copied_files.append(dst_relative_to_container_root)
     return copied_files
 
 
@@ -237,10 +298,10 @@ def setup_storage_initialization():
     userspace_info = next(api.consume(TargetUserSpaceInfo), None)
 
     with mounting.NspawnActions(base_dir=userspace_info.path) as upgrade_container_ctx:
-        with tempfile.TemporaryDirectory() as workspace_path:
+        with tempfile.TemporaryDirectory(dir='/var/lib/leapp/', prefix='tmp_systemd_fstab_') as workspace_path:
             run_systemd_fstab_generator(workspace_path)
             remove_units_for_targets_that_are_already_mounted_by_dracut(workspace_path)
             prefix_all_mount_units_with_sysroot(workspace_path)
-            _fix_local_fs_requires(workspace_path)
+            fix_symlinks_in_targets(workspace_path)
             mount_unit_files = copy_units_into_system_location(upgrade_container_ctx, workspace_path)
             request_units_inclusion_in_initramfs(mount_unit_files)
