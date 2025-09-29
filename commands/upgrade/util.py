@@ -221,9 +221,13 @@ def prepare_configuration(args):
     if args.enable_experimental_feature:
         os.environ['LEAPP_EXPERIMENTAL'] = '1'
 
+    os.environ["LEAPP_TARGET_OS"] = os.getenv(
+        "LEAPP_DEVEL_TARGET_OS", command_utils.get_distro_id()
+    )
+
     os.environ['LEAPP_UNSUPPORTED'] = '0' if os.getenv('LEAPP_UNSUPPORTED', '0') == '0' else '1'
     # force no rhsm on non-rhel systems, regardless of whether the binary is there
-    if args.no_rhsm or command_utils.get_distro_id() != 'rhel':
+    if args.no_rhsm or os.environ['LEAPP_TARGET_OS'] != 'rhel':
         os.environ['LEAPP_NO_RHSM'] = '1'
     elif not os.path.exists('/usr/sbin/subscription-manager'):
         os.environ['LEAPP_NO_RHSM'] = '1'
