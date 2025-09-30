@@ -61,29 +61,20 @@ class mocked_get_cpuinfo(object):
     def __init__(self, filename):
         self.filename = filename
 
-    def __call__(self, output_json=False):
+    def __call__(self):
         """
         Return lines of the self.filename test file located in the files directory.
 
         Those files contain /proc/cpuinfo content from several machines.
         """
-
-        filename = self.filename
-        if output_json:
-            filename = os.path.join('json', filename)
-        else:
-            filename = os.path.join('txt', filename)
-        filename = os.path.join(CUR_DIR, 'files', filename)
+        filename = os.path.join(CUR_DIR, 'files', self.filename)
 
         with open(filename, 'r') as fp:
             return '\n'.join(fp.read().splitlines())
 
 
 @pytest.mark.parametrize("arch", ARCH_SUPPORTED)
-@pytest.mark.parametrize("version", ['7', '8'])
-def test_scancpu(monkeypatch, arch, version):
-
-    monkeypatch.setattr('leapp.libraries.actor.scancpu.get_source_major_version', lambda: version)
+def test_scancpu(monkeypatch, arch):
 
     mocked_cpuinfo = mocked_get_cpuinfo('lscpu_' + arch)
     monkeypatch.setattr(scancpu, '_get_lscpu_output', mocked_cpuinfo)
@@ -106,34 +97,9 @@ def test_scancpu(monkeypatch, arch, version):
     assert expected == produced
 
 
-def test_lscpu_with_empty_field(monkeypatch):
-
-    def mocked_cpuinfo(*args, **kwargs):
-        return mocked_get_cpuinfo('lscpu_empty_field')(output_json=False)
-
-    monkeypatch.setattr(scancpu, '_get_lscpu_output', mocked_cpuinfo)
-    monkeypatch.setattr(api, 'produce', produce_mocked())
-    current_actor = CurrentActorMocked()
-    monkeypatch.setattr(api, 'current_actor', current_actor)
-
-    scancpu.process()
-
-    expected = CPUInfo(machine_type=None, flags=['flag'])
-    produced = api.produce.model_instances[0]
-
-    assert api.produce.called == 1
-
-    assert expected.machine_type == produced.machine_type
-    assert sorted(expected.flags) == sorted(produced.flags)
-
-
 def test_parse_invalid_json(monkeypatch):
 
-    monkeypatch.setattr('leapp.libraries.actor.scancpu.get_source_major_version', lambda: '8')
-
-    def mocked_cpuinfo(*args, **kwargs):
-        return mocked_get_cpuinfo('invalid')(output_json=True)
-
+    mocked_cpuinfo = mocked_get_cpuinfo('invalid')
     monkeypatch.setattr(scancpu, '_get_lscpu_output', mocked_cpuinfo)
     monkeypatch.setattr(api, 'produce', produce_mocked())
     monkeypatch.setattr(api, 'current_logger', logger_mocked())

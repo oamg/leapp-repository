@@ -94,7 +94,7 @@ def test_matches_source_version(monkeypatch, result, version_list):
     (False, ['8.2', '8.0']),
 ])
 def test_matches_target_version(monkeypatch, result, version_list):
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(src_ver='7.6'))
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(src_ver='7.6', dst_ver='8.1'))
     assert version.matches_target_version(*version_list) == result
 
 

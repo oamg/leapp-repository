@@ -1,13 +1,8 @@
 from leapp.libraries.actor import repairsystemdsymlinks
 from leapp.libraries.common import systemd
-from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked
-from leapp.libraries.stdlib import api, CalledProcessError, run
-from leapp.models import (
-    SystemdBrokenSymlinksSource,
-    SystemdBrokenSymlinksTarget,
-    SystemdServiceFile,
-    SystemdServicesInfoSource
-)
+from leapp.libraries.common.testutils import CurrentActorMocked
+from leapp.libraries.stdlib import api
+from leapp.models import SystemdServiceFile, SystemdServicesInfoSource
 
 
 class MockedSystemdCmd(object):
@@ -20,8 +15,16 @@ class MockedSystemdCmd(object):
 
 
 def test_bad_symslinks(monkeypatch):
+    # there is no _INSTALLATION_CHANGED service on RHEL 8 and RHEL 9, but it's
+    # possible such service will be discovered and added in the future as it
+    # was on RHEL 7, so let's add such case
+    monkeypatch.setitem(
+        repairsystemdsymlinks._INSTALLATION_CHANGED,
+        "9", ["some.service"],
+    )
+
     service_files = [
-        SystemdServiceFile(name='rngd.service', state='enabled'),
+        SystemdServiceFile(name='some.service', state='enabled'),
         SystemdServiceFile(name='sysstat.service', state='disabled'),
         SystemdServiceFile(name='hello.service', state='enabled'),
         SystemdServiceFile(name='world.service', state='disabled'),
@@ -36,11 +39,15 @@ def test_bad_symslinks(monkeypatch):
     monkeypatch.setattr(systemd, 'reenable_unit', reenable_mocked)
 
     service_info = SystemdServicesInfoSource(service_files=service_files)
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[service_info]))
+    monkeypatch.setattr(
+        api,
+        "current_actor",
+        CurrentActorMocked(src_ver="8.10", dst_ver="9.6", msgs=[service_info]),
+    )
 
     repairsystemdsymlinks._handle_bad_symlinks(service_info.service_files)
 
-    assert reenable_mocked.units == ['rngd.service']
+    assert reenable_mocked.units == ['some.service']
 
 
 def test_handle_newly_broken_symlink(monkeypatch):
