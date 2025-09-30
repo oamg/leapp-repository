@@ -21,7 +21,7 @@ Overrides the automatically detected storage device with GRUB core (e.g. /dev/sd
 Set to 1 to disable RPM GPG checks (same as yum/dnf –nogpgckeck option). It‘s equivalent to the --nogpgcheck leapp option.
 
 #### LEAPP_NO_INSIGHTS_REGISTER
-If set to `1`, Leapp does not register the system into Red Hat Insights automatically. It‘s equivalent to the --no-insights-register leapp option.
+If set to `1`, Leapp does not register the system into Red Hat Lightspeed automatically. It‘s equivalent to the --no-insights-register leapp option.
 
 #### LEAPP_NO_NETWORK_RENAMING
 If set to `1`, the actor responsible to handle NICs names ends without doing anything. The actor usually creates UDEV rules to preserve original NICs in case they are changed. However, in some cases it‘s not wanted and it leads in malfunction network configuration (e.g. in case the bonding is configured on the system). It‘s expected that NICs have to be handled manually if needed.

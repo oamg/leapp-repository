@@ -41,7 +41,7 @@ def test_insights_register_success_logged(monkeypatch):
 
     def run_mocked(cmd, **kwargs):
         return {
-            'stdout': 'Successfully registered into Insights',
+            'stdout': 'Successfully registered into Red Hat Lightspeed',
             'stderr': '',
             'exit_code': 0
         }

@@ -7,7 +7,7 @@ from leapp.tags import FirstBootPhaseTag, IPUWorkflowTag
 
 class InsightsAutoregister(Actor):
     """
-    Automatically registers system into Red Hat Insights
+    Automatically registers system into Red Hat Lightspeed
 
     The registration is skipped if NO_INSIGHTS_REGISTER=1 environment variable
     is set, the --no-insights-register command line argument present or the
