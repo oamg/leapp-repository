@@ -4,7 +4,7 @@ import pytest
 
 from leapp.libraries.actor import scanner
 from leapp.libraries.common.config import architecture, version
-from leapp.models import GrubConfigError, Report
+from leapp.models import GrubConfigError
 
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -24,18 +24,16 @@ def test_wrong_config_error_detection():
 def test_all_errors_produced(current_actor_context, monkeypatch):
     # Tell the actor we are not running on s390x
     monkeypatch.setattr(architecture, 'matches_architecture', lambda _: False)
-    monkeypatch.setattr(version, 'get_source_version', lambda: '7.9')
     # Set that all checks failed
     monkeypatch.setattr(scanner, 'is_grub_config_missing_final_newline', lambda _: True)
     monkeypatch.setattr(scanner, 'is_grubenv_corrupted', lambda _: True)
     monkeypatch.setattr(scanner, 'detect_config_error', lambda _: True)
     # Run the actor
     current_actor_context.run()
-    # Check that exactly 3 messages of different types are produced
+    # Check that exactly 2 messages of different types are produced
     errors = current_actor_context.consume(GrubConfigError)
-    assert len(errors) == 3
-    for err_type in [GrubConfigError.ERROR_MISSING_NEWLINE, GrubConfigError.ERROR_CORRUPTED_GRUBENV,
-                     GrubConfigError.ERROR_GRUB_CMDLINE_LINUX_SYNTAX]:
+    assert len(errors) == 2
+    for err_type in [GrubConfigError.ERROR_MISSING_NEWLINE, GrubConfigError.ERROR_CORRUPTED_GRUBENV]:
         distinct_error = next((e for e in errors if e.error_type == err_type), None)
         assert distinct_error
         assert distinct_error.files

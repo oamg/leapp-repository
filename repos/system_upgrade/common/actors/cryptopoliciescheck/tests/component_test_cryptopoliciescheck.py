@@ -12,7 +12,6 @@ from leapp.models import (
 
 
 @pytest.mark.parametrize(('source_version'), [
-    ('7'),
     ('8'),
     ('9'),
 ])
@@ -30,7 +29,6 @@ def test_actor_execution_default(monkeypatch, current_actor_context, source_vers
 
 
 @pytest.mark.parametrize(('source_version', 'should_run'), [
-    ('7', False),
     ('8', True),
     ('9', True),
 ])
@@ -57,7 +55,6 @@ def test_actor_execution_legacy(monkeypatch, current_actor_context, source_versi
 
 
 @pytest.mark.parametrize(('source_version', 'should_run'), [
-    ('7', False),
     ('8', True),
     ('9', True),
 ])

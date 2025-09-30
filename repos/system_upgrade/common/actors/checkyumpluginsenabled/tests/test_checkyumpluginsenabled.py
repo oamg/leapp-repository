@@ -1,7 +1,5 @@
-import pytest
-
 from leapp import reporting
-from leapp.libraries.actor.checkyumpluginsenabled import check_required_yum_plugins_enabled
+from leapp.libraries.actor.checkyumpluginsenabled import check_required_dnf_plugins_enabled
 from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked
 from leapp.libraries.stdlib import api
 from leapp.models import PkgManagerInfo
@@ -37,15 +35,15 @@ def test__create_report_mocked(monkeypatch):
 
 
 def test_report_when_missing_required_plugins(monkeypatch):
-    """Test whether a report entry is created when any of the required YUM plugins are missing."""
-    yum_config = PkgManagerInfo(enabled_plugins=['product-id', 'some-user-plugin'])
+    """Test whether a report entry is created when any of the required DNF plugins are missing."""
+    dnf_config = PkgManagerInfo(enabled_plugins=['product-id', 'some-user-plugin'])
 
     actor_reports = create_report_mocked()
 
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked())
     monkeypatch.setattr(reporting, 'create_report', actor_reports)
 
-    check_required_yum_plugins_enabled(yum_config)
+    check_required_dnf_plugins_enabled(dnf_config)
 
     assert actor_reports.called, "Report wasn't created when required a plugin is missing."
 
@@ -62,7 +60,7 @@ def test_nothing_is_reported_when_rhsm_disabled(monkeypatch):
     monkeypatch.setattr(api, 'current_actor', actor_mocked)
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
 
-    yum_config = PkgManagerInfo(enabled_plugins=[])
-    check_required_yum_plugins_enabled(yum_config)
+    dnf_config = PkgManagerInfo(enabled_plugins=[])
+    check_required_dnf_plugins_enabled(dnf_config)
 
     assert not reporting.create_report.called, 'Report was created even if LEAPP_NO_RHSM was set'

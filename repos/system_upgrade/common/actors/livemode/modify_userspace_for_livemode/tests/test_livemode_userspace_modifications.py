@@ -296,8 +296,6 @@ def test_setup_sshd(monkeypatch):
         Action(type_=ActionType.SYMLINK,
                args=('/usr/lib/systemd/system/sshd.service',
                      '/USERSPACE/etc/systemd/system/multi-user.target.wants/sshd.service')),
-        Action(type_=ActionType.OPEN, args=('/USERSPACE/etc/crypto-policies/config',)),
-        Action(type_=ActionType.WRITE, args=('LEGACY\n',)),
     ]
 
     error = assert_execution_trace_subsumes_other(actual_trace, expected_trace)

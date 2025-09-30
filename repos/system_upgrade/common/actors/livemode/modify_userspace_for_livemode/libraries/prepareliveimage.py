@@ -6,7 +6,7 @@ import os.path
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import mounting
 from leapp.libraries.common.config.version import get_target_major_version
-from leapp.libraries.stdlib import api, CalledProcessError
+from leapp.libraries.stdlib import api
 from leapp.models import LiveImagePreparationInfo
 
 LEAPP_UPGRADE_SERVICE_FILE = 'upgrade.service'
@@ -380,47 +380,6 @@ def setup_sshd(context, authorized_keys):
                 'Failed to enable the sshd service in the upgrade image (failed to create a symlink). Full error: %s',
                 error
             )
-
-    # @Todo(mhecko): This is hazardous. I guess we are setting this so that we can use weaker SSH keys from RHEL7,
-    # #              but this way we change crypto settings system-wise (could be a problem for FIPS). Instead, we
-    # #              should check whether the keys will be OK on RHEL8, and inform the user otherwise.
-    if get_target_major_version() == '8':  # set to LEGACY for 7>8 only
-        try:
-            with context.open('/etc/crypto-policies/config', 'w+') as f:
-                f.write('LEGACY\n')
-        except OSError as error:
-            api.current_logger().warning('Cannot set crypto policy to LEGACY')
-            details = {'details': 'Failed to set crypto-policies to LEGACY due to the error: {0}'.format(error)}
-            raise StopActorExecutionError('Failed to set up livemode SSHD', details=details)
-
-
-# stolen from upgradeinitramfsgenerator.py
-def _get_target_kernel_version(context):
-    """
-    Get the version of the most recent kernel version within the container.
-    """
-    try:
-        results = context.call(['rpm', '-qa', 'kernel-core'], split=True)['stdout']
-
-    except CalledProcessError as error:
-        problem = 'Could not query the target userspace kernel version through rpm. Full error: {0}'.format(error)
-        raise StopActorExecutionError(
-            'Cannot get the version of the installed kernel.',
-            details={'Problem': problem})
-
-    if len(results) > 1:
-        raise StopActorExecutionError(
-            'Cannot detect the version of the target userspace kernel.',
-            details={'Problem': 'Detected unexpectedly multiple kernels inside target userspace container.'})
-    if not results:
-        raise StopActorExecutionError(
-            'Cannot detect the version of the target userspace kernel.',
-            details={'Problem': 'An rpm query for the available kernels did not produce any results.'})
-
-    kernel_version = '-'.join(results[0].rsplit("-", 2)[-2:])
-    api.current_logger().debug('Detected kernel version inside container: {}.'.format(kernel_version))
-
-    return kernel_version
 
 
 def fakerootfs():
