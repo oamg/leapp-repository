@@ -461,6 +461,9 @@ def perform_transaction_install(target_userspace_info, storage_info, used_repos,
 
 @contextlib.contextmanager
 def _prepare_perform(used_repos, target_userspace_info, xfs_info, storage_info, target_iso=None):
+    # noqa: W0135; pylint: disable=bad-option-value,contextmanager-generator-missing-cleanup
+    # NOTE(pstodulk): the pylint check is not valid in this case - finally is covered
+    # implicitly
     # noqa: W0135
     reserve_space = overlaygen.get_recommended_leapp_free_space(target_userspace_info.path)
     with _prepare_transaction(used_repos=used_repos,
@@ -471,10 +474,7 @@ def _prepare_perform(used_repos, target_userspace_info, xfs_info, storage_info, 
                                               mount_target=os.path.join(context.base_dir, 'installroot'),
                                               scratch_reserve=reserve_space) as overlay:
             with mounting.mount_upgrade_iso_to_root_dir(target_userspace_info.path, target_iso):
-                try:
-                    yield context, overlay, target_repoids
-                finally:
-                    pass  # cleanup is handled by the context managers
+                yield context, overlay, target_repoids
 
 
 def perform_transaction_check(target_userspace_info,

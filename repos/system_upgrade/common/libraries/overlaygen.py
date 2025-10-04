@@ -325,7 +325,9 @@ def _prepare_required_mounts(scratch_dir, mounts_dir, storage_info, scratch_rese
 
 @contextlib.contextmanager
 def _build_overlay_mount(root_mount, mounts):
-    # noqa: W0135
+    # noqa: W0135; pylint: disable=bad-option-value,contextmanager-generator-missing-cleanup
+    # NOTE(pstodulk): the pylint check is not valid in this case - finally is covered
+    # implicitly
     if not root_mount:
         raise StopActorExecutionError('Root mount point has not been prepared for overlayfs.')
     if not mounts:
@@ -339,10 +341,7 @@ def _build_overlay_mount(root_mount, mounts):
                 with mounting.BindMount(source=overlay.target,
                                         target=os.path.join(root_mount.target, current.lstrip('/'))):
                     with _build_overlay_mount(root_mount, mounts) as mount:
-                        try:
-                            yield mount
-                        finally:
-                            pass  # cleanup handled by the nested context managers
+                        yield mount
 
 
 def cleanup_scratch(scratch_dir, mounts_dir):
@@ -579,15 +578,14 @@ def _mount_dnf_cache(overlay_target):
     """
     Convenience context manager to ensure bind mounted /var/cache/dnf and removal of the mount.
     """
-    # noqa: W0135
+    # noqa: W0135; pylint: disable=bad-option-value,contextmanager-generator-missing-cleanup
+    # NOTE(pstodulk): the pylint check is not valid in this case - finally is covered
+    # implicitly
     with mounting.BindMount(
         source="/var/cache/dnf",
         target=os.path.join(overlay_target, "var", "cache", "dnf"),
     ) as cache_mount:
-        try:
-            yield cache_mount
-        finally:
-            pass  # cleanup is handled by BindMount.__exit__()
+        yield cache_mount
 
 
 @contextlib.contextmanager
@@ -642,7 +640,9 @@ def create_source_overlay(
     :type scratch_reserve: Optional[int]
     :rtype: mounting.BindMount or mounting.NullMount
     """
-    # noqa: W0135;
+    # noqa: W0135; pylint: disable=bad-option-value,contextmanager-generator-missing-cleanup
+    # NOTE(pstodulk): the pylint check is not valid in this case - finally is covered
+    # implicitly
     api.current_logger().debug('Creating source overlay in {scratch_dir} with mounts in {mounts_dir}'.format(
         scratch_dir=scratch_dir, mounts_dir=mounts_dir))
     try:
