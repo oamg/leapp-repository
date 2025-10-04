@@ -268,8 +268,7 @@ def test_get_lsblk_info(monkeypatch):
                     'crypt', '', '/dev/nvme0n1p1'],
                 ['/dev/nvme0n1p1', '259:1', '0', str(39 * bytes_per_gb), '0', 'part', '', '/dev/nvme0n1'],
             ]
-            for output_line_parts in output_lines_split_on_whitespace:
-                yield output_line_parts
+            yield from output_lines_split_on_whitespace
         elif len(cmd) == 5 and cmd[:4] == ['lsblk', '-nr', '--output', 'NAME,KNAME,SIZE']:
             # We cannot have the output in a list, since the command is called per device. Therefore, we have to map
             # each device path to its output.
@@ -460,7 +459,7 @@ def test_get_lvdisplay_info(monkeypatch):
 
 def test_get_systemd_mount_info(monkeypatch):
 
-    class UdevDeviceMocked(object):
+    class UdevDeviceMocked:
         def __init__(self, device_node, path, model, wwn, fs_type, label, uuid):
             self.device_node = device_node
             # Simulate udev device attributes that should be queried
@@ -482,7 +481,7 @@ def test_get_systemd_mount_info(monkeypatch):
 
             return self.device_attributes[attribute]
 
-    class UdevContextMocked(object):
+    class UdevContextMocked:
         def __init__(self, mocked_devices):
             self.mocked_devices = mocked_devices
 

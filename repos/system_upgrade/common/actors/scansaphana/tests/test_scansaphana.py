@@ -59,7 +59,7 @@ compiler-version: GCC 9
 lcmserver-artifact-version: 2.5.46'''))
 
 
-class CallMock(object):
+class CallMock:
     def __init__(self, ret):
         self.args = None
         self.ret = ret
@@ -69,7 +69,7 @@ class CallMock(object):
         return self.ret
 
 
-class SubprocessCall(object):
+class SubprocessCall:
     def __init__(self, admusername):
         self.admusername = admusername
 
@@ -77,9 +77,9 @@ class SubprocessCall(object):
         assert args[0][0:3] == ['sudo', '-u', self.admusername]
         cmd = args[0][3:]
         kwargs.pop('checked', None)
-        p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-        p.wait()
-        return {'exit_code': p.returncode, 'stdout': p.stdout.read()}
+        with subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as p:
+            stdout, stderr = p.communicate()
+            return {'exit_code': p.returncode, 'stdout': stdout.decode('utf-8'), 'stderr': stderr.decode('utf-8')}
 
 
 def test_scansaphana_get_instance_status(monkeypatch):
@@ -108,7 +108,7 @@ def test_scansaphana_get_instance_status(monkeypatch):
 
 
 def test_scansaphana_parse_manifest(monkeypatch):
-    class _mock_open(object):
+    class _mock_open:
         def __init__(self, path, mode):
             self._fp = BytesIO(SAPHANA2_MANIFEST.encode('utf-8'))
 

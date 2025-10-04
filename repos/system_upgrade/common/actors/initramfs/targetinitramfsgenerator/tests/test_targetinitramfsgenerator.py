@@ -33,7 +33,7 @@ def raise_call_error(args=None):
                              })
 
 
-class RunMocked(object):
+class RunMocked:
 
     def __init__(self, raise_err=False):
         self.called = 0

@@ -146,7 +146,7 @@ TEST_XFS_INFO_FTYPE0_MODEL = XFSInfo(
 )
 
 
-class run_mocked(object):
+class run_mocked:
     def __init__(self):
         self.called = 0
         self.args = None

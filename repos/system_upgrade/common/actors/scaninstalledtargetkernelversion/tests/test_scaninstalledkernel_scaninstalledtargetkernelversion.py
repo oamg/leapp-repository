@@ -15,7 +15,7 @@ OLD_KERNEL_NEVRA = 'kernel-core-0.1.2-3.el8.x86_64'
 OLD_RT_KERNEL_NEVRA = 'kernel-rt-core-0.1.2-3.rt4.5.el8.x86_64'
 
 
-class MockedRun(object):
+class MockedRun:
 
     def __init__(self, stdouts):
         # stdouts should be dict of list of strings: { str: [str1,str2,...]}

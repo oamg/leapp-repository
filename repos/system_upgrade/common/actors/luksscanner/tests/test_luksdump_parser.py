@@ -7,8 +7,8 @@ CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 def test_luksdump_parser_luks1(current_actor_context):
-    f = open(os.path.join(CUR_DIR, 'files/luksDump_nvme0n1p3_luks1.txt'))
-    parsed_dict = LuksDumpParser.parse(f.readlines())
+    with open(os.path.join(CUR_DIR, 'files/luksDump_nvme0n1p3_luks1.txt')) as f:
+        parsed_dict = LuksDumpParser.parse(f.readlines())
 
     assert parsed_dict["Version"] == "1"
     assert parsed_dict["Cipher name"] == "aes"
@@ -39,8 +39,8 @@ def test_luksdump_parser_luks1(current_actor_context):
 
 
 def test_luksdump_parser_luks2_tokens(current_actor_context):
-    f = open(os.path.join(CUR_DIR, 'files/luksDump_nvme0n1p3_luks2_tokens.txt'))
-    parsed_dict = LuksDumpParser.parse(f.readlines())
+    with open(os.path.join(CUR_DIR, 'files/luksDump_nvme0n1p3_luks2_tokens.txt')) as f:
+        parsed_dict = LuksDumpParser.parse(f.readlines())
 
     assert parsed_dict["Version"] == "2"
     assert parsed_dict["Epoch"] == "9"

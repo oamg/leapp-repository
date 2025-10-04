@@ -7,7 +7,7 @@ from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked
 from leapp.libraries.stdlib import CalledProcessError
 
 
-class PathExistsMocked(object):
+class PathExistsMocked:
     def __init__(self, existing_files=None):
         self.called = 0
         self._existing_files = existing_files if existing_files else []
@@ -17,7 +17,7 @@ class PathExistsMocked(object):
         return fpath in self._existing_files
 
 
-class IsOpensslModifiedMocked(object):
+class IsOpensslModifiedMocked:
     def __init__(self, ret_values):
         self._ret_values = ret_values
         # ret_values is list of bools to return on each call. ret_values.pop(0)
@@ -32,7 +32,7 @@ class IsOpensslModifiedMocked(object):
         return self._ret_values.pop(0)
 
 
-class SafeMVFileMocked(object):
+class SafeMVFileMocked:
     def __init__(self, ret_values):
         self._ret_values = ret_values
         # ret_values is list of bools to return on each call. ret_values.pop(0)
@@ -113,7 +113,7 @@ def test_migrate_openssl_failed_restore(monkeypatch):
     assert len(migrateopensslconf.api.current_logger.errmsg) == 2
 
 
-class MockedRun(object):
+class MockedRun:
     def __init__(self, raise_err):
         self.called = 0
         self.args = None

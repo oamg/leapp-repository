@@ -106,8 +106,7 @@ class _SupportedVersionsDict(dict):
 
     def __iter__(self):
         self._feed_supported_versions()
-        for d in self.data:
-            yield d
+        yield from self.data
 
     def __repr__(self):
         self._feed_supported_versions()

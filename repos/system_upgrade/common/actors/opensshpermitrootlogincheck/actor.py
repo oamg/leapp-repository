@@ -55,7 +55,8 @@ class OpenSshPermitRootLoginCheck(Actor):
         else:
             api.current_logger().warning('Unknown source major version: {}'.format(get_source_major_version()))
 
-    def process7to8(self, config):
+    @staticmethod
+    def process7to8(config):
         # when the config was not modified, we can pass this check and let the
         # rpm handle the configuration file update
         if not config.modified:
@@ -112,7 +113,8 @@ class OpenSshPermitRootLoginCheck(Actor):
                 reporting.Groups([reporting.Groups.INHIBITOR])
             ] + COMMON_RESOURCES)
 
-    def process8to9(self, config):
+    @staticmethod
+    def process8to9(config):
         # RHEL8 default sshd configuration file is not modified: It will get replaced by rpm and
         # root will no longer be able to connect through ssh. This will probably result in many
         # false positives so it will have to be waived a lot

@@ -4,7 +4,7 @@ from leapp.models import SatelliteFacts, SatellitePostgresqlFacts
 from leapp.snactor.fixture import current_actor_context
 
 
-class MockedRun(object):
+class MockedRun:
     def __init__(self):
         self._manager = Manager()
         self.commands = self._manager.list()

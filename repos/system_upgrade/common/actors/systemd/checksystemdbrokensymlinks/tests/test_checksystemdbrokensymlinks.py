@@ -20,7 +20,7 @@ def test_report_broken_symlinks(monkeypatch):
     checksystemdbrokensymlinks._report_broken_symlinks(symlinks)
 
     assert created_reports.called
-    assert all([s in created_reports.report_fields['summary'] for s in symlinks])
+    assert all(s in created_reports.report_fields['summary'] for s in symlinks)
 
 
 def test_report_enabled_services_broken_symlinks(monkeypatch):
@@ -35,10 +35,10 @@ def test_report_enabled_services_broken_symlinks(monkeypatch):
     checksystemdbrokensymlinks._report_enabled_services_broken_symlinks(symlinks)
 
     assert created_reports.called
-    assert all([s in created_reports.report_fields['summary'] for s in symlinks])
+    assert all(s in created_reports.report_fields['summary'] for s in symlinks)
 
 
-class ReportBrokenSymlinks(object):
+class ReportBrokenSymlinks:
     def __init__(self):
         self.symlinks = []
 

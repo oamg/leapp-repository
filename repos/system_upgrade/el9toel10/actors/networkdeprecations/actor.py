@@ -81,7 +81,6 @@ class CheckNetworkDeprecations9to10(Actor):
             reporting.RelatedResource('package', 'NetworkManager'),
             reporting.RelatedResource('package', 'NetworkManager-dispatcher-routing-rules'),
         ] + [reporting.RelatedResource('file', file) for file in conn.values()])
-        pass
 
     @staticmethod
     def report_ifcfg_leftover(conn):

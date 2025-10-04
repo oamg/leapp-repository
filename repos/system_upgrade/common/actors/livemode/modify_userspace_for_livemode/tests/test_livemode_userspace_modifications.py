@@ -26,7 +26,7 @@ _LiveModeConfig = functools.partial(LiveModeConfig, squashfs_fullpath='<squashfs
 def test_modifications_require_livemode_enabled(monkeypatch, livemode_config, should_modify):
     monkeypatch.setattr(api, 'produce', produce_mocked())
 
-    class NspawnActionsMock(object):
+    class NspawnActionsMock:
         def __init__(self, *arg, **kwargs):
             pass
 
@@ -82,7 +82,7 @@ class ActionType(enum.Enum):
     CHMOD = 5
 
 
-class WriterMock(object):
+class WriterMock:
     def __init__(self, action_log):
         self.action_log = action_log
 
@@ -91,7 +91,7 @@ class WriterMock(object):
         self.action_log.append(action)
 
 
-class FileHandleMock(object):
+class FileHandleMock:
     def __init__(self, action_log):
         self.action_log = action_log
 
@@ -102,7 +102,7 @@ class FileHandleMock(object):
         pass
 
 
-class NspawnActionsMock(object):
+class NspawnActionsMock:
     def __init__(self, base_dir, action_log):
         self.base_dir = base_dir
         self.action_log = action_log

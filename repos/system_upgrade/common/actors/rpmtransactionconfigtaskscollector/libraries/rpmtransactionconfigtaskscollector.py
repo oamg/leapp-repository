@@ -29,8 +29,9 @@ def load_tasks(base_dir, logger):
     filtered = set(to_install) - set(to_install_filtered)
     if filtered:
         api.current_logger().debug(
-            'The following packages from "to_install" file will be ignored as they are already installed:'
-            '\n- ' + '\n- '.join(filtered))
+            'The following packages from "to_install" file will be ignored as they are already installed:\n- %s',
+            '\n- '.join(filtered)
+        )
 
     return RpmTransactionTasks(
         to_install=to_install_filtered,

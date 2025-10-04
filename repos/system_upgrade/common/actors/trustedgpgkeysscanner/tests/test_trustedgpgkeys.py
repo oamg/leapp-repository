@@ -32,7 +32,7 @@ def _get_test_installed_rmps(fps):
     return InstalledRPM(items=rpms)
 
 
-class MockedGetGpgFromFile(object):
+class MockedGetGpgFromFile:
     def __init__(self, file_fps_tuples):
         # e.g. file_fps_tuple = [('/mydir/myfile', ['0000ff31', '0000ff32'])]
         self._data = {}
@@ -40,7 +40,7 @@ class MockedGetGpgFromFile(object):
             self._data[fname] = fps
 
     def get_files(self):
-        return self._data.keys()  # noqa: W1655; pylint: disable=dict-keys-not-iterating
+        return self._data.keys()  # noqa: W1655
 
     def __call__(self, fname):
         return self._data.get(fname, [])

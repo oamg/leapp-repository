@@ -14,7 +14,8 @@ class NISScanLibrary:
     Helper library for NISScan actor.
     """
 
-    def client_has_non_default_configuration(self):
+    @staticmethod
+    def client_has_non_default_configuration():
         """
         Check for any significant ypbind configuration lines in .conf file.
         """
@@ -31,7 +32,8 @@ class NISScanLibrary:
                 return True
         return False
 
-    def server_has_non_default_configuration(self):
+    @staticmethod
+    def server_has_non_default_configuration():
         """
         Check for any additional (not default) files in ypserv DIR.
         """

@@ -3,7 +3,7 @@ from leapp.libraries.common.config import version
 from leapp.libraries.stdlib import CalledProcessError
 
 
-class run_mocked(object):
+class run_mocked:
     def __init__(self):
         self.args = []
         self.called = 0
@@ -39,7 +39,7 @@ class run_mocked(object):
         return {'stdout': stdout}
 
 
-class run_mocked_fail(object):
+class run_mocked_fail:
     def __init__(self):
         self.called = 0
 

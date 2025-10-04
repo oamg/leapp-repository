@@ -3,7 +3,7 @@ from leapp.libraries.stdlib import api, CalledProcessError, run
 from leapp.models import SELinuxModule, SELinuxModules
 
 
-class run_mocked(object):
+class run_mocked:
     def __init__(self):
         self.args = []
         self.called = 0
