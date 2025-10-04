@@ -22,19 +22,17 @@ def process_ifcfg(filename, secrets=False):
         for line in f:
             try:
                 (name, value) = line.split("#")[0].strip().split("=")
-                if secrets:
-                    value = None
             except ValueError:
                 # We're not interested in lines that are not
                 # simple assignments. Play it safe.
                 continue
 
-            # Deal with simple quoting. We don't expand anything, nor do
-            # multiline strings or anything of that sort.
-            if value is not None and len(value) > 1 and value[0] == value[-1]:
-                if value.startswith('"') or value.startswith("'"):
-                    value = value[1:-1]
-
+            if secrets:
+                value = None
+            elif len(value) > 1 and value[0] in ('"', "'") and value[0] == value[-1]:
+                # Deal with simple quoting. We don't expand anything, nor do
+                # multiline strings or anything of that sort.
+                value = value[1:-1]
             properties.append(IfCfgProperty(name=name, value=value))
     return properties
 
