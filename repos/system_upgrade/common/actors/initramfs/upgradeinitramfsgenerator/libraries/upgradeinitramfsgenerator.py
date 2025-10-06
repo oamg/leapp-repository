@@ -436,6 +436,9 @@ def _generate_livemode_initramfs(context, userspace_initramfs_dest, target_kerne
            '--lvmconf', '--mdadmconf',
            '--kver', target_kernel_ver, '-f', userspace_initramfs_dest]
 
+    # Add included files
+    cmd.extend(itertools.chain(*(('--install', file) for file in initramfs_includes.files)))
+
     # Add dracut modules
     cmd.extend(itertools.chain(*(('--add', module) for module in dracut_modules)))
 

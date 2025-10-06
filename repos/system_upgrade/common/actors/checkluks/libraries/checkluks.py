@@ -161,7 +161,9 @@ def check_invalid_luks_devices():
                 copy_files=[CopyFile(src="/etc/crypttab")],
                 install_rpms=required_crypt_rpms)
             )
-            api.produce(UpgradeInitramfsTasks(include_dracut_modules=[
+            api.produce(UpgradeInitramfsTasks(
+                include_files=['/etc/crypttab'],
+                include_dracut_modules=[
                     DracutModule(name='clevis'),
                     DracutModule(name='clevis-pin-tpm2')
                 ])
