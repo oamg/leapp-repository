@@ -7,8 +7,8 @@ from leapp import reporting
 from leapp.exceptions import StopActorExecution, StopActorExecutionError
 from leapp.libraries.actor import constants
 from leapp.libraries.common import distro, dnfplugin, mounting, overlaygen, repofileutils, rhsm, utils
-from leapp.libraries.common.config import get_env, get_product_type, get_target_distro_id
-from leapp.libraries.common.config.version import get_target_major_version
+from leapp.libraries.common.config import get_env, get_product_type, get_source_distro_id, get_target_distro_id
+from leapp.libraries.common.config.version import get_target_major_version, get_target_version
 from leapp.libraries.common.gpg import get_path_to_gpg_certs, is_nogpgcheck_set
 from leapp.libraries.stdlib import api, CalledProcessError, config, run
 from leapp.models import RequiredTargetUserspacePackages  # deprecated
@@ -250,7 +250,9 @@ def prepare_target_userspace(context, userspace_dir, enabled_repos, packages):
         try:
             context.call(cmd, callback_raw=utils.logging_handler)
         except CalledProcessError as exc:
-            message = 'Unable to install RHEL {} userspace packages.'.format(target_major_version)
+            message = 'Unable to install target \'{}\' {} userspace packages.'.format(
+                get_target_distro_id(), target_major_version
+            )
             details = {'details': str(exc), 'stderr': exc.stderr}
 
             if 'more space needed on the' in exc.stderr:
@@ -263,25 +265,39 @@ def prepare_target_userspace(context, userspace_dir, enabled_repos, packages):
             # failed since leapp does not support updates behind proxy yet.
             for manager_info in api.consume(PkgManagerInfo):
                 if manager_info.configured_proxies:
-                    details['details'] = (
-                        "DNF failed to install userspace packages, likely due to the proxy "
-                        "configuration detected in the YUM/DNF configuration file. "
-                        "Make sure the proxy is properly configured in /etc/dnf/dnf.conf. "
-                        "It's also possible the proxy settings in the DNF configuration file are "
-                        "incompatible with the target system. A compatible configuration can be "
-                        "placed in /etc/leapp/files/dnf.conf which, if present, will be used during "
-                        "the upgrade instead of /etc/dnf/dnf.conf. "
-                        "In such case the configuration will also be applied to the target system."
+                    details['hint'] = (
+                        'DNF failed to install userspace packages, likely due to the proxy '
+                        'configuration detected in the YUM/DNF configuration file. '
+                        'Make sure the proxy is properly configured in /etc/dnf/dnf.conf. '
+                        'It\'s also possible the proxy settings in the DNF configuration file are '
+                        'incompatible with the target system. A compatible configuration can be '
+                        'placed in /etc/leapp/files/dnf.conf which, if present, will be used during '
+                        'the upgrade instead of /etc/dnf/dnf.conf. '
+                        'In such case the configuration will also be applied to the target system.'
                     )
 
             # Similarly if a proxy was set specifically for one of the repositories.
             for repo_facts in api.consume(RepositoriesFacts):
                 for repo_file in repo_facts.repositories:
                     if any(repo_data.proxy and repo_data.enabled for repo_data in repo_file.data):
-                        details['details'] = (
-                            "DNF failed to install userspace packages, likely due to the proxy "
-                            "configuration detected in a repository configuration file."
+                        details['hint'] = (
+                            'DNF failed to install userspace packages, likely due to the proxy '
+                            'configuration detected in a repository configuration file.'
                         )
+
+            if get_source_distro_id() == 'centos' and get_target_distro_id() == 'rhel':
+                check_rhel_release_hint = (
+                    'When upgrading and converting from Centos Stream to Red Hat Enterprise Linux'
+                    ' (RHEL), the automatically determined latest target version of RHEL \'{}\' might'
+                    ' not yet have been released. If so, specify the latest released RHEL version'
+                    ' manually using the --target-version commandline option.'
+                ).format(get_target_version())
+
+                if details.get('hint'):
+                    # keep the proxy hint, we don't know which one is the problem
+                    details['hint'] = f"{details['hint']}\n\n{check_rhel_release_hint}"
+                else:
+                    details['hint'] = check_rhel_release_hint
 
             raise StopActorExecutionError(message=message, details=details)
 
