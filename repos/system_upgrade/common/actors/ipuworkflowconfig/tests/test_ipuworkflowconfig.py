@@ -1,10 +1,12 @@
 import os
+from copy import deepcopy
 
 import pytest
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import ipuworkflowconfig
-from leapp.libraries.stdlib import CalledProcessError
+from leapp.libraries.common.testutils import logger_mocked
+from leapp.libraries.stdlib import api, CalledProcessError
 from leapp.models import IPUSourceToPossibleTargets, OSRelease
 
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -260,3 +262,46 @@ def test_load_raw_upgrade_paths_for_distro_and_flavour(monkeypatch, distro, flav
 def test_virtual_version_construction(construction_params, expected_versions):
     result = ipuworkflowconfig.get_virtual_version(TEST_UPGRADE_PATHS, *construction_params)
     assert result == expected_versions
+
+
+def _make_path(source_ver, target_vers):
+    return IPUSourceToPossibleTargets(source_version=source_ver, target_versions=target_vers)
+
+
+@pytest.mark.parametrize(
+    "paths,to_add,logmsg",
+    [
+        (
+            [_make_path("9.8", ["10.2"])],
+            ["10.1"],
+            "Adding 10.1 as a supported target version for centos->rhel upgrade."
+        ),
+        (
+            [_make_path("9.10", ["10.10"])],
+            ["10.9"],
+            "Adding 10.9 as a supported target version for centos->rhel upgrade."
+         ),
+        # already present
+        (
+            [_make_path("8.10", ["9.6", "9.7"])],
+            [],
+            "Skipping adding 9.6 as a target version for centos->rhel upgrade, already present."
+        ),
+        # lowest minor
+        (
+            [_make_path("9.6", ["10.0"])],
+            [],
+            "Skipping centos->rhel supported versions workaround, the latest target minor version is 0."
+        ),
+    ],
+)
+def test_centos_to_rhel_supported_version_workaround(monkeypatch, paths, to_add, logmsg):
+    logger = logger_mocked()
+    monkeypatch.setattr(api, 'current_logger', logger)
+
+    original = deepcopy(paths[0])
+    ipuworkflowconfig._centos_to_rhel_supported_version_workaround(paths)
+
+    assert paths[0].source_version == original.source_version
+    assert paths[0].target_versions == original.target_versions + to_add
+    assert logmsg in logger.dbgmsg[0]

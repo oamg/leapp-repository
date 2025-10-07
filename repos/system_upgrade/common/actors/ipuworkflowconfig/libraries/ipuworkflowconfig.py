@@ -189,6 +189,53 @@ def construct_models_for_paths_matching_source_major(
     return multipaths_matching_source
 
 
+def _centos_to_rhel_supported_version_workaround(exposed_supported_paths):
+    """
+    Add target version one minor version lower than the latest version
+
+    On CS to RHEL upgrades, particularly on 9->10, there is only one upgrade
+    path defined, CS 9 -> latest RHEL 10 (10.X). However a situation may occur,
+    in which the latest RHEL version has not yet been publicly released, e.g.
+    in pre-release builds.
+
+    This is problematic because the upgrade fails if the content is not yet
+    available. If this happens the user is informed (by code elsewhere) to
+    specify the latest available RHEL version (the previous minor version)
+    manually using the --target-version CLI option.
+    However the previous minor version is not a supported target version. This
+    function adds it as one by appending it to exposed_supported_paths[0].target_versions.
+    The version is not appended if already present or if the defined latest is X.0.
+
+    :param exposed_supported_paths: The supported upgrade paths. Length is expected to be 1.
+    :type exposed_supported_paths: list[IPUSourceToPossibleTargets]
+    """
+
+    if len(exposed_supported_paths) != 1:
+        raise StopActorExecutionError(
+            "Expected only 1 IPUSourceToPossibleTargets model on CS->RHEL upgrade"
+        )
+    path = exposed_supported_paths[0]
+
+    major, minor = max(path.target_versions).split('.')
+    if not minor or minor == '0':
+        api.current_logger().debug(
+            "Skipping centos->rhel supported versions workaround, the latest target minor version is 0."
+        )
+        return
+
+    new_minor = int(minor) - 1
+    to_add = "{}.{}".format(major, new_minor)
+
+    if to_add not in path.target_versions:
+        msg = "Adding {} as a supported target version for centos->rhel upgrade.".format(to_add)
+        path.target_versions.append(to_add)
+    else:
+        msg = "Skipping adding {} as a target version for centos->rhel upgrade, already present.".format(
+            to_add
+        )
+    api.current_logger().debug(msg)
+
+
 def produce_ipu_config(actor):
     flavour = os.environ.get('LEAPP_UPGRADE_PATH_FLAVOUR')
     target_version = os.environ.get('LEAPP_UPGRADE_PATH_TARGET_RELEASE')
@@ -218,6 +265,9 @@ def produce_ipu_config(actor):
     exposed_supported_paths = construct_models_for_paths_matching_source_major(
         raw_upgrade_paths, source_major_version
     )
+
+    if exposed_supported_paths and os_release.release_id == 'centos' and target_distro == 'rhel':
+        _centos_to_rhel_supported_version_workaround(exposed_supported_paths)
 
     actor.produce(IPUConfig(
         leapp_env_vars=get_env_vars(),
