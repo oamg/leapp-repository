@@ -12,78 +12,51 @@ srpm_build_deps:
 - make
 
 # This is just for the build from the CLI - all other builds for jobs use own
-# actions
 actions:
   create-archive:
-  - bash -c "rm -f packaging/deps-pkgs.tar.gz"
-  - bash -c "make source"
-  - bash -c "mv packaging/sources/*.gz packaging/"
-  - bash -c "find packaging/*.gz -type f"
+    - bash -c "rm -f packaging/deps-pkgs.tar.gz"
+    - bash -c "make source"
+    - bash -c "mv packaging/sources/*.gz packaging/"
+    - bash -c "find packaging/*.gz -type f"
   fix-spec-file:
-  - bash -c "sed -i -r \"0,/Release:/ s/Release:(\s*)\S*/Release:\1${PACKIT_RPMSPEC_RELEASE}%{?dist}/\" packaging/leapp-repository.spec"
-  post-upstream-clone:
-  # builds from PRs should have lower NVR than those from main branch
-  - bash -c "sed -i \"s/1%{?dist}/0%{?dist}/g\" packaging/leapp-repository.spec"
+    - bash -c "sed -i -r \"0,/Release:/ s/Release:(\\s*)\\S*/Release:\\1${PACKIT_RPMSPEC_RELEASE}%{?dist}/\" packaging/leapp-repository.spec"
 
 jobs:
-- job: copr_build
-  trigger: pull_request
-  metadata:
-    owner: "@oamg"
-    project: leapp
-    targets:
-    - epel-8-x86_64
-    - epel-9-x86_64
-  actions:
-    create-archive:
-    - bash -c "rm -f packaging/deps-pkgs.tar.gz"
-    - bash -c "make source"
-    - bash -c "mv packaging/sources/*.gz packaging/"
-    - bash -c "find packaging/*.gz -type f"
-    fix-spec-file:
-    - bash -c "sed -i -r \"0,/Release:/ s/Release:(\s*)\S*/Release:\1${PACKIT_RPMSPEC_RELEASE}%{?dist}/\" packaging/leapp-repository.spec"
-    post-upstream-clone:
-    # builds from PRs should have lower NVR than those from main branch
-    - bash -c "sed -i \"s/1%{?dist}/0%{?dist}/g\" packaging/leapp-repository.spec"
-- job: copr_build
-  trigger: commit
-  metadata:
-    branch: main
-    owner: "@oamg"
-    project: leapp
-    targets:
-    - epel-8-x86_64
-    - epel-9-x86_64
-  actions:
-    create-archive:
-    - bash -c "rm -f packaging/deps-pkgs.tar.gz"
-    - bash -c "make source"
-    - bash -c "mv packaging/sources/*.gz packaging/"
-    - bash -c "find packaging/*.gz -type f"
-    fix-spec-file:
-    - bash -c "sed -i -r \"0,/Release:/ s/Release:(\s*)\S*/Release:\1${PACKIT_RPMSPEC_RELEASE}%{?dist}/\" packaging/leapp-repository.spec"
-    post-upstream-clone:
-    # builds from main branch should start with 100 release, to have high priority
-    - bash -c "sed -i \"s/1%{?dist}/100%{?dist}/g\" packaging/leapp-repository.spec"
-- job: copr_build
-  trigger: release
-  metadata:
-    owner: "@oamg"
-    project: leapp
-    targets:
-    - epel-8-x86_64
-    - epel-9-x86_64
-  actions:
-    create-archive:
-    - bash -c "rm -f packaging/deps-pkgs.tar.gz"
-    - bash -c "make source"
-    - bash -c "mv packaging/sources/*.gz packaging/"
-    - bash -c "find packaging/*.gz -type f"
-    fix-spec-file:
-    - bash -c "sed -i -r \"0,/Release:/ s/Release:(\s*)\S*/Release:\1${PACKIT_RPMSPEC_RELEASE}%{?dist}/\" packaging/leapp-repository.spec"
-    post-upstream-clone:
-    # builds from main branch should start with 100 release, to have high priority
-    - bash -c "sed -i \"s/1%{?dist}/100%{?dist}/g\" packaging/leapp-repository.spec"
+  - job: copr_build
+    trigger: pull_request
+    metadata:
+      owner: "@oamg"
+      project: leapp
+      targets: &epel-targets
+        - epel-8-x86_64
+        - epel-9-x86_64
+    actions:
+      post-upstream-clone:
+        # PR builds should have lower NVR than main branch builds
+        - bash -c "sed -i \"s/1%{?dist}/0%{?dist}/g\" packaging/leapp-repository.spec"
+
+  - job: copr_build
+    trigger: commit
+    metadata:
+      branch: main
+      owner: "@oamg"
+      project: leapp
+      targets: *epel-targets
+    actions:
+      post-upstream-clone:
+        # main branch builds start with 100 release to have higher priority
+        - bash -c "sed -i \"s/1%{?dist}/100%{?dist}/g\" packaging/leapp-repository.spec"
+
+  - job: copr_build
+    trigger: release
+    metadata:
+      owner: "@oamg"
+      project: leapp
+      targets: *epel-targets
+    actions:
+      post-upstream-clone:
+        # releases also use 100 release
+        - bash -c "sed -i \"s/1%{?dist}/100%{?dist}/g\" packaging/leapp-repository.spec"
 
 
 # NOTE: to see what envars, targets, .. can be set in tests, see
