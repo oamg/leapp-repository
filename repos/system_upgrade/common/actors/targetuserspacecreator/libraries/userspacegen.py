@@ -999,10 +999,8 @@ def gather_target_repositories(context, indata):
             )
         )
     else:
-        api.current_logger().info(
-            "The following repoids are considered as provided by the '{}' distribution: []".format(
-                get_distro_id()
-            )
+        api.current_logger().warning(
+            "No repoids provided by the {} distribution have been discovered".format(get_distro_id())
         )
 
     all_repoids = _get_all_available_repoids(context)
