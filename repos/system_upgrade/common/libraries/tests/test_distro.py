@@ -5,6 +5,7 @@ import pytest
 
 from leapp.actors import StopActorExecutionError
 from leapp.libraries.common import distro, repofileutils, rhsm
+from leapp.libraries.common.config.architecture import ARCH_ACCEPTED, ARCH_ARM64, ARCH_PPC64LE, ARCH_S390X, ARCH_X86_64
 from leapp.libraries.common.distro import _get_distro_repofiles, get_distribution_data, get_distro_repoids
 from leapp.libraries.common.testutils import CurrentActorMocked
 from leapp.libraries.stdlib import api
@@ -67,46 +68,46 @@ def test_get_distro_repofiles(monkeypatch):
     test_map = {
         'distro1': {
             '8': {
-                'repofile1': 'all',
-                'repofile2': ['x86_64'],
+                'repofile1': ARCH_ACCEPTED,
+                'repofile2': [ARCH_X86_64],
             },
             '9': {
-                'repofile3': 'all',
+                'repofile3': ARCH_ACCEPTED,
             },
         },
         'distro2': {
             '8': {},
             '9': {
-                'repofile2': ['x86_64'],
-                'repofile3': ['aarch64', 's390x', 'ppc64le'],
+                'repofile2': [ARCH_X86_64],
+                'repofile3': [ARCH_ARM64, ARCH_S390X, ARCH_PPC64LE],
             },
         },
     }
     monkeypatch.setattr(distro, '_DISTRO_REPOFILES_MAP', test_map)
 
     # mix of all and specific arch
-    repofiles = _get_distro_repofiles('distro1', '8', 'x86_64')
+    repofiles = _get_distro_repofiles('distro1', '8', ARCH_X86_64)
     assert repofiles == ['repofile1', 'repofile2']
 
     # match all but not x86_64
-    repofiles = _get_distro_repofiles('distro1', '8', 'aarch64')
+    repofiles = _get_distro_repofiles('distro1', '8', ARCH_ARM64)
     assert repofiles == ['repofile1']
 
-    repofiles = _get_distro_repofiles('distro2', '9', 'x86_64')
+    repofiles = _get_distro_repofiles('distro2', '9', ARCH_X86_64)
     assert repofiles == ['repofile2']
-    repofiles = _get_distro_repofiles('distro2', '9', 'aarch64')
+    repofiles = _get_distro_repofiles('distro2', '9', ARCH_ARM64)
     assert repofiles == ['repofile3']
-    repofiles = _get_distro_repofiles('distro2', '9', 's390x')
+    repofiles = _get_distro_repofiles('distro2', '9', ARCH_S390X)
     assert repofiles == ['repofile3']
-    repofiles = _get_distro_repofiles('distro2', '9', 'ppc64le')
+    repofiles = _get_distro_repofiles('distro2', '9', ARCH_PPC64LE)
     assert repofiles == ['repofile3']
 
     # version not mapped
-    repofiles = _get_distro_repofiles('distro2', '8', 'x86_64')
+    repofiles = _get_distro_repofiles('distro2', '8', ARCH_X86_64)
     assert repofiles is None
 
     # distro not mapped
-    repofiles = _get_distro_repofiles('distro42', '8', 'x86_64')
+    repofiles = _get_distro_repofiles('distro42', '8', ARCH_X86_64)
     assert repofiles is None
 
 

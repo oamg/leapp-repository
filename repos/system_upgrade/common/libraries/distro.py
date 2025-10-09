@@ -4,6 +4,7 @@ import os
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import repofileutils, rhsm
 from leapp.libraries.common.config import get_distro_id
+from leapp.libraries.common.config.architecture import ARCH_ACCEPTED, ARCH_X86_64
 from leapp.libraries.common.config.version import get_target_major_version
 from leapp.libraries.stdlib import api
 
@@ -21,77 +22,78 @@ def get_distribution_data(distribution):
             details={'Problem': 'Distribution {} was not found in {}.'.format(distribution, distributions_path)})
 
 
+# distro -> major_version -> repofile -> tuple of architectures where it's present
 _DISTRO_REPOFILES_MAP = {
     'rhel': {
-        '8': {'/etc/yum.repos.d/redhat.repo': 'all'},
-        '9': {'/etc/yum.repos.d/redhat.repo': 'all'},
-        '10': {'/etc/yum.repos.d/redhat.repo': 'all'},
+        '8': {'/etc/yum.repos.d/redhat.repo': ARCH_ACCEPTED},
+        '9': {'/etc/yum.repos.d/redhat.repo': ARCH_ACCEPTED},
+        '10': {'/etc/yum.repos.d/redhat.repo': ARCH_ACCEPTED},
     },
     'centos': {
         '8': {
             # TODO is this true on all archs?
-            'CentOS-Linux-AppStream.repo': 'all',
-            'CentOS-Linux-BaseOS.repo': 'all',
-            'CentOS-Linux-ContinuousRelease.repo': 'all',
-            'CentOS-Linux-Debuginfo.repo': 'all',
-            'CentOS-Linux-Devel.repo': 'all',
-            'CentOS-Linux-Extras.repo': 'all',
-            'CentOS-Linux-FastTrack.repo': 'all',
-            'CentOS-Linux-HighAvailability.repo': 'all',
-            'CentOS-Linux-Media.repo': 'all',
-            'CentOS-Linux-Plus.repo': 'all',
-            'CentOS-Linux-PowerTools.repo': 'all',
-            'CentOS-Linux-Sources.repo': 'all',
+            'CentOS-Linux-AppStream.repo': ARCH_ACCEPTED,
+            'CentOS-Linux-BaseOS.repo': ARCH_ACCEPTED,
+            'CentOS-Linux-ContinuousRelease.repo': ARCH_ACCEPTED,
+            'CentOS-Linux-Debuginfo.repo': ARCH_ACCEPTED,
+            'CentOS-Linux-Devel.repo': ARCH_ACCEPTED,
+            'CentOS-Linux-Extras.repo': ARCH_ACCEPTED,
+            'CentOS-Linux-FastTrack.repo': ARCH_ACCEPTED,
+            'CentOS-Linux-HighAvailability.repo': ARCH_ACCEPTED,
+            'CentOS-Linux-Media.repo': ARCH_ACCEPTED,
+            'CentOS-Linux-Plus.repo': ARCH_ACCEPTED,
+            'CentOS-Linux-PowerTools.repo': ARCH_ACCEPTED,
+            'CentOS-Linux-Sources.repo': ARCH_ACCEPTED,
         },
         '9': {
-            '/etc/yum.repos.d/centos.repo': 'all',
-            '/etc/yum.repos.d/centos-addons.repo': 'all',
+            '/etc/yum.repos.d/centos.repo': ARCH_ACCEPTED,
+            '/etc/yum.repos.d/centos-addons.repo': ARCH_ACCEPTED,
         },
         '10': {
-            '/etc/yum.repos.d/centos.repo': 'all',
-            '/etc/yum.repos.d/centos-addons.repo': 'all',
+            '/etc/yum.repos.d/centos.repo': ARCH_ACCEPTED,
+            '/etc/yum.repos.d/centos-addons.repo': ARCH_ACCEPTED,
         },
     },
     'almalinux': {
         '8': {
             # TODO is this true on all archs?
-            '/etc/yum.repos.d/almalinux-ha.repo': 'all',
-            '/etc/yum.repos.d/almalinux-nfv.repo': 'all',
-            '/etc/yum.repos.d/almalinux-plus.repo': 'all',
-            '/etc/yum.repos.d/almalinux-powertools.repo': 'all',
-            '/etc/yum.repos.d/almalinux-resilientstorage.repo': 'all',
-            '/etc/yum.repos.d/almalinux-rt.repo': 'all',
-            '/etc/yum.repos.d/almalinux-sap.repo': 'all',
-            '/etc/yum.repos.d/almalinux-saphana.repo': 'all',
-            '/etc/yum.repos.d/almalinux.repo': 'all',
+            '/etc/yum.repos.d/almalinux-ha.repo': ARCH_ACCEPTED,
+            '/etc/yum.repos.d/almalinux-nfv.repo': ARCH_ACCEPTED,
+            '/etc/yum.repos.d/almalinux-plus.repo': ARCH_ACCEPTED,
+            '/etc/yum.repos.d/almalinux-powertools.repo': ARCH_ACCEPTED,
+            '/etc/yum.repos.d/almalinux-resilientstorage.repo': ARCH_ACCEPTED,
+            '/etc/yum.repos.d/almalinux-rt.repo': ARCH_ACCEPTED,
+            '/etc/yum.repos.d/almalinux-sap.repo': ARCH_ACCEPTED,
+            '/etc/yum.repos.d/almalinux-saphana.repo': ARCH_ACCEPTED,
+            '/etc/yum.repos.d/almalinux.repo': ARCH_ACCEPTED,
         },
         '9': {
-            '/etc/yum.repos.d/almalinux-appstream.repo': 'all',
-            '/etc/yum.repos.d/almalinux-baseos.repo': 'all',
-            '/etc/yum.repos.d/almalinux-crb.repo': 'all',
-            '/etc/yum.repos.d/almalinux-extras.repo': 'all',
-            '/etc/yum.repos.d/almalinux-highavailability.repo': 'all',
-            '/etc/yum.repos.d/almalinux-plus.repo': 'all',
-            '/etc/yum.repos.d/almalinux-resilientstorage.repo': 'all',
-            '/etc/yum.repos.d/almalinux-sap.repo': 'all',
-            '/etc/yum.repos.d/almalinux-saphana.repo': 'all',
+            '/etc/yum.repos.d/almalinux-appstream.repo': ARCH_ACCEPTED,
+            '/etc/yum.repos.d/almalinux-baseos.repo': ARCH_ACCEPTED,
+            '/etc/yum.repos.d/almalinux-crb.repo': ARCH_ACCEPTED,
+            '/etc/yum.repos.d/almalinux-extras.repo': ARCH_ACCEPTED,
+            '/etc/yum.repos.d/almalinux-highavailability.repo': ARCH_ACCEPTED,
+            '/etc/yum.repos.d/almalinux-plus.repo': ARCH_ACCEPTED,
+            '/etc/yum.repos.d/almalinux-resilientstorage.repo': ARCH_ACCEPTED,
+            '/etc/yum.repos.d/almalinux-sap.repo': ARCH_ACCEPTED,
+            '/etc/yum.repos.d/almalinux-saphana.repo': ARCH_ACCEPTED,
             # RT and NFV are only on x86_64 on almalinux 9
-            '/etc/yum.repos.d/almalinux-nfv.repo': ['x86_64'],
-            '/etc/yum.repos.d/almalinux-rt.repo': ['x86_64'],
+            '/etc/yum.repos.d/almalinux-nfv.repo': (ARCH_X86_64,),
+            '/etc/yum.repos.d/almalinux-rt.repo': (ARCH_X86_64,),
         },
         '10': {
             # no resilientstorage on 10
-            '/etc/yum.repos.d/almalinux-appstream.repo': 'all',
-            '/etc/yum.repos.d/almalinux-baseos.repo': 'all',
-            '/etc/yum.repos.d/almalinux-crb.repo': 'all',
-            '/etc/yum.repos.d/almalinux-extras.repo': 'all',
-            '/etc/yum.repos.d/almalinux-highavailability.repo': 'all',
-            '/etc/yum.repos.d/almalinux-plus.repo': 'all',
-            '/etc/yum.repos.d/almalinux-sap.repo': 'all',
-            '/etc/yum.repos.d/almalinux-saphana.repo': 'all',
+            '/etc/yum.repos.d/almalinux-appstream.repo': ARCH_ACCEPTED,
+            '/etc/yum.repos.d/almalinux-baseos.repo': ARCH_ACCEPTED,
+            '/etc/yum.repos.d/almalinux-crb.repo': ARCH_ACCEPTED,
+            '/etc/yum.repos.d/almalinux-extras.repo': ARCH_ACCEPTED,
+            '/etc/yum.repos.d/almalinux-highavailability.repo': ARCH_ACCEPTED,
+            '/etc/yum.repos.d/almalinux-plus.repo': ARCH_ACCEPTED,
+            '/etc/yum.repos.d/almalinux-sap.repo': ARCH_ACCEPTED,
+            '/etc/yum.repos.d/almalinux-saphana.repo': ARCH_ACCEPTED,
             # RT and NFV are only on x86_64 on almalinux 10
-            '/etc/yum.repos.d/almalinux-nfv.repo': ['x86_64'],
-            '/etc/yum.repos.d/almalinux-rt.repo': ['x86_64'],
+            '/etc/yum.repos.d/almalinux-nfv.repo': (ARCH_X86_64,),
+            '/etc/yum.repos.d/almalinux-rt.repo': (ARCH_X86_64,),
         },
     },
 }
@@ -114,10 +116,6 @@ def _get_distro_repofiles(distro, major_version, arch):
     :rtype: list[str] or None if no repofiles are mapped for the arguments
     """
 
-    # distro -> major_version -> repofile -> <architecture spec>
-    # <architecture spec> - either the string 'all' if present on all or
-    #                       a list of specific archs the repofile is present on
-    repofiles = []
     distro_repofiles = _DISTRO_REPOFILES_MAP.get(distro)
     if not distro_repofiles:
         return None
@@ -126,19 +124,7 @@ def _get_distro_repofiles(distro, major_version, arch):
     if not version_repofiles:
         return None
 
-    for repofile, archs in version_repofiles.items():
-        if isinstance(archs, str) and archs == 'all':
-            repofiles.append(repofile)
-        elif isinstance(archs, list):
-            if arch in archs:
-                repofiles.append(repofile)
-        else:
-            raise ValueError(
-                'Unexpected value for architecture specification for repofile {}: {}'.format(
-                    repofile, archs
-                )
-            )
-    return repofiles
+    return [repofile for repofile, archs in version_repofiles.items() if arch in archs]
 
 
 def get_target_distro_repoids(context):
