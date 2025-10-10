@@ -26,7 +26,6 @@ class DistributionSignedRPM(InstalledRPM):
     """
     Installed packages signed by the vendor of the distribution.
     """
-    pass
 
 
 class ThirdPartyRPM(InstalledRPM):
@@ -44,7 +43,6 @@ class ThirdPartyRPM(InstalledRPM):
        product (which is possibly part of the distribution). E.g. katello RPMS
        created in a Satellite server.
     """
-    pass
 
 
 @deprecated(since='2025-08-14', message='Replaced by ThirdPartyRPM')

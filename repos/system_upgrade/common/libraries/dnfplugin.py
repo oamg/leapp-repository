@@ -461,9 +461,10 @@ def perform_transaction_install(target_userspace_info, storage_info, used_repos,
 
 @contextlib.contextmanager
 def _prepare_perform(used_repos, target_userspace_info, xfs_info, storage_info, target_iso=None):
-    # noqa: W0135; pylint: disable=contextmanager-generator-missing-cleanup
+    # noqa: W0135; pylint: disable=bad-option-value,contextmanager-generator-missing-cleanup
     # NOTE(pstodulk): the pylint check is not valid in this case - finally is covered
     # implicitly
+    # noqa: W0135
     reserve_space = overlaygen.get_recommended_leapp_free_space(target_userspace_info.path)
     with _prepare_transaction(used_repos=used_repos,
                               target_userspace_info=target_userspace_info

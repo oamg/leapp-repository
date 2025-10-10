@@ -23,7 +23,7 @@ _CUSTOM_REPOS = [
 _CUSTOM_REPO_FILE_MSG = CustomTargetRepositoryFile(file=scancustomrepofile.CUSTOM_REPO_PATH)
 
 
-class LoggerMocked(object):
+class LoggerMocked:
     def __init__(self):
         self.infomsg = None
         self.debugmsg = None

@@ -113,5 +113,5 @@ def scan_dynamic_linker_configuration():
                                                included_configs=included_config_files,
                                                used_variables=used_variables)
 
-    if other_lines or any([config.modified for config in included_config_files]) or used_variables:
+    if other_lines or any(config.modified for config in included_config_files) or used_variables:
         api.produce(configuration)
