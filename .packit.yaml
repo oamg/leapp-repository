@@ -372,6 +372,80 @@ jobs:
     SOURCE_RELEASE: "8.10"
     TARGET_RELEASE: "9.7"
 
+  # Tests: 8.10 -> 9.8
+- &sanity-810to98
+  <<: *sanity-abstract-8to9
+  trigger: pull_request
+  identifier: sanity-8.10to9.8
+  tf_extra_params:
+    test:
+      tmt:
+        plan_filter: 'tag:8to9 & tag:tier0 & enabled:true'
+    environments:
+      - tmt:
+          context:
+            distro: "rhel-8.10"
+            distro_target: "rhel-9.8"
+        settings:
+          provisioning:
+            tags:
+              BusinessUnit: sst_upgrades@leapp_upstream_test
+  env:
+    SOURCE_RELEASE: "8.10"
+    TARGET_RELEASE: "9.8"
+
+# On-demand minimal beaker tests
+- &beaker-minimal-810to98
+  <<: *beaker-minimal-8to9-abstract-ondemand
+  trigger: pull_request
+  labels:
+    - beaker-minimal
+    - beaker-minimal-8.10to9.8
+    - 8.10to9.8
+  identifier: sanity-8.10to9.8-beaker-minimal-ondemand
+  tf_extra_params:
+    test:
+      tmt:
+        plan_filter: 'tag:8to9 & tag:partitioning & enabled:true'
+    environments:
+      - tmt:
+          context:
+            distro: "rhel-8.10"
+            distro_target: "rhel-9.8"
+        settings:
+          provisioning:
+            tags:
+              BusinessUnit: sst_upgrades@leapp_upstream_test
+  env:
+    SOURCE_RELEASE: "8.10"
+    TARGET_RELEASE: "9.8"
+
+# On-demand kernel-rt tests
+- &kernel-rt-810to98
+  <<: *kernel-rt-abstract-8to9-ondemand
+  trigger: pull_request
+  labels:
+    - kernel-rt
+    - kernel-rt-8.10to9.8
+    - 8.10to9.8
+  identifier: sanity-8.10to9.8-kernel-rt-ondemand
+  tf_extra_params:
+    test:
+      tmt:
+         plan_filter: 'tag:8to9 & tag:kernel-rt & enabled:true'
+    environments:
+      - tmt:
+          context:
+            distro: "rhel-8.10"
+            distro_target: "rhel-9.8"
+        settings:
+          provisioning:
+            tags:
+              BusinessUnit: sst_upgrades@leapp_upstream_test
+  env:
+    SOURCE_RELEASE: "8.10"
+    TARGET_RELEASE: "9.8"
+
 # ###################################################################### #
 # ############################## 9 TO 10 ################################ #
 # ###################################################################### #
@@ -585,3 +659,86 @@ jobs:
   env:
     SOURCE_RELEASE: "9.7"
     TARGET_RELEASE: "10.1"
+
+# Tests: 9.8 -> 10.2
+- &sanity-98to102
+  <<: *sanity-abstract-9to10
+  trigger: pull_request
+  identifier: sanity-9.8to10.2
+  targets:
+    epel-9-x86_64:
+      distros: [RHEL-9.8.0-Nightly]
+  tf_extra_params:
+    test:
+      tmt:
+        plan_filter: 'tag:9to10 & tag:tier0 & enabled:true'
+    environments:
+      - tmt:
+          context:
+            distro: "rhel-9.8"
+            distro_target: "rhel-10.2"
+        settings:
+          provisioning:
+            tags:
+              BusinessUnit: sst_upgrades@leapp_upstream_test
+  env:
+    SOURCE_RELEASE: "9.8"
+    TARGET_RELEASE: "10.2"
+
+# On-demand minimal beaker tests
+- &beaker-minimal-98to102
+  <<: *beaker-minimal-9to10-abstract-ondemand
+  trigger: pull_request
+  labels:
+    - beaker-minimal
+    - beaker-minimal-9.8to10.2
+    - 9.8to10.2
+  identifier: sanity-9.8to10.2-beaker-minimal-ondemand
+  targets:
+    epel-9-x86_64:
+      distros: [RHEL-9.8-Nightly]
+  tf_extra_params:
+    test:
+      tmt:
+        plan_filter: 'tag:8to9 & tag:partitioning & enabled:true'
+    environments:
+      - tmt:
+          context:
+            distro: "rhel-9.8"
+            distro_target: "rhel-10.2"
+        settings:
+          provisioning:
+            tags:
+              BusinessUnit: sst_upgrades@leapp_upstream_test
+  env:
+    SOURCE_RELEASE: "9.8"
+    TARGET_RELEASE: "10.2"
+
+# On-demand kernel-rt tests
+- &kernel-rt-98to102
+  <<: *kernel-rt-abstract-9to10-ondemand
+  trigger: pull_request
+  labels:
+    - kernel-rt
+    - kernel-rt-9.8to10.2
+    - 9.8to10.2
+  identifier: sanity-9.8to10.2-kernel-rt-ondemand
+  targets:
+    epel-9-x86_64:
+      distros: [RHEL-9.8-Nightly]
+  tf_extra_params:
+    test:
+      tmt:
+         plan_filter: 'tag:8to9 & tag:kernel-rt & enabled:true'
+    environments:
+      - tmt:
+          context:
+            distro: "rhel-9.8"
+            distro_target: "rhel-10.2"
+        settings:
+          provisioning:
+            tags:
+              BusinessUnit: sst_upgrades@leapp_upstream_test
+  env:
+    SOURCE_RELEASE: "9.8"
+    TARGET_RELEASE: "10.2"
