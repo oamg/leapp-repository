@@ -279,10 +279,14 @@ class ExpectedAction(Enum):
 )
 def test_process(monkeypatch, extra_installed_pkgs, skip_rhsm, expected_action):
     known_setups = {
-        RHUIFamily('rhui-variant'): [
-            mk_rhui_setup(clients={'src_pkg'}, os_version='7'),
-            mk_rhui_setup(clients={'target_pkg'}, os_version='8', leapp_pkg='leapp_pkg',
-                          mandatory_files=[('file1', '/etc'), ('file2', '/var')]),
+        RHUIFamily("rhui-variant"): [
+            mk_rhui_setup(clients={"src_pkg"}, os_version="8"),
+            mk_rhui_setup(
+                clients={"target_pkg"},
+                os_version="9",
+                leapp_pkg="leapp_pkg",
+                mandatory_files=[("file1", "/etc"), ("file2", "/var")],
+            ),
         ]
     }
 
@@ -291,7 +295,7 @@ def test_process(monkeypatch, extra_installed_pkgs, skip_rhsm, expected_action):
     installed_rpms = InstalledRPM(items=installed_pkgs)
 
     monkeypatch.setattr(api, 'produce', produce_mocked())
-    actor = CurrentActorMocked(src_ver='7.9', msgs=[installed_rpms], config=_make_default_config(all_rhui_cfg))
+    actor = CurrentActorMocked(msgs=[installed_rpms], config=_make_default_config(all_rhui_cfg))
     monkeypatch.setattr(api, 'current_actor', actor)
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
     monkeypatch.setattr(rhsm, 'skip_rhsm', lambda: skip_rhsm)
@@ -318,12 +322,12 @@ def test_unknown_target_rhui_setup(monkeypatch, is_target_setup_known):
     rhui_family = RHUIFamily('rhui-variant')
     known_setups = {
         rhui_family: [
-            mk_rhui_setup(clients={'src_pkg'}, os_version='7'),
+            mk_rhui_setup(clients={'src_pkg'}, os_version='8'),
         ]
     }
 
     if is_target_setup_known:
-        target_setup = mk_rhui_setup(clients={'target_pkg'}, os_version='8', leapp_pkg='leapp_pkg')
+        target_setup = mk_rhui_setup(clients={'target_pkg'}, os_version='9', leapp_pkg='leapp_pkg')
         known_setups[rhui_family].append(target_setup)
 
     installed_pkgs = {'zip', 'kernel-core', 'python', 'src_pkg', 'leapp_pkg'}
@@ -331,7 +335,7 @@ def test_unknown_target_rhui_setup(monkeypatch, is_target_setup_known):
     installed_rpms = InstalledRPM(items=installed_pkgs)
 
     monkeypatch.setattr(api, 'produce', produce_mocked())
-    actor = CurrentActorMocked(src_ver='7.9', msgs=[installed_rpms], config=_make_default_config(all_rhui_cfg))
+    actor = CurrentActorMocked(msgs=[installed_rpms], config=_make_default_config(all_rhui_cfg))
     monkeypatch.setattr(api, 'current_actor', actor)
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
     monkeypatch.setattr(rhsm, 'skip_rhsm', lambda: True)

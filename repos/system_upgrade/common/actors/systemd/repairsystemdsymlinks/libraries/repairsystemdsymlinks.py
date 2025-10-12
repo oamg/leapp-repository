@@ -7,7 +7,6 @@ from leapp.libraries.stdlib import api, CalledProcessError, run
 from leapp.models import SystemdBrokenSymlinksSource, SystemdBrokenSymlinksTarget, SystemdServicesInfoSource
 
 _INSTALLATION_CHANGED = {
-    '8': ['rngd.service', 'sysstat.service'],
     '9': [],
     '10': [],
 }

@@ -55,21 +55,21 @@ def process():
         )
         return
 
-    rhel7_ifaces = next(api.consume(PersistentNetNamesFacts)).interfaces
-    rhel8_ifaces = next(api.consume(PersistentNetNamesFactsInitramfs)).interfaces
+    source_ifaces = next(api.consume(PersistentNetNamesFacts)).interfaces
+    target_ifaces = next(api.consume(PersistentNetNamesFactsInitramfs)).interfaces
 
-    rhel7_ifaces_map = {iface.mac: iface for iface in rhel7_ifaces}
-    rhel8_ifaces_map = {iface.mac: iface for iface in rhel8_ifaces}
+    source_ifaces_map = {iface.mac: iface for iface in source_ifaces}
+    target_ifaces_map = {iface.mac: iface for iface in target_ifaces}
 
     initrd_files = []
     missing_ifaces = []
     renamed_interfaces = []
 
-    if rhel7_ifaces != rhel8_ifaces:
-        for iface in rhel7_ifaces:
-            rhel7_name = rhel7_ifaces_map[iface.mac].name
+    if source_ifaces != target_ifaces:
+        for iface in source_ifaces:
+            source_name = source_ifaces_map[iface.mac].name
             try:
-                rhel8_name = rhel8_ifaces_map[iface.mac].name
+                target_name = target_ifaces_map[iface.mac].name
             except KeyError:
                 missing_ifaces.append(iface)
                 api.current_logger().warning(
@@ -80,13 +80,13 @@ def process():
                 )
                 continue
 
-            if rhel7_name != rhel8_name and get_env('LEAPP_NO_NETWORK_RENAMING', '0') != '1':
-                api.current_logger().warning('Detected interface rename {} -> {}.'.format(rhel7_name, rhel8_name))
+            if source_name != target_name and get_env('LEAPP_NO_NETWORK_RENAMING', '0') != '1':
+                api.current_logger().warning('Detected interface rename {} -> {}.'.format(source_name, target_name))
 
                 if re.search('eth[0-9]+', iface.name) is not None:
                     api.current_logger().warning('Interface named using eth prefix, refusing to generate link file')
-                    renamed_interfaces.append(RenamedInterface(**{'rhel7_name': rhel7_name,
-                                                                  'rhel8_name': rhel8_name}))
+                    renamed_interfaces.append(RenamedInterface(**{'rhel7_name': source_name,
+                                                                  'rhel8_name': target_name}))
                     continue
 
                 initrd_files.append(generate_link_file(iface))

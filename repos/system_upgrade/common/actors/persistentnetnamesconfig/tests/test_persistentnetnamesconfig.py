@@ -12,7 +12,6 @@ from leapp.models import (
     PCIAddress,
     PersistentNetNamesFacts,
     PersistentNetNamesFactsInitramfs,
-    RenamedInterface,
     RenamedInterfaces,
     TargetInitramfsTasks
 )
@@ -170,7 +169,12 @@ def test_bz_1899455_crash_iface(monkeypatch, adjust_cwd):
         PersistentNetNamesFactsInitramfs.create(json_msgs["PersistentNetNamesFactsInitramfs"]),
     ]
     monkeypatch.setattr(persistentnetnamesconfig, 'generate_link_file', generate_link_file_mocked)
-    monkeypatch.setattr(persistentnetnamesconfig.api, 'current_actor', CurrentActorMocked(msgs=msgs))
+    monkeypatch.setattr(
+        persistentnetnamesconfig.api,
+        "current_actor",
+        # without this the actor exits early
+        CurrentActorMocked(msgs=msgs, envars={"LEAPP_DISABLE_NET_NAMING_SCHEMES": "1"}),
+    )
     monkeypatch.setattr(persistentnetnamesconfig.api, 'current_logger', logger_mocked())
     monkeypatch.setattr(persistentnetnamesconfig.api, 'produce', produce_mocked())
     persistentnetnamesconfig.process()
@@ -194,7 +198,13 @@ def test_no_network_renaming(monkeypatch):
     msgs = [PersistentNetNamesFacts(interfaces=interfaces)]
     interfaces[0].name = 'changedinterfacename0'
     msgs.append(PersistentNetNamesFactsInitramfs(interfaces=interfaces))
-    mocked_actor = CurrentActorMocked(msgs=msgs, envars={'LEAPP_NO_NETWORK_RENAMING': '1'})
+    mocked_actor = CurrentActorMocked(
+        msgs=msgs,
+        envars={
+            "LEAPP_DISABLE_NET_NAMING_SCHEMES": "1",
+            "LEAPP_NO_NETWORK_RENAMING": "1",
+        },
+    )
     monkeypatch.setattr(persistentnetnamesconfig.api, 'current_actor', mocked_actor)
     monkeypatch.setattr(persistentnetnamesconfig.api, 'current_logger', logger_mocked())
     monkeypatch.setattr(persistentnetnamesconfig.api, 'produce', produce_mocked())
