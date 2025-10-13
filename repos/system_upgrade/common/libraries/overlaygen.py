@@ -710,7 +710,7 @@ def _create_mount_disk_image_old(disk_images_directory, path):
     try:
         utils.call_with_oserror_handled(cmd=['/sbin/mkfs.ext4', '-F', diskimage_path])
     except CalledProcessError as e:
-        api.current_logger().error('Failed to create ext4 filesystem in %s', exc_info=True)
+        api.current_logger().error('Failed to create ext4 filesystem in %s', diskimage_path, exc_info=True)
         raise StopActorExecutionError(
             message=str(e)
         )
