@@ -6,6 +6,11 @@
         "429785e181b961a5",
         "d07bf2a08d50eb66"
     ],
+    "key-rpms": [
+        "gpg-pubkey-3abb34f8-5ffd890e",
+        "gpg-pubkey-ced7258b-6525146f",
+        "gpg-pubkey-b86b3716-61e69f29"
+    ],
     "obsoleted-keys": {
         "7": [],
         "8": [],

@@ -1,3 +1,4 @@
+from leapp.libraries.common.config import get_source_distro_id, get_target_distro_id
 from leapp.libraries.common.config.version import get_target_major_version
 from leapp.libraries.common.distro import get_distribution_data
 from leapp.libraries.common.rpms import has_package
@@ -5,22 +6,45 @@ from leapp.libraries.stdlib import api
 from leapp.models import DNFWorkaround, InstalledRPM
 
 
+def _is_key_installed(key):
+    """
+    :param key: The NVR of the gpg key RPM (e.g. gpg-pubkey-1d997668-61bae63b)
+    """
+    name, version, release = key.rsplit("-", 2)
+    return has_package(InstalledRPM, name, version=version, release=release)
+
+
 def _get_obsolete_keys():
     """
-    Return keys obsoleted in target and previous versions
+    Get keys obsoleted in target and previous major versions
     """
-    distribution = api.current_actor().configuration.os_release.release_id
+    distribution = get_target_distro_id()
     obsoleted_keys_map = get_distribution_data(distribution).get('obsoleted-keys', {})
     keys = []
     for version in range(7, int(get_target_major_version()) + 1):
         try:
             for key in obsoleted_keys_map[str(version)]:
-                name, version, release = key.rsplit("-", 2)
-                if has_package(InstalledRPM, name, version=version, release=release):
+                if _is_key_installed(key):
                     keys.append(key)
         except KeyError:
             pass
 
+    return keys
+
+
+def _get_source_distro_keys():
+    """
+    Get all known keys of the source distro
+
+    This includes keys from all relevant previous OS versions as all of those
+    might be present on the system.
+    """
+    keys = []
+    distribution = get_source_distro_id()
+    distro_keys = get_distribution_data(distribution).get('key-rpms', {})
+    for key in distro_keys:
+        if _is_key_installed(key):
+            keys.append(key)
     return keys
 
 
@@ -35,8 +59,12 @@ def register_dnfworkaround(keys):
 
 
 def process():
-    keys = _get_obsolete_keys()
-    if not keys:
-        return
+    if get_source_distro_id() == get_target_distro_id():
+        # only upgrading - remove keys obsoleted in previous versions
+        keys = _get_obsolete_keys()
+    else:
+        # also converting - we need to remove all keys from the source distro
+        keys = _get_source_distro_keys()
 
-    register_dnfworkaround(keys)
+    if keys:
+        register_dnfworkaround(keys)
