@@ -2,12 +2,14 @@ from leapp import reporting
 from leapp.libraries.common import config, rhsm
 from leapp.libraries.common.config.version import get_target_major_version
 from leapp.libraries.stdlib import api
-from leapp.models import CustomTargetRepositoryFile, RHUIInfo, TargetRepositories
+from leapp.models import CustomTargetRepositoryFile, RHELTargetRepository, RHUIInfo, TargetRepositories
+from leapp.utils.deprecation import suppress_deprecation
 
 # TODO: we need to provide this path in a shared library
 CUSTOM_REPO_PATH = '/etc/leapp/files/leapp_upgrade_repositories.repo'
 
 
+@suppress_deprecation(RHELTargetRepository)  # member of TargetRepositories
 def _any_custom_repo_defined():
     for tr in api.consume(TargetRepositories):
         if tr.custom_repos:
@@ -38,9 +40,10 @@ def process():
 
     rhui_info = next(api.consume(RHUIInfo), None)
 
-    if not rhsm.skip_rhsm() or rhui_info:
-        # getting RH repositories through RHSM or RHUI; resolved by seatbelts
-        # implemented in other actors
+    if config.get_distro_id() != 'rhel' or (not rhsm.skip_rhsm() or rhui_info):
+        # RHEL: getting RH repositories through RHSM or RHUI;
+        #       resolved by seatbelts in other actors
+        # other: distro repos provided by the distro directly, seatbelts elsewhere
         return
 
     # rhsm skipped; take your seatbelts please

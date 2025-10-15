@@ -3,6 +3,7 @@ from leapp.libraries.common.config.version import get_source_major_version
 from leapp.libraries.stdlib import api
 from leapp.models import (
     CephInfo,
+    CopyFile,
     DracutModule,
     LuksDumps,
     StorageInfo,
@@ -156,8 +157,13 @@ def check_invalid_luks_devices():
                 'tpm2-tools',
                 'tpm2-abrmd'
             ]
-            api.produce(TargetUserSpaceUpgradeTasks(install_rpms=required_crypt_rpms))
-            api.produce(UpgradeInitramfsTasks(include_dracut_modules=[
+            api.produce(TargetUserSpaceUpgradeTasks(
+                copy_files=[CopyFile(src="/etc/crypttab")],
+                install_rpms=required_crypt_rpms)
+            )
+            api.produce(UpgradeInitramfsTasks(
+                include_files=['/etc/crypttab'],
+                include_dracut_modules=[
                     DracutModule(name='clevis'),
                     DracutModule(name='clevis-pin-tpm2')
                 ])
