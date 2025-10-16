@@ -21,7 +21,7 @@ ifdef ACTOR
 	# actor only in the specified repositories.
 	# if REPOSITORIES is not set i.e. it's empty, all repositories are searched
 	# - this is broken due to name collisions in repositories (FIXME)
-	TEST_PATHS=$(shell . $(VENVNAME)/bin/activate && $(_PYTHON_VENV) utils/actor_path.py $(ACTOR) $(REPOSITORIES))
+	TEST_PATHS = $(shell . $(VENVNAME)/bin/activate && $(_PYTHON_VENV) utils/actor_path.py $(ACTOR) $(REPOSITORIES))
 	APPROX_TEST_PATHS=$(shell $(_PYTHON_VENV) utils/find_actors.py -C repos $(ACTOR))  # Dev only
 else
 	REPOSITORIES ?= $(shell ls $(_SYSUPG_REPOS) | xargs echo | tr " " ",")
@@ -376,7 +376,6 @@ lint_fix:
 	echo "--- isort inplace fixing done. ---;"
 
 test_no_lint: _warn_misssing_repos_if_using_actor
-
 	@echo "============= snactor sanity-check ipu ===============" 2>&1
 	. $(VENVNAME)/bin/activate; \
 	snactor repo find --path repos/; \
@@ -385,9 +384,19 @@ test_no_lint: _warn_misssing_repos_if_using_actor
 		(cd $(_SYSUPG_REPOS)/$$dir && snactor workflow sanity-check ipu); \
 	done
 
-	@echo "==================== unit tests ======================" 2>&1
+	@echo "==================== unit tests ======================" 2>&1;
+# the below commands need to be one shell invocation for the early exit to work;
+# note: need to store the paths into separate var as it here as it's lazily
+# evaluated on each use :), using ?= for the assignment does not help for
+# some reason
+	@paths="$(TEST_PATHS)"; \
+	if [[ $$(echo "$$paths" | grep 'ERROR:') && -n "$(ACTOR)" ]]; then \
+		echo Failed to find the '$(ACTOR)' actor in the '$(REPOSITORIES)' repositories: $$paths; \
+		printf "\033[0;33mSkipping unit tests, could not find the '$(ACTOR)' actor in $(REPOSITORIES) repositories\033[0m\n"; \
+		exit 0; \
+	fi; \
 	. $(VENVNAME)/bin/activate; \
-	$(_PYTHON_VENV) -m pytest $(REPORT_ARG) $(TEST_PATHS) $(LIBRARY_PATH) $(PYTEST_ARGS)
+	$(_PYTHON_VENV) -m pytest $(REPORT_ARG) $$paths $(LIBRARY_PATH) $(PYTEST_ARGS)
 
 test: lint test_no_lint
 
