@@ -83,7 +83,7 @@ def test_adjust_local_file_url(repo_file_line, expected_adjusted_repo_file_line)
     assert adjusted_repo_file_line == expected_adjusted_repo_file_line
 
 
-class MockedFileDescriptor(object):
+class MockedFileDescriptor:
 
     def __init__(self, repo_file, expected_new_repo_file):
         self.repo_file = repo_file
@@ -113,7 +113,7 @@ class MockedFileDescriptor(object):
         assert expected_repo_file_contents == new_contents
 
 
-class MockedContext(object):
+class MockedContext:
 
     def __init__(self, repo_contents, expected_repo_contents):
         self.repo_contents = repo_contents

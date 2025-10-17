@@ -36,7 +36,7 @@ def raise_call_error(args=None):
     )
 
 
-class run_mocked(object):
+class run_mocked:
     def __init__(self, hypervisor='', raise_err=False):
         self.hypervisor = hypervisor
         self.called = 0

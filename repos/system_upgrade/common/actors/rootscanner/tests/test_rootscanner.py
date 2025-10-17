@@ -9,9 +9,9 @@ from leapp.libraries.actor.rootscanner import scan_dir
 
 
 @pytest.mark.parametrize("filename,symlink,count_invalid",
-                         [(u'a_utf_file'.encode('utf-8'), u"utf8_symlink".encode('utf-8'), 0),
-                          (u'простофайл'.encode('koi8-r'), u"этонеутф8".encode('koi8-r'), 2),
-                          (u'a_utf_file'.encode('utf-8'), u"этонеутф8".encode('koi8-r'), 1)])
+                         [('a_utf_file'.encode('utf-8'), "utf8_symlink".encode('utf-8'), 0),
+                          ('простофайл'.encode('koi8-r'), "этонеутф8".encode('koi8-r'), 2),
+                          ('a_utf_file'.encode('utf-8'), "этонеутф8".encode('koi8-r'), 1)])
 def test_invalid_symlinks(filename, symlink, count_invalid):
     # Let's create a directory with both valid utf-8 and non-utf symlinks
     # NOTE(ivasilev) As this has to run for python2 as well can't use the nice tempfile.TemporaryDirectory way

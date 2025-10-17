@@ -3,7 +3,7 @@ import pytest
 from leapp.libraries.actor.opensshdropindirectory import prepend_string_if_not_present
 
 
-class MockFile(object):
+class MockFile:
     def __init__(self, path, content=None):
         self.path = path
         self.content = content

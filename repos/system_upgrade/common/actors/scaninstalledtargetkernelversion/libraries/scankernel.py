@@ -70,7 +70,7 @@ def get_boot_files_provided_by_kernel_pkg(kernel_nevra):
 
 @suppress_deprecation(InstalledTargetKernelVersion)
 def process():
-    # pylint: disable=no-else-return  - false positive
+    # pylint: disable=no-else-return  # false positive
     # TODO: should we take care about stuff of kernel-rt and kernel in the same
     # time when both are present? or just one? currently, handle only one
     # of these during the upgrade. kernel-rt has higher prio when original sys

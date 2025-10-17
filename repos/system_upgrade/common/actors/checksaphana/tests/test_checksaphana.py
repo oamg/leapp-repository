@@ -97,7 +97,7 @@ def _parse_manifest_data(manifest):
     return result
 
 
-class MockSapHanaInstanceInfo(object):
+class MockSapHanaInstanceInfo:
     def __init__(self, name, number, path, admin, manifest_data, running=True):
         self.manifest = _parse_manifest_data(manifest_data)
         self.name = name
@@ -118,7 +118,7 @@ def _gen_instance_info(name, manifest_data, index, running=True):
     )
 
 
-class MockSapHanaInfo(object):
+class MockSapHanaInfo:
     def __init__(self, v1names, v2names, v2lownames, running=None):
         self.installed = bool(v1names or v2names or v2lownames)
         self.running = running if running is not None else self.installed
@@ -151,7 +151,7 @@ def _consume_mock_sap_hana_info(v1names=(), v2names=(), v2lownames=(), running=T
     return _consume
 
 
-class MockSAPHanaVersionInstance(object):
+class MockSAPHanaVersionInstance:
     def __init__(self, major, rev, patchlevel):
         self.name = "TestName"
 
@@ -284,7 +284,7 @@ def test_checksaphana_perform_check(monkeypatch):
     # Expected 3 reports due to v1names + v2lownames + running
     assert len(reports) == 3
     # Verifies that all expected title patterns are within the reports and not just coincidentally 3
-    assert all([any([pattern(report) for report in reports]) for pattern in EXPECTED_TITLE_PATTERNS.values()])
+    assert all(any(pattern(report) for report in reports) for pattern in EXPECTED_TITLE_PATTERNS.values())
 
     list_clear(reports)
     monkeypatch.setattr(checksaphana.api, 'consume', _consume_mock_sap_hana_info(
@@ -294,4 +294,7 @@ def test_checksaphana_perform_check(monkeypatch):
     # Expected 2 reports due to v1names + v2lownames
     assert len(reports) == 2
     # Verifies that all expected title patterns are within the reports and not just coincidentally 2
-    assert all([any([EXPECTED_TITLE_PATTERNS[pattern](report) for report in reports]) for pattern in ['v1', 'low']])
+    assert all(
+        any(EXPECTED_TITLE_PATTERNS[pattern](report) for report in reports)
+        for pattern in ['v1', 'low']
+    )

@@ -40,7 +40,7 @@ class RhelUpgradeCommand(dnf.cli.Command):
     summary = 'Plugin for upgrading to the next RHEL major release'
 
     def __init__(self, cli):
-        super(RhelUpgradeCommand, self).__init__(cli)
+        super().__init__(cli)
         self.plugin_data = {}
 
     @staticmethod
@@ -49,7 +49,8 @@ class RhelUpgradeCommand(dnf.cli.Command):
                             metavar="[%s]" % "|".join(CMDS))
         parser.add_argument('filename')
 
-    def _process_entities(self, entities, op, entity_name):
+    @staticmethod
+    def _process_entities(entities, op, entity_name):
         """
         Adds list of packages for given operation to the transaction
         """
@@ -73,7 +74,8 @@ class RhelUpgradeCommand(dnf.cli.Command):
         with open(self.opts.filename, 'w+') as fo:
             json.dump(self.plugin_data, fo, sort_keys=True, indent=2)
 
-    def _read_aws_region(self, repo):
+    @staticmethod
+    def _read_aws_region(repo):
         region = None
         if repo.baseurl:
             # baseurl is tuple (changed by Amazon-id plugin)
@@ -86,7 +88,8 @@ class RhelUpgradeCommand(dnf.cli.Command):
             sys.exit(1)
         return region
 
-    def _fix_rhui_url(self, repo, region):
+    @staticmethod
+    def _fix_rhui_url(repo, region):
         if repo.baseurl:
             repo.baseurl = tuple(
                 url.replace('REGION', region, 1) for url in repo.baseurl
@@ -222,6 +225,6 @@ class RhelUpgradePlugin(dnf.Plugin):
     name = 'rhel-upgrade'
 
     def __init__(self, base, cli):
-        super(RhelUpgradePlugin, self).__init__(base, cli)
+        super().__init__(base, cli)
         if cli:
             cli.register_command(RhelUpgradeCommand)

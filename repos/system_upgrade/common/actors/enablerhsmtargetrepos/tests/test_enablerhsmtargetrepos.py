@@ -13,11 +13,12 @@ from leapp.models import EnvVar, UsedTargetRepositories, UsedTargetRepository
 def not_isolated_actions(raise_err=False):
     commands_called = []
 
-    class MockNotIsolatedActions(object):
+    class MockNotIsolatedActions:
         def __init__(self, base_dir=None):
             pass
 
-        def call(self, cmd, **kwargs):
+        @staticmethod
+        def call(cmd, **kwargs):
             commands_called.append((cmd, kwargs))
             if raise_err:
                 raise_call_error()
@@ -33,7 +34,7 @@ def raise_call_error(args=None):
     )
 
 
-class run_mocked(object):
+class run_mocked:
     def __init__(self, raise_err=False):
         self.called = 0
         self.args = []

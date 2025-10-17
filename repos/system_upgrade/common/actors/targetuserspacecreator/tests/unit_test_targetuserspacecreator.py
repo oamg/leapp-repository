@@ -36,7 +36,7 @@ def adjust_cwd():
     os.chdir(previous_cwd)
 
 
-class MockedMountingBase(object):
+class MockedMountingBase:
     def __init__(self, **dummy_kwargs):
         self.called_copytree_from = []
         self.target = ''
@@ -50,7 +50,8 @@ class MockedMountingBase(object):
     def __call__(self, **dummy_kwarg):
         yield self
 
-    def call(self, *args, **kwargs):
+    @staticmethod
+    def call(*args, **kwargs):
         return {'stdout': ''}
 
     def nspawn(self):
@@ -95,8 +96,7 @@ def traverse_structure(structure, root=Path('/')):
         filepath = root / filename
 
         if isinstance(links_to, dict):
-            for pair in traverse_structure(links_to, filepath):
-                yield pair
+            yield from traverse_structure(links_to, root=filepath)
         else:
             yield (filepath, links_to)
 
@@ -924,7 +924,7 @@ _SAEE = StopActorExecutionError
 _SAE = StopActorExecution
 
 
-class MockedConsume(object):
+class MockedConsume:
     def __init__(self, *args):
         self._msgs = []
         for arg in args:
@@ -1068,7 +1068,7 @@ def test_consume_data(monkeypatch, raised, no_rhsm, testdata):
             assert raised[1] in err.value.message
         else:
             assert userspacegen.api.current_logger.warnmsg
-            assert any([raised[1] in x for x in userspacegen.api.current_logger.warnmsg])
+            assert any(raised[1] in x for x in userspacegen.api.current_logger.warnmsg)
 
 
 @pytest.mark.skip(reason="Currently not implemented in the actor. It's TODO.")
@@ -1390,7 +1390,7 @@ def test__get_files_owned_by_rpms_recursive(monkeypatch):
     assert sorted(owned[0:4]) == sorted(out)
 
     def has_dbgmsg(substr):
-        return any([substr in log for log in logger.dbgmsg])
+        return any(substr in log for log in logger.dbgmsg)
 
     # test a few
     assert has_dbgmsg(
