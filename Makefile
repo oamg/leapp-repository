@@ -447,7 +447,8 @@ test_container:
 	export _CONT_NAME="leapp-repo-tests-$(_TEST_CONTAINER)-cont"; \
 	$(_CONTAINER_TOOL) ps -q -f name=$$_CONT_NAME && { $(_CONTAINER_TOOL) kill $$_CONT_NAME; $(_CONTAINER_TOOL) rm $$_CONT_NAME; }; \
 	$(_CONTAINER_TOOL) run -di --name $$_CONT_NAME -v "$$PWD":/repo:Z -e PYTHON_VENV=$$_VENV $$TEST_IMAGE && \
-	$(_CONTAINER_TOOL) exec $$_CONT_NAME rsync -aur --delete --exclude 'tut/' --exclude 'docs/' --exclude '**/__pycache__/' --exclude 'packaging/' --exclude '.git/' /repo/ /repocopy && \
+	$(_CONTAINER_TOOL) exec $$_CONT_NAME rsync -aur --delete --exclude 'tut/' --exclude 'docs/' --exclude '**/__pycache__/' --exclude 'packaging/' --exclude '.git/' --exclude 'commands/' /repo/ /repocopy && \
+	$(_CONTAINER_TOOL) exec $$_CONT_NAME rsync -aur --delete --exclude '**/__pycache__/' /repo/commands/ /repocopy/tut/lib/$$_VENV/site-packages/leapp/cli/commands/ && \
 	export res=0; \
 	case $$_VENV in \
 	python3.6) \
