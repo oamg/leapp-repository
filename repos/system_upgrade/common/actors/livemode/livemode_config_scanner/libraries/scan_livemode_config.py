@@ -5,7 +5,6 @@ from leapp.libraries.common.rpms import has_package
 from leapp.libraries.stdlib import api
 from leapp.models import InstalledRPM, LiveModeConfig
 
-LIVEMODE_CONFIG_LOCATION = '/etc/leapp/files/devel-livemode.ini'
 DEFAULT_SQUASHFS_PATH = '/var/lib/leapp/live-upgrade.img'
 
 
@@ -39,8 +38,7 @@ def scan_config_and_emit_message():
     if not should_scan_config():
         return
 
-    api.current_logger().info('Loading livemode config from %s', LIVEMODE_CONFIG_LOCATION)
-
+    api.current_logger().info('Loading the livemode configuration.')
     config = api.current_actor().config[livemode_config_lib.LIVEMODE_CONFIG_SECTION]
 
     # Mapping from model field names to configuration fields - because we might have
