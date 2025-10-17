@@ -40,7 +40,7 @@ class MockedGetGpgFromFile:
             self._data[fname] = fps
 
     def get_files(self):
-        return self._data.keys()  # noqa: W1655
+        return self._data.keys()
 
     def __call__(self, fname):
         return self._data.get(fname, [])
