@@ -5,7 +5,7 @@ import tempfile
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import mounting
 from leapp.libraries.stdlib import api, CalledProcessError, run
-from leapp.models import TargetUserSpaceInfo, UpgradeInitramfsTasks
+from leapp.models import LiveModeConfig, TargetUserSpaceInfo, UpgradeInitramfsTasks
 
 
 def run_systemd_fstab_generator(output_directory):
@@ -295,8 +295,12 @@ def request_units_inclusion_in_initramfs(files_to_include):
 
 
 def setup_storage_initialization():
-    userspace_info = next(api.consume(TargetUserSpaceInfo), None)
+    livemode_config = next(api.consume(LiveModeConfig), None)
+    if livemode_config and livemode_config.is_enabled:
+        api.current_logger().debug('Pre-generation of systemd fstab mount units skipped: The LiveMode is enabled.')
+        return
 
+    userspace_info = next(api.consume(TargetUserSpaceInfo), None)
     with mounting.NspawnActions(base_dir=userspace_info.path) as upgrade_container_ctx:
         with tempfile.TemporaryDirectory(dir='/var/lib/leapp/', prefix='tmp_systemd_fstab_') as workspace_path:
             run_systemd_fstab_generator(workspace_path)
