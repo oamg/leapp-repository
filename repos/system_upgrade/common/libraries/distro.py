@@ -3,7 +3,7 @@ import os
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import repofileutils, rhsm
-from leapp.libraries.common.config import get_distro_id
+from leapp.libraries.common.config import get_target_distro_id
 from leapp.libraries.common.config.architecture import ARCH_ACCEPTED, ARCH_X86_64
 from leapp.libraries.common.config.version import get_target_major_version
 from leapp.libraries.stdlib import api
@@ -141,7 +141,7 @@ def get_target_distro_repoids(context):
 
     return get_distro_repoids(
         context,
-        get_distro_id(),
+        get_target_distro_id(),
         get_target_major_version(),
         api.current_actor().configuration.architecture
     )

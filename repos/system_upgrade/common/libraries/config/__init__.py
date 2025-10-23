@@ -99,9 +99,9 @@ def get_consumed_data_stream_id():
     return CONSUMED_DATA_STREAM_ID
 
 
-def get_distro_id():
+def get_source_distro_id():
     """
-    Retrieve the distro ID.
+    Retrieve the distro ID of the source system.
 
     This is the ID string from /etc/os_release.
     E.g. "rhel" for Red Hat Enterprise Linux
@@ -109,4 +109,17 @@ def get_distro_id():
     :return: The ID string from /etc/os_release
     :rtype: str
     """
-    return api.current_actor().configuration.os_release.release_id
+    return api.current_actor().configuration.distro.source
+
+
+def get_target_distro_id():
+    """
+    Retrieve the distro ID for the target system.
+
+    The ID follows the naming convention that is used in /etc/os_release files.
+    E.g. "rhel" for Red Hat Enterprise Linux, "centos" for Centos (Stream), etc.
+
+    :return: The ID for the target system
+    :rtype: str
+    """
+    return api.current_actor().configuration.distro.target

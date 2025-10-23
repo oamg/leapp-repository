@@ -7,8 +7,8 @@ from leapp import reporting
 from leapp.exceptions import StopActorExecution, StopActorExecutionError
 from leapp.libraries.actor import constants
 from leapp.libraries.common import distro, dnfplugin, mounting, overlaygen, repofileutils, rhsm, utils
-from leapp.libraries.common.config import get_distro_id, get_env, get_product_type
-from leapp.libraries.common.config.version import get_target_major_version
+from leapp.libraries.common.config import get_env, get_product_type, get_source_distro_id, get_target_distro_id
+from leapp.libraries.common.config.version import get_target_major_version, get_target_version
 from leapp.libraries.common.gpg import get_path_to_gpg_certs, is_nogpgcheck_set
 from leapp.libraries.stdlib import api, CalledProcessError, config, run
 from leapp.models import RequiredTargetUserspacePackages  # deprecated
@@ -151,7 +151,8 @@ def _backup_to_persistent_package_cache(userspace_dir):
 
 def _import_gpg_keys(context, install_root_dir, target_major_version):
     certs_path = get_path_to_gpg_certs()
-    # Import the RHEL X+1 GPG key to be able to verify the installation of initial packages
+    # Import the target distro target version GPG key to be able to verify the
+    # installation of initial packages
     try:
         # Import also any other keys provided by the customer in the same directory
         for certname in os.listdir(certs_path):
@@ -249,7 +250,9 @@ def prepare_target_userspace(context, userspace_dir, enabled_repos, packages):
         try:
             context.call(cmd, callback_raw=utils.logging_handler)
         except CalledProcessError as exc:
-            message = 'Unable to install RHEL {} userspace packages.'.format(target_major_version)
+            message = 'Unable to install target \'{}\' {} userspace packages.'.format(
+                get_target_distro_id(), target_major_version
+            )
             details = {'details': str(exc), 'stderr': exc.stderr}
 
             if 'more space needed on the' in exc.stderr:
@@ -262,7 +265,7 @@ def prepare_target_userspace(context, userspace_dir, enabled_repos, packages):
             # failed since leapp does not support updates behind proxy yet.
             for manager_info in api.consume(PkgManagerInfo):
                 if manager_info.configured_proxies:
-                    details['details'] = (
+                    details["hint"] = (
                         "DNF failed to install userspace packages, likely due to the proxy "
                         "configuration detected in the YUM/DNF configuration file. "
                         "Make sure the proxy is properly configured in /etc/dnf/dnf.conf. "
@@ -277,10 +280,24 @@ def prepare_target_userspace(context, userspace_dir, enabled_repos, packages):
             for repo_facts in api.consume(RepositoriesFacts):
                 for repo_file in repo_facts.repositories:
                     if any(repo_data.proxy and repo_data.enabled for repo_data in repo_file.data):
-                        details['details'] = (
+                        details["hint"] = (
                             "DNF failed to install userspace packages, likely due to the proxy "
                             "configuration detected in a repository configuration file."
                         )
+
+            if get_source_distro_id() == 'centos' and get_target_distro_id() == 'rhel':
+                check_rhel_release_hint = (
+                    "When upgrading and converting from Centos Stream to Red Hat Enterprise Linux"
+                    " (RHEL), the automatically determined latest target version of RHEL '{}' might"
+                    " not yet have been released. If so, specify the latest released RHEL version"
+                    " manually using the --target-version commandline option."
+                ).format(get_target_version())
+
+                if details.get("hint"):
+                    # keep the proxy hint, we don't know which one is the problem
+                    details["hint"] += "\n" + check_rhel_release_hint
+                else:
+                    details["hint"] = check_rhel_release_hint
 
             raise StopActorExecutionError(message=message, details=details)
 
@@ -681,7 +698,7 @@ def _get_product_certificate_path():
     :return: The path to the product certificate or None on non-RHEL systems
     :raises: StopActorExecution if a certificate cannot be found
     """
-    if get_distro_id() != 'rhel':
+    if get_target_distro_id() != 'rhel':
         return None
 
     architecture = api.current_actor().configuration.architecture
@@ -960,7 +977,7 @@ def _get_distro_available_repoids(context, indata):
     :rtype: set[str]
     """
     distro_repoids = distro.get_target_distro_repoids(context)
-    distro_id = get_distro_id()
+    distro_id = get_target_distro_id()
     rhel_and_rhsm = distro_id == 'rhel' and not rhsm.skip_rhsm()
     if distro_id != 'rhel' or rhel_and_rhsm:
         _inhibit_if_no_base_repos(distro_repoids)
@@ -997,14 +1014,16 @@ def gather_target_repositories(context, indata):
     if distro_repoids:
         api.current_logger().info(
             "The following repoids are considered as provided by the '{}' distribution:{}{}".format(
-                get_distro_id(),
+                get_target_distro_id(),
                 FMT_LIST_SEPARATOR,
                 FMT_LIST_SEPARATOR.join(sorted(distro_repoids)),
             )
         )
     else:
         api.current_logger().warning(
-            "No repoids provided by the {} distribution have been discovered".format(get_distro_id())
+            "No repoids provided by the {} distribution have been discovered".format(
+                get_target_distro_id()
+            )
         )
 
     all_repoids = _get_all_available_repoids(context)
@@ -1153,7 +1172,7 @@ def _gather_target_repositories(context, indata, prod_cert_path):
     rhsm.set_container_mode(context)
     rhsm.switch_certificate(context, indata.rhsm_info, prod_cert_path)
 
-    if api.current_actor().configuration.os_release.release_id == 'centos':
+    if get_target_distro_id() == 'centos':
         adjust_dnf_stream_variable(context)
 
     _install_custom_repofiles(context, indata.custom_repofiles)

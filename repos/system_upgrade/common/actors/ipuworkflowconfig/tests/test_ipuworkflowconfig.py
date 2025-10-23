@@ -1,12 +1,12 @@
-import json
 import os
-import tempfile
+from copy import deepcopy
 
 import pytest
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import ipuworkflowconfig
-from leapp.libraries.stdlib import CalledProcessError
+from leapp.libraries.common.testutils import logger_mocked
+from leapp.libraries.stdlib import api, CalledProcessError
 from leapp.models import IPUSourceToPossibleTargets, OSRelease
 
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -40,6 +40,43 @@ def _get_os_release(version='7.9', codename='Maipo'):
         variant='Server',
         variant_id='server')
     return release
+
+
+TEST_UPGRADE_PATHS = {
+    'rhel': {
+        'default': {
+            '8.10': ['9.4', '9.6', '9.7'],
+            '8.4': ['9.2'],
+            '9.6': ['10.0'],
+            '9.7': ['10.1'],
+            '8': ['9.4', '9.6'],
+            '9': ['10.1'],
+        },
+        'saphana': {
+            '8.10': ['9.6', '9.4'],
+            '8': ['9.6', '9.4'],
+            '9.6': ['10.0'],
+            '9': ['10.0'],
+        },
+    },
+    'centos': {
+        'default': {
+            '8': ['9'],
+            '9': ['10'],
+        },
+        '_virtual_versions': {
+            '8': '8.10',
+            '9': '9.7',
+            '10': '10.1',
+        },
+    },
+    'almalinux': {
+        'default': {
+            '8.10': ['9.0', '9.1', '9.2', '9.3', '9.4', '9.5', '9.6', '9.7'],
+            '9.7': ['10.0', '10.1'],
+        },
+    },
+}
 
 
 def test_leapp_env_vars(monkeypatch):
@@ -82,12 +119,20 @@ def test_get_booted_kernel(monkeypatch):
                 IPUSourceToPossibleTargets(source_version='8.10', target_versions=['9.4', '9.5', '9.6']),
                 IPUSourceToPossibleTargets(source_version='8.4', target_versions=['9.2']),
                 IPUSourceToPossibleTargets(source_version='8', target_versions=['9.4', '9.5', '9.6']),
+                IPUSourceToPossibleTargets(source_version='8.6', target_versions=['9']),
             ]
         ),
         (
             '80',
             [
                 IPUSourceToPossibleTargets(source_version='80.0', target_versions=['81.0']),
+            ]
+        ),
+        (
+            '9',
+            [
+                IPUSourceToPossibleTargets(source_version='9', target_versions=['10']),
+                IPUSourceToPossibleTargets(source_version='9.6', target_versions=['10.0']),
             ]
         ),
     )
@@ -98,12 +143,46 @@ def test_construct_models_for_paths_matching_source_major(source_major_version, 
         '8.4': ['9.2'],
         '9.6': ['10.0'],
         '8': ['9.4', '9.5', '9.6'],
-        '80.0': ['81.0']
+        '80.0': ['81.0'],
+        '8.6': ['9'],
+        '9': ['10'],
     }
 
     result = ipuworkflowconfig.construct_models_for_paths_matching_source_major(RAW_PATHS, source_major_version)
     result = sorted(result, key=lambda x: x.source_version)
     assert result == sorted(expected_result, key=lambda x: x.source_version)
+
+
+@pytest.mark.parametrize(
+    "src_distro,dst_distro,expected",
+    [
+        ("centos", "rhel", {"8": ["9.4", "9.6", "9.7"], "9": ["10.1"]}),
+        ("almalinux", "rhel", {"8.10": ["9.4", "9.6", "9.7"], "9.7": ["10.1"]}),
+        ("rhel", "centos", {"8.10": ["9"], "9.7": ["10"]}),
+        ("almalinux", "centos", {"8.10": ["9"], "9.7": ["10"]}),
+        (
+            "rhel",
+            "almalinux",
+            {
+                "8.10": ["9.0", "9.1", "9.2", "9.3", "9.4", "9.5", "9.6", "9.7"],
+                "9.7": ["10.0", "10.1"],
+            },
+        ),
+        (
+            "centos",
+            "almalinux",
+            {
+                "8": ["9.0", "9.1", "9.2", "9.3", "9.4", "9.5", "9.6", "9.7"],
+                "9": ["10.0", "10.1"],
+            },
+        ),
+    ],
+)
+def test_make_cross_distro_paths(src_distro, dst_distro, expected):
+    res = ipuworkflowconfig.make_cross_distro_paths(
+        TEST_UPGRADE_PATHS, src_distro, dst_distro, 'default'
+    )
+    assert res == expected
 
 
 @pytest.mark.parametrize(
@@ -163,50 +242,66 @@ def test_load_raw_upgrade_paths_for_distro_and_flavour(monkeypatch, distro, flav
         }
     }
 
-    result = ipuworkflowconfig.extract_upgrade_paths_for_distro_and_flavour(defined_upgrade_paths,
-                                                                            distro, flavour)
+    result = ipuworkflowconfig.extract_upgrade_paths_for_distro_and_flavour(
+        defined_upgrade_paths, distro, flavour
+    )
     assert result == expected_result
 
 
 @pytest.mark.parametrize(
     ('construction_params', 'expected_versions'),
     [
-        (('centos', '8', '9'), ('8.10', '9.5')),
-        (('rhel', '8.10', '9.4'), ('8.10', '9.4')),
-        (('almalinux', '8.10', '9.6'), ('8.10', '9.6')),
+        (('centos', '8'), '8.10'),
+        (('centos', '9'), '9.7'),
+        (('rhel', '8.10'), '8.10'),
+        (('rhel', '9.4'), '9.4'),
+        (('almalinux', '8.10'), '8.10'),
+        (('almalinux', '9.6'), '9.6'),
     ]
 )
 def test_virtual_version_construction(construction_params, expected_versions):
-    defined_upgrade_paths = {
-        'rhel': {
-            'default': {
-                '8.10': ['9.4', '9.5', '9.6'],
-                '8.4': ['9.2'],
-                '9.6': ['10.0'],
-                '8': ['9.4', '9.5', '9.6'],
-                '9': ['10.0']
-            },
-            'saphana': {
-                '8.10': ['9.6', '9.4'],
-                '8': ['9.6', '9.4'],
-                '9.6': ['10.0'],
-                '9': ['10.0']
-            }
-        },
-        'centos': {
-            '8': ['9'],
-            '_virtual_versions': {
-                '8': '8.10',
-                '9': '9.5',
-            }
-        },
-        'almalinux': {
-            'default': {
-                '8.10': ['9.0', '9.1', '9.2', '9.3', '9.4', '9.5', '9.6'],
-                '9.6': ['10.0']
-            }
-        },
-    }
-
-    result = ipuworkflowconfig.construct_virtual_versions(defined_upgrade_paths, *construction_params)
+    result = ipuworkflowconfig.get_virtual_version(TEST_UPGRADE_PATHS, *construction_params)
     assert result == expected_versions
+
+
+def _make_path(source_ver, target_vers):
+    return IPUSourceToPossibleTargets(source_version=source_ver, target_versions=target_vers)
+
+
+@pytest.mark.parametrize(
+    "paths,to_add,logmsg",
+    [
+        (
+            [_make_path("9.8", ["10.2"])],
+            ["10.1"],
+            "Adding 10.1 as a supported target version for centos->rhel upgrade."
+        ),
+        (
+            [_make_path("9.10", ["10.10"])],
+            ["10.9"],
+            "Adding 10.9 as a supported target version for centos->rhel upgrade."
+         ),
+        # already present
+        (
+            [_make_path("8.10", ["9.6", "9.7"])],
+            [],
+            "Skipping adding 9.6 as a target version for centos->rhel upgrade, already present."
+        ),
+        # lowest minor
+        (
+            [_make_path("9.6", ["10.0"])],
+            [],
+            "Skipping centos->rhel supported versions workaround, the latest target minor version is 0."
+        ),
+    ],
+)
+def test_centos_to_rhel_supported_version_workaround(monkeypatch, paths, to_add, logmsg):
+    logger = logger_mocked()
+    monkeypatch.setattr(api, 'current_logger', logger)
+
+    original = deepcopy(paths[0])
+    ipuworkflowconfig._centos_to_rhel_supported_version_workaround(paths)
+
+    assert paths[0].source_version == original.source_version
+    assert paths[0].target_versions == original.target_versions + to_add
+    assert logmsg in logger.dbgmsg[0]
