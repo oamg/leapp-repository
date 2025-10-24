@@ -80,6 +80,30 @@ def get_major_version_from_a_valid_version(version):
     return version.split('.')[0]
 
 
+def _get_latest_version_with_matching_major_version(versions, major_version):
+    """
+    Find the latest version from given list of available versions matching the provided major version.
+
+    Versioning schema: MAJOR.MINOR
+
+    :param list[str] versions: List of versions to choose from.
+    :param str major_version: The major version for which to find the latest version.
+    :rtype: str
+    :returns: Latest version with given major version form the given versions list, or empty string when not found.
+    """
+    latest_minor_version = -1
+    for version in versions:
+        version = version.split('.')
+        if len(version) <= 1:
+            continue  # skip versions without a minor version
+        if version[0] == major_version:
+            minor_version = int(version[1])
+            latest_minor_version = max(minor_version, latest_minor_version)
+    if latest_minor_version == -1:
+        return ''
+    return f'{major_version}.{latest_minor_version}'
+
+
 def detect_sap_hana():
     """
     Detect SAP HANA based on existence of /hana/shared/*/exe/linuxx86_64/hdb/sapcontrol
@@ -156,15 +180,6 @@ def get_upgrade_paths_config():
     return upgrade_paths_map
 
 
-def get_target_versions_from_config(src_version_id, distro, flavor):
-    """
-    Retrieve all possible target versions from upgrade_paths_map.
-    If no match is found returns empty list.
-    """
-    upgrade_paths_map = get_upgrade_paths_config()
-    return upgrade_paths_map.get(distro, {}).get(flavor, {}).get(src_version_id, [])
-
-
 def get_virtual_version_from_config(src_version_id, distro):
     """
     Retrieve the virtual version for the given version from upgrade_paths_map.
@@ -179,8 +194,11 @@ def get_supported_target_versions(target_distro, flavour=get_upgrade_flavour()):
     """
     Return a list of supported target versions for the given `flavour` of upgrade.
     The default value for `flavour` is `default`.
-    """
 
+    :param str flavour: One of the upgrade flavours.
+    :rtype: list[str]
+    :returns: List of supported target versions.
+    """
     os_release_contents = _retrieve_os_release_contents()
     current_version_id = os_release_contents.get('VERSION_ID', '')
     source_distro = os_release_contents.get('ID', '')
@@ -193,15 +211,18 @@ def get_supported_target_versions(target_distro, flavour=get_upgrade_flavour()):
         # when upconverting from centos, we need to lookup by virtual version
         current_version_id = get_virtual_version_from_config(current_version_id, source_distro)
 
-    target_versions = get_target_versions_from_config(current_version_id, target_distro, flavour)
+    upgrade_paths_map = get_upgrade_paths_config()
+    relevant_paths = upgrade_paths_map.get(source_distro, {}).get(flavour, {})
+    target_versions = relevant_paths.get(current_version_id, [])
     if not target_versions:
-        # If we cannot find a particular major.minor version in the map,
-        # we fallback to pick a target version just based on a major version.
-        # This can happen for example when testing not yet released versions.
-        # But also removes the need to handle virtual versions on X->centos upgrades.
+        # If we cannot find a particular major.minor version in the map, we treat
+        # the system as if it was the latest minor version of its major version
+        # defined in the upgrade paths map. This can happen for example when
+        # testing not yet released versions.
+        available_source_versions = relevant_paths.keys()
         major_version = get_major_version_from_a_valid_version(current_version_id)
-        target_versions = get_target_versions_from_config(major_version, target_distro, flavour)
-
+        latest_version = _get_latest_version_with_matching_major_version(available_source_versions, major_version)
+        target_versions = relevant_paths.get(latest_version, [])
     return target_versions
 
 
