@@ -155,18 +155,30 @@ def produce_ipu_config(actor):
     target_version = os.environ.get('LEAPP_UPGRADE_PATH_TARGET_RELEASE')
     os_release = get_os_release('/etc/os-release')
     source_version = os_release.version_id
-
-    check_target_major_version(source_version, target_version)
+    distro = os_release.release_id
 
     all_upgrade_path_defs = load_upgrade_paths_definitions('upgrade_paths.json')
-    raw_upgrade_paths = extract_upgrade_paths_for_distro_and_flavour(all_upgrade_path_defs,
-                                                                     os_release.release_id,
-                                                                     flavour)
+    raw_upgrade_paths = extract_upgrade_paths_for_distro_and_flavour(all_upgrade_path_defs, distro, flavour)
+
+    if not target_version:
+        details = {}
+        if distro not in all_upgrade_path_defs:
+            details['detail'] = 'This is due to an unsupported system distribution.'
+        elif source_version not in raw_upgrade_paths:
+            details['detail'] = 'This is due to an unsupported source version of the system.'
+        details['hint'] = (
+                'The in-place upgrade is possible only for the supported upgrade paths '
+                'listed here: https://access.redhat.com/articles/4263361'
+            )
+        raise StopActorExecutionError(message='Could not determine the target version for the in-place upgrade.',
+                                      details=details)
+    check_target_major_version(source_version, target_version)
+
     source_major_version = source_version.split('.')[0]
     exposed_supported_paths = construct_models_for_paths_matching_source_major(raw_upgrade_paths, source_major_version)
 
     virtual_source_version, virtual_target_version = construct_virtual_versions(all_upgrade_path_defs,
-                                                                                os_release.release_id,
+                                                                                distro,
                                                                                 source_version,
                                                                                 target_version)
 
