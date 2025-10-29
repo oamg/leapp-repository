@@ -1,9 +1,9 @@
 import errno
 import textwrap
+import unittest.mock as mock
 from io import StringIO
 from os.path import basename
 
-import mock
 import six
 
 from leapp.libraries.actor import ifcfgscanner

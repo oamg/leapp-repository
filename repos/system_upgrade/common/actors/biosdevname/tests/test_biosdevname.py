@@ -1,7 +1,8 @@
+from unittest.mock import mock_open, patch
+
 import pytest
 import pyudev
 import six
-from mock import mock_open, patch
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import biosdevname
