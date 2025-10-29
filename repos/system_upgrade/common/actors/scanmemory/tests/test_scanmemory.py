@@ -1,4 +1,5 @@
-import mock
+import unittest.mock as mock
+
 import six
 
 from leapp.libraries.actor import scanmemory
