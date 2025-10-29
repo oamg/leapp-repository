@@ -4,9 +4,7 @@ import pytest
 
 from leapp.libraries.common.config import mock_configs
 from leapp.libraries.stdlib import api, CalledProcessError, run
-from leapp.models import SELinuxCustom, SELinuxFacts, SELinuxModule, SELinuxModules, SELinuxRequestRPMs
-from leapp.reporting import Report
-from leapp.snactor.fixture import current_actor_context
+from leapp.models import SELinuxCustom, SELinuxFacts, SELinuxModules, SELinuxRequestRPMs
 
 # compat module ensures compatibility with newer systems and is not part of testing
 TEST_MODULES = [

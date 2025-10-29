@@ -1,7 +1,7 @@
 import os
 import resource
+import unittest.mock as mock
 
-import mock
 import pytest
 
 from leapp.cli.commands import command_utils

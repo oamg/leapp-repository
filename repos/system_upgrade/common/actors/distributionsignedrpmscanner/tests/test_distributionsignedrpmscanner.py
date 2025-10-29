@@ -1,4 +1,4 @@
-import mock
+import unittest.mock as mock
 
 from leapp.libraries.common import rpms
 from leapp.libraries.common.config import mock_configs
@@ -8,7 +8,6 @@ from leapp.models import (
     fields,
     InstalledRPM,
     InstalledUnsignedRPM,
-    IPUConfig,
     Model,
     OSRelease,
     RPM,

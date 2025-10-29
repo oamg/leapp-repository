@@ -1,9 +1,6 @@
-import pytest
-from mock import Mock, patch
+from unittest.mock import patch
 
 from leapp.libraries.actor import cephvolumescan
-from leapp.models import InstalledRPM, LsblkEntry, RPM, StorageInfo
-from leapp.reporting import Report
 
 CONT_PS_COMMAND_OUTPUT = {
     "stdout":
