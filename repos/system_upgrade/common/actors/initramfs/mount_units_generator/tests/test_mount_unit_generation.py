@@ -5,9 +5,9 @@ import pytest
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import mount_unit_generator
-from leapp.libraries.common.testutils import logger_mocked
+from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked
 from leapp.libraries.stdlib import api, CalledProcessError
-from leapp.models import TargetUserSpaceInfo, UpgradeInitramfsTasks
+from leapp.models import FstabEntry, StorageInfo, TargetUserSpaceInfo, UpgradeInitramfsTasks
 
 
 def test_run_systemd_fstab_generator_successful_generation(monkeypatch):
@@ -267,3 +267,62 @@ def test_copy_units_mixed_content(monkeypatch):
     ]
     assert sorted(files) == sorted(expected_files)
     assert mount_unit_generator._delete_file.removal_called
+
+
+class CurrentActorMockedWithActorFolder(CurrentActorMocked):
+    def __init__(self, actor_folder_path, *args, **kwargs):
+        self.actor_folder_path = actor_folder_path
+        super().__init__(*args, **kwargs)
+
+    def get_actor_folder_path(self, subfolder):
+        return os.path.join(self.actor_folder_path, subfolder)
+
+
+@pytest.mark.parametrize('has_separate_boot', (True, False))
+def test_injection_of_sysroot_boot_bindmount_unit(monkeypatch, has_separate_boot):
+    fstab_entries = [
+        FstabEntry(fs_spec='UUID=123', fs_file='/root', fs_vfstype='xfs',
+                   fs_mntops='defaults', fs_freq='0', fs_passno='0')
+    ]
+
+    if has_separate_boot:
+        boot_fstab_entry = FstabEntry(fs_spec='UUID=123', fs_file='/root', fs_vfstype='xfs',
+                                      fs_mntops='defaults', fs_freq='0', fs_passno='0')
+        fstab_entries.append(boot_fstab_entry)
+
+    storage_info = StorageInfo(fstab=fstab_entries)
+
+    actor_mock = CurrentActorMockedWithActorFolder(actor_folder_path='/actor', msgs=[storage_info])
+    monkeypatch.setattr(api, 'current_actor', actor_mock)
+
+    workspace_path = '/workspace'
+    was_copyfile_for_sysroot_boot_called = False
+
+    def copyfile_mocked(source, dest, *args, **kwargs):
+        if not os.path.basename(source) == mount_unit_generator.BIND_MOUNT_SYSROOT_BOOT_UNIT:
+            return
+
+        assert has_separate_boot
+        assert dest == os.path.join(workspace_path, mount_unit_generator.BIND_MOUNT_SYSROOT_BOOT_UNIT)
+
+        nonlocal was_copyfile_for_sysroot_boot_called
+        was_copyfile_for_sysroot_boot_called = True
+
+    monkeypatch.setattr(shutil, 'copyfile', copyfile_mocked)
+
+    def listdir_mocked(path):
+        assert path == actor_mock.get_actor_folder_path('bundled_units')
+        return [
+            mount_unit_generator.BIND_MOUNT_SYSROOT_BOOT_UNIT,
+            'other.mount'
+        ]
+
+    monkeypatch.setattr(os, 'listdir', listdir_mocked)
+    monkeypatch.setattr(mount_unit_generator,
+                        'does_system_have_separate_boot_partition',
+                        lambda: has_separate_boot)
+
+    mount_unit_generator.inject_bundled_units(workspace_path)
+
+    if has_separate_boot:
+        assert was_copyfile_for_sysroot_boot_called

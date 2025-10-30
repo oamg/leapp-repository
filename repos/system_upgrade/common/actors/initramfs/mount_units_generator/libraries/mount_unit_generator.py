@@ -5,7 +5,9 @@ import tempfile
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import mounting
 from leapp.libraries.stdlib import api, CalledProcessError, run
-from leapp.models import LiveModeConfig, TargetUserSpaceInfo, UpgradeInitramfsTasks
+from leapp.models import LiveModeConfig, StorageInfo, TargetUserSpaceInfo, UpgradeInitramfsTasks
+
+BIND_MOUNT_SYSROOT_BOOT_UNIT = 'boot.mount'
 
 
 def run_systemd_fstab_generator(output_directory):
@@ -294,6 +296,39 @@ def request_units_inclusion_in_initramfs(files_to_include):
     api.produce(tasks)
 
 
+def does_system_have_separate_boot_partition():
+    storage_info = next(api.consume(StorageInfo), None)
+    if not storage_info:
+        err_msg = 'Actor did not receive required information about system storage (StorageInfo)'
+        raise StopActorExecutionError(err_msg)
+
+    for fstab_entry in storage_info.fstab:
+        if fstab_entry.fs_file == '/boot':
+            return True
+
+    return False
+
+
+def inject_bundled_units(workspace):
+    """
+    Copy static units that are bundled within this actor into the workspace.
+    """
+    bundled_units_dir = api.get_actor_folder_path('bundled_units')
+    for unit in os.listdir(bundled_units_dir):
+        if unit == BIND_MOUNT_SYSROOT_BOOT_UNIT:
+            has_separate_boot = does_system_have_separate_boot_partition()
+            if not has_separate_boot:
+                # We perform bind-mounting because of dracut's fips module.
+                # When /boot is not a separate partition, we don't need to bind mount it --
+                # the fips module itself will create a symlink.
+                continue
+
+        unit_path = os.path.join(bundled_units_dir, unit)
+        unit_dst = os.path.join(workspace, unit)
+        api.current_logger().debug('Copying static unit bundled within leapp {} to {}'.format(unit, unit_dst))
+        shutil.copyfile(unit_path, unit_dst)
+
+
 def setup_storage_initialization():
     livemode_config = next(api.consume(LiveModeConfig), None)
     if livemode_config and livemode_config.is_enabled:
@@ -306,6 +341,7 @@ def setup_storage_initialization():
             run_systemd_fstab_generator(workspace_path)
             remove_units_for_targets_that_are_already_mounted_by_dracut(workspace_path)
             prefix_all_mount_units_with_sysroot(workspace_path)
+            inject_bundled_units(workspace_path)
             fix_symlinks_in_targets(workspace_path)
             mount_unit_files = copy_units_into_system_location(upgrade_container_ctx, workspace_path)
             request_units_inclusion_in_initramfs(mount_unit_files)

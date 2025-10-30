@@ -1,6 +1,6 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import mount_unit_generator as mount_unit_generator_lib
-from leapp.models import LiveModeConfig, TargetUserSpaceInfo, UpgradeInitramfsTasks
+from leapp.models import LiveModeConfig, StorageInfo, TargetUserSpaceInfo, UpgradeInitramfsTasks
 from leapp.tags import InterimPreparationPhaseTag, IPUWorkflowTag
 
 
@@ -15,6 +15,7 @@ class MountUnitGenerator(Actor):
     consumes = (
         LiveModeConfig,
         TargetUserSpaceInfo,
+        StorageInfo,
     )
     produces = (
         UpgradeInitramfsTasks,
