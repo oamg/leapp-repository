@@ -263,14 +263,18 @@ def prepare_configuration(args):
 
     # Check upgrade path and fail early if it's invalid
     target_version, flavor = command_utils.get_target_release(args)
-    os.environ['LEAPP_UPGRADE_PATH_TARGET_RELEASE'] = target_version
-    os.environ['LEAPP_UPGRADE_PATH_FLAVOUR'] = flavor
-
     current_version = command_utils.get_os_release_version_id('/etc/os-release')
-    os.environ['LEAPP_IPU_IN_PROGRESS'] = '{source}to{target}'.format(
-        source=command_utils.get_major_version_from_a_valid_version(current_version),
-        target=command_utils.get_major_version_from_a_valid_version(target_version)
-    )
+    if current_version and target_version:
+        os.environ['LEAPP_UPGRADE_PATH_TARGET_RELEASE'] = target_version
+        os.environ['LEAPP_IPU_IN_PROGRESS'] = '{source}to{target}'.format(
+            source=command_utils.get_major_version_from_a_valid_version(current_version),
+            target=command_utils.get_major_version_from_a_valid_version(target_version)
+        )
+    else:
+        # Setting these variables to prevent them being set outside of the leapp environment
+        os.environ['LEAPP_UPGRADE_PATH_TARGET_RELEASE'] = ''
+        os.environ['LEAPP_IPU_IN_PROGRESS'] = ''
+    os.environ['LEAPP_UPGRADE_PATH_FLAVOUR'] = flavor
 
     configuration = {
         'debug': os.getenv('LEAPP_DEBUG', '0'),

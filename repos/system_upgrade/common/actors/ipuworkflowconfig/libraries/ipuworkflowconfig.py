@@ -239,26 +239,38 @@ def _centos_to_rhel_supported_version_workaround(exposed_supported_paths):
 def produce_ipu_config(actor):
     flavour = os.environ.get('LEAPP_UPGRADE_PATH_FLAVOUR')
     target_version = os.environ.get('LEAPP_UPGRADE_PATH_TARGET_RELEASE')
+    target_distro = os.environ.get('LEAPP_TARGET_OS')
     os_release = get_os_release('/etc/os-release')
     source_version = os_release.version_id
-    target_distro = os.environ.get('LEAPP_TARGET_OS')
-
-    check_target_major_version(source_version, target_version)
+    source_distro = os_release.release_id
 
     all_upgrade_path_defs = load_upgrade_paths_definitions('upgrade_paths.json')
-    raw_upgrade_paths = extract_upgrade_paths_for_distro_and_flavour(all_upgrade_path_defs,
-                                                                     os_release.release_id,
-                                                                     flavour)
-    if os_release.release_id == target_distro:
+    raw_upgrade_paths = extract_upgrade_paths_for_distro_and_flavour(all_upgrade_path_defs, source_distro, flavour)
+
+    if not target_version:
+        details = {}
+        if source_distro not in all_upgrade_path_defs:
+            details['details'] = 'This is due to an unsupported system distribution.'
+        elif source_version not in raw_upgrade_paths:
+            details['details'] = 'This is due to an unsupported source version of the system.'
+        details['hint'] = (
+                'The in-place upgrade is possible only for the supported upgrade paths '
+                'listed here: https://access.redhat.com/articles/4263361'
+            )
+        raise StopActorExecutionError(message='Could not determine the target version for the in-place upgrade.',
+                                      details=details)
+    check_target_major_version(source_version, target_version)
+
+    if source_distro == target_distro:
         raw_upgrade_paths = extract_upgrade_paths_for_distro_and_flavour(
-            all_upgrade_path_defs, os_release.release_id, flavour
+            all_upgrade_path_defs, source_distro, flavour
         )
     else:
         raw_upgrade_paths = make_cross_distro_paths(
-            all_upgrade_path_defs, os_release.release_id, target_distro, flavour
+            all_upgrade_path_defs, source_distro, target_distro, flavour
         )
 
-    virtual_source_version = get_virtual_version(all_upgrade_path_defs, os_release.release_id, source_version)
+    virtual_source_version = get_virtual_version(all_upgrade_path_defs, source_distro, source_version)
     virtual_target_version = get_virtual_version(all_upgrade_path_defs, target_distro, target_version)
 
     source_major_version = source_version.split('.')[0]
@@ -266,7 +278,7 @@ def produce_ipu_config(actor):
         raw_upgrade_paths, source_major_version
     )
 
-    if exposed_supported_paths and os_release.release_id == 'centos' and target_distro == 'rhel':
+    if exposed_supported_paths and source_distro == 'centos' and target_distro == 'rhel':
         _centos_to_rhel_supported_version_workaround(exposed_supported_paths)
 
     actor.produce(IPUConfig(
@@ -283,7 +295,7 @@ def produce_ipu_config(actor):
         flavour=flavour,
         supported_upgrade_paths=exposed_supported_paths,
         distro=Distro(
-            source=os_release.release_id,
+            source=source_distro,
             target=target_distro,
         ),
     ))
