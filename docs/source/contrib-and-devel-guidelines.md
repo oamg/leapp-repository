@@ -86,18 +86,6 @@ Use of the library would require very good reasoning, why the
 {py:func}`~leapp.libraries.stdlib.run` function cannot be used.
 
 ## Commits and pull requests (PRs)
-### PR description
-The description should contain information about all introduced changes:
-* What has been changed
-* How it has been changed
-* The reason for the change
-* How could people try/test the PR
-* Reference to a Jira ticket, Github issue, ... if applicable
-
-Good description provides all information for readers without the need to
-read the code. Note that reviewers can decline to review the PR with a poor
-description.
-
 ### Commit messages
 When your pull-request is ready to be reviewed, every commit needs to include
 a title and a body continuing a description of the change --- what problem is
@@ -111,9 +99,9 @@ number (if applicable), GitHub issue that is being fixed, etc.:
   Jira-ref: <ticket-number>
 ```
 
-Note that good commit message should provide information in similar way like
-the PR description. Poorly written commit messages can block the merge of PR
-or proper review.
+Note that good commit message should provide information in similar the [PR
+description](#pr-description). Poorly written commit messages can block the
+merge of PR or proper review.
 
 ### Granularity of commits
 The granularity of commits depends strongly on the problem being solved. However,
@@ -131,6 +119,30 @@ in your PR, it's good practice to use the rebase more often. High numbers of suc
 commits could make the final rebase more tricky in the end. So your PR should not
 have more than 15 commits at any time.
 
-### Create a separate git branch for your changes
-TBD
+### Submitting a Pull Request
+Before you submit your pull request, consider the following guidelines:
+- Fork the repository and clone your fork.
+- Make your changes in a new git branch:
+  ```bash
+  git checkout -b bug/my-fix-branch main
+  ```
+- Commit your changes with message conforming to the our [Git commit messages guidelines](#commit-messages).
+- Push your branch to GitHub:
+  ```bash
+  git push --set-upstream origin bug/my-fix-branch
+  ```
+- When opening a pull request, select the main branch as a base and follow our [PR description guidelines](#pr-description).
+- You can open the PR as a Draft PR to prevent merging while you are still working on it.
+- Wait for a review from the maintainers and address all their comments.
 
+#### PR description
+The description should contain information about all introduced changes:
+* What has been changed
+* How it has been changed
+* The reason for the change
+* How could people try/test the PR
+* Reference to a Jira ticket, Github issue, ... if applicable
+
+Good description provides all information for readers without the need to
+read the code. Note that reviewers can decline to review the PR with a poor
+description.
