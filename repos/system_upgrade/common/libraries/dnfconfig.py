@@ -43,8 +43,11 @@ def _get_main_dump(context, disable_plugins):
 
     output_data = {}
     for line in data[main_start:]:
+        if not line.strip():
+            continue
         try:
             key, val = _strip_split(line, '=', 1)
+            output_data[key] = val
         except ValueError:
             # This is not expected to happen, but call it a seatbelt in case
             # the dnf dump implementation will change and we will miss it
@@ -54,7 +57,6 @@ def _get_main_dump(context, disable_plugins):
             api.current_logger().warning(
                 'Cannot parse the dnf dump correctly, line: {}'.format(line))
             pass
-        output_data[key] = val
 
     return output_data
 
