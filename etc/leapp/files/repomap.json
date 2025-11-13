@@ -1,5 +1,5 @@
 {
-    "datetime": "202511121444Z",
+    "datetime": "202511131423Z",
     "version_format": "1.3.0",
     "provided_data_streams": [
         "4.1"
@@ -3083,6 +3083,38 @@
             "entries": [
                 {
                     "major_version": "8",
+                    "repoid": "baseos",
+                    "arch": "aarch64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "centos"
+                },
+                {
+                    "major_version": "8",
+                    "repoid": "baseos",
+                    "arch": "ppc64le",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "centos"
+                },
+                {
+                    "major_version": "8",
+                    "repoid": "baseos",
+                    "arch": "s390x",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "centos"
+                },
+                {
+                    "major_version": "8",
+                    "repoid": "baseos",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "centos"
+                },
+                {
+                    "major_version": "8",
                     "repoid": "rhel-8-baseos-beta-rhui-rpms",
                     "arch": "aarch64",
                     "channel": "beta",
@@ -3348,6 +3380,38 @@
         {
             "pesid": "rhel8-AppStream",
             "entries": [
+                {
+                    "major_version": "8",
+                    "repoid": "appstream",
+                    "arch": "aarch64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "centos"
+                },
+                {
+                    "major_version": "8",
+                    "repoid": "appstream",
+                    "arch": "ppc64le",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "centos"
+                },
+                {
+                    "major_version": "8",
+                    "repoid": "appstream",
+                    "arch": "s390x",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "centos"
+                },
+                {
+                    "major_version": "8",
+                    "repoid": "appstream",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "centos"
+                },
                 {
                     "major_version": "8",
                     "repoid": "rhel-8-appstream-beta-rhui-rpms",
@@ -3749,6 +3813,38 @@
                 },
                 {
                     "major_version": "8",
+                    "repoid": "powertools",
+                    "arch": "aarch64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "centos"
+                },
+                {
+                    "major_version": "8",
+                    "repoid": "powertools",
+                    "arch": "ppc64le",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "centos"
+                },
+                {
+                    "major_version": "8",
+                    "repoid": "powertools",
+                    "arch": "s390x",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "centos"
+                },
+                {
+                    "major_version": "8",
+                    "repoid": "powertools",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "centos"
+                },
+                {
+                    "major_version": "8",
                     "repoid": "rhui-codeready-builder-for-rhel-8-aarch64-rhui-rpms",
                     "arch": "aarch64",
                     "channel": "ga",
@@ -3958,12 +4054,28 @@
                     "channel": "ga",
                     "repo_type": "rpm",
                     "distro": "rhel"
+                },
+                {
+                    "major_version": "8",
+                    "repoid": "rt",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "centos"
                 }
             ]
         },
         {
             "pesid": "rhel8-NFV",
             "entries": [
+                {
+                    "major_version": "8",
+                    "repoid": "nfv",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "centos"
+                },
                 {
                     "major_version": "8",
                     "repoid": "rhel-8-for-x86_64-nfv-beta-rpms",
@@ -4236,6 +4348,38 @@
         {
             "pesid": "rhel8-HighAvailability",
             "entries": [
+                {
+                    "major_version": "8",
+                    "repoid": "ha",
+                    "arch": "aarch64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "centos"
+                },
+                {
+                    "major_version": "8",
+                    "repoid": "ha",
+                    "arch": "ppc64le",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "centos"
+                },
+                {
+                    "major_version": "8",
+                    "repoid": "ha",
+                    "arch": "s390x",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "centos"
+                },
+                {
+                    "major_version": "8",
+                    "repoid": "ha",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "centos"
+                },
                 {
                     "major_version": "8",
                     "repoid": "rhel-8-for-aarch64-highavailability-beta-rpms",
