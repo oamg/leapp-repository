@@ -88,3 +88,6 @@ Change the default target RHEL version. Format: `MAJOR.MINOR`.
 
 #### LEAPP_DEVEL_USE_PERSISTENT_PACKAGE_CACHE
 Caches downloaded packages when set to `1`. This will reduce the time needed by leapp when executed multiple times, because it will not have to download already downloaded packages. However, this can lead to a random issues in case the data is not up-to-date or when setting or repositories change. The environment variable is meant to be used only for the part of the upgrade before the reboot and has no effect or use otherwise.
+
+#### LEAPP_DEVEL_TARGET_OS
+Change the target OS. This is similar to the --target-os CLI option except there is no restriction on what values can be passed in. This can be used when developing conversions to a yet unsupported target OS.
