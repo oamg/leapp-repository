@@ -136,7 +136,7 @@ def get_os_release_version_id(filepath):
     return _retrieve_os_release_contents(_os_release_path=filepath).get('VERSION_ID', '')
 
 
-def get_distro_id():
+def get_source_distro_id():
     """
     Retrieve the OS release ID from /etc/os-release.
 
@@ -302,3 +302,7 @@ def load_actor_configs_and_store_it_in_db(context, repositories, framework_cfg):
     config_data = audit.ActorConfigData(config=config_text, hash_id=config_text_hash)
     db_config = audit.ActorConfig(config=config_data, context=context)
     db_config.store()
+
+
+def get_available_target_distro_ids():
+    return [member.value for member in DistroIDs]
