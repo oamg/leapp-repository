@@ -1,3 +1,5 @@
+import itertools
+
 from leapp.libraries.common.config import get_source_distro_id, get_target_distro_id
 from leapp.libraries.common.config.version import get_target_major_version
 from leapp.libraries.common.distro import get_distribution_data
@@ -40,8 +42,9 @@ def _get_source_distro_keys():
     might be present on the system.
     """
     distribution = get_source_distro_id()
-    distro_keys = get_distribution_data(distribution).get('key-rpms', {})
-    return [key for key in distro_keys if _is_key_installed(key)]
+    keys = get_distribution_data(distribution).get('keys', {})
+    distro_keys = [rpm_names for _fingerprint, rpm_names in keys.items()]
+    return [key for key in itertools.chain.from_iterable(distro_keys) if _is_key_installed(key)]
 
 
 def register_dnfworkaround(keys):
