@@ -1,4 +1,8 @@
+import os
+
 from leapp.libraries.common import multipathutil
+from leapp.libraries.stdlib import api
+from leapp.models import TargetUserSpaceInfo, UpdatedMultipathConfig
 
 _regexes = ('vendor', 'product', 'revision', 'product_blacklist', 'devnode',
             'wwid', 'property', 'protocol')
@@ -72,9 +76,26 @@ def _update_config(need_foreign, need_allow_usb, config):
 
 
 def update_configs(facts):
+    userspace_info = next(api.consume(TargetUserSpaceInfo))
+
     need_foreign = not any(x for x in facts.configs if x.enable_foreign_exists)
     need_allow_usb = not any(x for x in facts.configs if x.allow_usb_exists)
+
+    config_updates = []
     for config in facts.configs:
+        # We have copied all of the multipath configs into the userspace container, so we can (safely)
+        # modify those. After the upgrade, we just pick the (proven) modified configs and replace
+        # the incompatible old ones.
+        rootless_path = config.pathname.lstrip('/')
+        path_to_config_copy = os.path.join(userspace_info.path, rootless_path)  # Modify the copy inside container
+        api.current_logger().debug(
+            'Instead of modyfing {}, our copy inside target userspace {} will be modified'.format(
+                config.pathname,
+                path_to_config_copy
+            )
+        )
+        config.pathname = path_to_config_copy
+
         contents = _update_config(need_foreign, need_allow_usb, config)
         need_foreign = False
         need_allow_usb = False
@@ -84,3 +105,8 @@ def update_configs(facts):
         """
         if contents:
             multipathutil.write_config(config.pathname, contents)
+
+            update = UpdatedMultipathConfig(path=config.pathname)
+            config_updates.append(update)
+
+    api.produce(*config_updates)
