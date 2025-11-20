@@ -193,6 +193,7 @@ def _copy_files(context, files):
             context.remove_tree(file_task.dst)
             context.copytree_to(file_task.src, file_task.dst)
         else:
+            context.makedirs(os.path.dirname(file_task.dst))
             context.copy_to(file_task.src, file_task.dst)
 
 
