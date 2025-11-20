@@ -2,14 +2,18 @@ import errno
 import os
 
 from leapp.libraries.common import multipathutil
+from leapp.libraries.common.config.version import get_source_major_version
 from leapp.libraries.common.rpms import has_package
 from leapp.libraries.stdlib import api
 from leapp.models import (
     CopyFile,
     DistributionSignedRPM,
+    DracutModule,
     MultipathConfFacts8to9,
     MultipathConfig8to9,
-    TargetUserSpaceUpgradeTasks
+    MultipathInfo,
+    TargetUserSpaceUpgradeTasks,
+    UpgradeInitramfsTasks
 )
 
 _regexes = ('vendor', 'product', 'revision', 'product_blacklist', 'devnode',
@@ -88,20 +92,7 @@ def is_processable():
     return res
 
 
-def get_multipath_conf_facts(config_file='/etc/multipath.conf'):
-    res_configs = []
-    conf = _parse_config(config_file)
-    if not conf:
-        return None
-    res_configs.append(conf)
-    if conf.config_dir:
-        res_configs.extend(_parse_config_dir(conf.config_dir))
-    else:
-        res_configs.extend(_parse_config_dir('/etc/multipath/conf.d'))
-    return MultipathConfFacts8to9(configs=res_configs)
-
-
-def produce_copy_to_target_task():
+def request_multipath_files_in_target_userspace():
     """
     Produce task to copy files into the target userspace
 
@@ -131,3 +122,41 @@ def produce_copy_to_target_task():
 
     if copy_files:
         api.produce(TargetUserSpaceUpgradeTasks(copy_files=copy_files))
+
+
+def request_mpath_dracut_module_for_upgrade_initramfs():
+    multipath_mod = DracutModule(name='multipath')
+    request = UpgradeInitramfsTasks(include_dracut_modules=[multipath_mod])
+    api.produce(request)
+
+
+def scan_and_emit_multipath_info():
+    if not is_processable():
+        return
+
+    primary_config = _parse_config('/etc/multipath.conf')
+    if not primary_config:
+        api.current_logger().debug(
+            'Primary multipath config /etc/multipath.conf is not present - multipath '
+            'is not used.'
+        )
+        mpath_info = MultipathInfo(is_configured=False)
+        api.produce(mpath_info)
+        return
+
+    multipath_info = MultipathInfo(
+        is_configured=True,
+        config_dir=primary_config.config_dir or '/etc/multipath/conf.d'
+    )
+    api.produce(multipath_info)
+
+    request_multipath_files_in_target_userspace()
+    request_mpath_dracut_module_for_upgrade_initramfs()
+
+    # Handle upgrade-path-specific config actions
+    if get_source_major_version() == '8':
+        secondary_configs = _parse_config_dir(multipath_info.config_dir)
+        all_configs = [primary_config] + secondary_configs
+
+        config_facts_for_8to9 = MultipathConfFacts8to9(configs=all_configs)
+        api.produce(config_facts_for_8to9)
