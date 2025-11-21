@@ -48,7 +48,7 @@ def process():
                     [
                         "grubby",
                         "--update-kernel=ALL",
-                        '--remove-args="{}"'.format(",".join(remediation_cmd_args)),
+                        '--remove-args="{}"'.format(" ".join(remediation_cmd_args)),
                     ],
                 ],
             ),
