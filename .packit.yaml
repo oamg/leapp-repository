@@ -460,6 +460,15 @@ jobs:
       tmt:
         plan_filter: 'tag:9to10'
     environments:
+      - &tmt-env-settings-centos9to10
+        tmt:
+          context: &tmt-context-centos9to10
+            distro: "centos-9"
+            distro_target: "centos-10"
+        settings:
+          provisioning:
+            tags:
+              BusinessUnit: sst_upgrades@leapp_upstream_test
       - &tmt-env-settings-96to100
         tmt:
           context: &tmt-context-96to100
@@ -478,10 +487,28 @@ jobs:
           provisioning:
             tags:
               BusinessUnit: sst_upgrades@leapp_upstream_test
+      - &tmt-env-settings-centos9torhel101
+        tmt:
+          context: &tmt-context-centos9torhel101
+            distro: "centos-9"
+            distro_target: "rhel-10.1"
+        settings:
+          provisioning:
+            tags:
+              BusinessUnit: sst_upgrades@leapp_upstream_test
       - &tmt-env-settings-98to102
         tmt:
           context: &tmt-context-98to102
             distro: "rhel-9.8"
+            distro_target: "rhel-10.2"
+        settings:
+          provisioning:
+            tags:
+              BusinessUnit: sst_upgrades@leapp_upstream_test
+      - &tmt-env-settings-centos9torhel102
+        tmt:
+          context: &tmt-context-centos9torhel102
+            distro: "centos-9"
             distro_target: "rhel-10.2"
         settings:
           provisioning:
@@ -705,3 +732,79 @@ jobs:
   env:
     <<: *env-98to102
 
+# ###################################################################### #
+# ########################## CentOS Stream ############################# #
+# ###################################################################### #
+
+# ###################################################################### #
+# ###################### CentOS Stream > RHEL ########################## #
+# ###################################################################### #
+
+# ###################################################################### #
+# ############################ 9 > 10.1 ################################ #
+# ###################################################################### #
+
+- &sanity-centos9torhel101
+  <<: *sanity-abstract-9to10
+  trigger: pull_request
+  identifier: sanity-CentOS9toRHEL10.1
+  targets:
+    epel-9-x86_64:
+      distros: [CentOS-Stream-9]
+  tf_extra_params:
+    test:
+      tmt:
+        plan_filter: 'tag:9to10 & tag:tier0 & enabled:true & tag:-rhsm'
+    environments:
+      - *tmt-env-settings-centos9torhel101
+  env: &env-centos9to101
+    SOURCE_RELEASE: "9"
+    TARGET_RELEASE: "10.1"
+
+# ###################################################################### #
+# ############################ 9 > 10.2 ################################ #
+# ###################################################################### #
+
+- &sanity-centos9torhel102
+  <<: *sanity-abstract-9to10
+  trigger: pull_request
+  identifier: sanity-CentOS9toRHEL10.2
+  targets:
+    epel-9-x86_64:
+      distros: [CentOS-Stream-9]
+  tf_extra_params:
+    test:
+      tmt:
+        plan_filter: 'tag:9to10 & tag:tier0 & enabled:true & tag:-rhsm'
+        name:
+    environments:
+      - *tmt-env-settings-centos9torhel102
+  env: &env-centos9torhel102
+    SOURCE_RELEASE: "9"
+    TARGET_RELEASE: "10.2"
+
+# ###################################################################### #
+# ################## CentOS Stream > CentOS Stream ##################### #
+# ###################################################################### #
+
+# ###################################################################### #
+# ############################## 9 > 10 ################################ #
+# ###################################################################### #
+
+- &sanity-centos-9to10
+  <<: *sanity-abstract-9to10
+  trigger: pull_request
+  identifier: sanity-CentOS9to10
+  targets:
+    epel-9-x86_64:
+      distros: [CentOS-Stream-9]
+  tf_extra_params:
+    test:
+      tmt:
+        plan_filter: 'tag:9to10 & tag:tier0 & enabled:true & tag:-rhsm'
+    environments:
+      - *tmt-env-settings-centos9to10
+  env: &env-centos9to10
+    SOURCE_RELEASE: "9"
+    TARGET_RELEASE: "10"
+    TARGET_OS: "centos"
