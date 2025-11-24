@@ -21,7 +21,7 @@ providing Red Hat Enterprise Linux in-place upgrade functionality.
     upgrade-architecture-and-workflow/index
     configuring-ipu/index
     libraries-and-api/index
-    contrib-and-devel-guidelines
+    contributing/index
     faq
 
 .. Indices and tables
