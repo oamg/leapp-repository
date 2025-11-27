@@ -1,8 +1,8 @@
 [Unit]
 DefaultDependencies=no
 Before=local-fs.target
-After=sysroot-boot.target
-Requires=sysroot-boot.target
+After=sysroot-boot.mount
+Requires=sysroot-boot.mount
 
 [Mount]
 What=/sysroot/boot
