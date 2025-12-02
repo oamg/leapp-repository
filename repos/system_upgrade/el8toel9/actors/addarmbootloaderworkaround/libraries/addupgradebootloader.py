@@ -2,15 +2,9 @@ import os
 import shutil
 
 from leapp.exceptions import StopActorExecutionError
-from leapp.libraries.common import mounting
-from leapp.libraries.common.grub import (
-    canonical_path_to_efi_format,
-    EFIBootInfo,
-    get_boot_partition,
-    get_device_number,
-    get_efi_device,
-    get_efi_partition
-)
+from leapp.libraries.common import efi, mounting
+from leapp.libraries.common.grub import get_boot_partition
+from leapp.libraries.common.partitions import blk_dev_from_partition, get_partition_number
 from leapp.libraries.stdlib import api, CalledProcessError, run
 from leapp.models import ArmWorkaroundEFIBootloaderInfo, EFIBootEntry, TargetUserSpaceInfo
 
@@ -19,9 +13,8 @@ UPGRADE_EFI_ENTRY_LABEL = 'Leapp Upgrade'
 ARM_SHIM_PACKAGE_NAME = 'shim-aa64'
 ARM_GRUB_PACKAGE_NAME = 'grub2-efi-aa64'
 
-EFI_MOUNTPOINT = '/boot/efi/'
-LEAPP_EFIDIR_CANONICAL_PATH = os.path.join(EFI_MOUNTPOINT, 'EFI/leapp/')
-RHEL_EFIDIR_CANONICAL_PATH = os.path.join(EFI_MOUNTPOINT, 'EFI/redhat/')
+LEAPP_EFIDIR_CANONICAL_PATH = os.path.join(efi.EFI_MOUNTPOINT, 'EFI/leapp/')
+RHEL_EFIDIR_CANONICAL_PATH = os.path.join(efi.EFI_MOUNTPOINT, 'EFI/redhat/') # TODO
 UPGRADE_BLS_DIR = '/boot/upgrade-loader'
 
 CONTAINER_DOWNLOAD_DIR = '/tmp_pkg_download_dir'
@@ -59,7 +52,12 @@ def process():
 
         _copy_grub_files(['grubenv', 'grub.cfg'], ['user.cfg'])
 
-        efibootinfo = EFIBootInfo()
+        try:
+            efibootinfo = efi.EFIBootInfo()
+        except efi.EFIError as e:
+            raise StopActorExecutionError(
+                "Failed to obtain information about UEFI: {}".format(e)
+            )
         current_boot_entry = efibootinfo.entries[efibootinfo.current_bootnum]
         upgrade_boot_entry = _add_upgrade_boot_entry(efibootinfo)
 
@@ -73,7 +71,7 @@ def process():
                 original_entry=EFIBootEntry(**{f: getattr(current_boot_entry, f) for f in efibootentry_fields}),
                 upgrade_entry=EFIBootEntry(**{f: getattr(upgrade_boot_entry, f) for f in efibootentry_fields}),
                 upgrade_bls_dir=UPGRADE_BLS_DIR,
-                upgrade_entry_efi_path=os.path.join(EFI_MOUNTPOINT, LEAPP_EFIDIR_CANONICAL_PATH),
+                upgrade_entry_efi_path=LEAPP_EFIDIR_CANONICAL_PATH,
             )
         )
 
@@ -126,12 +124,17 @@ def _add_upgrade_boot_entry(efibootinfo):
     Return the upgrade efi entry (EFIEntry).
     """
 
-    dev_number = get_device_number(get_efi_partition())
-    blk_dev = get_efi_device()
+    try:
+        efi_part = efi.get_efi_partition()
+    except efi.EFIError as e:
+        raise StopActorExecutionError("Failed to get EFI partition: {}".format(e))
+
+    dev_number = get_partition_number(efi_part)
+    blk_dev = blk_dev_from_partition(efi_part)
 
     tmp_efi_path = os.path.join(LEAPP_EFIDIR_CANONICAL_PATH, 'shimaa64.efi')
     if os.path.exists(tmp_efi_path):
-        efi_path = canonical_path_to_efi_format(tmp_efi_path)
+        efi_path = efi.canonical_path_to_efi_format(tmp_efi_path)
     else:
         raise StopActorExecutionError('Unable to detect upgrade UEFI binary file.')
 
@@ -158,7 +161,7 @@ def _add_upgrade_boot_entry(efibootinfo):
         raise StopActorExecutionError('Unable to add a new UEFI bootloader entry for upgrade.')
 
     # Sanity check new boot entry has been added
-    efibootinfo_new = EFIBootInfo()
+    efibootinfo_new = efi.EFIBootInfo()
     upgrade_boot_entry = _get_upgrade_boot_entry(efibootinfo_new, efi_path, UPGRADE_EFI_ENTRY_LABEL)
     if upgrade_boot_entry is None:
         raise StopActorExecutionError('Unable to find the new UEFI bootloader entry after adding it.')
@@ -261,7 +264,7 @@ def patch_efi_redhat_grubcfg_to_load_correct_grubenv():
     EFI entries. Thus, we need to replace it with our own that will load grubenv shipped
     of our UEFI boot entry.
     """
-    leapp_grub_cfg_path = os.path.join(EFI_MOUNTPOINT, LEAPP_EFIDIR_CANONICAL_PATH, 'grub.cfg')
+    leapp_grub_cfg_path = os.path.join(LEAPP_EFIDIR_CANONICAL_PATH, 'grub.cfg')
 
     if not os.path.isfile(leapp_grub_cfg_path):
         msg = 'The file {} does not exists, cannot check whether bootloader is configured properly.'
