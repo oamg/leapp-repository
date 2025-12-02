@@ -4,18 +4,18 @@ import pytest
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import addupgradebootloader
-from leapp.libraries.common.grub import EFIBootLoaderEntry
+from leapp.libraries.common.firmware import efi
 from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked, make_OSError, produce_mocked
 from leapp.libraries.stdlib import api, CalledProcessError
 from leapp.models import ArmWorkaroundEFIBootloaderInfo, EFIBootEntry, TargetUserSpaceInfo
 
-TEST_RHEL_EFI_ENTRY = EFIBootLoaderEntry(
+TEST_RHEL_EFI_ENTRY = efi.EFIBootLoaderEntry(
             '0000',
             'Red Hat Enterprise Linux',
             True,
             'File(\\EFI\\redhat\\shimaa64.efi)'
         )
-TEST_UPGRADE_EFI_ENTRY = EFIBootLoaderEntry(
+TEST_UPGRADE_EFI_ENTRY = efi.EFIBootLoaderEntry(
             '0001',
             addupgradebootloader.UPGRADE_EFI_ENTRY_LABEL,
             True,
@@ -169,9 +169,9 @@ def test_set_bootnext(monkeypatch):
 
 
 def test_add_upgrade_boot_entry_no_efi_binary(monkeypatch):
-    monkeypatch.setattr(addupgradebootloader, 'get_efi_partition', lambda: '/dev/sda1')
-    monkeypatch.setattr(addupgradebootloader, 'get_device_number', lambda device: '1')
-    monkeypatch.setattr(addupgradebootloader, 'get_efi_device', lambda: '/dev/sda')
+    monkeypatch.setattr(efi, 'get_efi_partition', lambda: '/dev/sda1')
+    monkeypatch.setattr(addupgradebootloader, 'get_partition_number', lambda device: '1')
+    monkeypatch.setattr(efi, 'get_efi_device', lambda: '/dev/sda')
     monkeypatch.setattr(os.path, 'exists', lambda path: False)
 
     efibootinfo_mock = MockEFIBootInfo([TEST_RHEL_EFI_ENTRY])
@@ -182,9 +182,9 @@ def test_add_upgrade_boot_entry_no_efi_binary(monkeypatch):
 def test_add_upgrade_already_exists(monkeypatch):
     run_calls = []
 
-    monkeypatch.setattr(addupgradebootloader, 'get_efi_partition', lambda: '/dev/sda1')
-    monkeypatch.setattr(addupgradebootloader, 'get_device_number', lambda device: '1')
-    monkeypatch.setattr(addupgradebootloader, 'get_efi_device', lambda: '/dev/sda')
+    monkeypatch.setattr(efi, 'get_efi_partition', lambda: '/dev/sda1')
+    monkeypatch.setattr(addupgradebootloader, 'get_partition_number', lambda device: '1')
+    monkeypatch.setattr(efi, 'get_efi_device', lambda: '/dev/sda')
     monkeypatch.setattr(os.path, 'exists', lambda path: True)
 
     def mock_run(cmd):
@@ -200,9 +200,9 @@ def test_add_upgrade_already_exists(monkeypatch):
 
 
 def test_add_upgrade_boot_entry_command_failure(monkeypatch):
-    monkeypatch.setattr(addupgradebootloader, 'get_efi_partition', lambda: '/dev/sda1')
-    monkeypatch.setattr(addupgradebootloader, 'get_device_number', lambda device: '1')
-    monkeypatch.setattr(addupgradebootloader, 'get_efi_device', lambda: '/dev/sda')
+    monkeypatch.setattr(efi, 'get_efi_partition', lambda: '/dev/sda1')
+    monkeypatch.setattr(addupgradebootloader, 'get_partition_number', lambda device: '1')
+    monkeypatch.setattr(efi, 'get_efi_device', lambda: '/dev/sda')
     monkeypatch.setattr(addupgradebootloader, '_get_upgrade_boot_entry', lambda efi, path, label: None)
     monkeypatch.setattr(os.path, 'exists', lambda path: True)
 
@@ -223,9 +223,9 @@ def test_add_upgrade_boot_entry_command_failure(monkeypatch):
 def test_add_upgrade_boot_entry_verification_failure(monkeypatch):
     run_calls = []
 
-    monkeypatch.setattr(addupgradebootloader, 'get_efi_partition', lambda: '/dev/sda1')
-    monkeypatch.setattr(addupgradebootloader, 'get_device_number', lambda device: '1')
-    monkeypatch.setattr(addupgradebootloader, 'get_efi_device', lambda: '/dev/sda')
+    monkeypatch.setattr(efi, 'get_efi_partition', lambda: '/dev/sda1')
+    monkeypatch.setattr(addupgradebootloader, 'get_partition_number', lambda device: '1')
+    monkeypatch.setattr(efi, 'get_efi_device', lambda: '/dev/sda')
     monkeypatch.setattr(addupgradebootloader, '_get_upgrade_boot_entry', lambda efi, path, label: None)
     monkeypatch.setattr(os.path, 'exists', lambda path: True)
 
@@ -233,7 +233,7 @@ def test_add_upgrade_boot_entry_verification_failure(monkeypatch):
         run_calls.append(cmd)
 
     monkeypatch.setattr(addupgradebootloader, 'run', mock_run)
-    monkeypatch.setattr(addupgradebootloader, 'EFIBootInfo', lambda: MockEFIBootInfo([TEST_RHEL_EFI_ENTRY]))
+    monkeypatch.setattr(efi, 'EFIBootInfo', lambda: MockEFIBootInfo([TEST_RHEL_EFI_ENTRY]))
 
     efibootinfo_mock = MockEFIBootInfo([TEST_RHEL_EFI_ENTRY])
     with pytest.raises(StopActorExecutionError, match="Unable to find the new UEFI bootloader entry after adding it"):
@@ -243,9 +243,9 @@ def test_add_upgrade_boot_entry_verification_failure(monkeypatch):
 def test_add_upgrade_boot_entry_success(monkeypatch):
     run_calls = []
 
-    monkeypatch.setattr(addupgradebootloader, 'get_efi_partition', lambda: '/dev/sda1')
-    monkeypatch.setattr(addupgradebootloader, 'get_device_number', lambda device: '1')
-    monkeypatch.setattr(addupgradebootloader, 'get_efi_device', lambda: '/dev/sda')
+    monkeypatch.setattr(efi, 'get_efi_partition', lambda: '/dev/sda1')
+    monkeypatch.setattr(addupgradebootloader, 'get_partition_number', lambda device: '1')
+    monkeypatch.setattr(efi, 'get_efi_device', lambda: '/dev/sda')
     monkeypatch.setattr(os.path, 'exists', lambda path: True)
 
     def mock_run(cmd):
@@ -253,7 +253,7 @@ def test_add_upgrade_boot_entry_success(monkeypatch):
 
     monkeypatch.setattr(addupgradebootloader, 'run', mock_run)
     monkeypatch.setattr(
-        addupgradebootloader,
+        efi,
         'EFIBootInfo',
         lambda: MockEFIBootInfo([TEST_RHEL_EFI_ENTRY, TEST_UPGRADE_EFI_ENTRY])
     )
@@ -289,7 +289,7 @@ def test_process(monkeypatch):
     monkeypatch.setattr(addupgradebootloader, '_copy_grub_files', lambda optional, required: None)
 
     efibootinfo_mock = MockEFIBootInfo([TEST_RHEL_EFI_ENTRY])
-    monkeypatch.setattr(addupgradebootloader, 'EFIBootInfo', lambda: efibootinfo_mock)
+    monkeypatch.setattr(efi, 'EFIBootInfo', lambda: efibootinfo_mock)
 
     def mock_add_upgrade_boot_entry(efibootinfo):
         return TEST_UPGRADE_EFI_ENTRY
@@ -319,7 +319,7 @@ def test_process(monkeypatch):
 @pytest.mark.parametrize('is_config_ok', (True, False))
 def test_patch_grubcfg(is_config_ok, monkeypatch):
 
-    expected_grubcfg_path = os.path.join(addupgradebootloader.EFI_MOUNTPOINT,
+    expected_grubcfg_path = os.path.join(efi.EFI_MOUNTPOINT,
                                          addupgradebootloader.LEAPP_EFIDIR_CANONICAL_PATH,
                                          'grub.cfg')
 

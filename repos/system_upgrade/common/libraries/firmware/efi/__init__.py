@@ -2,30 +2,21 @@ import os
 import re
 
 from leapp.exceptions import StopActorExecution
-from leapp.libraries.common import mdraid, partitions
+from leapp.libraries.common.firmware import is_efi
+from leapp.libraries.common.partitions import get_partition_for_dir, blk_dev_from_partition
 from leapp.libraries.stdlib import api, CalledProcessError, run
-from leapp.utils.deprecation import deprecated
 
-# DEPRECATED(2025-12-04): Moved to the firmware.efi library
 EFI_MOUNTPOINT = '/boot/efi/'
 """The path to the required mountpoint for ESP."""
 
-GRUB2_BIOS_ENTRYPOINT = '/boot/grub2'
-"""The entrypoint path of the BIOS GRUB2"""
 
-GRUB2_BIOS_ENV_FILE = os.path.join(GRUB2_BIOS_ENTRYPOINT, 'grubenv')
-"""The path to the env file for GRUB2 in BIOS"""
-
-
-@deprecated(
-    since="2025-12-04",
-    message="Replaced by canonical_path_to_efi_format in the firmware.efi library",
-)
 def canonical_path_to_efi_format(canonical_path):
     r"""Transform the canonical path to the UEFI format.
+
     e.g. /boot/efi/EFI/redhat/shimx64.efi -> \EFI\redhat\shimx64.efi
     (just single backslash; so the string needs to be put into apostrophes
     when used for /usr/sbin/efibootmgr cmd)
+
     The path has to start with /boot/efi otherwise the path is invalid for UEFI.
     """
 
@@ -33,10 +24,6 @@ def canonical_path_to_efi_format(canonical_path):
     return canonical_path.replace(EFI_MOUNTPOINT[:-1], "").replace("/", "\\")
 
 
-@deprecated(
-    since="2025-12-04",
-    message="Replaced by EFIBootLoaderEntry in the firmware.efi library",
-)
 class EFIBootLoaderEntry:
     """
     Representation of an UEFI boot loader entry.
@@ -54,6 +41,7 @@ class EFIBootLoaderEntry:
 
         self.efi_bin_source = efi_bin_source
         """Source of the UEFI binary.
+
         It could contain various values, e.g.:
             FvVol(7cb8bdc9-f8eb-4f34-aaea-3ee4af6516a1)/FvFile(462caa21-7614-4503-836e-8ab6f4662331)
             HD(1,GPT,28c77f6b-3cd0-4b22-985f-c99903835d79,0x800,0x12c000)/File(\\EFI\\redhat\\shimx64.efi)
@@ -83,8 +71,10 @@ class EFIBootLoaderEntry:
 
     def is_referring_to_file(self):
         """Return True when the boot source is a file.
+
         Some sources could refer e.g. to PXE boot. Return true if the source
         refers to a file ("ends with /File(...path...)")
+
         Does not matter whether the file exists or not.
         """
         return '/File(\\' in self.efi_bin_source
@@ -95,6 +85,7 @@ class EFIBootLoaderEntry:
 
     def get_canonical_path(self):
         """Return expected canonical path for the referred UEFI bin or None.
+
         Return None in case the entry is not referring to any UEFI bin
         (e.g. when it refers to a PXE boot).
         """
@@ -104,13 +95,10 @@ class EFIBootLoaderEntry:
         return EFIBootLoaderEntry._efi_path_to_canonical(match.groups('path')[0])
 
 
-@deprecated(
-    since="2025-12-04",
-    message="Replaced by EFIBootInfo in the firmware.efi library",
-)
 class EFIBootInfo:
     """
     Data about the current UEFI boot configuration.
+
     Raise StopActorExecution when:
         - unable to obtain info about the UEFI configuration.
         - BIOS is detected.
@@ -134,7 +122,7 @@ class EFIBootInfo:
         self.boot_order = tuple()
         """The tuple of the UEFI boot loader entries in the boot order."""
         self.entries = {}
-        """The UEFI boot loader entries {'boot_number': EFIBootLoader}"""
+        """The UEFI boot loader entries {'boot_number': EFIBootLoaderEntry}"""
 
         self._parse_efi_boot_entries(bootmgr_output)
         self._parse_current_bootnum(bootmgr_output)
@@ -206,54 +194,10 @@ class EFIBootInfo:
         api.current_logger().debug(msg)
 
 
-def has_grub(blk_dev):
-    """
-    Check whether GRUB is present on block device
-    """
-    try:
-        blk = os.open(blk_dev, os.O_RDONLY)
-        mbr = os.read(blk, 512)
-    except OSError:
-        api.current_logger().warning(
-            'Could not read first sector of {} in order to identify the bootloader'.format(blk_dev)
-        )
-        raise StopActorExecution()
-    os.close(blk)
-    test = 'GRUB'
-    if not isinstance(mbr, str):
-        test = test.encode('utf-8')
-
-    return test in mbr
-
-
-def get_boot_partition():
-    """
-    Get /boot partition name.
-    """
-
-    return partitions.get_partition_for_dir('/boot')
-
-
-@deprecated(
-    since="2025-12-04",
-    message="Replaced by is_efi() in the firmware library",
-)
-def is_efi():
-    """
-    Return True if UEFI is used.
-    NOTE(pstodulk): the check doesn't have to be valid for hybrid boot (e.g. AWS, Azure, ..)
-    """
-
-    return os.path.exists("/sys/firmware/efi")
-
-
-@deprecated(
-    since="2025-12-04",
-    message="Moved to the firmware.efi library",
-)
 def get_efi_partition():
     """
     Return the EFI System Partition (ESP).
+
     Raise StopActorExecution when:
         - UEFI is not detected,
         - ESP is not mounted where expected,
@@ -268,123 +212,10 @@ def get_efi_partition():
             'The UEFI has been detected but the ESP is not mounted in /boot/efi as required.'
         )
 
-    return partitions.get_partition_for_dir('/boot/efi/')
+    return get_partition_for_dir(EFI_MOUNTPOINT)
 
 
-@deprecated(
-    since="2025-12-04",
-    message="Moved to the partitions library",
-)
-def blk_dev_from_partition(partition):
-    """
-    Get the block device.
-    In case of the block device itself (e.g. /dev/sda), return just the block
-    device. In case of a partition, return its block device:
-        /dev/sda  -> /dev/sda
-        /dev/sda1 -> /dev/sda
-    Raise CalledProcessError when unable to get the block device.
-    """
-
-    try:
-        result = run(['lsblk', '-spnlo', 'name', partition])
-    except CalledProcessError:
-        msg = 'Could not get parent device of {} partition'.format(partition)
-        api.current_logger().warning(msg)
-        raise StopActorExecution(msg)
-
-    # lsblk "-s" option prints dependencies in inverse order, so the parent device will always
-    # be the last or the only device.
-    # Command result example:
-    # 'result', {'signal': 0, 'pid': 3872, 'exit_code': 0, 'stderr': u'', 'stdout': u'/dev/vda1\n/dev/vda\n'}
-    return result['stdout'].strip().split()[-1]
-
-
-@deprecated(
-    since="2025-12-04",
-    message="Replace by get_partition_number() in partitions library",
-)
-def get_device_number(device):
-    """Get the partition number of a particular device.
-    This method will use `blkid` to determinate what is the partition number
-    related to a particular device.
-    :param device: The device to be analyzed.
-    :type device: str
-    :return: The device partition number.
-    :rtype: int
-    """
-
-    try:
-        result = run(
-            ['/usr/sbin/blkid', '-p', '-s', 'PART_ENTRY_NUMBER', device],
-        )
-        output = result['stdout'].strip()
-    except CalledProcessError:
-        raise StopActorExecution('Unable to get information about the {} device'.format(device))
-
-    if not output:
-        raise StopActorExecution('The {} device has no PART_ENTRY_NUMBER'.format(device))
-
-    partition_number = output.split('PART_ENTRY_NUMBER=')[-1].replace('"', '')
-
-    return int(partition_number)
-
-
-def get_grub_devices():
-    """
-    Get block devices where GRUB is located. We assume GRUB is on the same device
-    as /boot partition is. In case that device is an md (Multiple Device) device, all
-    of the component devices of such a device are considered.
-
-    :return: Devices where GRUB is located
-    :rtype: list
-    """
-    # TODO: catch errors and return meaningful value/error instead of StopActorExecution
-    boot_device = get_boot_partition()
-    devices = []
-    if mdraid.is_mdraid_dev(boot_device):
-        component_devs = mdraid.get_component_devices(boot_device)
-        blk_devs = [partitions.blk_dev_from_partition(dev) for dev in component_devs]
-        # remove duplicates as there might be raid on partitions on the same drive
-        # even if that's very unusual
-        devices = sorted(list(set(blk_devs)))
-    else:
-        devices.append(partitions.blk_dev_from_partition(boot_device))
-
-    have_grub = [dev for dev in devices if has_grub(dev)]
-    api.current_logger().info('GRUB is installed on {}'.format(",".join(have_grub)))
-    return have_grub
-
-
-@deprecated(
-    since="2025-12-04",
-    message="Moved to the firmware.efi library",
-)
 def get_efi_device():
     """Get the block device on which GRUB is installed."""
 
-    return partitions.blk_dev_from_partition(get_efi_partition())
-
-
-@deprecated(since='2023-06-23', message='This function has been replaced by get_grub_devices')
-def get_grub_device():
-    """
-    Get block device where GRUB is located. We assume GRUB is on the same device
-    as /boot partition is.
-
-    """
-    boot_partition = get_boot_partition()
-    grub_dev = partitions.blk_dev_from_partition(boot_partition)
-    api.current_logger().info('GRUB is installed on {}'.format(grub_dev))
-    # if has_grub(grub_dev):
-    return grub_dev if has_grub(grub_dev) else None
-
-
-def is_blscfg_enabled_in_defaultgrub(default_grub_msg):
-    """
-    Check if GRUB_ENABLE_BLSCFG is true in /etc/default/grub file
-    """
-    grub_options_lst = default_grub_msg.default_grub_info
-    default_grub_options = {
-        option.name: option.value.strip('"') for option in grub_options_lst
-    }
-    return bool(default_grub_options.get('GRUB_ENABLE_BLSCFG', '') == 'true')
+    return blk_dev_from_partition(get_efi_partition())
