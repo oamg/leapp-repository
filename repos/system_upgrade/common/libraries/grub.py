@@ -2,10 +2,11 @@ import os
 import re
 
 from leapp.exceptions import StopActorExecution
-from leapp.libraries.common import mdraid
+from leapp.libraries.common import mdraid, partitions
 from leapp.libraries.stdlib import api, CalledProcessError, run
 from leapp.utils.deprecation import deprecated
 
+# DEPRECATED(2025-12-04): Moved to the firmware.efi library
 EFI_MOUNTPOINT = '/boot/efi/'
 """The path to the required mountpoint for ESP."""
 
@@ -16,8 +17,13 @@ GRUB2_BIOS_ENV_FILE = os.path.join(GRUB2_BIOS_ENTRYPOINT, 'grubenv')
 """The path to the env file for GRUB2 in BIOS"""
 
 
+@deprecated(
+    since="2025-12-04",
+    message="Replaced by canonical_path_to_efi_format in the firmware.efi library",
+)
 def canonical_path_to_efi_format(canonical_path):
-    r"""Transform the canonical path to the UEFI format.
+    r"""
+    Transform the canonical path to the UEFI format.
 
     e.g. /boot/efi/EFI/redhat/shimx64.efi -> \EFI\redhat\shimx64.efi
     (just single backslash; so the string needs to be put into apostrophes
@@ -30,6 +36,10 @@ def canonical_path_to_efi_format(canonical_path):
     return canonical_path.replace(EFI_MOUNTPOINT[:-1], "").replace("/", "\\")
 
 
+@deprecated(
+    since="2025-12-04",
+    message="Replaced by EFIBootLoaderEntry in the firmware.efi library",
+)
 class EFIBootLoaderEntry:
     """
     Representation of an UEFI boot loader entry.
@@ -37,7 +47,7 @@ class EFIBootLoaderEntry:
 
     def __init__(self, boot_number, label, active, efi_bin_source):
         self.boot_number = boot_number
-        """Expected string, e.g. '0001'. """
+        """Expected string, e.g. '0001'."""
 
         self.label = label
         """Label of the UEFI entry. E.g. 'Redhat'"""
@@ -46,7 +56,8 @@ class EFIBootLoaderEntry:
         """True when the UEFI entry is active (asterisk is present next to the boot number)"""
 
         self.efi_bin_source = efi_bin_source
-        """Source of the UEFI binary.
+        """
+        Source of the UEFI binary.
 
         It could contain various values, e.g.:
             FvVol(7cb8bdc9-f8eb-4f34-aaea-3ee4af6516a1)/FvFile(462caa21-7614-4503-836e-8ab6f4662331)
@@ -76,7 +87,8 @@ class EFIBootLoaderEntry:
         )
 
     def is_referring_to_file(self):
-        """Return True when the boot source is a file.
+        """
+        Return True when the boot source is a file.
 
         Some sources could refer e.g. to PXE boot. Return true if the source
         refers to a file ("ends with /File(...path...)")
@@ -90,7 +102,8 @@ class EFIBootLoaderEntry:
         return os.path.join(EFI_MOUNTPOINT, efi_path.replace("\\", "/").lstrip("/"))
 
     def get_canonical_path(self):
-        """Return expected canonical path for the referred UEFI bin or None.
+        """
+        Return expected canonical path for the referred UEFI bin or None.
 
         Return None in case the entry is not referring to any UEFI bin
         (e.g. when it refers to a PXE boot).
@@ -101,6 +114,10 @@ class EFIBootLoaderEntry:
         return EFIBootLoaderEntry._efi_path_to_canonical(match.groups('path')[0])
 
 
+@deprecated(
+    since="2025-12-04",
+    message="Replaced by EFIBootInfo in the firmware.efi library",
+)
 class EFIBootInfo:
     """
     Data about the current UEFI boot configuration.
@@ -220,38 +237,22 @@ def has_grub(blk_dev):
     return test in mbr
 
 
-def _get_partition(directory):
-    """
-    Get partition name of `directory`.
-    """
-
-    try:
-        result = run(['grub2-probe', '--target=device', directory])
-    except CalledProcessError:
-        msg = 'Could not get name of underlying {} partition'.format(directory)
-        api.current_logger().warning(msg)
-        raise StopActorExecution(msg)
-    except OSError:
-        msg = ('Could not get name of underlying {} partition:'
-               ' grub2-probe is missing.'
-               ' Possibly called on system that does not use GRUB2?').format(directory)
-        api.current_logger().warning(msg)
-        raise StopActorExecution(msg)
-
-    partition = result['stdout'].strip()
-    api.current_logger().info('{} is on {}'.format(directory, partition))
-
-    return partition
-
-
 def get_boot_partition():
     """
     Get /boot partition name.
+
+    :return: Path to the partition hosting the /boot directory
+    :rtype: str
+    :raises partitions.StorageScanError: When unable to obtain a partition hosting /boot
     """
+    # TODO: replace the exception?
+    return partitions._get_partition_for_dir('/boot')
 
-    return _get_partition('/boot')
 
-
+@deprecated(
+    since="2025-12-04",
+    message="Moved to the efi library",
+)
 def is_efi():
     """
     Return True if UEFI is used.
@@ -262,6 +263,10 @@ def is_efi():
     return os.path.exists("/sys/firmware/efi")
 
 
+@deprecated(
+    since="2025-12-04",
+    message="Moved to the firmware.efi library",
+)
 def get_efi_partition():
     """
     Return the EFI System Partition (ESP).
@@ -280,9 +285,13 @@ def get_efi_partition():
             'The UEFI has been detected but the ESP is not mounted in /boot/efi as required.'
         )
 
-    return _get_partition('/boot/efi/')
+    return partitions._get_partition_for_dir('/boot/efi/')
 
 
+@deprecated(
+    since="2025-12-04",
+    message="Moved to the partitions library",
+)
 def blk_dev_from_partition(partition):
     """
     Get the block device.
@@ -309,8 +318,13 @@ def blk_dev_from_partition(partition):
     return result['stdout'].strip().split()[-1]
 
 
+@deprecated(
+    since="2025-12-04",
+    message="Replace by get_partition_number() in partitions library",
+)
 def get_device_number(device):
-    """Get the partition number of a particular device.
+    """
+    Get the partition number of a particular device.
 
     This method will use `blkid` to determinate what is the partition number
     related to a particular device.
@@ -339,8 +353,10 @@ def get_device_number(device):
 
 def get_grub_devices():
     """
-    Get block devices where GRUB is located. We assume GRUB is on the same device
-    as /boot partition is. In case that device is an md (Multiple Device) device, all
+    Get block devices where GRUB is located.
+
+    We assume GRUB is on the same device as /boot partition is.
+    In case that device is an md (Multiple Device) device, all
     of the component devices of such a device are considered.
 
     :return: Devices where GRUB is located
@@ -351,33 +367,38 @@ def get_grub_devices():
     devices = []
     if mdraid.is_mdraid_dev(boot_device):
         component_devs = mdraid.get_component_devices(boot_device)
-        blk_devs = [blk_dev_from_partition(dev) for dev in component_devs]
+        blk_devs = [partitions.blk_dev_from_partition(dev) for dev in component_devs]
         # remove duplicates as there might be raid on partitions on the same drive
         # even if that's very unusual
         devices = sorted(list(set(blk_devs)))
     else:
-        devices.append(blk_dev_from_partition(boot_device))
+        devices.append(partitions.blk_dev_from_partition(boot_device))
 
     have_grub = [dev for dev in devices if has_grub(dev)]
     api.current_logger().info('GRUB is installed on {}'.format(",".join(have_grub)))
     return have_grub
 
 
+@deprecated(
+    since="2025-12-04",
+    message="Moved to the firmware.efi library",
+)
 def get_efi_device():
-    """Get the block device on which GRUB is installed."""
-
-    return blk_dev_from_partition(get_efi_partition())
+    """
+    Get the block device on which GRUB is installed.
+    """
+    return partitions.blk_dev_from_partition(get_efi_partition())
 
 
 @deprecated(since='2023-06-23', message='This function has been replaced by get_grub_devices')
 def get_grub_device():
     """
-    Get block device where GRUB is located. We assume GRUB is on the same device
-    as /boot partition is.
+    Get block device where GRUB is located.
 
+    We assume GRUB is on the same device as /boot partition is.
     """
     boot_partition = get_boot_partition()
-    grub_dev = blk_dev_from_partition(boot_partition)
+    grub_dev = partitions.blk_dev_from_partition(boot_partition)
     api.current_logger().info('GRUB is installed on {}'.format(grub_dev))
     # if has_grub(grub_dev):
     return grub_dev if has_grub(grub_dev) else None
