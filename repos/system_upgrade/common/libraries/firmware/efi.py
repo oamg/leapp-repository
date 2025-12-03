@@ -3,7 +3,7 @@ import re
 
 from leapp.exceptions import StopActorExecution
 from leapp.libraries.common.firmware import is_efi
-from leapp.libraries.common.partitions import get_partition_for_dir, blk_dev_from_partition
+from leapp.libraries.common.partitions import get_partition_for_dir, blk_dev_from_partition, get_partition_number
 from leapp.libraries.stdlib import api, CalledProcessError, run
 
 EFI_MOUNTPOINT = '/boot/efi/'
@@ -323,3 +323,16 @@ def set_bootnext(boot_number):
         run(['/usr/sbin/efibootmgr', '--bootnext', boot_number])
     except CalledProcessError:
         raise EFIError('Could not set boot entry {} as BootNext.'.format(boot_number))
+
+
+def get_distro_efidir_canon_path(distro):
+    """
+    Get canonical path to the distro EFI directory in the EFI mountpoint.
+
+    NOTE: The path might be incorrect for distros not properly enabled for IPU,
+    when enabling new distros in the codebase, make sure the path is correct.
+    """
+    if distro == 'rhel':
+        return os.path.join(EFI_MOUNTPOINT, "EFI", "redhat")
+
+    return os.path.join(EFI_MOUNTPOINT, "EFI", distro)

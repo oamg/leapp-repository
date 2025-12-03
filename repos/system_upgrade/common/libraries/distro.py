@@ -208,3 +208,16 @@ def get_distro_repoids(context, distro, major_version, arch):
                 distro_repoids.extend([repo.repoid for repo in rfile.data])
 
     return sorted(distro_repoids)
+
+
+def distro_id_to_pretty_name(distro_id):
+    """
+    Get pretty name for the given distro id.
+
+    The pretty name is what is found in the NAME field of /etc/os-release.
+    """
+    return {
+        "rhel": "Red Hat Enterprise Linux",
+        "centos": "CentOS Stream",
+        "almalinux": "AlmaLinux",
+    }[distro_id]
