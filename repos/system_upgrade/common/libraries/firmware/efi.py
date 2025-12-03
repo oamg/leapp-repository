@@ -219,3 +219,107 @@ def get_efi_device():
     """Get the block device on which GRUB is installed."""
 
     return blk_dev_from_partition(get_efi_partition())
+
+
+class EFIError(Exception):
+    """
+    Exception raised when EFI operation failed.
+    """
+
+# TODO maybe rename this to find_boot_entry
+def get_boot_entry(efibootinfo, label, efi_bin_path):
+    """
+    Get the UEFI boot entry with label `label` and EFI binary path `efi_bin_path`.
+
+    :param label: Label to search for
+    :type label: str
+    :param efi_bin_path: Path to EFI binary to search for in EFI format
+    :type efi_bin_path: str
+    :return: The entry or None if not found
+    :rtype: EFIBootEntry|None
+    """
+
+    for entry in efibootinfo.entries.values():
+        if entry.label == label and efi_bin_path in entry.efi_bin_source:
+            return entry
+
+    return None
+
+
+def add_boot_entry(label, efi_bin_path):
+    """
+    Add a new boot entry to the UEFI bootloader
+
+    Uses /usr/sbin/efibootmgr under the hood, which sets the new entry to be
+    the first in boot order.
+
+    Note that this function doesn't check whether the entry already exists
+    before adding it. It does sanity check after adding it whether it was
+    successfully added.
+
+    :param label: Label for the new entry
+    :type label: str
+    :param efi_bin_path: Canonical path to the UEFI binary for the entry
+    :type efi_bin_path: str
+    :return: The newly added entry
+    :rtype: EFIBootLoaderEntry
+    :raises EFIError: When failed to add the entry
+    """
+    esp = get_efi_partition()
+    esp_number = get_partition_number(esp)
+    # not using get_efi_device() here saves one call to external command
+    efi_dev = blk_dev_from_partition(esp)
+
+    cmd = [
+        "/usr/sbin/efibootmgr",
+        "--create",
+        "--disk",
+        efi_dev,
+        "--part",
+        str(esp_number),
+        "--loader",
+        efi_bin_path,
+        "--label",
+        label,
+    ]
+
+    try:
+        run(cmd)
+    except CalledProcessError as e:
+        raise EFIError(
+            "Unable to add a new UEFI bootloader entry '{}' for EFI binary at {}.".format(
+                label, efi_bin_path
+            )
+        ) from e
+
+    # sanity check it's really there
+    efibootinfo = EFIBootInfo()
+    new_entry = get_boot_entry(efibootinfo, label, efi_bin_path)
+    if new_entry is None:
+        raise EFIError(
+            "Unable to find the new UEFI bootlaoder entry '{}' after adding it.".format(
+                label
+            )
+        )
+    return new_entry
+
+
+def remove_boot_entry(boot_number):
+    try:
+        run(["/usr/sbin/efibootmgr", "--delete-bootnum", "--bootnum", boot_number])
+    except CalledProcessError as e:
+        raise EFIError(
+            "Failed to remove boot entry with boot number '{}'".format(boot_number)
+        ) from e
+
+
+def set_bootnext(boot_number):
+    """
+    Set the BootNext UEFI entry to `boot_number`.
+    """
+
+    api.current_logger().debug('Setting {} as BootNext'.format(boot_number))
+    try:
+        run(['/usr/sbin/efibootmgr', '--bootnext', boot_number])
+    except CalledProcessError:
+        raise EFIError('Could not set boot entry {} as BootNext.'.format(boot_number))

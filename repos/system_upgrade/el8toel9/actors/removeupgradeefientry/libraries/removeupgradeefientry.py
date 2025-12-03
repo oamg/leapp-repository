@@ -2,6 +2,7 @@ import os
 import shutil
 
 from leapp.exceptions import StopActorExecutionError
+from leapp.libraries.common.firmware import efi
 from leapp.libraries.stdlib import api, CalledProcessError, run
 from leapp.models import ArmWorkaroundEFIBootloaderInfo
 
@@ -36,13 +37,8 @@ def remove_upgrade_efi_entry():
 
     upgrade_boot_number = bootloader_info.upgrade_entry.boot_number
     try:
-        run([
-            '/usr/sbin/efibootmgr',
-            '--delete-bootnum',
-            '--bootnum',
-            upgrade_boot_number
-        ])
-    except CalledProcessError:
+        efi.remove_boot_entry(upgrade_boot_number)
+    except efi.EFIError:
         api.current_logger().warning('Unable to remove Leapp upgrade efi entry.')
 
     try:
@@ -53,7 +49,7 @@ def remove_upgrade_efi_entry():
     _remove_upgrade_blsdir(bootloader_info)
 
     original_boot_number = bootloader_info.original_entry.boot_number
-    run(['/usr/sbin/efibootmgr', '--bootnext', original_boot_number])
+    efi.set_bootnext(original_boot_number)
 
     # TODO: Move calling `mount -a` to a separate actor as it is not really
     # related to removing the upgrade boot entry. It's worth to call it after
