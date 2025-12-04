@@ -12,6 +12,7 @@ from leapp.models import UpgradeDracutModule  # deprecated
 from leapp.models import (
     BootContent,
     LiveModeConfig,
+    LVMConfig,
     TargetOSInstallationImage,
     TargetUserSpaceInfo,
     TargetUserSpaceUpgradeTasks,
@@ -364,20 +365,29 @@ def generate_initram_disk(context):
     def fmt_module_list(module_list):
         return ','.join(mod.name for mod in module_list)
 
+    env_variables = [
+        'LEAPP_KERNEL_VERSION={kernel_version}',
+        'LEAPP_ADD_DRACUT_MODULES="{dracut_modules}"',
+        'LEAPP_KERNEL_ARCH={arch}',
+        'LEAPP_ADD_KERNEL_MODULES="{kernel_modules}"',
+        'LEAPP_DRACUT_INSTALL_FILES="{files}"'
+    ]
+
+    if next(api.consume(LVMConfig), None):
+        env_variables.append('LEAPP_DRACUT_LVMCONF="1"')
+
+    env_variables = ' '.join(env_variables)
+    env_variables = env_variables.format(
+        kernel_version=_get_target_kernel_version(context),
+        dracut_modules=fmt_module_list(initramfs_includes.dracut_modules),
+        kernel_modules=fmt_module_list(initramfs_includes.kernel_modules),
+        arch=api.current_actor().configuration.architecture,
+        files=' '.join(initramfs_includes.files)
+    )
+    cmd = os.path.join('/', INITRAM_GEN_SCRIPT_NAME)
+
     # FIXME: issue #376
-    context.call([
-        '/bin/sh', '-c',
-        'LEAPP_KERNEL_VERSION={kernel_version} '
-        'LEAPP_ADD_DRACUT_MODULES="{dracut_modules}" LEAPP_KERNEL_ARCH={arch} '
-        'LEAPP_ADD_KERNEL_MODULES="{kernel_modules}" '
-        'LEAPP_DRACUT_INSTALL_FILES="{files}" {cmd}'.format(
-            kernel_version=_get_target_kernel_version(context),
-            dracut_modules=fmt_module_list(initramfs_includes.dracut_modules),
-            kernel_modules=fmt_module_list(initramfs_includes.kernel_modules),
-            arch=api.current_actor().configuration.architecture,
-            files=' '.join(initramfs_includes.files),
-            cmd=os.path.join('/', INITRAM_GEN_SCRIPT_NAME))
-    ], env=env)
+    context.call(['/bin/sh', '-c', f'{env_variables} {cmd}'], env=env)
 
     boot_files_info = copy_boot_files(context)
     return boot_files_info
