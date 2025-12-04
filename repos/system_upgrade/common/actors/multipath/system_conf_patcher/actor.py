@@ -1,6 +1,6 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import system_config_patcher
-from leapp.models import UpdatedMultipathConfig
+from leapp.models import MultipathConfigUpdatesInfo
 from leapp.tags import ApplicationsPhaseTag, IPUWorkflowTag
 
 
@@ -15,7 +15,7 @@ class MultipathSystemConfigPatcher(Actor):
     """
 
     name = 'multipath_system_config_patcher'
-    consumes = (UpdatedMultipathConfig,)
+    consumes = (MultipathConfigUpdatesInfo,)
     produces = ()
     tags = (ApplicationsPhaseTag, IPUWorkflowTag)
 

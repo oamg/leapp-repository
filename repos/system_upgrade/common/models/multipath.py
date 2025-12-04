@@ -28,6 +28,14 @@ class UpdatedMultipathConfig(Model):
     """ Location where should be the updated config placed. """
 
 
+class MultipathConfigUpdatesInfo(Model):
+    """ Aggregate information about multipath configs that were updated. """
+    topic = SystemInfoTopic
+
+    updates = fields.List(fields.Model(UpdatedMultipathConfig), default=[])
+    """ Collection of multipath config updates that must be performed during the upgrade. """
+
+
 class MultipathConfig8to9(Model):
     """
     Model information about multipath configuration file important for the 8>9 upgrade path.

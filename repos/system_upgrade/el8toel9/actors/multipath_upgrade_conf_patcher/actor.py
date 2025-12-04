@@ -1,6 +1,6 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import multipathconfupdate
-from leapp.models import MultipathConfFacts8to9, UpdatedMultipathConfig
+from leapp.models import MultipathConfFacts8to9, MultipathConfigUpdatesInfo
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
@@ -15,7 +15,7 @@ class MultipathUpgradeConfUpdate8to9(Actor):
 
     name = 'multipath_upgrade_conf_update_8to9'
     consumes = (MultipathConfFacts8to9,)
-    produces = (UpdatedMultipathConfig,)
+    produces = (MultipathConfigUpdatesInfo,)
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 
     def process(self):

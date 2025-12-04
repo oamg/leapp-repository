@@ -3,7 +3,7 @@ import shutil
 from leapp.libraries.actor import system_config_patcher
 from leapp.libraries.common.testutils import CurrentActorMocked
 from leapp.libraries.stdlib import api
-from leapp.models import UpdatedMultipathConfig
+from leapp.models import MultipathConfigUpdatesInfo, UpdatedMultipathConfig
 
 
 def test_config_patcher(monkeypatch):
@@ -17,8 +17,9 @@ def test_config_patcher(monkeypatch):
             target_path='/etc/multipath/conf.d/myconfig.conf'
         )
     ]
+    config_update_info = MultipathConfigUpdatesInfo(updates=modified_configs)
 
-    actor_mock = CurrentActorMocked(msgs=modified_configs)
+    actor_mock = CurrentActorMocked(msgs=[config_update_info])
     monkeypatch.setattr(api, 'current_actor', actor_mock)
 
     copies_performed = []

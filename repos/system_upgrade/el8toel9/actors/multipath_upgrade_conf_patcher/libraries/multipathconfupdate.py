@@ -3,7 +3,7 @@ import shutil
 
 from leapp.libraries.common import multipathutil
 from leapp.libraries.stdlib import api
-from leapp.models import UpdatedMultipathConfig
+from leapp.models import MultipathConfigUpdatesInfo, UpdatedMultipathConfig
 
 MODIFICATIONS_STORE_PATH = '/var/lib/leapp/proposed_modifications'
 
@@ -124,4 +124,4 @@ def update_configs(facts):
                                             target_path=original_config_location)
             config_updates.append(update)
 
-    api.produce(*config_updates)
+    api.produce(MultipathConfigUpdatesInfo(updates=config_updates))

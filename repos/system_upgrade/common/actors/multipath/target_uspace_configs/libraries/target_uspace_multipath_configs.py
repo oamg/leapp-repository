@@ -4,9 +4,9 @@ from leapp.libraries.stdlib import api
 from leapp.models import (
     CopyFile,
     DracutModule,
+    MultipathConfigUpdatesInfo,
     MultipathInfo,
     TargetUserSpaceUpgradeTasks,
-    UpdatedMultipathConfig,
     UpgradeInitramfsTasks
 )
 
@@ -32,8 +32,9 @@ def request_mpath_confs(multipath_info):
                 continue
             files_to_put_into_uspace[config_path] = config_path
 
-    for config_update in api.consume(UpdatedMultipathConfig):
-        files_to_put_into_uspace[config_update.updated_config_location] = config_update.target_path
+    for config_updates in api.consume(MultipathConfigUpdatesInfo):
+        for update in config_updates.updates:
+            files_to_put_into_uspace[update.updated_config_location] = update.target_path
 
     # Note: original implementation would copy the /etc/multipath directory, which contains
     # /etc/multipath/conf.d location for drop-in files. The current logic includes it automatically,

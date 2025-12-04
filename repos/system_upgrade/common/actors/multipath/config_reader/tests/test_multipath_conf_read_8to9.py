@@ -132,7 +132,7 @@ def test_get_facts_missing_dir(monkeypatch, primary_config, expected_configs):
     general_info = [msg for msg in produce_mock.model_instances if isinstance(msg, MultipathInfo)]
     assert len(general_info) == 1
     assert general_info[0].is_configured
-    # general_info[0].config_dir is with the MultipathConfFacts8to9 messages bellow
+    # general_info[0].config_dir is with the MultipathConfFacts8to9 messages below
 
     msgs = [msg for msg in produce_mock.model_instances if isinstance(msg, MultipathConfFacts8to9)]
     assert len(msgs) == 1

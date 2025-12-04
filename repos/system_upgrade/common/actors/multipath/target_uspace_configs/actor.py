@@ -1,6 +1,6 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import target_uspace_multipath_configs
-from leapp.models import MultipathInfo, TargetUserSpaceUpgradeTasks, UpdatedMultipathConfig, UpgradeInitramfsTasks
+from leapp.models import MultipathConfigUpdatesInfo, MultipathInfo, TargetUserSpaceUpgradeTasks, UpgradeInitramfsTasks
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
@@ -14,7 +14,7 @@ class RequestMultipathConfsInTargetUserspace(Actor):
     """
 
     name = 'request_multipath_conf_in_target_userspace'
-    consumes = (MultipathInfo, UpdatedMultipathConfig)
+    consumes = (MultipathInfo, MultipathConfigUpdatesInfo)
     produces = (TargetUserSpaceUpgradeTasks, UpgradeInitramfsTasks)
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 

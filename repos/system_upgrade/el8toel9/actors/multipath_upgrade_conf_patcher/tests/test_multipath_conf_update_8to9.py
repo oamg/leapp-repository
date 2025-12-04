@@ -122,8 +122,9 @@ def test_all_facts(monkeypatch, config_facts):
     multipathconfupdate.update_configs(config_facts)
 
     config_updates = {}
-    for config_update in produce_mock.model_instances:
-        config_updates[config_update.target_path] = config_update.updated_config_location
+    for config_updates_msg in produce_mock.model_instances:
+        for update in config_updates_msg.updates:
+            config_updates[update.target_path] = update.updated_config_location
 
     for config in config_facts.configs:
         expected_conf_location = os.path.join(AFTER_DIR, config.pathname)
