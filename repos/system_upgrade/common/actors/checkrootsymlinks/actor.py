@@ -55,7 +55,7 @@ class CheckRootSymlinks(Actor):
                                     os.path.relpath(item.target, '/'),
                                     os.path.join('/', item.name)])
                 commands.append(command)
-            rem_commands = [['sh', '-c', ' && '.join(commands)]]
+            rem_commands = [['sh', '-c', '"{}"'.format(' && '.join(commands))]]
         # Generate reports about non-utf8 absolute links presence
         nonutf_count = len(absolute_links_nonutf)
         if nonutf_count > 0:
