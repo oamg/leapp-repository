@@ -34,6 +34,11 @@ def request_mpath_confs(multipath_info):
 
     for config_updates in api.consume(MultipathConfigUpdatesInfo):
         for update in config_updates.updates:
+            # Detect /etc/multipath.conf > /etc/multipath.conf, and replace it with the patched
+            # version PATCHED > /etc/multipath.conf
+            if update.target_path in files_to_put_into_uspace:
+                del files_to_put_into_uspace[update.target_path]
+
             files_to_put_into_uspace[update.updated_config_location] = update.target_path
 
     # Note: original implementation would copy the /etc/multipath directory, which contains
@@ -56,11 +61,20 @@ def request_mpath_confs(multipath_info):
 
 def process():
     multipath_info = next(api.consume(MultipathInfo), None)
+
     if not multipath_info:
         api.current_logger().debug(
-            'Received no MultipathInfo message. No configfiles will '
+            'Received no MultipathInfo message. No config files will '
             'be requested to be placed into target userspace.'
         )
         return
+
+    if not multipath_info.is_configured:
+        api.current_logger().debug(
+            'Multipath is not configured. No config files will '
+            'be requested to be placed into target userspace.'
+        )
+        return
+
     request_mpath_confs(multipath_info)
     request_mpath_dracut_module_for_upgrade_initramfs()
