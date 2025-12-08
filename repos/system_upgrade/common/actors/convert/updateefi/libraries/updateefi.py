@@ -126,6 +126,11 @@ def process():
     try:
         efibootinfo = efi.EFIBootInfo()
         target_entry = _add_boot_entry_for_target(efibootinfo)
+        # NOTE: this isn't strictly necessary as UEFI should set the next entry
+        # to be the first in the BootOrder. This is a workaround to make sure
+        # the "efi_finalization_fix" actor doesn't attempt to set BootNext to
+        # the original entry which will be deleted below.
+        efi.set_bootnext(target_entry.boot_number)
     except efi.EFIError as e:
         raise StopActorExecutionError(
             "Failed to add UEFI boot entry for the target system",
@@ -147,7 +152,7 @@ def process():
         api.current_logger().error("Failed to remove source distro EFI boot entry: {}".format(e))
 
         # This is low severity, some UEFIs will automatically remove an entry
-        # whose EFI binary no longer exists, at least OVMF, used by qemu, does.
+        # whose EFI binary no longer exists at least OVMF, used by qemu, does.
         summary = (
             "Removal of the source system UEFI boot entry failed."
             " Check UEFI boot entries and manually remove it if it's still present."
