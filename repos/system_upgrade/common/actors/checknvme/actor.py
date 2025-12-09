@@ -5,7 +5,7 @@ from leapp.reporting import Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
-class CheckLuks(Actor):
+class CheckNVME(Actor):
     """
     Check if NVMe devices are used and possibly register additional actions.
 

@@ -24,7 +24,7 @@ RQ_CONFIG_FILES = [
 ]
 """
 These config files seems to be required, but potentially they could be missing
-on the source system. Tracking them explicitely.
+on the source system. Tracking them explicitly.
 """
 
 
@@ -93,7 +93,7 @@ def check_nvme(nvmeinfo):
     if nvmeof_devices and not (nvmeinfo.hostid and nvmeinfo.hostnqn):
         # NOTE(pstodulk): hostid and hostnqn are mandatory for NVMe-oF devices.
         # That means practically FC, RDMA, TCP. Let's inform user the upgrade
-        # is blocked and they must cofigure the system properly to be able to
+        # is blocked and they must configure the system properly to be able to
         # upgrade
         upgrade_can_continue = False
         report_missing_configs(nvmeinfo, nvmeof_devices)
