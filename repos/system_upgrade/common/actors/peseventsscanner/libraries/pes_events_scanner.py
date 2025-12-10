@@ -140,18 +140,29 @@ def compute_pkg_changes_between_consequent_releases(source_installed_pkgs,
         # PRESENCE events have a different semantics than the other events - they add a package to a target state
         # only if it had been seen (installed) during the course of the overall target packages
         if event.action == Action.PRESENT:
-            for pkg in event.in_pkgs:
-                if pkg in seen_pkgs:
-                    # First remove the package with the old repository and add it back, but now with the new
-                    # repository. As the Package class has a custom __hash__ and __eq__ comparing only name
-                    # and modulestream, the pkg.repository field is ignore and therefore the add() call
-                    # does not update the entry.
-                    if pkg in target_pkgs:
-                        target_pkgs.remove(pkg)
-                    target_pkgs.add(pkg)
+            # First, remove the packages with the old repositories and add them back, but now with the new
+            # repositories. As the Package class has a custom __hash__ and __eq__ comparing only name
+            # and modulestream, the pkg.repository field is ignored and therefore the union() call
+            # does not update the entries.
+            seen_in_pkgs = event.in_pkgs.intersection(seen_pkgs)
+            removed_pkgs = target_pkgs.intersection(seen_in_pkgs)
+            removed_pkgs_str = ', '.join(str(pkg) for pkg in removed_pkgs)
+            added_pkgs_str = ', '.join(str(pkg) for pkg in seen_in_pkgs)
+            logger.debug('Applying event %d (%s): replacing packages %s with %s',
+                         event.id, event.action, removed_pkgs_str, added_pkgs_str)
+
+            target_pkgs = target_pkgs.difference(seen_in_pkgs)
+            target_pkgs = target_pkgs.union(seen_in_pkgs)
+
         elif event.action == Action.DEPRECATED:
             if event.in_pkgs.intersection(source_installed_pkgs):
                 # Remove packages with old repositories add packages with the new one
+                removed_pkgs = target_pkgs.intersection(event.in_pkgs)
+                removed_pkgs_str = ', '.join(str(pkg) for pkg in removed_pkgs)
+                added_pkgs_str = ', '.join(str(pkg) for pkg in event.in_pkgs)
+                logger.debug('Applying event %d (%s): replacing packages %s with %s',
+                             event.id, event.action, removed_pkgs_str, added_pkgs_str)
+
                 target_pkgs = target_pkgs.difference(event.in_pkgs)
                 target_pkgs = target_pkgs.union(event.in_pkgs)
         else:
