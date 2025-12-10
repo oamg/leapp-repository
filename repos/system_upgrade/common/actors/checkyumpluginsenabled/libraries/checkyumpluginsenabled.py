@@ -66,5 +66,5 @@ def check_required_dnf_plugins_enabled(pkg_manager_info):
             reporting.Severity(reporting.Severity.HIGH),
             reporting.Groups([reporting.Groups.INHIBITOR]),
             reporting.Groups([reporting.Groups.REPOSITORY]),
-            # TODO add key
+            reporting.Key("2a0ff91bea885cfe9d763cf3a379789848a501b9"),
         ])
