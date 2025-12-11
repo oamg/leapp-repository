@@ -53,16 +53,6 @@ def mk_setup_info():
     return TargetRHUISetupInfo(preinstall_tasks=pre_tasks, postinstall_tasks=post_tasks)
 
 
-def iter_known_rhui_setups():
-    for upgrade_path, providers in rhui.RHUI_CLOUD_MAP.items():
-        for provider_variant, variant_description in providers.items():
-            src_clients = variant_description['src_pkg']
-            if isinstance(src_clients, str):
-                src_clients = {src_clients, }
-
-            yield provider_variant, upgrade_path, src_clients
-
-
 def mk_cloud_map(variants):
     upg_path = {}
     for variant_desc in variants:
@@ -108,7 +98,7 @@ def mk_cloud_map(variants):
     ]
 )
 def test_determine_rhui_src_variant(monkeypatch, extra_pkgs, rhui_setups, expected_result):
-    actor = CurrentActorMocked(src_ver='7.9', config=_make_default_config(all_rhui_cfg))
+    actor = CurrentActorMocked(src_ver='8.10', config=_make_default_config(all_rhui_cfg))
     monkeypatch.setattr(api, 'current_actor', actor)
     installed_pkgs = {'zip', 'zsh', 'bash', 'grubby'}.union(set(extra_pkgs))
 

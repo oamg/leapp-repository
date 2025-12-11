@@ -27,8 +27,8 @@ def test_no_skip_check(monkeypatch):
 
 def test_not_supported_release(monkeypatch):
     monkeypatch.setattr(version, "is_supported_version", lambda: False)
-    monkeypatch.setattr(version, "get_source_major_version", lambda: '7')
-    monkeypatch.setattr(version, "current_version", lambda: ('bad', '7'))
+    monkeypatch.setattr(version, "get_source_major_version", lambda: '8')
+    monkeypatch.setattr(version, "current_version", lambda: ('bad', '8'))
     monkeypatch.setattr(reporting, "create_report", create_report_mocked())
 
     checkosrelease.check_os_version()

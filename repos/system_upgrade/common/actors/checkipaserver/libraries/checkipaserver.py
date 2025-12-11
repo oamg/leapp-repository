@@ -1,13 +1,10 @@
 from leapp import reporting
 from leapp.libraries.common.config.version import get_source_major_version
 
-MIGRATION_GUIDE_7 = "https://red.ht/IdM-upgrading-RHEL-7-to-RHEL-8"
-
 # TBD: update the doc url when migration guide 8->9 becomes available
 MIGRATION_GUIDE_8 = "https://red.ht/IdM-upgrading-RHEL-8-to-RHEL-9"
 MIGRATION_GUIDE_9 = "https://red.ht/IdM-upgrading-RHEL-9-to-RHEL-10"
 MIGRATION_GUIDES = {
-    '7': MIGRATION_GUIDE_7,
     '8': MIGRATION_GUIDE_8,
     '9': MIGRATION_GUIDE_9
 }
