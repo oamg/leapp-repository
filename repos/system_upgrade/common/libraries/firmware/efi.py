@@ -323,16 +323,3 @@ def set_bootnext(boot_number):
         run(['/usr/sbin/efibootmgr', '--bootnext', boot_number])
     except CalledProcessError:
         raise EFIError('Could not set boot entry {} as BootNext.'.format(boot_number))
-
-
-def get_distro_efidir_canon_path(distro):
-    """
-    Get canonical path to the distro EFI directory in the EFI mountpoint.
-
-    NOTE: The path might be incorrect for distros not properly enabled for IPU,
-    when enabling new distros in the codebase, make sure the path is correct.
-    """
-    if distro == 'rhel':
-        return os.path.join(EFI_MOUNTPOINT, "EFI", "redhat")
-
-    return os.path.join(EFI_MOUNTPOINT, "EFI", distro)

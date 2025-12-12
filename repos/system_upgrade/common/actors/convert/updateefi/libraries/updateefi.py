@@ -9,6 +9,19 @@ from leapp.libraries.common.firmware import is_efi, efi
 from leapp.libraries.stdlib import api
 
 
+def _get_distro_efidir_canon_path(distro_id):
+    """
+    Get canonical path to the distro EFI directory in the EFI mountpoint.
+
+    NOTE: The path might be incorrect for distros not properly enabled for IPU,
+    when enabling new distros in the codebase, make sure the path is correct.
+    """
+    if distro_id == 'rhel':
+        return os.path.join(efi.EFI_MOUNTPOINT, "EFI", "redhat")
+
+    return os.path.join(efi.EFI_MOUNTPOINT, "EFI", distro_id)
+
+
 def _get_target_efi_bin_path():
     # TODO aarch64
 
@@ -22,7 +35,7 @@ def _get_target_efi_bin_path():
     # - shim64-<distro>.efi - ???
     # What about them?
     for filename in ("shimx64.efi", "grubx64.efi"):
-        efi_dir = efi.get_distro_efidir_canon_path(get_target_distro_id())
+        efi_dir = _get_distro_efidir_canon_path(get_target_distro_id())
         canon_path = os.path.join(efi_dir, filename)
         if os.path.exists(canon_path):
             return efi.canonical_path_to_efi_format(canon_path)
