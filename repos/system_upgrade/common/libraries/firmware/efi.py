@@ -231,6 +231,8 @@ def get_boot_entry(efibootinfo, label, efi_bin_path):
     """
     Get the UEFI boot entry with label `label` and EFI binary path `efi_bin_path`.
 
+    The EFI binary path comparison is case-insensitive.
+
     :param label: Label to search for
     :type label: str
     :param efi_bin_path: Path to EFI binary to search for in EFI format
@@ -240,7 +242,9 @@ def get_boot_entry(efibootinfo, label, efi_bin_path):
     """
 
     for entry in efibootinfo.entries.values():
-        if entry.label == label and efi_bin_path in entry.efi_bin_source:
+        # the ESP has to be on FAT filesystem which is case-insensitive
+        is_path_equal = efi_bin_path.lower() in entry.efi_bin_source.lower()
+        if entry.label == label and is_path_equal:
             return entry
 
     return None
