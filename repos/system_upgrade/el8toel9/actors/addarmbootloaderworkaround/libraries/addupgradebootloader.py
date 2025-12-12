@@ -125,7 +125,7 @@ def _add_upgrade_boot_entry(efibootinfo):
     else:
         raise StopActorExecutionError('Unable to detect upgrade UEFI binary file.')
 
-    upgrade_boot_entry = efi.get_boot_entry(efibootinfo, efi_path, UPGRADE_EFI_ENTRY_LABEL)
+    upgrade_boot_entry = efi.get_boot_entry(efibootinfo, UPGRADE_EFI_ENTRY_LABEL, efi_path)
     if upgrade_boot_entry is not None:
         return upgrade_boot_entry
 
