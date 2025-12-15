@@ -351,6 +351,19 @@ def test_produce_config():
     assert cfg.subsystem_sftp == 'internal-sftp'
 
 
+@pytest.mark.parametrize('config_line,option_name,invalid_value', [
+    ('PermitRootLogin NO', 'PermitRootLogin', 'NO'),
+    ('UsePrivilegeSeparation YES', 'UsePrivilegeSeparation', 'YES'),
+])
+def test_parse_config_invalid_option_case(config_line, option_name, invalid_value):
+    config = [config_line]
+
+    with pytest.raises(StopActorExecutionError) as err:
+        parse_config(config)
+
+    assert str(err.value).startswith('Invalid SSH configuration')
+
+
 def test_actor_execution(current_actor_context):
     current_actor_context.run()
     assert current_actor_context.consume(OpenSshConfig)
