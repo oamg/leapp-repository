@@ -7,6 +7,7 @@ from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common.rpms import check_file_modification
 from leapp.libraries.stdlib import api
 from leapp.models import OpenSshConfig, OpenSshPermitRootLogin
+from leapp.models.fields import ModelViolationError
 
 CONFIG = '/etc/ssh/sshd_config'
 DEPRECATED_DIRECTIVES = ['showpatchlevel']
@@ -60,12 +61,35 @@ def parse_config(config, base_config=None, current_cfg_depth=0):
             # convert deprecated alias
             if value == "without-password":
                 value = "prohibit-password"
-            v = OpenSshPermitRootLogin(value=value, in_match=in_match)
+            try:
+                v = OpenSshPermitRootLogin(value=value, in_match=in_match)
+            except ModelViolationError:
+                valid_values = OpenSshPermitRootLogin.value.serialize()['choices']
+                raise StopActorExecutionError(
+                    'Invalid SSH configuration: Invalid value for PermitRootLogin',
+                    details={
+                        'details': 'Invalid value "{}" for PermitRootLogin in {}. '
+                                   'Arguments for SSH configuration options are case-sensitive. '
+                                   'Valid values are: {}.'
+                                   .format(value, CONFIG, ', '.join(valid_values))
+                    }
+                )
             ret.permit_root_login.append(v)
 
         elif el[0].lower() == 'useprivilegeseparation':
             # Record only first occurrence, which is effective
             if not ret.use_privilege_separation:
+                valid_values = OpenSshConfig.use_privilege_separation.serialize()['choices']
+                if value not in valid_values:
+                    raise StopActorExecutionError(
+                        'Invalid SSH configuration: Invalid value for UsePrivilegeSeparation',
+                        details={
+                            'details': 'Invalid value "{}" for UsePrivilegeSeparation in {}. '
+                                       'Arguments for SSH configuration options are case-sensitive. '
+                                       'Valid values are: {}.'
+                                       .format(value, CONFIG, ', '.join(valid_values))
+                        }
+                    )
                 ret.use_privilege_separation = value
 
         elif el[0].lower() == 'protocol':
