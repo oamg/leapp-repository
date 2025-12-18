@@ -296,10 +296,26 @@ def get_firewalls_status():
 
 def get_firmware():
     firmware = 'efi' if os.path.isdir('/sys/firmware/efi') else 'bios'
+
+    ppc64le_opal = None
     if architecture.matches_architecture(architecture.ARCH_PPC64LE):
-        ppc64le_opal = bool(os.path.isdir('/sys/firmware/opal/'))
-        return FirmwareFacts(firmware=firmware, ppc64le_opal=ppc64le_opal)
-    return FirmwareFacts(firmware=firmware)
+        ppc64le_opal = os.path.isdir('/sys/firmware/opal/')
+
+    is_secureboot = None
+    if firmware == 'efi':
+        try:
+            out = run(['mokutil', '--sb-state'])['stdout']
+            is_secureboot = 'enabled' in out
+        except CalledProcessError as e:
+            raise StopActorExecutionError('Failed to determine SecureBoot state: {}'.format(e))
+        except OSError as e:
+            # shim depends on mokutil, if it's not installed assume SecureBoot is disabled
+            api.current_logger().debug(
+                'Failed to execute mokutil, assuming SecureBoot is disabled: {}'.format(e)
+            )
+            is_secureboot = False
+
+    return FirmwareFacts(firmware=firmware, ppc64le_opal=ppc64le_opal, secureboot_enabled=is_secureboot)
 
 
 @aslist
