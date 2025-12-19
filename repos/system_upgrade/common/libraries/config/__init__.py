@@ -141,3 +141,19 @@ def get_target_distro_id():
     :rtype: str
     """
     return api.current_actor().configuration.distro.target
+
+
+def is_conversion():
+    """
+    Return whether a conversion is happening during the upgrade.
+
+    Conversions in means that a target distro different from source distro was
+    specified.
+
+    This is a wrapper which compares source and target distro IDs. This can also
+    be helpful for testing.
+
+    :return: True if converting False otherwise
+    :rtype: bool
+    """
+    return get_source_distro_id() != get_target_distro_id()
