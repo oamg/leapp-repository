@@ -47,6 +47,9 @@ def remove_upgrade_efi_entry():
     _remove_upgrade_blsdir(bootloader_info)
 
     original_boot_number = bootloader_info.original_entry.boot_number
+    # NOTE: during conversion this will be overwritten by the convert/updateefi
+    # actor, which is executed later and sets BootNext to a newly created entry
+    # for the target OS
     efi.set_bootnext(original_boot_number)
 
     # TODO: Move calling `mount -a` to a separate actor as it is not really

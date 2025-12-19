@@ -1,7 +1,8 @@
 import os
 from re import compile as regexp
 
-from leapp.libraries.stdlib import run
+from leapp.libraries.common import efi
+from leapp.libraries.stdlib import api, run
 
 _current_boot_matcher = regexp(r'BootCurrent: (?P<boot_current>([0-9A-F]*))')
 _next_boot_matcher = regexp(r'BootNext: (?P<boot_next>([0-9A-F]*))')
@@ -42,6 +43,20 @@ def maybe_emit_updated_boot_entry():
         if next_match:
             next_boot = next_match
 
+    # TODO this only works if the entry with the boot number of BootCurrent
+    # wasn't modified.
+    # This would happen for example during conversion where the original boot
+    # entry is replaced by the one for the target distro, the only thing
+    # preventing this is that we set BootNext to the new entry's number.
+    #
+    # For a proper solution an earlier actor should scan
+    # output of `efibootmgr` and produce a message so that we can check that
+    # the original entry at BootCurrent wasn't modified.
     if current_boot and not next_boot:
         # We set BootNext to CurrentBoot only if BootNext wasn't previously set
-        run(['/sbin/efibootmgr', '-n', current_boot])
+        try:
+            efi.set_bootnext(current_boot)
+        except efi.EFIError as e:
+            api.current_logger().error(
+                "Failed to set BootNext to {}: {}".format(current_boot, e)
+            )

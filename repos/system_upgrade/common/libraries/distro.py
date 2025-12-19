@@ -221,6 +221,19 @@ def get_distro_repoids(context, distro, major_version, arch):
     return sorted(distro_repoids)
 
 
+def distro_id_to_pretty_name(distro_id):
+    """
+    Get pretty name for the given distro id.
+
+    The pretty name is what is found in the NAME field of /etc/os-release.
+    """
+    return {
+        "rhel": "Red Hat Enterprise Linux",
+        "centos": "CentOS Stream",
+        "almalinux": "AlmaLinux",
+    }[distro_id]
+
+
 def get_distro_efidir_canon_path(distro_id):
     """
     Get canonical path to the distro EFI directory in the EFI mountpoint.

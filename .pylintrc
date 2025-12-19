@@ -42,7 +42,9 @@ disable=
  unnecessary-pass,
  raise-missing-from,  # no 'raise from' in python 2
  consider-using-f-string,  # sorry, not gonna happen, still have to support py2
- logging-format-interpolation
+ logging-format-interpolation,
+# problem betwee Python 3.6 and 3.8+ pylint
+ useless-option-value
 
 [FORMAT]
 # Maximum number of characters on a single line.
