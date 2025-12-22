@@ -163,7 +163,7 @@ def _report_kept_enabled(tasks):
         "Systemd services which were enabled on the system before the upgrade"
         " were kept enabled after the upgrade. "
     )
-    if tasks:
+    if tasks.to_enable:
         summary += (
             "The following services were originally disabled by preset on the"
             " upgraded system and Leapp attempted to enable them:{}{}"
@@ -193,9 +193,12 @@ def _get_newly_enabled(services_source, desired_states):
 
 
 def _report_newly_enabled(newly_enabled):
+    if not newly_enabled:
+        return
+
     summary = (
         "The following services were disabled before the upgrade and were set"
-        "to enabled by a systemd preset after the upgrade:{}{}.".format(
+        " to enabled by a systemd preset after the upgrade:{}{}".format(
             FMT_LIST_SEPARATOR, FMT_LIST_SEPARATOR.join(sorted(newly_enabled))
         )
     )
