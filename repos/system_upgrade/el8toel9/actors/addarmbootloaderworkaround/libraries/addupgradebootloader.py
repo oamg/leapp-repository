@@ -5,7 +5,7 @@ from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import mounting
 from leapp.libraries.common.firmware import efi
 from leapp.libraries.common.grub import get_boot_partition
-from leapp.libraries.common.partitions import get_partition_number
+from leapp.libraries.common.partitions import get_partition_number, blk_dev_from_partition
 from leapp.libraries.stdlib import api, CalledProcessError, run
 from leapp.models import ArmWorkaroundEFIBootloaderInfo, EFIBootEntry, TargetUserSpaceInfo
 
@@ -53,7 +53,12 @@ def process():
 
         _copy_grub_files(['grubenv', 'grub.cfg'], ['user.cfg'])
 
-        efibootinfo = efi.EFIBootInfo()
+        try:
+            efibootinfo = efi.EFIBootInfo()
+        except efi.EFIError as e:
+            raise StopActorExecutionError(
+                "Failed to obtain information about UEFI: {}".format(e)
+            )
         current_boot_entry = efibootinfo.entries[efibootinfo.current_bootnum]
         upgrade_boot_entry = _add_upgrade_boot_entry(efibootinfo)
 
@@ -120,8 +125,13 @@ def _add_upgrade_boot_entry(efibootinfo):
     Return the upgrade efi entry (EFIEntry).
     """
 
-    dev_number = get_partition_number(efi.get_efi_partition())
-    blk_dev = efi.get_efi_device()
+    try:
+        efi_part = efi.get_efi_partition()
+    except efi.EFIError as e:
+        raise StopActorExecutionError("Failed to get EFI partition: {}".format(e))
+
+    dev_number = get_partition_number(efi_part)
+    blk_dev = blk_dev_from_partition(efi_part)
 
     tmp_efi_path = os.path.join(LEAPP_EFIDIR_CANONICAL_PATH, 'shimaa64.efi')
     if os.path.exists(tmp_efi_path):

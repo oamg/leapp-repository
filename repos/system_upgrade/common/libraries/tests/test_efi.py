@@ -2,7 +2,6 @@ import os
 
 import pytest
 
-from leapp.exceptions import StopActorExecution
 from leapp.libraries.common import partitions
 from leapp.libraries.common.firmware import efi
 from leapp.libraries.stdlib import CalledProcessError
@@ -187,7 +186,7 @@ def test_get_efi_partition_success_fail_not_efi(monkeypatch):
     monkeypatch.setattr(os.path, 'exists', lambda path: path == '/boot/efi/')
     monkeypatch.setattr(os.path, 'ismount', lambda path: path == '/boot/efi/')
 
-    with pytest.raises(StopActorExecution) as err:
+    with pytest.raises(efi.EFIError) as err:
         efi.get_efi_partition()
         assert 'Unable to get ESP when BIOS is used.' in err
 
@@ -198,7 +197,7 @@ def test_get_efi_partition_success_fail_not_exists(monkeypatch):
     monkeypatch.setattr(os.path, 'exists', lambda path: False)
     monkeypatch.setattr(os.path, 'ismount', lambda path: path == '/boot/efi/')
 
-    with pytest.raises(StopActorExecution) as err:
+    with pytest.raises(efi.EFIError) as err:
         efi.get_efi_partition()
         assert 'The UEFI has been detected but' in err
 
@@ -209,7 +208,7 @@ def test_get_efi_partition_success_fail_not_mounted(monkeypatch):
     monkeypatch.setattr(os.path, 'exists', lambda path: path == '/boot/efi/')
     monkeypatch.setattr(os.path, 'ismount', lambda path: False)
 
-    with pytest.raises(StopActorExecution) as err:
+    with pytest.raises(efi.EFIError) as err:
         efi.get_efi_partition()
         assert 'The UEFI has been detected but' in err
 
@@ -224,7 +223,7 @@ def test_get_efi_device(monkeypatch):
 def test_EFIBootInfo_fail_not_efi(monkeypatch):
     monkeypatch.setattr(efi, 'is_efi', lambda: False)
 
-    with pytest.raises(StopActorExecution) as err:
+    with pytest.raises(efi.EFIError) as err:
         efi.EFIBootInfo()
         assert 'Unable to collect data about UEFI on a BIOS system.' in err
 
@@ -233,7 +232,7 @@ def test_EFIBootInfo_fail_efibootmgr_error(monkeypatch):
     monkeypatch.setattr(efi, 'is_efi', lambda: True)
     monkeypatch.setattr(efi, 'run', RunMocked(raise_err=True))
 
-    with pytest.raises(StopActorExecution) as err:
+    with pytest.raises(efi.EFIError) as err:
         efi.EFIBootInfo()
         assert 'Unable to get information about UEFI boot entries.' in err
 

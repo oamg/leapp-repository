@@ -144,9 +144,11 @@ def test_get_partition_for_dir_command_missing(monkeypatch):
 
     monkeypatch.setattr(partitions, "run", run_mocked)
 
-    msg = ('Could not get name of underlying /boot partition:'
-        ' grub2-probe is missing.'
-        ' Possibly called on system that does not use GRUB2?')
+    msg = (
+        "Could not get name of underlying /boot partition:"
+        " grub2-probe is missing."
+        " Possibly called on system that does not use GRUB2?"
+    )
     with pytest.raises(StopActorExecution, match=msg):
         partitions.get_partition_for_dir('/boot')
 

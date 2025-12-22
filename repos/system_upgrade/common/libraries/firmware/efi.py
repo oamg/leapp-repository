@@ -1,13 +1,18 @@
 import os
 import re
 
-from leapp.exceptions import StopActorExecution
 from leapp.libraries.common.firmware import is_efi
-from leapp.libraries.common.partitions import blk_dev_from_partition, get_partition_for_dir, get_partition_number
+from leapp.libraries.common.partitions import blk_dev_from_partition, get_partition_for_dir
 from leapp.libraries.stdlib import api, CalledProcessError, run
 
 EFI_MOUNTPOINT = '/boot/efi/'
 """The path to the required mountpoint for ESP."""
+
+
+class EFIError(Exception):
+    """
+    Exception raised when EFI operation failed.
+    """
 
 
 def canonical_path_to_efi_format(canonical_path):
@@ -99,19 +104,17 @@ class EFIBootInfo:
     """
     Data about the current UEFI boot configuration.
 
-    Raise StopActorExecution when:
-        - unable to obtain info about the UEFI configuration.
-        - BIOS is detected.
-        - ESP is not mounted where expected.
+    :raises EFIError: when unable to obtain info about the UEFI configuration,
+                      BIOS is detected or ESP is not mounted where expected.
     """
 
     def __init__(self):
         if not is_efi():
-            raise StopActorExecution('Unable to collect data about UEFI on a BIOS system.')
+            raise EFIError('Unable to collect data about UEFI on a BIOS system.')
         try:
             result = run(['/usr/sbin/efibootmgr', '-v'])
         except CalledProcessError:
-            raise StopActorExecution('Unable to get information about UEFI boot entries.')
+            raise EFIError('Unable to get information about UEFI boot entries.')
 
         bootmgr_output = result['stdout']
 
@@ -154,7 +157,7 @@ class EFIBootInfo:
 
         if not self.entries:
             # it's not expected that no entry exists
-            raise StopActorExecution('UEFI: Unable to detect any UEFI bootloader entry.')
+            raise EFIError('Unable to detect any UEFI bootloader entry.')
 
     @staticmethod
     def _parse_key_value(bootmgr_output, key):
@@ -170,7 +173,7 @@ class EFIBootInfo:
         self.current_bootnum = self._parse_key_value(bootmgr_output, 'BootCurrent')
 
         if self.current_bootnum is None:
-            raise StopActorExecution('UEFI: Unable to detect current boot number.')
+            raise EFIError('Unable to detect current boot number.')
 
     def _parse_next_bootnum(self, bootmgr_output):
         # e.g.: BootNext: 0002
@@ -182,7 +185,7 @@ class EFIBootInfo:
         self.boot_order = tuple(read_boot_order.split(','))
 
         if self.boot_order is None:
-            raise StopActorExecution('UEFI: Unable to detect current boot order.')
+            raise EFIError('UEFI: Unable to detect current boot order.')
 
     def _print_loaded_info(self):
         msg = 'Bootloader setup:'
@@ -198,17 +201,15 @@ def get_efi_partition():
     """
     Return the EFI System Partition (ESP).
 
-    Raise StopActorExecution when:
-        - UEFI is not detected,
-        - ESP is not mounted where expected,
-        - the partition can't be obtained from GRUB.
+    :raises EFIError: when UEFI is not detected, ESP is not mounted where
+                      expected, the partition can't be obtained from GRUB.
     """
 
     if not is_efi():
-        raise StopActorExecution('Unable to get ESP when BIOS is used.')
+        raise EFIError('Unable to get ESP when BIOS is used.')
 
     if not os.path.exists(EFI_MOUNTPOINT) or not os.path.ismount(EFI_MOUNTPOINT):
-        raise StopActorExecution(
+        raise EFIError(
             'The UEFI has been detected but the ESP is not mounted in /boot/efi as required.'
         )
 

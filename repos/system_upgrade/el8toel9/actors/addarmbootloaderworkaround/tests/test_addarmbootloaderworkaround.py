@@ -171,7 +171,7 @@ def test_set_bootnext(monkeypatch):
 def test_add_upgrade_boot_entry_no_efi_binary(monkeypatch):
     monkeypatch.setattr(efi, 'get_efi_partition', lambda: '/dev/sda1')
     monkeypatch.setattr(addupgradebootloader, 'get_partition_number', lambda device: '1')
-    monkeypatch.setattr(efi, 'get_efi_device', lambda: '/dev/sda')
+    monkeypatch.setattr(addupgradebootloader, 'blk_dev_from_partition', lambda part: '/dev/sda')
     monkeypatch.setattr(os.path, 'exists', lambda path: False)
 
     efibootinfo_mock = MockEFIBootInfo([TEST_RHEL_EFI_ENTRY])
@@ -184,7 +184,7 @@ def test_add_upgrade_already_exists(monkeypatch):
 
     monkeypatch.setattr(efi, 'get_efi_partition', lambda: '/dev/sda1')
     monkeypatch.setattr(addupgradebootloader, 'get_partition_number', lambda device: '1')
-    monkeypatch.setattr(efi, 'get_efi_device', lambda: '/dev/sda')
+    monkeypatch.setattr(addupgradebootloader, 'blk_dev_from_partition', lambda part: '/dev/sda')
     monkeypatch.setattr(os.path, 'exists', lambda path: True)
 
     def mock_run(cmd):
@@ -202,7 +202,7 @@ def test_add_upgrade_already_exists(monkeypatch):
 def test_add_upgrade_boot_entry_command_failure(monkeypatch):
     monkeypatch.setattr(efi, 'get_efi_partition', lambda: '/dev/sda1')
     monkeypatch.setattr(addupgradebootloader, 'get_partition_number', lambda device: '1')
-    monkeypatch.setattr(efi, 'get_efi_device', lambda: '/dev/sda')
+    monkeypatch.setattr(addupgradebootloader, 'blk_dev_from_partition', lambda part: '/dev/sda')
     monkeypatch.setattr(addupgradebootloader, '_get_upgrade_boot_entry', lambda efi, path, label: None)
     monkeypatch.setattr(os.path, 'exists', lambda path: True)
 
@@ -225,7 +225,7 @@ def test_add_upgrade_boot_entry_verification_failure(monkeypatch):
 
     monkeypatch.setattr(efi, 'get_efi_partition', lambda: '/dev/sda1')
     monkeypatch.setattr(addupgradebootloader, 'get_partition_number', lambda device: '1')
-    monkeypatch.setattr(efi, 'get_efi_device', lambda: '/dev/sda')
+    monkeypatch.setattr(addupgradebootloader, 'blk_dev_from_partition', lambda part: '/dev/sda')
     monkeypatch.setattr(addupgradebootloader, '_get_upgrade_boot_entry', lambda efi, path, label: None)
     monkeypatch.setattr(os.path, 'exists', lambda path: True)
 
@@ -245,7 +245,7 @@ def test_add_upgrade_boot_entry_success(monkeypatch):
 
     monkeypatch.setattr(efi, 'get_efi_partition', lambda: '/dev/sda1')
     monkeypatch.setattr(addupgradebootloader, 'get_partition_number', lambda device: '1')
-    monkeypatch.setattr(efi, 'get_efi_device', lambda: '/dev/sda')
+    monkeypatch.setattr(addupgradebootloader, 'blk_dev_from_partition', lambda part: '/dev/sda')
     monkeypatch.setattr(os.path, 'exists', lambda path: True)
 
     def mock_run(cmd):
