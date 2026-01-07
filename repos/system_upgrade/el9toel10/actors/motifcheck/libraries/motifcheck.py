@@ -16,7 +16,7 @@ report_motif_inst_hint = (
 )
 
 # Link URL for motif report
-report_motif_inst_link_url = 'https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/10/html/10.0_release_notes/removed-features#removed-features-graphics-infrastructures'
+report_motif_inst_link_url = 'https://red.ht/rhel-10-removed-features-graphics-infrastructures'
 
 
 def _report_motif_installed():
