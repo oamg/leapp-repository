@@ -42,13 +42,13 @@ def _report_motif_installed():
         ])
 
 
-def report_installed_packages(_context=api):
+def report_installed_packages():
     """
     Create reports according to detected motif packages.
 
     Create the report if the motif rpm (RH signed) is installed.
     """
-    has_motif = has_package(DistributionSignedRPM, 'motif', context=_context)
+    has_motif = has_package(DistributionSignedRPM, 'motif')
 
     if has_motif:
         _report_motif_installed()
