@@ -13,9 +13,6 @@ report_motif_inst_summary = (
 
 report_motif_inst_hint = (
     'Consider migrating applications to a modern GUI toolkit before proceeding with the upgrade.'
-    ' If you must retain Motif-based applications, you may need to rebuild the Motif package'
-    ' from source or find alternative distribution channels. Please review your application'
-    ' requirements and plan accordingly.'
 )
 
 # Link URL for motif report
