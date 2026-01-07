@@ -27,8 +27,8 @@ def _generate_rpm_with_name(name):
 
 
 @pytest.mark.parametrize('has_motif', [
-    (True),  # with motif
-    (False),  # without motif
+    True,  # with motif
+    False,  # without motif
 ])
 def test_actor_execution(monkeypatch, has_motif):
     """
