@@ -1,0 +1,7 @@
+#
+# Original nvmf-initqueue rules called initqueue, which might not be running when the udev event lands.
+# Therefore, we call it directly.
+
+ACTION=="change", SUBSYSTEM=="fc", ENV{FC_EVENT}=="nvmediscovery", \
+      ENV{NVMEFC_HOST_TRADDR}=="*", ENV{NVMEFC_TRADDR}=="*", \
+      RUN+="/usr/sbin/nvme connect-all --transport=fc --traddr=$env{NVMEFC_TRADDR} --host-traddr=$env{NVMEFC_HOST_TRADDR}"
