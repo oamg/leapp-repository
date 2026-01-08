@@ -3,9 +3,11 @@ from leapp.libraries.stdlib import api
 from leapp.models import (
     CopyFile,
     DracutModule,
+    KernelCmdlineArg,
     NVMEInfo,
     TargetUserSpaceUpgradeTasks,
-    UpgradeInitramfsTasks
+    UpgradeInitramfsTasks,
+    UpgradeKernelCmdlineArgTasks
 )
 from leapp.reporting import create_report
 
@@ -38,10 +40,13 @@ def _format_list(data, sep=FMT_LIST_SEPARATOR, callback_sort=sorted, limit=0):
     return ''.join(res)
 
 
-def _register_upgrade_tasks():
+def _register_upgrade_tasks(nvme_fc_devices=None):
     """
     Register tasks that should happen during IPU to handle NVMe devices
     successfully.
+
+    Args:
+        nvme_fc_devices (list): List of NVMe-FC devices
     """
     api.produce(TargetUserSpaceUpgradeTasks(
         copy_files=[CopyFile(src='/etc/nvme/')],
@@ -55,6 +60,11 @@ def _register_upgrade_tasks():
         include_dracut_modules=[DracutModule(name='nvmf')])
     )
 
+    # Add kernel command line argument for NVMe-FC auto-discovery
+    if nvme_fc_devices:
+        cmdline_args = [KernelCmdlineArg(key='rd.nvmf.discover', value='fc,auto')]
+        api.produce(UpgradeKernelCmdlineArgTasks(to_add=cmdline_args))
+
 
 def report_missing_configs(nvmeinfo, nvmeof_devices):
     # TODO(pstodulk)
@@ -67,12 +77,16 @@ def check_nvme(nvmeinfo):
 
     In case the discovered configuration is considered
 
-    Return True if upgrade can continue, False otherwise.
+    Return tuple (upgrade_can_continue, nvme_fc_devices) where:
+    - upgrade_can_continue: True if upgrade can continue, False otherwise
+    - nvme_fc_devices: List of NVMe-FC devices
     """
     upgrade_can_continue = True
     unhandled_devices = []
     safe_devices = []
     nvmeof_devices = []
+    nvme_fc_devices = []
+
     for device in nvmeinfo.devices:
         if device.transport in BROKEN_TRANSPORT_TYPES:
             unhandled_devices.append(device)
@@ -83,7 +97,8 @@ def check_nvme(nvmeinfo):
             pass
         if device.transport != 'pcie':
             nvmeof_devices.append(device)
-
+        if device.transport == 'fc':
+            nvme_fc_devices.append(device)
 
     if unhandled_devices:
         # TODO(pstodulk): what we will do here? It's not clear whether to stop
@@ -100,7 +115,13 @@ def check_nvme(nvmeinfo):
         upgrade_can_continue = False
         report_missing_configs(nvmeinfo, nvmeof_devices)
 
-    return upgrade_can_continue
+    if nvme_fc_devices:
+        api.current_logger().info(
+            'Detected %d NVMe-FC device(s). Will add rd.nvmf.discover=fc,auto to the upgrade boot entry.',
+            len(nvme_fc_devices)
+        )
+
+    return upgrade_can_continue, nvme_fc_devices
 
 
 def process():
@@ -109,6 +130,7 @@ def process():
         # Nothing to do
         return
 
-    if check_nvme(nvmeinfo):
-        _register_upgrade_tasks()
+    upgrade_can_continue, nvme_fc_devices = check_nvme(nvmeinfo)
+    if upgrade_can_continue:
+        _register_upgrade_tasks(nvme_fc_devices)
 

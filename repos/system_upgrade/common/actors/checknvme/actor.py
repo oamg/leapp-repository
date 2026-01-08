@@ -1,6 +1,6 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import checknvme
-from leapp.models import NVMEInfo, TargetUserSpaceUpgradeTasks, UpgradeInitramfsTasks
+from leapp.models import NVMEInfo, TargetUserSpaceUpgradeTasks, UpgradeInitramfsTasks, UpgradeKernelCmdlineArgTasks
 from leapp.reporting import Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
@@ -23,7 +23,7 @@ class CheckNVME(Actor):
 
     name = 'check_nvme'
     consumes = (NVMEInfo,)
-    produces = (Report, TargetUserSpaceUpgradeTasks, UpgradeInitramfsTasks)
+    produces = (Report, TargetUserSpaceUpgradeTasks, UpgradeInitramfsTasks, UpgradeKernelCmdlineArgTasks)
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 
     def process(self):
