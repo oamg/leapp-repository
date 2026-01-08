@@ -6,6 +6,7 @@ from leapp.models import (
     NVMEInfo,
     StorageInfo,
     TargetKernelCmdlineArgTasks,
+    TargetUserSpacePreupgradeTasks,
     TargetUserSpaceUpgradeTasks,
     UpgradeInitramfsTasks,
     UpgradeKernelCmdlineArgTasks
@@ -42,6 +43,7 @@ class CheckNVME(Actor):
     produces = (
         Report,
         TargetKernelCmdlineArgTasks,
+        TargetUserSpacePreupgradeTasks,
         TargetUserSpaceUpgradeTasks,
         UpgradeInitramfsTasks,
         UpgradeKernelCmdlineArgTasks

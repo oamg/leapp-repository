@@ -11,6 +11,7 @@ from leapp.models import (
     NVMEInfo,
     StorageInfo,
     TargetKernelCmdlineArgTasks,
+    TargetUserSpacePreupgradeTasks,
     TargetUserSpaceUpgradeTasks,
     UpgradeInitramfsTasks,
     UpgradeKernelCmdlineArgTasks
@@ -69,9 +70,11 @@ def test_nvme_pcie_devices_only(monkeypatch):
     # Check TargetUserSpaceUpgradeTasks - no copy_files for PCIe-only
     userspace_tasks = _get_produced_msg(TargetUserSpaceUpgradeTasks)
     assert userspace_tasks.copy_files == []
+    assert set(userspace_tasks.install_rpms) == {'iproute', 'jq', 'nvme-cli', 'sed'}
 
-    expected_pkgs = {'iproute', 'jq', 'nvme-cli', 'sed', 'dracut', 'dracut-network'}
-    assert set(userspace_tasks.install_rpms) == expected_pkgs
+    # Check TargetUserSpacePreupgradeTasks
+    preupgrade_tasks = _get_produced_msg(TargetUserSpacePreupgradeTasks)
+    assert set(preupgrade_tasks.install_rpms) == {'dracut', 'dracut-network'}
 
     # Check UpgradeInitramfsTasks
     initramfs_tasks = _get_produced_msg(UpgradeInitramfsTasks)
@@ -111,9 +114,10 @@ def test_nvme_fc_devices_present(monkeypatch):
 
     checknvme.process()
 
-    assert api.produce.called == 4
+    assert api.produce.called == 5
 
     produced_msgs = api.produce.model_instances
+    assert any(isinstance(msg, TargetUserSpacePreupgradeTasks) for msg in produced_msgs)
     assert any(isinstance(msg, TargetUserSpaceUpgradeTasks) for msg in produced_msgs)
     assert any(isinstance(msg, UpgradeInitramfsTasks) for msg in produced_msgs)
 
@@ -155,7 +159,7 @@ def test_mixed_nvme_devices(monkeypatch):
 
     checknvme.process()
 
-    assert api.produce.called == 4
+    assert api.produce.called == 5
 
     produced_msgs = api.produce.model_instances
 
@@ -295,6 +299,7 @@ def test_register_upgrade_tasks_without_fabrics_devices(monkeypatch):
     produced_msgs = api.produce.model_instances
     expected_msg_types = {
         TargetUserSpaceUpgradeTasks,
+        TargetUserSpacePreupgradeTasks,
         UpgradeInitramfsTasks,
         UpgradeKernelCmdlineArgTasks,
         TargetKernelCmdlineArgTasks,
@@ -323,6 +328,7 @@ def test_register_upgrade_tasks_with_fabrics_devices(monkeypatch):
     produced_msgs = api.produce.model_instances
     expected_msg_types = {
         TargetUserSpaceUpgradeTasks,
+        TargetUserSpacePreupgradeTasks,
         UpgradeInitramfsTasks,
         UpgradeKernelCmdlineArgTasks,
         TargetKernelCmdlineArgTasks,

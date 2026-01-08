@@ -16,6 +16,7 @@ from leapp.models import (
     NVMEInfo,
     StorageInfo,
     TargetKernelCmdlineArgTasks,
+    TargetUserSpacePreupgradeTasks,
     TargetUserSpaceUpgradeTasks,
     UpgradeInitramfsTasks,
     UpgradeKernelCmdlineArgTasks
@@ -26,12 +27,17 @@ FABRICS_TRANSPORT_TYPES = ['fc', 'tcp', 'rdma']
 BROKEN_TRANSPORT_TYPES = ['tcp', 'rdma']
 SAFE_TRANSPORT_TYPES = ['pcie', 'fc']
 RQ_RPMS_CONTAINER = [
-    'dracut',
-    'dracut-network',  # Adds dracut-nvmf module
     'iproute',
     'jq',
     'nvme-cli',
     'sed',
+]
+
+# We need this packages early (when setting up container) as we will be modifying some
+# of their files
+EARLY_CONTAINER_RPMS = [
+    'dracut',
+    'dracut-network',  # Adds dracut-nvmf module
 ]
 
 
@@ -251,6 +257,9 @@ def register_upgrade_tasks(nvme_device_collection: NVMEDeviceCollection):
     """
     _tasks_copy_files_into_container(nvme_device_collection)
     _tasks_for_kernel_cmdline(nvme_device_collection)
+
+    api.produce(TargetUserSpacePreupgradeTasks(install_rpms=EARLY_CONTAINER_RPMS))
+    api.produce(UpgradeInitramfsTasks(include_dracut_modules=[DracutModule(name='nvmf')]))
 
 
 def report_missing_configs_for_fabrics_devices(nvme_info: NVMEInfo,
