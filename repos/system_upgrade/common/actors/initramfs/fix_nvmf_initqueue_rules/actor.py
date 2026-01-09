@@ -20,4 +20,3 @@ class FixNvmfInitqueueRules(Actor):
 
     def process(self):
         fix_nvmf_initqueue_rules_lib.replace_nvmf_initqueue_rules()
-

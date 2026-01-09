@@ -53,4 +53,3 @@ def replace_nvmf_initqueue_rules():
         raise StopActorExecutionError('Failed to copy nvmf initqueue rules to target userspace: {}'.format(e))
 
     api.produce(UpgradeInitramfsTasks())  # To enforce ordering of actors
-
