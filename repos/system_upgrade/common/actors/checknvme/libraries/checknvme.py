@@ -5,6 +5,7 @@ from leapp.models import (
     DracutModule,
     KernelCmdlineArg,
     NVMEInfo,
+    TargetUserSpacePreupgradeTasks,
     TargetUserSpaceUpgradeTasks,
     UpgradeInitramfsTasks,
     UpgradeKernelCmdlineArgTasks
@@ -19,6 +20,12 @@ RQ_RPMS_CONTAINER = [
     'jq',
     'nvme-cli',
     'sed',
+]
+# We need the following packages early (when the container is created) as
+# we want to modify some of its files.
+EARLY_CONTAINER_RPMS = [
+    'dracut',
+    'dracut-network',  # Adds dracut-nvmf module
 ]
 RQ_CONFIG_FILES = [
     '/etc/nvme/hostid',
@@ -48,6 +55,8 @@ def _register_upgrade_tasks(nvme_fc_devices=None):
     Args:
         nvme_fc_devices (list): List of NVMe-FC devices
     """
+    api.produce(TargetUserSpacePreupgradeTasks(install_rpms=EARLY_CONTAINER_RPMS))
+
     api.produce(TargetUserSpaceUpgradeTasks(
         copy_files=[CopyFile(src='/etc/nvme/')],
         install_rpms=RQ_RPMS_CONTAINER)
