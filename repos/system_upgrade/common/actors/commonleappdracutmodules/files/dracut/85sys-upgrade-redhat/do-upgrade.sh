@@ -358,6 +358,8 @@ fi
 # enable read/write $NEWROOT
 mount -o "remount,rw" "$NEWROOT"
 
+exit 1  # Temporary - always enter emergency shell to prevent accidentally upgrading the machine
+
 ##### do the upgrade #######
 (
     # check if leapp previously failed in the initramfs, if it did return to the emergency shell
