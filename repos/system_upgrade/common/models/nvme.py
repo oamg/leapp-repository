@@ -48,7 +48,7 @@ class NVMEInfo(Model):
     """
 
     topic = SystemInfoTopic
-    devices =  fields.List(fields.Model(NVMEDevice), default=[])
+    devices = fields.List(fields.Model(NVMEDevice), default=[])
     """
     List of detected NVMe devices.
     """
