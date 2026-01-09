@@ -1,7 +1,6 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import scannvme
 from leapp.models import NVMEInfo
-from leapp.reporting import Report
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 
@@ -19,7 +18,7 @@ class ScanNVMe(Actor):
 
     name = 'scan_nvme'
     consumes = ()
-    produces = (NVMEInfo)
+    produces = (NVMEInfo,)
     tags = (FactsPhaseTag, IPUWorkflowTag)
 
     def process(self):

@@ -11,6 +11,7 @@ isort:skip_file
 # from leapp.reporting import Report
 # from leapp.utils.report import is_inhibitor
 
+
 def test_missing():
     # FIXME(pstodulk): add the missint tests. Created just an empty boilerplate
     pass
