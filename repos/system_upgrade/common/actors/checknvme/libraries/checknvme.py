@@ -1,4 +1,3 @@
-from leapp import reporting
 from leapp.libraries.stdlib import api
 from leapp.models import (
     CopyFile,
@@ -10,7 +9,6 @@ from leapp.models import (
     UpgradeInitramfsTasks,
     UpgradeKernelCmdlineArgTasks
 )
-from leapp.reporting import create_report
 
 FMT_LIST_SEPARATOR = '\n    - '
 BROKEN_TRANSPORT_TYPES = ['tcp', 'rdma']
@@ -39,8 +37,12 @@ on the source system. Tracking them explicitly.
 
 def _format_list(data, sep=FMT_LIST_SEPARATOR, callback_sort=sorted, limit=0):
     # NOTE(pstodulk): Teaser O:-> https://issues.redhat.com/browse/RHEL-126447
+
+    def identity(values):
+        return values
+
     if callback_sort is None:
-        callback_sort = lambda x: x
+        callback_sort = identity
     res = ['{}{}'.format(sep, item) for item in callback_sort(data)]
     if limit:
         return ''.join(res[:limit])
@@ -142,4 +144,3 @@ def process():
     upgrade_can_continue, nvme_fc_devices = check_nvme(nvmeinfo)
     if upgrade_can_continue:
         _register_upgrade_tasks(nvme_fc_devices)
-

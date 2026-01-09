@@ -160,7 +160,7 @@ def test_multiple_nvme_fc_devices(monkeypatch):
 
     # Should still produce only one UpgradeKernelCmdlineArgTasks message
     kernel_cmdline_msgs = [msg for msg in api.produce.model_instances
-                          if isinstance(msg, UpgradeKernelCmdlineArgTasks)]
+                           if isinstance(msg, UpgradeKernelCmdlineArgTasks)]
     assert len(kernel_cmdline_msgs) == 1
 
     # Should still have only one kernel argument
