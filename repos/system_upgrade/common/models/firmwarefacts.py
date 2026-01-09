@@ -9,3 +9,5 @@ class FirmwareFacts(Model):
     """ System firmware interface (BIOS or EFI) """
     ppc64le_opal = fields.Nullable(fields.Boolean())
     """ Check OPAL presence to identify ppc64le bare metal systems """
+    secureboot_enabled = fields.Nullable(fields.Boolean())
+    """ Whether SecureBoot is enabled, always False on BIOS systems """
