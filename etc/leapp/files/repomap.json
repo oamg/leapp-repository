@@ -1,122 +1,10 @@
 {
-    "datetime": "202511131423Z",
+    "datetime": "202601071719Z",
     "version_format": "1.3.0",
     "provided_data_streams": [
-        "4.1"
+        "4.2"
     ],
     "mapping": [
-        {
-            "source_major_version": "7",
-            "target_major_version": "8",
-            "entries": [
-                {
-                    "source": "rhel7-base",
-                    "target": [
-                        "rhel8-AppStream",
-                        "rhel8-BaseOS"
-                    ]
-                },
-                {
-                    "source": "rhel7-optional",
-                    "target": [
-                        "rhel8-CRB"
-                    ]
-                },
-                {
-                    "source": "rhel7-supplementary",
-                    "target": [
-                        "rhel8-Supplementary"
-                    ]
-                },
-                {
-                    "source": "rhel7-extras",
-                    "target": [
-                        "rhel8-AppStream",
-                        "rhel8-BaseOS"
-                    ]
-                },
-                {
-                    "source": "rhel7-rt",
-                    "target": [
-                        "rhel8-RT"
-                    ]
-                },
-                {
-                    "source": "rhel7-nfv",
-                    "target": [
-                        "rhel8-NFV"
-                    ]
-                },
-                {
-                    "source": "rhel7-sap",
-                    "target": [
-                        "rhel8-SAP-NetWeaver"
-                    ]
-                },
-                {
-                    "source": "rhel7-sap-hana",
-                    "target": [
-                        "rhel8-SAP-Solutions"
-                    ]
-                },
-                {
-                    "source": "rhel7-rhui-microsoft-azure-sap-apps",
-                    "target": [
-                        "rhel8-SAP-Solutions",
-                        "rhel8-SAP-NetWeaver",
-                        "rhel8-rhui-microsoft-azure-sap-apps"
-                    ]
-                },
-                {
-                    "source": "rhel7-highavailability",
-                    "target": [
-                        "rhel8-HighAvailability"
-                    ]
-                },
-                {
-                    "source": "rhel7-ansible-2",
-                    "target": [
-                        "rhel8-ansible-2"
-                    ]
-                },
-                {
-                    "source": "rhel7-rhui-client-config-server-7",
-                    "target": [
-                        "rhel8-rhui-client-config-server-8"
-                    ]
-                },
-                {
-                    "source": "rhel7-rhui-client-config-server-7-sap",
-                    "target": [
-                        "rhel8-rhui-client-config-server-8-sap"
-                    ]
-                },
-                {
-                    "source": "rhel7-rhui-microsoft-azure-rhel7",
-                    "target": [
-                        "rhel8-rhui-microsoft-azure-rhel8"
-                    ]
-                },
-                {
-                    "source": "rhel7-rhui-microsoft-sap-ha",
-                    "target": [
-                        "rhel8-rhui-microsoft-sap-ha"
-                    ]
-                },
-                {
-                    "source": "rhel7-rhui-google-compute-engine",
-                    "target": [
-                        "rhel8-rhui-google-compute-engine-leapp"
-                    ]
-                },
-                {
-                    "source": "rhel7-rhui-custom-client-at-alibaba",
-                    "target": [
-                        "rhel8-rhui-custom-client-at-alibaba"
-                    ]
-                }
-            ]
-        },
         {
             "source_major_version": "8",
             "target_major_version": "9",
@@ -200,6 +88,54 @@
                     ]
                 },
                 {
+                    "source": "rhel8-jbeap-7.4",
+                    "target": [
+                        "rhel9-jbeap-7.4"
+                    ]
+                },
+                {
+                    "source": "rhel8-jbeap-8.0",
+                    "target": [
+                        "rhel9-jbeap-8.0"
+                    ]
+                },
+                {
+                    "source": "rhel8-jbeap-8.1",
+                    "target": [
+                        "rhel9-jbeap-8.1"
+                    ]
+                },
+                {
+                    "source": "rhel8-satellite-6.16",
+                    "target": [
+                        "rhel9-satellite-6.16"
+                    ]
+                },
+                {
+                    "source": "rhel8-satellite-capsule-6.16",
+                    "target": [
+                        "rhel9-satellite-capsule-6.16"
+                    ]
+                },
+                {
+                    "source": "rhel8-satellite-maintenance-6.16",
+                    "target": [
+                        "rhel9-satellite-maintenance-6.16"
+                    ]
+                },
+                {
+                    "source": "rhel8-satellite-utils-6.16",
+                    "target": [
+                        "rhel9-satellite-utils-6.16"
+                    ]
+                },
+                {
+                    "source": "rhel8-satellite-client-6",
+                    "target": [
+                        "rhel9-satellite-client-6"
+                    ]
+                },
+                {
                     "source": "rhel8-rhui-client-config-server-8-sap",
                     "target": [
                         "rhel9-rhui-client-config-server-9-sap"
@@ -233,24 +169,6 @@
                     "source": "rhel8-rhui-custom-client-at-alibaba",
                     "target": [
                         "rhel9-rhui-custom-client-at-alibaba"
-                    ]
-                },
-                {
-                    "source": "rhel8-jbeap-7.4",
-                    "target": [
-                        "rhel9-jbeap-7.4"
-                    ]
-                },
-                {
-                    "source": "rhel8-jbeap-8.0",
-                    "target": [
-                        "rhel9-jbeap-8.0"
-                    ]
-                },
-                {
-                    "source": "rhel8-jbeap-8.1",
-                    "target": [
-                        "rhel9-jbeap-8.1"
                     ]
                 }
             ]
@@ -311,6 +229,12 @@
                     "source": "rhel9-HighAvailability",
                     "target": [
                         "rhel10-HighAvailability"
+                    ]
+                },
+                {
+                    "source": "rhel9-satellite-client-6",
+                    "target": [
+                        "rhel10-satellite-client-6"
                     ]
                 },
                 {
@@ -1667,6 +1591,91 @@
             ]
         },
         {
+            "pesid": "rhel10-satellite-client-6",
+            "entries": [
+                {
+                    "major_version": "10",
+                    "repoid": "satellite-client-6-for-rhel-10-aarch64-eus-rpms",
+                    "arch": "aarch64",
+                    "channel": "eus",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "satellite-client-6-for-rhel-10-aarch64-rpms",
+                    "arch": "aarch64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "satellite-client-6-for-rhel-10-ppc64le-e4s-rpms",
+                    "arch": "ppc64le",
+                    "channel": "e4s",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "satellite-client-6-for-rhel-10-ppc64le-eus-rpms",
+                    "arch": "ppc64le",
+                    "channel": "eus",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "satellite-client-6-for-rhel-10-ppc64le-rpms",
+                    "arch": "ppc64le",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "satellite-client-6-for-rhel-10-s390x-eus-rpms",
+                    "arch": "s390x",
+                    "channel": "eus",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "satellite-client-6-for-rhel-10-s390x-rpms",
+                    "arch": "s390x",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "satellite-client-6-for-rhel-10-x86_64-e4s-rpms",
+                    "arch": "x86_64",
+                    "channel": "e4s",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "satellite-client-6-for-rhel-10-x86_64-eus-rpms",
+                    "arch": "x86_64",
+                    "channel": "eus",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "satellite-client-6-for-rhel-10-x86_64-rpms",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
+                }
+            ]
+        },
+        {
             "pesid": "rhel10-rhui-microsoft-azure-rhel10",
             "entries": [
                 {
@@ -1765,1316 +1774,6 @@
                     "repo_type": "rpm",
                     "distro": "rhel",
                     "rhui": "azure"
-                }
-            ]
-        },
-        {
-            "pesid": "rhel7-base",
-            "entries": [
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-for-arm-64-rhui-rpms",
-                    "arch": "aarch64",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "aws"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-for-arm-64-rpms",
-                    "arch": "aarch64",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-for-power-9-rpms",
-                    "arch": "ppc64le",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-for-power-le-beta-rpms",
-                    "arch": "ppc64le",
-                    "channel": "beta",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-for-power-le-e4s-rpms",
-                    "arch": "ppc64le",
-                    "channel": "e4s",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-for-power-le-els-rpms",
-                    "arch": "ppc64le",
-                    "channel": "els",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-for-power-le-eus-rpms",
-                    "arch": "ppc64le",
-                    "channel": "eus",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-for-power-le-rpms",
-                    "arch": "ppc64le",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-for-system-z-a-rpms",
-                    "arch": "s390x",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-for-system-z-beta-rpms",
-                    "arch": "s390x",
-                    "channel": "beta",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-for-system-z-els-rpms",
-                    "arch": "s390x",
-                    "channel": "els",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-for-system-z-eus-rpms",
-                    "arch": "s390x",
-                    "channel": "eus",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-for-system-z-rpms",
-                    "arch": "s390x",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-server-aus-rpms",
-                    "arch": "x86_64",
-                    "channel": "aus",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-server-beta-rpms",
-                    "arch": "x86_64",
-                    "channel": "beta",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-server-e4s-rhui-rpms",
-                    "arch": "x86_64",
-                    "channel": "e4s",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "aws"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-server-e4s-rpms",
-                    "arch": "x86_64",
-                    "channel": "e4s",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-server-els-rpms",
-                    "arch": "x86_64",
-                    "channel": "els",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-server-eus-rpms",
-                    "arch": "x86_64",
-                    "channel": "eus",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-server-releases-rhui-beta",
-                    "arch": "x86_64",
-                    "channel": "beta",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "aws"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-server-rhui-eus-rpms",
-                    "arch": "x86_64",
-                    "channel": "eus",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "aws"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-server-rhui-rpms",
-                    "arch": "x86_64",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "aws"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-server-rhui-rpms",
-                    "arch": "x86_64",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "azure"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-server-rpms",
-                    "arch": "x86_64",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhui-rhel-7-server-e4s-rhui-rpms",
-                    "arch": "x86_64",
-                    "channel": "e4s",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "google"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhui-rhel-7-server-els-rhui-rpms",
-                    "arch": "x86_64",
-                    "channel": "els",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "google"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhui-rhel-7-server-rhui-eus-rpms",
-                    "arch": "x86_64",
-                    "channel": "eus",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "azure"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhui-rhel-7-server-rhui-rpms",
-                    "arch": "x86_64",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "google"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhui-rhel-7-server-rhui-rpms",
-                    "arch": "x86_64",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "alibaba"
-                }
-            ]
-        },
-        {
-            "pesid": "rhel7-optional",
-            "entries": [
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-for-arm-64-optional-rpms",
-                    "arch": "aarch64",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-for-arm-64-rhui-optional-rpms",
-                    "arch": "aarch64",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "aws"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-for-power-9-optional-rpms",
-                    "arch": "ppc64le",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-for-power-le-e4s-optional-rpms",
-                    "arch": "ppc64le",
-                    "channel": "e4s",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-for-power-le-els-optional-rpms",
-                    "arch": "ppc64le",
-                    "channel": "els",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-for-power-le-eus-optional-rpms",
-                    "arch": "ppc64le",
-                    "channel": "eus",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-for-power-le-optional-beta-rpms",
-                    "arch": "ppc64le",
-                    "channel": "beta",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-for-power-le-optional-rpms",
-                    "arch": "ppc64le",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-for-system-z-a-optional-rpms",
-                    "arch": "s390x",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-for-system-z-els-optional-rpms",
-                    "arch": "s390x",
-                    "channel": "els",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-for-system-z-eus-optional-rpms",
-                    "arch": "s390x",
-                    "channel": "eus",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-for-system-z-optional-beta-rpms",
-                    "arch": "s390x",
-                    "channel": "beta",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-for-system-z-optional-rpms",
-                    "arch": "s390x",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-server-aus-optional-rpms",
-                    "arch": "x86_64",
-                    "channel": "aus",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-server-e4s-optional-rhui-rpms",
-                    "arch": "x86_64",
-                    "channel": "e4s",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "aws"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-server-e4s-optional-rpms",
-                    "arch": "x86_64",
-                    "channel": "e4s",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-server-els-optional-rpms",
-                    "arch": "x86_64",
-                    "channel": "els",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-server-eus-optional-rpms",
-                    "arch": "x86_64",
-                    "channel": "eus",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-server-optional-beta-rpms",
-                    "arch": "x86_64",
-                    "channel": "beta",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-server-optional-rpms",
-                    "arch": "x86_64",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-server-releases-rhui-optional-beta",
-                    "arch": "x86_64",
-                    "channel": "beta",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "aws"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-server-rhui-eus-optional-rpms",
-                    "arch": "x86_64",
-                    "channel": "eus",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "aws"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-server-rhui-optional-rpms",
-                    "arch": "x86_64",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "aws"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-server-rhui-optional-rpms",
-                    "arch": "x86_64",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "azure"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhui-rhel-7-server-e4s-optional-rhui-rpms",
-                    "arch": "x86_64",
-                    "channel": "e4s",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "google"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhui-rhel-7-server-els-optional-rhui-rpms",
-                    "arch": "x86_64",
-                    "channel": "els",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "google"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhui-rhel-7-server-rhui-optional-rpms",
-                    "arch": "x86_64",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "google"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhui-rhel-7-server-rhui-optional-rpms",
-                    "arch": "x86_64",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "alibaba"
-                }
-            ]
-        },
-        {
-            "pesid": "rhel7-supplementary",
-            "entries": [
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-for-power-9-supplementary-rpms",
-                    "arch": "ppc64le",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-for-power-le-eus-supplementary-rpms",
-                    "arch": "ppc64le",
-                    "channel": "eus",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-for-power-le-supplementary-rpms",
-                    "arch": "ppc64le",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-for-system-z-eus-supplementary-rpms",
-                    "arch": "s390x",
-                    "channel": "eus",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-for-system-z-supplementary-rpms",
-                    "arch": "s390x",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-server-eus-supplementary-rpms",
-                    "arch": "x86_64",
-                    "channel": "eus",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-server-rhui-eus-supplementary-rpms",
-                    "arch": "x86_64",
-                    "channel": "eus",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "aws"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-server-rhui-supplementary-rpms",
-                    "arch": "x86_64",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "aws"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-server-rhui-supplementary-rpms",
-                    "arch": "x86_64",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "azure"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-server-supplementary-rpms",
-                    "arch": "x86_64",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhui-rhel-7-server-rhui-supplementary-rpms",
-                    "arch": "x86_64",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "google"
-                }
-            ]
-        },
-        {
-            "pesid": "rhel7-extras",
-            "entries": [
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-for-arm-64-extras-beta-rpms",
-                    "arch": "aarch64",
-                    "channel": "beta",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-for-arm-64-extras-rhui-rpms",
-                    "arch": "aarch64",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "aws"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-for-arm-64-extras-rpms",
-                    "arch": "aarch64",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-for-power-9-extras-beta-rpms",
-                    "arch": "ppc64le",
-                    "channel": "beta",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-for-power-9-extras-rpms",
-                    "arch": "ppc64le",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-for-power-le-extras-beta-rpms",
-                    "arch": "ppc64le",
-                    "channel": "beta",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-for-power-le-extras-rpms",
-                    "arch": "ppc64le",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-for-system-z-a-extras-beta-rpms",
-                    "arch": "s390x",
-                    "channel": "beta",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-for-system-z-a-extras-rpms",
-                    "arch": "s390x",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-for-system-z-extras-beta-rpms",
-                    "arch": "s390x",
-                    "channel": "beta",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-for-system-z-extras-rpms",
-                    "arch": "s390x",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-server-extras-beta-rpms",
-                    "arch": "x86_64",
-                    "channel": "beta",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-server-extras-rpms",
-                    "arch": "x86_64",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-server-rhui-extras-rpms",
-                    "arch": "x86_64",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "aws"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-server-rhui-extras-rpms",
-                    "arch": "x86_64",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "azure"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhui-rhel-7-server-rhui-extras-rpms",
-                    "arch": "x86_64",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "google"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhui-rhel-7-server-rhui-extras-rpms",
-                    "arch": "x86_64",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "alibaba"
-                }
-            ]
-        },
-        {
-            "pesid": "rhel7-rt",
-            "entries": [
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-server-eus-rt-rpms",
-                    "arch": "x86_64",
-                    "channel": "eus",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-server-rt-beta-rpms",
-                    "arch": "x86_64",
-                    "channel": "beta",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-server-rt-els-rpms",
-                    "arch": "x86_64",
-                    "channel": "els",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-server-rt-rpms",
-                    "arch": "x86_64",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                }
-            ]
-        },
-        {
-            "pesid": "rhel7-nfv",
-            "entries": [
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-server-nfv-rpms",
-                    "arch": "x86_64",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                }
-            ]
-        },
-        {
-            "pesid": "rhel7-sap",
-            "entries": [
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-sap-for-rhel-7-for-power-le-e4s-rpms",
-                    "arch": "ppc64le",
-                    "channel": "e4s",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-sap-for-rhel-7-for-power-le-els-rpms",
-                    "arch": "ppc64le",
-                    "channel": "els",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-sap-for-rhel-7-for-power-le-eus-rpms",
-                    "arch": "ppc64le",
-                    "channel": "eus",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-sap-for-rhel-7-for-power-le-rpms",
-                    "arch": "ppc64le",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-sap-for-rhel-7-for-system-z-beta-rpms",
-                    "arch": "s390x",
-                    "channel": "beta",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-sap-for-rhel-7-for-system-z-els-rpms",
-                    "arch": "s390x",
-                    "channel": "els",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-sap-for-rhel-7-for-system-z-eus-rpms",
-                    "arch": "s390x",
-                    "channel": "eus",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-sap-for-rhel-7-for-system-z-rpms",
-                    "arch": "s390x",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-sap-for-rhel-7-server-beta-rpms",
-                    "arch": "x86_64",
-                    "channel": "beta",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-sap-for-rhel-7-server-e4s-rpms",
-                    "arch": "x86_64",
-                    "channel": "e4s",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-sap-for-rhel-7-server-els-rpms",
-                    "arch": "x86_64",
-                    "channel": "els",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-sap-for-rhel-7-server-eus-rhui-rpms",
-                    "arch": "x86_64",
-                    "channel": "eus",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "aws"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-sap-for-rhel-7-server-eus-rpms",
-                    "arch": "x86_64",
-                    "channel": "eus",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-sap-for-rhel-7-server-rhui-e4s-rpms",
-                    "arch": "x86_64",
-                    "channel": "e4s",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "aws"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-sap-for-rhel-7-server-rhui-rpms",
-                    "arch": "x86_64",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "aws"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-sap-for-rhel-7-server-rhui-rpms",
-                    "arch": "x86_64",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "azure"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-sap-for-rhel-7-server-rpms",
-                    "arch": "x86_64",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhui-rhel-sap-for-rhel-7-server-rhui-e4s-rpms",
-                    "arch": "x86_64",
-                    "channel": "e4s",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "google"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhui-rhel-sap-for-rhel-7-server-rhui-rpms",
-                    "arch": "x86_64",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "google"
-                }
-            ]
-        },
-        {
-            "pesid": "rhel7-sap-hana",
-            "entries": [
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-sap-hana-for-rhel-7-for-power-le-e4s-rpms",
-                    "arch": "ppc64le",
-                    "channel": "e4s",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-sap-hana-for-rhel-7-for-power-le-els-rpms",
-                    "arch": "ppc64le",
-                    "channel": "els",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-sap-hana-for-rhel-7-for-power-le-eus-rpms",
-                    "arch": "ppc64le",
-                    "channel": "eus",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-sap-hana-for-rhel-7-for-power-le-rpms",
-                    "arch": "ppc64le",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-sap-hana-for-rhel-7-server-beta-rpms",
-                    "arch": "x86_64",
-                    "channel": "beta",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-sap-hana-for-rhel-7-server-e4s-rpms",
-                    "arch": "x86_64",
-                    "channel": "e4s",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-sap-hana-for-rhel-7-server-els-rpms",
-                    "arch": "x86_64",
-                    "channel": "els",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-sap-hana-for-rhel-7-server-eus-rhui-rpms",
-                    "arch": "x86_64",
-                    "channel": "eus",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "aws"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-sap-hana-for-rhel-7-server-eus-rpms",
-                    "arch": "x86_64",
-                    "channel": "eus",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-sap-hana-for-rhel-7-server-rhui-e4s-rpms",
-                    "arch": "x86_64",
-                    "channel": "e4s",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "aws"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-sap-hana-for-rhel-7-server-rhui-rpms",
-                    "arch": "x86_64",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "aws"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-sap-hana-for-rhel-7-server-rhui-rpms",
-                    "arch": "x86_64",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "azure"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-sap-hana-for-rhel-7-server-rpms",
-                    "arch": "x86_64",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhui-rhel-sap-hana-for-rhel-7-server-rhui-e4s-rpms",
-                    "arch": "x86_64",
-                    "channel": "e4s",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "google"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhui-rhel-sap-hana-for-rhel-7-server-rhui-rpms",
-                    "arch": "x86_64",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "google"
-                }
-            ]
-        },
-        {
-            "pesid": "rhel7-highavailability",
-            "entries": [
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-ha-for-rhel-7-for-system-z-beta-rpms",
-                    "arch": "s390x",
-                    "channel": "beta",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-ha-for-rhel-7-for-system-z-rpms",
-                    "arch": "s390x",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-ha-for-rhel-7-server-beta-rpms",
-                    "arch": "x86_64",
-                    "channel": "beta",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-ha-for-rhel-7-server-e4s-rhui-rpms",
-                    "arch": "x86_64",
-                    "channel": "e4s",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "aws"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-ha-for-rhel-7-server-e4s-rpms",
-                    "arch": "x86_64",
-                    "channel": "e4s",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-ha-for-rhel-7-server-els-rpms",
-                    "arch": "x86_64",
-                    "channel": "els",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-ha-for-rhel-7-server-eus-rhui-rpms",
-                    "arch": "x86_64",
-                    "channel": "eus",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "aws"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-ha-for-rhel-7-server-eus-rpms",
-                    "arch": "x86_64",
-                    "channel": "eus",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-ha-for-rhel-7-server-rhui-rpms",
-                    "arch": "x86_64",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "aws"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-ha-for-rhel-7-server-rhui-rpms",
-                    "arch": "x86_64",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "azure"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-ha-for-rhel-7-server-rpms",
-                    "arch": "x86_64",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhui-rhel-ha-for-rhel-7-server-e4s-rhui-rpms",
-                    "arch": "x86_64",
-                    "channel": "e4s",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "google"
-                }
-            ]
-        },
-        {
-            "pesid": "rhel7-ansible-2",
-            "entries": [
-                {
-                    "major_version": "7",
-                    "repoid": "rhel-7-server-ansible-2-rhui-rpms",
-                    "arch": "x86_64",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "azure"
-                }
-            ]
-        },
-        {
-            "pesid": "rhel7-rhui-client-config-server-7",
-            "entries": [
-                {
-                    "major_version": "7",
-                    "repoid": "rhui-client-config-server-7",
-                    "arch": "x86_64",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "aws"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhui-client-config-server-7-arm",
-                    "arch": "aarch64",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "aws"
-                }
-            ]
-        },
-        {
-            "pesid": "rhel7-rhui-client-config-server-7-sap",
-            "entries": [
-                {
-                    "major_version": "7",
-                    "repoid": "rhui-client-config-server-7-sap-bundle",
-                    "arch": "x86_64",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "aws"
-                }
-            ]
-        },
-        {
-            "pesid": "rhel7-rhui-microsoft-azure-rhel7",
-            "entries": [
-                {
-                    "major_version": "7",
-                    "repoid": "rhui-microsoft-azure-rhel7",
-                    "arch": "x86_64",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "azure"
-                },
-                {
-                    "major_version": "7",
-                    "repoid": "rhui-microsoft-azure-rhel7-eus",
-                    "arch": "x86_64",
-                    "channel": "eus",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "azure"
-                }
-            ]
-        },
-        {
-            "pesid": "rhel7-rhui-microsoft-sap-ha",
-            "entries": [
-                {
-                    "major_version": "7",
-                    "repoid": "rhui-microsoft-azure-rhel7-base-sap-ha",
-                    "arch": "x86_64",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "azure"
-                }
-            ]
-        },
-        {
-            "pesid": "rhel7-rhui-google-compute-engine",
-            "entries": [
-                {
-                    "major_version": "7",
-                    "repoid": "google-compute-engine",
-                    "arch": "x86_64",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "google"
-                }
-            ]
-        },
-        {
-            "pesid": "rhel7-rhui-microsoft-azure-sap-apps",
-            "entries": [
-                {
-                    "major_version": "7",
-                    "repoid": "rhui-microsoft-azure-rhel7-base-sap-apps",
-                    "arch": "x86_64",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "azure"
-                }
-            ]
-        },
-        {
-            "pesid": "rhel7-rhui-custom-client-at-alibaba",
-            "entries": [
-                {
-                    "major_version": "7",
-                    "repoid": "rhui-custom-rhui_client_at_alibaba",
-                    "arch": "x86_64",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel",
-                    "rhui": "alibaba"
                 }
             ]
         },
@@ -4611,6 +3310,151 @@
                 {
                     "major_version": "8",
                     "repoid": "jb-eap-8.1-for-rhel-8-x86_64-rpms",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
+                }
+            ]
+        },
+        {
+            "pesid": "rhel8-satellite-6.16",
+            "entries": [
+                {
+                    "major_version": "8",
+                    "repoid": "satellite-6.16-for-rhel-8-x86_64-rpms",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
+                }
+            ]
+        },
+        {
+            "pesid": "rhel8-satellite-capsule-6.16",
+            "entries": [
+                {
+                    "major_version": "8",
+                    "repoid": "satellite-capsule-6.16-for-rhel-8-x86_64-rpms",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
+                }
+            ]
+        },
+        {
+            "pesid": "rhel8-satellite-maintenance-6.16",
+            "entries": [
+                {
+                    "major_version": "8",
+                    "repoid": "satellite-maintenance-6.16-for-rhel-8-x86_64-rpms",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
+                }
+            ]
+        },
+        {
+            "pesid": "rhel8-satellite-utils-6.16",
+            "entries": [
+                {
+                    "major_version": "8",
+                    "repoid": "satellite-utils-6.16-for-rhel-8-x86_64-rpms",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
+                }
+            ]
+        },
+        {
+            "pesid": "rhel8-satellite-client-6",
+            "entries": [
+                {
+                    "major_version": "8",
+                    "repoid": "satellite-client-6-for-rhel-8-aarch64-eus-rpms",
+                    "arch": "aarch64",
+                    "channel": "eus",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
+                },
+                {
+                    "major_version": "8",
+                    "repoid": "satellite-client-6-for-rhel-8-aarch64-rpms",
+                    "arch": "aarch64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
+                },
+                {
+                    "major_version": "8",
+                    "repoid": "satellite-client-6-for-rhel-8-ppc64le-e4s-rpms",
+                    "arch": "ppc64le",
+                    "channel": "e4s",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
+                },
+                {
+                    "major_version": "8",
+                    "repoid": "satellite-client-6-for-rhel-8-ppc64le-eus-rpms",
+                    "arch": "ppc64le",
+                    "channel": "eus",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
+                },
+                {
+                    "major_version": "8",
+                    "repoid": "satellite-client-6-for-rhel-8-ppc64le-rpms",
+                    "arch": "ppc64le",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
+                },
+                {
+                    "major_version": "8",
+                    "repoid": "satellite-client-6-for-rhel-8-s390x-eus-rpms",
+                    "arch": "s390x",
+                    "channel": "eus",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
+                },
+                {
+                    "major_version": "8",
+                    "repoid": "satellite-client-6-for-rhel-8-s390x-rpms",
+                    "arch": "s390x",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
+                },
+                {
+                    "major_version": "8",
+                    "repoid": "satellite-client-6-for-rhel-8-x86_64-aus-rpms",
+                    "arch": "x86_64",
+                    "channel": "aus",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
+                },
+                {
+                    "major_version": "8",
+                    "repoid": "satellite-client-6-for-rhel-8-x86_64-e4s-rpms",
+                    "arch": "x86_64",
+                    "channel": "e4s",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
+                },
+                {
+                    "major_version": "8",
+                    "repoid": "satellite-client-6-for-rhel-8-x86_64-eus-rpms",
+                    "arch": "x86_64",
+                    "channel": "eus",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
+                },
+                {
+                    "major_version": "8",
+                    "repoid": "satellite-client-6-for-rhel-8-x86_64-rpms",
                     "arch": "x86_64",
                     "channel": "ga",
                     "repo_type": "rpm",
@@ -6306,6 +5150,190 @@
             ]
         },
         {
+            "pesid": "rhel9-jbeap-7.4",
+            "entries": [
+                {
+                    "major_version": "9",
+                    "repoid": "jb-eap-7.4-for-rhel-9-x86_64-rpms",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
+                }
+            ]
+        },
+        {
+            "pesid": "rhel9-jbeap-8.0",
+            "entries": [
+                {
+                    "major_version": "9",
+                    "repoid": "jb-eap-8.0-for-rhel-9-x86_64-rpms",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
+                }
+            ]
+        },
+        {
+            "pesid": "rhel9-jbeap-8.1",
+            "entries": [
+                {
+                    "major_version": "9",
+                    "repoid": "jb-eap-8.1-for-rhel-9-x86_64-rpms",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
+                }
+            ]
+        },
+        {
+            "pesid": "rhel9-satellite-6.16",
+            "entries": [
+                {
+                    "major_version": "9",
+                    "repoid": "satellite-6.16-for-rhel-9-x86_64-rpms",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
+                }
+            ]
+        },
+        {
+            "pesid": "rhel9-satellite-capsule-6.16",
+            "entries": [
+                {
+                    "major_version": "9",
+                    "repoid": "satellite-capsule-6.16-for-rhel-9-x86_64-rpms",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
+                }
+            ]
+        },
+        {
+            "pesid": "rhel9-satellite-maintenance-6.16",
+            "entries": [
+                {
+                    "major_version": "9",
+                    "repoid": "satellite-maintenance-6.16-for-rhel-9-x86_64-rpms",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
+                }
+            ]
+        },
+        {
+            "pesid": "rhel9-satellite-utils-6.16",
+            "entries": [
+                {
+                    "major_version": "9",
+                    "repoid": "satellite-utils-6.16-for-rhel-9-x86_64-rpms",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
+                }
+            ]
+        },
+        {
+            "pesid": "rhel9-satellite-client-6",
+            "entries": [
+                {
+                    "major_version": "9",
+                    "repoid": "satellite-client-6-for-rhel-9-aarch64-eus-rpms",
+                    "arch": "aarch64",
+                    "channel": "eus",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
+                },
+                {
+                    "major_version": "9",
+                    "repoid": "satellite-client-6-for-rhel-9-aarch64-rpms",
+                    "arch": "aarch64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
+                },
+                {
+                    "major_version": "9",
+                    "repoid": "satellite-client-6-for-rhel-9-ppc64le-e4s-rpms",
+                    "arch": "ppc64le",
+                    "channel": "e4s",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
+                },
+                {
+                    "major_version": "9",
+                    "repoid": "satellite-client-6-for-rhel-9-ppc64le-eus-rpms",
+                    "arch": "ppc64le",
+                    "channel": "eus",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
+                },
+                {
+                    "major_version": "9",
+                    "repoid": "satellite-client-6-for-rhel-9-ppc64le-rpms",
+                    "arch": "ppc64le",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
+                },
+                {
+                    "major_version": "9",
+                    "repoid": "satellite-client-6-for-rhel-9-s390x-eus-rpms",
+                    "arch": "s390x",
+                    "channel": "eus",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
+                },
+                {
+                    "major_version": "9",
+                    "repoid": "satellite-client-6-for-rhel-9-s390x-rpms",
+                    "arch": "s390x",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
+                },
+                {
+                    "major_version": "9",
+                    "repoid": "satellite-client-6-for-rhel-9-x86_64-aus-rpms",
+                    "arch": "x86_64",
+                    "channel": "aus",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
+                },
+                {
+                    "major_version": "9",
+                    "repoid": "satellite-client-6-for-rhel-9-x86_64-e4s-rpms",
+                    "arch": "x86_64",
+                    "channel": "e4s",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
+                },
+                {
+                    "major_version": "9",
+                    "repoid": "satellite-client-6-for-rhel-9-x86_64-eus-rpms",
+                    "arch": "x86_64",
+                    "channel": "eus",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
+                },
+                {
+                    "major_version": "9",
+                    "repoid": "satellite-client-6-for-rhel-9-x86_64-rpms",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "rhel"
+                }
+            ]
+        },
+        {
             "pesid": "rhel9-rhui-client-config-server-9",
             "entries": [
                 {
@@ -6432,45 +5460,6 @@
                     "repo_type": "rpm",
                     "distro": "rhel",
                     "rhui": "alibaba"
-                }
-            ]
-        },
-        {
-            "pesid": "rhel9-jbeap-7.4",
-            "entries": [
-                {
-                    "major_version": "9",
-                    "repoid": "jb-eap-7.4-for-rhel-9-x86_64-rpms",
-                    "arch": "x86_64",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                }
-            ]
-        },
-        {
-            "pesid": "rhel9-jbeap-8.0",
-            "entries": [
-                {
-                    "major_version": "9",
-                    "repoid": "jb-eap-8.0-for-rhel-9-x86_64-rpms",
-                    "arch": "x86_64",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
-                }
-            ]
-        },
-        {
-            "pesid": "rhel9-jbeap-8.1",
-            "entries": [
-                {
-                    "major_version": "9",
-                    "repoid": "jb-eap-8.1-for-rhel-9-x86_64-rpms",
-                    "arch": "x86_64",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rhel"
                 }
             ]
         }
