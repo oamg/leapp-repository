@@ -221,14 +221,13 @@ def get_repositories_status():
         return RepositoriesFacts(repositories=repofileutils.get_parsed_repofiles())
     except repofileutils.InvalidRepoDefinition as e:
         raise StopActorExecutionError(
-            message=str(e),
+            message="Failed to parse repositories on the source system: {}".format(str(e)),
             details={
-                'hint': 'For more directions on how to resolve the issue, see: {url}.'
-                        .format(
-                            url='https://access.redhat.com/solutions/6969001'
-                        )
-            }
-        )
+                'hint': 'Ensure the repository definition is correct or remove it '
+                        'if the repository is not needed anymore. '
+                        'This issue is typically caused by missing definition of the name field. '
+                        'For more information, see: https://access.redhat.com/solutions/6969001.'
+            })
 
 
 def get_selinux_status():

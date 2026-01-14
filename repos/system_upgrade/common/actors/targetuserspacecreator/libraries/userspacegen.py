@@ -820,7 +820,15 @@ def _inhibit_on_duplicate_repos(repofiles):
 
 
 def _get_all_available_repoids(context):
-    repofiles = repofileutils.get_parsed_repofiles(context)
+    try:
+        repofiles = repofileutils.get_parsed_repofiles(context)
+    except repofileutils.InvalidRepoDefinition as e:
+        raise StopActorExecutionError(
+            message="Failed to parse available repoids: {}".format(str(e)),
+            details={
+                'hint': 'Ensure the repository definition is correct or remove it '
+                        'if the repository is not required for the upgrade.'
+            })
     # TODO: this is not good solution, but keep it as it is now
     # Issue: #486
     if rhsm.skip_rhsm():
@@ -1302,7 +1310,15 @@ def setup_target_rhui_access_if_needed(context, indata):
         copied_repofiles = [copy.src for copy in copy_tasks if copy.src.endswith('.repo')]
         copied_repoids = set()
         for repofile in copied_repofiles:
-            repofile_contents = repofileutils.parse_repofile(repofile)
+            try:
+                repofile_contents = repofileutils.parse_repofile(repofile)
+            except repofileutils.InvalidRepoDefinition as e:
+                raise StopActorExecutionError(
+                    message="Failed to parse repositories for RHUI: {}".format(str(e)),
+                    details={
+                        'hint': 'Ensure the repository definition is correct or remove it '
+                                'if the repository is not required for the upgrade.'
+                    })
             copied_repoids.update(entry.repoid for entry in repofile_contents.data)
 
         cmd += ['--disablerepo', '*']
@@ -1403,7 +1419,17 @@ def perform():
                 target_repoids = _gather_target_repositories(context, indata, prod_cert_path)
                 _create_target_userspace(context, indata, indata.packages, indata.files, target_repoids)
                 # TODO: this is tmp solution as proper one needs significant refactoring
-                target_repo_facts = repofileutils.get_parsed_repofiles(context)
+                try:
+                    target_repo_facts = repofileutils.get_parsed_repofiles(context)
+                except repofileutils.InvalidRepoDefinition as e:
+                    raise StopActorExecutionError(
+                        message="Failed to parse target system repofiles: {}".format(str(e)),
+                        details={
+                            'hint': 'Ensure the repository definition is correct or remove it '
+                                    'if the repository is not needed anymore. '
+                                    'This issue is typically caused by missing definition of the name field. '
+                                    'For more information, see: https://access.redhat.com/solutions/6969001.'
+                        })
                 api.produce(TMPTargetRepositoriesFacts(repositories=target_repo_facts))
                 # ## TODO ends here
                 api.produce(UsedTargetRepositories(

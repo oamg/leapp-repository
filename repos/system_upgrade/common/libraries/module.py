@@ -1,5 +1,6 @@
 import warnings
 
+from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common.config.version import get_source_major_version
 
 try:
@@ -37,7 +38,20 @@ def _create_or_get_dnf_base(base=None):
         # e.g. the amazon-id plugin requires loaded repositories
         # for the proper configuration.
         base.configure_plugins()
-        base.fill_sack()
+
+        try:
+            base.fill_sack()
+        except dnf.exceptions.RepoError as e:
+            err_msg = str(e)
+            repoid = err_msg.split('repo:')[-1].strip() if 'repo:' in err_msg else 'unknown repo'
+            repoid = repoid.strip('"').strip("'").replace('\\"', '')
+            raise StopActorExecutionError(
+                message='DNF failed to load repositories: {}'.format(str(e)),
+                details={
+                    'hint': 'Ensure the {} repository definition is correct or remove it '
+                            'if the repository is not needed anymore.'.format(repoid)
+                }
+            )
     return base
 
 

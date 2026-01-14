@@ -2,6 +2,7 @@ import sys
 
 import pytest
 
+from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import rpmscanner
 from leapp.libraries.common import module as module_lib
 from leapp.libraries.common import rpms, testutils
@@ -192,3 +193,18 @@ def test_process(monkeypatch):
     assert items['passwd'].arch == 'x86_64'
     assert not items['passwd'].module
     assert not items['passwd'].stream
+
+
+@pytest.mark.skipif(no_dnf, reason='dnf is unavailable')
+def test_get_package_repository_data_dnf_repo_error(monkeypatch):
+    # pylint: disable=bad-option-value,useless-option-value,no-self-use
+    class MockDnfBase:
+        def fill_sack(self, *args, **kwargs):
+            raise rpmscanner.dnf.exceptions.RepoError('Cannot find a valid baseurl for repo: broken-repo')
+
+    monkeypatch.setattr(rpmscanner.dnf, 'Base', MockDnfBase)
+
+    with pytest.raises(StopActorExecutionError) as exc_info:
+        rpmscanner._get_package_repository_data_dnf()
+
+    assert 'Ensure the repository broken-repo definition' in exc_info.value.details['hint']
