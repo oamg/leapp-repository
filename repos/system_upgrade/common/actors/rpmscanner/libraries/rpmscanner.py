@@ -53,6 +53,20 @@ def _get_package_repository_data_dnf():
         # NOTE: currently we do not initialize/load DNF plugins here as we are
         # working just with the local stuff (load_system_repo=True)
         dnf_base.fill_sack(load_system_repo=True, load_available_repos=False)
+    except dnf.exceptions.RepoError as e:
+        err_msg = str(e)
+        repoid = err_msg.split('repo:')[-1].strip() if 'repo:' in err_msg else 'unknown repo'
+        repoid = repoid.strip('"').strip("'").replace('\\"', '')
+        raise StopActorExecutionError(
+            message='DNF failed to load repositories: {}'.format(str(e)),
+            details={
+                'hint': 'Ensure the repository {} definition is correct or remove it '
+                        'if the repository is not needed anymore.'
+                        .format(repoid)
+            }
+        )
+
+    try:
         for pkg in dnf_base.sack.query():
             pkg_repos[pkg.name] = pkg._from_repo.lstrip('@')
     except ValueError as e:

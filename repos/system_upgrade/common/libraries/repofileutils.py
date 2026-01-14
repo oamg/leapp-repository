@@ -84,6 +84,7 @@ def get_parsed_repofiles(context=mounting.NotIsolatedActions(base_dir='/')):
     :param context: An instance of a mounting.IsolatedActions class
     :type context: mounting.IsolatedActions class
     :rtype: List(RepositoryFile)
+    :raises InvalidRepoDefinition: If any repository definition is invalid
     """
     repofiles = []
     cmd = ['find', '-L'] + get_repodirs() + ['-maxdepth', '1', '-type', 'f', '-name', '*.repo']

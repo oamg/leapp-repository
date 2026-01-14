@@ -198,3 +198,28 @@ def test_get_distro_repoids_no_distro_repofiles(monkeypatch, other_rfiles):
 
     with pytest.raises(StopActorExecutionError):
         get_distro_repoids(None, 'somedistro', '8', 'x86_64')
+
+
+def test_get_distro_repoids_invalid_repo(monkeypatch):
+    current_actor = CurrentActorMocked(release_id='centos')
+    monkeypatch.setattr(api, 'current_actor', current_actor)
+    monkeypatch.setattr(rhsm, 'skip_rhsm', lambda: True)
+
+    def _raise_invalid_repo(context):
+        raise repofileutils.InvalidRepoDefinition(
+            msg='mocked error',
+            repofile='/etc/yum.repos.d/invalid.repo',
+            repoid='invalid-repo'
+        )
+
+    monkeypatch.setattr(repofileutils, 'get_parsed_repofiles', _raise_invalid_repo)
+
+    class MockedContext:
+        @staticmethod
+        def full_path(path):
+            return path
+
+    with pytest.raises(StopActorExecutionError) as exc_info:
+        get_distro_repoids(MockedContext(), 'centos', '9', 'x86_64')
+
+    assert 'Ensure the repository definition is correct' in exc_info.value.details['hint']

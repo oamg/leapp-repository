@@ -186,6 +186,24 @@ def test_get_available_repo_ids_error():
     assert 'Unable to use yum' in str(err)
 
 
+def test_get_available_repo_ids_invalid_repo(monkeypatch):
+    context_mocked = IsolatedActionsMocked()
+
+    def _raise_invalid_repo(context):
+        raise repofileutils.InvalidRepoDefinition(
+            msg='mocked error',
+            repofile='/etc/yum.repos.d/invalid.repo',
+            repoid='invalid-repo'
+        )
+
+    monkeypatch.setattr(repofileutils, 'get_parsed_repofiles', _raise_invalid_repo)
+
+    with pytest.raises(StopActorExecutionError) as exc_info:
+        rhsm.get_available_repo_ids(context_mocked)
+
+    assert 'Ensure the repository definition is correct' in exc_info.value.details['hint']
+
+
 def test_inhibit_on_duplicate_repos(monkeypatch):
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
     monkeypatch.setattr(api, 'current_logger', logger_mocked())

@@ -177,7 +177,18 @@ def get_distro_repoids(context, distro, major_version, arch):
         # TODO: very similar thing should happens for all other repofiles in container
         return rhsm.get_available_repo_ids(context)
 
-    repofiles = repofileutils.get_parsed_repofiles(context)
+    try:
+        repofiles = repofileutils.get_parsed_repofiles(context)
+    except repofileutils.InvalidRepoDefinition as e:
+        raise StopActorExecutionError(
+            message="Failed to get distro provided repositories: {}".format(str(e)),
+            details={
+                'hint': 'Ensure the repository definition is correct or remove it '
+                        'if the repository is not needed anymore. '
+                        'This issue is typically caused by missing definition of the name field. '
+                        'For more information, see: https://access.redhat.com/solutions/6969001.'
+            })
+
     distro_repofiles = _get_distro_repofiles(distro, major_version, arch)
     if not distro_repofiles:
         # TODO: a different way of signaling an error would be preferred (e.g. returning None),

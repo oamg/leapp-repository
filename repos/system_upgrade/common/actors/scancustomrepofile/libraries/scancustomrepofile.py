@@ -1,5 +1,6 @@
 import os
 
+from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import repofileutils
 from leapp.libraries.stdlib import api
 from leapp.models import CustomTargetRepository, CustomTargetRepositoryFile
@@ -21,7 +22,18 @@ def process():
                 .format(CUSTOM_REPO_PATH))
         return
     api.current_logger().info("The {} file exists.".format(CUSTOM_REPO_PATH))
-    repofile = repofileutils.parse_repofile(CUSTOM_REPO_PATH)
+    try:
+        repofile = repofileutils.parse_repofile(CUSTOM_REPO_PATH)
+    except repofileutils.InvalidRepoDefinition as e:
+        raise StopActorExecutionError(
+            message="Failed to parse custom repository definition: {}".format(str(e)),
+            details={
+                'hint': 'Ensure the repository {} definition is correct or remove it '
+                        'if the repository is not needed anymore. '
+                        'This issue is typically caused by missing definition of the name field. '
+                        'For more information, see: https://access.redhat.com/solutions/6969001.'
+                        .format(CUSTOM_REPO_PATH)
+            })
     if not repofile.data:
         return
     api.produce(CustomTargetRepositoryFile(file=CUSTOM_REPO_PATH))

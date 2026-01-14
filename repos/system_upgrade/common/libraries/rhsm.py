@@ -170,7 +170,17 @@ def get_available_repo_ids(context):
             details={'details': str(exc), 'stderr': exc.stderr}
         )
 
-    repofiles = repofileutils.get_parsed_repofiles(context)
+    try:
+        repofiles = repofileutils.get_parsed_repofiles(context)
+    except repofileutils.InvalidRepoDefinition as e:
+        raise StopActorExecutionError(
+            message="Failed to get repositories available through RHSM: {}".format(str(e)),
+            details={
+                'hint': 'Ensure the repository definition is correct or remove it '
+                        'if the repository is not needed anymore. '
+                        'This issue is typically caused by missing definition of the name field. '
+                        'For more information, see: https://access.redhat.com/solutions/6969001. '
+            })
 
     # TODO: move this functionality out! Create check actor that will do
     # the inhibit. The functionality is really not good here in the current

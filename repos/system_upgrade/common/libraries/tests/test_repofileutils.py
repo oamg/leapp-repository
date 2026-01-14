@@ -18,10 +18,10 @@ def test_invert_dict():
 @pytest.mark.parametrize(
     ('repoid', 'data'),
     (
-        ('missing-name', {'baseurl': 'http://example.com', 'enabled': '1', 'gpgcheck': '1'}),
         (None, {'name': 'name', 'baseurl': 'http://example.com', 'enabled': '1', 'gpgcheck': '1'}),
-        ('name-none', {'name': None, 'baseurl': 'http://example.com', 'enabled': '1', 'gpgcheck': '1'}),
         ('baseurl-true', {'name': 'valid', 'baseurl': True, 'enabled': '1', 'gpgcheck': '1'}),
+        ('missing-name', {'baseurl': 'http://example.com', 'enabled': '1', 'gpgcheck': '1'}),
+        ('name-none', {'name': None, 'baseurl': 'http://example.com', 'enabled': '1', 'gpgcheck': '1'}),
     )
 )
 def test__parse_repository_missing_name(repoid, data):
