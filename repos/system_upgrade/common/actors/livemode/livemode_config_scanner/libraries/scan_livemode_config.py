@@ -1,6 +1,6 @@
 from leapp.configs.actor import livemode as livemode_config_lib
 from leapp.exceptions import StopActorExecutionError
-from leapp.libraries.common.config import architecture, get_env
+from leapp.libraries.common.config import get_env
 from leapp.libraries.common.rpms import has_package
 from leapp.libraries.stdlib import api
 from leapp.models import InstalledRPM, LiveModeConfig
@@ -14,14 +14,6 @@ def should_scan_config():
     if not is_unsupported:
         api.current_logger().debug('Will not scan livemode config - the upgrade is not unsupported.')
         return False
-
-    if not architecture.matches_architecture(architecture.ARCH_X86_64):
-        api.current_logger().debug('Will not scan livemode config - livemode is currently limited to x86_64.')
-        details = 'Live upgrades are currently limited to x86_64 only.'
-        raise StopActorExecutionError(
-            'CPU architecture does not meet requirements for live upgrades',
-            details={'Problem': details}
-        )
 
     if not has_package(InstalledRPM, 'squashfs-tools'):
         # This feature is not to be used by standard users, so stopping the upgrade and providing
