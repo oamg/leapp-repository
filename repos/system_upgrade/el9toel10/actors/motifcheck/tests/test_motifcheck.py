@@ -55,7 +55,7 @@ def test_actor_execution(monkeypatch, has_motif):
     monkeypatch.setattr(reporting, "create_report", create_report_mocked())
 
     # Executed actor fed with out fake RPMs
-    report_installed_packages(_context=api)
+    report_installed_packages()
 
     if has_motif:
         # Assert for motif package installed
