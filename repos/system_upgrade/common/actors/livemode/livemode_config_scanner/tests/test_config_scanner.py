@@ -37,7 +37,7 @@ EnablementTestCase = namedtuple('EnablementTestCase', ('env_vars', 'arch', 'pkgs
                            result=EnablementResult.DO_NOTHING),
         EnablementTestCase(env_vars={'LEAPP_UNSUPPORTED': '1'},
                            arch=architecture.ARCH_ARM64, pkgs=('squashfs-tools', ),
-                           result=EnablementResult.RAISE),
+                           result=EnablementResult.SCAN_CONFIG),
         EnablementTestCase(env_vars={'LEAPP_UNSUPPORTED': '1'},
                            arch=architecture.ARCH_ARM64, pkgs=tuple(),
                            result=EnablementResult.RAISE),
