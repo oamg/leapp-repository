@@ -11,16 +11,10 @@ _REQUIRED_PACKAGES_FOR_LIVE_MODE = [
     'util-linux',
     'dracut-live',
     'dracut-squash',
-    'dmidecode',
-    'pciutils',
-    'lsscsi',
     'passwd',
     'kexec-tools',
-    'vi',
     'less',
     'openssh-clients',
-    'strace',
-    'tcpdump',
 ]
 
 
@@ -32,6 +26,9 @@ def emit_livemode_userspace_requirements():
     packages = _REQUIRED_PACKAGES_FOR_LIVE_MODE + livemode_config.additional_packages
     if livemode_config.setup_opensshd_with_auth_keys:
         packages += ['openssh-server', 'crypto-policies']
+
+    if livemode_config.capture_upgrade_strace_into:
+        packages += ['strace']
 
     packages = sorted(set(packages))
 
