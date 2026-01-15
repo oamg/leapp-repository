@@ -1,6 +1,5 @@
 from leapp import reporting
 from leapp.libraries.common.rpms import has_package
-from leapp.libraries.stdlib import api
 from leapp.models import DistributionSignedRPM
 
 # Summary for motif report
