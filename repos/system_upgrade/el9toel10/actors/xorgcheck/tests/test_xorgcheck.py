@@ -11,11 +11,10 @@ def _generate_rpm_with_name(name):
     """
     Generate new RPM model item with given name.
 
-    Parameters:
-        name (str): rpm name
-
-    Returns:
-        rpm  (RPM): new RPM object with name parameter set
+    :param name: rpm name
+    :type name: str
+    :return: new RPM object with name parameter set
+    :rtype: RPM
     """
     return RPM(name=name,
                version='0.1',
