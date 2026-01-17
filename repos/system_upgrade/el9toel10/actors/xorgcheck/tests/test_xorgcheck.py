@@ -62,6 +62,10 @@ def test_actor_execution(monkeypatch, xorg_packages):
     if xorg_packages:
         # Assert for Xorg packages installed
         assert reporting.create_report.called == 1
+        resources = report_fields['detail']['related_resources']
+        titles = [res['title'] for res in resources]
+        assert titles == xorg_packages
+        assert all([res['scheme'] == 'package' for res in resources])
     else:
         # Assert for no Xorg packages installed
         assert not reporting.create_report.called
