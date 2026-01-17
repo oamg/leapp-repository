@@ -6,10 +6,9 @@ from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 class XorgCheck(Actor):
     """
-    Actor checking for presence of Xorg server packages installation.
+    Inhibit the upgrade if Xorg server packages are present on the system.
 
-    Provides user with information related to upgrading systems
-    with Xorg server packages installed.
+    Xorg server is not available in RHEL 10. 
     """
     name = 'xorg_check'
     consumes = (DistributionSignedRPM,)
