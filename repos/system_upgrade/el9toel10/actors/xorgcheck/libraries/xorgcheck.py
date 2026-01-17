@@ -3,7 +3,7 @@ from leapp.libraries.common.rpms import has_package
 from leapp.models import DistributionSignedRPM
 
 # List of Xorg server packages to check
-XORG_PACKAGES = [
+_XORG_PACKAGES = [
     'xorg-x11-server-Xdmx',
     'xorg-x11-server-Xephyr',
     'xorg-x11-server-Xnest',
@@ -12,19 +12,19 @@ XORG_PACKAGES = [
 ]
 
 # Summary for Xorg report
-report_xorg_inst_summary = (
+_report_xorg_inst_summary = (
     'Xorg server packages have been detected on your system. The Xorg server is no longer available '
     'in RHEL 10. Applications and services that depend on these Xorg server packages will not work '
     'after the upgrade. You will need to migrate to Wayland or maintain the Xorg packages through '
     'alternative means.'
 )
 
-report_xorg_inst_hint = (
+_report_xorg_inst_hint = (
     'Consider migrating to Wayland before proceeding with the upgrade.'
 )
 
 # Link URL for Xorg report
-report_xorg_inst_link_url = 'https://red.ht/rhel-10-removed-features-graphics-infrastructures'
+_report_xorg_inst_link_url = 'https://red.ht/rhel-10-removed-features-graphics-infrastructures'
 
 
 def _report_xorg_installed(packages):
