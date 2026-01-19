@@ -14,8 +14,8 @@ _XORG_PACKAGES = [
 # Summary for Xorg report
 _report_xorg_inst_summary = (
     'Xorg server packages have been detected on your system. The Xorg server is no longer available '
-    'in RHEL 10. Applications and services that depend on these Xorg server packages will not work '
-    'after the upgrade. You will need to migrate to Wayland or maintain the Xorg packages through '
+    'in RHEL 10. Applications and services that depend on Xorg server packages will not work '
+    'after the upgrade. Migrate to Wayland or maintain the Xorg packages through '
     'alternative means.'
 )
 
