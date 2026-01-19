@@ -40,12 +40,12 @@ def _report_xorg_installed(packages):
     """
     reporting.create_report([
         reporting.Title('Xorg server packages have been detected on your system'),
-        reporting.Summary(report_xorg_inst_summary),
+        reporting.Summary(_report_xorg_inst_summary),
         reporting.Severity(reporting.Severity.HIGH),
         reporting.Groups([reporting.Groups.SERVICES]),
         reporting.ExternalLink(title='RHEL 10 Removed Features - Graphics Infrastructures',
-                               url=report_xorg_inst_link_url),
-        reporting.Remediation(hint=report_xorg_inst_hint),
+                               url=_report_xorg_inst_link_url),
+        reporting.Remediation(hint=_report_xorg_inst_hint),
         ] + [reporting.RelatedResource('package', pkg) for pkg in packages])
 
 
@@ -57,7 +57,7 @@ def report_installed_packages():
     """
     installed_packages = []
 
-    for package in XORG_PACKAGES:
+    for package in _XORG_PACKAGES:
         if has_package(DistributionSignedRPM, package):
             installed_packages.append(package)
 
