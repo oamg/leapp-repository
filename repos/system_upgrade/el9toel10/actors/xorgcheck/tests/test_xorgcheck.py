@@ -1,7 +1,7 @@
 import pytest
 
 from leapp import reporting
-from leapp.libraries.actor.xorgcheck import report_installed_packages, _XORG_PACKAGES
+from leapp.libraries.actor.xorgcheck import _XORG_PACKAGES, report_installed_packages
 from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked
 from leapp.libraries.stdlib import api
 from leapp.models import DistributionSignedRPM, RPM
