@@ -8,7 +8,7 @@ class XorgCheck(Actor):
     """
     Inhibit the upgrade if Xorg server packages are present on the system.
 
-    Xorg server is not available in RHEL 10. 
+    Xorg server is not available in RHEL 10.
     """
     name = 'xorg_check'
     consumes = (DistributionSignedRPM,)
