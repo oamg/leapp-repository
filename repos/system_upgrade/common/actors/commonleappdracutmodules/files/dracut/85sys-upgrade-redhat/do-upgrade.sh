@@ -282,7 +282,7 @@ do_upgrade() {
         local dirname
         dirname="$("$NEWROOT/bin/dirname" "$NEWROOT$LEAPP_FAILED_FLAG_FILE")"
         [ -d "$dirname" ] || mkdir "$dirname"
-        
+
         echo >&2 "Creating file $NEWROOT$LEAPP_FAILED_FLAG_FILE"
         echo >&2 "Warning: Leapp upgrade failed and there is an issue blocking the upgrade."
         echo >&2 "Please file a support case with /var/log/leapp/leapp-upgrade.log attached"
