@@ -35,8 +35,8 @@ def _report_xorg_installed(packages):
     warn them about the lack of Xorg support in RHEL 10, and redirect
     them to online documentation for the migration process.
 
-    Parameters:
-        packages (list): List of installed Xorg package names
+    :param packages: List of installed Xorg package names
+    :type packages: list
     """
     reporting.create_report([
         reporting.Title('Xorg server packages have been detected on your system'),

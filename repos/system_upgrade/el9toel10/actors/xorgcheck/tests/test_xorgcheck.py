@@ -40,8 +40,8 @@ def test_actor_execution(monkeypatch, xorg_packages):
     the actor fed with our RPM list. Finally, assert Reports
     according to set arguments.
 
-    Parameters:
-        xorg_packages  (list): List of Xorg package names to include
+    :param xorg_packages: List of Xorg package names to include
+    :type xorg_packages: list
     """
 
     # Couple of random packages
