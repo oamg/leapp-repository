@@ -19,11 +19,11 @@ jobs:
           - name: 'Unit tests (python:3.12; repos:el9toel10,common)'
             python: python3.12
             repos: 'el9toel10,common'
-            container: el9
+            container: el10
           - name: 'Linters (python:3.12; repos:el9toel10,common)'
             python: python3.12
             repos: 'el9toel10,common'
-            container: el9-lint
+            container: el10-lint
           - name: 'Unit tests (python:3.9; repos:el9toel10,common)'
             python: python3.9
             repos: 'el9toel10,common'
