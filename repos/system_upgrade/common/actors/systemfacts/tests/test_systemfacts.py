@@ -1,20 +1,27 @@
 import grp
+import os
 import pwd
+from unittest import mock
 
 import pytest
 
 from leapp.exceptions import StopActorExecutionError
+from leapp.libraries.actor import systemfacts
 from leapp.libraries.actor.systemfacts import (
+    _get_secure_boot_state,
     _get_system_groups,
     _get_system_users,
     anyendswith,
     anyhasprefix,
     aslist,
+    get_firmware,
     get_repositories_status
 )
 from leapp.libraries.common import repofileutils
-from leapp.libraries.common.testutils import logger_mocked
-from leapp.libraries.stdlib import api
+from leapp.libraries.common.config import architecture
+from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked
+from leapp.libraries.stdlib import api, CalledProcessError
+from leapp.models import FirmwareFacts
 from leapp.snactor.fixture import current_actor_libraries
 
 
@@ -138,3 +145,114 @@ def test_failed_parsed_repofiles(monkeypatch):
 
     with pytest.raises(StopActorExecutionError):
         get_repositories_status()
+
+
+@pytest.mark.parametrize('is_enabled', (True, False))
+@mock.patch('leapp.libraries.actor.systemfacts.run')
+def test_get_secure_boot_state_ok(mocked_run: mock.MagicMock, is_enabled):
+    mocked_run.return_value = {
+        'stdout': f'SecureBoot {"enabled" if is_enabled else "disabled"}'
+    }
+
+    out = _get_secure_boot_state()
+
+    assert out == is_enabled
+    mocked_run.assert_called_once_with(['mokutil', '--sb-state'])
+
+
+@mock.patch('leapp.libraries.actor.systemfacts.run')
+def test_get_secure_boot_state_no_mokutil(mocked_run: mock.MagicMock):
+    mocked_run.side_effect = OSError
+
+    out = _get_secure_boot_state()
+
+    assert out is False
+    mocked_run.assert_called_once_with(['mokutil', '--sb-state'])
+
+
+@mock.patch('leapp.libraries.actor.systemfacts.run')
+def test_get_secure_boot_state_not_supported(mocked_run: mock.MagicMock):
+    cmd = ['mokutil', '--sb-state']
+    result = {
+        'stderr': "This system doesn't support Secure Boot",
+        'exit_code': 255,
+    }
+    mocked_run.side_effect = CalledProcessError(
+        "Command mokutil --sb-state failed with exit code 255.",
+        cmd,
+        result
+    )
+
+    out = _get_secure_boot_state()
+
+    assert out is None
+    mocked_run.assert_called_once_with(cmd)
+
+
+@mock.patch('leapp.libraries.actor.systemfacts.run')
+def test_get_secure_boot_state_failed(mocked_run: mock.MagicMock):
+    cmd = ['mokutil', '--sb-state']
+    result = {
+        'stderr': 'EFI variables are not supported on this system',
+        'exit_code': 1,
+    }
+    mocked_run.side_effect = CalledProcessError(
+        "Command mokutil --sb-state failed with exit code 1.",
+        cmd,
+        result
+    )
+
+    with pytest.raises(
+        StopActorExecutionError,
+        match='Failed to determine SecureBoot state'
+    ):
+        _get_secure_boot_state()
+
+    mocked_run.assert_called_once_with(cmd)
+
+
+def _ff(firmware, ppc64le_opal, is_secureboot):
+    return FirmwareFacts(
+        firmware=firmware,
+        ppc64le_opal=ppc64le_opal,
+        secureboot_enabled=is_secureboot
+    )
+
+
+@pytest.mark.parametrize(
+    "has_sys_efi, has_sys_opal, is_ppc, secboot_state, expect",
+    [
+        # 1. Standard BIOS on x86
+        (False, False, False, None, _ff("bios", None, None)),
+        # 2. EFI on x86 with Secure Boot Enabled
+        (True,  False, False, True,  _ff("efi",  None, True)),
+        # 3. EFI on x86 with Secure Boot Disabled
+        (True,  False, False, False, _ff("efi",  None, False)),
+        # 4. PPC64LE with OPAL (No EFI)
+        (False, True,  True,  None,  _ff("bios", True, None)),
+        # 5. PPC64LE without OPAL (No EFI)
+        (False, False, True,  None,  _ff("bios", False, None)),
+        # 6. EFI on PPC64LE with OPAL
+        (True,  True,  True,  True,  _ff("efi",  True, True)),
+    ]
+)
+def test_get_firmware_logic(
+    has_sys_efi, has_sys_opal, is_ppc, secboot_state, expect
+):
+    with mock.patch('os.path.isdir') as mock_isdir, \
+         mock.patch('leapp.libraries.stdlib.api.current_actor') as mock_curr_actor, \
+         mock.patch('leapp.libraries.actor.systemfacts._get_secure_boot_state') as mock_get_sb_state:
+
+        mock_isdir.side_effect = lambda path: {
+            '/sys/firmware/efi': has_sys_efi,
+            '/sys/firmware/opal/': has_sys_opal
+        }.get(path, False)
+
+        mock_curr_actor.return_value = CurrentActorMocked(
+            arch=architecture.ARCH_PPC64LE if is_ppc else architecture.ARCH_X86_64
+        )
+        mock_get_sb_state.return_value = secboot_state
+
+        result = get_firmware()
+
+        assert result == expect
