@@ -294,6 +294,23 @@ def get_firewalls_status():
     )
 
 
+def _get_secure_boot_state():
+    try:
+        stdout = run(['mokutil', '--sb-state'])['stdout']
+        return 'enabled' in stdout
+    except CalledProcessError as e:
+        if "doesn't support Secure Boot" in e.stderr:
+            return None
+
+        raise StopActorExecutionError('Failed to determine SecureBoot state: {}'.format(e))
+    except OSError as e:
+        # shim depends on mokutil, if it's not installed assume SecureBoot is disabled
+        api.current_logger().debug(
+            'Failed to execute mokutil, assuming SecureBoot is disabled: {}'.format(e)
+        )
+        return False
+
+
 def get_firmware():
     firmware = 'efi' if os.path.isdir('/sys/firmware/efi') else 'bios'
 
@@ -303,17 +320,7 @@ def get_firmware():
 
     is_secureboot = None
     if firmware == 'efi':
-        try:
-            out = run(['mokutil', '--sb-state'])['stdout']
-            is_secureboot = 'enabled' in out
-        except CalledProcessError as e:
-            raise StopActorExecutionError('Failed to determine SecureBoot state: {}'.format(e))
-        except OSError as e:
-            # shim depends on mokutil, if it's not installed assume SecureBoot is disabled
-            api.current_logger().debug(
-                'Failed to execute mokutil, assuming SecureBoot is disabled: {}'.format(e)
-            )
-            is_secureboot = False
+        is_secureboot = _get_secure_boot_state()
 
     return FirmwareFacts(firmware=firmware, ppc64le_opal=ppc64le_opal, secureboot_enabled=is_secureboot)
 
