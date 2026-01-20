@@ -16,6 +16,12 @@ TEST_RHEL_EFI_ENTRY = efi.EFIBootLoaderEntry(
             True,
             'File(\\EFI\\redhat\\shimaa64.efi)'
         )
+TEST_CENTOS_EFI_ENTRY = efi.EFIBootLoaderEntry(
+            '0000',
+            'CentOS Stream',
+            True,
+            'File(\\EFI\\centos\\shimaa64.efi)'
+        )
 TEST_UPGRADE_EFI_ENTRY = efi.EFIBootLoaderEntry(
             '0001',
             addupgradebootloader.UPGRADE_EFI_ENTRY_LABEL,
@@ -132,7 +138,10 @@ def test_ensure_clean_environment(monkeypatch, exists):
     assert rmtree_calls == ([addupgradebootloader.LEAPP_EFIDIR_CANONICAL_PATH] if exists else [])
 
 
-def test_copy_grub_files(monkeypatch):
+@pytest.mark.parametrize(
+    'distro, efidir', [('rhel', '/boot/efi/EFI/redhat'), ('centos', '/boot/efi/EFI/centos')]
+)
+def test_copy_grub_files(monkeypatch, distro, efidir):
     copy_file_calls = []
 
     def mock_copy_file(src, dst):
@@ -140,31 +149,40 @@ def test_copy_grub_files(monkeypatch):
 
     monkeypatch.setattr(addupgradebootloader, '_copy_file', mock_copy_file)
     monkeypatch.setattr(os.path, 'exists', lambda path: True)
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(src_distro=distro))
 
     addupgradebootloader._copy_grub_files(['required'], ['optional'])
 
     assert (
-        os.path.join(addupgradebootloader.RHEL_EFIDIR_CANONICAL_PATH, 'required'),
+        os.path.join(efidir, 'required'),
         os.path.join(addupgradebootloader.LEAPP_EFIDIR_CANONICAL_PATH, 'required')
     ) in copy_file_calls
     assert (
-        os.path.join(addupgradebootloader.RHEL_EFIDIR_CANONICAL_PATH, 'optional'),
+        os.path.join(efidir, 'optional'),
         os.path.join(addupgradebootloader.LEAPP_EFIDIR_CANONICAL_PATH, 'optional')
     ) in copy_file_calls
 
 
-def test_add_upgrade_boot_entry_no_efi_binary(monkeypatch):
-    monkeypatch.setattr(os.path, 'exists', lambda path: False)
+DISTRO_SCENARIOS = [('rhel', TEST_RHEL_EFI_ENTRY), ('centos', TEST_CENTOS_EFI_ENTRY)]
 
-    efibootinfo_mock = MockEFIBootInfo([TEST_RHEL_EFI_ENTRY])
+
+@pytest.mark.parametrize('distro, efientry', DISTRO_SCENARIOS)
+def test_add_upgrade_boot_entry_no_efi_binary(monkeypatch, distro, efientry):
+    monkeypatch.setattr(os.path, 'exists', lambda path: False)
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(src_distro=distro))
+
+    efibootinfo_mock = MockEFIBootInfo([efientry])
+
     with pytest.raises(StopActorExecutionError, match="Unable to detect upgrade UEFI binary file"):
         addupgradebootloader._add_upgrade_boot_entry(efibootinfo_mock)
 
 
-def test_add_upgrade_boot_entry_already_exists(monkeypatch):
+@pytest.mark.parametrize('distro, efientry', DISTRO_SCENARIOS)
+def test_add_upgrade_boot_entry_already_exists(monkeypatch, distro, efientry):
     monkeypatch.setattr(os.path, 'exists', lambda path: True)
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(src_distro=distro))
 
-    efibootinfo_mock = MockEFIBootInfo([TEST_RHEL_EFI_ENTRY, TEST_UPGRADE_EFI_ENTRY])
+    efibootinfo_mock = MockEFIBootInfo([efientry, TEST_UPGRADE_EFI_ENTRY])
 
     with mock.patch(
         "leapp.libraries.common.efi.add_boot_entry"
@@ -174,8 +192,10 @@ def test_add_upgrade_boot_entry_already_exists(monkeypatch):
         assert result == TEST_UPGRADE_EFI_ENTRY
 
 
-def test_add_upgrade_boot_entry_success(monkeypatch):
+@pytest.mark.parametrize('distro, efientry', DISTRO_SCENARIOS)
+def test_add_upgrade_boot_entry_success(monkeypatch, distro, efientry):
     monkeypatch.setattr(os.path, 'exists', lambda path: True)
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(src_distro=distro))
 
     def add_boot_entry_mocked(label, efi_path):
         assert label == addupgradebootloader.UPGRADE_EFI_ENTRY_LABEL
@@ -184,19 +204,24 @@ def test_add_upgrade_boot_entry_success(monkeypatch):
 
     monkeypatch.setattr(efi, 'add_boot_entry', add_boot_entry_mocked)
 
-    efibootinfo_mock = MockEFIBootInfo([TEST_RHEL_EFI_ENTRY])
+    efibootinfo_mock = MockEFIBootInfo([TEST_CENTOS_EFI_ENTRY])
     result = addupgradebootloader._add_upgrade_boot_entry(efibootinfo_mock)
     assert result.label == addupgradebootloader.UPGRADE_EFI_ENTRY_LABEL
 
 
-def test_process(monkeypatch):
+@pytest.mark.parametrize('distro, efientry', DISTRO_SCENARIOS)
+def test_process(monkeypatch, distro, efientry):
     run_calls = []
 
     def mock_run(cmd):
         run_calls.append(cmd)
 
     target_info_mock = TargetUserSpaceInfo(path='/USERSPACE', scratch='/SCRATCH', mounts='/MOUNTS')
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[target_info_mock]))
+    monkeypatch.setattr(
+        api,
+        'current_actor',
+        CurrentActorMocked(msgs=[target_info_mock], src_distro=distro),
+    )
     monkeypatch.setattr(api, 'produce', produce_mocked())
     monkeypatch.setattr(addupgradebootloader, 'run', mock_run)
 
@@ -205,7 +230,7 @@ def test_process(monkeypatch):
 
     monkeypatch.setattr(addupgradebootloader, '_copy_grub_files', lambda optional, required: None)
 
-    efibootinfo_mock = MockEFIBootInfo([TEST_RHEL_EFI_ENTRY])
+    efibootinfo_mock = MockEFIBootInfo([efientry])
     monkeypatch.setattr(efi, 'EFIBootInfo', lambda: efibootinfo_mock)
 
     def mock_add_upgrade_boot_entry(efibootinfo):
@@ -214,7 +239,7 @@ def test_process(monkeypatch):
     monkeypatch.setattr(addupgradebootloader, '_add_upgrade_boot_entry', mock_add_upgrade_boot_entry)
     monkeypatch.setattr(efi, 'set_bootnext', lambda _: None)
 
-    monkeypatch.setattr(addupgradebootloader, 'patch_efi_redhat_grubcfg_to_load_correct_grubenv',
+    monkeypatch.setattr(addupgradebootloader, 'patch_efidir_grubcfg_to_load_correct_grubenv',
                         lambda: None)
 
     addupgradebootloader.process()
@@ -224,7 +249,7 @@ def test_process(monkeypatch):
 
     efibootentry_fields = ['boot_number', 'label', 'active', 'efi_bin_source']
     expected = ArmWorkaroundEFIBootloaderInfo(
-            original_entry=EFIBootEntry(**{f: getattr(TEST_RHEL_EFI_ENTRY, f) for f in efibootentry_fields}),
+            original_entry=EFIBootEntry(**{f: getattr(efientry, f) for f in efibootentry_fields}),
             upgrade_entry=EFIBootEntry(**{f: getattr(TEST_UPGRADE_EFI_ENTRY, f) for f in efibootentry_fields}),
             upgrade_bls_dir=addupgradebootloader.UPGRADE_BLS_DIR,
             upgrade_entry_efi_path='/boot/efi/EFI/leapp/',
