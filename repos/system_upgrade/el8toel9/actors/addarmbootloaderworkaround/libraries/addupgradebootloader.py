@@ -2,7 +2,8 @@ import os
 import shutil
 
 from leapp.exceptions import StopActorExecutionError
-from leapp.libraries.common import efi, mounting
+from leapp.libraries.common import distro, efi, mounting
+from leapp.libraries.common.config import get_source_distro_id
 from leapp.libraries.common.grub import get_boot_partition
 from leapp.libraries.stdlib import api, CalledProcessError, run
 from leapp.models import ArmWorkaroundEFIBootloaderInfo, EFIBootEntry, TargetUserSpaceInfo
@@ -13,7 +14,6 @@ ARM_SHIM_PACKAGE_NAME = 'shim-aa64'
 ARM_GRUB_PACKAGE_NAME = 'grub2-efi-aa64'
 
 LEAPP_EFIDIR_CANONICAL_PATH = os.path.join(efi.EFI_MOUNTPOINT, 'EFI/leapp/')
-RHEL_EFIDIR_CANONICAL_PATH = os.path.join(efi.EFI_MOUNTPOINT, 'EFI/redhat/') # TODO
 UPGRADE_BLS_DIR = '/boot/upgrade-loader'
 
 CONTAINER_DOWNLOAD_DIR = '/tmp_pkg_download_dir'
@@ -24,7 +24,6 @@ Our grub configuration file template that is used in case the system's grubcfg w
 
 The template contains placeholders named with LEAPP_*, that need to be replaced in order to
 obtain a valid config.
-
 """
 
 
@@ -45,9 +44,10 @@ def process():
     with mounting.NspawnActions(base_dir=userspace.path) as context:
         _ensure_clean_environment()
 
+        distro_efidir = distro.get_distro_efidir_canon_path(get_source_distro_id())
         # NOTE(dkubek): Assumes required shim-aa64 and grub2-efi-aa64 packages
         # have been installed
-        context.copytree_from(RHEL_EFIDIR_CANONICAL_PATH, LEAPP_EFIDIR_CANONICAL_PATH)
+        context.copytree_from(distro_efidir, LEAPP_EFIDIR_CANONICAL_PATH)
 
         _copy_grub_files(['grubenv', 'grub.cfg'], ['user.cfg'])
 
@@ -60,7 +60,7 @@ def process():
         current_boot_entry = efibootinfo.entries[efibootinfo.current_bootnum]
         upgrade_boot_entry = _add_upgrade_boot_entry(efibootinfo)
 
-        patch_efi_redhat_grubcfg_to_load_correct_grubenv()
+        patch_efidir_grubcfg_to_load_correct_grubenv()
 
         try:
             efi.set_bootnext(upgrade_boot_entry.boot_number)
@@ -100,12 +100,13 @@ def _ensure_clean_environment():
 
 def _copy_grub_files(required, optional):
     """
-    Copy grub files from redhat/ dir to the /boot/efi/EFI/leapp/ dir.
+    Copy grub files from the distro EFI dir to the /boot/efi/EFI/leapp/ dir.
     """
 
     all_files = required + optional
     for filename in all_files:
-        src_path = os.path.join(RHEL_EFIDIR_CANONICAL_PATH, filename)
+        distro_efidir = distro.get_distro_efidir_canon_path(get_source_distro_id())
+        src_path = os.path.join(distro_efidir, filename)
         dst_path = os.path.join(LEAPP_EFIDIR_CANONICAL_PATH, filename)
 
         if not os.path.exists(src_path):
@@ -207,9 +208,9 @@ def _write_config(config_path, config_contents):
         grub_cfg_handle.write(config_contents)
 
 
-def patch_efi_redhat_grubcfg_to_load_correct_grubenv():
+def patch_efidir_grubcfg_to_load_correct_grubenv():
     """
-    Replaces /boot/efi/EFI/redhat/grub2.cfg with a patched grub2.cfg shipped in leapp.
+    Replaces <distro efi directory>/grub2.cfg with a patched grub2.cfg shipped in leapp.
 
     The grub2.cfg shipped on some AWS images omits the section that loads grubenv different
     EFI entries. Thus, we need to replace it with our own that will load grubenv shipped
