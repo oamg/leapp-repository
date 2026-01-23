@@ -7,7 +7,13 @@ from leapp import reporting
 from leapp.exceptions import StopActorExecution, StopActorExecutionError
 from leapp.libraries.actor import constants
 from leapp.libraries.common import distro, dnfplugin, mounting, overlaygen, repofileutils, rhsm, utils
-from leapp.libraries.common.config import get_env, get_product_type, get_source_distro_id, get_target_distro_id
+from leapp.libraries.common.config import (
+    get_env,
+    get_product_type,
+    get_source_distro_id,
+    get_target_distro_id,
+    is_conversion
+)
 from leapp.libraries.common.config.version import get_target_major_version, get_target_version
 from leapp.libraries.common.gpg import get_path_to_gpg_certs, is_nogpgcheck_set
 from leapp.libraries.stdlib import api, CalledProcessError, config, run
@@ -981,14 +987,19 @@ def _get_distro_available_repoids(context, indata):
              provider has itw own rpm).
     On other: Repositories are provided in specific repofiles (e.g. centos.repo
               and centos-addons.repo on CS)
+    Conversions: Only custom repos - no distro repoids (all distros)
 
     :return: A set of repoids provided by distribution
     :rtype: set[str]
     """
     distro_repoids = distro.get_target_distro_repoids(context)
-    distro_id = get_target_distro_id()
-    rhel_and_rhsm = distro_id == 'rhel' and not rhsm.skip_rhsm()
-    if distro_id != 'rhel' or rhel_and_rhsm:
+    target_distro = get_target_distro_id()
+    rhel_and_rhsm = target_distro == 'rhel' and not rhsm.skip_rhsm()
+
+    if (
+        not is_conversion()  # conversions only work with custom repos
+        and (target_distro != "rhel" or rhel_and_rhsm)
+    ):
         _inhibit_if_no_base_repos(distro_repoids)
 
     if indata and indata.rhui_info:

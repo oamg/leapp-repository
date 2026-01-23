@@ -1217,16 +1217,26 @@ def test__get_distro_available_repoids_norhsm_norhui(monkeypatch):
 
 
 @pytest.mark.parametrize(
-    "distro_id,skip_rhsm", [("rhel", False), ("centos", True), ("almalinux", True)]
+    "src_distro", ["rhel", "centos", "almalinux"]
+)
+@pytest.mark.parametrize(
+    "dst_distro, skip_rhsm",
+    [
+        ("rhel", False),
+        ("centos", True),
+        ("almalinux", True),
+    ]
 )
 def test__get_distro_available_repoids_nobaserepos_inhibit(
-    monkeypatch, distro_id, skip_rhsm
+    monkeypatch, src_distro, dst_distro, skip_rhsm
 ):
     """
     Test that get_distro_available repoids reports and raises if there are no base repos.
     """
     monkeypatch.setattr(
-        userspacegen.api, "current_actor", CurrentActorMocked(dst_distro=distro_id)
+        userspacegen.api,
+        "current_actor",
+        CurrentActorMocked(src_distro=src_distro, dst_distro=dst_distro),
     )
     monkeypatch.setattr(userspacegen.api.current_actor(), 'produce', produce_mocked())
     monkeypatch.setattr(reporting, "create_report", create_report_mocked())
@@ -1235,6 +1245,12 @@ def test__get_distro_available_repoids_nobaserepos_inhibit(
     monkeypatch.setattr(distro, 'get_target_distro_repoids', lambda ctx: [])
 
     indata = testInData(_PACKAGES_MSGS, None, None, _XFS_MSG, _STORAGEINFO_MSG, None)
+
+    if src_distro != dst_distro:
+        # no inhibitor when converting
+        userspacegen._get_distro_available_repoids(None, indata)
+        return
+
     with pytest.raises(StopActorExecution):
         # NOTE: context is not used without rhsm, for simplicity setting to None
         userspacegen._get_distro_available_repoids(None, indata)
