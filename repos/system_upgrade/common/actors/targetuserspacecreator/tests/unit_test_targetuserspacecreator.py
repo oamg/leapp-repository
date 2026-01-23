@@ -1216,19 +1216,13 @@ def test__get_distro_available_repoids_norhsm_norhui(monkeypatch):
     assert repoids == set()
 
 
+@pytest.mark.parametrize("src_distro", ["rhel", "centos", "almalinux"])
 @pytest.mark.parametrize(
-    "src_distro", ["rhel", "centos", "almalinux"]
+    "dst_distro, skip_rhsm", [("rhel", False), ("centos", True), ("almalinux", True)]
 )
-@pytest.mark.parametrize(
-    "dst_distro, skip_rhsm",
-    [
-        ("rhel", False),
-        ("centos", True),
-        ("almalinux", True),
-    ]
-)
+@pytest.mark.parametrize("src_ver, dst_ver", [("9.6", "10.2"), ("8.10", "9.6")])
 def test__get_distro_available_repoids_nobaserepos_inhibit(
-    monkeypatch, src_distro, dst_distro, skip_rhsm
+    monkeypatch, src_distro, dst_distro, skip_rhsm, src_ver, dst_ver
 ):
     """
     Test that get_distro_available repoids reports and raises if there are no base repos.
@@ -1236,7 +1230,9 @@ def test__get_distro_available_repoids_nobaserepos_inhibit(
     monkeypatch.setattr(
         userspacegen.api,
         "current_actor",
-        CurrentActorMocked(src_distro=src_distro, dst_distro=dst_distro),
+        CurrentActorMocked(
+            src_distro=src_distro, dst_distro=dst_distro, src_ver=src_ver, dst_ver=dst_ver
+        ),
     )
     monkeypatch.setattr(userspacegen.api.current_actor(), 'produce', produce_mocked())
     monkeypatch.setattr(reporting, "create_report", create_report_mocked())
@@ -1246,8 +1242,8 @@ def test__get_distro_available_repoids_nobaserepos_inhibit(
 
     indata = testInData(_PACKAGES_MSGS, None, None, _XFS_MSG, _STORAGEINFO_MSG, None)
 
-    if src_distro != dst_distro:
-        # no inhibitor when converting
+    if src_distro == "centos" and src_ver == "8.10" or src_distro != dst_distro:
+        # should not raise on CS 8to9 and when converting
         userspacegen._get_distro_available_repoids(None, indata)
         return
 
