@@ -11,6 +11,9 @@ _XORG_PACKAGES = [
     'xorg-x11-server-Xvfb',
 ]
 
+# Separator for list formatting in reports
+FMT_LIST_SEPARATOR = '\n    - '
+
 # Summary for Xorg report
 _report_xorg_inst_summary = (
     'Xorg server packages have been detected on your system. The Xorg server is no longer available '
