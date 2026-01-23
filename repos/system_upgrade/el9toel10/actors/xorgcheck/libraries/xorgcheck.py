@@ -16,7 +16,7 @@ _report_xorg_inst_summary = (
     'Xorg server packages have been detected on your system. The Xorg server is no longer available '
     'in RHEL 10. Applications and services that depend on Xorg server packages will not work '
     'after the upgrade. Migrate to Wayland or maintain the Xorg packages through '
-    'alternative means.'
+    'alternative means. The following Xorg server packages have been detected and are not available in RHEL 10:{}{}'.format(FMT_LIST_SEPARATOR, FMT_LIST_SEPARATOR.join(<the packages>))
 )
 
 _report_xorg_inst_hint = (
