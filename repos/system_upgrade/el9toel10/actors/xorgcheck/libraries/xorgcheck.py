@@ -14,12 +14,12 @@ _XORG_PACKAGES = [
 # Separator for list formatting in reports
 FMT_LIST_SEPARATOR = '\n    - '
 
-# Summary for Xorg report
-_report_xorg_inst_summary = (
+# Summary template for Xorg report
+_report_xorg_inst_summary_template = (
     'Xorg server packages have been detected on your system. The Xorg server is no longer available '
     'in RHEL 10. Applications and services that depend on Xorg server packages will not work '
     'after the upgrade. Migrate to Wayland or maintain the Xorg packages through '
-    'alternative means. The following Xorg server packages have been detected and are not available in RHEL 10:{}{}'.format(FMT_LIST_SEPARATOR, FMT_LIST_SEPARATOR.join(<the packages>))
+    'alternative means. The following Xorg server packages have been detected and are not available in RHEL 10:{}{}'
 )
 
 _report_xorg_inst_hint = (
@@ -41,9 +41,10 @@ def _report_xorg_installed(packages):
     :param packages: List of installed Xorg package names
     :type packages: list
     """
+    summary = _report_xorg_inst_summary_template.format(FMT_LIST_SEPARATOR, FMT_LIST_SEPARATOR.join(packages))
     reporting.create_report([
         reporting.Title('Xorg server packages have been detected on your system'),
-        reporting.Summary(_report_xorg_inst_summary),
+        reporting.Summary(summary),
         reporting.Severity(reporting.Severity.HIGH),
         reporting.Groups([reporting.Groups.SERVICES]),
         reporting.ExternalLink(title='RHEL 10 Removed Features - Graphics Infrastructures',
