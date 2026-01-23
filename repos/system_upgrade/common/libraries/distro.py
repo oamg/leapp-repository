@@ -1,5 +1,6 @@
 import json
 import os
+from collections import namedtuple
 from collections.abc import Mapping
 
 from leapp.exceptions import StopActorExecutionError
@@ -350,3 +351,18 @@ def get_distro_efidir_canon_path(distro_id):
         return os.path.join(efi.EFI_MOUNTPOINT, "EFI", "redhat")
 
     return os.path.join(efi.EFI_MOUNTPOINT, "EFI", distro_id)
+
+
+DistroIsoConfig = namedtuple('DistroIsoConfig', ('release_pkg_name_prefix', 'etc_release_file'))
+"""
+Holds distro-specific information about ISO images.
+"""
+
+
+def get_distro_iso_config(distro_id):
+    return {
+        "rhel": DistroIsoConfig("redhat-release", "/etc/redhat-release"),
+        "centos": DistroIsoConfig("centos-stream-release", "/etc/centos-release"),
+        "almalinux": DistroIsoConfig("almalinux-release", "/etc/almalinux-release"),
+        "rocky": DistroIsoConfig("rocky-release", "/etc/rocky-release"),
+    }[distro_id]
