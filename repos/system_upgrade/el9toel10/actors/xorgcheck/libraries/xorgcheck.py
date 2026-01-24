@@ -9,6 +9,8 @@ _XORG_PACKAGES = [
     'xorg-x11-server-Xnest',
     'xorg-x11-server-Xorg',
     'xorg-x11-server-Xvfb',
+    'xorg-x11-server-utils',
+    'xorg-x11-utils',
 ]
 
 # Separator for list formatting in reports
