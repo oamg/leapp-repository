@@ -21,5 +21,11 @@ def remove_live_image():
 
     try:
         os.unlink(artifacts.squashfs_path)
+    except FileNotFoundError:
+        api.current_logger().debug(
+            'The %s file does not exist. Most likely it has been removed before. Usually happens with "leapp rerun".',
+            artifacts.squashfs_path
+        )
+        return
     except OSError as error:
-        api.current_logger().warning('Failed to remove %s with error: %s', artifacts.squashfs, error)
+        api.current_logger().warning('Failed to remove %s with error: %s', artifacts.squashfs_path, error)
