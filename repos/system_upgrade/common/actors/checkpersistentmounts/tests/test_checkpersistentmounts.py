@@ -11,6 +11,9 @@ MOUNT_ENTRY = MountEntry(name='/dev/sdaX', tp='ext4', mount='/var/lib/leapp', op
 FSTAB_ENTRY = FstabEntry(fs_spec='', fs_file='/var/lib/leapp', fs_vfstype='',
                          fs_mntops='defaults', fs_freq='0', fs_passno='0')
 
+FSTAB_ENTRY_TRAIL_SLASH = FstabEntry(fs_spec='', fs_file='/var/lib/leapp/', fs_vfstype='',
+                                     fs_mntops='defaults', fs_freq='0', fs_passno='0')
+
 
 @pytest.mark.parametrize(
     ('storage_info', 'should_inhibit'),
@@ -25,6 +28,10 @@ FSTAB_ENTRY = FstabEntry(fs_spec='', fs_file='/var/lib/leapp', fs_vfstype='',
         ),
         (
             StorageInfo(mount=[MOUNT_ENTRY], fstab=[FSTAB_ENTRY]),
+            False
+        ),
+        (
+            StorageInfo(mount=[MOUNT_ENTRY], fstab=[FSTAB_ENTRY_TRAIL_SLASH]),
             False
         ),
     ]

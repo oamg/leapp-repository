@@ -31,7 +31,7 @@ def check_mount_is_persistent(storage_info, mountpoint):
     """Check if mountpoint is mounted in persistent fashion"""
 
     mount_entry_exists = any(me.mount == mountpoint for me in storage_info.mount)
-    fstab_entry_exists = any(fe.fs_file == mountpoint for fe in storage_info.fstab)
+    fstab_entry_exists = any(fe.fs_file.rstrip('/') == mountpoint for fe in storage_info.fstab)
 
     if mount_entry_exists and not fstab_entry_exists:
         inhibit_upgrade_due_non_persistent_mount(mountpoint)
