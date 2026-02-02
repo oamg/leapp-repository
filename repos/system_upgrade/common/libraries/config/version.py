@@ -16,7 +16,7 @@ OP_MAP = {
 
 _SUPPORTED_VERSIONS = {
     '8': {'rhel': ['8.10'], 'rhel-saphana': ['8.10']},
-    '9': {'rhel': ['9.6'], 'rhel-saphana': ['9.6']},
+    '9': {'rhel': ['9.6', '9.8'], 'rhel-saphana': ['9.6', '9.8']},
 }
 
 
