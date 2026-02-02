@@ -17,6 +17,12 @@ GRUB2_BIOS_ENV_FILE = os.path.join(GRUB2_BIOS_ENTRYPOINT, 'grubenv')
 """The path to the env file for GRUB2 in BIOS"""
 
 
+class GRUBDeviceError(Exception):
+    """
+    Exception raised when cannot detect GRUB device(s)
+    """
+
+
 @deprecated(
     since="2025-12-04",
     message="Replaced by canonical_path_to_efi_format in the firmware.efi library",
@@ -220,6 +226,10 @@ class EFIBootInfo:
 def has_grub(blk_dev):
     """
     Check whether GRUB is present on block device
+
+    :return: True if GRUB has been detected on the block device.
+    :rtype: bool
+    :raises OSError: When cannot read from the given block device
     """
     try:
         blk = os.open(blk_dev, os.O_RDONLY)
@@ -228,7 +238,7 @@ def has_grub(blk_dev):
         api.current_logger().warning(
             'Could not read first sector of {} in order to identify the bootloader'.format(blk_dev)
         )
-        raise StopActorExecution()
+        raise
     os.close(blk)
     test = 'GRUB'
     if not isinstance(mbr, str):
@@ -361,22 +371,41 @@ def get_grub_devices():
 
     :return: Devices where GRUB is located
     :rtype: list
+    :raises GRUBDeviceError: When cannot obtain devices where GRUB is located
     """
-    # TODO: catch errors and return meaningful value/error instead of StopActorExecution
-    boot_device = get_boot_partition()
+    try:
+        boot_device = get_boot_partition()
+        is_mdraid = mdraid.is_mdraid_dev(boot_device)
+    except partitions.StorageScanError as err:
+        raise GRUBDeviceError('Cannot detect partition hosting /boot: {}'.format(err))
+    except CalledProcessError as err:
+        raise GRUBDeviceError(
+            'Cannot determine whether /boot is managed by MD RAID: {}'
+            .format(err.message)
+        ) from err
+
     devices = []
-    if mdraid.is_mdraid_dev(boot_device):
+    if is_mdraid:
         component_devs = mdraid.get_component_devices(boot_device)
-        blk_devs = [partitions.blk_dev_from_partition(dev) for dev in component_devs]
-        # remove duplicates as there might be raid on partitions on the same drive
-        # even if that's very unusual
-        devices = sorted(list(set(blk_devs)))
+        if component_devs is None:
+            # NOTE(pstodulk): This is just a seatbelt, we know this situation
+            # has not occurred yet
+            raise GRUBDeviceError('Cannot obtain list of component devices for MD RAID hosting /boot')
+
+        # Use set to remove duplicates as there might be raid on partitions
+        # hosted by the same drive even if that's very unusual
+        blk_devs = {partitions.blk_dev_from_partition(dev) for dev in component_devs}
+        devices = sorted(blk_devs)
     else:
         devices.append(partitions.blk_dev_from_partition(boot_device))
 
-    have_grub = [dev for dev in devices if has_grub(dev)]
-    api.current_logger().info('GRUB is installed on {}'.format(",".join(have_grub)))
-    return have_grub
+    try:
+        grub_devices = sorted([dev for dev in devices if has_grub(dev)])
+    except OSError as err:
+        raise GRUBDeviceError('Cannot read from potential GRUB device: {}'. format(err))
+
+    api.current_logger().info('GRUB is installed on {}'.format(",".join(grub_devices)))
+    return grub_devices
 
 
 @deprecated(
