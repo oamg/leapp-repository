@@ -107,9 +107,7 @@ def test_update_grub_nogrub_system_ibmz(monkeypatch):
 
 def test_update_grub_nogrub_system(monkeypatch):
     def get_grub_devices_mocked():
-        # this is not very well documented, but the grub.get_grub_devices function raises a StopActorExecution on error
-        # (whether that's caused by determining root partition or determining the block device a given partition is on
-        raise StopActorExecution()
+        raise grub.GRUBDeviceError()
 
     monkeypatch.setattr(grub, 'get_grub_devices', get_grub_devices_mocked)
     monkeypatch.setattr(reporting, 'create_report', testutils.create_report_mocked())

@@ -1,4 +1,5 @@
 from leapp import reporting
+from leapp.exceptions import StopActorExecution
 from leapp.libraries.common import grub
 from leapp.libraries.common.config import architecture
 from leapp.libraries.stdlib import api, CalledProcessError, config, run
@@ -61,7 +62,11 @@ def process():
         return
     ff = next(api.consume(FirmwareFacts), None)
     if ff and ff.firmware == 'bios':
-        grub_devs = grub.get_grub_devices()
+        try:
+            grub_devs = grub.get_grub_devices()
+        except grub.GRUBDeviceError as err:
+            api.current_logger().warning('Failed to detect GRUB devices: %s', err)
+            raise StopActorExecution()
         if grub_devs:
             update_grub_core(grub_devs)
         else:
