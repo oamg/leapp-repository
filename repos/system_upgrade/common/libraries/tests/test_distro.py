@@ -4,9 +4,9 @@ import os
 import pytest
 
 from leapp.actors import StopActorExecutionError
-from leapp.libraries.common import distro, repofileutils, rhsm
+from leapp.libraries.common import distro as distrolib
+from leapp.libraries.common import repofileutils, rhsm
 from leapp.libraries.common.config.architecture import ARCH_ACCEPTED, ARCH_ARM64, ARCH_PPC64LE, ARCH_S390X, ARCH_X86_64
-from leapp.libraries.common.distro import _get_distro_repofiles, get_distribution_data, get_distro_repoids
 from leapp.libraries.common.testutils import CurrentActorMocked
 from leapp.libraries.stdlib import api
 from leapp.models import RepositoryData, RepositoryFile
@@ -34,7 +34,7 @@ def test_get_distribution_data(monkeypatch, distro):
         return True
 
     monkeypatch.setattr(os.path, 'exists', exists_mocked)
-    ret = get_distribution_data(distro)
+    ret = distrolib.get_distribution_data(distro)
 
     with open(data_path) as fp:
         assert ret == json.load(fp)
@@ -57,7 +57,7 @@ def test_get_distribution_data_not_exists(monkeypatch, distro):
     monkeypatch.setattr(os.path, 'exists', exists_mocked)
 
     with pytest.raises(StopActorExecutionError) as err:
-        get_distribution_data(distro)
+        distrolib.get_distribution_data(distro)
         assert 'Cannot find distribution signature configuration.' in err
 
 
@@ -83,31 +83,31 @@ def test_get_distro_repofiles(monkeypatch):
             },
         },
     }
-    monkeypatch.setattr(distro, '_DISTRO_REPOFILES_MAP', test_map)
+    monkeypatch.setattr(distrolib, '_DISTRO_REPOFILES_MAP', test_map)
 
     # mix of all and specific arch
-    repofiles = _get_distro_repofiles('distro1', '8', ARCH_X86_64)
+    repofiles = distrolib._get_distro_repofiles('distro1', '8', ARCH_X86_64)
     assert repofiles == ['repofile1', 'repofile2']
 
     # match all but not x86_64
-    repofiles = _get_distro_repofiles('distro1', '8', ARCH_ARM64)
+    repofiles = distrolib._get_distro_repofiles('distro1', '8', ARCH_ARM64)
     assert repofiles == ['repofile1']
 
-    repofiles = _get_distro_repofiles('distro2', '9', ARCH_X86_64)
+    repofiles = distrolib._get_distro_repofiles('distro2', '9', ARCH_X86_64)
     assert repofiles == ['repofile2']
-    repofiles = _get_distro_repofiles('distro2', '9', ARCH_ARM64)
+    repofiles = distrolib._get_distro_repofiles('distro2', '9', ARCH_ARM64)
     assert repofiles == ['repofile3']
-    repofiles = _get_distro_repofiles('distro2', '9', ARCH_S390X)
+    repofiles = distrolib._get_distro_repofiles('distro2', '9', ARCH_S390X)
     assert repofiles == ['repofile3']
-    repofiles = _get_distro_repofiles('distro2', '9', ARCH_PPC64LE)
+    repofiles = distrolib._get_distro_repofiles('distro2', '9', ARCH_PPC64LE)
     assert repofiles == ['repofile3']
 
     # version not mapped
-    repofiles = _get_distro_repofiles('distro2', '8', ARCH_X86_64)
+    repofiles = distrolib._get_distro_repofiles('distro2', '8', ARCH_X86_64)
     assert repofiles is None
 
     # distro not mapped
-    repofiles = _get_distro_repofiles('distro42', '8', ARCH_X86_64)
+    repofiles = distrolib._get_distro_repofiles('distro42', '8', ARCH_X86_64)
     assert repofiles is None
 
 
@@ -172,7 +172,7 @@ def test_get_distro_repoids(
         def full_path(path):
             return path
 
-    repoids = get_distro_repoids(MockedContext(), distro_id, '9', 'x86_64')
+    repoids = distrolib.get_distro_repoids(MockedContext(), distro_id, '9', 'x86_64')
 
     if distro_id == 'rhel' and skip_rhsm:
         assert repoids == []
@@ -193,11 +193,11 @@ def test_get_distro_repoids_no_distro_repofiles(monkeypatch, other_rfiles):
     def mocked_get_distro_repofiles(*args):
         return []
 
-    monkeypatch.setattr(distro, '_get_distro_repofiles',  mocked_get_distro_repofiles)
+    monkeypatch.setattr(distrolib, '_get_distro_repofiles',  mocked_get_distro_repofiles)
     monkeypatch.setattr(repofileutils, "get_parsed_repofiles", lambda x: other_rfiles)
 
     with pytest.raises(StopActorExecutionError):
-        get_distro_repoids(None, 'somedistro', '8', 'x86_64')
+        distrolib.get_distro_repoids(None, 'somedistro', '8', 'x86_64')
 
 
 def test_get_distro_repoids_invalid_repo(monkeypatch):
@@ -220,6 +220,18 @@ def test_get_distro_repoids_invalid_repo(monkeypatch):
             return path
 
     with pytest.raises(StopActorExecutionError) as exc_info:
-        get_distro_repoids(MockedContext(), 'centos', '9', 'x86_64')
+        distrolib.get_distro_repoids(MockedContext(), 'centos', '9', 'x86_64')
 
     assert 'Ensure the repository definition is correct' in exc_info.value.details['hint']
+
+
+@pytest.mark.parametrize(
+    "distro, expect",
+    [
+        ("rhel", "/boot/efi/EFI/redhat"),
+        ("centos", "/boot/efi/EFI/centos"),
+        ("almalinux", "/boot/efi/EFI/almalinux"),
+    ],
+)
+def test__get_distro_efidir_canon_path(distro, expect):
+    assert expect == distrolib.get_distro_efidir_canon_path(distro)

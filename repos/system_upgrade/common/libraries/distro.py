@@ -2,7 +2,7 @@ import json
 import os
 
 from leapp.exceptions import StopActorExecutionError
-from leapp.libraries.common import repofileutils, rhsm
+from leapp.libraries.common import efi, repofileutils, rhsm
 from leapp.libraries.common.config import get_target_distro_id
 from leapp.libraries.common.config.architecture import ARCH_ACCEPTED, ARCH_X86_64
 from leapp.libraries.common.config.version import get_target_major_version
@@ -219,3 +219,16 @@ def get_distro_repoids(context, distro, major_version, arch):
                 distro_repoids.extend([repo.repoid for repo in rfile.data])
 
     return sorted(distro_repoids)
+
+
+def get_distro_efidir_canon_path(distro_id):
+    """
+    Get canonical path to the distro EFI directory in the EFI mountpoint.
+
+    NOTE: The path might be incorrect for distros not properly enabled for IPU,
+    when enabling new distros in the codebase, make sure the path is correct.
+    """
+    if distro_id == "rhel":
+        return os.path.join(efi.EFI_MOUNTPOINT, "EFI", "redhat")
+
+    return os.path.join(efi.EFI_MOUNTPOINT, "EFI", distro_id)
