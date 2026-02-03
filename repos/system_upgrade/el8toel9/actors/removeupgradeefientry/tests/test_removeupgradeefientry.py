@@ -4,6 +4,7 @@ import pytest
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import removeupgradeefientry
+from leapp.libraries.common import efi
 from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked
 from leapp.libraries.stdlib import api
 from leapp.models import ArmWorkaroundEFIBootloaderInfo, EFIBootEntry
@@ -63,17 +64,28 @@ def test_remove_upgrade_efi_entry(monkeypatch):
         run_calls.append('shutil.rmtree')
         assert tree == TEST_EFI_INFO.upgrade_bls_dir
 
+    def remove_boot_entry_mocked(boot_number):
+        assert boot_number == '0002'
+        # let's just do it this way to be able to test the order of operations
+        run_calls.append('efi.remove_boot_entry')
+
+    def set_bootnext_mocked(boot_number):
+        assert boot_number == '0001'
+        run_calls.append('efi.set_bootnext')
+
     monkeypatch.setattr(removeupgradeefientry, 'run', mock_run)
     monkeypatch.setattr(shutil, 'rmtree', rmtree_mocked)
+    monkeypatch.setattr(efi, 'remove_boot_entry', remove_boot_entry_mocked)
+    monkeypatch.setattr(efi, 'set_bootnext', set_bootnext_mocked)
 
     removeupgradeefientry.remove_upgrade_efi_entry()
 
     assert run_calls == [
         ['/bin/mount', '/boot'],
         ['/bin/mount', '/boot/efi'],
-        ['/usr/sbin/efibootmgr', '--delete-bootnum', '--bootnum', '0002'],
+        'efi.remove_boot_entry',
         ['rm', '-rf', removeupgradeefientry.LEAPP_EFIDIR_CANONICAL_PATH],
         'shutil.rmtree',
-        ['/usr/sbin/efibootmgr', '--bootnext', '0001'],
+        'efi.set_bootnext',
         ['/bin/mount', '-a'],
     ]

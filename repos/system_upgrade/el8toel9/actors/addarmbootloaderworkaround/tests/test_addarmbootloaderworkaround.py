@@ -1,4 +1,5 @@
 import os
+from unittest import mock
 
 import pytest
 
@@ -6,7 +7,7 @@ from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import addupgradebootloader
 from leapp.libraries.common import efi
 from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked, make_OSError, produce_mocked
-from leapp.libraries.stdlib import api, CalledProcessError
+from leapp.libraries.stdlib import api
 from leapp.models import ArmWorkaroundEFIBootloaderInfo, EFIBootEntry, TargetUserSpaceInfo
 
 TEST_RHEL_EFI_ENTRY = efi.EFIBootLoaderEntry(
@@ -152,26 +153,7 @@ def test_copy_grub_files(monkeypatch):
     ) in copy_file_calls
 
 
-def test_set_bootnext(monkeypatch):
-    run_calls = []
-    logger = logger_mocked()
-
-    def mock_run(command):
-        run_calls.append(command)
-
-    monkeypatch.setattr(addupgradebootloader, 'run', mock_run)
-    monkeypatch.setattr(api, 'current_logger', logger)
-
-    addupgradebootloader._set_bootnext('0000')
-
-    assert run_calls == [['/usr/sbin/efibootmgr', '--bootnext', '0000']]
-    assert logger.dbgmsg == ['Setting {} as BootNext'.format('0000')]
-
-
 def test_add_upgrade_boot_entry_no_efi_binary(monkeypatch):
-    monkeypatch.setattr(efi, 'get_efi_partition', lambda: '/dev/sda1')
-    monkeypatch.setattr(addupgradebootloader, 'get_partition_number', lambda device: '1')
-    monkeypatch.setattr(addupgradebootloader, 'blk_dev_from_partition', lambda part: '/dev/sda')
     monkeypatch.setattr(os.path, 'exists', lambda path: False)
 
     efibootinfo_mock = MockEFIBootInfo([TEST_RHEL_EFI_ENTRY])
@@ -179,96 +161,31 @@ def test_add_upgrade_boot_entry_no_efi_binary(monkeypatch):
         addupgradebootloader._add_upgrade_boot_entry(efibootinfo_mock)
 
 
-def test_add_upgrade_already_exists(monkeypatch):
-    run_calls = []
-
-    monkeypatch.setattr(efi, 'get_efi_partition', lambda: '/dev/sda1')
-    monkeypatch.setattr(addupgradebootloader, 'get_partition_number', lambda device: '1')
-    monkeypatch.setattr(addupgradebootloader, 'blk_dev_from_partition', lambda part: '/dev/sda')
+def test_add_upgrade_boot_entry_already_exists(monkeypatch):
     monkeypatch.setattr(os.path, 'exists', lambda path: True)
-
-    def mock_run(cmd):
-        run_calls.append(cmd)
-
-    monkeypatch.setattr(addupgradebootloader, 'run', mock_run)
 
     efibootinfo_mock = MockEFIBootInfo([TEST_RHEL_EFI_ENTRY, TEST_UPGRADE_EFI_ENTRY])
-    result = addupgradebootloader._add_upgrade_boot_entry(efibootinfo_mock)
 
-    assert result == TEST_UPGRADE_EFI_ENTRY
-    assert len(run_calls) == 0
-
-
-def test_add_upgrade_boot_entry_command_failure(monkeypatch):
-    monkeypatch.setattr(efi, 'get_efi_partition', lambda: '/dev/sda1')
-    monkeypatch.setattr(addupgradebootloader, 'get_partition_number', lambda device: '1')
-    monkeypatch.setattr(addupgradebootloader, 'blk_dev_from_partition', lambda part: '/dev/sda')
-    monkeypatch.setattr(addupgradebootloader, '_get_upgrade_boot_entry', lambda efi, path, label: None)
-    monkeypatch.setattr(os.path, 'exists', lambda path: True)
-
-    def mock_run(cmd):
-        raise CalledProcessError(
-            message='A Leapp Command Error occurred.',
-            command=cmd,
-            result={'signal': None, 'exit_code': 1, 'pid': 0, 'stdout': 'fake', 'stderr': 'fake'}
-        )
-
-    monkeypatch.setattr(addupgradebootloader, 'run', mock_run)
-
-    efibootinfo_mock = MockEFIBootInfo([TEST_RHEL_EFI_ENTRY])
-    with pytest.raises(StopActorExecutionError, match="Unable to add a new UEFI bootloader entry"):
-        addupgradebootloader._add_upgrade_boot_entry(efibootinfo_mock)
-
-
-def test_add_upgrade_boot_entry_verification_failure(monkeypatch):
-    run_calls = []
-
-    monkeypatch.setattr(efi, 'get_efi_partition', lambda: '/dev/sda1')
-    monkeypatch.setattr(addupgradebootloader, 'get_partition_number', lambda device: '1')
-    monkeypatch.setattr(addupgradebootloader, 'blk_dev_from_partition', lambda part: '/dev/sda')
-    monkeypatch.setattr(addupgradebootloader, '_get_upgrade_boot_entry', lambda efi, path, label: None)
-    monkeypatch.setattr(os.path, 'exists', lambda path: True)
-
-    def mock_run(cmd):
-        run_calls.append(cmd)
-
-    monkeypatch.setattr(addupgradebootloader, 'run', mock_run)
-    monkeypatch.setattr(efi, 'EFIBootInfo', lambda: MockEFIBootInfo([TEST_RHEL_EFI_ENTRY]))
-
-    efibootinfo_mock = MockEFIBootInfo([TEST_RHEL_EFI_ENTRY])
-    with pytest.raises(StopActorExecutionError, match="Unable to find the new UEFI bootloader entry after adding it"):
-        addupgradebootloader._add_upgrade_boot_entry(efibootinfo_mock)
+    with mock.patch(
+        "leapp.libraries.common.efi.add_boot_entry"
+    ) as add_boot_entry_mock:
+        result = addupgradebootloader._add_upgrade_boot_entry(efibootinfo_mock)
+        add_boot_entry_mock.assert_not_called()
+        assert result == TEST_UPGRADE_EFI_ENTRY
 
 
 def test_add_upgrade_boot_entry_success(monkeypatch):
-    run_calls = []
-
-    monkeypatch.setattr(efi, 'get_efi_partition', lambda: '/dev/sda1')
-    monkeypatch.setattr(addupgradebootloader, 'get_partition_number', lambda device: '1')
-    monkeypatch.setattr(addupgradebootloader, 'blk_dev_from_partition', lambda part: '/dev/sda')
     monkeypatch.setattr(os.path, 'exists', lambda path: True)
 
-    def mock_run(cmd):
-        run_calls.append(cmd)
+    def add_boot_entry_mocked(label, efi_path):
+        assert label == addupgradebootloader.UPGRADE_EFI_ENTRY_LABEL
+        assert efi_path == '\\EFI\\leapp\\shimaa64.efi'
+        return TEST_UPGRADE_EFI_ENTRY
 
-    monkeypatch.setattr(addupgradebootloader, 'run', mock_run)
-    monkeypatch.setattr(
-        efi,
-        'EFIBootInfo',
-        lambda: MockEFIBootInfo([TEST_RHEL_EFI_ENTRY, TEST_UPGRADE_EFI_ENTRY])
-    )
+    monkeypatch.setattr(efi, 'add_boot_entry', add_boot_entry_mocked)
 
     efibootinfo_mock = MockEFIBootInfo([TEST_RHEL_EFI_ENTRY])
     result = addupgradebootloader._add_upgrade_boot_entry(efibootinfo_mock)
-
-    assert [
-        '/usr/sbin/efibootmgr',
-        '--create',
-        '--disk', '/dev/sda',
-        '--part', '1',
-        '--loader', '\\EFI\\leapp\\shimaa64.efi',
-        '--label', 'Leapp Upgrade',
-    ] in run_calls
     assert result.label == addupgradebootloader.UPGRADE_EFI_ENTRY_LABEL
 
 
@@ -295,7 +212,7 @@ def test_process(monkeypatch):
         return TEST_UPGRADE_EFI_ENTRY
 
     monkeypatch.setattr(addupgradebootloader, '_add_upgrade_boot_entry', mock_add_upgrade_boot_entry)
-    monkeypatch.setattr(addupgradebootloader, '_set_bootnext', lambda _: None)
+    monkeypatch.setattr(efi, 'set_bootnext', lambda _: None)
 
     monkeypatch.setattr(addupgradebootloader, 'patch_efi_redhat_grubcfg_to_load_correct_grubenv',
                         lambda: None)
