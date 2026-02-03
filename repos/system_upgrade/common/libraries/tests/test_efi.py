@@ -2,9 +2,9 @@ import os
 
 import pytest
 
-from leapp.libraries.common import partitions
-from leapp.libraries.common.firmware import efi
-from leapp.libraries.stdlib import CalledProcessError
+from leapp.libraries.common import efi, partitions
+from leapp.libraries.common.testutils import logger_mocked
+from leapp.libraries.stdlib import api, CalledProcessError
 
 EFI_PARTITION = '/dev/vda1'
 EFI_DEVICE = '/dev/vda'
@@ -246,3 +246,207 @@ def test_EFIBootInfo_success(monkeypatch):
     assert efibootinfo.next_bootnum is None
     assert efibootinfo.boot_order == ('0003', '0004', '0001', '0006', '0000', '0002', '0007', '0005')
     assert efibootinfo.entries == EFIBOOTMGR_OUTPUT_ENTRIES
+
+
+class MockEFIBootInfo:
+    def __init__(self, entries):
+        assert len(entries) > 0
+
+        self.boot_order = tuple(entry.boot_number for entry in entries)
+        self.current_bootnum = self.boot_order[0]
+        self.next_bootnum = None
+        self.entries = {
+            entry.boot_number: entry for entry in entries
+        }
+
+
+TEST_ENTRY = efi.EFIBootLoaderEntry(
+    '0000',
+    'test entry',
+    True,
+    r'File(\EFI\TEST\SHIMX64.EFI)'
+)
+
+
+def test_get_boot_entry():
+    TEST_ENTRIES = [
+        TEST_ENTRY,
+        # diff name, same path as TEST_ENTRY
+        efi.EFIBootLoaderEntry(
+            '0001',
+            'test entry 2',
+            True,
+            r'File(\EFI\TEST\SHIMX64.EFI)'
+        ),
+        # same name, diff path as TEST_ENTRY
+        efi.EFIBootLoaderEntry(
+            '0002',
+            'test entry',
+            True,
+            r'File(\EFI\TEST\GRUBX64.EFI)'
+        ),
+        # the RHEL entry from EFIBOOTMGR_OUTPUT_ENTRIES
+        EFIBOOTMGR_OUTPUT_ENTRIES['0006'],
+    ]
+
+    mock_efibootinfo = MockEFIBootInfo(TEST_ENTRIES)
+
+    ret = efi.get_boot_entry(
+        mock_efibootinfo, "Red Hat Enterprise Linux", "\\EFI\\REDHAT\\SHIMAA64.EFI"
+    )
+    assert ret == TEST_ENTRIES[3]
+
+    ret = efi.get_boot_entry(
+        mock_efibootinfo, "test entry", "\\EFI\\TEST\\GRUBX64.EFI"
+    )
+    assert ret == TEST_ENTRIES[2]
+
+    ret = efi.get_boot_entry(
+        mock_efibootinfo, "test entry", "\\EFI\\TEST\\SHIMX64.EFI"
+    )
+    assert ret == TEST_ENTRIES[0]
+
+    ret = efi.get_boot_entry(
+        mock_efibootinfo, "test entry 2", "\\EFI\\TEST\\SHIMX64.EFI"
+    )
+    assert ret == TEST_ENTRIES[1]
+
+    ret = efi.get_boot_entry(
+        mock_efibootinfo, "test entry", "\\EFI\\TEST\\SHIMAA64.EFI"
+    )
+    assert not ret
+
+    ret = efi.get_boot_entry(
+        mock_efibootinfo, "redhat", "\\EFI\\REDHAT\\SHIMAA64.EFI"
+    )
+    assert not ret
+
+
+def test_add_boot_entry_success(monkeypatch):
+    monkeypatch.setattr(efi, 'get_efi_partition', lambda: '/dev/sda1')
+    monkeypatch.setattr(efi, 'get_partition_number', lambda device: '1')
+    monkeypatch.setattr(efi, 'blk_dev_from_partition', lambda _part: '/dev/sda')
+
+    def mock_run(cmd):
+        assert cmd == [
+            '/usr/sbin/efibootmgr',
+            '--create',
+            '--disk', '/dev/sda',
+            '--part', '1',
+            '--loader', '\\EFI\\test\\shimx64.efi',
+            '--label', 'test entry',
+        ]
+
+    monkeypatch.setattr(efi, 'run', mock_run)
+
+    entries = list(EFIBOOTMGR_OUTPUT_ENTRIES.values())
+    monkeypatch.setattr(
+        efi,
+        'EFIBootInfo',
+        lambda: MockEFIBootInfo(entries + [TEST_ENTRY])
+    )
+    # Looking for \EFI\leapp\shimaa64.efi and Leapp Upgrade
+    # Looking for test entry and \EFI\test\shimx64.efi
+
+    result = efi.add_boot_entry(
+        "test entry", "\\EFI\\test\\shimx64.efi"
+    )
+    assert result.label == 'test entry'
+
+
+def test_add_boot_entry_command_failure(monkeypatch):
+    monkeypatch.setattr(efi, 'get_efi_partition', lambda: '/dev/sda1')
+    monkeypatch.setattr(efi, 'get_partition_number', lambda device: '1')
+    monkeypatch.setattr(efi, 'blk_dev_from_partition', lambda _part: '/dev/sda')
+
+    def mock_run(cmd):
+        raise CalledProcessError(
+            message="A Leapp Command Error occurred.",
+            command=cmd,
+            result={
+                "exit_code": 1,
+                "stdout": "",
+                "stderr": "",
+            },
+        )
+
+    monkeypatch.setattr(efi, 'run', mock_run)
+
+    with pytest.raises(
+        efi.EFIError,
+        match=r"Unable to add a new UEFI bootloader entry 'test entry' for EFI binary at \\EFI\\test\\shimx64.efi.",
+    ):
+        efi.add_boot_entry("test entry", r"\EFI\test\shimx64.efi")
+
+
+def test_add_boot_entry_verification_failure(monkeypatch):
+    run_calls = []
+
+    monkeypatch.setattr(efi, 'get_efi_partition', lambda: '/dev/sda1')
+    monkeypatch.setattr(efi, 'get_partition_number', lambda device: '1')
+    monkeypatch.setattr(efi, 'blk_dev_from_partition', lambda _part: '/dev/sda')
+
+    def mock_run(cmd):
+        run_calls.append(cmd)
+
+    monkeypatch.setattr(efi, 'run', mock_run)
+    entries = list(EFIBOOTMGR_OUTPUT_ENTRIES.values())
+    monkeypatch.setattr(efi, 'EFIBootInfo', lambda: MockEFIBootInfo(entries))
+
+    with pytest.raises(
+        efi.EFIError,
+        match="Unable to find the new UEFI bootloader entry 'test entry' after adding it.",
+    ):
+        efi.add_boot_entry("test entry", r"\EFI\test\shimx64.efi")
+
+
+def test_remove_boot_entry_success(monkeypatch):
+    run_calls = []
+
+    def mock_run(command):
+        run_calls.append(command)
+
+    monkeypatch.setattr(efi, 'run', mock_run)
+
+    efi.remove_boot_entry('0001')
+    efi.remove_boot_entry('0010')
+    assert run_calls == [
+        ['/usr/sbin/efibootmgr', '--delete-bootnum', '--bootnum', '0001'],
+        ['/usr/sbin/efibootmgr', '--delete-bootnum', '--bootnum', '0010'],
+    ]
+
+
+def test_remove_boot_entry_cmd_failed(monkeypatch):
+    monkeypatch.setattr(efi, 'run', raise_call_error)
+
+    with pytest.raises(
+        efi.EFIError, match=r"Failed to remove boot entry with boot number '0001'"
+    ):
+        efi.remove_boot_entry('0001')
+
+    with pytest.raises(
+        efi.EFIError, match=r"Failed to remove boot entry with boot number '0020'"
+    ):
+        efi.remove_boot_entry('0020')
+
+
+def test_set_bootnext(monkeypatch):
+    run_calls = []
+    logger = logger_mocked()
+
+    def mock_run(command):
+        run_calls.append(command)
+
+    monkeypatch.setattr(efi, 'run', mock_run)
+    monkeypatch.setattr(api, 'current_logger', logger)
+
+    efi.set_bootnext('0000')
+    efi.set_bootnext('0010')
+    assert run_calls == [
+        ["/usr/sbin/efibootmgr", "--bootnext", "0000"],
+        ["/usr/sbin/efibootmgr", "--bootnext", "0010"],
+    ]
+    assert logger.dbgmsg == [
+        "Setting {} as BootNext".format("0000"),
+        "Setting {} as BootNext".format("0010"),
+    ]

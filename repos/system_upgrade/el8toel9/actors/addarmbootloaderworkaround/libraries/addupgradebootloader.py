@@ -4,7 +4,6 @@ import shutil
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import efi, mounting
 from leapp.libraries.common.grub import get_boot_partition
-from leapp.libraries.common.partitions import blk_dev_from_partition, get_partition_number
 from leapp.libraries.stdlib import api, CalledProcessError, run
 from leapp.models import ArmWorkaroundEFIBootloaderInfo, EFIBootEntry, TargetUserSpaceInfo
 
@@ -63,7 +62,12 @@ def process():
 
         patch_efi_redhat_grubcfg_to_load_correct_grubenv()
 
-        _set_bootnext(upgrade_boot_entry.boot_number)
+        try:
+            efi.set_bootnext(upgrade_boot_entry.boot_number)
+        except efi.EFIError as e:
+            raise StopActorExecutionError(
+                'Could not set boot entry {} as BootNext: {}.'.format(upgrade_boot_entry.boot_number, e)
+            )
 
         efibootentry_fields = ['boot_number', 'label', 'active', 'efi_bin_source']
         api.produce(
@@ -124,75 +128,22 @@ def _add_upgrade_boot_entry(efibootinfo):
     Return the upgrade efi entry (EFIEntry).
     """
 
-    try:
-        efi_part = efi.get_efi_partition()
-    except efi.EFIError as e:
-        raise StopActorExecutionError("Failed to get EFI partition: {}".format(e))
-
-    dev_number = get_partition_number(efi_part)
-    blk_dev = blk_dev_from_partition(efi_part)
-
     tmp_efi_path = os.path.join(LEAPP_EFIDIR_CANONICAL_PATH, 'shimaa64.efi')
     if os.path.exists(tmp_efi_path):
         efi_path = efi.canonical_path_to_efi_format(tmp_efi_path)
     else:
         raise StopActorExecutionError('Unable to detect upgrade UEFI binary file.')
 
-    upgrade_boot_entry = _get_upgrade_boot_entry(efibootinfo, efi_path, UPGRADE_EFI_ENTRY_LABEL)
+    upgrade_boot_entry = efi.get_boot_entry(efibootinfo, UPGRADE_EFI_ENTRY_LABEL, efi_path)
     if upgrade_boot_entry is not None:
         return upgrade_boot_entry
 
-    cmd = [
-        "/usr/sbin/efibootmgr",
-        "--create",
-        "--disk",
-        blk_dev,
-        "--part",
-        str(dev_number),
-        "--loader",
-        efi_path,
-        "--label",
-        UPGRADE_EFI_ENTRY_LABEL,
-    ]
-
     try:
-        run(cmd)
-    except CalledProcessError:
-        raise StopActorExecutionError('Unable to add a new UEFI bootloader entry for upgrade.')
-
-    # Sanity check new boot entry has been added
-    efibootinfo_new = efi.EFIBootInfo()
-    upgrade_boot_entry = _get_upgrade_boot_entry(efibootinfo_new, efi_path, UPGRADE_EFI_ENTRY_LABEL)
-    if upgrade_boot_entry is None:
-        raise StopActorExecutionError('Unable to find the new UEFI bootloader entry after adding it.')
-
-    return upgrade_boot_entry
-
-
-def _get_upgrade_boot_entry(efibootinfo, efi_path, label):
-    """
-    Get the UEFI boot entry with label `label` and EFI binary path `efi_path`
-
-    Return EFIBootEntry or None if not found.
-    """
-
-    for entry in efibootinfo.entries.values():
-        if entry.label == label and efi_path in entry.efi_bin_source:
-            return entry
-
-    return None
-
-
-def _set_bootnext(boot_number):
-    """
-    Set the BootNext UEFI entry to `boot_number`.
-    """
-
-    api.current_logger().debug('Setting {} as BootNext'.format(boot_number))
-    try:
-        run(['/usr/sbin/efibootmgr', '--bootnext', boot_number])
-    except CalledProcessError:
-        raise StopActorExecutionError('Could not set boot entry {} as BootNext.'.format(boot_number))
+        return efi.add_boot_entry(UPGRADE_EFI_ENTRY_LABEL, efi_path)
+    except efi.EFIError as e:
+        raise StopActorExecutionError(
+            "Unable to add a new UEFI bootloader entry for upgrade: {}".format(e)
+        )
 
 
 def _notify_user_to_check_grub2_cfg():
