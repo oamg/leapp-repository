@@ -2,7 +2,7 @@ import os
 import shutil
 
 from leapp.exceptions import StopActorExecutionError
-from leapp.libraries.common import distro, efi, mounting
+from leapp.libraries.common import distro, efi, mounting, partitions
 from leapp.libraries.common.config import get_source_distro_id
 from leapp.libraries.common.grub import get_boot_partition
 from leapp.libraries.stdlib import api, CalledProcessError, run
@@ -166,7 +166,13 @@ def _will_grubcfg_read_our_grubenv(grubcfg_path):
 
 
 def _get_boot_device_uuid():
-    boot_device = get_boot_partition()
+    try:
+        boot_device = get_boot_partition()
+    except partitions.StorageScanError as e:
+        raise StopActorExecutionError(
+            'Failed to determine boot partition: {}'.format(e)
+        )
+
     try:
         raw_device_info_lines = run(['blkid', boot_device], split=True)['stdout']
         raw_device_info = raw_device_info_lines[0]  # There is only 1 output line
