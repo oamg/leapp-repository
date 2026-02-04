@@ -1,7 +1,12 @@
 import os
 import re
 
-from leapp.libraries.common.partitions import _get_partition_for_dir, blk_dev_from_partition, get_partition_number
+from leapp.libraries.common.partitions import (
+    _get_partition_for_dir,
+    blk_dev_from_partition,
+    get_partition_number,
+    StorageScanError
+)
 from leapp.libraries.stdlib import api, CalledProcessError, run
 
 EFI_MOUNTPOINT = '/boot/efi/'
@@ -224,7 +229,12 @@ def get_efi_partition():
             'The UEFI has been detected but the ESP is not mounted in /boot/efi as required.'
         )
 
-    return _get_partition_for_dir(EFI_MOUNTPOINT)
+    try:
+        return _get_partition_for_dir(EFI_MOUNTPOINT)
+    except StorageScanError as e:
+        raise EFIError(
+            'Failed to determine partition containing {}: {}'.format(EFI_MOUNTPOINT, e)
+        ) from e
 
 
 def get_efi_device():
@@ -240,7 +250,12 @@ def get_efi_device():
     except EFIError as e:
         raise EFIError('Failed to get EFI device') from e
 
-    return blk_dev_from_partition(efi_part)
+    try:
+        return blk_dev_from_partition(efi_part)
+    except StorageScanError as e:
+        raise EFIError(
+            'Failed to get block device of the ESP ({}): {}'.format(efi_part, e)
+        ) from e
 
 
 def get_boot_entry(efibootinfo, label, efi_bin_path):
@@ -286,9 +301,19 @@ def add_boot_entry(label, efi_bin_path):
     :raises EFIError: When failed to add the entry
     """
     esp = get_efi_partition()
-    esp_number = get_partition_number(esp)
-    # not using get_efi_device() here saves one call to external command
-    efi_dev = blk_dev_from_partition(esp)
+    try:
+        esp_number = get_partition_number(esp)
+    except StorageScanError as e:
+        raise EFIError(
+            'Failed to determine partition number of the ESP: {}'.format(e)
+        ) from e
+    try:
+        # not using get_efi_device() here saves one call to external command
+        efi_dev = blk_dev_from_partition(esp)
+    except StorageScanError as e:
+        raise EFIError(
+            'Failed to determine the device containing ESP: {}'.format(e)
+        ) from e
 
     cmd = [
         '/usr/sbin/efibootmgr',
