@@ -50,12 +50,32 @@ def test_is_net_scheme_compatible_with_current_cmdline(monkeypatch, kernel_args,
         (False, True)
     ]
 )
-def test_emit_msgs_to_use_net_naming_schemes(monkeypatch, is_net_scheme_enabled, is_current_cmdline_compatible):
-    envvar_value = '0' if is_net_scheme_enabled else '1'
-
-    mocked_actor = CurrentActorMocked(src_ver='8.10',
-                                      dst_ver='9.5',
-                                      envars={'LEAPP_DISABLE_NET_NAMING_SCHEMES': envvar_value})
+@pytest.mark.parametrize(
+    'source_ver, target_ver',
+    [
+        ('8.10', '9.5'),
+        ('8.10', '9.8'),
+        ('9.6', '10.0'),
+        ('9.8', '10.2'),
+    ]
+)
+@pytest.mark.parametrize('target_distro', ['rhel', 'centos'])
+def test_emit_msgs_to_use_net_naming_schemes(
+    monkeypatch,
+    is_net_scheme_enabled,
+    is_current_cmdline_compatible,
+    source_ver,
+    target_ver,
+    target_distro,
+):
+    mocked_actor = CurrentActorMocked(
+        src_ver=source_ver,
+        dst_ver=target_ver,
+        dst_distro=target_distro,
+        envars={
+            "LEAPP_DISABLE_NET_NAMING_SCHEMES": "0" if is_net_scheme_enabled else "1"
+        },
+    )
     monkeypatch.setattr(api, 'current_actor', mocked_actor)
 
     monkeypatch.setattr(api, 'produce', produce_mocked())
@@ -71,13 +91,22 @@ def test_emit_msgs_to_use_net_naming_schemes(monkeypatch, is_net_scheme_enabled,
         assert not next(msgs, None), 'More than one message of type {type} produced'.format(type=type)
         return msg
 
+    target_major = target_ver.split(".")[0]
+    pkg_name = emit_net_naming_lib.NET_NAMING_SYSATTRS_RPM_NAME[target_major]
     produced_messages = api.produce.model_instances
-    if is_net_scheme_enabled:
+
+    if (
+        is_net_scheme_enabled
+        # the package is available since 10.2
+        and target_ver != "10.0"
+        # TODO not yet available in CS 10, remove this when it is
+        and not (target_distro == "centos" and target_major == "10")
+    ):
         userspace_tasks = ensure_one_msg_of_type_produced(produced_messages, TargetUserSpaceUpgradeTasks)
-        assert userspace_tasks.install_rpms == [emit_net_naming_lib.NET_NAMING_SYSATTRS_RPM_NAME]
+        assert userspace_tasks.install_rpms == [pkg_name]
 
         rpm_tasks = ensure_one_msg_of_type_produced(produced_messages, RpmTransactionTasks)
-        assert rpm_tasks.to_install == [emit_net_naming_lib.NET_NAMING_SYSATTRS_RPM_NAME]
+        assert rpm_tasks.to_install == [pkg_name]
     else:
         assert not api.produce.called
         return
