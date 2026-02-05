@@ -384,25 +384,29 @@ def get_grub_devices():
             .format(err.message)
         ) from err
 
-    devices = []
+    candidates = []
     if is_mdraid:
-        component_devs = mdraid.get_component_devices(boot_device)
-        if component_devs is None:
+        candidates = mdraid.get_component_devices(boot_device)
+        if candidates is None:
             # NOTE(pstodulk): This is just a seatbelt, we know this situation
             # has not occurred yet
             raise GRUBDeviceError('Cannot obtain list of component devices for MD RAID hosting /boot')
-
-        # Use set to remove duplicates as there might be raid on partitions
-        # hosted by the same drive even if that's very unusual
-        blk_devs = {partitions.blk_dev_from_partition(dev) for dev in component_devs}
-        devices = sorted(blk_devs)
     else:
-        devices.append(partitions.blk_dev_from_partition(boot_device))
+        candidates = [boot_device]
+
+    # Use set to remove duplicates as there might be raid on partitions
+    # hosted by the same drive even if that's very unusual
+    try:
+        blk_devs = {partitions.blk_dev_from_partition(dev) for dev in candidates}
+    except partitions.StorageScanError as e:
+        raise GRUBDeviceError('Failed to get block device of a partition: {}'.format(e))
 
     try:
-        grub_devices = sorted([dev for dev in devices if has_grub(dev)])
+        grub_devices = sorted([dev for dev in blk_devs if has_grub(dev)])
     except OSError as err:
-        raise GRUBDeviceError('Cannot read from potential GRUB device: {}'. format(err))
+        raise GRUBDeviceError(
+            'Failed to determine whether a device contains grub: {}'.format(err)
+        )
 
     api.current_logger().info('GRUB is installed on {}'.format(",".join(grub_devices)))
     return grub_devices

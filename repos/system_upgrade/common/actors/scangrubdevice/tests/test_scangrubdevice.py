@@ -1,35 +1,68 @@
+import pytest
+
+from leapp.exceptions import StopActorExecutionError
+from leapp.libraries.actor import scangrubdevice
 from leapp.libraries.common import grub
-from leapp.libraries.common.config import mock_configs
+from leapp.libraries.common.config import architecture
+from leapp.libraries.common.testutils import CurrentActorMocked, produce_mocked
+from leapp.libraries.stdlib import api
 from leapp.models import GrubInfo
 
 
-def _get_grub_devices_mocked():
-    return ['/dev/vda', '/dev/vdb']
-
-
-def test_actor_scan_grub_device(current_actor_context, monkeypatch):
-    monkeypatch.setattr(grub, 'get_grub_devices', _get_grub_devices_mocked)
-    current_actor_context.run(config_model=mock_configs.CONFIG)
-    info = current_actor_context.consume(GrubInfo)
-    assert info and info[0].orig_devices == ['/dev/vda', '/dev/vdb']
-    assert len(info) == 1, 'Expected just one GrubInfo message'
-    assert not info[0].orig_device_name
-
-
-def test_actor_scan_grub_device_one(current_actor_context, monkeypatch):
-
+def test_process_one_dev(monkeypatch):
     def _get_grub_devices_mocked():
         return ['/dev/vda']
 
     monkeypatch.setattr(grub, 'get_grub_devices', _get_grub_devices_mocked)
-    current_actor_context.run(config_model=mock_configs.CONFIG)
-    info = current_actor_context.consume(GrubInfo)
-    assert info and info[0].orig_devices == ['/dev/vda']
-    assert len(info) == 1, 'Expected just one GrubInfo message'
-    assert info[0].orig_device_name == '/dev/vda'
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked())
+    monkeypatch.setattr(api, 'produce', produce_mocked())
+
+    scangrubdevice.process()
+
+    assert api.produce.called == 1
+    assert len(api.produce.model_instances) == 1
+    grubinfo = api.produce.model_instances[0]
+    assert isinstance(grubinfo, GrubInfo)
+    assert grubinfo.orig_devices == ['/dev/vda']
+    assert grubinfo.orig_device_name == '/dev/vda'
 
 
-def test_actor_scan_grub_device_s390x(current_actor_context, monkeypatch):
+def test_process_multiple_devs(monkeypatch):
+    def _get_grub_devices_mocked():
+        return ['/dev/vda', '/dev/vdb']
+
     monkeypatch.setattr(grub, 'get_grub_devices', _get_grub_devices_mocked)
-    current_actor_context.run(config_model=mock_configs.CONFIG_S390X)
-    assert not current_actor_context.consume(GrubInfo)
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked())
+    monkeypatch.setattr(api, 'produce', produce_mocked())
+
+    scangrubdevice.process()
+
+    assert api.produce.called == 1
+    assert len(api.produce.model_instances) == 1
+    grubinfo = api.produce.model_instances[0]
+    assert isinstance(grubinfo, GrubInfo)
+    assert grubinfo.orig_devices == ['/dev/vda', '/dev/vdb']
+    assert grubinfo.orig_device_name is None
+
+
+def test_process_no_produce_on_s390x(monkeypatch):
+    monkeypatch.setattr(
+        api, "current_actor", CurrentActorMocked(arch=architecture.ARCH_S390X)
+    )
+    monkeypatch.setattr(api, 'produce', produce_mocked())
+
+    scangrubdevice.process()
+
+    assert api.produce.called == 0
+
+
+def test_process_fail_to_get_grubdevs(monkeypatch):
+
+    def _get_grub_devices_mocked():
+        raise grub.GRUBDeviceError()
+
+    monkeypatch.setattr(grub, 'get_grub_devices', _get_grub_devices_mocked)
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked())
+
+    with pytest.raises(StopActorExecutionError, match='Cannot detect GRUB devices'):
+        scangrubdevice.process()
