@@ -1,5 +1,5 @@
 from leapp.exceptions import StopActorExecutionError
-from leapp.libraries.common.config import get_env, version
+from leapp.libraries.common.config import get_env, get_target_distro_id, version
 from leapp.libraries.stdlib import api
 from leapp.models import (
     KernelCmdline,
@@ -10,7 +10,10 @@ from leapp.models import (
     UpgradeKernelCmdlineArgTasks
 )
 
-NET_NAMING_SYSATTRS_RPM_NAME = 'rhel-net-naming-sysattrs'
+NET_NAMING_SYSATTRS_RPM_NAME = {
+    '9': 'rhel-net-naming-sysattrs',
+    '10': 'net-naming-sysattrs',
+}
 
 
 def is_net_scheme_compatible_with_current_cmdline():
@@ -45,15 +48,21 @@ def is_net_scheme_compatible_with_current_cmdline():
 
 def emit_msgs_to_use_net_naming_schemes():
     is_feature_enabled = get_env('LEAPP_DISABLE_NET_NAMING_SCHEMES', '0') != '1'
-    is_upgrade_8to9 = version.get_target_major_version() == '9'
-    is_net_naming_enabled_and_permitted = is_feature_enabled and is_upgrade_8to9
-    if not is_net_naming_enabled_and_permitted:
+
+    is_net_naming_available = version.get_target_major_version() == "9" or (
+        version.matches_target_version(">= 10.2")
+        # TODO the net-naming-sysattrs pkg is not yet available on CS10, remove
+        # this when it becomes
+        and not get_target_distro_id() == "centos"
+    )
+
+    if not (is_feature_enabled and is_net_naming_available):
         return
 
     # The package should be installed regardless of whether we will modify the cmdline -
     # if the cmdline already contains net.naming-scheme, then the package will be useful
     # in both, the upgrade environment and on the target system.
-    pkgs_to_install = [NET_NAMING_SYSATTRS_RPM_NAME]
+    pkgs_to_install = [NET_NAMING_SYSATTRS_RPM_NAME[version.get_target_major_version()]]
     api.produce(TargetUserSpaceUpgradeTasks(install_rpms=pkgs_to_install))
     api.produce(RpmTransactionTasks(to_install=pkgs_to_install))
 
