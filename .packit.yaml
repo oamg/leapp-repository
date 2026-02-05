@@ -123,29 +123,11 @@ jobs:
       tmt:
         plan_filter: 'tag:8to9'
     environments:
-      - &tmt-env-settings-810to94
-        tmt:
-          context: &tmt-context-810to94
-            distro: "rhel-8.10"
-            distro_target: "rhel-9.4"
-        settings:
-          provisioning:
-            tags:
-              BusinessUnit: sst_upgrades@leapp_upstream_test
       - &tmt-env-settings-810to96
         tmt:
           context: &tmt-context-810to96
             distro: "rhel-8.10"
             distro_target: "rhel-9.6"
-        settings:
-          provisioning:
-            tags:
-              BusinessUnit: sst_upgrades@leapp_upstream_test
-      - &tmt-env-settings-810to97
-        tmt:
-          context: &tmt-context-810to97
-            distro: "rhel-8.10"
-            distro_target: "rhel-9.7"
         settings:
           provisioning:
             tags:
@@ -189,67 +171,6 @@ jobs:
 # ###################################################################### #
 # ######################### Individual tests ########################### #
 # ###################################################################### #
-
-# ###################################################################### #
-# ############################# 8.10 > 9.4 ############################# #
-# ###################################################################### #
-
-- &sanity-810to94
-  <<: *sanity-abstract-8to9
-  trigger: pull_request
-  identifier: sanity-8.10to9.4
-  tf_extra_params:
-    test:
-      tmt:
-        plan_filter: 'tag:8to9 & tag:tier0 & enabled:true & tag:-rhsm'
-    environments:
-      - *tmt-env-settings-810to94
-  env: &env-810to94
-    SOURCE_RELEASE: "8.10"
-    TARGET_RELEASE: "9.4"
-    LEAPP_TARGET_PRODUCT_CHANNEL: "EUS"
-
-# On-demand minimal beaker tests
-- &beaker-minimal-810to94
-  <<: *beaker-minimal-8to9-abstract-ondemand
-  trigger: pull_request
-  labels:
-    - beaker-minimal
-    - beaker-minimal-8.10to9.4
-    - 8.10to9.4
-  identifier: sanity-8.10to9.4-beaker-minimal-ondemand
-  tf_extra_params:
-    test:
-      tmt:
-        plan_filter: 'tag:8to9 & tag:partitioning & enabled:true & tag:-rhsm'
-    environments:
-      - *tmt-env-settings-810to94
-  env:
-    <<: *env-810to94
-
-# On-demand kernel-rt tests
-- &kernel-rt-810to94
-  <<: *kernel-rt-abstract-8to9-ondemand
-  trigger: pull_request
-  labels:
-    - kernel-rt
-    - kernel-rt-8.10to9.4
-    - 8.10to9.4
-  identifier: sanity-8.10to9.4-kernel-rt-ondemand
-  tf_extra_params:
-    test:
-      tmt:
-         plan_filter: 'tag:8to9 & tag:kernel-rt & enabled:true & tag:-rhsm'
-    environments:
-      - tmt:
-          context: *tmt-context-810to94
-        settings:
-          provisioning:
-            tags:
-              BusinessUnit: sst_upgrades@leapp_upstream_test
-  env:
-    <<: *env-810to94
-
 
 # ###################################################################### #
 # ############################# 8.10 > 9.6 ############################# #
@@ -326,60 +247,6 @@ jobs:
   env:
     <<: *env-810to96
 
-
-# ###################################################################### #
-# ############################# 8.10 > 9.7 ############################# #
-# ###################################################################### #
-
-- &sanity-810to97
-  <<: *sanity-abstract-8to9
-  trigger: pull_request
-  identifier: sanity-8.10to9.7
-  tf_extra_params:
-    test:
-      tmt:
-        plan_filter: 'tag:8to9 & tag:tier0 & enabled:true & tag:-rhsm'
-    environments:
-      - *tmt-env-settings-810to97
-  env: &env-810to97
-    SOURCE_RELEASE: "8.10"
-    TARGET_RELEASE: "9.7"
-
-# On-demand minimal beaker tests
-- &beaker-minimal-810to97
-  <<: *beaker-minimal-8to9-abstract-ondemand
-  trigger: pull_request
-  labels:
-    - beaker-minimal
-    - beaker-minimal-8.10to9.7
-    - 8.10to9.7
-  identifier: sanity-8.10to9.7-beaker-minimal-ondemand
-  tf_extra_params:
-    test:
-      tmt:
-        plan_filter: 'tag:8to9 & tag:partitioning & enabled:true & tag:-rhsm'
-    environments:
-      - *tmt-env-settings-810to97
-  env:
-    <<: *env-810to97
-
-# On-demand kernel-rt tests
-- &kernel-rt-810to97
-  <<: *kernel-rt-abstract-8to9-ondemand
-  trigger: pull_request
-  labels:
-    - kernel-rt
-    - kernel-rt-8.10to9.7
-    - 8.10to9.7
-  identifier: sanity-8.10to9.7-kernel-rt-ondemand
-  tf_extra_params:
-    test:
-      tmt:
-         plan_filter: 'tag:8to9 & tag:kernel-rt & enabled:true & tag:-rhsm'
-    environments:
-      - *tmt-env-settings-810to97
-  env:
-    <<: *env-810to97
 
 # ###################################################################### #
 # ############################# 8.10 > 9.8 ############################# #
@@ -474,15 +341,6 @@ jobs:
           context: &tmt-context-96to100
             distro: "rhel-9.6"
             distro_target: "rhel-10.0"
-        settings:
-          provisioning:
-            tags:
-              BusinessUnit: sst_upgrades@leapp_upstream_test
-      - &tmt-env-settings-97to101
-        tmt:
-          context: &tmt-context-97to101
-            distro: "rhel-9.7"
-            distro_target: "rhel-10.1"
         settings:
           provisioning:
             tags:
@@ -604,70 +462,6 @@ jobs:
       - *tmt-env-settings-96to100
   env:
     <<: *env-96to100
-
-# ###################################################################### #
-# ############################# 9.7 > 10.1 ############################# #
-# ###################################################################### #
-
-- &sanity-97to101
-  <<: *sanity-abstract-9to10
-  trigger: pull_request
-  identifier: sanity-9.7to10.1
-  targets:
-    epel-9-x86_64:
-      distros: [RHEL-9.7.0-Nightly]
-  tf_extra_params:
-    test:
-      tmt:
-        plan_filter: 'tag:9to10 & tag:tier0 & enabled:true & tag:-rhsm'
-    environments:
-      - *tmt-env-settings-97to101
-  env: &env-97to101
-    SOURCE_RELEASE: "9.7"
-    TARGET_RELEASE: "10.1"
-
-# On-demand minimal beaker tests
-- &beaker-minimal-97to101
-  <<: *beaker-minimal-9to10-abstract-ondemand
-  trigger: pull_request
-  labels:
-    - beaker-minimal
-    - beaker-minimal-9.7to10.1
-    - 9.7to10.1
-  identifier: sanity-9.7to10.1-beaker-minimal-ondemand
-  targets:
-    epel-9-x86_64:
-      distros: [RHEL-9.7-Nightly]
-  tf_extra_params:
-    test:
-      tmt:
-        plan_filter: 'tag:8to9 & tag:partitioning & enabled:true & tag:-rhsm'
-    environments:
-      - *tmt-env-settings-97to101
-  env:
-    <<: *env-97to101
-
-# On-demand kernel-rt tests
-- &kernel-rt-97to101
-  <<: *kernel-rt-abstract-9to10-ondemand
-  trigger: pull_request
-  labels:
-    - kernel-rt
-    - kernel-rt-9.7to10.1
-    - 9.7to10.1
-  identifier: sanity-9.7to10.1-kernel-rt-ondemand
-  targets:
-    epel-9-x86_64:
-      distros: [RHEL-9.7-Nightly]
-  tf_extra_params:
-    test:
-      tmt:
-         plan_filter: 'tag:8to9 & tag:kernel-rt & enabled:true & tag:-rhsm'
-    environments:
-      - *tmt-env-settings-97to101
-  env:
-    <<: *env-97to101
-
 
 # ###################################################################### #
 # ############################# 9.8 > 10.2 ############################# #
