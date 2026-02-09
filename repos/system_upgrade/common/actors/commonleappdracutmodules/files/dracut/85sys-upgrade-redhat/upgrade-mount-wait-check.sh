@@ -28,6 +28,13 @@ check_reqs_in_dir() {
             continue
         fi
 
+        grep -E "^Options=.*nofail.*" "$1/$fname" &>/dev/null
+        is_nofail=$?
+        if [ $is_nofail -eq 0 ]; then
+            # The unit contains Options=...,nofail,... so it is a nofail mount -> skip
+            continue
+        fi
+
         if [ ! -e "$resource_path" ]; then
             log_debug "Waiting for missing resource: '$resource_path'"
             result=1
