@@ -13,9 +13,13 @@ framework, see {ref}`deprecation:list of the deprecated functionality in leapp`.
 Only the versions in which a deprecation has been made are listed.
 
 ## Next release <span style="font-size:0.5em; font-weight:normal">(till TODO date)</span>
+- Note: nothing new deprecated yet
+
+## v0.24.0 <span style="font-size:0.5em; font-weight:normal">(till September 2026)</span>
 - Shared libraries
   - **`leapp.libraries.common.config.get_distro_id()`** - The function has been replaced by variants for source and target distros - `leapp.libraries.common.config.get_source_distro_id()` and `leapp.libraries.common.config.get_target_distro_id()`.
-  - Following UEFI related functions and classes have been moved from `leapp.libraries.common.grub` into `leapp.libraries.common.efi`:
+  - Following UEFI related symbols have been moved from `leapp.libraries.common.grub` into `leapp.libraries.common.efi`:
+    - **`EFI_MOUNTPOINT`**
     - **`EFIBootInfo`** - raises `leapp.libraries.common.efi.EFIError` instead of `leapp.exceptions.StopActorExecutionError`
     - **`EFIBootLoaderEntry`**
     - **`canonical_path_to_efi_format()`**
@@ -23,8 +27,10 @@ Only the versions in which a deprecation has been made are listed.
     - **`get_efi_partition()`** - raises `leapp.libraries.common.efi.EFIError` instead of `leapp.exceptions.StopActorExecutionError`
     - **`is_efi()`**
   - Functions related to manipulation of devices and partitions were moved from `leapp.libraries.common.grub` into `leapp.libraries.common.partitions`:
-    - **`get_device_number()`** - replaced by **`get_partition_number()`**
     - **`blk_dev_from_partition()`**
+    - **`get_device_number()`** - replaced by **`get_partition_number()`**
+- Models
+  - **`RHELTargetRepository`** - Replaced by `DistroTargetRepository`
 
 ## v0.23.0 <span style="font-size:0.5em; font-weight:normal">(till March 2026)</span>
 
