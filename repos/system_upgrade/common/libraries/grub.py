@@ -6,7 +6,7 @@ from leapp.libraries.common import mdraid, partitions
 from leapp.libraries.stdlib import api, CalledProcessError, run
 from leapp.utils.deprecation import deprecated
 
-# DEPRECATED(2025-12-04): Moved to the firmware.efi library
+# DEPRECATED(2026-02-10): Moved to the firmware.efi library
 EFI_MOUNTPOINT = '/boot/efi/'
 """The path to the required mountpoint for ESP."""
 
@@ -24,7 +24,7 @@ class GRUBDeviceError(Exception):
 
 
 @deprecated(
-    since="2025-12-04",
+    since="2026-02-10",
     message="Replaced by canonical_path_to_efi_format in the firmware.efi library",
 )
 def canonical_path_to_efi_format(canonical_path):
@@ -43,7 +43,7 @@ def canonical_path_to_efi_format(canonical_path):
 
 
 @deprecated(
-    since="2025-12-04",
+    since="2026-02-10",
     message="Replaced by EFIBootLoaderEntry in the firmware.efi library",
 )
 class EFIBootLoaderEntry:
@@ -121,7 +121,7 @@ class EFIBootLoaderEntry:
 
 
 @deprecated(
-    since="2025-12-04",
+    since="2026-02-10",
     message="Replaced by EFIBootInfo in the firmware.efi library",
 )
 class EFIBootInfo:
@@ -260,7 +260,7 @@ def get_boot_partition():
 
 
 @deprecated(
-    since="2025-12-04",
+    since="2026-02-10",
     message="Moved to the efi library",
 )
 def is_efi():
@@ -274,7 +274,7 @@ def is_efi():
 
 
 @deprecated(
-    since="2025-12-04",
+    since="2026-02-10",
     message="Moved to the firmware.efi library",
 )
 def get_efi_partition():
@@ -299,7 +299,7 @@ def get_efi_partition():
 
 
 @deprecated(
-    since="2025-12-04",
+    since="2026-02-10",
     message="Moved to the partitions library",
 )
 def blk_dev_from_partition(partition):
@@ -329,7 +329,7 @@ def blk_dev_from_partition(partition):
 
 
 @deprecated(
-    since="2025-12-04",
+    since="2026-02-10",
     message="Replace by get_partition_number() in partitions library",
 )
 def get_device_number(device):
@@ -413,7 +413,7 @@ def get_grub_devices():
 
 
 @deprecated(
-    since="2025-12-04",
+    since="2026-02-10",
     message="Moved to the firmware.efi library",
 )
 def get_efi_device():

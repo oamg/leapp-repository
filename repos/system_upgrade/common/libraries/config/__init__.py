@@ -101,7 +101,7 @@ def get_consumed_data_stream_id():
 
 
 @deprecated(
-    since="2025-10-27",
+    since="2026-02-10",
     message="Use get_source_distro_id or get_target_distro_id instead.",
 )
 def get_distro_id():

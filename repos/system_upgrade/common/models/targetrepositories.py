@@ -13,7 +13,7 @@ class UsedTargetRepository(TargetRepositoryBase):
 
 
 @deprecated(
-    since="2025-07-23",
+    since="2026-02-10",
     message="This model is deprecated, use DistroTargetRepository instead.",
 )
 class RHELTargetRepository(TargetRepositoryBase):
