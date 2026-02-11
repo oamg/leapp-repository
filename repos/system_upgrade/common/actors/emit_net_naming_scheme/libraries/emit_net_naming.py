@@ -1,5 +1,5 @@
 from leapp.exceptions import StopActorExecutionError
-from leapp.libraries.common.config import get_env, get_target_distro_id, version
+from leapp.libraries.common.config import get_env, version
 from leapp.libraries.stdlib import api
 from leapp.models import (
     KernelCmdline,
@@ -49,11 +49,9 @@ def is_net_scheme_compatible_with_current_cmdline():
 def emit_msgs_to_use_net_naming_schemes():
     is_feature_enabled = get_env('LEAPP_DISABLE_NET_NAMING_SCHEMES', '0') != '1'
 
-    is_net_naming_available = version.get_target_major_version() == "9" or (
-        version.matches_target_version(">= 10.2")
-        # TODO the net-naming-sysattrs pkg is not yet available on CS10, remove
-        # this when it becomes
-        and not get_target_distro_id() == "centos"
+    is_net_naming_available = (
+        version.get_target_major_version() == "9"
+        or version.matches_target_version(">= 10.2")
     )
 
     if not (is_feature_enabled and is_net_naming_available):
