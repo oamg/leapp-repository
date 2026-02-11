@@ -95,13 +95,8 @@ def test_emit_msgs_to_use_net_naming_schemes(
     pkg_name = emit_net_naming_lib.NET_NAMING_SYSATTRS_RPM_NAME[target_major]
     produced_messages = api.produce.model_instances
 
-    if (
-        is_net_scheme_enabled
-        # the package is available since 10.2
-        and target_ver != "10.0"
-        # TODO not yet available in CS 10, remove this when it is
-        and not (target_distro == "centos" and target_major == "10")
-    ):
+    # the package is available since 10.2
+    if is_net_scheme_enabled and target_ver != "10.0":
         userspace_tasks = ensure_one_msg_of_type_produced(produced_messages, TargetUserSpaceUpgradeTasks)
         assert userspace_tasks.install_rpms == [pkg_name]
 
