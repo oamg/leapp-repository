@@ -1,0 +1,14 @@
+{
+  "include": ["repos", "commands"],
+  "typeCheckingMode": "standard",
+
+  "useLibraryCodeForTypes": true,
+
+  "stubPath": "./typings",
+  "reportMissingTypeStubs": false,
+
+  "reportUnannotatedClassAttribute": false,
+  "reportUnknownVariableType": false,
+  "reportUnknownMemberType": false,
+  "reportUnknownArgumentType": false
+}
