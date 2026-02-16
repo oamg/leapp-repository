@@ -1,6 +1,6 @@
 {
   "provided_data_streams": [
-    "4.2"
+    "4.3"
   ],
   "data": [
     {
@@ -4766,6 +4766,32 @@
     },
     {
       "available_in_rhel": [
+        7
+      ],
+      "deprecation_announced": "",
+      "device_id": "0x10df:0xe208",
+      "device_name": "Emulex Corporation: LPe15000/LPe16000 Series 8Gb/16Gb Fibre Channel Adapter (VF)",
+      "device_type": "pci",
+      "driver_name": "lpfc",
+      "maintained_in_rhel": [
+        7
+      ]
+    },
+    {
+      "available_in_rhel": [
+        7
+      ],
+      "deprecation_announced": "",
+      "device_id": "0x10df:0xe268",
+      "device_name": "Emulex Corporation: OneConnect FCoE Initiator (Lancer VF)",
+      "device_type": "pci",
+      "driver_name": "lpfc",
+      "maintained_in_rhel": [
+        7
+      ]
+    },
+    {
+      "available_in_rhel": [
         7,
         8,
         9,
@@ -5316,10 +5342,23 @@
       ]
     },
     {
-      "available_in_rhel": [],
+      "available_in_rhel": [
+        10
+      ],
       "deprecation_announced": "",
       "device_id": "0x15B3:0x1025",
       "device_name": "ConnectX-9",
+      "device_type": "pci",
+      "driver_name": "mlx5",
+      "maintained_in_rhel": [
+        10
+      ]
+    },
+    {
+      "available_in_rhel": [],
+      "deprecation_announced": "",
+      "device_id": "0x15B3:0x1027",
+      "device_name": "ConnectX-10",
       "device_type": "pci",
       "driver_name": "mlx5",
       "maintained_in_rhel": []
@@ -5343,13 +5382,17 @@
       ]
     },
     {
-      "available_in_rhel": [],
+      "available_in_rhel": [
+        10
+      ],
       "deprecation_announced": "",
       "device_id": "0x15B3:0xA2DF",
       "device_name": "BlueField-4 integrated ConnectX-8 network controller",
       "device_type": "pci",
       "driver_name": "mlx5",
-      "maintained_in_rhel": []
+      "maintained_in_rhel": [
+        10
+      ]
     },
     {
       "available_in_rhel": [
