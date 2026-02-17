@@ -235,3 +235,22 @@ def test_get_distro_repoids_invalid_repo(monkeypatch):
 )
 def test__get_distro_efidir_canon_path(distro, expect):
     assert expect == distrolib.get_distro_efidir_canon_path(distro)
+
+
+def test_distro_report_names(monkeypatch):
+    current_actor = CurrentActorMocked(src_distro="centos", dst_distro="rhel")
+    monkeypatch.setattr(api, "current_actor", current_actor)
+
+    assert distrolib.DISTRO_REPORT_NAMES.source == "CentOS Stream"
+    assert distrolib.DISTRO_REPORT_NAMES.target == "RHEL"
+
+    expect = "CentOS Stream is upstream for RHEL"
+    template = "{source_distro} is upstream for {target_distro}"
+    assert expect == template.format_map(distrolib.DISTRO_REPORT_NAMES)
+    assert expect == template.format(**distrolib.DISTRO_REPORT_NAMES)
+
+    template = "{source_distro} is {what} for {target_distro}"
+    assert expect == template.format(what='upstream', **distrolib.DISTRO_REPORT_NAMES)
+
+    template = "{source_distro} is {what} for RHEL"
+    assert expect == template.format(what='upstream', **distrolib.DISTRO_REPORT_NAMES)
