@@ -3,7 +3,7 @@ import os
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import efi, repofileutils, rhsm
-from leapp.libraries.common.config import get_target_distro_id
+from leapp.libraries.common.config import get_source_distro_id, get_target_distro_id
 from leapp.libraries.common.config.architecture import ARCH_ACCEPTED, ARCH_X86_64
 from leapp.libraries.common.config.version import get_target_major_version
 from leapp.libraries.stdlib import api
@@ -233,6 +233,60 @@ def distro_id_to_pretty_name(distro_id):
         "almalinux": "AlmaLinux",
     }[distro_id]
 
+
+def distro_id_to_display_name(distro_id):
+    """
+    Get the diplay name for the given distro id.
+
+    The display name should be used for user facing text, such as in reports.
+    For a real/full name see the :func:`distro_id_to_pretty_name` function.
+    """
+    return {
+        "rhel": "RHEL",
+        "centos": "CS", # TODO
+        "almalinux": "AlmaLinux"
+    }[distro_id]
+
+
+def source_distro_display_name():
+    """
+    Get the diplay name for the source distro.
+
+    See :func:`distro_id_to_display_name`.
+    """
+    return distro_id_to_display_name(get_source_distro_id())
+
+
+def target_distro_display_name():
+    """
+    Get the diplay name for the target distro.
+
+    See :func:`distro_id_to_display_name`.
+    """
+    return distro_id_to_display_name(get_target_distro_id())
+
+
+class _FrozenDict(dict):
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def __setitem__(self, key, value):
+        raise TypeError(f"Cannot modify immutable {self.__class__.__name__}")
+
+    def __delitem__(self, key):
+        raise TypeError(f"Cannot modify immutable {self.__class__.__name__}")
+
+
+DISTRO_DISPLAY_NAMES = _FrozenDict(
+    source_distro=source_distro_display_name(),
+    target_distro=target_distro_display_name(),
+)
+"""
+A map of distro "display" names for use in reports.
+
+Can be used as argument for format_map() or unpacked in format() calls.
+"""
 
 def get_distro_efidir_canon_path(distro_id):
     """
