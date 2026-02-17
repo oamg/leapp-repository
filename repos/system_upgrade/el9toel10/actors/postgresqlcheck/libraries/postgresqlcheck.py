@@ -16,7 +16,7 @@ def _report_server_installed():
     summary = (
         'PostgreSQL server component will be upgraded. Since {target_distro} 10 includes'
         ' PostgreSQL server 16 by default, which is incompatible with 13 and 15'
-        ' included in {target_distro} 9, in those cases, it is necessary to'
+        ' included in {source_distro} 9, in those cases, it is necessary to'
         ' proceed with additional steps for the complete upgrade of the PostgreSQL data.'
         ' If the database has already been upgraded, meaning the system is'
         ' already using PostgreSQL 16, then no further actions are required.'
