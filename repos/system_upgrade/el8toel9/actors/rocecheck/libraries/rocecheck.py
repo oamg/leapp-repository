@@ -1,6 +1,6 @@
 from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
-from leapp.libraries.common.config import architecture, version
+from leapp.libraries.common.config import architecture
 from leapp.libraries.stdlib import api
 from leapp.models import KernelCmdline, RoceDetected
 
@@ -37,36 +37,8 @@ def _fmt_list(items):
     return ''.join([FMT_LIST_SEPARATOR.format(i) for i in items])
 
 
-def _report_old_version(roce):
+def _report_wrong_setup(roce):
     roce_nics = roce.roce_nics_connected + roce.roce_nics_connecting
-    reporting.create_report([
-        reporting.Title('A newer version of RHEL 8 is required for the upgrade with RoCE.'),
-        reporting.Summary(
-            'The RHEL 9 system uses different network schemes for NIC names'
-            ' than RHEL 8.'
-            ' RHEL {version} does not provide functionality to be able'
-            ' to set the system configuration in a way the network interface'
-            ' names used by RoCE are persistent on both (RHEL 8 and RHEL 9)'
-            ' systems.'
-            ' The in-place upgrade from the current version of RHEL to RHEL 9'
-            ' will break the RoCE network configuration.'
-            '\n\nRoCE detected on following NICs:{nics}'
-            .format(
-                version=version.get_source_version(),
-                nics=_fmt_list(roce_nics)
-            )
-        ),
-        reporting.Remediation(hint=(
-            'Update the system to RHEL 8.8 or newer using DNF and then reboot'
-            ' the system prior the in-place upgrade to RHEL 9.'
-        )),
-        reporting.Severity(reporting.Severity.HIGH),
-        reporting.Groups([
-            reporting.Groups.INHIBITOR,
-            reporting.Groups.ACCESSIBILITY,
-            reporting.Groups.SANITY,
-        ]),
-    ])
 
 
 def _report_wrong_setup(roce):
@@ -128,7 +100,6 @@ def process():
         # No used RoCE detected - nothing to do
         api.current_logger().debug('Skipping RoCE checks: No RoCE card detected.')
         return
-    if version.matches_source_version('<= 8.6'):
-        _report_old_version(roce)
+
     if not is_kernel_arg_set():
         _report_wrong_setup(roce)
