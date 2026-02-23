@@ -1,6 +1,7 @@
 from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
-from leapp.libraries.common.config import architecture
+from leapp.libraries.common.config import architecture, get_target_distro_id
+from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
 from leapp.libraries.stdlib import api
 from leapp.models import KernelCmdline, RoceDetected
 
@@ -40,45 +41,51 @@ def _fmt_list(items):
 def _report_wrong_setup(roce):
     roce_nics = roce.roce_nics_connected + roce.roce_nics_connecting
 
+    summary = (
+        'The {target_distro} 9 system uses different network schemes for NIC names'
+        ' than {source_distro} 8.'
+        ' The below listed RoCE NICs need to be reconfigured to the new'
+        ' interface naming scheme in order to prevent loss of network'
+        ' access to your system via these interfaces after the upgrade.'
+        ' For more information, see: {url}'
+        '\n\nRoCE detected on the following NICs:{nics}'
+    ).format(
+        nics=_fmt_list(roce_nics),
+        url=DOC_URL,
+        **DISTRO_REPORT_NAMES,
+    )
+    remmediation_hint = (
+        'Prerequisite for upgrading to {target_distro} {target_version}:'
+        'In {source_distro} 8, all RoCE cards must be configured with the interface'
+        ' names they should have in {target_distro} {target_version}.\n'
+        'For more information, see chapter 1.4 of the RHEL 8 Product'
+        ' Documentation (see the attached link) and follow these steps:\n'
+        '1.) determine the current interface device names of the RoCE'
+        ' cards that are in "connected to" or in "connecting" state\n'
+        '2.) determine if UID uniqueness is set for these cards\n'
+        '3.) compute new interface device names from the UID or the'
+        ' function ID, respectively\n'
+        '4.) change the network interface device names in ifcfg'
+        ' files\n'
+        '5.) set the kernel parameter net.naming-scheme=rhel-8.7 in the'
+        ' effective .conf file in /boot/loader/entries\n'
+        '6.) adjust other settings that rely on the interface device names'
+        ' (e.g. firewall) by changing the interface device names'
+        ' accordingly\n'
+        '7.) run `zipl -V` and reboot the system\n'
+        '8.) check your network connectivity\n'
+        '\n'
+        'Caution: Creating an incorrect configuration might cause the loss'
+        ' of your network connection after reboot!'
+    ).format(
+        target_version="9" if get_target_distro_id() == "centos" else "9.x",
+        **DISTRO_REPORT_NAMES,
+    )
 
-def _report_wrong_setup(roce):
-    roce_nics = roce.roce_nics_connected + roce.roce_nics_connecting
     reporting.create_report([
         reporting.Title('Invalid RoCE configuration for the in-place upgrade'),
-        reporting.Summary(
-            'The RHEL 9 system uses different network schemes for NIC names'
-            ' than RHEL 8.'
-            ' The below listed RoCE NICs need to be reconfigured to the new'
-            ' interface naming scheme in order to prevent loss of network'
-            ' access to your system via these interfaces after the upgrade.'
-            ' For more information, see: {url}'
-            '\n\nRoCE detected on the following NICs:{nics}'
-            .format(nics=_fmt_list(roce_nics), url=DOC_URL)
-        ),
-        reporting.Remediation(hint=(
-            'Prerequisite for upgrading to RHEL9.x:'
-            'In RHEL 8, all RoCE cards must be configured with the interface'
-            ' names they should have in RHEL9.x.\n'
-            'For more information, see chapter 1.4 of the RHEL8 Product'
-            ' Documentation (see the attached link) and follow these steps:\n'
-            '1.) determine the current interface device names of the RoCE'
-            ' cards that are in "connected to" or in "connecting" state\n'
-            '2.) determine if UID uniqueness is set for these cards\n'
-            '3.) compute new interface device names from the UID or the'
-            ' function ID, respectively\n'
-            '4.) change the network interface device names in ifcfg'
-            ' files\n'
-            '5.) set the kernel parameter net.naming-scheme=rhel-8.7 in the'
-            ' effective .conf file in /boot/loader/entries\n'
-            '6.) adjust other settings that rely on the interface device names'
-            ' (e.g. firewall) by changing the interface device names'
-            ' accordingly\n'
-            '7.) run `zipl -V` and reboot the system\n'
-            '8.) check your network connectivity\n'
-            '\n'
-            'Caution: Creating an incorrect configuration might cause the loss'
-            ' of your network connection after reboot!'
-        )),
+        reporting.Summary(summary),
+        reporting.Remediation(hint=remmediation_hint),
         reporting.ExternalLink(
             title='Predictable network interface device names on the System z platform',
             url=DOC_URL),
