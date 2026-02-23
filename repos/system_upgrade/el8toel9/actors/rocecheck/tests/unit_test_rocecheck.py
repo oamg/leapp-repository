@@ -52,7 +52,6 @@ def test_roce_noibmz(monkeypatch, arch):
 
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(arch=arch))
     monkeypatch.setattr(reporting, "create_report", create_report_mocked())
-    monkeypatch.setattr(rocecheck, '_report_old_version', mocked_do_not_call_me)
     monkeypatch.setattr(rocecheck, '_report_wrong_setup', mocked_do_not_call_me)
     monkeypatch.setattr(rocecheck, 'is_kernel_arg_set', mocked_do_not_call_me)
     monkeypatch.setattr(rocecheck.api, 'consume', mocked_do_not_call_me)
@@ -74,27 +73,6 @@ def test_roce_ok(monkeypatch, msgs, version):
     monkeypatch.setattr(reporting, "create_report", create_report_mocked())
     rocecheck.process()
     assert not reporting.create_report.called
-
-
-@pytest.mark.parametrize('msgs', (
-    [_kernel_cmdline(['net.naming-scheme=rhel-8.7']), _roce(['eno'], [])],
-    [_kernel_cmdline(['net.naming-scheme=rhel-8.7']), _roce([], ['eno'])],
-    [_kernel_cmdline(['net.naming-scheme=rhel-8.6']), _roce(['eno'], [])],
-    [_kernel_cmdline(['net.naming-scheme=rhel-8.6']), _roce(['eno', 'eno1'], ['enp'])],
-    [_kernel_cmdline(['foo=bar']), _roce(['eno'], [])],
-    [_kernel_cmdline(), _roce(['eno'], [])],
-))
-@pytest.mark.parametrize('version', ['8.0', '8.3', '8.6'])
-def test_roce_old_rhel(monkeypatch, msgs, version):
-    curr_actor_mocked = CurrentActorMocked(arch=architecture.ARCH_S390X, src_ver=version, msgs=msgs)
-    monkeypatch.setattr(api, 'current_actor', curr_actor_mocked)
-    monkeypatch.setattr(reporting, "create_report", create_report_mocked())
-    rocecheck.process()
-    assert reporting.create_report.called
-    assert any(
-        'version of RHEL' in report['title']
-        for report in reporting.create_report.reports
-    )
 
 
 # NOTE: what about the situation when net.naming-scheme is configured multiple times???
