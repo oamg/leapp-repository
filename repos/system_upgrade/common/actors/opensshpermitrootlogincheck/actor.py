@@ -3,6 +3,7 @@ from leapp.actors import Actor
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor.opensshpermitrootlogincheck import global_value
 from leapp.libraries.common.config.version import get_source_major_version
+from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
 from leapp.libraries.stdlib import api
 from leapp.models import OpenSshConfig, Report
 from leapp.reporting import create_report
@@ -62,12 +63,12 @@ class OpenSshPermitRootLoginCheck(Actor):
             create_report([
                 reporting.Title('Possible problems with remote login using root account'),
                 reporting.Summary(
-                    'OpenSSH configuration file will get updated to RHEL9 '
+                    'OpenSSH configuration file will get updated to {target_distro} 9 '
                     'version, no longer allowing root login with password. '
                     'It is a good practice to use non-root administrative '
                     'user and non-password authentications, but if you rely '
                     'on the remote root login, this change can lock you out '
-                    'of this system.'
+                    'of this system.'.format_map(DISTRO_REPORT_NAMES)
                 ),
                 reporting.Severity(reporting.Severity.HIGH),
                 reporting.Groups(COMMON_REPORT_TAGS),
@@ -93,11 +94,13 @@ class OpenSshPermitRootLoginCheck(Actor):
             create_report([
                 reporting.Title('Remote root logins globally allowed using password'),
                 reporting.Summary(
-                    'RHEL9 no longer allows remote root logins, but the '
-                    'server configuration explicitly overrides this default. '
-                    'The configuration file will not be updated and root is '
-                    'still going to be allowed to login with password. '
-                    'This is not recommended and considered as a security risk.'
+                    '{target_distro} 9 no longer allows remote root logins, but '
+                    'the server configuration explicitly overrides this default. '
+                    'The configuration file will not be updated and root is still'
+                    'going to be allowed to login with password. This is not '
+                    'recommended and considered as a security risk. '.format_map(
+                        DISTRO_REPORT_NAMES
+                    )
                 ),
                 reporting.Severity(reporting.Severity.HIGH),
                 reporting.Groups(COMMON_REPORT_TAGS),
