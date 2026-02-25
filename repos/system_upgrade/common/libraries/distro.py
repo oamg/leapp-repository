@@ -1,3 +1,4 @@
+from collections.abc import Mapping
 import json
 import os
 
@@ -234,7 +235,7 @@ def distro_id_to_pretty_name(distro_id):
     }[distro_id]
 
 
-def distro_id_to_display_name(distro_id):
+def _distro_id_to_report_name(distro_id):
     """
     Get the diplay name for the given distro id.
 
@@ -243,49 +244,63 @@ def distro_id_to_display_name(distro_id):
     """
     return {
         "rhel": "RHEL",
-        "centos": "CS", # TODO
+        "centos": "CentOS Stream",
         "almalinux": "AlmaLinux"
     }[distro_id]
 
 
-def source_distro_display_name():
+class _DistroReportNames(Mapping):
     """
-    Get the diplay name for the source distro.
+    A mapping of distro names to be used in reports.
 
-    See :func:`distro_id_to_display_name`.
+    In addition to the properties :attr:`source` and :attr:`target`, this class
+    can be used in :func:`format_map()` or unpacked to :func:`format` where it
+    exposes them as 'source_distro' and 'target_distro'.
     """
-    return distro_id_to_display_name(get_source_distro_id())
+
+    @property
+    def source(self) -> str:
+        """
+        The source distro report name.
+
+        :type: str
+        """
+        return _distro_id_to_report_name(get_source_distro_id())
+
+    @property
+    def target(self) -> str:
+        """
+        The target distro report name.
+
+        :type: str
+        """
+        return _distro_id_to_report_name(get_target_distro_id())
+
+    def __getitem__(self, key):
+        if key == 'source_distro':
+            return self.source
+
+        if key == 'target_distro':
+            return self.target
+
+        raise KeyError(f"Key '{key}' not found in {self.__class__.__name__}")
+
+    def __len__(self):
+        return 2
+
+    def __iter__(self):
+        yield from ['source_distro', 'target_distro']
 
 
-def target_distro_display_name():
-    """
-    Get the diplay name for the target distro.
-
-    See :func:`distro_id_to_display_name`.
-    """
-    return distro_id_to_display_name(get_target_distro_id())
-
-
-class _FrozenDict(dict):
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-    def __setitem__(self, key, value):
-        raise TypeError(f"Cannot modify immutable {self.__class__.__name__}")
-
-    def __delitem__(self, key):
-        raise TypeError(f"Cannot modify immutable {self.__class__.__name__}")
-
-
-DISTRO_DISPLAY_NAMES = _FrozenDict(
-    source_distro=source_distro_display_name(),
-    target_distro=target_distro_display_name(),
-)
+DISTRO_REPORT_NAMES = _DistroReportNames()
 """
-A map of distro "display" names for use in reports.
+A mapping of distro "display" names for use in reports.
 
 Can be used as argument for format_map() or unpacked in format() calls.
+The format string placeholders 'source_distro' and 'target_distro' are then
+replaced by the respective distro names or abbreviations of them.
+
+See :class:`_DistroReportNames`.
 """
 
 def get_distro_efidir_canon_path(distro_id):
