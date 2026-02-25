@@ -1,6 +1,6 @@
-from collections.abc import Mapping
 import json
 import os
+from collections.abc import Mapping
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import efi, repofileutils, rhsm
