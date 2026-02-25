@@ -303,6 +303,7 @@ replaced by the respective distro names or abbreviations of them.
 See :class:`_DistroReportNames`.
 """
 
+
 def get_distro_efidir_canon_path(distro_id):
     """
     Get canonical path to the distro EFI directory in the EFI mountpoint.
