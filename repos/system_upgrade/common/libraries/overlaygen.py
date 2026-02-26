@@ -594,12 +594,6 @@ def create_source_overlay(
     in the OVERLAY_DO_NOT_MOUNT set. Such prepared OVL images are then composed
     together to reflect the real host filesystem. In the end everything is cleaned.
 
-    The new solution can be now problematic for system with too many partitions
-    and loop devices. For such systems we keep for now the possibility of the
-    fallback to an old solution, which has however number of issues that are
-    fixed by the new design. To fallback to the old solution, set envar:
-        LEAPP_OVL_LEGACY=1
-
     Disk images created for OVL are formatted with XFS by default. In case of
     problems, it's possible to switch to Ext4 FS using:
         LEAPP_OVL_IMG_FS_EXT4=1
