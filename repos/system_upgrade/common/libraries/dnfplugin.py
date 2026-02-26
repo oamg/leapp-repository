@@ -7,7 +7,6 @@ import shutil
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import dnfconfig, guards, mounting, overlaygen, rhsm, utils
-from leapp.libraries.common.config import get_env
 from leapp.libraries.common.config.version import get_target_major_version, get_target_version
 from leapp.libraries.common.gpg import is_nogpgcheck_set
 from leapp.libraries.stdlib import api, CalledProcessError, config
@@ -166,16 +165,10 @@ def _handle_transaction_err_msg_old(stage, xfs_info, err):
     raise StopActorExecutionError(message=message, details=details)
 
 
-def _handle_transaction_err_msg(stage, xfs_info, err, is_container=False):
-    # ignore the fallback when the error is related to the container issue
-    # e.g. installation of packages inside the container; so it's unrelated
-    # to the upgrade transactions.
-    if get_env('LEAPP_OVL_LEGACY', '0') == '1' and not is_container:
-        _handle_transaction_err_msg_old(stage, xfs_info, err)
-        return  # not needed actually as the above function raises error, but for visibility
+def _handle_transaction_err_msg(err, is_container=False):
     NO_SPACE_STR = 'more space needed on the'
-    message = 'DNF execution failed with non zero exit code.'
     if NO_SPACE_STR not in err.stderr:
+        message = 'DNF execution failed with non zero exit code.'
         # if there was a problem reaching repos and proxy is configured in DNF/YUM configs, the
         # proxy is likely the problem.
         # NOTE(mmatuska): We can't consistently detect there was a problem reaching some repos,
@@ -308,7 +301,7 @@ def _transaction(context, stage, target_repoids, tasks, plugin_info, xfs_info,
             )
         except CalledProcessError as e:
             api.current_logger().error('Cannot calculate, check, test, or perform the upgrade transaction.')
-            _handle_transaction_err_msg(stage, xfs_info, e, is_container=False)
+            _handle_transaction_err_msg(e, is_container=False)
         finally:
             if stage == 'check':
                 backup_debug_data(context=context)
@@ -384,7 +377,7 @@ def install_initramdisk_requirements(packages, target_userspace_info, used_repos
             api.current_logger().error(
                 'Cannot install packages in the target container required to build the upgrade initramfs.'
             )
-            _handle_transaction_err_msg('', None, e, is_container=True)
+            _handle_transaction_err_msg(e, is_container=True)
 
 
 def perform_transaction_install(target_userspace_info, storage_info, used_repos, tasks, plugin_info, xfs_info):

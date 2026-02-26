@@ -178,26 +178,7 @@ def _import_gpg_keys(context, install_root_dir, target_major_version):
         )
 
 
-def _handle_transaction_err_msg_size_old(err):
-    # NOTE(pstodulk): This is going to be removed in future!
-
-    article_section = 'Generic case'
-    xfs_info = next(api.consume(XFSPresence), XFSPresence())
-    if xfs_info.present and xfs_info.without_ftype:
-        article_section = 'XFS ftype=0 case'
-
-    message = ('There is not enough space on the file system hosting /var/lib/leapp directory '
-               'to extract the packages.')
-    details = {'hint': "Please follow the instructions in the '{}' section of the article at: "
-                       "link: https://access.redhat.com/solutions/5057391".format(article_section)}
-
-    raise StopActorExecutionError(message=message, details=details)
-
-
 def _handle_transaction_err_msg_size(err):
-    if get_env('LEAPP_OVL_LEGACY', '0') == '1':
-        _handle_transaction_err_msg_size_old(err)
-        return  # not needed actually as the above function raises error, but for visibility
     NO_SPACE_STR = 'more space needed on the'
 
     # Disk Requirements:
