@@ -1,9 +1,10 @@
 import json
 import os
+from collections.abc import Mapping
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import efi, repofileutils, rhsm
-from leapp.libraries.common.config import get_target_distro_id
+from leapp.libraries.common.config import get_source_distro_id, get_target_distro_id
 from leapp.libraries.common.config.architecture import ARCH_ACCEPTED, ARCH_X86_64
 from leapp.libraries.common.config.version import get_target_major_version
 from leapp.libraries.stdlib import api
@@ -232,6 +233,75 @@ def distro_id_to_pretty_name(distro_id):
         "centos": "CentOS Stream",
         "almalinux": "AlmaLinux",
     }[distro_id]
+
+
+def _distro_id_to_report_name(distro_id):
+    """
+    Get the diplay name for the given distro id.
+
+    The display name should be used for user facing text, such as in reports.
+    For a real/full name see the :func:`distro_id_to_pretty_name` function.
+    """
+    return {
+        "rhel": "RHEL",
+        "centos": "CentOS Stream",
+        "almalinux": "AlmaLinux"
+    }[distro_id]
+
+
+class _DistroReportNames(Mapping):
+    """
+    A mapping of distro names to be used in reports.
+
+    In addition to the properties :attr:`source` and :attr:`target`, this class
+    can be used in :func:`format_map()` or unpacked to :func:`format` where it
+    exposes them as 'source_distro' and 'target_distro'.
+    """
+
+    @property
+    def source(self) -> str:
+        """
+        The source distro report name.
+
+        :type: str
+        """
+        return _distro_id_to_report_name(get_source_distro_id())
+
+    @property
+    def target(self) -> str:
+        """
+        The target distro report name.
+
+        :type: str
+        """
+        return _distro_id_to_report_name(get_target_distro_id())
+
+    def __getitem__(self, key):
+        if key == 'source_distro':
+            return self.source
+
+        if key == 'target_distro':
+            return self.target
+
+        raise KeyError(f"Key '{key}' not found in {self.__class__.__name__}")
+
+    def __len__(self):
+        return 2
+
+    def __iter__(self):
+        yield from ['source_distro', 'target_distro']
+
+
+DISTRO_REPORT_NAMES = _DistroReportNames()
+"""
+A mapping of distro "display" names for use in reports.
+
+Can be used as argument for format_map() or unpacked in format() calls.
+The format string placeholders 'source_distro' and 'target_distro' are then
+replaced by the respective distro names or abbreviations of them.
+
+See :class:`_DistroReportNames`.
+"""
 
 
 def get_distro_efidir_canon_path(distro_id):
