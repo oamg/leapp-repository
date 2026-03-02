@@ -1,4 +1,5 @@
 from leapp import reporting
+from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
 from leapp.reporting import create_report
 
 
@@ -8,15 +9,18 @@ def _report_foreign():
             'device-mapper-multipath now defaults to ignoring foreign devices'
         ),
         reporting.Summary(
-            'In RHEL-9, the default value for the "enable_foreign" option has '
-            'changed to "NONE". This means that multipath will no longer list '
-            'devices that are not managed by device-mapper. In order to retain '
-            'the default RHEL-8 behavior of listing foreign multipath devices, '
-            '\'enable_foreign ""\' will be added to the defaults section of '
-            '"/etc/multipath.conf". If you wish to change to the default '
-            'RHEL-9 behavior, please remove this line. This option only '
-            'effects the devices that multipath lists. It has no impact on '
-            'what devices are managed.'),
+            'In {target_distro} 9, the default value for the "enable_foreign" '
+            'option has changed to "NONE". This means that multipath will no '
+            'longer list devices that are not managed by device-mapper. In '
+            'order to retain the default {source_distro} 8 behavior of listing '
+            'foreign multipath devices, \'enable_foreign ""\' will be added to '
+            'the defaults section of "/etc/multipath.conf". If you wish to '
+            'change to the default {target_distro} 9 behavior, please remove '
+            'this line. This option only affects the devices that multipath '
+            'lists. It has no impact on what devices are managed.'.format_map(
+                DISTRO_REPORT_NAMES
+            )
+        ),
         reporting.Severity(reporting.Severity.INFO),
         reporting.Groups([reporting.Groups.SERVICES]),
         reporting.RelatedResource('package', 'device-mapper-multipath')
@@ -29,13 +33,15 @@ def _report_allow_usb():
             'device-mapper-multipath now defaults to ignoring USB devices'
         ),
         reporting.Summary(
-            'In RHEL-9, the default multipath configuration has changed to '
-            'ignore USB devices. A new config option, "allow_usb_devices" has '
-            'been added to control this.  In order to retain the RHEL-8 '
-            'behavior of treating USB devices like other block devices. '
-            '"allow_usb_devices yes" will be added to the defaults section '
-            'of "/etc/multipath.conf". If you wish to change to the default '
-            'RHEL-9 behavior, please remove this line.'),
+            'In {target_distro} 9, the default multipath configuration has '
+            'changed to ignore USB devices. A new config option, '
+            '"allow_usb_devices" has been added to control this. In order to '
+            'retain the {source_distro} 8 behavior of treating USB devices '
+            'like other block devices. "allow_usb_devices yes" will be added '
+            'to the defaults section of "/etc/multipath.conf". If you wish to '
+            'change to the default {target_distro} 9 behavior, please remove '
+            'this line.'.format_map(DISTRO_REPORT_NAMES)
+        ),
         reporting.Severity(reporting.Severity.INFO),
         reporting.Groups([reporting.Groups.SERVICES]),
         reporting.RelatedResource('package', 'device-mapper-multipath')
