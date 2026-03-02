@@ -1,3 +1,4 @@
+from leapp.libraries.actor import opensslconfigcheck
 from leapp.models import OpenSslConfig, OpenSslConfigBlock, OpenSslConfigPair, Report
 
 
@@ -12,7 +13,8 @@ def test_actor_execution_empty(current_actor_context):
     assert not current_actor_context.consume(Report)
 
 
-def test_actor_execution_empty_modified(current_actor_context):
+def test_actor_execution_empty_modified(current_actor_context, monkeypatch):
+    monkeypatch.setattr(opensslconfigcheck, 'get_target_distro_id', lambda: 'rhel')
     current_actor_context.feed(
         OpenSslConfig(
             blocks=[],
@@ -25,7 +27,8 @@ def test_actor_execution_empty_modified(current_actor_context):
     assert 'missing the crypto policies integration' in r[0].report['title']
 
 
-def test_actor_execution_default_modified(current_actor_context):
+def test_actor_execution_default_modified(current_actor_context, monkeypatch):
+    monkeypatch.setattr(opensslconfigcheck, 'get_target_distro_id', lambda: 'rhel')
     current_actor_context.feed(
         OpenSslConfig(
             openssl_conf='default_modules',
