@@ -3,12 +3,14 @@ import pytest
 from leapp.libraries.actor.add_provider import (
     _add_lines,
     _append,
+    _get_leapp_comment,
     _modify_file,
     _replace,
     APPEND_STRING,
-    LEAPP_COMMENT,
     NotFoundException
 )
+from leapp.libraries.common.testutils import CurrentActorMocked
+from leapp.libraries.stdlib import api
 
 testdata = (
     ([], 'one', ['one\n']),
@@ -80,32 +82,52 @@ class MockFile:
 
 
 testdata = (
-    ('', ''),
-    ('openssl_conf=default_modules\n',
-     '{}# openssl_conf=default_modules\nopenssl_conf = openssl_init\n'.format(LEAPP_COMMENT)),
-    ('openssl_conf = default_modules\n',
-     '{}# openssl_conf = default_modules\nopenssl_conf = openssl_init\n'.format(LEAPP_COMMENT)),
-    ('openssl_conf  =  default_modules\n',
-     '{}# openssl_conf  =  default_modules\nopenssl_conf = openssl_init\n'.format(LEAPP_COMMENT)),
-    ('  openssl_conf = default_modules  \n',
-     '{}#   openssl_conf = default_modules  \nopenssl_conf = openssl_init\n'.format(LEAPP_COMMENT)),
-    ('[default_modules]\n',
-     '{}# [default_modules]\n[openssl_init]\nproviders = provider_sect\n'.format(LEAPP_COMMENT)),
-    ('[  default_modules  ]\n',
-     '{}# [  default_modules  ]\n[openssl_init]\nproviders = provider_sect\n'.format(LEAPP_COMMENT)),
-    ('  [ default_modules ] \n',
-     '{}#   [ default_modules ] \n[openssl_init]\nproviders = provider_sect\n'.format(LEAPP_COMMENT)),
-    ('openssl_conf=default_modules\n[default_modules]\n',
-     '{c}# openssl_conf=default_modules\nopenssl_conf = openssl_init\n'
-     '{c}# [default_modules]\n[openssl_init]\nproviders = provider_sect\n'.format(c=LEAPP_COMMENT)),
+    ("", ""),
+    (
+        "openssl_conf=default_modules\n",
+        "{c}# openssl_conf=default_modules\nopenssl_conf = openssl_init\n",
+    ),
+    (
+        "openssl_conf = default_modules\n",
+        "{c}# openssl_conf = default_modules\nopenssl_conf = openssl_init\n",
+    ),
+    (
+        "openssl_conf  =  default_modules\n",
+        "{c}# openssl_conf  =  default_modules\nopenssl_conf = openssl_init\n",
+    ),
+    (
+        "  openssl_conf = default_modules  \n",
+        "{c}#   openssl_conf = default_modules  \nopenssl_conf = openssl_init\n",
+    ),
+    (
+        "[default_modules]\n",
+        "{c}# [default_modules]\n[openssl_init]\nproviders = provider_sect\n",
+    ),
+    (
+        "[  default_modules  ]\n",
+        "{c}# [  default_modules  ]\n[openssl_init]\nproviders = provider_sect\n",
+    ),
+    (
+        "  [ default_modules ] \n",
+        "{c}#   [ default_modules ] \n[openssl_init]\nproviders = provider_sect\n",
+    ),
+    (
+        "openssl_conf=default_modules\n[default_modules]\n",
+        "{c}# openssl_conf=default_modules\nopenssl_conf = openssl_init\n"
+        "{c}# [default_modules]\n[openssl_init]\nproviders = provider_sect\n",
+    ),
 )
 
 
 @pytest.mark.parametrize('file_content,expected', testdata)
-def test_modify_file(file_content, expected):
-    f = MockFile(file_content)
+def test_modify_file(monkeypatch, file_content, expected):
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked())
+
+    f = MockFile(file_content.format(c=_get_leapp_comment()))
 
     # Test separate replaces and do not fail if pattern is not found
     _modify_file(f, False)
 
-    assert f.content == "{}{}{}\n".format(expected, LEAPP_COMMENT, APPEND_STRING)
+    assert f.content == "{}{}{}\n".format(
+        expected.format(c=_get_leapp_comment()), _get_leapp_comment(), APPEND_STRING
+    )
