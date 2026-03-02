@@ -1,5 +1,6 @@
 from leapp import reporting
 from leapp.actors import Actor
+from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
 from leapp.models import FirewalldGlobalConfig, FirewallsFacts
 from leapp.reporting import create_report, Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
@@ -34,10 +35,14 @@ class FirewalldCheckAllowZoneDrifting(Actor):
 
         create_report([
             reporting.Title('Firewalld Configuration AllowZoneDrifting Is Unsupported'),
-            reporting.Summary('Firewalld has enabled configuration option '
-                              '"{conf_key}" which has been removed in RHEL-9. '
-                              'New behavior is as if "{conf_key}" was set to "no".'.format(
-                                  conf_key='AllowZoneDrifting')),
+            reporting.Summary(
+                'Firewalld has enabled configuration option "{conf_key}" which'
+                ' has been removed in {target_distro} 9. New behavior is as if '
+                '"{conf_key}" was set to "no".'.format(
+                    target_distro=DISTRO_REPORT_NAMES.target,
+                    conf_key='AllowZoneDrifting',
+                )
+            ),
             reporting.Severity(reporting.Severity.HIGH),
             reporting.Groups([reporting.Groups.SANITY, reporting.Groups.FIREWALL]),
             reporting.Groups([reporting.Groups.INHIBITOR]),

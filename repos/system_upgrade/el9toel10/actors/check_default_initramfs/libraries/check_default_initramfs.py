@@ -2,6 +2,7 @@ import os
 
 from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
+from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
 from leapp.libraries.stdlib import api
 from leapp.models import DefaultInitramfsInfo
 
@@ -14,15 +15,17 @@ def check_default_initramfs():
 
     if 'network-legacy' in default_initramfs_info.used_dracut_modules:
         summary = (
-            f'Initramfs ({default_initramfs_info.path}) of the default boot entry uses dracut '
+            'Initramfs ({initramfs_path}) of the default boot entry uses dracut '
             'modules that are missing on the target system. This could cause a fatal '
             'failure during the upgrade, resulting in unbootable system as '
             'the missing dracut module could prevent creation of the required target '
             'initramfs.\n\n'
             'Namely, the legacy-network dracut module is used on this system, which '
-            'could originate from older system installations. The problem is typical '
-            'for RHEL 7 and early RHEL 8 systems that were in-place-upgraded to RHEL 9.'
-        )
+            'could originate from older system installations. '
+            'The problem is typical for {source_distro} 7 and early {source_distro} 8 '
+            'systems that were in-place-upgraded to {source_distro} 9.'
+        ).format(**DISTRO_REPORT_NAMES, initramfs_path=default_initramfs_info.path)
+
         remediation_hint = (
             'Remove the dracut config file which adds the `network-legacy` dracut module. '
             'Then rebuild existing initramfs images to remove the dracut module from them.'

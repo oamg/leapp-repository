@@ -2,6 +2,7 @@ import os
 
 from leapp import reporting
 from leapp.actors import Actor
+from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
 from leapp.models import IfCfg, NetworkManagerConfig, Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
@@ -30,9 +31,12 @@ class CheckNetworkDeprecations9to10(Actor):
     @staticmethod
     def report_dhclient():
         title = 'Deprecated DHCP plugin configured'
-        summary = ('NetworkManager is configured to use the "dhclient" DHCP module.'
-                   ' In Red Hat Enterprise Linux 10, this setting will be ignored'
-                   ' along with any dhcp-client specific configuration.')
+        summary = (
+            'NetworkManager is configured to use the "dhclient" DHCP module.'
+            ' In {target_distro} 10, this setting will be ignored'
+            ' along with any dhcp-client specific configuration.'
+        ).format_map(DISTRO_REPORT_NAMES)
+
         remediation = ('Remove "dhcp=dhclient" line from "[main]" section from all'
                        ' configuration files in "/etc/NetworkManager". Review'
                        ' configuration in "/etc/dhcp", which will be ignored.')
@@ -53,12 +57,15 @@ class CheckNetworkDeprecations9to10(Actor):
             reporting.Title('Legacy network configuration with policy routing rules found'),
             reporting.Summary(
                 'Network configuration files in "ifcfg" format are present accompanied'
-                ' by legacy routing rules. In Red Hat Enterprise Linux 10, support'
+                ' by legacy routing rules. In {target_distro} 10, support'
                 ' for these files is no longer enabled and the configuration will be'
                 ' ignored. Legacy routing rules are not supported by NetworkManager'
                 ' natively and therefore can not be migrated automatically.'
-                ' The following configuration files were found:{}'
-                .format(''.join(_formatted_list_output(conn.values())))
+                ' The following configuration files were found:{files}'
+                .format(
+                    files=''.join(_formatted_list_output(conn.values())),
+                    target_distro=DISTRO_REPORT_NAMES.target
+                )
             ),
             reporting.Remediation(hint='Replace the routing rules with equivalent'
                                        ' "ipv4.routing-rules" or "ipv6.routing-rules" properties,'
@@ -81,7 +88,6 @@ class CheckNetworkDeprecations9to10(Actor):
             reporting.RelatedResource('package', 'NetworkManager'),
             reporting.RelatedResource('package', 'NetworkManager-dispatcher-routing-rules'),
         ] + [reporting.RelatedResource('file', file) for file in conn.values()])
-        pass
 
     @staticmethod
     def report_ifcfg_leftover(conn):
@@ -110,9 +116,12 @@ class CheckNetworkDeprecations9to10(Actor):
             reporting.Title('Legacy network configuration found'),
             reporting.Summary(
                 'Network configuration files in legacy "ifcfg" format are present.'
-                'In Red Hat Enterprise Linux 10, support for these files is no longer'
+                'In {target_distro} 10, support for these files is no longer'
                 ' enabled and the configuration will be ignored. The following files'
-                ' were found:{}'.format(''.join(_formatted_list_output(conn.values())))
+                ' were found:{conns}'.format(
+                    conns=''.join(_formatted_list_output(conn.values())),
+                    target_distro=DISTRO_REPORT_NAMES.target,
+                )
             ),
             reporting.Remediation(
                 hint='Convert the configuration into NetworkManager native "keyfile" format.',

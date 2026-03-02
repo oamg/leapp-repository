@@ -1,21 +1,9 @@
 from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
+from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
 from leapp.libraries.common.rpms import has_package
 from leapp.libraries.stdlib import api
 from leapp.models import DistributionSignedRPM, NISConfig
-
-report_summary = (
-    'The NIS components (ypserv, ypbind, and yp-tools) are no longer available in RHEL-9.'
-    ' The technology behind those packages is based an outdated design patterns, which are'
-    ' no longer considered as secure. There is no direct alternative with fully compatible'
-    ' features.'
-)
-
-report_hint = (
-    'The alternatives are LDAP and for some use cases Kerberos or migrating to IPA.'
-)
-
-report_link_url = 'https://access.redhat.com/solutions/5991271'
 
 
 def report_nis():
@@ -55,15 +43,26 @@ def report_nis():
     if not rpms_configured_installed:
         return
 
+    report_summary = (
+        'The NIS components (ypserv, ypbind, and yp-tools) are no longer available'
+        ' in {target_distro} 9. The technology behind those packages is based an '
+        ' outdated design patterns, which are no longer considered as secure. There'
+        ' is no direct alternative with fully compatible features.'
+    ).format_map(DISTRO_REPORT_NAMES)
+
     # Create report
     report_content = [
         reporting.Title('NIS component has been detected on your system'),
         reporting.Summary(report_summary),
         reporting.Severity(reporting.Severity.MEDIUM),
         reporting.Groups([reporting.Groups.SERVICES]),
-        reporting.ExternalLink(title='RHEL 9 (NIS) discontinuation',
-                               url=report_link_url),
-        reporting.Remediation(hint=report_hint),
+        reporting.ExternalLink(
+            title='RHEL 9 (NIS) discontinuation',
+            url='https://access.redhat.com/solutions/5991271',
+        ),
+        reporting.Remediation(
+            hint='The alternatives are LDAP and for some use cases Kerberos or migrating to IPA.'
+        ),
     ]
 
     related_resources = [reporting.RelatedResource('package', pkg) for pkg in rpms_configured_installed]

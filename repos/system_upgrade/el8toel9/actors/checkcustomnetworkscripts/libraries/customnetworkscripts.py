@@ -1,6 +1,7 @@
 import os
 
 from leapp import reporting
+from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
 
 CUSTOM_NETWORK_SCRIPTS = [
     "/sbin/ifup-local",
@@ -17,9 +18,9 @@ def generate_report(existing_custom_network_scripts):
     # Show documentation url if custom network-scripts detected
     title = "custom network-scripts detected"
     summary = (
-        "RHEL 9 does not support the legacy network-scripts package that was"
-        " deprecated in RHEL 8. Custom network-scripts have been detected."
-    )
+        "{target_distro} 9 does not support the legacy network-scripts package that was"
+        " deprecated in {source_distro} 8. Custom network-scripts have been detected."
+    ).format_map(DISTRO_REPORT_NAMES)
 
     reporting.create_report(
         [

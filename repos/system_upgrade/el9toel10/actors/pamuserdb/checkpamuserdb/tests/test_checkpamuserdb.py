@@ -3,6 +3,7 @@ import pytest
 from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import checkpamuserdb
+from leapp.libraries.common import distro
 from leapp.libraries.common.testutils import create_report_mocked, logger_mocked
 from leapp.libraries.stdlib import api
 from leapp.models import PamUserDbLocation
@@ -38,6 +39,8 @@ def test_process_locations(monkeypatch):
 
     monkeypatch.setattr(reporting, "create_report", create_report_mocked())
     monkeypatch.setattr(api, 'consume', consume_mocked)
+    monkeypatch.setattr(distro, 'get_source_distro_id', lambda: 'rhel')
+    monkeypatch.setattr(distro, 'get_target_distro_id', lambda: 'rhel')
 
     checkpamuserdb.process()
     assert reporting.create_report.called == 1

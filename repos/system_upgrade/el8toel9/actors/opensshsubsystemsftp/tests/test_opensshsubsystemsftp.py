@@ -2,6 +2,7 @@ import pytest
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import opensshsubsystemsftp
+from leapp.libraries.common import distro
 from leapp.models import OpenSshConfig, Report
 
 
@@ -17,7 +18,9 @@ def test_no_config(current_actor_context):
     (True, 'internal-sftp', False),
     (True, '/usr/libexec/openssh/sftp-server', False)
 ])
-def test_subsystem(current_actor_context, modified, subsystem, expected_report):
+def test_subsystem(monkeypatch, current_actor_context, modified, subsystem, expected_report):
+    monkeypatch.setattr(distro, 'get_target_distro_id', lambda: 'rhel')
+
     conf = OpenSshConfig(
         modified=modified,
         permit_root_login=[],
