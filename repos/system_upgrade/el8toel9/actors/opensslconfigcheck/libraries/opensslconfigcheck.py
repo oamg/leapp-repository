@@ -1,4 +1,5 @@
 from leapp import reporting
+from leapp.libraries.common.config import get_target_distro_id
 from leapp.libraries.stdlib import api
 
 
@@ -228,14 +229,18 @@ def check_crypto_policies(config):
                                    path=("default_modules", "ssl_conf", "ssl_module",
                                          "system_default", "crypto_policy", ".include"),
                                    value="/etc/crypto-policies/back-ends/opensslcnf.config"):
+
         reporting.create_report([
             reporting.Title('The OpenSSL configuration is missing the crypto policies integration'),
+
             reporting.Summary(
                 'The OpenSSL configuration file `/etc/pki/tls/openssl.cnf` does not contain the '
                 'directive to include the system-wide crypto policies. This is not recommended '
-                'by Red Hat and can lead to decreasing overall system security and inconsistent '
+                '{} can lead to decreasing overall system security and inconsistent '
                 'behavior between applications. If you need to adjust the crypto policies to your '
-                'needs, it is recommended to use custom crypto policies.'
+                'needs, it is recommended to use custom crypto policies.'.format(
+                    "by Red Hat and" if get_target_distro_id() == "rhel" else "as it"
+                )
             ),
             reporting.Severity(reporting.Severity.MEDIUM),
             reporting.Groups([
