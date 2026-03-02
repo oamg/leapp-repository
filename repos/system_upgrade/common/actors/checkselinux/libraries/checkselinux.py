@@ -1,5 +1,6 @@
 from leapp import reporting
 from leapp.libraries.common.config.version import get_target_major_version
+from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
 from leapp.libraries.stdlib import api
 from leapp.models import KernelCmdlineArg, SELinuxFacts, SelinuxPermissiveDecision, SelinuxRelabelDecision
 
@@ -20,10 +21,10 @@ def process():
             reporting.create_report([
                 reporting.Title('LEAPP detected SELinux disabled in "/etc/selinux/config"'),
                 reporting.Summary(
-                    'On RHEL 9, disabling SELinux in "/etc/selinux/config" is no longer possible. '
-                    'This way, the system starts with SELinux enabled but with no policy loaded. LEAPP '
+                    'On {target_distro} 9, disabling SELinux in "/etc/selinux/config" is no longer possible. '
+                    'This way, the system starts with SELinux enabled but with no policy loaded. Leapp '
                     'will automatically disable SELinux using "SELINUX=0" kernel command line parameter. '
-                    'However, Red Hat strongly recommends to have SELinux enabled'
+                    'However, it is strongly recommended to have SELinux enabled'.format_map(DISTRO_REPORT_NAMES)
                 ),
                 reporting.Severity(reporting.Severity.INFO),
                 reporting.Groups([reporting.Groups.SELINUX]),
