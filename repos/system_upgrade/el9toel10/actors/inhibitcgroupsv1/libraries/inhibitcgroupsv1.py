@@ -1,5 +1,6 @@
 from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
+from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
 from leapp.libraries.stdlib import api
 from leapp.models import KernelCmdline
 
@@ -30,10 +31,12 @@ def process():
         remediation_cmd_args.append('systemd.legacy_systemd_cgroup_controller')
 
     summary = (
-        "Leapp detected cgroups-v1 is enabled on the system."
-        " The support of cgroups-v1 was deprecated in RHEL 9 and is removed in RHEL 10."
-        " Software requiring cgroups-v1 might not work correctly or at all on RHEL 10."
-    )
+        "Leapp detected cgroups-v1 is enabled on the system. The support of"
+        " cgroups-v1 was deprecated in {source_distro} 9 and is removed in"
+        " {target_distro} 10. Software requiring cgroups-v1 might not work"
+        " correctly or at all on {target_distro} 10."
+    ).format_map(DISTRO_REPORT_NAMES)
+
     reporting.create_report(
         [
             reporting.Title("cgroups-v1 enabled on the system"),
