@@ -1,5 +1,6 @@
 from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
+from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
 from leapp.libraries.stdlib import api
 
 
@@ -32,9 +33,10 @@ def process(openssh_messages):
         reporting.create_report([
             reporting.Title('OpenSSH configured without SFTP subsystem'),
             reporting.Summary(
-                'The RHEL9 is changing the default SCP behaviour to use SFTP internally '
+                'The {target_distro} 9 is changing the default SCP behaviour to use SFTP internally '
                 'so not having SFTP server enabled can prevent interoperability and break existing '
-                'scripts on other systems updated to RHEL9 to copy files to or from this machine.'
+                'scripts on other systems updated to {target_distro} 9 to copy files to or from '
+                'this machine.'.format_map(DISTRO_REPORT_NAMES)
             ),
             reporting.Remediation(
                 hint='Add the following line to the /etc/ssh/sshd_config to enable SFTP server: '
