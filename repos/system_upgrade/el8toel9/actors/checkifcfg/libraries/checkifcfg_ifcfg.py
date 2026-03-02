@@ -1,11 +1,18 @@
 import os
 
 from leapp import reporting
+from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
 from leapp.libraries.common.rpms import has_package
 from leapp.libraries.stdlib import api
 from leapp.models import IfCfg, InstalledRPM, RpmTransactionTasks
 
 FMT_LIST_SEPARATOR = '\n    - '
+
+
+def _format_files_list(files):
+    return "".join(
+        ["{}{}".format(FMT_LIST_SEPARATOR, f) for f in files]
+    )
 
 
 def process():
@@ -74,12 +81,15 @@ def process():
 
     if bad_type_files:
         title = 'Network configuration for unsupported device types detected'
-        summary = ('RHEL 9 does not support the legacy network-scripts'
-                   ' package that was deprecated in RHEL 8 in favor of'
-                   ' NetworkManager. Files for device types that are not'
-                   ' supported by NetworkManager are present in the system.'
-                   ' Files with the problematic configuration:{}').format(
-            ''.join(['{}{}'.format(FMT_LIST_SEPARATOR, bfile) for bfile in bad_type_files])
+        summary = (
+            "{target_distro} 9 does not support the legacy network-scripts"
+            " package that was deprecated in {source_distro} 8 in favor of"
+            " NetworkManager. Files for device types that are not"
+            " supported by NetworkManager are present in the system."
+            " Files with the problematic configuration:{bad_files}".format(
+                bad_files=_format_files_list(bad_type_files),
+                **DISTRO_REPORT_NAMES,
+            )
         )
         remediation = ('Consult the nm-settings-ifcfg-rh(5) manual for'
                        ' valid types of ifcfg files. Remove configuration'
@@ -104,12 +114,15 @@ def process():
 
     if not_controlled_files:
         title = 'Network configuration with disabled NetworkManager support detected'
-        summary = ('RHEL 9 does not support the legacy network-scripts'
-                   ' package that was deprecated in RHEL 8 in favor of'
-                   ' NetworkManager. Configuration present in the system'
-                   ' prohibit NetworkManager from loading it.'
-                   ' Files with the problematic configuration:{}').format(
-            ''.join(['{}{}'.format(FMT_LIST_SEPARATOR, bfile) for bfile in not_controlled_files])
+        summary = (
+            '{target_distro} 9 does not support the legacy network-scripts'
+            ' package that was deprecated in {source_distro} 8 in favor of'
+            ' NetworkManager. Configuration present in the system'
+            ' prohibit NetworkManager from loading it.'
+            ' Files with the problematic configuration:{bad_files}'
+        ).format(
+            bad_files=_format_files_list(not_controlled_files),
+            **DISTRO_REPORT_NAMES,
         )
         remediation = ('Ensure the ifcfg files comply with format described in'
                        ' nm-settings-ifcfg-rh(5) manual and remove the'

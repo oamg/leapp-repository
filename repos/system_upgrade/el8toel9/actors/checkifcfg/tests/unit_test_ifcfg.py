@@ -1,3 +1,4 @@
+from leapp.libraries.common import distro
 from leapp.models import IfCfg, IfCfgProperty, InstalledRPM, RPM, RpmTransactionTasks
 from leapp.reporting import Report
 from leapp.utils.report import is_inhibitor
@@ -85,10 +86,12 @@ def test_ifcfg_good_type(current_actor_context):
     assert rpm_transaction.to_install == ["NetworkManager"]
 
 
-def test_ifcfg_not_controlled(current_actor_context):
+def test_ifcfg_not_controlled(monkeypatch, current_actor_context):
     """
     Report if there's a NM_CONTROLLED=no file.
     """
+    monkeypatch.setattr(distro, 'get_source_distro_id', lambda: 'rhel')
+    monkeypatch.setattr(distro, 'get_target_distro_id', lambda: 'rhel')
 
     current_actor_context.feed(IfCfg(
         filename="/NM/ifcfg-eth0",
@@ -105,10 +108,12 @@ def test_ifcfg_not_controlled(current_actor_context):
     assert "disabled NetworkManager" in report_fields['title']
 
 
-def test_ifcfg_unknown_type(current_actor_context):
+def test_ifcfg_unknown_type(monkeypatch, current_actor_context):
     """
     Report if there's configuration for a type we don't recognize.
     """
+    monkeypatch.setattr(distro, 'get_source_distro_id', lambda: 'rhel')
+    monkeypatch.setattr(distro, 'get_target_distro_id', lambda: 'rhel')
 
     current_actor_context.feed(IfCfg(
         filename="/NM/ifcfg-pigeon0",
