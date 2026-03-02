@@ -7,11 +7,11 @@ from leapp.tags import IPUWorkflowTag, RPMUpgradePhaseTag
 
 class ReportLeftoverPackages(Actor):
     """
-    Collect messages about leftover RHEL packages from older major versions and generate a report.
+    Generate a report about leftover distribution packages from older major versions.
 
-    Depending on execution of previous actors,
-    generated report contains information that there are still old RHEL packages
-    present on the system, which makes it unsupported or lists packages that have been removed.
+    Generated report informs about old distribution packages present on the system,
+    which makes it unsupported, and lists packages that have been removed if there
+    were any.
     """
 
     name = 'report_leftover_packages'

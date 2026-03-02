@@ -27,7 +27,10 @@ def test_no_removed_packages_leftover_present(monkeypatch):
     reportleftoverpackages.process()
 
     assert reporting.create_report.called == 1
-    assert 'Some RHEL packages have not been upgraded' in reporting.create_report.report_fields['title']
+    assert (
+        'Some packages from the original OS have not been upgraded'
+        in reporting.create_report.report_fields['title']
+    )
     assert 'Following RHEL packages have not been upgraded' in reporting.create_report.report_fields['summary']
     summary = 'Please remove these packages to keep your system in supported state.'
     assert summary in reporting.create_report.report_fields['summary']
@@ -44,6 +47,6 @@ def test_removed_packages(monkeypatch):
     reportleftoverpackages.process()
 
     assert reporting.create_report.called == 1
-    assert 'Leftover RHEL packages have been removed' in reporting.create_report.report_fields['title']
-    assert 'Following packages have been removed' in reporting.create_report.report_fields['summary']
+    assert 'Leftover packages from the original OS have been removed' in reporting.create_report.report_fields['title']
+    assert 'Following RHEL packages have been removed' in reporting.create_report.report_fields['summary']
     assert 'rpm-1.0-1.el7' in reporting.create_report.report_fields['summary']
