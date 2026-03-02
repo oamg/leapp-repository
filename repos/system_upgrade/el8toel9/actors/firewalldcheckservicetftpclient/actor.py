@@ -1,5 +1,6 @@
 from leapp import reporting
 from leapp.actors import Actor
+from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
 from leapp.models import FirewalldUsedObjectNames
 from leapp.reporting import create_report, Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
@@ -27,9 +28,13 @@ class FirewalldCheckServiceTftpClient(Actor):
         if send_report:
             create_report([
                 reporting.Title('Firewalld Service tftp-client Is Unsupported'),
-                reporting.Summary('Firewalld has service "{service}" enabled. '
-                                  'Service "{service}" has been removed in RHEL-9.'.format(
-                                      service=tftp_client_service)),
+                reporting.Summary(
+                    'Firewalld has service "{service}" enabled. '
+                    'Service "{service}" has been removed in {target_distro} 9.'.format(
+                        service=tftp_client_service,
+                        target_distro=DISTRO_REPORT_NAMES.target,
+                    )
+                ),
                 reporting.Severity(reporting.Severity.HIGH),
                 reporting.Groups([reporting.Groups.SANITY, reporting.Groups.FIREWALL]),
                 reporting.Groups([reporting.Groups.INHIBITOR]),

@@ -1,3 +1,6 @@
+import pytest
+
+from leapp.libraries.common import distro
 from leapp.models import MultipathConfFacts8to9, MultipathConfig8to9
 from leapp.reporting import Report
 
@@ -33,6 +36,12 @@ def _build_config(pathname, config_dir, enable_foreign_exists, invalid_regexes_e
 
 def _build_facts(confs):
     return MultipathConfFacts8to9(configs=confs)
+
+
+@pytest.fixture(autouse=True)
+def mock_distro_names(monkeypatch):
+    monkeypatch.setattr(distro, 'get_target_distro_id', lambda: 'rhel')
+    monkeypatch.setattr(distro, 'get_source_distro_id', lambda: 'rhel')
 
 
 def test_need_everything(current_actor_context):

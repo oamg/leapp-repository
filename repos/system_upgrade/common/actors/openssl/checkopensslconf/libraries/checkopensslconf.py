@@ -1,5 +1,6 @@
 from leapp import reporting
 from leapp.libraries.common.config import architecture, version
+from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
 from leapp.libraries.common.rpms import has_package
 from leapp.libraries.stdlib import api
 from leapp.models import DistributionSignedRPM, TrackedFilesInfoSource
@@ -8,7 +9,7 @@ DEFAULT_OPENSSL_CONF = '/etc/pki/tls/openssl.cnf'
 URL_CRYPTOPOLICIES = {
     '8': 'https://red.ht/rhel-8-system-wide-crypto-policies',
     '9': 'https://red.ht/rhel-9-system-wide-crypto-policies',
-    '10': 'https://red.ht/rhel-10-system-wide-crypto-policies',  # TODO actually make the url
+    '10': 'https://red.ht/rhel-10-system-wide-crypto-policies',
 }
 
 
@@ -22,14 +23,14 @@ def check_ibmca():
     # is deprecated, so keep proper teminology to not confuse users.
     summary = (
         'The presence of openssl-ibmca package suggests that the system may be configured'
-        ' to use the IBMCA OpenSSL engine.'
-        ' Due to major changes in OpenSSL and libica between RHEL {source} and RHEL {target} it is not'
-        ' possible to migrate OpenSSL configuration files automatically. Therefore,'
-        ' it is necessary to enable IBMCA providers in the OpenSSL config file manually'
-        ' after the system upgrade.'
-        .format(
-            source=version.get_source_major_version(),
-            target=version.get_target_major_version(),
+        ' to use the IBMCA OpenSSL engine. Due to major changes in OpenSSL and libica'
+        ' between {source_distro} {source_version} and {target_distro} {target_version}'
+        ' it is not possible to migrate OpenSSL configuration files automatically.'
+        ' Therefore, it is necessary to enable IBMCA providers in the OpenSSL config file'
+        ' manually after the system upgrade.'.format(
+            source_version=version.get_source_major_version(),
+            target_version=version.get_target_major_version(),
+            **DISTRO_REPORT_NAMES
         )
     )
 
@@ -79,7 +80,7 @@ def check_default_openssl():
     # current wording could be inaccurate.
     summary = (
         'The OpenSSL configuration file ({fpath}) has been'
-        ' modified on the system. RHEL 8 (and newer) systems provide a crypto-policies'
+        ' modified on the system. {target_distro} 8 (and newer) systems provide a crypto-policies'
         ' mechanism ensuring usage of system-wide secure cryptography algorithms.'
         ' Also the target system uses newer version of OpenSSL that is not fully'
         ' compatible with the current one.'
@@ -92,20 +93,22 @@ def check_default_openssl():
         ' the upgrade if it depends on the current OpenSSL configuration.'
         ' Such a problem may be caused by using a particular OpenSSL engine, as'
         ' OpenSSL engines built for the'
-        ' RHEL {source} system are not compatible with RHEL {target}.'
+        ' {source_distro} {source_version} system are not compatible with'
+        ' {target_distro} {target_version}.'
         .format(
             fpath=DEFAULT_OPENSSL_CONF,
-            source=version.get_source_major_version(),
-            target=version.get_target_major_version()
+            source_version=version.get_source_major_version(),
+            target_version=version.get_target_major_version(),
+            **DISTRO_REPORT_NAMES
         )
     )
     if version.get_target_major_version() == '9':
         # NOTE(pstodulk): that a try to make things with engine/providers a
         # little bit better (see my TODO note above)
         summary += (
-            '\n\nNote the legacy ENGINE API is deprecated since RHEL 8 and'
+            '\n\nNote the legacy ENGINE API is deprecated since {target_distro} 8 and'
             ' it is required to use the new OpenSSL providers API instead on'
-            ' RHEL 9 systems.'
+            ' {target_distro} 9 systems.'.format_map(DISTRO_REPORT_NAMES)
         )
     hint = (
         'Check that your ability to login to the system does not depend on'

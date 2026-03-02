@@ -1,8 +1,11 @@
+from leapp.libraries.common import distro
 from leapp.models import FirewalldGlobalConfig, FirewallsFacts, FirewallStatus
 from leapp.reporting import Report
 
 
-def test_actor_firewalldcheckallowzonedrifting(current_actor_context):
+def test_actor_firewalldcheckallowzonedrifting(current_actor_context, monkeypatch):
+    monkeypatch.setattr(distro, 'get_target_distro_id', lambda: 'rhel')
+
     status = FirewallStatus(enabled=True, active=True)
     current_actor_context.feed(FirewallsFacts(firewalld=status,
                                               iptables=status,

@@ -1,3 +1,4 @@
+from leapp.libraries.common import distro
 from leapp.libraries.common.config import version
 from leapp.models import (
     CephInfo,
@@ -17,6 +18,9 @@ _REPORT_TITLE_UNSUITABLE = 'Detected LUKS devices unsuitable for in-place upgrad
 
 def test_actor_with_luks1_notpm(monkeypatch, current_actor_context):
     monkeypatch.setattr(version, 'get_source_major_version', lambda: '8')
+    monkeypatch.setattr(distro, 'get_source_distro_id', lambda: 'rhel')
+    monkeypatch.setattr(distro, 'get_target_distro_id', lambda: 'rhel')
+
     luks_dump = LuksDump(
         version=1,
         uuid='dd09e6d4-b595-4f1c-80b8-fd47540e6464',
