@@ -1,6 +1,7 @@
 from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common.config import architecture, version
+from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
 from leapp.libraries.stdlib import api
 from leapp.models import MemoryInfo
 
@@ -32,23 +33,28 @@ def process():
     minimum_req_error = _check_memory(memoryinfo)
 
     if minimum_req_error:
-        title = 'Minimum memory requirements for RHEL {} are not met'.format(version.get_target_major_version())
+        title = (
+            'Minimum memory requirements for {target_distro} {version}'
+            ' are not met'.format(**DISTRO_REPORT_NAMES,
+                                  version=version.get_target_major_version())
+        )
         summary = 'Memory detected: {} MiB, required: {} MiB'.format(
             int(minimum_req_error['detected'] / 1024),
             int(minimum_req_error['minimal_req'] / 1024),
         )
         reporting.create_report([
-                          reporting.Title(title),
-                          reporting.Summary(summary),
-                          reporting.Severity(reporting.Severity.HIGH),
-                          reporting.Groups([reporting.Groups.SANITY, reporting.Groups.INHIBITOR]),
-                          reporting.ExternalLink(
-                              url='https://access.redhat.com/solutions/7014179',
-                              title='Leapp upgrade fail with error"Minimum memory requirements '
-                                    'for RHEL 8 are not met"Upgrade cannot proceed'
-                          ),
-                          reporting.ExternalLink(
-                            url='https://access.redhat.com/articles/rhel-limits',
-                            title='Red Hat Enterprise Linux Technology Capabilities and Limits'
-                          ),
-                      ])
+            reporting.Title(title),
+            reporting.Summary(summary),
+            reporting.Severity(reporting.Severity.HIGH),
+            reporting.Groups([reporting.Groups.SANITY, reporting.Groups.INHIBITOR]),
+            reporting.ExternalLink(
+                url='https://access.redhat.com/solutions/7014179',
+                title='Leapp upgrade fail with error "Minimum memory requirements '
+                    'for RHEL 8 are not met"Upgrade cannot proceed'
+            ),
+            reporting.ExternalLink(
+                url='https://access.redhat.com/articles/rhel-limits',
+                title='Red Hat Enterprise Linux Technology Capabilities and Limits'
+            ),
+            reporting.Key('be50646b45beb8304c13daf5380d836a4be8e1cc'),
+        ])
