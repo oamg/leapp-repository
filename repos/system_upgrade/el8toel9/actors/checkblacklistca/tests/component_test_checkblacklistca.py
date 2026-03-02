@@ -1,5 +1,14 @@
+import pytest
+
+from leapp.libraries.common import distro
 from leapp.models import BlackListCA, BlackListError, Report
 from leapp.utils.report import is_inhibitor
+
+
+@pytest.fixture(autouse=True)
+def common_mocks(monkeypatch):
+    monkeypatch.setattr(distro, 'get_source_distro_id', lambda: 'rhel')
+    monkeypatch.setattr(distro, 'get_target_distro_id', lambda: 'rhel')
 
 
 def test_actor_execution_empty(current_actor_context):
