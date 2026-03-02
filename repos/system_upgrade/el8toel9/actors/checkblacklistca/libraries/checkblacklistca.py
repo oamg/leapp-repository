@@ -1,4 +1,5 @@
 from leapp import reporting
+from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
 from leapp.libraries.stdlib import api
 from leapp.models import BlackListCA, BlackListError
 
@@ -50,9 +51,14 @@ def process():
             reporting.Title('Distrusted CA certificates will be moved from blacklist to blocklist'),
             reporting.Summary(
                 'The directories which store user and administrator supplied '
-                'distrusted certificates have change names from blacklist in '
-                'RHEL8 to blocklist in RHEL9. As a result {} and '
-                '{} will be deleted.'.format(reportString, deleteString)),
+                'distrusted certificates were renamed from blacklist in '
+                '{source_distro} 8 to blocklist in {target_distro} 9. '
+                'As a result {report_string} and {delete_string} will be deleted.'.format(
+                    report_string=reportString,
+                    delete_string=deleteString,
+                    **DISTRO_REPORT_NAMES,
+                )
+            ),
             reporting.Severity(reporting.Severity.INFO),
             reporting.Groups([reporting.Groups.SECURITY]),
             reporting.Groups([reporting.Groups.AUTHENTICATION])
@@ -63,11 +69,17 @@ def process():
             reporting.Summary(
                 'The directories which stores user and administrator supplied '
                 'distrusted certificates has change names from blacklist in '
-                'RHEL8 to blocklist in RHEL9. But we are unable to access the '
-                'RHEL8 directory {} because {}. You can clear this error by '
-                'correcting the condition, or by moving the contents to {} '
-                'and removing {} completely'
-                '. '.format(ble.sourceDir, ble.error, ble.targetDir, ble.sourceDir)),
+                '{source_distro} 8 to blocklist in {target_distro} 9. '
+                'But we are unable to access the {source_distro} 8 directory '
+                '{source_dir} because {error}. You can clear this error by '
+                'correcting the condition, or by moving the contents to '
+                '{target_dir} and removing {source_dir} completely'.format(
+                    source_dir=ble.sourceDir,
+                    error=ble.error,
+                    target_dir=ble.targetDir,
+                    **DISTRO_REPORT_NAMES,
+                )
+            ),
             reporting.Severity(reporting.Severity.HIGH),
             reporting.Groups([reporting.Groups.SECURITY]),
             reporting.Groups([reporting.Groups.INHIBITOR]),
