@@ -1103,7 +1103,7 @@ def test_gather_target_repositories_none_available(monkeypatch):
         reports = [m.report for m in mocked_produce.model_instances if isinstance(m, reporting.Report)]
         inhibitors = [m for m in reports if 'INHIBITOR' in m.get('flags', ())]
         assert len(inhibitors) == 1
-        assert inhibitors[0].get('title', '') == 'Cannot find required basic RHEL target repositories.'
+        assert inhibitors[0].get('title', '') == 'Cannot find required basic target OS repositories.'
 
 
 @suppress_deprecation(models.RHELTargetRepository)
@@ -1166,7 +1166,7 @@ def test_gather_target_repositories_baseos_appstream_not_available(monkeypatch):
     reports = [m.report for m in mocked_produce.model_instances if isinstance(m, reporting.Report)]
     inhibitors = [m for m in reports if 'inhibitor' in m.get('groups', ())]
     assert len(inhibitors) == 1
-    assert inhibitors[0].get('title', '') == 'Cannot find required basic RHEL target repositories.'
+    assert inhibitors[0].get('title', '') == 'Cannot find required basic target OS repositories.'
     # Now test the case when either of AppStream and BaseOs is not available, upgrade should be inhibited
     mocked_produce = produce_mocked()
     monkeypatch.setattr(userspacegen.api, 'current_actor', CurrentActorMocked())
@@ -1181,7 +1181,7 @@ def test_gather_target_repositories_baseos_appstream_not_available(monkeypatch):
     reports = [m.report for m in mocked_produce.model_instances if isinstance(m, reporting.Report)]
     inhibitors = [m for m in reports if 'inhibitor' in m.get('groups', ())]
     assert len(inhibitors) == 1
-    assert inhibitors[0].get('title', '') == 'Cannot find required basic RHEL target repositories.'
+    assert inhibitors[0].get('title', '') == 'Cannot find required basic target OS repositories.'
     mocked_produce = produce_mocked()
     monkeypatch.setattr(userspacegen.api, 'current_actor', CurrentActorMocked())
     monkeypatch.setattr(userspacegen.api.current_actor(), 'produce', mocked_produce)
@@ -1195,7 +1195,7 @@ def test_gather_target_repositories_baseos_appstream_not_available(monkeypatch):
     reports = [m.report for m in mocked_produce.model_instances if isinstance(m, reporting.Report)]
     inhibitors = [m for m in reports if 'inhibitor' in m.get('groups', ())]
     assert len(inhibitors) == 1
-    assert inhibitors[0].get('title', '') == 'Cannot find required basic RHEL target repositories.'
+    assert inhibitors[0].get('title', '') == 'Cannot find required basic target OS repositories.'
 
 
 def test__get_distro_available_repoids_norhsm_norhui(monkeypatch):
@@ -1254,7 +1254,7 @@ def test__get_distro_available_repoids_nobaserepos_inhibit(
         # TODO adjust the asserts when the report is made distro agnostic
         assert reporting.create_report.called == 1
         report = reporting.create_report.reports[0]
-        assert "Cannot find required basic RHEL target repositories" in report["title"]
+        assert "Cannot find required basic target OS repositories" in report["title"]
         assert reporting.Groups.INHIBITOR in report["groups"]
 
 
