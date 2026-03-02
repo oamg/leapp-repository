@@ -28,7 +28,8 @@ def check_default_initramfs():
             # distros, since upgrades of them were not enabled in leapp at the
             # time
             summary += (
-                ' The problem is typical for RHEL 7 and early RHEL 8 systems that were in-place-upgraded to RHEL 9.'
+                ' The problem is typical for RHEL 7 and early RHEL 8 systems that'
+                ' were in-place-upgraded to RHEL 9.'
             )
 
         remediation_hint = (
