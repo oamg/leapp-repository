@@ -1,6 +1,7 @@
 from leapp import reporting
 from leapp.libraries.common import grub
 from leapp.libraries.common.config import architecture
+from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
 from leapp.libraries.stdlib import api
 from leapp.models import DefaultGrubInfo, FirmwareFacts, GrubCfgBios
 
@@ -31,8 +32,9 @@ def process():
                 'Leapp cannot continue with upgrade on "ppc64le" bare metal systems'
             ),
             reporting.Summary(
-                'In-place upgrade to RHEL 9 is not supported on POWER8 and POWER9 bare metal systems. '
-                'For more information, refer to the following article: {}'.format(URL)
+                f'In-place upgrade to {DISTRO_REPORT_NAMES.target} 9 is not'
+                ' supported on POWER8 and POWER9 bare metal systems. For more'
+                ' information, refer to the attached article.'
             ),
             reporting.Severity(reporting.Severity.HIGH),
             reporting.Groups(['inhibitor']),
@@ -54,8 +56,9 @@ def process():
                 'On "ppc64le" systems with BLS enabled, the GRUB configuration is not '
                 'properly converted after the upgrade and Leapp has to run "grub2-mkconfig" '
                 '-o /boot/grub2/grub.cfg command in order to fix an issue with booting into '
-                'the RHEL 8 kernel instead of RHEL 9.'
-
+                'the {source_distro} 8 kernel instead of {target_distro} 9.'.format_map(
+                    DISTRO_REPORT_NAMES
+                )
             ),
             reporting.Severity(reporting.Severity.HIGH),
             reporting.Groups([reporting.Groups.BOOT]),
