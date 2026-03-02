@@ -3,6 +3,7 @@ from enum import IntEnum
 
 from leapp import reporting
 from leapp.libraries.common.config.version import get_source_major_version, get_target_major_version
+from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
 from leapp.libraries.stdlib import api
 from leapp.models import DetectedDeviceOrDriver
 
@@ -20,19 +21,23 @@ def create_inhibitors(inhibiting_entries):
 
     drivers = inhibiting_entries.get(MessagingClass.DRIVERS)
     if drivers:
+        # TODO: Add fixed key for this report
         reporting.create_report([
             reporting.Title(
-                'Leapp detected loaded kernel drivers which have been removed '
-                'in RHEL {}. Upgrade cannot proceed.'.format(get_target_major_version())
+                'Leapp detected loaded kernel drivers which have been'
+                ' removed in {target_distro} {version}. Upgrade cannot'
+                ' proceed.'.format(**DISTRO_REPORT_NAMES, version=get_target_major_version())
             ),
             reporting.Summary(
                 (
-                    'Support for the following RHEL {source} device drivers has been removed in RHEL {target}:\n'
+                    'Support for the following {source_distro} {source_version} device drivers has'
+                    ' been removed in {target_distro} {target_version}:\n'
                     '     - {drivers}\n'
                 ).format(
                     drivers='\n     - '.join([entry.driver_name for entry in drivers]),
-                    target=get_target_major_version(),
-                    source=get_source_major_version(),
+                    target_version=get_target_major_version(),
+                    source_version=get_source_major_version(),
+                    **DISTRO_REPORT_NAMES
                 )
             ),
             reporting.ExternalLink(
@@ -57,19 +62,21 @@ def create_inhibitors(inhibiting_entries):
 
     devices = inhibiting_entries.get(MessagingClass.DEVICES)
     if devices:
+        # TODO: Add fixed key for this report
         reporting.create_report([
             reporting.Title(
-                'Leapp detected devices which are no longer supported in RHEL {}. Upgrade cannot proceed.'.format(
-                    get_target_major_version())
+                'Leapp detected devices which are no longer supported in {target_distro} {version}.'
+                ' Upgrade cannot proceed.'.format(**DISTRO_REPORT_NAMES, version=get_target_major_version())
             ),
             reporting.Summary(
                 (
-                    'Support for the following devices has been removed in RHEL {target}:\n'
+                    'Support for the following devices has been removed in {target_distro} {version}:\n'
                     '     - {devices}\n'
                 ).format(
                     devices='\n     - '.join(['{name} ({pci})'.format(name=entry.device_name,
                                              pci=entry.device_id) for entry in devices]),
-                    target=get_target_major_version(),
+                    version=get_target_major_version(),
+                    **DISTRO_REPORT_NAMES
                 )
             ),
             reporting.Audience('sysadmin'),
@@ -80,18 +87,21 @@ def create_inhibitors(inhibiting_entries):
 
     cpus = inhibiting_entries.get(MessagingClass.CPUS)
     if cpus:
+        # TODO: add fixed key for this report
         reporting.create_report([
             reporting.Title(
-                'Leapp detected a processor which is no longer supported in RHEL {}. Upgrade cannot proceed.'.format(
-                    get_target_major_version())
+                'Leapp detected a processor which is no longer supported in'
+                ' {target_distro} {version}. Upgrade cannot proceed.'.format(
+                    **DISTRO_REPORT_NAMES, version=get_target_major_version())
             ),
             reporting.Summary(
                 (
-                    'Support for the following processors has been removed in RHEL {target}:\n'
+                    'Support for the following processors has been removed in {target_distro} {version}:\n'
                     '     - {processors}\n'
                 ).format(
                     processors='\n     - '.join([entry.device_name for entry in cpus]),
-                    target=get_target_major_version(),
+                    version=get_target_major_version(),
+                    **DISTRO_REPORT_NAMES
                 )
             ),
             reporting.Audience('sysadmin'),
@@ -107,19 +117,22 @@ def create_warnings(unmaintained_entries):
 
     drivers = unmaintained_entries.get(MessagingClass.DRIVERS)
     if drivers:
+        # TODO: Add fixed key for this report
         reporting.create_report([
             reporting.Title(
-                'Leapp detected loaded kernel drivers which are no longer maintained in RHEL {}.'.format(
-                    get_target_major_version())
+                'Leapp detected loaded kernel drivers which are no longer maintained in'
+                ' {target_distro} {version}.'.format(**DISTRO_REPORT_NAMES, version=get_target_major_version())
             ),
             reporting.Summary(
                 (
-                    'The following RHEL {source} device drivers are no longer maintained RHEL {target}:\n'
+                    'The following {source_distro} {source_version} device drivers are no longer'
+                    ' maintained {target_distro} {target_version}:\n'
                     '     - {drivers}\n'
                 ).format(
                     drivers='\n     - '.join([entry.driver_name for entry in drivers]),
-                    target=get_target_major_version(),
-                    source=get_source_major_version(),
+                    target_version=get_target_major_version(),
+                    source_version=get_source_major_version(),
+                    **DISTRO_REPORT_NAMES
                 )
             ),
             reporting.Audience('sysadmin'),
@@ -129,19 +142,21 @@ def create_warnings(unmaintained_entries):
 
     devices = unmaintained_entries.get(MessagingClass.DEVICES)
     if devices:
+        # TODO: Add fixed key for this report
         reporting.create_report([
             reporting.Title(
-                'Leapp detected devices which are no longer maintained in RHEL {}'.format(
-                    get_target_major_version())
+                'Leapp detected devices which are no longer maintained in'
+                ' {target_distro} {version}'.format(**DISTRO_REPORT_NAMES, version=get_target_major_version())
             ),
             reporting.Summary(
                 (
-                    'The support for the following devices has been removed in RHEL {target} and '
+                    'The support for the following devices has been removed in {target_distro} {version} and '
                     'are no longer maintained:\n     - {devices}\n'
                 ).format(
                     devices='\n     - '.join(['{name} ({pci})'.format(name=entry.device_name,
                                              pci=entry.device_id) for entry in devices]),
-                    target=get_target_major_version(),
+                    version=get_target_major_version(),
+                    **DISTRO_REPORT_NAMES
                 )
             ),
             reporting.Audience('sysadmin'),
@@ -151,18 +166,20 @@ def create_warnings(unmaintained_entries):
 
     cpus = unmaintained_entries.get(MessagingClass.CPUS)
     if cpus:
+        # TODO: Add fixed key for this report
         reporting.create_report([
             reporting.Title(
-                'Leapp detected a processor which is no longer maintained in RHEL {}.'.format(
-                    get_target_major_version())
+                'Leapp detected a processor which is no longer maintained in {target_distro} {version}.'.format(
+                    **DISTRO_REPORT_NAMES, version=get_target_major_version())
             ),
             reporting.Summary(
                 (
-                    'The following processors are no longer maintained in RHEL {target}:\n'
+                    'The following processors are no longer maintained in {target_distro} {version}:\n'
                     '     - {processors}\n'
                 ).format(
                     processors='\n     - '.join([entry.device_name for entry in cpus]),
-                    target=get_target_major_version(),
+                    version=get_target_major_version(),
+                    **DISTRO_REPORT_NAMES
                 )
             ),
             reporting.Audience('sysadmin'),
