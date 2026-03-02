@@ -1,6 +1,7 @@
 import os
 
 from leapp import reporting
+from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
 from leapp.libraries.common.rpms import has_package
 from leapp.libraries.stdlib import api
 from leapp.models import (
@@ -19,9 +20,9 @@ LVM_DEVICES_FILE_PATH_PREFIX = '/etc/lvm/devices'
 def _report_filter_detection():
     title = 'LVM filter definition detected.'
     summary = (
-        'Beginning with RHEL 9, LVM devices file is used by default to select devices used by '
-        f'LVM. Since leapp detected the use of LVM filter in the {LVM_CONFIG_PATH} configuration '
-        'file, the configuration won\'t be modified to use devices file during the upgrade and '
+        f'Beginning with {DISTRO_REPORT_NAMES.target} 9, LVM devices file is used by default to, '
+        f'select devices used by LVM. Since leapp detected the use of LVM filter in the {LVM_CONFIG_PATH} '
+        'configuration file, the configuration won\'t be modified to use devices file during the upgrade and '
         'the LVM filter will remain in use after the upgrade.'
     )
 

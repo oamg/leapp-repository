@@ -1,3 +1,4 @@
+from leapp.libraries.common import distro
 from leapp.models import OpenSslConfig, OpenSslConfigBlock, OpenSslConfigPair, Report
 
 
@@ -93,7 +94,9 @@ def test_actor_execution_default_modified(current_actor_context):
     assert not current_actor_context.consume(Report)
 
 
-def test_actor_execution_other_engine_modified(current_actor_context):
+def test_actor_execution_other_engine_modified(current_actor_context, monkeypatch):
+    monkeypatch.setattr(distro, 'get_source_distro_id', lambda: 'rhel')
+    monkeypatch.setattr(distro, 'get_target_distro_id', lambda: 'rhel')
     # default, but removing contents unrelated for the checks
     current_actor_context.feed(
         OpenSslConfig(

@@ -1,11 +1,13 @@
+from leapp.libraries.common import distro
 from leapp.models import FirewalldUsedObjectNames
 from leapp.reporting import Report
 
 
-def test_actor_firewalldcheckservicetftpclient(current_actor_context):
+def test_actor_firewalldcheckservicetftpclient(current_actor_context, monkeypatch):
     services = ['cockpit', 'tftp-client', 'ssh', 'https']
     policies = []
     zones = []
+    monkeypatch.setattr(distro, 'get_target_distro_id', lambda: 'rhel')
 
     current_actor_context.feed(FirewalldUsedObjectNames(services=services,
                                                         policies=policies,

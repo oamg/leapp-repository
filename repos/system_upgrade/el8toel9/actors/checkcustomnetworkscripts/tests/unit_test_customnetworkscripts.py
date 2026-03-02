@@ -3,11 +3,13 @@ import os
 from leapp import reporting
 from leapp.libraries.actor import customnetworkscripts
 from leapp.libraries.common import testutils
+from leapp.libraries.stdlib import api
 
 
 def test_customnetworkscripts_exists(monkeypatch):
     monkeypatch.setattr(os.path, "isfile", lambda dummy: True)
     monkeypatch.setattr(reporting, "create_report", testutils.create_report_mocked())
+    monkeypatch.setattr(api, "current_actor", testutils.CurrentActorMocked())
     customnetworkscripts.process()
     assert reporting.create_report.called
 

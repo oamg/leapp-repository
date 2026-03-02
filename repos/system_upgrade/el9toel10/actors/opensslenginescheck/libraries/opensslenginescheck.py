@@ -1,4 +1,5 @@
 from leapp import reporting
+from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
 from leapp.libraries.stdlib import api
 
 FMT_LIST_SEPARATOR = '\n    - '
@@ -110,11 +111,14 @@ def check_openssl_engines(config):
             reporting.Summary(
                 'OpenSSL engines are deprecated since OpenSSL version 3.0'
                 ' and they are no longer supported nor available on the target'
-                ' RHEL 10 system. Any applications depending on OpenSSL engines'
-                ' might not work correctly on the target system and should be configured'
-                ' to use OpenSSL providers instead.'
-                ' The following OpenSSL engines are configured inside the /etc/pki/tls/openssl.cnf file:{}'
-                .format(''.join(_formatted_list_output(enabled_engines)))
+                ' {} 10 system. Any applications depending on OpenSSL engines'
+                ' might not work correctly on the target system and should be'
+                ' configured to use OpenSSL providers instead.'
+                ' The following OpenSSL engines are configured inside the'
+                ' /etc/pki/tls/openssl.cnf file:{}'.format(
+                    DISTRO_REPORT_NAMES.target,
+                    ''.join(_formatted_list_output(enabled_engines)),
+                )
             ),
             reporting.Remediation(hint=(
                 'After the upgrade configure your system and applications'

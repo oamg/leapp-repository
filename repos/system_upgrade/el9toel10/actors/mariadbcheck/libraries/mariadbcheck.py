@@ -1,26 +1,8 @@
 from leapp import reporting
+from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
 from leapp.libraries.common.rpms import has_package
 from leapp.libraries.stdlib import api
 from leapp.models import DistributionSignedRPM
-
-# Summary for mariadb-server report
-report_server_inst_summary = (
-    'MariaDB server component will be upgraded. Since RHEL-10 includes'
-    ' MariaDB server 10.11 by default, which is incompatible with 10.5'
-    ' included in RHEL-9 as default stream, it is necessary to proceed with'
-    ' additional steps for the complete upgrade of the MariaDB data.'
-)
-
-report_server_inst_hint = (
-    'Back up your data before proceeding with the upgrade'
-    ' and follow steps in the documentation section "Migrating to a RHEL 10 version of MariaDB"'
-    ' after the upgrade. If the database has already been upgraded,'
-    ' meaning the system is already using MariaDB 10.11 then no further'
-    ' actions are required.'
-)
-
-# Link URL for mariadb-server report
-report_server_inst_link_url = 'https://access.redhat.com/articles/7097551'
 
 
 def _report_server_installed():
@@ -31,16 +13,31 @@ def _report_server_installed():
     installation, warn them about necessary additional steps, and
     redirect them to online documentation for the upgrade process.
     """
+    summary = (
+        'MariaDB server component will be upgraded.'
+        ' Since {target_distro} 10 includes MariaDB server 10.11 by default,'
+        ' which is incompatible with 10.5 included in {source_distro} 9 as default stream,'
+        ' it is necessary to proceed with additional steps for the complete upgrade of the MariaDB data.'
+    ).format_map(DISTRO_REPORT_NAMES)
+
+    hint = (
+        'Back up your data before proceeding with the upgrade and follow'
+        ' steps in the documentation section "Migrating to a RHEL 10 version of'
+        ' MariaDB" after the upgrade. If the database has already been'
+        ' upgraded, meaning the system is already using MariaDB 10.11 then no'
+        ' further actions are required.'
+    )
+
     reporting.create_report([
         reporting.Title('MariaDB (mariadb-server) has been detected on your system'),
-        reporting.Summary(report_server_inst_summary),
+        reporting.Summary(summary),
         reporting.Severity(reporting.Severity.MEDIUM),
         reporting.Groups([reporting.Groups.SERVICES]),
         reporting.ExternalLink(title='Migrating to a RHEL 10 version of MariaDB',
-                               url=report_server_inst_link_url),
+                               url='https://access.redhat.com/articles/7097551'),
         reporting.RelatedResource('package', 'mariadb-server'),
-        reporting.Remediation(hint=report_server_inst_hint),
-        ])
+        reporting.Remediation(hint=hint),
+    ])
 
 
 def report_installed_packages(_context=api):

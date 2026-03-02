@@ -7,6 +7,7 @@ from leapp.libraries.actor import peseventsscanner_repomap
 from leapp.libraries.actor.pes_event_parsing import Action, get_pes_events, Package
 from leapp.libraries.common import rpms
 from leapp.libraries.common.config import get_target_distro_id, version
+from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
 from leapp.libraries.stdlib import api
 from leapp.libraries.stdlib.config import is_verbose
 from leapp.models import (
@@ -457,30 +458,37 @@ def replace_pesids_with_repoids_in_packages(packages, source_pkgs_repoids):
 
     required_target_pesids = {pkg.repository for pkg in packages_with_pesid}
 
-    pesid_to_repoid_map = get_pesid_to_repoid_map(required_target_pesids)
+    pesid_to_target_repoid_map = get_pesid_to_repoid_map(required_target_pesids)
 
-    packages_without_known_repoid = {pkg for pkg in packages_with_pesid if pkg.repository not in pesid_to_repoid_map}
+    packages_with_unknown_target_repoid = {
+        pkg
+        for pkg in packages_with_pesid
+        if pkg.repository not in pesid_to_target_repoid_map
+    }
 
-    if packages_without_known_repoid:
+    if packages_with_unknown_target_repoid:
         report_skipped_packages(
             title='Packages from unknown repositories may not be installed',
             message='packages may not be installed or upgraded due to repositories unknown to leapp:',
-            skipped_pkgs=packages_without_known_repoid,
+            skipped_pkgs=packages_with_unknown_target_repoid,
             remediation=(
-                'In case the listed repositories are mirrors of official repositories for RHEL'
-                ' (provided by Red Hat on CDN)'
-                ' and their repositories IDs has been customized, you can change'
+                'In case the listed repositories are mirrors of official repositories for {}'
+                ' and their repositories IDs have been customized, you can change'
                 ' the configuration to use the official IDs instead of fixing the problem.'
                 ' You can also review the projected DNF upgrade transaction result'
                 ' in the logs to see what is going to happen, as this does not necessarily mean'
                 ' that the listed packages will not be upgraded. You can also'
-                ' install any missing packages after the in-place upgrade manually.'
+                ' install any missing packages after the in-place upgrade manually.'.format(
+                    'RHEL (provided by Red Hat on CDN)'
+                    if get_target_distro_id() == 'rhel'
+                    else DISTRO_REPORT_NAMES
+                )
             ),
         )
 
-    packages_with_known_repoid = packages_with_pesid.difference(packages_without_known_repoid)
+    packages_with_known_repoid = packages_with_pesid.difference(packages_with_unknown_target_repoid)
     packages_with_repoid = {
-        Package(p.name, pesid_to_repoid_map[p.repository], p.modulestream) for p in packages_with_known_repoid
+        Package(p.name, pesid_to_target_repoid_map[p.repository], p.modulestream) for p in packages_with_known_repoid
     }
     # Packages without pesid are those for which we do not have an event, keep them in target packages
     return packages_with_repoid.union(packages_without_pesid)

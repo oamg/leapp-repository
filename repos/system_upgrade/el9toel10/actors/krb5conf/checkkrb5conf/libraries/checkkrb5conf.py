@@ -1,5 +1,6 @@
 from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
+from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
 from leapp.libraries.stdlib import api
 from leapp.models import OutdatedKrb5conf
 
@@ -22,7 +23,8 @@ def process():
             reporting.Title('Unmanaged MIT krb5 configuration file(s) will be '
                             'updated to point to the new X.509 CA bundle file'),
             reporting.Summary(
-                'On RHEL 10, the location of the reference X.509 CA bundle '
+                f'On {DISTRO_REPORT_NAMES.target} 10, '
+                'the location of the reference X.509 CA bundle '
                 'file was modified. The following unmanaged MIT krb5 '
                 'configuration files have to be updated to point to the new '
                 'bundle file:' + __human_readable_list(msg.unmanaged_files)),
@@ -36,7 +38,8 @@ def process():
             reporting.Title('RPM-provided MIT krb5 configuration file(s) are '
                             'pointing to outdated X.509 CA bundle file'),
             reporting.Summary(
-                'On RHEL 10, the location of the reference X.509 CA bundle '
+                f'On {DISTRO_REPORT_NAMES.target} 10, '
+                'the location of the reference X.509 CA bundle '
                 'file was modified. Some MIT krb5 configuration files on this '
                 'system are pointing to the old bundle file, but are provided '
                 'by third-party RPMs. You must make sure these third-party '

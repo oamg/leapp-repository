@@ -1,7 +1,14 @@
 import pytest
 
+from leapp.libraries.common import distro
 from leapp.models import IfCfg, NetworkManagerConfig, Report
 from leapp.utils.report import is_inhibitor
+
+
+@pytest.fixture(autouse=True)
+def common_mocks(monkeypatch):
+    monkeypatch.setattr(distro, 'get_source_distro_id', lambda: 'rhel')
+    monkeypatch.setattr(distro, 'get_target_distro_id', lambda: 'rhel')
 
 
 def test_dhcp_dhclient(current_actor_context):
