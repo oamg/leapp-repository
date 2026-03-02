@@ -19,6 +19,7 @@ from leapp.libraries.common.config.version import (
     get_target_major_version,
     get_target_version
 )
+from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
 from leapp.libraries.common.gpg import get_path_to_gpg_certs, is_nogpgcheck_set
 from leapp.libraries.stdlib import api, CalledProcessError, config, run
 from leapp.models import RequiredTargetUserspacePackages  # deprecated
@@ -844,9 +845,8 @@ def _inhibit_if_no_base_repos(distro_repoids):
     no_baseos = all("baseos" not in ri for ri in distro_repoids)
     no_appstream = all("appstream" not in ri for ri in distro_repoids)
     if no_baseos or no_appstream:
-        reporting.create_report([
-            # TODO: Make the report distro agnostic
-            reporting.Title('Cannot find required basic RHEL target repositories.'),
+        report = [
+            reporting.Title(f'Cannot find required basic {DISTRO_REPORT_NAMES.target} target repositories.'),
             reporting.Summary(
                 'This can happen when a repository ID was entered incorrectly either while using the --enablerepo'
                 ' option of leapp or in a third party actor that produces a CustomTargetRepositoryMessage.'
@@ -854,17 +854,6 @@ def _inhibit_if_no_base_repos(distro_repoids):
             reporting.Groups([reporting.Groups.REPOSITORY]),
             reporting.Severity(reporting.Severity.HIGH),
             reporting.Groups([reporting.Groups.INHIBITOR]),
-            reporting.Remediation(hint=(
-                'It is required to have RHEL repositories on the system'
-                ' provided by the subscription-manager unless the --no-rhsm'
-                ' option is specified. You might be missing a valid SKU for'
-                ' the target system or have a failed network connection.'
-                ' Check whether your system is attached to a valid SKU that is'
-                ' providing RHEL {} repositories.'
-                ' If you are using Red Hat Satellite, read the upgrade documentation'
-                ' to set up Satellite and the system properly.'
-
-            ).format(target_major_version)),
             reporting.ExternalLink(
                 url='https://access.redhat.com/solutions/5392811',
                 title='RHEL 7 to RHEL 8 LEAPP Upgrade Failing When Using Red Hat Satellite'
@@ -874,8 +863,22 @@ def _inhibit_if_no_base_repos(distro_repoids):
                 # https://red.ht/preparing-for-upgrade-to-rhel9
                 # https://red.ht/preparing-for-upgrade-to-rhel10
                 url='https://red.ht/preparing-for-upgrade-to-rhel{}'.format(target_major_version),
-                title='Preparing for the upgrade')
-            ])
+                title='Preparing for the upgrade'),
+            reporting.Key('f5770a56e540f27d370da7b697cb4a2e81e2c30d'),
+        ]
+        if get_target_distro_id() == 'rhel':
+            report.append(reporting.Remediation(hint=(
+                'It is required to have RHEL repositories on the system'
+                ' provided by the subscription-manager unless the --no-rhsm'
+                ' option is specified. You might be missing a valid SKU for'
+                ' the target system or have a failed network connection.'
+                ' Check whether your system is attached to a valid SKU that is'
+                ' providing RHEL {} repositories.'
+                ' If you are using Red Hat Satellite, read the upgrade documentation'
+                ' to set up Satellite and the system properly.'
+                .format(target_major_version)))
+            )
+        reporting.create_report(report)
         raise StopActorExecution()
 
 
