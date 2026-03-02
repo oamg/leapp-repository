@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING
 
 from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
+from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
 from leapp.libraries.stdlib import api
 
 if TYPE_CHECKING:
@@ -32,14 +33,16 @@ def _generate_mysql_present_report() -> None:
     """
     reporting.create_report([
         reporting.Title('Manual migration of data from MySQL database might be needed'),
-        reporting.Summary((
-            'MySQL server component will be upgraded. '
-            'Since RHEL-10 includes MySQL server 8.4 by default, '
-            'it might be necessary to proceed with additional steps after '
-            'RHEL upgrade is completed. In simple setups MySQL server should '
-            'automatically upgrade all data on first start, but in more '
-            'complicated setups manual intervention might be needed.'
-        )),
+        reporting.Summary(
+            (
+                'MySQL server component will be upgraded. '
+                'Since {target_distro} 10 includes MySQL server 8.4 by default, '
+                'it might be necessary to proceed with additional steps after '
+                'the upgrade is completed. In simple setups MySQL server should '
+                'automatically upgrade all data on first start, but in more '
+                'complicated setups manual intervention might be needed.'
+            ).format_map(DISTRO_REPORT_NAMES)
+        ),
         reporting.Severity(reporting.Severity.MEDIUM),
         reporting.Groups([reporting.Groups.SERVICES]),
         reporting.ExternalLink(title='Migrating MySQL databases from RHEL 9 to RHEL 10',
@@ -51,7 +54,7 @@ def _generate_mysql_present_report() -> None:
             '"Migrating MySQL databases from RHEL 9 to RHEL 10" '
             'with up to date recommended steps before and after the upgrade.'
         )),
-        ])
+    ])
 
 
 def _generate_deprecated_config_report(found_options: list,
