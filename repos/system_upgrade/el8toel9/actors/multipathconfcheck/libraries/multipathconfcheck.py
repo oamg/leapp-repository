@@ -62,11 +62,16 @@ def _report_invalid_regexes(paths):
         ),
         reporting.Summary(
             'Some options in device-mapper-multipath configuration files '
-            'have values that are regular expressions. In RHEL-8, if such an '
-            'option had a value of "*", multipath would internally convert it '
-            'to ".*". In RHEL-9, values of "*" are no longer accepted. '
-            'These regular expression values have been found in {}. They '
-            'will be converted to ".*"'.format(paths_str)),
+            ' have values that are regular expressions. In {source_distro} 8,'
+            ' if such an option had a value of "*", multipath would internally'
+            'convert it to ".*". In {target_distro} 9, values of "*" are no '
+            'longer accepted. '
+            'These regular expression values have been found in {paths}. They '
+            'will be converted to ".*"'.format(
+                paths=paths_str,
+                **DISTRO_REPORT_NAMES
+            )
+        ),
         reporting.Severity(reporting.Severity.INFO),
         reporting.Groups([reporting.Groups.SERVICES]),
         reporting.RelatedResource('package', 'device-mapper-multipath')
