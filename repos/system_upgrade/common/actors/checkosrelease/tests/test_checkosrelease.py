@@ -3,7 +3,8 @@ import os
 from leapp import reporting
 from leapp.libraries.actor import checkosrelease
 from leapp.libraries.common.config import version
-from leapp.libraries.common.testutils import create_report_mocked, produce_mocked
+from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked, produce_mocked
+from leapp.libraries.stdlib import api
 from leapp.utils.report import is_inhibitor
 
 
@@ -26,6 +27,7 @@ def test_no_skip_check(monkeypatch):
 
 
 def test_not_supported_release(monkeypatch):
+    monkeypatch.setattr(api, "current_actor", CurrentActorMocked())
     monkeypatch.setattr(version, "is_supported_version", lambda: False)
     monkeypatch.setattr(version, "get_source_major_version", lambda: '8')
     monkeypatch.setattr(version, "current_version", lambda: ('bad', '8'))

@@ -6,7 +6,7 @@ from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 class CheckOSRelease(Actor):
     """
-    Check if the current RHEL minor version is supported. If not, inhibit the upgrade process.
+    Check if the current distro version is supported. If not, inhibit the upgrade process.
 
     This check can be skipped by using the LEAPP_DEVEL_SKIP_CHECK_OS_RELEASE environment variable.
     """
