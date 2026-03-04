@@ -116,7 +116,7 @@ class MockedContext:
         self.called_copy_to.append((src, dst))
         self.content.add(dst)
 
-    def makedirs(self, path):
+    def makedirs(self, path, exists_ok=True):
         self.called_makedirs.append(path)
 
     def remove_tree(self, path):
@@ -402,3 +402,85 @@ def test_copy_modules_duplicate_skip(monkeypatch, kind):
     assert context.content
     assert len(context.called_copy_to) == 1
     assert debugmsg in upgradeinitramfsgenerator.api.current_logger.dbgmsg
+
+
+def test_create_upgrade_hmac_from_target_hmac(monkeypatch):
+    upgrade_hmac_written = False
+
+    def _read_file_mock(path):
+        assert path == '/original-hmac'
+        return ('ff00a9674033eea61bec48d21a1d2c27eaac9bd6ed4997e31dd0d9307c7a4770eb81df7116c'
+                '4ace25d354a06dfdcd75e38f504f2ea7c1c4bdc95ea7083b701c0  vmlinuz-6.12.0-55.9.1.el10_0.x86_64')
+
+    def _write_file_mock(path, content):
+        assert path == '/boot/.vmlinuz-upgrade.x86_64.hmac'
+        expected_content = ('ff00a9674033eea61bec48d21a1d2c27eaac9bd6ed4997e31dd0d9307c7a4770eb81df7116c'
+                            '4ace25d354a06dfdcd75e38f504f2ea7c1c4bdc95ea7083b701c0  '
+                            'vmlinuz-upgrade.x86_64\n')
+        assert content == expected_content
+        nonlocal upgrade_hmac_written
+        upgrade_hmac_written = True
+
+    monkeypatch.setattr(upgradeinitramfsgenerator, '_read_file', _read_file_mock)
+    monkeypatch.setattr(upgradeinitramfsgenerator, '_write_file', _write_file_mock)
+    upgradeinitramfsgenerator.create_upgrade_hmac_from_target_hmac(
+        '/original-hmac', '/boot/.vmlinuz-upgrade.x86_64.hmac', 'vmlinuz-upgrade.x86_64')
+
+    assert upgrade_hmac_written
+
+
+def test_prepare_boot_files_for_livemode(monkeypatch):
+    context_mock = MockedContext()
+
+    monkeypatch.setattr(upgradeinitramfsgenerator,
+                        '_get_target_kernel_version',
+                        lambda ctx: '6.18.3-100.fc42.x86_64')
+
+    monkeypatch.setattr(upgradeinitramfsgenerator,
+                        'get_boot_artifact_names',
+                        lambda: ('vmlinuz-upgrade.x86_64', 'initramfs-upgrade.x86_64.img'))
+
+    upgrade_kernel_present = False
+    initramfs_generated = False
+    upgrade_initramfs_present = False
+    upgrade_kernel_hmac_present = False
+
+    def copy_target_kernel_mock(context, target_kernel_ver, kernel_artifact_name):
+        nonlocal upgrade_kernel_present
+        upgrade_kernel_present = True
+
+    def _generate_initramfs_mock(context, userspace_initramfs_dest, target_kernel_ver):
+        nonlocal initramfs_generated
+        initramfs_generated = True
+
+    def create_upgrade_hmac_from_target_hmac_mock(uspace_kernel_hmac_path,
+                                                  upgrade_kernel_hmac_dest,
+                                                  kernel_artifact_name):
+        assert upgrade_kernel_hmac_dest == '/boot/.vmlinuz-upgrade.x86_64.hmac'
+        nonlocal upgrade_kernel_hmac_present
+        upgrade_kernel_hmac_present = True
+
+    monkeypatch.setattr(upgradeinitramfsgenerator,
+                        'copy_target_kernel_from_userspace_into_boot',
+                        copy_target_kernel_mock)
+
+    monkeypatch.setattr(upgradeinitramfsgenerator,
+                        'create_upgrade_hmac_from_target_hmac',
+                        create_upgrade_hmac_from_target_hmac_mock)
+
+    monkeypatch.setattr(upgradeinitramfsgenerator,
+                        '_generate_livemode_initramfs',
+                        _generate_initramfs_mock)
+
+    boot_content = upgradeinitramfsgenerator.prepare_boot_files_for_livemode(context_mock)
+
+    upgrade_initramfs_present = context_mock.called_copy_from[0][1] == '/boot/initramfs-upgrade.x86_64.img'
+
+    assert upgrade_kernel_present
+    assert initramfs_generated
+    assert upgrade_initramfs_present
+    assert upgrade_kernel_hmac_present
+
+    assert boot_content.kernel_path == '/boot/vmlinuz-upgrade.x86_64'
+    assert boot_content.initram_path == '/boot/initramfs-upgrade.x86_64.img'
+    assert boot_content.kernel_hmac_path == '/boot/.vmlinuz-upgrade.x86_64.hmac'
