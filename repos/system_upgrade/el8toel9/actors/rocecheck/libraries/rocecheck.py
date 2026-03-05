@@ -1,7 +1,11 @@
 from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common.config import architecture, get_target_distro_id
-from leapp.libraries.common.distro import DISTRO_REPORT_NAMES, source_distro_id_to_display_name, target_distro_id_to_display_name
+from leapp.libraries.common.distro import (
+    DISTRO_REPORT_NAMES,
+    source_distro_id_to_display_name,
+    target_distro_id_to_display_name
+)
 from leapp.libraries.stdlib import api
 from leapp.models import KernelCmdline, RoceDetected
 
