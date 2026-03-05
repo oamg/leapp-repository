@@ -5,6 +5,8 @@ from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries import stdlib
 from leapp.libraries.common.config import architecture, version
+from leapp.libraries.common.config.version import get_target_major_version
+from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
 from leapp.libraries.stdlib import api
 from leapp.models import (
     InstalledTargetKernelInfo,
@@ -120,13 +122,13 @@ def _extract_grubby_value(record):
 def report_multple_entries_for_default_kernel():
     if use_cmdline_file():
         report_hint = (
-            'After the system has been rebooted into the new version of RHEL,'
+            'After the system has been rebooted into the {target_distro} {target_version},'
             ' check that configured default kernel cmdline arguments in /etc/kernel/cmdline '
             ' are correct. In case that different arguments are expected, update the file as needed.'
-        )
+        ).format(**DISTRO_REPORT_NAMES, target_version=get_target_major_version())
     else:
         report_hint = (
-            'After the system has been rebooted into the new version of RHEL,'
+            'After the system has been rebooted into the {target_distro} {target_version},'
             ' check that configured default kernel cmdline arguments are set as expected, using'
             ' the `grub2-editenv list` command. '
             ' If different default arguments are expected, update them using grub2-editenv.\n'
@@ -138,7 +140,7 @@ def report_multple_entries_for_default_kernel():
             ' then run the following grub2-editenv command:\n\n'
             '    # grub2-editenv - set "kernelopts=root=/dev/mapper/rhel_ibm--root'
             ' ro console=tty0 console=ttyS0,115200 rd_NO_PLYMOUTH"'
-        )
+        ).format(**DISTRO_REPORT_NAMES, target_version=get_target_major_version())
 
     reporting.create_report([
         reporting.Title('Ensure that expected default kernel cmdline arguments are set'),
@@ -243,14 +245,14 @@ def entrypoint(configs=None):
 
         if use_cmdline_file():
             report_hint = (
-                'After the system has been rebooted into the new version of RHEL, you'
+                'After the system has been rebooted into the {target_distro} {target_version}, you'
                 ' should take the kernel cmdline arguments from /proc/cmdline (Everything'
                 ' except the BOOT_IMAGE entry and initrd entries) and copy them into'
                 ' /etc/kernel/cmdline before installing any new kernels.'
-            )
+            ).format(**DISTRO_REPORT_NAMES, target_version=get_target_major_version())
         else:
             report_hint = (
-                'After the system has been rebooted into the new version of RHEL, you'
+                'After the system has been rebooted into the {target_distro} {target_version}, you'
                 ' should take the kernel cmdline arguments from /proc/cmdline (Everything'
                 ' except the BOOT_IMAGE entry and initrd entries) and then use the'
                 ' grub2-editenv command to make them the default kernel args.  For example,'
@@ -261,7 +263,7 @@ def entrypoint(configs=None):
                 ' then run the following grub2-editenv command:\n\n'
                 '    # grub2-editenv - set "kernelopts=root=/dev/mapper/rhel_ibm--root'
                 ' ro console=tty0 console=ttyS0,115200 rd_NO_PLYMOUTH"'
-            )
+            ).format(**DISTRO_REPORT_NAMES, target_version=get_target_major_version())
 
         reporting.create_report([
             reporting.Title('Could not set the kernel arguments for future kernels'),

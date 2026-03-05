@@ -3,6 +3,7 @@ from collections import namedtuple
 from leapp import reporting
 from leapp.libraries.common.config.architecture import ARCH_X86_64, matches_architecture
 from leapp.libraries.common.config.version import get_target_major_version
+from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
 from leapp.libraries.stdlib import api
 from leapp.models import CPUInfo
 
@@ -13,11 +14,12 @@ X86_64_V3_FLAGS = ['avx2', 'bmi1', 'bmi2', 'f16c', 'fma', 'abm', 'movbe', 'xsave
 MicroarchInfo = namedtuple('MicroarchInfo', ('required_flags', 'extra_report_fields', 'microarch_ver'))
 
 
-def _inhibit_upgrade(missing_flags, target_rhel, microarch_ver, extra_report_fields=None):
-    title = 'Current x86-64 microarchitecture is unsupported in {0}'.format(target_rhel)
+def _inhibit_upgrade(missing_flags, target_distro, microarch_ver, extra_report_fields=None):
+    # TODO: Add fixed key to this report
+    title = 'Current x86-64 microarchitecture is unsupported in {0}'.format(target_distro)
     summary = ('{0} has a higher CPU requirement than older versions, it now requires a CPU '
                'compatible with {1} instruction set or higher.\n\n'
-               'Missings flags detected are: {2}\n').format(target_rhel, microarch_ver, ', '.join(missing_flags))
+               'Missings flags detected are: {2}\n').format(target_distro, microarch_ver, ', '.join(missing_flags))
 
     report_fields = [
         reporting.Title(title),
@@ -28,7 +30,7 @@ def _inhibit_upgrade(missing_flags, target_rhel, microarch_ver, extra_report_fie
         reporting.Remediation(hint=('If a case of using virtualization, virtualization platforms often allow '
                                     'configuring a minimum denominator CPU model for compatibility when migrating '
                                     'between different CPU models. Ensure that minimum requirements are not below '
-                                    'that of {0}\n').format(target_rhel)),
+                                    'that of {0}\n').format(target_distro)),
     ]
 
     if extra_report_fields:
@@ -69,14 +71,15 @@ def process():
 
     microarch_info = rhel_major_to_microarch_reqs.get(get_target_major_version())
     if not microarch_info:
-        api.current_logger().info('No known microarchitecture requirements are known for target RHEL%s.',
-                                  get_target_major_version())
+        api.current_logger().info(
+            'No known microarchitecture requirements are known'
+            ' for target {target_distro} {version}.'.format(**DISTRO_REPORT_NAMES, version=get_target_major_version()))
         return
 
     missing_flags = [flag for flag in microarch_info.required_flags if flag not in cpuinfo.flags]
     api.current_logger().debug('Required flags missing: %s', missing_flags)
     if missing_flags:
         _inhibit_upgrade(missing_flags,
-                         'RHEL{0}'.format(get_target_major_version()),
+                         '{target_distro} {version}'.format(**DISTRO_REPORT_NAMES, version=get_target_major_version()),
                          microarch_info.microarch_ver,
                          extra_report_fields=microarch_info.extra_report_fields)

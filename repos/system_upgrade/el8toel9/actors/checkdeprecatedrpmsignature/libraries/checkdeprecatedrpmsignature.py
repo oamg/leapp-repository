@@ -1,4 +1,5 @@
 from leapp import reporting
+from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
 from leapp.libraries.stdlib import api
 from leapp.models import CryptoPolicyInfo, InstalledRPM
 
@@ -11,7 +12,7 @@ FMT_LIST_SEPARATOR = '\n    - '
 # framework prints external links in the file as well.
 SUMMARY_FMT = (
     'Digital signatures using SHA-1 hash algorithm are no longer considered'
-    ' secure and are not allowed to be used on RHEL 9 systems by default.'
+    ' secure and are not allowed to be used on {target_distro} 9 systems by default.'
     ' This causes issues when using DNF/RPM to handle packages with RSA/SHA1'
     ' signatures as the signature cannot be checked with the default'
     ' cryptographic policy. Any such packages cannot be installed, removed,'
@@ -68,6 +69,7 @@ def process():
         report = [
             reporting.Title('Detected RPMs with RSA/SHA1 signature'),
             reporting.Summary(SUMMARY_FMT.format(
+                target_distro=DISTRO_REPORT_NAMES.target,
                 major_changes_url=MAJOR_CHANGE_URL,
                 crypto_policies_url=CRYPTO_POLICIES_URL,
                 bad_pkgs=bad_rpms_str

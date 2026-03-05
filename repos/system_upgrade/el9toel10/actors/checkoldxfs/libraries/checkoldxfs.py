@@ -1,9 +1,8 @@
 from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
+from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
 from leapp.libraries.stdlib import api
 from leapp.models import XFSInfoFacts
-
-RHEL_9_TO_10_BACKUP_RESTORE_LINK = 'https://red.ht/rhel_9_to_10_backup_restore_xfs'
 
 FMT_LIST_SEPARATOR = '\n    - '
 
@@ -71,14 +70,16 @@ def _inhibit_upgrade(invalid_bigtime, invalid_crc):
 def _report_bigtime(invalid_bigtime):
     title = 'Detected XFS filesystems without bigtime feature.'
     summary = (
-        'The XFS v5 filesystem format introduced the "bigtime" feature in RHEL 9,'
-        ' to support timestamps beyond the year 2038. XFS filesystems that'
+        'The XFS v5 filesystem format introduced the "bigtime" feature in'
+        ' {} 9, to support timestamps beyond the year 2038. XFS filesystems that'
         ' do not have the "bigtime" feature enabled remain vulnerable to timestamp'
         ' overflow issues. It is recommended to enable this feature on all'
         ' XFS filesystems to ensure long-term compatibility and prevent potential'
         ' failures.'
-        ' Following XFS file systems have not enabled the "bigtime" feature:{}'
-        .format(''.join(_formatted_list_output(invalid_bigtime)))
+        ' Following XFS file systems have not enabled the "bigtime" feature:{}'.format(
+            DISTRO_REPORT_NAMES.target,
+            ''.join(_formatted_list_output(invalid_bigtime))
+        )
     )
 
     # NOTE(pstodulk): This will affect any system which upgraded from RHEL 8 so

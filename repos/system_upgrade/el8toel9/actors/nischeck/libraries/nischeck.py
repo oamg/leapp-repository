@@ -1,15 +1,16 @@
 from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
+from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
 from leapp.libraries.common.rpms import has_package
 from leapp.libraries.stdlib import api
 from leapp.models import DistributionSignedRPM, NISConfig
 
 report_summary = (
-    'The NIS components (ypserv, ypbind, and yp-tools) are no longer available in RHEL-9.'
-    ' The technology behind those packages is based an outdated design patterns, which are'
-    ' no longer considered as secure. There is no direct alternative with fully compatible'
-    ' features.'
-)
+    'The NIS components (ypserv, ypbind, and yp-tools) are no longer available'
+    ' in {target_distro} 9. The technology behind those packages is based an '
+    ' outdated design patterns, which are no longer considered as secure. There'
+    ' is no direct alternative with fully compatible features.'
+).format_map(DISTRO_REPORT_NAMES)
 
 report_hint = (
     'The alternatives are LDAP and for some use cases Kerberos or migrating to IPA.'

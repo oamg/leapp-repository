@@ -2,13 +2,16 @@ import re
 
 from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
+from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
 from leapp.libraries.stdlib import api
 
 # The openssl configuration file
 # TODO copied from opensslconfigscanner/libraries/readconf.py
 CONFIG = '/etc/pki/tls/openssl.cnf'
 
-LEAPP_COMMENT = '# Modified by leapp during upgrade to RHEL 9\n'
+LEAPP_COMMENT = (
+    f"# Modified by leapp during upgrade to {DISTRO_REPORT_NAMES.target} 9\n"
+)
 APPEND_STRING = (
     '[provider_sect]\n'
     'default = default_sect\n'

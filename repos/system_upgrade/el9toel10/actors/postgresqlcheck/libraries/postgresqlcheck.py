@@ -1,26 +1,8 @@
 from leapp import reporting
+from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
 from leapp.libraries.common.rpms import has_package
 from leapp.libraries.stdlib import api
 from leapp.models import DistributionSignedRPM
-
-# Summary for postgresql-server report
-report_server_inst_summary = (
-    'PostgreSQL server component will be upgraded. Since RHEL-10 includes'
-    ' PostgreSQL server 16 by default, which is incompatible with 13 and 15'
-    ' included in RHEL-9, in those cases, it is necessary to proceed with additional steps'
-    ' for the complete upgrade of the PostgreSQL data.'
-    'If the database has already been upgraded, meaning the system is already using PostgreSQL 16,'
-    ' then no further actions are required.'
-)
-
-report_server_inst_hint = (
-    'Back up your data before proceeding with the upgrade'
-    ' and follow steps in the documentation section "Migrating to a RHEL 10 version of PostgreSQL"'
-    ' after the upgrade.'
-)
-
-# Link URL for postgresql-server report
-report_server_inst_link_url = 'https://access.redhat.com/articles/7097228'
 
 
 def _report_server_installed():
@@ -31,16 +13,32 @@ def _report_server_installed():
     installation, warn them about necessary additional steps, and
     redirect them to online documentation for the upgrade process.
     """
+
+    summary = (
+        'PostgreSQL server component will be upgraded. Since {target_distro} 10 includes'
+        ' PostgreSQL server 16 by default, which is incompatible with 13 and 15'
+        ' included in {source_distro} 9, in those cases, it is necessary to'
+        ' proceed with additional steps for the complete upgrade of the PostgreSQL data.'
+        ' If the database has already been upgraded, meaning the system is'
+        ' already using PostgreSQL 16, then no further actions are required.'
+    ).format_map(DISTRO_REPORT_NAMES)
+
+    hint_text = (
+        'Back up your data before proceeding with the upgrade'
+        ' and follow steps in the documentation section "Migrating to a RHEL 10 version of PostgreSQL"'
+        ' after the upgrade.'
+    )
+
     reporting.create_report([
         reporting.Title('PostgreSQL (postgresql-server) has been detected on your system'),
-        reporting.Summary(report_server_inst_summary),
+        reporting.Summary(summary),
         reporting.Severity(reporting.Severity.MEDIUM),
         reporting.Groups([reporting.Groups.SERVICES]),
         reporting.ExternalLink(title='Migrating to a RHEL 10 version of PostgreSQL',
-                               url=report_server_inst_link_url),
+                               url= 'https://access.redhat.com/articles/7097228'),
         reporting.RelatedResource('package', 'postgresql-server'),
-        reporting.Remediation(hint=report_server_inst_hint),
-        ])
+        reporting.Remediation(hint=hint_text),
+    ])
 
 
 def report_installed_packages(_context=api):
