@@ -480,6 +480,16 @@ def prepare_boot_files_for_livemode(context):
 
     copy_target_kernel_from_userspace_into_boot(context, target_kernel_ver, kernel_artifact_name)
 
+    uspace_kernel_hmac_path = context.full_path('/lib/modules/{}/.vmlinuz.hmac'.format(target_kernel_ver))
+    upgrade_kernel_hmac_dest = '/boot/.{}.hmac'.format(kernel_artifact_name)
+    create_upgrade_hmac_from_target_hmac(uspace_kernel_hmac_path, upgrade_kernel_hmac_dest, kernel_artifact_name)
+    api.current_logger().info(
+        'Written hmac ({0}) for the upgrade kernel (based on {1})'.format(
+            upgrade_kernel_hmac_dest,
+            uspace_kernel_hmac_path
+        )
+    )
+
     USERSPACE_ARTIFACTS_PATH = '/artifacts'
     context.makedirs(USERSPACE_ARTIFACTS_PATH, exists_ok=True)
     userspace_initramfs_dest = os.path.join(USERSPACE_ARTIFACTS_PATH, initramfs_artifact_name)
@@ -493,25 +503,35 @@ def prepare_boot_files_for_livemode(context):
 
     return BootContent(kernel_path=host_kernel_dest,
                        initram_path=host_initramfs_dest,
-                       kernel_hmac_path='')
+                       kernel_hmac_path=upgrade_kernel_hmac_dest)
 
 
-def create_upgrade_hmac_from_target_hmac(original_hmac_path, upgrade_hmac_path, upgrade_kernel):
+def _read_file(path):
+    with open(path) as in_file:
+        return in_file.read()
+
+
+def _write_file(path, data):
+    with open(path, 'w') as out_file:
+        out_file.write(data)
+
+
+def create_upgrade_hmac_from_target_hmac(original_hmac_path: str, upgrade_hmac_path: str, upgrade_kernel: str):
     # Rename the kernel name stored in the HMAC file as the upgrade kernel is named differently and the HMAC file
     # refers to the real target kernel
-    with open(original_hmac_path) as original_hmac_file:
-        hmac_file_lines = [line for line in original_hmac_file.read().split('\n') if line]
-        if len(hmac_file_lines) > 1:
-            details = ('Expected the target kernel HMAC file to containing only one HMAC line, '
-                       'found {0}'.format(len(hmac_file_lines)))
-            raise StopActorExecutionError('Failed to prepare HMAC file for upgrade kernel.',
-                                          details={'details': details})
+    original_hmac_file_content = _read_file(original_hmac_path)
+    hmac_file_lines = [line for line in original_hmac_file_content.split('\n') if line]
+    if len(hmac_file_lines) > 1:
+        details = ('Expected the target kernel HMAC file to containing only one HMAC line, '
+                   'found {0}'.format(len(hmac_file_lines)))
+        raise StopActorExecutionError('Failed to prepare HMAC file for upgrade kernel.',
+                                      details={'details': details})
 
-        # Keep only non-empty strings after splitting on space
-        hmac, dummy_target_kernel_name = [fragment for fragment in hmac_file_lines[0].split(' ') if fragment]
+    # Keep only non-empty strings after splitting on space
+    hmac, dummy_target_kernel_name = [fragment for fragment in hmac_file_lines[0].split(' ') if fragment]
 
-    with open(upgrade_hmac_path, 'w') as upgrade_kernel_hmac_file:
-        upgrade_kernel_hmac_file.write('{hmac}  {kernel}\n'.format(hmac=hmac, kernel=upgrade_kernel))
+    upgrade_hmac_content = '{hmac}  {kernel}\n'.format(hmac=hmac, kernel=upgrade_kernel)
+    _write_file(upgrade_hmac_path, upgrade_hmac_content)
 
 
 def copy_boot_files(context):
