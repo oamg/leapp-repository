@@ -4,6 +4,7 @@ from leapp.libraries.common.rpms import has_package
 from leapp.libraries.stdlib import api
 from leapp.models import DistributionSignedRPM
 
+
 def _report_server_installed():
     """
     Create report on postgresql-server package installation detection.
