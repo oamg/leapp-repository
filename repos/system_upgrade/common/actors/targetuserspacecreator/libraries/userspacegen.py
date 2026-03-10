@@ -6,7 +6,7 @@ import shutil
 from leapp import reporting
 from leapp.exceptions import StopActorExecution, StopActorExecutionError
 from leapp.libraries.actor import constants
-from leapp.libraries.common import distro, dnfplugin, mounting, overlaygen, repofileutils, rhsm, utils
+from leapp.libraries.common import distro, mounting, overlaygen, repofileutils, rhsm, utils
 from leapp.libraries.common.config import (
     get_env,
     get_product_type,
@@ -19,6 +19,7 @@ from leapp.libraries.common.config.version import (
     get_target_major_version,
     get_target_version
 )
+from leapp.libraries.common.dnflibs import dnfplugin
 from leapp.libraries.common.gpg import get_path_to_gpg_certs, is_nogpgcheck_set
 from leapp.libraries.stdlib import api, CalledProcessError, config, run
 from leapp.models import RequiredTargetUserspacePackages  # deprecated

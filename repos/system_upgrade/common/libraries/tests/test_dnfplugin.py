@@ -3,8 +3,8 @@ from collections import namedtuple
 import pytest
 
 import leapp.models
-from leapp.libraries.common import dnfplugin
 from leapp.libraries.common.config.version import get_major_version
+from leapp.libraries.common.dnflibs import dnfplugin
 from leapp.libraries.common.testutils import CurrentActorMocked
 from leapp.libraries.stdlib import api
 from leapp.models.fields import Boolean

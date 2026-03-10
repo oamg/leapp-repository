@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.libraries.common import dnfplugin
+from leapp.libraries.common.dnflibs import dnfplugin
 from leapp.models import (
     BootContent,
     DNFPluginTask,
