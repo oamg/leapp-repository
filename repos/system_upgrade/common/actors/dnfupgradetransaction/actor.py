@@ -1,7 +1,7 @@
 import shutil
 
 from leapp.actors import Actor
-from leapp.libraries.common import dnfplugin
+from leapp.libraries.common.dnflibs import dnfplugin
 from leapp.libraries.stdlib import run
 from leapp.models import (
     DNFPluginTask,
