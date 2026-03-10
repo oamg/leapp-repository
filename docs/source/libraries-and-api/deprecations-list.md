@@ -18,6 +18,12 @@ Only the versions in which a deprecation has been made are listed.
   - **`LEAPP_NO_NETWORK_RENAMING`** - It becomes obsoleted by the solution based on `net.naming-scheme` which replaces the legacy solution based on created udev link files correcting NIC names during the upgrade.
 - Models:
   - **`RenamedInterfaces`** - Information provided in this message is not always complete and it's not used since the `net.naming-scheme` kernel command line argument is set during the upgrade.
+- Shared libraries
+  - DNF-related libraries have been reorganized into the `leapp.libraries.common.dnflibs` package. The following modules have been moved:
+    - **`leapp.libraries.common.dnfconfig`** - Moved to `leapp.libraries.common.dnflibs.dnfconfig`. All public functions (`exclude_leapp_rpms`) are deprecated in the old location.
+    - **`leapp.libraries.common.dnfplugin`** - Moved to `leapp.libraries.common.dnflibs.dnfplugin`. All public functions (`install`, `build_plugin_data`, `create_config`, `backup_config`, `backup_debug_data`, `apply_workarounds`, `install_initramdisk_requirements`, `perform_transaction_install`, `perform_transaction_check`, `perform_rpm_download`, `perform_dry_run`) and constants (`DNF_PLUGIN_NAME`, `DNF_PLUGIN_PATH`, `DNF_PLUGIN_DATA_NAME`, `DNF_PLUGIN_DATA_PATH`, `DNF_PLUGIN_DATA_LOG_PATH`, `DNF_DEBUG_DATA_PATH`) are available in the new location.
+    - **`leapp.libraries.common.module`** - Moved to `leapp.libraries.common.dnflibs.dnfmodule` (renamed for clarity). All public functions (`get_modules`, `get_enabled_modules`, `map_installed_rpms_to_modules`) are deprecated in the old location.
+
 
 ## v0.24.0 <span style="font-size:0.5em; font-weight:normal">(till September 2026)</span>
 - Shared libraries
