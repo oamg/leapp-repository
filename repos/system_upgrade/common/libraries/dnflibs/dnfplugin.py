@@ -8,7 +8,7 @@ import shutil
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import guards, mounting, overlaygen, rhsm, utils
 from leapp.libraries.common.config.version import get_target_major_version, get_target_version
-from leapp.libraries.common.dnflibs import dnfconfig
+from leapp.libraries.common.dnflibs import dnfconfig, DNFError
 from leapp.libraries.common.gpg import is_nogpgcheck_set
 from leapp.libraries.stdlib import api, CalledProcessError, config
 from leapp.models import DNFWorkaround
@@ -26,16 +26,41 @@ _DNF_PLUGIN_PATHS = {
 }
 
 
+class DNFPluginInstallError(DNFError):
+    """
+    Raised when cannot install the rhel_upgrade DNF plugin.
+    """
 
 
+class DNFExecutionError(DNFError):
+    """
+    Raised when cannot execute DNF.
+    """
 
 
+class DNFUpgradeTransactionError(DNFError):
+    """
+    Raised when an error with the DNF upgrade transaction occurs.
 
+    This covers all stages of the upgrade, from the initial calculation in
+    preupgrade phases to the final execution of the transaction in the
+    upgrade environment.
+    """
+
+
+class RegisteredWorkaroundApplicationError(StopActorExecutionError):
+    """
+    Raised when a registered workaround cannot be applied or the application failed.
+    """
 
 
 def install(target_basedir):
     """
-    Installs our plugin to the DNF plugins.
+    Installs the rhel_upgrade plugin to the DNF plugin under specified container path.
+
+    :raises DNFPluginInstallError: When cannot install the DNF plugin.
+    :raises KeyError: When the installation DNF plugin path is not defined for
+                      the target system (yet).
     """
     # NOTE(pstodulk): Keeping KeyError unhandled as this can happen only
     # for the new major upgrade path.
@@ -47,7 +72,7 @@ def install(target_basedir):
         shutil.copy2(api.get_file_path(DNF_PLUGIN_NAME), tgt_plugin_path)
     except EnvironmentError as e:
         api.current_logger().debug('Failed to install DNF plugin', exc_info=True)
-        raise StopActorExecutionError(
+        raise DNFPluginInstallError(
             message='Failed to install DNF plugin. Error: {}'.format(str(e))
         )
 
@@ -155,7 +180,7 @@ def _handle_transaction_err_msg(err, is_container=False):
             "for your current system to pass the early phases of the upgrade process."
         )
         details = {'STDOUT': err.stdout, 'STDERR': err.stderr, 'hint': proxy_hint}
-        raise StopActorExecutionError(message=message, details=details)
+        raise DNFUpgradeTransactionError(message=message, details=details)
 
     # Disk Requirements:
     #   At least <size> more space needed on the <path> filesystem.
@@ -189,7 +214,7 @@ def _handle_transaction_err_msg(err, is_container=False):
         )
         details = {'hint': hint, 'Disk Requirements': '\n'.join(missing_space)}
 
-    raise StopActorExecutionError(message=message, details=details)
+    raise DNFUpgradeTransactionError(message=message, details=details)
 
 
 def _transaction(context, stage, target_repoids, tasks, plugin_info, xfs_info,
@@ -259,7 +284,7 @@ def _transaction(context, stage, target_repoids, tasks, plugin_info, xfs_info,
             )
         except OSError as e:
             api.current_logger().error('Could not call dnf command: Message: %s', str(e), exc_info=True)
-            raise StopActorExecutionError(
+            raise DNFExecutionError(
                 message='Failed to execute dnf. Reason: {}'.format(str(e))
             )
         except CalledProcessError as e:
@@ -283,8 +308,17 @@ def _prepare_transaction(used_repos, target_userspace_info, binds=()):
 def apply_workarounds(context=None):
     """
     Apply registered workarounds in the given context environment
+
+    Note this function consumes DNFWorkaround messages! An actor calling this
+    function must list the DNFWorkaround in the list of consumable messages.
+
+    :param context: Execution context (defaults to NotIsolatedActions)
+    :type context: mounting.IsolatedActions or None
+    :raises RegisteredWorkaroundApplicationError: When a workaround script fails to execute.
     """
     context = context or mounting.NotIsolatedActions(base_dir='/')
+    # FIXME(pstodulk): add check that actor is consuming DNFWorkaround, and raise
+    # new error if it is not.
     for workaround in api.consume(DNFWorkaround):
         try:
             api.show_message('Applying transaction workaround - {}'.format(workaround.display_name))
@@ -297,15 +331,24 @@ def apply_workarounds(context=None):
                 cmd_str = workaround.script_path
             context.call(['/bin/bash', '-c', cmd_str])
         except (OSError, CalledProcessError) as e:
-            raise StopActorExecutionError(
-                message=('Failed to execute script to apply transaction workaround {display_name}.'
-                         ' Message: {error}'.format(error=str(e), display_name=workaround.display_name))
+            raise RegisteredWorkaroundApplicationError(
+                message=f'Failed to execute script to apply transaction workaround {workaround.display_name}.',
+                details={
+                    'error message': str(e),
+                    'workaround name': workaround.display_name
+                }
             )
 
 
 def install_initramdisk_requirements(packages, target_userspace_info, used_repos):
     """
     Performs the installation of packages into the initram disk
+
+    :param packages: List of package names to install
+    :param target_userspace_info: Information about the target userspace
+    :param used_repos: Repository information for the installation
+    :raises DNFUpgradeTransactionError: When the DNF transaction fails (insufficient disk space,
+                                       package conflicts, or repository access issues).
     """
     mount_binds = ['/:/installroot']
     with _prepare_transaction(used_repos=used_repos, target_userspace_info=target_userspace_info,
@@ -346,6 +389,19 @@ def install_initramdisk_requirements(packages, target_userspace_info, used_repos
 def perform_transaction_install(target_userspace_info, storage_info, used_repos, tasks, plugin_info, xfs_info):
     """
     Performs the actual installation with the DNF rhel-upgrade plugin using the target userspace
+
+    :param target_userspace_info: Information about the target userspace
+    :param storage_info: Storage and filesystem information
+    :param used_repos: Repositories to use for the upgrade
+    :param tasks: Package installation/removal/upgrade tasks
+    :param plugin_info: DNF plugin configuration
+    :param xfs_info: XFS filesystem information
+    :raises DNFExecutionError: When the DNF command fails to execute.
+    :raises DNFUpgradeTransactionError: When the upgrade transaction encounters an error
+                                       (insufficient disk space, package conflicts, etc.).
+
+    .. seealso::
+        :func:`dnfconfig.exclude_leapp_rpms` - For DNF configuration exceptions
     """
 
     stage = 'upgrade'
@@ -435,6 +491,20 @@ def perform_transaction_check(target_userspace_info,
                               target_iso=None):
     """
     Perform DNF transaction check using our plugin
+
+    :param target_userspace_info: Information about the target userspace
+    :param used_repos: Repositories to use for the upgrade
+    :param tasks: Package installation/removal/upgrade tasks
+    :param xfs_info: XFS filesystem information
+    :param storage_info: Storage and filesystem information
+    :param plugin_info: DNF plugin configuration
+    :param target_iso: Optional path to target ISO image
+    :raises DNFExecutionError: When the DNF command fails to execute.
+    :raises DNFUpgradeTransactionError: When the transaction check encounters an error
+                                       (package dependency conflicts, repository issues, etc.).
+
+    .. seealso::
+        :func:`dnfconfig.exclude_leapp_rpms` - For DNF configuration exceptions
     """
 
     stage = 'check'
@@ -466,6 +536,21 @@ def perform_rpm_download(target_userspace_info,
                          on_aws=False):
     """
     Perform RPM download including the transaction test using dnf with our plugin
+
+    :param target_userspace_info: Information about the target userspace
+    :param used_repos: Repositories to use for the upgrade
+    :param tasks: Package installation/removal/upgrade tasks
+    :param xfs_info: XFS filesystem information
+    :param storage_info: Storage and filesystem information
+    :param plugin_info: DNF plugin configuration
+    :param target_iso: Optional path to target ISO image
+    :param on_aws: Whether running on AWS infrastructure
+    :raises DNFExecutionError: When the DNF command fails to execute.
+    :raises DNFUpgradeTransactionError: When the RPM download or transaction test fails
+                                       (insufficient disk space, network issues, repository problems).
+
+    .. seealso::
+        :func:`dnfconfig.exclude_leapp_rpms` - For DNF configuration exceptions
     """
 
     stage = 'download'
@@ -500,6 +585,18 @@ def perform_dry_run(target_userspace_info,
                     on_aws=False):
     """
     Perform the dnf transaction test / dry-run using only cached data.
+
+    :param target_userspace_info: Information about the target userspace
+    :param used_repos: Repositories to use for the upgrade
+    :param tasks: Package installation/removal/upgrade tasks
+    :param xfs_info: XFS filesystem information
+    :param storage_info: Storage and filesystem information
+    :param plugin_info: DNF plugin configuration
+    :param target_iso: Optional path to target ISO image
+    :param on_aws: Whether running on AWS infrastructure
+    :raises DNFExecutionError: When the DNF command fails to execute.
+    :raises DNFUpgradeTransactionError: When the dry-run transaction test encounters an error
+                                       (package dependency conflicts, insufficient disk space).
     """
     with _prepare_perform(used_repos=used_repos,
                           target_userspace_info=target_userspace_info,
