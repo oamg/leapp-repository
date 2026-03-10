@@ -10,9 +10,8 @@ This shim will be removed in a future version. Please update imports to:
 from leapp.libraries.common.dnflibs import dnfplugin as _dnfplugin
 from leapp.utils.deprecation import deprecated
 
-# Re-export constants (not deprecated)
+# Re-export constants
 DNF_PLUGIN_NAME = _dnfplugin.DNF_PLUGIN_NAME
-DNF_PLUGIN_PATH = _dnfplugin.DNF_PLUGIN_PATH
 DNF_PLUGIN_DATA_NAME = _dnfplugin.DNF_PLUGIN_DATA_NAME
 DNF_PLUGIN_DATA_PATH = _dnfplugin.DNF_PLUGIN_DATA_PATH
 DNF_PLUGIN_DATA_LOG_PATH = _dnfplugin.DNF_PLUGIN_DATA_LOG_PATH
