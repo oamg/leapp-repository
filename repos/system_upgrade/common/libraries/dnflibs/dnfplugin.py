@@ -145,27 +145,6 @@ def backup_debug_data(context):
             api.current_logger().warning('Failed to copy debugdata. Message: {}'.format(str(e)), exc_info=True)
 
 
-def _handle_transaction_err_msg_old(stage, xfs_info, err):
-    # NOTE(pstodulk): This is going to be removed in future!
-    message = 'DNF execution failed with non zero exit code.'
-    details = {'STDOUT': err.stdout, 'STDERR': err.stderr}
-
-    if 'more space needed on the' in err.stderr and stage != 'upgrade':
-        # Disk Requirements:
-        #   At least <size> more space needed on the <path> filesystem.
-        #
-        article_section = 'Generic case'
-        if xfs_info.present and xfs_info.without_ftype:
-            article_section = 'XFS ftype=0 case'
-
-        message = ('There is not enough space on the file system hosting /var/lib/leapp directory '
-                   'to extract the packages.')
-        details = {'hint': "Please follow the instructions in the '{}' section of the article at: "
-                           "link: https://access.redhat.com/solutions/5057391".format(article_section)}
-
-    raise StopActorExecutionError(message=message, details=details)
-
-
 def _handle_transaction_err_msg(err, is_container=False):
     NO_SPACE_STR = 'more space needed on the'
     if NO_SPACE_STR not in err.stderr:
