@@ -14,54 +14,37 @@ from leapp.libraries.stdlib import api, CalledProcessError, config
 from leapp.models import DNFWorkaround
 
 DNF_PLUGIN_NAME = 'rhel_upgrade.py'
-_DEDICATED_URL = 'https://access.redhat.com/solutions/7011704'
-
-
-class _DnfPluginPathStr(str):
-    _PATHS = {
-        "9": os.path.join('/lib/python3.9/site-packages/dnf-plugins', DNF_PLUGIN_NAME),
-        "10": os.path.join('/lib/python3.12/site-packages/dnf-plugins', DNF_PLUGIN_NAME),
-    }
-
-    def __init__(self):  # noqa: W0231; pylint: disable=super-init-not-called
-        self.data = ""
-
-    def _feed(self):
-        major = get_target_major_version()
-        if major not in _DnfPluginPathStr._PATHS:
-            raise KeyError('{} is not a supported target version of RHEL'.format(major))
-        self.data = _DnfPluginPathStr._PATHS[major]
-
-    def __str__(self):
-        self._feed()
-        return str(self.data)
-
-    def __repr__(self):
-        self._feed()
-        return repr(self.data)
-
-    def lstrip(self, chars=None):
-        self._feed()
-        return self.data.lstrip(chars)
-
-
-# Deprecated
-DNF_PLUGIN_PATH = _DnfPluginPathStr()
-
 DNF_PLUGIN_DATA_NAME = 'dnf-plugin-data.txt'
 DNF_PLUGIN_DATA_PATH = os.path.join('/var/lib/leapp', DNF_PLUGIN_DATA_NAME)
 DNF_PLUGIN_DATA_LOG_PATH = os.path.join('/var/log/leapp', DNF_PLUGIN_DATA_NAME)
 DNF_DEBUG_DATA_PATH = '/var/log/leapp/dnf-debugdata/'
+
+_DEDICATED_URL = 'https://access.redhat.com/solutions/7011704'
+_DNF_PLUGIN_PATHS = {
+    '9': os.path.join('/lib/python3.9/site-packages/dnf-plugins', DNF_PLUGIN_NAME),
+    '10': os.path.join('/lib/python3.12/site-packages/dnf-plugins', DNF_PLUGIN_NAME),
+}
+
+
+
+
+
+
+
 
 
 def install(target_basedir):
     """
     Installs our plugin to the DNF plugins.
     """
+    # NOTE(pstodulk): Keeping KeyError unhandled as this can happen only
+    # for the new major upgrade path.
+    tgt_plugin_path = os.path.join(
+        target_basedir,
+        _DNF_PLUGIN_PATHS[get_target_major_version()].lstrip('/')
+    )
     try:
-        shutil.copy2(
-            api.get_file_path(DNF_PLUGIN_NAME),
-            os.path.join(target_basedir, DNF_PLUGIN_PATH.lstrip('/')))
+        shutil.copy2(api.get_file_path(DNF_PLUGIN_NAME), tgt_plugin_path)
     except EnvironmentError as e:
         api.current_logger().debug('Failed to install DNF plugin', exc_info=True)
         raise StopActorExecutionError(
