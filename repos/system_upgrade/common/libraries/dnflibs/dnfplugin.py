@@ -26,16 +26,39 @@ _DNF_PLUGIN_PATHS = {
 }
 
 
+class DNFPluginInstallError(StopActorExecutionError):
+    """
+    Raised when cannot install the rhel_upgrade DNF plugin.
+    """
+
+class DNFExecutionError(StopActorExecutionError):
+    """
+    Raised when cannot execute DNF.
+    """
 
 
+class DNFUpgradeTransactionError(StopActorExecutionError):
+    """
+    Raised when an error with the DNF upgrade transaction occurs.
 
+    This covers all stages of the upgrade, from the initial calculation in
+    preupgrade phases to the final execution of the transaction in the
+    upgrade environment.
+    """
 
-
+class RegisteredWorkaroundApplicationError(StopActorExecutionError):
+    """
+    Raised when a registered workaround cannot be applied or the application failured.
+    """
 
 
 def install(target_basedir):
     """
-    Installs our plugin to the DNF plugins.
+    Installs the rhel_upgrade plugin to the DNF plugin under specified container path.
+
+    :raises DNFPluginInstallError: When cannot install the DNF plugin.
+    :raises KeyError: When the installation DNF plugin path is not defined for
+                      the target system (yet).
     """
     # NOTE(pstodulk): Keeping KeyError unhandled as this can happen only
     # for the new major upgrade path.
@@ -47,7 +70,7 @@ def install(target_basedir):
         shutil.copy2(api.get_file_path(DNF_PLUGIN_NAME), tgt_plugin_path)
     except EnvironmentError as e:
         api.current_logger().debug('Failed to install DNF plugin', exc_info=True)
-        raise StopActorExecutionError(
+        raise DNFPluginInstallError(
             message='Failed to install DNF plugin. Error: {}'.format(str(e))
         )
 
@@ -155,7 +178,7 @@ def _handle_transaction_err_msg(err, is_container=False):
             "for your current system to pass the early phases of the upgrade process."
         )
         details = {'STDOUT': err.stdout, 'STDERR': err.stderr, 'hint': proxy_hint}
-        raise StopActorExecutionError(message=message, details=details)
+        raise DNFUpgradeTransactionError(message=message, details=details)
 
     # Disk Requirements:
     #   At least <size> more space needed on the <path> filesystem.
@@ -189,7 +212,7 @@ def _handle_transaction_err_msg(err, is_container=False):
         )
         details = {'hint': hint, 'Disk Requirements': '\n'.join(missing_space)}
 
-    raise StopActorExecutionError(message=message, details=details)
+    raise DNFUpgradeTransactionError(message=message, details=details)
 
 
 def _transaction(context, stage, target_repoids, tasks, plugin_info, xfs_info,
@@ -259,7 +282,7 @@ def _transaction(context, stage, target_repoids, tasks, plugin_info, xfs_info,
             )
         except OSError as e:
             api.current_logger().error('Could not call dnf command: Message: %s', str(e), exc_info=True)
-            raise StopActorExecutionError(
+            raise DNFExecutionError(
                 message='Failed to execute dnf. Reason: {}'.format(str(e))
             )
         except CalledProcessError as e:
@@ -297,9 +320,12 @@ def apply_workarounds(context=None):
                 cmd_str = workaround.script_path
             context.call(['/bin/bash', '-c', cmd_str])
         except (OSError, CalledProcessError) as e:
-            raise StopActorExecutionError(
-                message=('Failed to execute script to apply transaction workaround {display_name}.'
-                         ' Message: {error}'.format(error=str(e), display_name=workaround.display_name))
+            raise RegisteredWorkaroundApplicationError(
+                message=f'Failed to execute script to apply transaction workaround {workaround.display_name}.',
+                details = {
+                    'error message': str(e),
+                    'workaround name': workaround.display_name
+                }
             )
 
 
