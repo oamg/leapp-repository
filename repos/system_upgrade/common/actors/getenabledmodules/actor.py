@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.libraries.common.module import get_enabled_modules
+from leapp.libraries.common.dnflibs.dnfmodule import get_enabled_modules
 from leapp.models import EnabledModules, Module
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
