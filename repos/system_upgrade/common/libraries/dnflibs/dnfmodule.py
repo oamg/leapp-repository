@@ -16,6 +16,12 @@ except ImportError:
     warnings.warn('Could not import the `hawkey` python module.', ImportWarning)
 
 
+class DNFRepoError(StopActorExecutionError):
+    """
+    Used when DNF fails to load repositories.
+    """
+
+
 def _create_or_get_dnf_base(base=None):
     if not base:
         # The DNF command reads /etc/yum/vars/releasever, but the DNF library does not. It parses redhat-release
@@ -45,7 +51,7 @@ def _create_or_get_dnf_base(base=None):
             err_msg = str(e)
             repoid = err_msg.split('repo:')[-1].strip() if 'repo:' in err_msg else 'unknown repo'
             repoid = repoid.strip('"').strip("'").replace('\\"', '')
-            raise StopActorExecutionError(
+            raise DNFRepoError(
                 message='DNF failed to load repositories: {}'.format(str(e)),
                 details={
                     'hint': 'Ensure the {} repository definition is correct or remove it '
@@ -58,6 +64,12 @@ def _create_or_get_dnf_base(base=None):
 def get_modules(base=None):
     """
     Return info about all module streams as a list of libdnf.module.ModulePackage objects.
+
+    The function return an empty list if the DNF python module is not present.
+
+    :param base: If it is set, use it instead of creating a new one.
+    :type base: dnf.Base
+    :raises DNFRepoError: When DNF fails to load DNF repositories.
     """
     if not dnf:
         return []
@@ -73,6 +85,8 @@ def get_modules(base=None):
 def get_enabled_modules():
     """
     Return currently enabled module streams as a list of libdnf.module.ModulePackage objects.
+
+    The function return an empty list if the DNF python module is not present.
     """
     if not dnf:
         return []
