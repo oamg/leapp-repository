@@ -13,7 +13,10 @@ framework, see {ref}`deprecation:list of the deprecated functionality in leapp`.
 Only the versions in which a deprecation has been made are listed.
 
 ## Next release <span style="font-size:0.5em; font-weight:normal">(till TODO date)</span>
-- Note: nothing new deprecated yet
+- Shared libraries
+  - **`leapp.libraries.common.dnfconfig`** - Moved to `leapp.libraries.common.dnflibs.dnfconfig`. Original library is deprecated.
+  - **`leapp.libraries.common.dnfplugin`** - Moved to `leapp.libraries.common.dnflibs.dnfplugin`. Original library is deprecated.
+  - **`leapp.libraries.common.module`** - Replaced by `leapp.libraries.common.dnflibs.dnfmodule` (renamed for clarity). Original library is deprecated.
 
 ## v0.24.0 <span style="font-size:0.5em; font-weight:normal">(till September 2026)</span>
 - Shared libraries

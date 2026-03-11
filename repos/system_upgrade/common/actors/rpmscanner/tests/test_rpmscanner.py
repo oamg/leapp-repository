@@ -4,8 +4,8 @@ import pytest
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import rpmscanner
-from leapp.libraries.common import module as module_lib
 from leapp.libraries.common import rpms, testutils
+from leapp.libraries.common.dnflibs import dnfmodule as module_lib
 from leapp.libraries.stdlib import api
 from leapp.models import InstalledRPM, RPM
 from leapp.snactor.fixture import current_actor_context

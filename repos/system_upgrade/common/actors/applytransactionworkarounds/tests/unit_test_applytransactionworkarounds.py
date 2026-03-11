@@ -1,6 +1,6 @@
 import os
 
-from leapp.libraries.common.dnfplugin import api, apply_workarounds, mounting
+from leapp.libraries.common.dnflibs.dnfplugin import api, apply_workarounds, mounting
 from leapp.libraries.common.testutils import CurrentActorMocked
 from leapp.models import DNFWorkaround
 
