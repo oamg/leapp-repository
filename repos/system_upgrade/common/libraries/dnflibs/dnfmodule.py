@@ -1,7 +1,6 @@
 import warnings
 
-from leapp.exceptions import StopActorExecutionError
-from leapp.libraries.common.config.version import get_source_major_version
+from leapp.libraries.common.dnflibs import create_dnf_base
 
 try:
     import dnf
@@ -16,55 +15,26 @@ except ImportError:
     warnings.warn('Could not import the `hawkey` python module.', ImportWarning)
 
 
-def _create_or_get_dnf_base(base=None):
-    if not base:
-        # The DNF command reads /etc/yum/vars/releasever, but the DNF library does not. It parses redhat-release
-        # package to retrieve system's major version which it then uses as $releasever. However, some systems might
-        # have repositories only for the exact system version (including the minor number). In a case when
-        # /etc/yum/vars/releasever is present, read its contents so that we can access repositores on such systems.
-        conf = dnf.conf.Conf()
-
-        # preload releasever from what we know, this will be our fallback
-        conf.substitutions['releasever'] = get_source_major_version()
-
-        # load all substitutions from etc
-        conf.substitutions.update_from_etc('/')
-
-        base = dnf.Base(conf=conf)
-        base.conf.read()
-        base.init_plugins()
-        base.read_all_repos()
-        # configure plugins after the repositories are loaded
-        # e.g. the amazon-id plugin requires loaded repositories
-        # for the proper configuration.
-        base.configure_plugins()
-
-        try:
-            base.fill_sack()
-        except dnf.exceptions.RepoError as e:
-            err_msg = str(e)
-            repoid = err_msg.split('repo:')[-1].strip() if 'repo:' in err_msg else 'unknown repo'
-            repoid = repoid.strip('"').strip("'").replace('\\"', '')
-            raise StopActorExecutionError(
-                message='DNF failed to load repositories: {}'.format(str(e)),
-                details={
-                    'hint': 'Ensure the {} repository definition is correct or remove it '
-                            'if the repository is not needed anymore.'.format(repoid)
-                }
-            )
-    return base
-
-
 def get_modules(base=None):
     """
     Return info about all module streams as a list of libdnf.module.ModulePackage objects.
+
+    The function return an empty list if the DNF python module is not present.
+
+    :param base: If it is set, use it instead of creating a new one.
+    :type base: dnf.Base
+
+    .. seealso::
+        :func:`create_dnf_base` for exceptions raised when creating dnf.Base
     """
     if not dnf:
         return []
-    base = _create_or_get_dnf_base(base)
+    if not base:
+        base = create_dnf_base()
 
     module_base = dnf.module.module_base.ModuleBase(base)
     # this method is absent on RHEL 7, in which case there are no modules anyway
+    # note the method could be removed in future as well - so keep the check
     if not hasattr(module_base, 'get_modules'):
         return []
     return module_base.get_modules('*')[0]
@@ -73,11 +43,17 @@ def get_modules(base=None):
 def get_enabled_modules():
     """
     Return currently enabled module streams as a list of libdnf.module.ModulePackage objects.
+
+    The function return an empty list if the DNF python module is not present.
+
+    .. seealso::
+        :func:`get_modules` for exceptions raised during module discovery.
+        :func:`create_dnf_base` for exceptions raised when creating dnf.Base
     """
     if not dnf:
         return []
 
-    base = _create_or_get_dnf_base()
+    base = create_dnf_base()
     modules = get_modules(base)
 
     # if modules are not supported (RHEL 7), base.sack._moduleContainer won't exist
@@ -88,6 +64,12 @@ def get_enabled_modules():
 def map_installed_rpms_to_modules():
     """
     Map installed modular packages to the module streams they come from.
+
+    :returns: Mapping of RPM NVRA tuples to (module_name, stream) tuples
+    :rtype: dict
+
+    .. seealso::
+        :func:`get_modules` for exceptions raised during module discovery.
     """
     modules = get_modules()
     # empty on RHEL 7 because of no modules
