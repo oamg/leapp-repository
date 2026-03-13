@@ -36,21 +36,49 @@ def interfaces():
     Generator which produces an Interface objects containing assorted interface properties relevant for network naming
     """
     for dev in physical_interfaces():
-        attrs = {}
+        attrs = {'is_complete': True}
 
         try:
             attrs['name'] = dev.sys_name
             attrs['devpath'] = dev.device_path
-            attrs['driver'] = dev['ID_NET_DRIVER']
-            attrs['vendor'] = dev['ID_VENDOR_ID']
-            attrs['pci_info'] = PCIAddress(**pci_info(dev['ID_PATH']))
-            attrs['mac'] = dev.attributes.get('address')
+
+            # can be missing when the interface is not "managed" by udev
+            # TODO(pstodulk): check the MAC, I think that that one should be
+            # actually always in DB.
+            attrs['driver'] = dev.get('ID_NET_DRIVER', '')
+            attrs['mac'] = dev.attributes.get('address', '')
             if isinstance(attrs['mac'], bytes):
                 attrs['mac'] = attrs['mac'].decode()
+
+            # pci info is not provided for cards that do not use PCI bus,
+            # also it can be missing if the interface is not "managed" by udev.
+            # Cards that do not use PCI usually do not have specified vendor as
+            # well.
+            attrs['vendor'] = dev.get('ID_VENDOR_ID', '')
+            if attrs['vendor'] and dev.get('ID_PATH', '').startswith('pci-'):
+                attrs['pci_info'] = PCIAddress(**pci_info(dev['ID_PATH']))
+            else:
+                # non-PCI
+                attrs['pci_info'] = None
         except Exception as e:  # pylint: disable=broad-except
             # FIXME(msekleta): We should probably handle errors more granularly
             # Maybe we should inhibit upgrade process at this point
-            api.current_logger().warning('Failed to gather information about network interface: %s', e)
+            net_name =  attrs.get('name', 'unknown-interface')
+            api.current_logger().warning(
+                'Failed to gather information about network interface %s: "%s"',
+                net_name, str(e)
+            )
+            # NOTE(pstodulk): skipping the interface as it's really broken
+            # or unknown from the code in leapp-repository pov and another
+            # processing would lead now to a broken upgrades.
+            # Other values that are usually expected but can be missing
+            # in some situations are covered and do not raise this exception.
             continue
+
+        if not all(attrs['driver'], attrs['mac']):
+            attrs['is_complete'] = False
+            api.current_logger().warning(
+                'Information in udev about %s network interface is incomplete.',
+                net_name, str(e)
 
         yield Interface(**attrs)
