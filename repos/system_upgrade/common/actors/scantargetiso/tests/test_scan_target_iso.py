@@ -32,7 +32,32 @@ def test_determine_rhel_version_determination_unexpected_iso_structure_or_invali
     assert not determined_version
 
 
-def test_determine_rhel_version_valid_iso(monkeypatch):
+@pytest.mark.parametrize(
+    "distro, pkgs, etc_release_fname, etc_release_content, expect",
+    [
+        (
+            "rhel",
+            [
+                "redhat-release-8.7-0.3.el8.x86_64.rpm",
+                "redhat-release-eula-8.7-0.3.el8.x86_64.rpm",  # test that this one isn't picked up
+            ],
+            "./etc/redhat-release",
+            "Red Hat Enterprise Linux Server release 7.9 (Maipo)",
+            "7.9",
+        ),
+        (
+            "centos",
+            ["centos-stream-release-9.0-34.el9.x86_64.rpm"],
+            "./etc/centos-release",
+            "CentOS Stream release 9",
+            "9"
+        ),
+    ],
+)
+def test_determine_rhel_version_valid_iso(
+    monkeypatch, distro, pkgs, etc_release_fname, etc_release_content, expect
+):
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(release_id=distro))
     iso_mountpoint = '/some/mountpoint'
 
     def isdir_mocked(path):
@@ -40,20 +65,17 @@ def test_determine_rhel_version_valid_iso(monkeypatch):
 
     def listdir_mocked(path):
         assert path == '/some/mountpoint/BaseOS/Packages', 'Only the contents of BaseOS/Packages should be examined.'
-        return ['xz-5.2.4-4.el8_6.x86_64.rpm',
-                'libmodman-2.0.1-17.el8.i686.rpm',
-                'redhat-release-8.7-0.3.el8.x86_64.rpm',
-                'redhat-release-eula-8.7-0.3.el8.x86_64.rpm']
+        return ['xz-5.2.4-4.el8_6.x86_64.rpm', 'libmodman-2.0.1-17.el8.i686.rpm'] + pkgs
 
     def run_mocked(cmd, *args, **kwargs):
         rpm2cpio_output = 'rpm2cpio_output'
         if cmd[0] == 'rpm2cpio':
-            assert cmd == ['rpm2cpio', '/some/mountpoint/BaseOS/Packages/redhat-release-8.7-0.3.el8.x86_64.rpm']
+            assert cmd == ['rpm2cpio', f'/some/mountpoint/BaseOS/Packages/{pkgs[0]}']
             return {'stdout': rpm2cpio_output}
         if cmd[0] == 'cpio':
-            assert cmd == ['cpio', '--extract', '--to-stdout', './etc/redhat-release']
+            assert cmd == ['cpio', '--extract', '--to-stdout', etc_release_fname]
             assert kwargs['stdin'] == rpm2cpio_output
-            return {'stdout': 'Red Hat Enterprise Linux Server release 7.9 (Maipo)'}
+            return {'stdout': etc_release_content}
         raise ValueError('Unexpected command has been called.')
 
     monkeypatch.setattr(os.path, 'isdir', isdir_mocked)
@@ -61,7 +83,7 @@ def test_determine_rhel_version_valid_iso(monkeypatch):
     monkeypatch.setattr(scan_target_os_iso, 'run', run_mocked)
 
     determined_version = scan_target_os_iso.determine_rhel_version_from_iso_mountpoint(iso_mountpoint)
-    assert determined_version == '7.9'
+    assert determined_version == expect
 
 
 def test_determine_rhel_version_valid_iso_no_rh_release(monkeypatch):
@@ -110,7 +132,7 @@ def test_determine_rhel_version_rpm_extract_fails(monkeypatch):
 @pytest.mark.parametrize('etc_rh_release_contents', ('',
                                                      'Red Hat Enterprise Linux Server',
                                                      'Fedora release 35 (Thirty Five)'))
-def test_determine_rhel_version_unexpected_etc_rh_release_contents(monkeypatch, etc_rh_release_contents):
+def test_determine_rhel_version_unexpected_etc_distro_release_contents(monkeypatch, etc_rh_release_contents):
     iso_mountpoint = '/some/mountpoint'
 
     def isdir_mocked(path):
