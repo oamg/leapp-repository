@@ -1,26 +1,8 @@
 from leapp import reporting
+from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
 from leapp.libraries.common.rpms import has_package
 from leapp.libraries.stdlib import api
 from leapp.models import DistributionSignedRPM
-
-# Summary for postgresql-server report
-report_server_inst_summary = (
-    'PostgreSQL server component will be upgraded. Since RHEL-9 includes'
-    ' PostgreSQL server 13 by default, which is incompatible with 9.6, 10 and 12'
-    ' included in RHEL-8, in those cases, it is necessary to proceed with additional steps'
-    ' for the complete upgrade of the PostgreSQL data.'
-    'If the database has already been upgraded, meaning the system is already using PostgreSQL 13,'
-    ' then no further actions are required.'
-)
-
-report_server_inst_hint = (
-    'Back up your data before proceeding with the upgrade'
-    ' and follow steps in the documentation section "Migrating to a RHEL 9 version of PostgreSQL"'
-    ' after the upgrade.'
-)
-
-# Link URL for postgresql-server report
-report_server_inst_link_url = 'https://access.redhat.com/articles/6654721'
 
 
 def _report_server_installed():
@@ -31,16 +13,37 @@ def _report_server_installed():
     installation, warn them about necessary additional steps, and
     redirect them to online documentation for the upgrade process.
     """
-    reporting.create_report([
-        reporting.Title('PostgreSQL (postgresql-server) has been detected on your system'),
-        reporting.Summary(report_server_inst_summary),
-        reporting.Severity(reporting.Severity.MEDIUM),
-        reporting.Groups([reporting.Groups.SERVICES]),
-        reporting.ExternalLink(title='Migrating to a RHEL 9 version of PostgreSQL',
-                               url=report_server_inst_link_url),
-        reporting.RelatedResource('package', 'postgresql-server'),
-        reporting.Remediation(hint=report_server_inst_hint),
-        ])
+    summary = (
+        'PostgreSQL server component will be upgraded. Since {target_distro} 9'
+        ' includes PostgreSQL server 13 by default, which is incompatible with 9.6,'
+        ' 10 and 12 included in {source_distro} 8, in those cases, it is necessary'
+        ' to proceed with additional steps for the complete upgrade of the PostgreSQL'
+        ' data. If the database has already been upgraded, meaning the system is'
+        ' already using PostgreSQL 13, then no further actions are required.'
+    ).format_map(DISTRO_REPORT_NAMES)
+
+    hint = (
+        'Back up your data before proceeding with the upgrade'
+        ' and follow steps in the documentation section "Migrating to a RHEL 9 version of PostgreSQL"'
+        ' after the upgrade.'
+    )
+
+    reporting.create_report(
+        [
+            reporting.Title(
+                "PostgreSQL (postgresql-server) has been detected on your system"
+            ),
+            reporting.Summary(summary),
+            reporting.Severity(reporting.Severity.MEDIUM),
+            reporting.Groups([reporting.Groups.SERVICES]),
+            reporting.ExternalLink(
+                title="Migrating to a RHEL 9 version of PostgreSQL",
+                url='https://access.redhat.com/articles/6654721',
+            ),
+            reporting.RelatedResource("package", "postgresql-server"),
+            reporting.Remediation(hint=hint),
+        ]
+    )
 
 
 def report_installed_packages(_context=api):

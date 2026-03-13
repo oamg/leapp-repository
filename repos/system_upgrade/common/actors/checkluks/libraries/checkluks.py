@@ -1,5 +1,6 @@
 from leapp import reporting
 from leapp.libraries.common.config.version import get_source_major_version
+from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
 from leapp.libraries.stdlib import api
 from leapp.models import (
     CephInfo,
@@ -50,18 +51,18 @@ def report_inhibitor(luks1_partitions, no_tpm2_partitions):
     if luks1_partitions:
 
         summary += (
-            '\n\nSince RHEL 8 the default format for LUKS encryption is LUKS2.'
-            ' Despite the old LUKS1 format is still supported on RHEL systems'
+            '\n\nSince {target_distro} 8 the default format for LUKS encryption is LUKS2.'
+            ' Despite the old LUKS1 format is still supported on {target_distro} systems'
             ' it has some limitations in comparison to LUKS2.'
             ' Only the LUKS2 format is supported for upgrades.'
-            ' The following LUKS1 partitions have been discovered on your system:{}'
-            .format(''.join(_formatted_list_output(luks1_partitions)))
+            ' The following LUKS1 partitions have been discovered on your system:{partitions}'
+            .format(**DISTRO_REPORT_NAMES, partitions=''.join(_formatted_list_output(luks1_partitions)))
         )
         report_hints.append(reporting.Remediation(
             hint=(
                 'Convert your LUKS1 encrypted devices to LUKS2 and bind it to TPM2 using clevis.'
                 ' If this is not possible in your case consider clean installation'
-                ' of the target RHEL system instead.'
+                ' of the target {target_distro} system instead.'.format_map(DISTRO_REPORT_NAMES)
             )
         ))
         report_hints.append(reporting.ExternalLink(

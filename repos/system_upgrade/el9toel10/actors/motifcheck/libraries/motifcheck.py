@@ -1,21 +1,7 @@
 from leapp import reporting
+from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
 from leapp.libraries.common.rpms import has_package
 from leapp.models import DistributionSignedRPM
-
-# Summary for motif report
-report_motif_inst_summary = (
-    'The Motif package has been detected on your system. Motif is no longer available in RHEL 10.'
-    ' Applications that depend on Motif will not work after the upgrade.'
-    ' You will need to either migrate to an alternative GUI toolkit (such as GTK or Qt)'
-    ' or maintain the Motif package through alternative means.'
-)
-
-report_motif_inst_hint = (
-    'Consider migrating applications to a modern GUI toolkit before proceeding with the upgrade.'
-)
-
-# Link URL for motif report
-report_motif_inst_link_url = 'https://red.ht/rhel-10-removed-features-graphics-infrastructures'
 
 
 def _report_motif_installed():
@@ -26,16 +12,28 @@ def _report_motif_installed():
     installation, warn them about the lack of motif support in RHEL 10, and
     redirect them to online documentation for the migration process.
     """
+    summary = (
+        'The Motif package has been detected on your system. Motif is no longer'
+        ' available in {target_distro} 10. Applications that depend on Motif'
+        ' will not work after the upgrade. You will need to either migrate to'
+        ' an alternative GUI toolkit (such as GTK or Qt) or maintain the Motif'
+        ' package through alternative means.'
+    ).format_map(DISTRO_REPORT_NAMES)
+
     reporting.create_report([
         reporting.Title('Motif has been detected on your system'),
-        reporting.Summary(report_motif_inst_summary),
+        reporting.Summary(summary),
         reporting.Severity(reporting.Severity.HIGH),
         reporting.Groups([reporting.Groups.SERVICES]),
-        reporting.ExternalLink(title='RHEL 10 Removed Features - Graphics Infrastructures',
-                               url=report_motif_inst_link_url),
+        reporting.ExternalLink(
+            title='RHEL 10 Removed Features - Graphics Infrastructures',
+            url='https://red.ht/rhel-10-removed-features-graphics-infrastructures'
+        ),
         reporting.RelatedResource('package', 'motif'),
-        reporting.Remediation(hint=report_motif_inst_hint),
-        ])
+        reporting.Remediation(
+            hint='Consider migrating applications to a modern GUI toolkit before proceeding with the upgrade.'
+        ),
+    ])
 
 
 def report_installed_packages():

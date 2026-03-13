@@ -2,13 +2,13 @@ import re
 
 from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
+from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
 from leapp.libraries.stdlib import api
 
 # The openssl configuration file
 # TODO copied from opensslconfigscanner/libraries/readconf.py
 CONFIG = '/etc/pki/tls/openssl.cnf'
 
-LEAPP_COMMENT = '# Modified by leapp during upgrade to RHEL 9\n'
 APPEND_STRING = (
     '[provider_sect]\n'
     'default = default_sect\n'
@@ -20,6 +20,11 @@ APPEND_STRING = (
     '##[legacy_sect]\n'
     '##activate = 1\n'
 )
+
+
+def _get_leapp_comment():
+    # cannot access DISTRO_REPORT_NAMES at top level
+    return f"# Modified by leapp during upgrade to {DISTRO_REPORT_NAMES.target} 9\n"
 
 
 def _add_lines(lines, add):
@@ -76,12 +81,12 @@ def _modify_file(f, fail_on_error=True):
     lines = f.readlines()
     lines = _replace(lines, r"openssl_conf\s*=\s*default_modules",
                      "openssl_conf = openssl_init",
-                     LEAPP_COMMENT, True, fail_on_error)
+                     _get_leapp_comment(), True, fail_on_error)
     lines = _replace(lines, r"\[\s*default_modules\s*\]",
                      "[openssl_init]\n"
                      "providers = provider_sect",
-                     LEAPP_COMMENT, True, fail_on_error)
-    lines = _append(lines, APPEND_STRING, LEAPP_COMMENT)
+                     _get_leapp_comment(), True, fail_on_error)
+    lines = _append(lines, APPEND_STRING, _get_leapp_comment())
     f.seek(0)
     f.write(''.join(lines))
 

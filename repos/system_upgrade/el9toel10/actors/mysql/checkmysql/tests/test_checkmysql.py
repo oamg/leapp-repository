@@ -3,7 +3,7 @@ import pytest
 from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import checkmysql
-from leapp.libraries.common.testutils import create_report_mocked, logger_mocked
+from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked, logger_mocked
 from leapp.libraries.stdlib import api
 from leapp.models import MySQLConfiguration
 
@@ -42,6 +42,7 @@ def test_process_no_deprecated(monkeypatch):
                                  removed_options=[],
                                  removed_arguments=[])
 
+    monkeypatch.setattr(api, "current_actor", CurrentActorMocked())
     monkeypatch.setattr(reporting, "create_report", create_report_mocked())
     monkeypatch.setattr(api, 'consume', consume_mocked)
 
@@ -57,6 +58,7 @@ def test_process_deprecated(monkeypatch):
                                  removed_options=['avoid_temporal_upgrade', '--old'],
                                  removed_arguments=['--language'])
 
+    monkeypatch.setattr(api, "current_actor", CurrentActorMocked())
     monkeypatch.setattr(reporting, "create_report", create_report_mocked())
     monkeypatch.setattr(api, 'consume', consume_mocked)
 

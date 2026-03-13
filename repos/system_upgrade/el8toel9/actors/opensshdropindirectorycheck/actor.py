@@ -50,7 +50,7 @@ class OpenSshDropInDirectoryCheck(Actor):
             reporting.Title('The upgrade will prepend the Include directive to OpenSSH sshd_config'),
             reporting.Summary(
                 'OpenSSH server configuration needs to be modified to contain Include directive '
-                'for the RHEL9 to work properly and integrate with the other parts of the OS. '
+                'for the target system to work properly and integrate with the other parts of the OS. '
                 'The following snippet will be added to the /etc/ssh/sshd_config during the '
                 'ApplicationsPhase: `Include /etc/ssh/sshd_config.d/*.conf`'
             ),

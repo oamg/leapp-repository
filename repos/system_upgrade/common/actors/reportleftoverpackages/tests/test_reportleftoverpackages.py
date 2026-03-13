@@ -45,5 +45,5 @@ def test_removed_packages(monkeypatch):
 
     assert reporting.create_report.called == 1
     assert 'Leftover RHEL packages have been removed' in reporting.create_report.report_fields['title']
-    assert 'Following packages have been removed' in reporting.create_report.report_fields['summary']
+    assert 'Following RHEL packages have been removed' in reporting.create_report.report_fields['summary']
     assert 'rpm-1.0-1.el7' in reporting.create_report.report_fields['summary']

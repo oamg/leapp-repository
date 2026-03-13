@@ -2,6 +2,7 @@ import os
 
 from leapp import reporting
 from leapp.libraries.common.config import version
+from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
 
 COMMON_REPORT_TAGS = [reporting.Groups.SANITY]
 FMT_LIST_SEPARATOR = '\n    - '
@@ -14,7 +15,9 @@ def skip_check():
     if os.getenv('LEAPP_DEVEL_SKIP_CHECK_OS_RELEASE'):
         reporting.create_report([
             reporting.Title('Skipped OS release check'),
-            reporting.Summary('Source RHEL release check skipped via LEAPP_DEVEL_SKIP_CHECK_OS_RELEASE env var.'),
+            reporting.Summary(
+                'Source system release check skipped via LEAPP_DEVEL_SKIP_CHECK_OS_RELEASE env variable.'
+            ),
             reporting.Severity(reporting.Severity.HIGH),
             reporting.Groups(COMMON_REPORT_TAGS)
         ] + related)
@@ -24,7 +27,7 @@ def skip_check():
 
 
 def check_os_version():
-    """ Check the RHEL minor version and inhibit the upgrade if it does not match the supported ones """
+    """ Check the distro version and inhibit the upgrade if it does not match the supported ones """
     if not version.is_supported_version():
         supported_releases = []
         for rel in version.SUPPORTED_VERSIONS:
@@ -33,7 +36,8 @@ def check_os_version():
         current_release = ' '.join(version.current_version()).upper()
         reporting.create_report([
             reporting.Title(
-                'The installed OS version is not supported for the in-place upgrade to the target RHEL version'
+                'The installed OS version is not supported for the in-place upgrade'
+                ' to the target {target_distro} version'.format_map(DISTRO_REPORT_NAMES)
             ),
             reporting.Summary(
                 'The supported OS releases for the upgrade process:'
