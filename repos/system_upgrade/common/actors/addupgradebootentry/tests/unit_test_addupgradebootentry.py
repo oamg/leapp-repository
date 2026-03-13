@@ -279,23 +279,31 @@ def test_get_rdlvm_arg_values(monkeypatch):
     assert args == ('A', 'B')
 
 
+@pytest.mark.parametrize(
+    ('path', 'mount_point', 'suffix'),
+    [
+        ('/', '/', '/'),
+        ('/dir', '/', '/dir'),
+        ('/dir/squashfs', '/', '/dir/squashfs'),
+        ('/dir/squashfs', '/dir', '/squashfs'),
+    ]
+)
+def test_split_path_on_mount_point(monkeypatch, path, mount_point, suffix):
+    def is_mount_mock(_path):
+        return _path == mount_point
+
+    monkeypatch.setattr(os.path, 'ismount', is_mount_mock)
+
+    ret_mount_point, ret_suffix = addupgradebootentry._split_path_on_mount_point(path)
+    assert ret_mount_point == mount_point
+    assert ret_suffix == suffix
+
+
 def test_get_device_uuid(monkeypatch):
     """
     The file in question is /var/lib/file
     Underlying partition /var is a device /dev/sda1 (dev_id=10) linked to from /dev/disk/by-uuid/MY_UUID1
     """
-
-    execution_stats = {
-        'is_mount_call_count': 0
-    }
-
-    def is_mount_mock(path):
-        execution_stats['is_mount_call_count'] += 1
-        assert execution_stats['is_mount_call_count'] <= 3
-        return path == '/var'
-
-    monkeypatch.setattr(os.path, 'ismount', is_mount_mock)
-
     StatResult = namedtuple('StatResult', ('st_dev', 'st_rdev'))
 
     def stat_mock(path):
@@ -325,8 +333,8 @@ def test_get_device_uuid(monkeypatch):
 
     monkeypatch.setattr(os, 'readlink', readlink_mock)
 
-    path = '/var/lib/file'
-    uuid = addupgradebootentry._get_device_uuid(path)
+    mount_point = '/var'
+    uuid = addupgradebootentry._get_device_uuid(mount_point)
 
     assert uuid == 'MY_UUID1'
 
