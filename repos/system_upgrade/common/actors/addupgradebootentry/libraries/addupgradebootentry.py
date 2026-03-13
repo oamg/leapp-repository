@@ -270,14 +270,26 @@ def local_os_stat(path):
     return os.stat(path)
 
 
-def _get_device_uuid(path):
-    """
-    Find the UUID of a device in which the given path is located.
-    """
-    while not os.path.ismount(path):
-        path = os.path.dirname(path)
+def _split_path_on_mount_point(path):
+    """ Split a given path into a prefix where a device is mounted and suffix relative to the device root. """
+    mount_point = path
+    while not os.path.ismount(mount_point):
+        mount_point = os.path.dirname(mount_point)
 
-    needle_dev_id = local_os_stat(path).st_dev
+    relative_suffix = path[len(mount_point):]
+    if len(relative_suffix) == 0 or relative_suffix[0] != '/':
+        # relative_suffix is '' if the squashfs dir is set to root (/)
+        # relative_suffix does not start with '/' if the dir is located in /, i.e., /mydir
+        relative_suffix = '/{}'.format(relative_suffix)
+
+    return (mount_point, relative_suffix)
+
+
+def _get_device_uuid(mount_point):
+    """
+    Find the UUID of a device mounted at a given mount point.
+    """
+    needle_dev_id = local_os_stat(mount_point).st_dev
 
     for uuid in os.listdir('/dev/disk/by-uuid'):
         uuid_fullpath = os.path.join('/dev/disk/by-uuid/', uuid)
@@ -333,8 +345,9 @@ def construct_cmdline_args_for_livemode():
     if livemode_config.url_to_load_squashfs_from:
         args['root'] = 'live:{}'.format(livemode_config.url_to_load_squashfs_from)
     else:
-        args['root'] = 'live:UUID={}'.format(_get_device_uuid(dir_path_containing_liveimg))
-        args['rd.live.dir'] = dir_path_containing_liveimg
+        dev_mount_point, dir_location_on_dev = _split_path_on_mount_point(dir_path_containing_liveimg)
+        args['root'] = 'live:UUID={}'.format(_get_device_uuid(dev_mount_point))
+        args['rd.live.dir'] = dir_location_on_dev
         args['rd.live.squashimg'] = liveimg_filename
 
     if livemode_config.dracut_network:
