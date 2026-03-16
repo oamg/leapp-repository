@@ -27,8 +27,8 @@ def is_vendor_dell():
 
 def all_interfaces_biosdevname(interfaces):
     # Biosdevname supports two naming schemes
-    emx = re.compile('em[0-9]+')
-    pxpy = re.compile('p[0-9]+p[0-9]+')
+    emx = re.compile('^em[0-9]+$')
+    pxpy = re.compile('^p[0-9]+p[0-9]+$')
 
     for i in interfaces:
         if emx.match(i.name) is None and pxpy.match(i.name) is None:

@@ -59,50 +59,35 @@ def test_is_vendor_is_not_dell(monkeypatch):
     assert not biosdevname.is_vendor_dell()
 
 
-def test_all_interfaces_biosdevname(monkeypatch):
-    pci_info = PCIAddress(domain="domain", function="function", bus="bus", device="device")
+def _gen_ifaces_by_names(names):
+    pci = PCIAddress(domain="0000", bus="3e", function="00", device="PCI bridge")
+    interfaces = []
+    for nic_name in names:
+        interfaces.append(Interface(
+            name=nic_name,
+            devpath="path",
+            driver="drv",
+            mac="52:54:00:0b:4a:6d",
+            pci_info=pci,
+            vendor="dell",
+        ))
+    return interfaces
 
-    interfaces = [
-        Interface(
-            name="eth0", mac="mac", vendor="dell", pci_info=pci_info, devpath="path", driver="drv"
-        )
-    ]
-    assert not biosdevname.all_interfaces_biosdevname(interfaces)
-    interfaces = [
-        Interface(
-            name="em0", mac="mac", vendor="dell", pci_info=pci_info, devpath="path", driver="drv"
-        )
-    ]
-    assert biosdevname.all_interfaces_biosdevname(interfaces)
-    interfaces = [
-        Interface(
-            name="p0p22", mac="mac", vendor="dell", pci_info=pci_info, devpath="path", driver="drv"
-        )
-    ]
-    assert biosdevname.all_interfaces_biosdevname(interfaces)
 
-    interfaces = [
-        Interface(
-            name="p1p2", mac="mac", vendor="dell", pci_info=pci_info, devpath="path", driver="drv"
-        ),
-        Interface(
-            name="em2", mac="mac", vendor="dell", pci_info=pci_info, devpath="path", driver="drv"
-        ),
-    ]
-    assert biosdevname.all_interfaces_biosdevname(interfaces)
-
-    interfaces = [
-        Interface(
-            name="p1p2", mac="mac", vendor="dell", pci_info=pci_info, devpath="path", driver="drv"
-        ),
-        Interface(
-            name="em2", mac="mac", vendor="dell", pci_info=pci_info, devpath="path", driver="drv"
-        ),
-        Interface(
-            name="eth0", mac="mac", vendor="dell", pci_info=pci_info, devpath="path", driver="drv"
-        ),
-    ]
-    assert not biosdevname.all_interfaces_biosdevname(interfaces)
+@pytest.mark.parametrize(("interface_names", "expected_result"), (
+    (["eth0"], False),
+    (["preem0"], False),
+    (["em0post"], False),
+    (["prep0p22"], False),
+    (["p0p22post"], False),
+    (["em0"], True),
+    (["p0p22"], True),
+    (["em2", "p1p22"], True),
+    (["p1p2", "em2", "eth0"], False)
+))
+def test_all_interfaces_biosdevname(interface_names, expected_result):
+    interfaces = _gen_ifaces_by_names(interface_names)
+    assert biosdevname.all_interfaces_biosdevname(interfaces) == expected_result
 
 
 def test_enable_biosdevname(monkeypatch):
