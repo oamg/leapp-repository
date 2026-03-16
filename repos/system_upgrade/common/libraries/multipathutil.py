@@ -7,7 +7,8 @@ _sections = ('defaults', 'blacklist', 'blacklist_exceptions', 'devices',
              'overrides', 'multipaths')
 
 _subsections = {'blacklist': 'device', 'blacklist_exceptions': 'device',
-                'devices': 'device', 'multipaths': 'multipath'}
+                'devices': 'device', 'multipaths': 'multipath',
+                'overrides': 'protocol'}
 
 
 def read_config(path):

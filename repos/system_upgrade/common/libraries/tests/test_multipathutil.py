@@ -38,7 +38,8 @@ def test_section_start():
     sections = ('defaults', 'blacklist', 'blacklist_exceptions', 'devices',
                 'overrides', 'multipaths')
     subsections = {'blacklist': 'device', 'blacklist_exceptions': 'device',
-                   'devices': 'device', 'multipaths': 'multipath'}
+                   'devices': 'device', 'multipaths': 'multipath',
+                   'overrides': 'protocol'}
     for section in sections:
         data = lib.LineData(section + ' {', None, False)
         assert data.type == data.TYPE_SECTION_START
