@@ -2,7 +2,6 @@ import errno
 import os
 
 from leapp.libraries.common import multipathutil
-from leapp.libraries.common.config.version import get_source_major_version
 from leapp.libraries.common.rpms import has_package
 from leapp.libraries.stdlib import api
 from leapp.models import DistributionSignedRPM, MultipathConfFacts8to9, MultipathConfig8to9, MultipathInfo
@@ -103,10 +102,8 @@ def scan_and_emit_multipath_info(default_config_path='/etc/multipath.conf'):
     )
     api.produce(multipath_info)
 
-    # Handle upgrade-path-specific config actions
-    if get_source_major_version() == '8':
-        secondary_configs = _parse_config_dir(multipath_info.config_dir)
-        all_configs = [primary_config] + secondary_configs
+    secondary_configs = _parse_config_dir(multipath_info.config_dir)
+    all_configs = [primary_config] + secondary_configs
 
-        config_facts_for_8to9 = MultipathConfFacts8to9(configs=all_configs)
-        api.produce(config_facts_for_8to9)
+    config_facts_for_8to9 = MultipathConfFacts8to9(configs=all_configs)
+    api.produce(config_facts_for_8to9)
