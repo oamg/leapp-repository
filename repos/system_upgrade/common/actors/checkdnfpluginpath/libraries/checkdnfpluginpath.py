@@ -21,7 +21,7 @@ def check_dnf_pluginpath(dnf_pluginpath_detected):
         reporting.Remediation(
             hint='Remove or comment out the pluginpath option in the DNF '
                  'configuration file to be able to upgrade the system',
-            commands=[['sed', '-i', '\'s/^pluginpath[[:space:]]*=/#pluginpath=/\'', DNF_CONFIG_PATH]],
+            commands=[['sed', '-i', 's/^pluginpath[[:space:]]*=/#pluginpath=/', DNF_CONFIG_PATH]],
         ),
         reporting.Severity(reporting.Severity.HIGH),
         reporting.Groups([reporting.Groups.INHIBITOR]),
