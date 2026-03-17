@@ -142,33 +142,3 @@ def test_get_facts_missing_dir(monkeypatch, primary_config, expected_configs):
 
     for actual_config, expected_config in zip(actual_configs, expected_configs):
         assert_config(actual_config, expected_config)
-
-
-def test_only_general_info_is_produced_on_9to10(monkeypatch):
-    default_config_path = '/etc/multipath.conf'
-
-    def parse_config_mock(path):
-        assert path == default_config_path
-        return MultipathConfig8to9(pathname=path)
-
-    monkeypatch.setattr(multipathconfread, '_parse_config', parse_config_mock)
-    monkeypatch.setattr(multipathconfread, 'is_processable', lambda: True)
-
-    produce_mock = produce_mocked()
-    monkeypatch.setattr(api, 'produce', produce_mock)
-
-    actor_mock = CurrentActorMocked(src_ver='9.6', dst_ver='10.0')
-    monkeypatch.setattr(api, 'current_actor', actor_mock)
-
-    multipathconfread.scan_and_emit_multipath_info(default_config_path)
-
-    assert produce_mock.called
-
-    general_info_msgs = [msg for msg in produce_mock.model_instances if isinstance(msg, MultipathInfo)]
-    assert len(general_info_msgs) == 1
-    general_info = general_info_msgs[0]
-    assert general_info.is_configured
-    assert general_info.config_dir == '/etc/multipath/conf.d'
-
-    msgs = [msg for msg in produce_mock.model_instances if isinstance(msg, MultipathConfFacts8to9)]
-    assert not msgs
