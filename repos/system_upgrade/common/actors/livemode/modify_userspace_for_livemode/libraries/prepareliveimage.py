@@ -18,8 +18,16 @@ LEAPP_CONSOLE_SERVICE_FILE = 'console.service'
 LEAPP_STRACE_SERVICE_FILE = 'upgrade-strace.service'
 """ Service that executes the upgrade while strace-ing the corresponding Leapp's process tree. """
 
-SOURCE_ROOT_MOUNT_LOCATION = '/run/initramfs/live'
-""" Controls where the source system's root will be mounted inside the upgrade image. """
+SOURCE_ROOT_MOUNT_LOCATION = '/run/upgrade'
+"""
+Controls where the source system's root will be mounted inside the upgrade image.
+
+Note: This cannot be set to /run/initramfs/live as the path is used by
+      dmsquash-live by default to mount the block device that holds the squashfs
+      image. As this device can be arbitrary (e.g., it can be mounted as /var on the
+      source system), using /run/initramfs/live would cause mounting problems - we
+      would attempt to mount / and also (for example) /var on the same location.
+"""
 
 
 def create_fstab_mounting_current_root_elsewhere(context, host_fstab):
