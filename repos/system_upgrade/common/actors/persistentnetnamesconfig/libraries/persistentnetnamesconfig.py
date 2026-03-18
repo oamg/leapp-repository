@@ -2,10 +2,9 @@ import errno
 import os
 import re
 
-from leapp.libraries.common.config import get_env, version
+from leapp.libraries.common.config import get_env
 from leapp.libraries.stdlib import api
 from leapp.models import (
-    InitrdIncludes,
     PersistentNetNamesFacts,
     PersistentNetNamesFactsInitramfs,
     RenamedInterface,
@@ -37,17 +36,20 @@ def generate_link_file(interface):
     return link_file
 
 
-@suppress_deprecation(InitrdIncludes)
+@suppress_deprecation(RenamedInterfaces, RenamedInterface)
 def process():
     are_net_schemes_enabled = get_env('LEAPP_DISABLE_NET_NAMING_SCHEMES', '0') != '1'
-    is_upgrade_8to9 = version.get_target_major_version() == '9'
 
-    if are_net_schemes_enabled and is_upgrade_8to9:
-        # For 8>9 we are using net.naming_scheme kernel arg by default - do not generate link files
+    if are_net_schemes_enabled:
         msg = ('Skipping generation of .link files renaming NICs as net.naming-scheme '
-               '{LEAPP_DISABLE_NET_NAMING_SCHEMES != 1} is enabled and upgrade is 8>9')
-        api.current_logger().info(msg)
+               '{LEAPP_DISABLE_NET_NAMING_SCHEMES != 1} is enabled.')
+        api.current_logger().debug(msg)
         return
+
+    api.current_logger().warning(
+        'LEAPP_DISABLE_NET_NAMING_SCHEMES=1 - Using deprecated handling'
+        ' of network interface names by creating link files.'
+    )
 
     if get_env('LEAPP_NO_NETWORK_RENAMING', '0') == '1':
         api.current_logger().info(
@@ -80,13 +82,13 @@ def process():
                 )
                 continue
 
-            if source_name != target_name and get_env('LEAPP_NO_NETWORK_RENAMING', '0') != '1':
+            if source_name != target_name:
                 api.current_logger().warning('Detected interface rename {} -> {}.'.format(source_name, target_name))
 
-                if re.search('eth[0-9]+', iface.name) is not None:
+                if re.search('^eth[0-9]+$', iface.name) is not None:
                     api.current_logger().warning('Interface named using eth prefix, refusing to generate link file')
-                    renamed_interfaces.append(RenamedInterface(**{'rhel7_name': source_name,
-                                                                  'rhel8_name': target_name}))
+                    renamed_interfaces.append(RenamedInterface(**{'original_name': source_name,
+                                                                  'new_name': target_name}))
                     continue
 
                 initrd_files.append(generate_link_file(iface))
@@ -108,7 +110,6 @@ def process():
         api.current_logger().warning(msg)
 
     api.produce(RenamedInterfaces(renamed=renamed_interfaces))
-    api.produce(InitrdIncludes(files=initrd_files))
     # TODO: cover actor by tests in future. I am skipping writing of tests
     # now as some refactoring and bugfixing related to this actor
     # is planned already.

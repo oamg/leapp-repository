@@ -1,7 +1,6 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import persistentnetnamesconfig
 from leapp.models import (
-    InitrdIncludes,
     PersistentNetNamesFacts,
     PersistentNetNamesFactsInitramfs,
     RenamedInterfaces,
@@ -11,21 +10,27 @@ from leapp.tags import ApplicationsPhaseTag, IPUWorkflowTag
 from leapp.utils.deprecation import suppress_deprecation
 
 
-@suppress_deprecation(InitrdIncludes)
+@suppress_deprecation(RenamedInterfaces)
 class PersistentNetNamesConfig(Actor):
     """
     Generate udev persistent network naming configuration
 
-    This actor generates systemd-udevd link files for each physical ethernet interface present on RHEL-7
-    in case we notice that interface name differs on RHEL-8. Link file configuration will assign RHEL-7 version of
-    a name. Actors produces list of interfaces which changed name between RHEL-7 and RHEL-8.
+    NOTE: This actor is deprecated and currently performs described actions
+          only if LEAPP_NO_NETWORK_RENAMING != 1 and LEAPP_DISABLE_NET_NAMING_SCHEMES == 1.
+
+    This actor generates systemd-udevd link files for each physical network
+    interface present on the original system if the interface name differs
+    on the target OS. Link file configuration will assign original name that has
+    been detected on the source OS.
+
+    Also produce list of interfaces which changed names during the upgrade
+    process.
     """
 
     name = 'persistentnetnamesconfig'
     consumes = (PersistentNetNamesFacts, PersistentNetNamesFactsInitramfs)
-    produces = (RenamedInterfaces, InitrdIncludes, TargetInitramfsTasks)
+    produces = (RenamedInterfaces, TargetInitramfsTasks)
     tags = (ApplicationsPhaseTag, IPUWorkflowTag)
-    initrd_files = []
 
     def process(self):
         persistentnetnamesconfig.process()
