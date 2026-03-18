@@ -28,8 +28,8 @@ export LEAPPHOME=/root/tmp_leapp_py3
 export LEAPP3_BIN=$LEAPPHOME/leapp3
 
 # this was initially a dracut script, hence $NEWROOT.
-# the rootfs is mounted on /run/initramfs/live when booted with dmsquash-live
-export NEWROOT=/run/initramfs/live
+# the rootfs is mounted on /run/upgrade when booted with dmsquash-live
+export NEWROOT=/run/upgrade
 
 NSPAWN_OPTS="--capability=all --bind=/dev --bind=/dev/pts --bind=/proc --bind=/run/udev --bind=/run/lock"
 [ -d /dev/mapper ] && NSPAWN_OPTS="$NSPAWN_OPTS --bind=/dev/mapper"
