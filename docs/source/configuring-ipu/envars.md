@@ -6,10 +6,20 @@ Below is a list of the general and development variables available.
 ### General variables
 
 #### LEAPP_DISABLE_NET_NAMING_SCHEMES
-On RHEL 8 to 9 upgrades, by default, net.naming-scheme is used to make network interface names immutable during the upgrade. In this case an extra RPM named `rhel-net-naming-sysattrs` is installed to the target system and target userspace container, providing the definitions of the "profiles" for net.naming-scheme.
+The `net.naming-scheme` kernel command line option is used by default to make
+network interface names immutable during the upgrade.
+In this case an extra RPM named `rhel-net-naming-sysattrs` (or `net-naming-sysattrs`)
+is installed to the target system and target userspace container, providing
+the definitions of the "profiles" for `net.naming-scheme`.
 
-If set to `0`, the "legacy" mechanism is used where leapp writes .link files to prevent interfaces being renamed
+If set to `0`, the legacy mechanism is used where leapp writes .link files to prevent interfaces being renamed
 after booting to post-upgrade system.
+
+```{warning}
+The variable is deprecated as it is a part of the legacy solution for handling
+NIC names during the upgrade. Current supported solution allows only using
+the `net.naming-scheme`.
+```
 
 #### LEAPP_ENABLE_REPOS
 Specify repositories (repoids) split by comma, that should be used during the in-place upgrade to the target system. It‘s overwritten automatically in case the --enablerepo option is used. It‘s recommended to use the --enablerepo option instead of the envar.
@@ -25,6 +35,12 @@ If set to `1`, Leapp does not register the system into Red Hat Lightspeed automa
 
 #### LEAPP_NO_NETWORK_RENAMING
 If set to `1`, the actor responsible to handle NICs names ends without doing anything. The actor usually creates UDEV rules to preserve original NICs in case they are changed. However, in some cases it‘s not wanted and it leads in malfunction network configuration (e.g. in case the bonding is configured on the system). It‘s expected that NICs have to be handled manually if needed.
+
+```{warning}
+The variable is deprecated as it is a part of the legacy solution for
+handling NIC names during the upgrade. Current supported solution allows only
+using of the `net.naming-scheme`.
+```
 
 ##### LEAPP_NO_RHSM
 If set to `1`, Leapp does not use Red Hat Subscription Management for the upgrade. It‘s equivalent to the --no-rhsm leapp option.

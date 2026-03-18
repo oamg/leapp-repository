@@ -1,5 +1,6 @@
 from leapp.models import fields, Model
 from leapp.topics import SystemInfoTopic
+from leapp.utils.deprecation import deprecated
 
 
 class PCIAddress(Model):
@@ -82,25 +83,37 @@ class PersistentNetNamesFactsInitramfs(PersistentNetNamesFacts):
     pass
 
 
+@deprecated(
+    since="2026-03-18",
+    message=(
+        "Information provided in this message is not always complete and it's"
+        " not used nowadays when net naming scheme is set during the upgrade."
+    )
+)
 class RenamedInterface(Model):
     """
     Provide original and new name of the network interface when renamed
     """
     topic = SystemInfoTopic
 
-    # TODO(pstodulk) deprecate these fields and replace them by new ones
-    # or deprecate the model completely.
-    rhel7_name = fields.String()
+    original_name = fields.String()
     """
     Original interface name.
     """
 
-    rhel8_name = fields.String()
+    new_name = fields.String()
     """
     New interface name.
     """
 
 
+@deprecated(
+    since="2026-03-18",
+    message=(
+        "Information provided in this message is not always complete and it's"
+        " not used nowadays when net naming scheme is set during the upgrade."
+    )
+)
 class RenamedInterfaces(Model):
     """
     Provide list of renamed network interfaces
