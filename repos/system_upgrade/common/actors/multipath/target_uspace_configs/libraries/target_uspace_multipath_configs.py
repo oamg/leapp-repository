@@ -22,7 +22,7 @@ def request_mpath_confs(multipath_info):
         '/etc/multipath.conf': '/etc/multipath.conf'  # default config
     }
 
-    if os.path.exists(multipath_info.config_dir):
+    if multipath_info.config_dir and os.path.exists(multipath_info.config_dir):
         for filename in os.listdir(multipath_info.config_dir):
             config_path = os.path.join(multipath_info.config_dir, filename)
             if not config_path.endswith('.conf'):
