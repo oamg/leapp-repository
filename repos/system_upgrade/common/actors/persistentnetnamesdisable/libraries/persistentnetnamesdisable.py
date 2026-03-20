@@ -3,7 +3,12 @@ import re
 from leapp import reporting
 from leapp.libraries.common.config.version import get_target_major_version
 from leapp.libraries.stdlib import api
-from leapp.models import KernelCmdlineArg, PersistentNetNamesFacts
+from leapp.models import (
+    KernelCmdlineArg,
+    PersistentNetNamesFacts,
+    TargetKernelCmdlineArgTasks,
+    UpgradeKernelCmdlineArgTasks
+)
 from leapp.reporting import create_report
 
 
@@ -29,7 +34,9 @@ def disable_persistent_naming():
         "Single eth0 network interface detected."
         " Appending 'net.ifnames=0' for the target system kernel commandline"
     )
-    api.produce(KernelCmdlineArg(**{'key': 'net.ifnames', 'value': '0'}))
+    k_arg = KernelCmdlineArg(key='net.ifnames', value='0')
+    api.produce(UpgradeKernelCmdlineArgTasks(to_add=[k_arg]))
+    api.produce(TargetKernelCmdlineArgTasks(to_add=[k_arg]))
 
 
 def report_ethX_ifaces():
