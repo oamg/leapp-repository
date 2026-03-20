@@ -8,8 +8,8 @@ from leapp.libraries.common.config import mock_configs
 from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked, produce_mocked
 from leapp.models import (
     EnvVar,
-    IPUConfig,
     Interface,
+    IPUConfig,
     PCIAddress,
     PersistentNetNamesFacts,
     PersistentNetNamesFactsInitramfs,

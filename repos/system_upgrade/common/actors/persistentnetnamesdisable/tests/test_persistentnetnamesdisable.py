@@ -1,7 +1,13 @@
 import pytest
 
 from leapp.libraries.actor import persistentnetnamesdisable
-from leapp.models import Interface, KernelCmdlineArg, PCIAddress, PersistentNetNamesFacts
+from leapp.models import (
+    Interface,
+    PCIAddress,
+    PersistentNetNamesFacts,
+    TargetKernelCmdlineArgTasks,
+    UpgradeKernelCmdlineArgTasks
+)
 from leapp.reporting import Report
 from leapp.snactor.fixture import current_actor_context
 from leapp.utils.report import is_inhibitor
@@ -51,6 +57,8 @@ def test_actor_single_eth0(current_actor_context):
     current_actor_context.feed(PersistentNetNamesFacts(interfaces=interface))
     current_actor_context.run()
     assert not current_actor_context.consume(Report)
+    assert current_actor_context.consume(UpgradeKernelCmdlineArgTasks)
+    assert current_actor_context.consume(TargetKernelCmdlineArgTasks)
 
 
 @pytest.mark.parametrize(
