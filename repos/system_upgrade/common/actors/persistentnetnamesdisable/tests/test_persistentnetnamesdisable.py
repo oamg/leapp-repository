@@ -1,8 +1,11 @@
 import pytest
 
 from leapp.libraries.actor import persistentnetnamesdisable
+from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked
 from leapp.models import (
     Interface,
+    KernelCmdline,
+    KernelCmdlineArg,
     PCIAddress,
     PersistentNetNamesFacts,
     TargetKernelCmdlineArgTasks,
@@ -65,6 +68,7 @@ def test_actor_single_eth0(current_actor_context):
     'target_version', ['9', '10']
 )
 def test_actor_more_ethX(monkeypatch, current_actor_context, target_version):
+    monkeypatch.setattr(persistentnetnamesdisable, 'get_source_major_version', lambda: str(int(target_version) - 1))
     monkeypatch.setattr(persistentnetnamesdisable, 'get_target_major_version', lambda: target_version)
     pci1 = PCIAddress(domain="0000", bus="3e", function="00", device="PCI bridge")
     pci2 = PCIAddress(domain="0000", bus="3d", function="00", device="Serial controller")
@@ -84,7 +88,10 @@ def test_actor_more_ethX(monkeypatch, current_actor_context, target_version):
             pci_info=pci2,
             devpath="/devices/hidraw/hidraw0")
     ]
-    current_actor_context.feed(PersistentNetNamesFacts(interfaces=interface))
+    current_actor_context.feed(
+        PersistentNetNamesFacts(interfaces=interface),
+        KernelCmdline(parameters=[KernelCmdlineArg(key='what', value='ever')])
+    )
     current_actor_context.run()
 
     report_fields = current_actor_context.consume(Report)[0].report
@@ -122,6 +129,7 @@ def test_actor_single_int_not_ethX(current_actor_context):
     'target_version', ['9', '10']
 )
 def test_actor_ethX_and_not_ethX(monkeypatch, current_actor_context, target_version):
+    monkeypatch.setattr(persistentnetnamesdisable, 'get_source_major_version', lambda: str(int(target_version) - 1))
     monkeypatch.setattr(persistentnetnamesdisable, 'get_target_major_version', lambda: target_version)
     pci1 = PCIAddress(domain="0000", bus="3e", function="00", device="PCI bridge")
     pci2 = PCIAddress(domain="0000", bus="3d", function="00", device="Serial controller")
@@ -141,7 +149,10 @@ def test_actor_ethX_and_not_ethX(monkeypatch, current_actor_context, target_vers
             pci_info=pci2,
             devpath="/devices/hidraw/hidraw0")
     ]
-    current_actor_context.feed(PersistentNetNamesFacts(interfaces=interface))
+    current_actor_context.feed(
+        PersistentNetNamesFacts(interfaces=interface),
+        KernelCmdline(parameters=[KernelCmdlineArg(key='what', value='ever')])
+    )
     current_actor_context.run()
     assert current_actor_context.consume(Report)
 
@@ -158,3 +169,66 @@ def test_actor_ethX_and_not_ethX(monkeypatch, current_actor_context, target_vers
         assert rhel8to9_present
     else:
         assert not rhel8to9_present
+
+
+@pytest.mark.parametrize(('result_expected', 'key', 'value'), (
+    (True, 'net.ifnames', None),
+    (True, 'net.ifnames', '0'),
+    (False, 'net.ifname', None),
+    (False, 'inet.ifnames', None),
+    (False, 'missing', None),
+    (False, 'missing', 'whatever'),
+    (False, 'net.ifnames', '1'),
+))
+def test_is_kernel_arg_present(monkeypatch, result_expected, key, value):
+    k_args = [
+        KernelCmdlineArg(key='Foo', value='0'),
+        KernelCmdlineArg(key='net.ifnames', value='0'),
+        KernelCmdlineArg(key='Something', value='None'),
+    ]
+    curr_actor_mocked = CurrentActorMocked(
+        msgs=[KernelCmdline(parameters=k_args)]
+    )
+    monkeypatch.setattr(persistentnetnamesdisable.api, 'current_actor', curr_actor_mocked)
+    assert result_expected is persistentnetnamesdisable.is_kernel_arg_present(key, value)
+
+
+@pytest.mark.parametrize(('naming_expected', 'k_args'), (
+    (False, [KernelCmdlineArg(key='net.ifnames', value='0')]),
+    (True, [KernelCmdlineArg(key='net.ifnames', value='1')]),
+    (True, [KernelCmdlineArg(key='net.naming-scheme-foo', value='rhel-8.10')]),
+    (
+        # NOTE(pstodulk): this is kind of nonsense, but let's test it
+        False,
+        [
+            KernelCmdlineArg(key='net.naming-scheme', value='rhel-8.10'),
+            KernelCmdlineArg(key='net.ifnames', value='0'),
+        ]
+    ),
+    (False, [KernelCmdlineArg(key='net.naming-scheme', value='rhel-8.10')]),
+    (False, [KernelCmdlineArg(key='net.naming-scheme', value='rhel-9.10')]),
+))
+@pytest.mark.parametrize('src_ver', ('8.10', '9.8', '10.6'))
+def test_report_ethx_ifaces_scheme(monkeypatch, naming_expected,  src_ver, k_args):
+    _v_split = src_ver.split('.')
+    dst_ver = '{}.{}'.format(int(_v_split[0]) + 1, _v_split[1])
+    curr_actor_mocked = CurrentActorMocked(
+        msgs=[KernelCmdline(parameters=k_args)],
+        src_ver=src_ver,
+        dst_ver=dst_ver
+    )
+    monkeypatch.setattr(persistentnetnamesdisable, 'create_report', create_report_mocked())
+    monkeypatch.setattr(persistentnetnamesdisable.api, 'current_actor', curr_actor_mocked)
+
+    persistentnetnamesdisable.report_ethX_ifaces()
+    assert persistentnetnamesdisable.create_report.called
+    report = persistentnetnamesdisable.create_report.reports[0]
+
+    if naming_expected:
+        url = 'https://red.ht/rhel-{}-consistent-nic-naming'.format(_v_split[0])
+        assert any(url == link['url'] for link in report['detail']['external'])
+        assert 'net.naming-scheme' in report['detail']['remediations'][0]['context']
+    else:
+        url_str = 'consistent-nic-naming'
+        assert not any(url_str in link['url'] for link in report['detail']['external'])
+        assert 'net.naming-scheme' not in report['detail']['remediations'][0]['context']
