@@ -39,9 +39,9 @@ def test_inhibit_should_inhibit(monkeypatch, cmdline_params):
     assert reporting.Groups.INHIBITOR in report["groups"]
 
     command = [r for r in report["detail"]["remediations"] if r["type"] == "command"][0]
-    assert "systemd.unified_cgroup_hierarchy" in command['context'][2]
+    assert "systemd.unified_cgroup_hierarchy" in command['context'][4]
     if len(cmdline_params) == 2:
-        assert "systemd.legacy_systemd_cgroup_controller" in command['context'][2]
+        assert "systemd.legacy_systemd_cgroup_controller" in command['context'][4]
 
 
 @pytest.mark.parametrize(
