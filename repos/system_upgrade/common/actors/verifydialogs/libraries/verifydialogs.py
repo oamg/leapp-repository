@@ -13,13 +13,14 @@ def check_dialogs(inhibit_if_no_userchoice=True):
         dialogs_remediation = ('Please register user choices with leapp answer cli command or by manually editing '
                                'the answerfile.')
         # FIXME: Enable more choices once we can do multi-command remediations
-        cmd_remediation = [['leapp', 'answer', '--section', "{}={}".format(s, choice)]
-                           for s, choices in dialog.answerfile_sections.items() for choice in choices[:1]]
+        cmd_remediations = [['leapp', 'answer', '--section', '{}={}'.format(s, choice)]
+                            for s, choices in dialog.answerfile_sections.items()
+                            for choice in choices[:1]]
         report_data = [reporting.Title('Missing required answers in the answer file'),
                        reporting.Severity(reporting.Severity.HIGH),
                        reporting.Summary(summary.format('\n'.join(sections))),
                        reporting.Groups([reporting.Groups.INHIBITOR] if inhibit_if_no_userchoice else []),
-                       reporting.Remediation(hint=dialogs_remediation, commands=cmd_remediation),
+                       reporting.Remediation(hint=dialogs_remediation, commands=cmd_remediations),
                        reporting.ExternalLink(
                            url='https://access.redhat.com/solutions/7035321',
                            title='Leapp upgrade fail with error "Inhibitor: Missing required answers '

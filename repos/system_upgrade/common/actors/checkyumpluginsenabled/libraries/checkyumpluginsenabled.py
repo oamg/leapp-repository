@@ -53,7 +53,7 @@ def check_required_dnf_plugins_enabled(pkg_manager_info):
                     .format(dnf_conf_path, plugin_configs_dir)
                 ),
                 # Provide all commands as one due to problems with satellites
-                commands=[['bash', '-c', '"{0}"'.format('; '.join(remediation_commands))]]
+                commands=[['bash', '-c', '{0}'.format('; '.join(remediation_commands))]]
             ),
             reporting.ExternalLink(
                 url='https://access.redhat.com/solutions/7028063',

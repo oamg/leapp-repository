@@ -46,9 +46,9 @@ def process():
                 # remove the args from commandline, the defaults are the desired values
                 commands=[
                     [
-                        "grubby",
-                        "--update-kernel=ALL",
-                        '--remove-args="{}"'.format(" ".join(remediation_cmd_args)),
+                        'grubby',
+                        '--update-kernel', 'ALL',
+                        '--remove-args', '{}'.format(' '.join(remediation_cmd_args))
                     ],
                 ],
             ),
