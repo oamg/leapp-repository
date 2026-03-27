@@ -1,8 +1,11 @@
 from leapp.actors import Actor
+from leapp.libraries.common.rpms import has_package
 from leapp.models import (
     DistributionSignedRPM,
     FilteredRpmTransactionTasks,
+    InstalledRPM,
     PESRpmTransactionTasks,
+    RHUIInfo,
     RpmTransactionTasks
 )
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
@@ -18,7 +21,7 @@ class FilterRpmTransactionTasks(Actor):
     """
 
     name = 'check_rpm_transaction_events'
-    consumes = (PESRpmTransactionTasks, RpmTransactionTasks, DistributionSignedRPM,)
+    consumes = (PESRpmTransactionTasks, RpmTransactionTasks, DistributionSignedRPM, RHUIInfo, InstalledRPM)
     produces = (FilteredRpmTransactionTasks,)
     tags = (IPUWorkflowTag, ChecksPhaseTag)
 
@@ -26,6 +29,13 @@ class FilterRpmTransactionTasks(Actor):
         installed_pkgs = set()
         for rpm_pkgs in self.consume(DistributionSignedRPM):
             installed_pkgs.update([pkg.name for pkg in rpm_pkgs.items])
+
+        # Consider all RHUI source clients as signed, so that we can always remove them
+        rhui_info = next(self.consume(RHUIInfo), None)
+        if rhui_info:
+            for source_client in rhui_info.src_client_pkg_names:
+                if has_package(InstalledRPM, source_client):
+                    installed_pkgs.add(source_client)
 
         local_rpms = set()
         to_install = set()
