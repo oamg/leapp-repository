@@ -8,8 +8,15 @@ Wants=network-online.target
 
 [Service]
 Type=oneshot
-# FIXME: this is temporary workaround for Python3
-ExecStart=/bin/sh -c "/root/tmp_leapp_py3/leapp3 upgrade --resume"
+# NOTE(pstodulk): After discussion with the SELinux team, we try to stay
+# out of unconfined mode for now.
+#SELinuxContext=unconfined_u:unconfined_r:unconfined_t:s0
+
+# NOTE(pstodulk): Correction of the selinux type context. This one should fit to leapp
+# Ignore the exit code as this cmd is expected to fail if selinux is disabled
+ExecStartPre=-chcon -t install_exec_t /root/tmp_leapp_py3/leapp3
+ExecStart=/root/tmp_leapp_py3/leapp3 upgrade --resume
 StandardOutput=journal+console
-# FIXME: this shouldn't be needed, but Satellite upgrade runs installer, and that's slow
+
+# NOTE(pstodulk): some actions can take a lot of time (e.g. satellite installer)
 TimeoutStartSec=infinity
