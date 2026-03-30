@@ -1,3 +1,4 @@
+import os
 import shutil
 
 from leapp.libraries.stdlib import api
@@ -14,4 +15,8 @@ def patch_system_configs():
                 )
             )
 
+            os.makedirs(
+                os.path.dirname(modified_config.target_path),
+                exist_ok=True
+            )
             shutil.copy(modified_config.updated_config_location, modified_config.target_path)
