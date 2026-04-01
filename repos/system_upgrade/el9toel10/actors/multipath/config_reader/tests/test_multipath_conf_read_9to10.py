@@ -162,6 +162,9 @@ def test_get_primary_facts_default_config_dir(monkeypatch, primary_config, expec
     assert len(general_info) == 1
     assert general_info[0].is_configured
     assert general_info[0].config_dir == '/etc/multipath/conf.d'
+    assert general_info[0].bindings_file == '/etc/multipath/bindings'
+    assert general_info[0].wwids_file == '/etc/multipath/wwids'
+    assert general_info[0].prkeys_file == '/etc/multipath/prkeys'
 
     msgs = [msg for msg in produce_mock.model_instances if isinstance(msg, MultipathConfFacts9to10)]
     assert len(msgs) == 1
@@ -212,6 +215,102 @@ def test_get_facts_with_config_dir(monkeypatch, primary_config, expected_configs
 
     for actual_config, expected_config in zip(actual_configs, expected_configs):
         assert_config(actual_config, expected_config)
+
+
+def test_file_locations_default(monkeypatch):
+    """Default or unset file locations should be set on MultipathInfo."""
+    monkeypatch.setattr(multipathconfread, 'is_processable', lambda: True)
+    monkeypatch.setattr(multipathconfread, '_check_socket_activation', lambda: False)
+    monkeypatch.setattr(multipathconfread, '_check_dm_nvme_multipathing', lambda: False)
+    monkeypatch.setattr(multipathconfread, '_parse_config_dir', mock_parse_config_dir)
+
+    produce_mock = produce_mocked()
+    monkeypatch.setattr(api, 'produce', produce_mock)
+
+    actor_mock = CurrentActorMocked(src_ver='9.6', dst_ver='10.0')
+    monkeypatch.setattr(api, 'current_actor', actor_mock)
+
+    config_to_use = os.path.join(TEST_DIR, 'all_options.conf')
+    multipathconfread.scan_and_emit_multipath_info(config_to_use)
+
+    general_info = [msg for msg in produce_mock.model_instances if isinstance(msg, MultipathInfo)]
+    assert len(general_info) == 1
+    assert general_info[0].bindings_file == '/etc/multipath/bindings'
+    assert general_info[0].wwids_file == '/etc/multipath/wwids'
+    assert general_info[0].prkeys_file == '/etc/multipath/prkeys'
+
+
+def test_file_locations_nondefault(monkeypatch):
+    """Non-default file locations should NOT be set on MultipathInfo."""
+    monkeypatch.setattr(multipathconfread, 'is_processable', lambda: True)
+    monkeypatch.setattr(multipathconfread, '_check_socket_activation', lambda: False)
+    monkeypatch.setattr(multipathconfread, '_check_dm_nvme_multipathing', lambda: False)
+    monkeypatch.setattr(multipathconfread, '_parse_config_dir', mock_parse_config_dir)
+
+    produce_mock = produce_mocked()
+    monkeypatch.setattr(api, 'produce', produce_mock)
+
+    actor_mock = CurrentActorMocked(src_ver='9.6', dst_ver='10.0')
+    monkeypatch.setattr(api, 'current_actor', actor_mock)
+
+    # Use a config that sets files to non-default paths
+    def mock_parse(path):
+        return MultipathConfig9to10(
+            pathname=path,
+            bindings_file='/tmp/bindings',
+            wwids_file='/tmp/wwids',
+            prkeys_file='/tmp/prkeys',
+        )
+
+    monkeypatch.setattr(multipathconfread, '_parse_config', mock_parse)
+
+    multipathconfread.scan_and_emit_multipath_info('/etc/multipath.conf')
+
+    general_info = [msg for msg in produce_mock.model_instances if isinstance(msg, MultipathInfo)]
+    assert len(general_info) == 1
+    # Non-default file locations should not be set on MultipathInfo
+    assert general_info[0].bindings_file is None
+    assert general_info[0].wwids_file is None
+    assert general_info[0].prkeys_file is None
+
+
+def test_file_locations_secondary_overrides(monkeypatch):
+    """Last non-None value wins for file locations across configs."""
+    monkeypatch.setattr(multipathconfread, 'is_processable', lambda: True)
+    monkeypatch.setattr(multipathconfread, '_check_socket_activation', lambda: False)
+    monkeypatch.setattr(multipathconfread, '_check_dm_nvme_multipathing', lambda: False)
+
+    produce_mock = produce_mocked()
+    monkeypatch.setattr(api, 'produce', produce_mock)
+
+    actor_mock = CurrentActorMocked(src_ver='9.6', dst_ver='10.0')
+    monkeypatch.setattr(api, 'current_actor', actor_mock)
+
+    primary = MultipathConfig9to10(
+        pathname='/etc/multipath.conf',
+        bindings_file='/tmp/bindings',
+    )
+
+    secondary = MultipathConfig9to10(
+        pathname='/etc/multipath/conf.d/secondary.conf',
+        bindings_file='/etc/multipath/bindings',
+    )
+
+    def mock_parse(path):
+        return primary
+
+    def mock_parse_dir(config_dir):
+        return [secondary]
+
+    monkeypatch.setattr(multipathconfread, '_parse_config', mock_parse)
+    monkeypatch.setattr(multipathconfread, '_parse_config_dir', mock_parse_dir)
+
+    multipathconfread.scan_and_emit_multipath_info('/etc/multipath.conf')
+
+    general_info = [msg for msg in produce_mock.model_instances if isinstance(msg, MultipathInfo)]
+    assert len(general_info) == 1
+    # Secondary overrides primary to default, so it should be set
+    assert general_info[0].bindings_file == '/etc/multipath/bindings'
 
 
 def test_check_socket_activation(monkeypatch):

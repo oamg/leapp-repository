@@ -22,6 +22,13 @@ def request_mpath_confs(multipath_info):
         '/etc/multipath.conf': '/etc/multipath.conf'  # default config
     }
 
+    for conf_file in (
+        multipath_info.bindings_file,
+        multipath_info.wwids_file,
+        multipath_info.prkeys_file
+    ):
+        if conf_file and os.path.exists(conf_file):
+            files_to_put_into_uspace[conf_file] = conf_file
     if multipath_info.config_dir and os.path.exists(multipath_info.config_dir):
         for filename in os.listdir(multipath_info.config_dir):
             config_path = os.path.join(multipath_info.config_dir, filename)

@@ -14,7 +14,32 @@ class MultipathInfo(Model):
     """
 
     config_dir = fields.Nullable(fields.String())
-    """ Value of config_dir in the defaults section. None if not set. """
+    """
+    The location of config_dir, if it should be copied to the same location
+    in the target userspace. None if it should be copied to a different
+    location (handled by upgrade-specific models).
+    """
+
+    bindings_file = fields.Nullable(fields.String())
+    """
+    The location of bindings_file, if it should be copied to the same location
+    in the target userspace. None if it should be copied to a different
+    location (handled by upgrade-specific models).
+    """
+
+    wwids_file = fields.Nullable(fields.String())
+    """
+    The location of wwids_file, if it should be copied to the same location
+    in the target userspace. None if it should be copied to a different
+    location (handled by upgrade-specific models).
+    """
+
+    prkeys_file = fields.Nullable(fields.String())
+    """
+    The location of prkeys_file, if it should be copied to the same location
+    in the target userspace. None if it should be copied to a different
+    location (handled by upgrade-specific models).
+    """
 
 
 class UpdatedMultipathConfig(Model):
