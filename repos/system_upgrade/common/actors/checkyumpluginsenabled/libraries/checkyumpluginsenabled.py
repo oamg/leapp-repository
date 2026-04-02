@@ -36,8 +36,8 @@ def check_required_dnf_plugins_enabled(pkg_manager_info):
         product_id_plugin_conf = os.path.join(plugin_configs_dir, 'product-id.conf')
 
         remediation_commands = [
-            f"sed -i 's/^plugins=0/plugins=1/' '{dnf_conf_path}'"
-            f"sed -i 's/^enabled=0/enabled=1/' '{rhsm_plugin_conf}'"
+            f"sed -i 's/^plugins=0/plugins=1/' '{dnf_conf_path}'",
+            f"sed -i 's/^enabled=0/enabled=1/' '{rhsm_plugin_conf}'",
             f"sed -i 's/^enabled=0/enabled=1/' '{product_id_plugin_conf}'"
         ]
 
