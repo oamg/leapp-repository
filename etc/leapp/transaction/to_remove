@@ -1,3 +1,11 @@
 ### List of packages (each on new line) to be removed from the upgrade transaction
 # Removing initial-setup package to avoid it asking for EULA acceptance during upgrade - OAMG-1531
 initial-setup
+
+# greenboot packages have a value just for rpm-ostree based systems
+# however, if someone would install them anyway, they would damage
+# the upgraded systems (mainly in case IPU 8.10 -> 9.8+).
+# As there is not value for of these packages on systems upgraded by leapp
+# (rpm based only), let's just remove them to stay safe
+greenboot
+greenboot-default-health-checks
