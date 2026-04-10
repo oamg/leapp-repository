@@ -36,8 +36,9 @@ mkdir -p "${OUT_DIR}"/leapp/{models,tags,topics} "${OUT_DIR}"/leapp/libraries/{c
 # Models
 # flake checks the code in the heredoc, so let's keep it conforming
 cat <<EOF > "${OUT_DIR}/leapp/models/__init__.pyi"
-from _typeshed import Incomplete
 from typing import Any, Literal
+
+from _typeshed import Incomplete
 
 from leapp.models import Model
 from leapp.topics import (

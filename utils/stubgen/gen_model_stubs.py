@@ -56,7 +56,7 @@ def _resolve_leapp_enum(node: ast.Call) -> str:
         # the only thing that can be done here is to either accept str,
         # which wouldn't be correct or take the literal strings and put
         # them in Literal[]. However that would maybe encourage people to
-        # use a string literal instead of the contants.
+        # use a string literal instead of the constants.
         #
         # For now, let's just return Incomplete and encourage the user to
         # take a look at the Model definition :)
