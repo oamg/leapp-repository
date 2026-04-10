@@ -20,7 +20,7 @@ fi
 
 # all the generation code is written in a python script to save time on the
 # Python interpreter and mypy initializiaton when executing mypy.stubgen
-./utils/gen_stubs.py --out-dir "$TMP_DIR"
+./utils/stubgen/gen_stubs.py --out-dir "$TMP_DIR"
 
 # Assemble final outputs
 # Models, topics and tags need to be flattened into a singled __init__.py file
@@ -31,12 +31,13 @@ fi
 # Actor and common libs are more straightforward since they are in separate
 # dynamically loaded modules in leapp.
 echo "Assembling final stubs in '${OUT_DIR}'."
-mkdir -p "${OUT_DIR}"/leapp/{models,tags,topics} "${OUT_DIR}/leapp/libraries/{common,actor}"
+mkdir -p "${OUT_DIR}"/leapp/{models,tags,topics} "${OUT_DIR}"/leapp/libraries/{common,actor}
 
 # Models
 # flake checks the code in the heredoc, so let's keep it conforming
 cat <<EOF > "${OUT_DIR}/leapp/models/__init__.pyi"
 from _typeshed import Incomplete
+from typing import Any, Literal
 
 from leapp.models import Model
 from leapp.topics import (

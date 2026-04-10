@@ -550,7 +550,7 @@ _warn_misssing_repos_if_using_actor:
 	fi
 
 stubgen:
-	./utils/gen_stubs.sh .stubs_tmp typings
+	./utils/stubgen/build_stubs.sh .stubs_tmp typings
 
 .PHONY: help build clean prepare source srpm copr_build _build_local build_container print_release register install-deps install-deps-fedora  lint test_no_lint test dashboard_data fast_lint _warn_missing_repos_if_using_actor stubgen
 .PHONY: test_container test_container_no_lint test_container_all test_container_all_no_lint clean_containers _build_container_image _test_container_ipu dev_test_no_lint

@@ -20,6 +20,7 @@ import argparse
 import ast
 import sys
 from pathlib import Path
+from typing import cast
 
 # Mapping of leapp field types to Python types
 BASIC_TYPE_MAP = {
@@ -44,71 +45,110 @@ def _resolve_leapp_enum(node: ast.Call) -> str:
             if isinstance(elem, ast.Constant):
                 # use repr() to keep quotes around strings
                 values.append(repr(elem.value))
-        return f"Literal[{', '.join(values)}]"
+
+        if values:
+            return f"Literal[{', '.join(values)}]"
+
+        # TODO: the values are not `ast.Constant`s, they are probably `ast.Name`,
+        # e.g. defined as
+        #     ERROR_CORRUPTED_GRUBENV = 'corrupted grubenv'
+        #
+        # the only thing that can be done here is to either accept str,
+        # which wouldn't be correct or take the literal strings and put
+        # them in Literal[]. However that would maybe encourage people to
+        # use a string literal instead of the contants.
+        #
+        # For now, let's just return Incomplete and encourage the user to
+        # take a look at the Model definition :)
+
     return "Incomplete"
 
 
-def resolve_leapp_wrapper_type(node: ast.expr) -> str:
+def is_field_ctor(node: ast.expr) -> bool:
+    """
+    Check whether the expression is creating an instance of a leapp field type
+    """
+    # Check if it's a function call like fields.String() or fields.List(...)
+    if not isinstance(node, ast.Call):
+        return False
+
+    func = node.func
+
+    # TODO: this breaks if the field type (like String) is imported directly,
+    # but this is currently not the case in any model
+    return isinstance(func, ast.Attribute) and func.value.id == "fields"
+
+
+def resolve_leapp_field_type(node: ast.expr) -> str | None:
     """Recursively resolves fields.Type() to a PEP 484 type string."""
 
-    # Check if it's a function call like fields.String() or fields.List(...)
-    if isinstance(node, ast.Call):
+    if is_field_ctor(node):
+        node = cast(ast.Call, node)
         func = node.func
-        if isinstance(func, ast.Attribute) and func.value.id == "fields":
-            field_type = func.attr
 
-            if field_type == "Nullable":
-                inner = resolve_leapp_wrapper_type(node.args[0])
-                return f"{inner} | None"
+        field_type = func.attr
 
-            if field_type == "List":
-                inner = resolve_leapp_wrapper_type(node.args[0])
-                return f"list[{inner}]"
+        if field_type == "Nullable":
+            inner = resolve_leapp_field_type(node.args[0])
+            return f"{inner} | None"
 
-            if field_type == "Model":
-                inner = resolve_leapp_wrapper_type(node.args[0])
-                return f"{inner}"
+        if field_type == "List":
+            inner = resolve_leapp_field_type(node.args[0])
+            return f"list[{inner}]"
 
-            if field_type in ("StringEnum", "IntegerEnum", "FloatEnum", "NumberEnum"):
-                return _resolve_leapp_enum(node)
+        if field_type == "Model":
+            inner = resolve_leapp_field_type(node.args[0])
+            return f"{inner}"
 
-            if field_type == "StringMap":
-                value_type = resolve_leapp_wrapper_type(node.args[0])
-                return f"dict[str, {value_type}]"
+        if field_type in ("StringEnum", "IntegerEnum", "FloatEnum", "NumberEnum"):
+            return _resolve_leapp_enum(node)
 
-            basic_type = BASIC_TYPE_MAP.get(field_type)
-            if not basic_type:
-                sys.stderr.write(f"Warning: Unhandled field type: {field_type}")
-                return "Incomplete"
+        if field_type == "StringMap":
+            value_type = resolve_leapp_field_type(node.args[0])
+            return f"dict[str, {value_type}]"
 
-            return basic_type
+        basic_type = BASIC_TYPE_MAP.get(field_type)
+        if not basic_type:
+            sys.stderr.write(f"Warning: Unhandled field type: {field_type}")
+            return "Incomplete"
 
-    # Fallback for simple assignments (like topic = SystemFactsTopic)
-    elif isinstance(node, ast.Name):
+        return basic_type
+
+    # fallback for e.g. the inner type of field.Model()
+    if isinstance(node, ast.Name):
         return node.id
 
-    return "Any"
+    return None
 
 
 def process_model_body(body: list[ast.stmt]):
     init_args = []
 
-    for i, item in enumerate(body):
-        if not isinstance(item, ast.Assign):
+    for i, assignment in enumerate(body):
+        if not isinstance(assignment, ast.Assign):
             continue
 
-        assert len(item.targets) == 1, "Multiple assignments are unexpected in a Model"
-        target = item.targets[0]
+        assert len(assignment.targets) == 1, "Multiple assignments are unexpected in a Model"
+        target = assignment.targets[0]
 
         if not isinstance(target, ast.Name):
             continue
 
         field_name = target.id
-        field_type = resolve_leapp_wrapper_type(item.value)
-        yield f"    {field_name}: {field_type}"
-
-        if field_name != "topic":
+        if is_field_ctor(assignment.value):
+            field_type = resolve_leapp_field_type(assignment.value) or "Any"
             init_args.append((field_name, field_type))
+        else:
+            # Constants, e.g. enum members with literal values
+            if isinstance(assignment.value, ast.Constant):
+                field_type = f'Literal[{repr(assignment.value.value)}]'
+            # Fallback for simple assignments (like topic = SystemFactsTopic)
+            elif isinstance(assignment.value, ast.Name):
+                field_type = assignment.value.id
+            else:
+                field_type = "Any"
+
+        yield f"    {field_name}: {field_type}"
 
         # Look ahead for field docstrings
         if i + 1 < len(body):
