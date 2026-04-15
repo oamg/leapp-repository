@@ -1,7 +1,7 @@
 import os
 import shutil
 
-from leapp.libraries.common import multipathutil
+from leapp.libraries.common import mpathfiles, multipathutil
 from leapp.libraries.stdlib import api
 from leapp.models import MultipathConfigUpdatesInfo, UpdatedMultipathConfig
 
@@ -55,24 +55,21 @@ def _update_config(config):
 
 
 def _get_file_locations(facts):
-    bindings_file = None
-    wwids_file = None
-    prkeys_file = None
-    for conf in facts.configs:
-        if conf.bindings_file is not None:
-            bindings_file = os.path.normpath(conf.bindings_file)
-        if conf.wwids_file is not None:
-            wwids_file = os.path.normpath(conf.wwids_file)
-        if conf.prkeys_file is not None:
-            prkeys_file = os.path.normpath(conf.prkeys_file)
+    bindings_file, wwids_file, prkeys_file = mpathfiles.mpath_file_locations(facts.configs)
 
     file_updates = []
-    if bindings_file is not None and bindings_file != _DEFAULT_BINDINGS_FILE:
-        file_updates.append((bindings_file, _DEFAULT_BINDINGS_FILE))
-    if wwids_file is not None and wwids_file != _DEFAULT_WWIDS_FILE:
-        file_updates.append((wwids_file, _DEFAULT_WWIDS_FILE))
-    if prkeys_file is not None and prkeys_file != _DEFAULT_PRKEYS_FILE:
-        file_updates.append((prkeys_file, _DEFAULT_PRKEYS_FILE))
+    files_to_move = [
+        (bindings_file, _DEFAULT_BINDINGS_FILE),
+        (wwids_file, _DEFAULT_WWIDS_FILE),
+        (prkeys_file, _DEFAULT_PRKEYS_FILE),
+    ]
+
+    for configured_path, default_path in files_to_move:
+        if configured_path is not None:
+            configured_path = os.path.normpath(configured_path)
+            if configured_path != default_path:
+                file_updates.append((configured_path, default_path))
+
     return file_updates
 
 

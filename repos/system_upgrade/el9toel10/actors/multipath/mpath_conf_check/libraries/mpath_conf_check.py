@@ -1,6 +1,7 @@
 import os
 
 from leapp import reporting
+from leapp.libraries.common import mpathfiles
 from leapp.reporting import create_report
 
 _DEFAULT_CONFIG_DIR = '/etc/multipath/conf.d'
@@ -145,34 +146,22 @@ def check_configs(facts):
         if _default_config_dir_has_conf_files():
             _report_config_dir_conflict(config_dir)
 
-    # bindings_file, wwids_file, prkeys_file: last non-None value wins
-    bindings_file = None
-    wwids_file = None
-    prkeys_file = None
-    for conf in facts.configs:
-        if conf.bindings_file is not None:
-            bindings_file = conf.bindings_file
-        if conf.wwids_file is not None:
-            wwids_file = conf.wwids_file
-        if conf.prkeys_file is not None:
-            prkeys_file = conf.prkeys_file
+    bindings_file, wwids_file, prkeys_file = mpathfiles.mpath_file_locations(facts.configs)
 
     file_list = []
-    if (
-        bindings_file is not None and
-        os.path.normpath(bindings_file) != _DEFAULT_BINDINGS_FILE
-    ):
-        file_list.append(('bindings_file', bindings_file, _DEFAULT_BINDINGS_FILE))
-    if (
-        wwids_file is not None and
-        os.path.normpath(wwids_file) != _DEFAULT_WWIDS_FILE
-    ):
-        file_list.append(('wwids_file', wwids_file, _DEFAULT_WWIDS_FILE))
-    if (
-        prkeys_file is not None and
-        os.path.normpath(prkeys_file) != _DEFAULT_PRKEYS_FILE
-    ):
-        file_list.append(('prkeys_file', prkeys_file, _DEFAULT_PRKEYS_FILE))
+    files_to_report = [
+        ('bindings_file', bindings_file, _DEFAULT_BINDINGS_FILE),
+        ('wwids_file', wwids_file, _DEFAULT_WWIDS_FILE),
+        ('prkeys_file', prkeys_file, _DEFAULT_PRKEYS_FILE),
+    ]
+
+    for file_name, configured_path, default_path in files_to_report:
+        if (
+            configured_path is not None and
+            os.path.normpath(configured_path) != default_path
+        ):
+            file_list.append((file_name, configured_path, default_path))
+
     if file_list:
         _report_files(file_list)
 
