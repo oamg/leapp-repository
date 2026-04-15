@@ -1,7 +1,7 @@
 import errno
 import os
 
-from leapp.libraries.common import multipathutil
+from leapp.libraries.common import mpathfiles, multipathutil
 from leapp.libraries.common.rpms import has_package
 from leapp.libraries.stdlib import api
 from leapp.models import DistributionSignedRPM, MultipathConfFacts9to10, MultipathConfig9to10, MultipathInfo
@@ -103,32 +103,25 @@ def is_processable():
 
 
 def _add_file_locations(configs, mpath_info):
-    bindings_file = None
-    wwids_file = None
-    prkeys_file = None
-    for conf in configs:
-        if conf.bindings_file is not None:
-            bindings_file = conf.bindings_file
-        if conf.wwids_file is not None:
-            wwids_file = conf.wwids_file
-        if conf.prkeys_file is not None:
-            prkeys_file = conf.prkeys_file
+    bindings_file, wwids_file, prkeys_file = mpathfiles.mpath_file_locations(configs)
 
-    if (
-        bindings_file is None or
-        os.path.normpath(bindings_file) == _DEFAULT_BINDINGS_FILE
-    ):
-        mpath_info.bindings_file = _DEFAULT_BINDINGS_FILE
-    if (
-        wwids_file is None or
-        os.path.normpath(wwids_file) == _DEFAULT_WWIDS_FILE
-    ):
-        mpath_info.wwids_file = _DEFAULT_WWIDS_FILE
-    if (
-        prkeys_file is None or
-        os.path.normpath(prkeys_file) == _DEFAULT_PRKEYS_FILE
-    ):
-        mpath_info.prkeys_file = _DEFAULT_PRKEYS_FILE
+    attrs_to_populate = [
+        ('bindings_file', bindings_file, _DEFAULT_BINDINGS_FILE),
+        ('wwids_file', wwids_file, _DEFAULT_WWIDS_FILE),
+        ('prkeys_file', prkeys_file, _DEFAULT_PRKEYS_FILE),
+    ]
+
+    # Set the attribute value only if it is not configured or equal to default.
+    # Setting mpath_info.X = Y would cause the config at Y to be copied into
+    # target_uspace/Y. However, we want to place Y at the default location due
+    # to 9>10 deprecations and there is no easy way to remove target_uspace/Y
+    # once created.
+    for mpath_info_attr, configured_value, default_value in attrs_to_populate:
+        if (
+            configured_value is None or
+            os.path.normpath(configured_value) == default_value
+        ):
+            setattr(mpath_info, mpath_info_attr, default_value)
 
 
 def scan_and_emit_multipath_info(default_config_path='/etc/multipath.conf'):
