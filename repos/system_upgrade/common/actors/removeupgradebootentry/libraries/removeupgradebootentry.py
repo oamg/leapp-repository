@@ -45,9 +45,16 @@ def remove_boot_entry():
 
     # TODO: Move calling `mount -a` to a separate actor as it is not really related to removing the upgrade boot entry.
     #       It's worth to call it after removing the boot entry to avoid boot loop in case mounting fails.
-    run([
-        '/bin/mount', '-a'
-    ])
+    try:
+        run(['/bin/mount', '-a'])
+    except CalledProcessError as err:
+        # Every mount that is not marked with 'nofail' should be mounted when this code is executed, so mount -a can
+        # fail only on corrupted nofail devices. We ignore errors here so that our mount -a behaves consistently
+        # with systemd's mount units marked with 'nofail' -- failures of such units will not prevent the system from
+        # booting. If a mount mounts a block dev with a corrupted FS, then the system could not have used the device,
+        # so it does not contain anything important for the upgrade.
+        api.current_logger().warning('Failed to execute `mount -a` with the following error: {}.'.format(err))
+        pass
 
 
 def get_upgrade_kernel_filepath():
