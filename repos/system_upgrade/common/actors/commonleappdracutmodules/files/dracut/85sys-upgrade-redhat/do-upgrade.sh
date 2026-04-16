@@ -236,7 +236,8 @@ do_upgrade() {
     # NOTE: in case we would need to run leapp before pivot, we would need to
     #       specify where the root is, e.g. --root=/sysroot
     # TODO: update: systemd-nspawn
-    /usr/bin/systemd-nspawn $NSPAWN_OPTS -D "$NEWROOT" /usr/bin/bash -c "mount -a; $LEAPPBIN upgrade --resume $args"
+    # shellcheck disable=SC2086  # The NSPAWN_OPTS and args variables are not quoted since they are supposed to expand into multiple arguments
+    /usr/bin/systemd-nspawn $NSPAWN_OPTS -D "$NEWROOT" /usr/bin/bash -c "mount -a || : ; $LEAPPBIN upgrade --resume $args"
     rv=$?
 
     # NOTE: flush the cached content to disk to ensure everything is written
@@ -272,7 +273,8 @@ do_upgrade() {
         # all FSTAB partitions. As mount was working before, hopefully will
         # work now as well. Later this should be probably modified as we will
         # need to handle more stuff around storage at all.
-        /usr/bin/systemd-nspawn $NSPAWN_OPTS -D "$NEWROOT" /usr/bin/bash -c "mount -a; /usr/bin/python3 -B $LEAPP3_BIN upgrade --resume $args"
+        # shellcheck disable=SC2086  # The NSPAWN_OPTS and args variables are not quoted since they are supposed to expand into multiple arguments
+        /usr/bin/systemd-nspawn $NSPAWN_OPTS -D "$NEWROOT" /usr/bin/bash -c "mount -a || : ; /usr/bin/python3 -B $LEAPP3_BIN upgrade --resume $args"
         rv=$?
     fi
 
@@ -328,7 +330,7 @@ save_journal() {
 
         # We need to run the actual saving of leapp-upgrade.log in a container and mount everything before, to be
         # sure /var/log is mounted in case it is on a separate partition.
-        local store_cmd="mount -a"
+        local store_cmd="mount -a || : "
         local store_cmd="$store_cmd; cat /tmp-leapp-upgrade.log >> /var/log/leapp/leapp-upgrade.log"
 
         /usr/bin/systemd-nspawn $NSPAWN_OPTS -D "$NEWROOT" /usr/bin/bash -c "$store_cmd"
