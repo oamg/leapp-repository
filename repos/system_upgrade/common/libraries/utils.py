@@ -10,7 +10,7 @@ from leapp.libraries.stdlib import api, CalledProcessError, config, run, STDOUT
 from leapp.utils.deprecation import deprecated
 
 
-def parse_config(cfg=None, strict=True):
+def parse_config(cfg=None, strict=True, no_interpolation=False):
     """
     Applies a workaround to parse a config file using py3 AND py2
 
@@ -18,10 +18,20 @@ def parse_config(cfg=None, strict=True):
     the old ones (Py2) obsoletes, these function was created to use the
     ConfigParser on Py2 and Py3
 
+    When no_interpolation is True, values are read literally. Use this for
+    inputs that may contain percent-encoded URLs (e.g. yum .repo baseurl),
+    since default ConfigParser treats ``%`` as interpolation syntax.
+
     :type cfg: str
     :type strict: bool
+    :type no_interpolation: bool
     """
-    if six.PY3:
+    if no_interpolation:
+        if six.PY3:
+            parser = six.moves.configparser.RawConfigParser(strict=strict)  # pylint: disable=unexpected-keyword-arg
+        else:
+            parser = six.moves.configparser.RawConfigParser()
+    elif six.PY3:
         parser = six.moves.configparser.ConfigParser(strict=strict)  # pylint: disable=unexpected-keyword-arg
     else:
         parser = six.moves.configparser.ConfigParser()
