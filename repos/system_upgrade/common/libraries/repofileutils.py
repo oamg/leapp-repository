@@ -48,7 +48,7 @@ def parse_repofile(repofile):
     """
     data = []
     with open(repofile, mode='r') as fp:
-        cp = utils.parse_config(fp, strict=False)
+        cp = utils.parse_config(fp, strict=False, no_interpolation=True)
         for repoid in cp.sections():
             try:
                 data.append(_parse_repository(repoid, dict(cp.items(repoid))))
