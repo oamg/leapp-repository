@@ -1,11 +1,13 @@
 import os
 
 import leapp.libraries.common.config as ipu_config
+from leapp.libraries.common.distro import distro_id_to_pretty_name
 from leapp.libraries.common.mounting import LoopMount, MountError
 from leapp.libraries.stdlib import api, CalledProcessError, run
 from leapp.models import CustomTargetRepository, TargetOSInstallationImage
 
-DISTRO_RELEASE_PKGS = {
+
+RELEASE_PKG_NAME_PREFIX = {
     'rhel': 'redhat-release',
     'centos': 'centos-stream-release',
     'almalinux': 'almalinux-release',
@@ -17,21 +19,37 @@ DISTRO_RELEASE_FILES = {
     'almalinux': '/etc/almalinux-release',
 }
 
-# TODO move these out
-DISTRO_NAMES = {
-    'rhel': 'Red Hat Enterprise Linux',
-    'centos': 'CentOS Stream',
-    'almalinux': 'AlmaLinux',
-}
+def etc_release_extract_version(etc_release_contents, target_distro):
+    """
+    Extract product release version from /etc/release content
+
+    :return: The parse version or None if it couldn't be determined
+    :rtype: str | None
+    """
+    # 'Red Hat Enterprise Linux Server release 7.9 (Maipo)' -> ['Red Hat...', '7.9 (Maipo)']
+    # Red Hat Enterprise Linux release 8.10 (Ootpa)
+    # CentOS Stream release 8
+    product_release_fragments = etc_release_contents['stdout'].split('release')
+    if len(product_release_fragments) != 2:
+        return None  # Unlikely. Either way we failed to parse the release
+
+    if not product_release_fragments[0].startswith(distro_id_to_pretty_name(target_distro)):
+        return None
+
+    determined_ver = product_release_fragments[1].strip().split(' ', 1)[0]  # Remove release name (Maipo)
+    return determined_ver
 
 
-def determine_rhel_version_from_iso_mountpoint(iso_mountpoint):
+def determine_distro_version_from_iso_mountpoint(iso_mountpoint):
     baseos_packages = os.path.join(iso_mountpoint, 'BaseOS/Packages')
     if os.path.isdir(baseos_packages):
         target_distro = ipu_config.get_target_distro_id()
 
         def is_release_pkg(pkg_name):
-            return pkg_name.startswith(DISTRO_RELEASE_PKGS[target_distro]) and 'eula' not in pkg_name
+            return (
+                pkg_name.startswith(RELEASE_PKG_NAME_PREFIX[target_distro])
+                and "eula" not in pkg_name
+            )
 
         distro_release_pkgs = [pkg for pkg in os.listdir(baseos_packages) if is_release_pkg(pkg)]
 
@@ -41,7 +59,7 @@ def determine_rhel_version_from_iso_mountpoint(iso_mountpoint):
         if len(distro_release_pkgs) > 1:
             api.current_logger().warning(
                 "Multiple packages with name {}* found when determining target version of the supplied"
-                " installation ISO.".format(DISTRO_RELEASE_PKGS[target_distro])
+                " installation ISO.".format(RELEASE_PKG_NAME_PREFIX[target_distro])
             )
 
         distro_release_pkg = distro_release_pkgs[0]
@@ -61,18 +79,7 @@ def determine_rhel_version_from_iso_mountpoint(iso_mountpoint):
                 stdin=cpio_archive["stdout"],
             )
 
-            # 'Red Hat Enterprise Linux Server release 7.9 (Maipo)' -> ['Red Hat...', '7.9 (Maipo)']
-            # Red Hat Enterprise Linux release 8.10 (Ootpa)
-            # CentOS Stream release 8
-            product_release_fragments = etc_release_contents['stdout'].split('release')
-            if len(product_release_fragments) != 2:
-                return ''  # Unlikely. Either way we failed to parse the release
-
-            if not product_release_fragments[0].startswith(DISTRO_NAMES[target_distro]):
-                return ''
-
-            determined_ver = product_release_fragments[1].strip().split(' ', 1)[0]  # Remove release name (Maipo)
-            return determined_ver
+            return etc_release_extract_version(etc_release_contents, target_distro) or ''
         except CalledProcessError:
             # FIXME?: This might fail e.g. if the ISO isn't complete
             # (download/scp/...) interrupted. Maybe we should at include
@@ -119,7 +126,7 @@ def inform_ipu_about_request_to_use_target_iso():
                 api.produce(iso_repo)
                 iso_repos.append(iso_repo)
 
-            rhel_version = determine_rhel_version_from_iso_mountpoint(iso_scan_mountpoint)
+            rhel_version = determine_distro_version_from_iso_mountpoint(iso_scan_mountpoint)
 
             api.produce(TargetOSInstallationImage(path=target_iso_path,
                                                   repositories=iso_repos,

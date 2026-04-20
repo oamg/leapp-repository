@@ -15,7 +15,7 @@ def fail_if_called(fail_reason, *args, **kwargs):
     assert False, fail_reason
 
 
-def test_determine_rhel_version_determination_unexpected_iso_structure_or_invalid_mountpoint(monkeypatch):
+def test_determine_distro_version_determination_unexpected_iso_structure_or_invalid_mountpoint(monkeypatch):
     iso_mountpoint = '/some/mountpoint'
 
     run_mocked = partial(fail_if_called,
@@ -28,7 +28,7 @@ def test_determine_rhel_version_determination_unexpected_iso_structure_or_invali
 
     monkeypatch.setattr(os.path, 'isdir', isdir_mocked)
 
-    determined_version = scan_target_os_iso.determine_rhel_version_from_iso_mountpoint(iso_mountpoint)
+    determined_version = scan_target_os_iso.determine_distro_version_from_iso_mountpoint(iso_mountpoint)
     assert not determined_version
 
 
@@ -52,9 +52,31 @@ def test_determine_rhel_version_determination_unexpected_iso_structure_or_invali
             "CentOS Stream release 9",
             "9"
         ),
+        (
+            "centos",
+            ["centos-stream-release-10.0-19.el10.noarch.rpm"],
+            "./etc/centos-release",
+            "CentOS Stream release 10 (Coughlan)",
+            "10"
+        ),
+        (
+            "almalinux",
+            ["almalinux-release-9.7-1.el9.x86_64.rpm"],
+            "./etc/almalinux-release",
+            "AlmaLinux release 9.7 (Moss Jungle Cat)",
+            "9.7"
+        ),
+        (
+            "almalinux",
+            ["almalinux-release-10.1-16.el10.x86_64.rpm"],
+            "./etc/almalinux-release",
+            "AlmaLinux release 10.1 (Heliotrope Lion)",
+            "10.1"
+        ),
+
     ],
 )
-def test_determine_rhel_version_valid_iso(
+def test_determine_distro_version_valid_iso(
     monkeypatch, distro, pkgs, etc_release_fname, etc_release_content, expect
 ):
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(release_id=distro))
@@ -82,11 +104,11 @@ def test_determine_rhel_version_valid_iso(
     monkeypatch.setattr(os, 'listdir', listdir_mocked)
     monkeypatch.setattr(scan_target_os_iso, 'run', run_mocked)
 
-    determined_version = scan_target_os_iso.determine_rhel_version_from_iso_mountpoint(iso_mountpoint)
+    determined_version = scan_target_os_iso.determine_distro_version_from_iso_mountpoint(iso_mountpoint)
     assert determined_version == expect
 
 
-def test_determine_rhel_version_valid_iso_no_rh_release(monkeypatch):
+def test_determine_distro_version_valid_iso_no_release_file(monkeypatch):
     iso_mountpoint = '/some/mountpoint'
 
     def isdir_mocked(path):
@@ -103,12 +125,13 @@ def test_determine_rhel_version_valid_iso_no_rh_release(monkeypatch):
     monkeypatch.setattr(os.path, 'isdir', isdir_mocked)
     monkeypatch.setattr(os, 'listdir', listdir_mocked)
     monkeypatch.setattr(scan_target_os_iso, 'run', run_mocked)
+    monkeypatch.setattr(api, "current_actor", CurrentActorMocked())
 
-    determined_version = scan_target_os_iso.determine_rhel_version_from_iso_mountpoint(iso_mountpoint)
+    determined_version = scan_target_os_iso.determine_distro_version_from_iso_mountpoint(iso_mountpoint)
     assert determined_version == ''
 
 
-def test_determine_rhel_version_rpm_extract_fails(monkeypatch):
+def test_determine_distro_version_rpm_extract_fails(monkeypatch):
     iso_mountpoint = '/some/mountpoint'
 
     def isdir_mocked(path):
@@ -124,15 +147,17 @@ def test_determine_rhel_version_rpm_extract_fails(monkeypatch):
     monkeypatch.setattr(os.path, 'isdir', isdir_mocked)
     monkeypatch.setattr(os, 'listdir', listdir_mocked)
     monkeypatch.setattr(scan_target_os_iso, 'run', run_mocked)
+    monkeypatch.setattr(api, "current_actor", CurrentActorMocked())
 
-    determined_version = scan_target_os_iso.determine_rhel_version_from_iso_mountpoint(iso_mountpoint)
+    determined_version = scan_target_os_iso.determine_distro_version_from_iso_mountpoint(iso_mountpoint)
     assert determined_version == ''
 
 
-@pytest.mark.parametrize('etc_rh_release_contents', ('',
-                                                     'Red Hat Enterprise Linux Server',
-                                                     'Fedora release 35 (Thirty Five)'))
-def test_determine_rhel_version_unexpected_etc_distro_release_contents(monkeypatch, etc_rh_release_contents):
+@pytest.mark.parametrize(
+    "etc_rh_release_contents",
+    ("", "Red Hat Enterprise Linux Server", "Fedora release 35 (Thirty Five)"),
+)
+def test_determine_distro_version_unexpected_etc_distro_release_contents(monkeypatch, etc_rh_release_contents):
     iso_mountpoint = '/some/mountpoint'
 
     def isdir_mocked(path):
@@ -152,8 +177,9 @@ def test_determine_rhel_version_unexpected_etc_distro_release_contents(monkeypat
     monkeypatch.setattr(os.path, 'isdir', isdir_mocked)
     monkeypatch.setattr(os, 'listdir', listdir_mocked)
     monkeypatch.setattr(scan_target_os_iso, 'run', run_mocked)
+    monkeypatch.setattr(api, "current_actor", CurrentActorMocked())
 
-    determined_version = scan_target_os_iso.determine_rhel_version_from_iso_mountpoint(iso_mountpoint)
+    determined_version = scan_target_os_iso.determine_distro_version_from_iso_mountpoint(iso_mountpoint)
     assert determined_version == ''
 
 
@@ -214,7 +240,7 @@ def test_iso_repository_detection(monkeypatch, repodirs_in_iso, expected_repoids
     monkeypatch.setattr(scan_target_os_iso, 'LoopMount', always_successful_loop_mount)
     monkeypatch.setattr(os.path, 'exists', mocked_os_path_exits)
     monkeypatch.setattr(os, 'listdir', mocked_os_listdir)
-    monkeypatch.setattr(scan_target_os_iso, 'determine_rhel_version_from_iso_mountpoint', lambda iso_mountpoint: '7.9')
+    monkeypatch.setattr(scan_target_os_iso, 'determine_distro_version_from_iso_mountpoint', lambda iso_mountpoint: '7.9')
 
     scan_target_os_iso.inform_ipu_about_request_to_use_target_iso()
 
