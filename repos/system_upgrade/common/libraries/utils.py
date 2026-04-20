@@ -1,8 +1,7 @@
 import functools
 import os
 import sys
-
-import six
+from configparser import ConfigParser, RawConfigParser
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import mounting
@@ -12,44 +11,33 @@ from leapp.utils.deprecation import deprecated
 
 def parse_config(cfg=None, strict=True, no_interpolation=False):
     """
-    Applies a workaround to parse a config file using py3 AND py2
+    Parse a config input.
 
-    ConfigParser has a new def to read strings/files in Py3, making
-    the old ones (Py2) obsoletes, these function was created to use the
-    ConfigParser on Py2 and Py3
+    When ``no_interpolation`` is True, ``RawConfigParser`` is used to read
+    values literally. This is useful for inputs that may contain URLs with
+    '%' characters for URL encoding (e.g. yum .repo baseurl).
 
-    When no_interpolation is True, values are read literally. Use this for
-    inputs that may contain percent-encoded URLs (e.g. yum .repo baseurl),
-    since default ConfigParser treats ``%`` as interpolation syntax.
+    When set to False, the default ``ConfigParser`` is used, where '%' is treated
+    as interpolation syntax and must be escaped (%%) if used literally.
 
-    :type cfg: str
+    :param cfg: Config data as a string or a file-like object
+    :type cfg: str or file-like object
+    :param strict: Enable strict parsing (no duplicate sections/options)
     :type strict: bool
+    :param no_interpolation: Disable interpolation and read values literally
     :type no_interpolation: bool
     """
     if no_interpolation:
-        if six.PY3:
-            parser = six.moves.configparser.RawConfigParser(strict=strict)  # pylint: disable=unexpected-keyword-arg
-        else:
-            parser = six.moves.configparser.RawConfigParser()
-    elif six.PY3:
-        parser = six.moves.configparser.ConfigParser(strict=strict)  # pylint: disable=unexpected-keyword-arg
+        parser = RawConfigParser(strict=strict)
     else:
-        parser = six.moves.configparser.ConfigParser()
+        parser = ConfigParser(strict=strict)
 
     # we do not handle exception here, handle with it when these function is called
-    if cfg and six.PY3:
-        # Python 3
-        if isinstance(cfg, six.string_types):
+    if cfg:
+        if isinstance(cfg, str):
             parser.read_string(cfg)
         else:
             parser.read_file(cfg)
-    elif cfg:
-        # Python 2
-        from cStringIO import StringIO  # pylint: disable=import-outside-toplevel
-        if isinstance(cfg, six.string_types):
-            parser.readfp(StringIO(cfg))  # pylint: disable=deprecated-method
-        else:
-            parser.readfp(cfg)  # pylint: disable=deprecated-method
     return parser
 
 

@@ -75,3 +75,23 @@ def test_parse_repofile():
     repos_duplicate = [repo for repo in repofile.data if repo.repoid == 'duplicate']
     assert len(repos_duplicate) == 1  # only one instance got through
     assert repos_duplicate[0].name == 'Duplicate 2'  # and it's the latter one
+
+
+def test_parse_repofile_preserves_url_encoded_characters(tmp_path):
+    """Percent signs from URL encoding must not be treated as config interpolation."""
+    repo_path = tmp_path / 'urlencoded.repo'
+    expected_baseurl = (
+        'https://cdn.example.com/content/dist/rhel8/%24releasever/x86_64/os/'
+        '?token=foo%2Fbar%3Dbaz'
+    )
+    repo_path.write_text(
+        '[urlencoded]\n'
+        'name=URL-encoded baseurl\n'
+        'baseurl={}\n'
+        'enabled=0\n'.format(expected_baseurl),
+        encoding='utf-8',
+    )
+
+    repofile = repofileutils.parse_repofile(str(repo_path))
+    repo = next(r for r in repofile.data if r.repoid == 'urlencoded')
+    assert repo.baseurl == expected_baseurl
