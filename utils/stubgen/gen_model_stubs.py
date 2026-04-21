@@ -33,6 +33,9 @@ BASIC_TYPE_MAP = {
     # TODO JSON is unhandled as it's currently unused
 }
 
+# maps class name of a parent to it's parent class and init args
+CLASS_INIT_ARGS_CACHE : dict[str, tuple[str, list]] = {}
+
 
 def _resolve_leapp_enum(node: ast.Call) -> str:
     """
@@ -121,8 +124,8 @@ def resolve_leapp_field_type(node: ast.expr) -> str | None:
     return None
 
 
-def process_model_body(body: list[ast.stmt]):
-    init_args = []
+def parse_model_fields(body: list[ast.stmt]) -> list[tuple[str, str, str, bool]]:
+    fields = []
 
     for i, assignment in enumerate(body):
         if not isinstance(assignment, ast.Assign):
@@ -135,9 +138,9 @@ def process_model_body(body: list[ast.stmt]):
             continue
 
         field_name = target.id
-        if is_field_ctor(assignment.value):
+        is_leapp_field = is_field_ctor(assignment.value)
+        if is_leapp_field:
             field_type = resolve_leapp_field_type(assignment.value) or "Any"
-            init_args.append((field_name, field_type))
         else:
             # Constants, e.g. enum members with literal values
             if isinstance(assignment.value, ast.Constant):
@@ -148,9 +151,8 @@ def process_model_body(body: list[ast.stmt]):
             else:
                 field_type = "Any"
 
-        yield f"    {field_name}: {field_type}"
-
         # Look ahead for field docstrings
+        field_doc = None
         if i + 1 < len(body):
             next_node = body[i + 1]
             if isinstance(next_node, ast.Expr) and isinstance(
@@ -158,17 +160,20 @@ def process_model_body(body: list[ast.stmt]):
             ):
                 if isinstance(next_node.value.value, str):
                     field_doc = next_node.value.value
-                    yield f'    """{field_doc}"""'
 
-    # add a fake __init__, leapp has a generic init in the Model class, so to
-    # have signature info with types and possible fields we add the specific
-    # fake on Model subclasses
-    if init_args:
-        # add the = ... to instruct the type checkers that a default value
-        # exists, but is not important for type inference/checking
-        args = [f"{fname}: {ftype} = ..." for (fname, ftype) in init_args]
-        args_str = ", ".join(args)
-        yield f"    def __init__(self, {args_str}) -> None: ..."
+        fields.append((field_name, field_type, field_doc, is_leapp_field))
+    return fields
+
+ 
+
+def _get_parents_init_args(parent_class: str):
+    init_args = []
+    parent_entry = CLASS_INIT_ARGS_CACHE.get(parent_class)
+    if parent_entry:
+        parent_class, parent_args = parent_entry
+        init_args.extend(parent_args)
+
+    return init_args
 
 
 def generate_stubs_from_source(source_code: str) -> str:
@@ -191,8 +196,35 @@ def generate_stubs_from_source(source_code: str) -> str:
         if doc:
             output.append(f'    """{doc}"""')
 
-        body = list(process_model_body(node.body)) or ["    ..."]
-        output += body
+        init_args = []
+        fields = parse_model_fields(node.body)
+        for fname, ftype, fdoc, is_leapp_field in fields:
+            output.append(f"    {fname}: {ftype}")
+            if fdoc:
+                output.append(f'    """{fdoc}"""')
+
+            if is_leapp_field:
+                init_args.append((fname, ftype))
+        else:
+            output.append("    ...")
+
+        # TODO currently only cosiders one parent, but that's enough in regards
+        # to the current Models
+        parents_init_args = _get_parents_init_args(bases[0])
+        # parent init args need to go first
+        init_args = parents_init_args + init_args
+        CLASS_INIT_ARGS_CACHE[node.name] = (bases[0], init_args)
+
+        # add a fake __init__, leapp has a generic init in the Model class, so to
+        # have signature info with types and possible fields we add the specific
+        # fake on Model subclasses
+        if init_args:
+            # add the = ... to instruct the type checkers that a default value
+            # exists, but is not important for type inference/checking
+            args = [f"{fname}: {ftype} = ..." for (fname, ftype, _, _) in init_args]
+            args_str = ", ".join(args)
+            output.append(f"    def __init__(self, {args_str}) -> None: ...")
+
         output.append("")
 
     return "\n".join(output)
