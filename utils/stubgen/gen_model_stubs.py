@@ -206,9 +206,6 @@ def main(infile: Path, outdir: Path):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        sys.stderr.write("Usage: gen_model_stubs <input_file.py> <output_dir>")
-
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--source",

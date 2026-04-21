@@ -20,7 +20,10 @@ fi
 
 # all the generation code is written in a python script to save time on the
 # Python interpreter and mypy initializiaton when executing mypy.stubgen
-./utils/stubgen/gen_stubs.py --out-dir "$TMP_DIR"
+if ! ./utils/stubgen/gen_stubs.py --out-dir "$TMP_DIR"; then
+    echo "Error: Stub generation failed." >&2
+    exit 1
+fi
 
 # Assemble final outputs
 # Models, topics and tags need to be flattened into a singled __init__.py file

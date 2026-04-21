@@ -9,7 +9,12 @@ import sys
 from pathlib import Path
 
 import gen_model_stubs
-from mypy import stubgen
+
+try:
+    from mypy import stubgen
+except ImportError as e:
+    sys.stderr.write("Error: Failed to import mypy.stubgen make sure mypy is installed.\n")
+    sys.exit(1)
 
 SYS_UPG_REPOS_PATH = Path("repos/system_upgrade/")
 REPOS = ["common", "el8toel9", "el9toel10"]
@@ -96,7 +101,6 @@ def main():
     )
 
     args = parser.parse_args()
-
     generate_all(args.out_dir)
 
 
