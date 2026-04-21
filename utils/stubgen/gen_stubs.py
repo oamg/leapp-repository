@@ -56,7 +56,6 @@ def run_stubgen(paths: Path | list[Path], output_dir: Path):
     except SystemExit as e:
         # stubgen calls sys.exit(0) on success; we catch it to prevent
         # the entire script from exiting.
-        print("here")
         if e.code != 0:
             print(f"Stubgen failed for {paths_str} with exit code {e.code}")
 
