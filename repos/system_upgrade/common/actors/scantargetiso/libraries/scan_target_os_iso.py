@@ -85,7 +85,9 @@ def determine_distro_version_from_iso_mountpoint(iso_mountpoint):
             # (download/scp/...) interrupted. Maybe we should at include
             # info that in the report?
             # Leaving an exact example from the logs (yes the empty line is there):
-            # error: /var/lib/leapp/iso_scan_mountpoint/BaseOS/Packages/centos-stream-release-9.0-26.el9.noarch.rpm: read failed: Input/output error (5)
+            # error:
+            # /var/lib/leapp/iso_scan_mountpoint/BaseOS/Packages/centos-stream-release-9.0-26.el9.noarch.rpm:
+            # read failed: Input/output error (5)
 
             # error reading header from package
 

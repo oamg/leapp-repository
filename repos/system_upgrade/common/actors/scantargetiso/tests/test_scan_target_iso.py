@@ -240,7 +240,11 @@ def test_iso_repository_detection(monkeypatch, repodirs_in_iso, expected_repoids
     monkeypatch.setattr(scan_target_os_iso, 'LoopMount', always_successful_loop_mount)
     monkeypatch.setattr(os.path, 'exists', mocked_os_path_exits)
     monkeypatch.setattr(os, 'listdir', mocked_os_listdir)
-    monkeypatch.setattr(scan_target_os_iso, 'determine_distro_version_from_iso_mountpoint', lambda iso_mountpoint: '7.9')
+    monkeypatch.setattr(
+        scan_target_os_iso,
+        "determine_distro_version_from_iso_mountpoint",
+        lambda iso_mountpoint: "7.9",
+    )
 
     scan_target_os_iso.inform_ipu_about_request_to_use_target_iso()
 
