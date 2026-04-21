@@ -326,3 +326,20 @@ def test_injection_of_sysroot_boot_bindmount_unit(monkeypatch, has_separate_boot
 
     if has_separate_boot:
         assert was_copyfile_for_sysroot_boot_called
+
+
+TEST_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'files')
+
+
+@pytest.mark.parametrize(
+    ('unit_filename', 'is_nofail'),
+    [
+        ('unit.mount', False),
+        ('unit-nofail.mount', True),
+        ('non-existing-unit.mount', False),  # This file does not exist in the files/
+    ]
+)
+def test_is_unit_marked_with_nofail(unit_filename, is_nofail):
+    unit_path = os.path.join(TEST_DIR, unit_filename)
+    determined_no_fail = mount_unit_generator.is_unit_marked_with_nofail(unit_path)
+    assert determined_no_fail == is_nofail

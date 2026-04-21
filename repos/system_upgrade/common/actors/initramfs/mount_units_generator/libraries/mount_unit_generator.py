@@ -30,7 +30,7 @@ def run_systemd_fstab_generator(output_directory):
         details = {'details': str(error)}
         raise StopActorExecutionError(
             'Failed to generate mount units using systemd-fstab-generator',
-            details
+            details=details
         )
 
     api.current_logger().debug(
@@ -110,6 +110,27 @@ def prefix_all_mount_units_with_sysroot(dir_containing_units):
         api.current_logger().debug('Original mount unit {} removed.'.format(unit_file_path))
 
 
+def is_unit_marked_with_nofail(unit_path: str) -> bool:
+    try:
+        with open(unit_path) as in_file:
+            lines = [line.strip() for line in in_file.readlines()]
+    except OSError:
+        api.current_logger().debug(
+            'Could not read the unit {} to determine whether it is nofail.'.format(unit_path)
+        )
+        return False  # This way, the unit will end up in target's '.requires', so it is a safe choice
+
+    for line in lines:
+        if line.startswith('Options'):
+            line_fragments = line.split('=', 1)
+            if len(line_fragments) <= 1:
+                continue  # Should not happen
+            used_options = [opt.strip() for opt in line_fragments[1].split(',')]
+            if 'nofail' in used_options:
+                return True
+    return False
+
+
 def _fix_symlinks_in_dir(dir_containing_mount_units, target_dir):
     """
     Fix broken symlinks in given target_dir due to us modifying (renaming) the mount units.
@@ -137,9 +158,14 @@ def _fix_symlinks_in_dir(dir_containing_mount_units, target_dir):
     os.mkdir(target_dir_path)
 
     api.current_logger().debug('Populating {} with new symlinks.'.format(target_dir))
+    will_units_be_required = target_dir.endswith('.requires')
 
     for unit_file in os.listdir(dir_containing_mount_units):
         if not unit_file.endswith('.mount'):
+            continue
+
+        is_nofail = is_unit_marked_with_nofail(os.path.join(dir_containing_mount_units, unit_file))
+        if is_nofail and will_units_be_required:
             continue
 
         place_fastlink_at = os.path.join(target_dir_path, unit_file)
