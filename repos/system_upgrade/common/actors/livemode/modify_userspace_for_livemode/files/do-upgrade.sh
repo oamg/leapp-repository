@@ -7,13 +7,13 @@ warn() {
 
 get_rhel_major_release() {
     local os_version
-    os_version=$(grep -o '^VERSION="[0-9][0-9]*\.' /etc/os-release | grep -o '[0-9]*')
+    os_version=$(grep -o '^VERSION="[0-9][0-9]*' /etc/os-release | grep -o '[0-9]*')
     [ -z "$os_version" ] && {
         # This should not happen as /etc/initrd-release is supposed to have API
         # stability, but check is better than broken system.
         warn "Cannot determine the major RHEL version."
         warn "The upgrade environment cannot be setup reliably."
-        echo "Content of the /etc/initrd-release:"
+        echo "Content of the /etc/os-release:"
         cat /etc/os-release
         exit 1
     }
@@ -26,6 +26,7 @@ export RHEL_OS_MAJOR_RELEASE
 export LEAPPBIN=/usr/bin/leapp
 export LEAPPHOME=/root/tmp_leapp_py3
 export LEAPP3_BIN=$LEAPPHOME/leapp3
+export LEAPP_FAILED_FLAG_FILE="/root/tmp_leapp_py3/.leapp_upgrade_failed"
 
 # this was initially a dracut script, hence $NEWROOT.
 # the rootfs is mounted on /run/upgrade when booted with dmsquash-live
@@ -48,155 +49,6 @@ fi
 export NSPAWN_OPTS="$NSPAWN_OPTS --keep-unit --register=no --timezone=off --resolv-conf=off"
 
 
-export LEAPP_FAILED_FLAG_FILE="/root/tmp_leapp_py3/.leapp_upgrade_failed"
-
-#
-# Temp for collecting and preparing tarball
-#
-LEAPP_DEBUG_TMP="/tmp/leapp-debug-root"
-
-#
-# Number of times to emit all chunks
-#
-# To avoid spammy parts of console log, second and later emissions
-# take longer delay in-between.  For example, with N being 3,
-# first emission is done immediately, second after 10s, and the
-# third one after 20s.
-#
-IBDMP_ITER=3
-
-#
-# Size of one payload chunk
-#
-# IOW, amount of characters in a single chunk of the base64-encoded
-# payload.   (By base64 standard, these characters are inherently ASCII,
-# so ie. they correspond to bytes.)
-#
-IBDMP_CHUNKSIZE=40
-
-collect_and_dump_debug_data() {
-    #
-    # Collect various debug files and dump tarball using ibdmp
-    #
-    local tmp=$LEAPP_DEBUG_TMP
-    local data=$tmp/data
-    mkdir -p "$data" || { echo >&2 "fatal: cannot create leapp dump data dir: $data"; exit 4; }
-    journalctl -amo verbose >"$data/journalctl.log"
-    mkdir -p "$data/var/lib/leapp"
-    mkdir -p "$data/var/log"
-    cp -vr "$NEWROOT/var/lib/leapp/leapp.db" \
-          "$data/var/lib/leapp"
-    cp -vr "$NEWROOT/var/log/leapp" \
-          "$data/var/log"
-    tar -cJf "$tmp/data.tar.xz" "$data"
-    ibdmp "$tmp/data.tar.xz"
-    rm -r "$tmp"
-}
-
-want_inband_dump() {
-    #
-    # True if dump collection is needed given leapp exit status $1 and kernel option
-    #
-    local leapp_es=$1
-    local mode
-    local kopt
-    kopt=$(getarg 'rd.upgrade.inband')
-    case $kopt in
-        always|never|onerror)   mode="$kopt" ;;
-        "")                     mode="never" ;;
-        *)  warn "ignoring unknown value of rd.upgrade.inband (dump will be disabled): '$kopt'"
-            return 2 ;;
-    esac
-    case $mode:$leapp_es in
-        always:*)   return 0 ;;
-        never:*)    return 1 ;;
-        onerror:0)  return 1 ;;
-        onerror:*)  return 0 ;;
-    esac
-}
-
-ibdmp() {
-    #
-    # Dump tarball $1 in base64 to stdout
-    #
-    # Tarball is encoded in a way that:
-    #
-    #   * final data can be printed to plain text terminal,
-    #   * tarball can be restored by scanning the saved
-    #     terminal output,
-    #   * corruptions caused by extra terminal noise
-    #     (extra lines, extra characters within lines,
-    #     line splits..) can be corrected.
-    #
-    # That is,
-    #
-    #   1. encode tarball using base64
-    #
-    #   2. prepend line `chunks=CHUNKS,md5=MD5` where
-    #      MD5 is the MD5 digest of original tarball and
-    #      CHUNKS is number of upcoming Base64 chunks
-    #
-    #   3. decorate each chunk with prefix `N:` where
-    #      N is number of given chunk.
-    #
-    #   4. Finally print all lines (prepended "header"
-    #      line and all chunks) several times, where
-    #      every iteration should be prefixed by
-    #      `_ibdmp:I/TTL|` and suffixed by `|`.
-    #      where `I` is iteration number and `TTL` is
-    #      total iteration numbers.
-    #
-    # Decoder should look for strings like this:
-    #
-    #     _ibdmp:I/J|CN:PAYLOAD|
-    #
-    # where I, J and CN are integers and PAYLOAD is a slice of a
-    # base64 string.
-    #
-    # Here, I represents number of iteration, J total of iterations
-    # ($IBDMP_ITER), and CN is number of given chunk within this
-    # iteration.  CN goes from 1 up to number of chunks (CHUNKS)
-    # predicted by header.
-    #
-    # Each set corresponds to one dump of the tarball and error
-    # correction is achieved by merging sets using these rules:
-    #
-    #    1. each set has to contain header (`chunks=CHUNKS,
-    #       md5=MD5`) prevalent header wins.
-    #
-    #    2. each set has to contain number of chunks
-    #       as per header
-    #
-    #    3. chunks are numbered so they can be compared across
-    #       sets; prevalent chunk wins.
-    #
-    # Finally the merged set of chunks is decoded as base64.
-    # Resulting data has to match md5 sum or we're hosed.
-    #
-    local tarball=$1
-    local tmp=$LEAPP_DEBUG_TMP/ibdmp
-    local md5
-    local i
-    mkdir -p "$tmp"
-    base64 -w "$IBDMP_CHUNKSIZE" "$tarball" > "$tmp/b64"
-    md5=$(md5sum "$tarball" | sed 's/ .*//')
-    chunks=$(wc -l <"$tmp/b64")
-    (
-        set +x
-        echo "chunks=$chunks,md5=$md5"
-        cnum=1
-        while read -r chunk; do
-            echo "$cnum:$chunk"
-            ((cnum++))
-        done <"$tmp/b64"
-    ) >"$tmp/report"
-    i=0
-    while test "$i" -lt "$IBDMP_ITER"; do
-        sleep "$((i * 10))"
-        ((i++))
-        sed "s%^%_ibdmp:$i/$IBDMP_ITER|%; s%$%|%; " <"$tmp/report"
-    done
-}
 
 do_upgrade() {
     local args="" rv=0
@@ -218,7 +70,7 @@ do_upgrade() {
 
     # NOTE: We disable shell-check since we want to word-break NSPAWN_OPTS
     # shellcheck disable=SC2086
-    /usr/bin/systemd-nspawn $NSPAWN_OPTS -D "$NEWROOT" /usr/bin/bash -c "mount -a; $LEAPPBIN upgrade --resume $args"
+    /usr/bin/systemd-nspawn $NSPAWN_OPTS -D "$NEWROOT" /usr/bin/bash -c "mount -a || : ; $LEAPPBIN upgrade --resume $args"
     rv=$?
 
     # NOTE: flush the cached content to disk to ensure everything is written
@@ -227,10 +79,6 @@ do_upgrade() {
     ## TODO: implement "Break after LEAPP upgrade stop"
 
     if [ "$rv" -eq 0 ]; then
-        # run leapp to proceed phases after the upgrade with Python3
-        #PY_LEAPP_PATH=/usr/lib/python2.7/site-packages/leapp/
-        #$NEWROOT/bin/systemd-nspawn $NSPAWN_OPTS -D $NEWROOT -E PYTHONPATH="${PYTHONPATH}:${PY_LEAPP_PATH}" /usr/bin/python3 $LEAPPBIN upgrade --resume $args
-
         # on aarch64 systems during el8 to el9 upgrades the swap is broken due to change in page size (64K to 4k)
         # adjust the page size before booting into the new system, as it is possible the swap is necessary for to boot
         # `arch` command is not available in the dracut shell, using uname -m instead
@@ -255,7 +103,7 @@ do_upgrade() {
 
         # NOTE: We disable shell-check since we want to word-break NSPAWN_OPTS
         # shellcheck disable=SC2086
-        /usr/bin/systemd-nspawn $NSPAWN_OPTS -D "$NEWROOT" /usr/bin/bash -c "mount -a; /usr/bin/python3 -B $LEAPP3_BIN upgrade --resume $args"
+        /usr/bin/systemd-nspawn $NSPAWN_OPTS -D "$NEWROOT" /usr/bin/bash -c "mount -a || : ; /usr/bin/python3 -B $LEAPP3_BIN upgrade --resume $args"
         rv=$?
     fi
 
@@ -265,13 +113,13 @@ do_upgrade() {
         local dirname
         dirname="$("$NEWROOT/bin/dirname" "$NEWROOT$LEAPP_FAILED_FLAG_FILE")"
         [ -d "$dirname" ] || mkdir "$dirname"
+
+        echo >&2 "Creating file $NEWROOT$LEAPP_FAILED_FLAG_FILE"
+        echo >&2 "Warning: Leapp upgrade failed and there is an issue blocking the upgrade."
+        echo >&2 "Please file a support case with /var/log/leapp/leapp-upgrade.log attached."
+
         "$NEWROOT/bin/touch" "$NEWROOT$LEAPP_FAILED_FLAG_FILE"
     fi
-
-    # Dump debug data in case something went wrong
-    ##if want_inband_dump "$rv"; then
-    ##    collect_and_dump_debug_data
-    ##fi
 
     # NOTE: THIS SHOULD BE AGAIN PART OF LEAPP IDEALLY
     ## backup old product id certificates
@@ -306,7 +154,7 @@ save_journal() {
 
         # We need to run the actual saving of leapp-upgrade.log in a container and mount everything before, to be
         # sure /var/log is mounted in case it is on a separate partition.
-        local store_cmd="mount -a"
+        local store_cmd="mount -a || : "
         local store_cmd="$store_cmd; cat /tmp-leapp-upgrade.log >> /var/log/leapp/leapp-upgrade.log"
 
         # NOTE: We disable shell-check since we want to word-break NSPAWN_OPTS
@@ -333,10 +181,10 @@ awk '{print $1}' /proc/cmdline \
     # check if leapp previously failed in the initramfs, if it did return to the emergency shell
     [ -f "$NEWROOT$LEAPP_FAILED_FLAG_FILE" ] && {
         echo >&2 "Found file $NEWROOT$LEAPP_FAILED_FLAG_FILE"
-        echo >&2 "Error: Leapp previously failed and cannot continue, returning back to emergency shell"
-        echo >&2 "Please file a support case with $NEWROOT/var/log/leapp/leapp-upgrade.log attached"
-        echo >&2 "To rerun the upgrade upon exiting the dracut shell remove the $NEWROOT$LEAPP_FAILED_FLAG_FILE file"
-        exit 1
+        echo >&2 "Warning: Leapp failed on a previous execution and something might be blocking the upgrade."
+        echo >&2 "Continuing with the upgrade anyway. Note that any subsequent error might be potentially misleading due to a previous failure."
+        echo >&2 "A log file will be generated at $NEWROOT/var/log/leapp/leapp-upgrade.log."
+        echo >&2 "In case of persisting failure, if possible, try to boot to the original system and file a support case with /var/log/leapp/leapp-upgrade.log attached."
     }
 
     [ ! -x "$NEWROOT$LEAPPBIN" ] && {
@@ -348,7 +196,7 @@ awk '{print $1}' /proc/cmdline \
 )
 result=$?
 
-##### safe the data #####
+##### save the data #####
 save_journal
 
 # NOTE: flush the cached content to disk to ensure everything is written

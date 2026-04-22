@@ -28,6 +28,7 @@ export RHEL_OS_MAJOR_RELEASE
 export LEAPPBIN=/usr/bin/leapp
 export LEAPPHOME=/root/tmp_leapp_py3
 export LEAPP3_BIN=$LEAPPHOME/leapp3
+export LEAPP_FAILED_FLAG_FILE="/root/tmp_leapp_py3/.leapp_upgrade_failed"
 
 export NEWROOT=${NEWROOT:-"/sysroot"}
 
@@ -46,7 +47,6 @@ fi
 export NSPAWN_OPTS="$NSPAWN_OPTS --keep-unit --register=no --timezone=off --resolv-conf=off"
 
 
-export LEAPP_FAILED_FLAG_FILE="/root/tmp_leapp_py3/.leapp_upgrade_failed"
 
 #
 # Temp for collecting and preparing tarball
@@ -249,10 +249,6 @@ do_upgrade() {
     }
 
     if [ "$rv" -eq 0 ]; then
-        # run leapp to proceed phases after the upgrade with Python3
-        #PY_LEAPP_PATH=/usr/lib/python2.7/site-packages/leapp/
-        #$NEWROOT/bin/systemd-nspawn $NSPAWN_OPTS -D $NEWROOT -E PYTHONPATH="${PYTHONPATH}:${PY_LEAPP_PATH}" /usr/bin/python3 $LEAPPBIN upgrade --resume $args
-
         # on aarch64 systems during el8 to el9 upgrades the swap is broken due to change in page size (64K to 4k)
         # adjust the page size before booting into the new system, as it is possible the swap is necessary for to boot
         # `arch` command is not available in the dracut shell, using uname -m instead
@@ -287,7 +283,7 @@ do_upgrade() {
 
         echo >&2 "Creating file $NEWROOT$LEAPP_FAILED_FLAG_FILE"
         echo >&2 "Warning: Leapp upgrade failed and there is an issue blocking the upgrade."
-        echo >&2 "Please file a support case with /var/log/leapp/leapp-upgrade.log attached"
+        echo >&2 "Please file a support case with /var/log/leapp/leapp-upgrade.log attached."
 
         "$NEWROOT/bin/touch" "$NEWROOT$LEAPP_FAILED_FLAG_FILE"
     fi
@@ -380,7 +376,7 @@ mount -o "remount,rw" "$NEWROOT"
 )
 result=$?
 
-##### safe the data and remount $NEWROOT as it was previously mounted #####
+##### save the data and remount $NEWROOT as it was previously mounted #####
 save_journal
 
 # NOTE: For debugging purposis. It's possible it will be changed in future.
