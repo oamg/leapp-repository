@@ -3,7 +3,9 @@ from leapp.models import (
     IfCfgProperty,
     NetworkManagerConnection,
     NetworkManagerConnectionProperty,
-    NetworkManagerConnectionSetting
+    NetworkManagerConnectionSetting,
+    SystemdServiceFile,
+    SystemdServicesInfoSource
 )
 from leapp.reporting import Report
 from leapp.utils.report import is_inhibitor
@@ -122,3 +124,81 @@ def test_ifcfg_dynamic_wep(current_actor_context):
     current_actor_context.run()
     report_fields = current_actor_context.consume(Report)[0].report
     assert is_inhibitor(report_fields)
+
+
+def _nm_service_info(state):
+    return SystemdServicesInfoSource(service_files=[
+        SystemdServiceFile(name='NetworkManager.service', state=state),
+    ])
+
+
+def test_nm_disabled_ifcfg_no_nm_controlled(current_actor_context):
+    """
+    Report if NM is disabled and ifcfg files don't have NM_CONTROLLED=no.
+    """
+
+    current_actor_context.feed(_nm_service_info('disabled'))
+    current_actor_context.feed(IfCfg(filename='/NM/ifcfg-eth0', properties=(
+        IfCfgProperty(name='TYPE', value='Ethernet'),
+    )))
+    current_actor_context.run()
+    reports = current_actor_context.consume(Report)
+    assert len(reports) == 1
+    assert 'ifcfg files expect NetworkManager' in reports[0].report['title']
+
+
+def test_nm_disabled_ifcfg_nm_controlled_no(current_actor_context):
+    """
+    No report if NM is disabled but all ifcfg files have NM_CONTROLLED=no.
+    """
+
+    current_actor_context.feed(_nm_service_info('disabled'))
+    current_actor_context.feed(IfCfg(filename='/NM/ifcfg-eth0', properties=(
+        IfCfgProperty(name='TYPE', value='Ethernet'),
+        IfCfgProperty(name='NM_CONTROLLED', value='no'),
+    )))
+    current_actor_context.run()
+    assert not current_actor_context.consume(Report)
+
+
+def test_nm_enabled_ifcfg_no_nm_controlled(current_actor_context):
+    """
+    No report if NM is enabled, even if ifcfg files lack NM_CONTROLLED=no.
+    """
+
+    current_actor_context.feed(_nm_service_info('enabled'))
+    current_actor_context.feed(IfCfg(filename='/NM/ifcfg-eth0', properties=(
+        IfCfgProperty(name='TYPE', value='Ethernet'),
+    )))
+    current_actor_context.run()
+    assert not current_actor_context.consume(Report)
+
+
+def test_nm_disabled_mixed_ifcfg(current_actor_context):
+    """
+    Report only the ifcfg files that lack NM_CONTROLLED=no when NM is disabled.
+    """
+
+    current_actor_context.feed(_nm_service_info('disabled'))
+    current_actor_context.feed(IfCfg(filename='/NM/ifcfg-eth0', properties=(
+        IfCfgProperty(name='TYPE', value='Ethernet'),
+    )))
+    current_actor_context.feed(IfCfg(filename='/NM/ifcfg-eth1', properties=(
+        IfCfgProperty(name='TYPE', value='Ethernet'),
+        IfCfgProperty(name='NM_CONTROLLED', value='no'),
+    )))
+    current_actor_context.run()
+    reports = current_actor_context.consume(Report)
+    assert len(reports) == 1
+    assert '/NM/ifcfg-eth0' in reports[0].report['summary']
+    assert '/NM/ifcfg-eth1' not in reports[0].report['summary']
+
+
+def test_nm_disabled_no_ifcfg(current_actor_context):
+    """
+    No report if NM is disabled but there are no ifcfg files at all.
+    """
+
+    current_actor_context.feed(_nm_service_info('disabled'))
+    current_actor_context.run()
+    assert not current_actor_context.consume(Report)
