@@ -160,13 +160,24 @@ def _backup_to_persistent_package_cache(userspace_dir):
 
 
 def _import_gpg_keys(context, install_root_dir, target_major_version):
+
+    def get_certs_paths(certs_dir):
+        paths = [os.path.join(certs_dir, name) for name in os.listdir(certs_dir)]
+        return [path for path in paths if os.path.isfile(path)]
+
     certs_path = get_path_to_gpg_certs()
     # Import the target distro target version GPG key to be able to verify the
     # installation of initial packages
     try:
         # Import also any other keys provided by the customer in the same directory
-        for certname in os.listdir(certs_path):
-            cmd = ['rpm', '--root', install_root_dir, '--import', os.path.join(certs_path, certname)]
+        cert_paths = [os.path.join(certs_path, name) for name in os.listdir(certs_path)]
+        cert_paths = [path for path in cert_paths if os.path.isfile(path)]
+        for certpath in cert_paths:
+            cmd = [
+                "rpm",
+                "--root", install_root_dir,
+                "--import", certpath,
+            ]
             context.call(cmd, callback_raw=utils.logging_handler)
     except CalledProcessError as exc:
         raise StopActorExecutionError(
