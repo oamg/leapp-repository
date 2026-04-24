@@ -1,6 +1,24 @@
-from leapp.exceptions import StopActorExecutionError
+from leapp.libraries.common.dnflibs import DNFError
 from leapp.libraries.common.rpms import get_leapp_packages
 from leapp.libraries.stdlib import api, CalledProcessError
+
+
+class InvalidDNFConfig(DNFError):
+    """
+    Raised when DNF configuration is invalid.
+    """
+
+
+class CannotObtainDNFConfig(DNFError):
+    """
+    Raised when cannot obtain DNF configuration.
+    """
+
+
+class CannotUpdateDNFConfig(DNFError):
+    """
+    Raised when the DNF configuration could not be updated.
+    """
 
 
 def _strip_split(data, sep, maxsplit=-1):
@@ -27,7 +45,7 @@ def _get_main_dump(context, disable_plugins):
         data = context.call(cmd, split=True)['stdout']
     except CalledProcessError as e:
         api.current_logger().error('Cannot obtain the dnf configuration')
-        raise StopActorExecutionError(
+        raise CannotObtainDNFConfig(
             message='Cannot obtain data about the DNF configuration',
             details={'stdout': e.stdout, 'stderr': e.stderr}
         )
@@ -36,7 +54,7 @@ def _get_main_dump(context, disable_plugins):
         # return index of the first item in the main section
         main_start = data.index('[main]') + 1
     except ValueError:
-        raise StopActorExecutionError(
+        raise InvalidDNFConfig(
             message='Invalid DNF configuration data (missing [main])',
             details=data,
         )
@@ -87,9 +105,12 @@ def _set_excluded_pkgs(context, pkglist, disable_plugins):
 
     try:
         context.call(cmd)
-    except CalledProcessError:
-        api.current_logger().error('Cannot set the dnf configuration')
-        raise
+    except CalledProcessError as e:
+        api.current_logger().error('Cannot update the dnf configuration')
+        raise CannotUpdateDNFConfig(
+            message='Cannot update the DNF configuration to exclude RPMs of the upgrade tooling.',
+            details={'stdout': e.stdout, 'stderr': e.stderr}
+        )
     api.current_logger().debug('The DNF configuration has been updated to exclude leapp packages.')
 
 
@@ -103,6 +124,15 @@ def exclude_leapp_rpms(context, disable_plugins):
         - on the host system
     So user will have to drop these packages from the exclude after the
     upgrade.
+
+    :param context: An instance of a mounting.IsolatedActions class
+    :type context: mounting.IsolatedActions class
+    :param disable_plugins: List of plugins supposed to be disabled during DNF execution
+    :type disable_plugins: list
+    :raises InvalidDNFConfig: When the discovered DNF configuratino is invalid.
+                              E.g. the [main] section is missing.
+    :raises CannotObtainDNFConfig: The DNF call `dnf config-manager --dump` failed.
+    :raises CannotUpdateDNFConfig: The DNF call to update its configuration failed.
     """
     to_exclude = list(set(_get_excluded_pkgs(context, disable_plugins) + get_leapp_packages()))
     _set_excluded_pkgs(context, to_exclude, disable_plugins)
