@@ -21,13 +21,16 @@ class RemoveSystemdResumeService(Actor):
     tags = (FirstBootPhaseTag.After, IPUWorkflowTag)
 
     def process(self):
+        systemd_dir = '/etc/systemd/system'
         service_name = 'leapp_resume.service'
-        if os.path.isfile('/etc/systemd/system/{}'.format(service_name)):
+        target_name = 'multi-user.target'
+
+        service_path = os.path.join(systemd_dir, service_name)
+        target_wants_path = os.path.join(systemd_dir, '{}.wants'.format(target_name), service_name)
+
+        if os.path.isfile(service_path):
             run(['systemctl', 'disable', service_name])
-            paths_to_unlink = [
-                '/etc/systemd/system/{}'.format(service_name),
-                '/etc/systemd/system/default.target.wants/{}'.format(service_name),
-            ]
+            paths_to_unlink = [service_path, target_wants_path]
             for path in paths_to_unlink:
                 try:
                     os.unlink(path)
