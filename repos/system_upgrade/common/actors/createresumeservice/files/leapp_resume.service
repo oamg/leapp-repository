@@ -1,6 +1,6 @@
 [Unit]
 Description=Temporary Leapp service which resumes execution after reboot
-After=default.target
+After=multi-user.target
 DefaultDependencies=no
 After=dbus.service
 After=network-online.target

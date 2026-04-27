@@ -22,18 +22,21 @@ class CreateSystemdResumeService(Actor):
     tags = (FinalizationPhaseTag, IPUWorkflowTag)
 
     def process(self):
-        service_name = 'leapp_resume.service'
         systemd_dir = '/etc/systemd/system'
+        service_name = 'leapp_resume.service'
+        target_name = 'multi-user.target'
 
         service_templ_fpath = self.get_file_path(service_name)
         shutil.copyfile(service_templ_fpath, os.path.join(systemd_dir, service_name))
 
-        service_path = '/etc/systemd/system/{}'.format(service_name)
-        symlink_path = '/etc/systemd/system/default.target.wants/{}'.format(service_name)
+        target_wants_path = os.path.join(systemd_dir, '{}.wants'.format(target_name))
 
-        # in case nothing is enabled in the default target, the directory does not exist
+        service_path = os.path.join(systemd_dir, service_name)
+        symlink_path = os.path.join(target_wants_path, service_name)
+
+        # in case nothing is enabled in the target, the directory does not exist
         try:
-            os.mkdir(os.path.join(systemd_dir, 'default.target.wants'))
+            os.mkdir(target_wants_path)
         except OSError:
             pass
 

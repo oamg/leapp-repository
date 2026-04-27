@@ -1,21 +1,18 @@
 import os
 
-import distro
 import pytest
 
 
 @pytest.mark.skipif(os.getuid() != 0, reason='User is not a root')
-@pytest.mark.skipif(
-    distro.id() == 'fedora',
-    reason='default.target.wants does not exists on Fedora distro',
-)
 def test_create_resume_service(current_actor_context):
-
     current_actor_context.run()
 
+    systemd_dir = '/etc/systemd/system'
     service_name = 'leapp_resume.service'
-    service_path = '/etc/systemd/system/{}'.format(service_name)
-    symlink_path = '/etc/systemd/system/default.target.wants/{}'.format(service_name)
+    target_name = 'multi-user.target'
+
+    service_path = os.path.join(systemd_dir, service_name)
+    symlink_path = os.path.join(systemd_dir, '{}.wants'.format(target_name), service_name)
 
     try:
         assert os.path.isfile(service_path)
