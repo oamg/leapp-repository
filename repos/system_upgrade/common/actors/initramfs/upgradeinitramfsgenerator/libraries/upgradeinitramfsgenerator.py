@@ -169,6 +169,14 @@ def _get_dracut_modules():
 
 
 def _install_initram_deps(packages):
+    """
+    Install initramfs dependencies into the target userspace.
+
+    :param packages: List of package names to install
+
+    .. seealso::
+        :func:`leapp.libraries.common.dnflibs.dnfplugin.install_initramdisk_requirements`
+    """
     used_repos = api.consume(UsedTargetRepositories)
     target_userspace_info = next(api.consume(TargetUserSpaceInfo), None)
 
