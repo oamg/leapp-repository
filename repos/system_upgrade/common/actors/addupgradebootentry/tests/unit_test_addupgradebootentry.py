@@ -18,7 +18,8 @@ from leapp.models import (
     LateTargetKernelCmdlineArgTasks,
     LiveModeArtifacts,
     LiveModeConfig,
-    TargetKernelCmdlineArgTasks
+    TargetKernelCmdlineArgTasks,
+    UpgradeKernelCmdlineArgTasks
 )
 
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -395,3 +396,26 @@ def test_modify_grubenv_to_have_separate_blsdir(monkeypatch, has_separate_boot):
     monkeypatch.setattr(addupgradebootentry, 'run', run_mocked)
 
     addupgradebootentry.modify_our_grubenv_to_have_separate_blsdir(efi_info)
+
+
+def test_collect_undesired_args_includes_upgrade_to_remove(monkeypatch):
+    msgs = [
+        UpgradeKernelCmdlineArgTasks(to_remove=[
+            KernelCmdlineArg(key='rd.luks.uuid', value='luks-aaa'),
+            KernelCmdlineArg(key='rd.luks.uuid', value='luks-bbb'),
+        ]),
+    ]
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=msgs))
+
+    undesired = addupgradebootentry.collect_undesired_args(livemode_enabled=False)
+
+    assert ('rd.luks.uuid', 'luks-aaa') in undesired
+    assert ('rd.luks.uuid', 'luks-bbb') in undesired
+
+
+def test_collect_undesired_args_no_upgrade_to_remove(monkeypatch):
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[]))
+
+    undesired = addupgradebootentry.collect_undesired_args(livemode_enabled=False)
+
+    assert undesired == set()
