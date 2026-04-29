@@ -1,13 +1,19 @@
+from leapp.libraries.actor import checkluks
 from leapp.libraries.common import distro
-from leapp.libraries.common.config import version
+from leapp.libraries.common.testutils import CurrentActorMocked, produce_mocked
+from leapp.libraries.stdlib import api
 from leapp.models import (
     CephInfo,
+    KernelCmdline,
+    KernelCmdlineArg,
     LsblkEntry,
     LuksDump,
     LuksDumps,
     LuksToken,
+    TargetKernelCmdlineArgTasks,
     TargetUserSpaceUpgradeTasks,
-    UpgradeInitramfsTasks
+    UpgradeInitramfsTasks,
+    UpgradeKernelCmdlineArgTasks
 )
 from leapp.reporting import Report
 from leapp.snactor.fixture import current_actor_context
@@ -17,7 +23,7 @@ _REPORT_TITLE_UNSUITABLE = 'Detected LUKS devices unsuitable for in-place upgrad
 
 
 def test_actor_with_luks1_notpm(monkeypatch, current_actor_context):
-    monkeypatch.setattr(version, 'get_source_major_version', lambda: '8')
+    monkeypatch.setattr(checkluks, 'get_source_major_version', lambda: '8')
     monkeypatch.setattr(distro, 'get_source_distro_id', lambda: 'rhel')
     monkeypatch.setattr(distro, 'get_target_distro_id', lambda: 'rhel')
 
@@ -41,7 +47,7 @@ def test_actor_with_luks1_notpm(monkeypatch, current_actor_context):
 
 
 def test_actor_with_luks2_notpm(monkeypatch, current_actor_context):
-    monkeypatch.setattr(version, 'get_source_major_version', lambda: '8')
+    monkeypatch.setattr(checkluks, 'get_source_major_version', lambda: '8')
     luks_dump = LuksDump(
         version=2,
         uuid='27b57c75-9adf-4744-ab04-9eb99726a301',
@@ -62,7 +68,7 @@ def test_actor_with_luks2_notpm(monkeypatch, current_actor_context):
 
 
 def test_actor_with_luks2_invalid_token(monkeypatch, current_actor_context):
-    monkeypatch.setattr(version, 'get_source_major_version', lambda: '8')
+    monkeypatch.setattr(checkluks, 'get_source_major_version', lambda: '8')
     luks_dump = LuksDump(
         version=2,
         uuid='dc1dbe37-6644-4094-9839-8fc5dcbec0c6',
@@ -84,7 +90,7 @@ def test_actor_with_luks2_invalid_token(monkeypatch, current_actor_context):
 
 
 def test_actor_with_luks2_clevis_tpm_token(monkeypatch, current_actor_context):
-    monkeypatch.setattr(version, 'get_source_major_version', lambda: '8')
+    monkeypatch.setattr(checkluks, 'get_source_major_version', lambda: '8')
     luks_dump = LuksDump(
         version=2,
         uuid='83050bd9-61c6-4ff0-846f-bfd3ac9bfc67',
@@ -113,7 +119,7 @@ def test_actor_with_luks2_clevis_tpm_token(monkeypatch, current_actor_context):
 
 
 def test_actor_with_luks2_ceph(monkeypatch, current_actor_context):
-    monkeypatch.setattr(version, 'get_source_major_version', lambda: '8')
+    monkeypatch.setattr(checkluks, 'get_source_major_version', lambda: '8')
     ceph_volume = ['sda']
     current_actor_context.feed(CephInfo(encrypted_volumes=ceph_volume))
     luks_dump = LuksDump(
@@ -143,3 +149,50 @@ LSBLK_ENTRY = LsblkEntry(
     parent_name="",
     parent_path=""
 )
+
+
+def test_rdluks_uuid_args_removed_from_upgrade_cmdline(monkeypatch):
+    cmdline = KernelCmdline(parameters=[
+        KernelCmdlineArg(key='root', value='/dev/mapper/rhel-root'),
+        KernelCmdlineArg(key='rd.luks.uuid', value='luks-aaa-bbb'),
+        KernelCmdlineArg(key='rd.luks.uuid', value='luks-ccc-ddd'),
+        KernelCmdlineArg(key='ro', value=None),
+    ])
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[cmdline]))
+    monkeypatch.setattr(api, 'produce', produce_mocked())
+
+    checkluks._emit_rdluks_undesired_for_upgrade_cmdline()
+
+    upgrade_msgs = [m for m in api.produce.model_instances if isinstance(m, UpgradeKernelCmdlineArgTasks)]
+    assert len(upgrade_msgs) == 1
+
+    removed_keys_values = {(arg.key, arg.value) for arg in upgrade_msgs[0].to_remove}
+    assert removed_keys_values == {
+        ('rd.luks.uuid', 'luks-aaa-bbb'),
+        ('rd.luks.uuid', 'luks-ccc-ddd'),
+    }
+
+    target_msgs = [m for m in api.produce.model_instances if isinstance(m, TargetKernelCmdlineArgTasks)]
+    assert len(target_msgs) == 1
+
+    readded_keys_values = {(arg.key, arg.value) for arg in target_msgs[0].to_add}
+    assert readded_keys_values == {
+        ('rd.luks.uuid', 'luks-aaa-bbb'),
+        ('rd.luks.uuid', 'luks-ccc-ddd'),
+    }
+
+
+def test_no_rdluks_uuid_no_message(monkeypatch):
+    cmdline = KernelCmdline(parameters=[
+        KernelCmdlineArg(key='root', value='/dev/mapper/rhel-root'),
+        KernelCmdlineArg(key='ro', value=None),
+    ])
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[cmdline]))
+    monkeypatch.setattr(api, 'produce', produce_mocked())
+
+    checkluks._emit_rdluks_undesired_for_upgrade_cmdline()
+
+    upgrade_msgs = [m for m in api.produce.model_instances if isinstance(m, UpgradeKernelCmdlineArgTasks)]
+    assert not upgrade_msgs
+    target_msgs = [m for m in api.produce.model_instances if isinstance(m, TargetKernelCmdlineArgTasks)]
+    assert not target_msgs

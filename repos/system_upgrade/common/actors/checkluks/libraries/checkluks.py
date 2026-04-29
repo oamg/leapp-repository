@@ -6,9 +6,12 @@ from leapp.models import (
     CephInfo,
     CopyFile,
     DracutModule,
+    KernelCmdline,
     LuksDumps,
+    TargetKernelCmdlineArgTasks,
     TargetUserSpaceUpgradeTasks,
-    UpgradeInitramfsTasks
+    UpgradeInitramfsTasks,
+    UpgradeKernelCmdlineArgTasks
 )
 from leapp.reporting import create_report
 
@@ -103,6 +106,41 @@ def report_inhibitor(luks1_partitions, no_tpm2_partitions):
     ] + report_hints)
 
 
+def _emit_rdluks_undesired_for_upgrade_cmdline():
+    """
+    Identify rd.luks.uuid args on the source kernel cmdline and request their
+    removal from the upgrade boot entry.
+
+    The upgrade initramfs uses clevis-tpm2 to unlock LUKS devices. Dracut's
+    rd.luks.uuid mechanism is not needed and can cause problems if left in.
+    limits what devices will be unlocked during boot, i.e., only devices named
+    in the rd.luks.uuid args will be unlocked.  However, we want to unlock all
+    LUKS devices (at least those in /etc/crypttab). Therefore, we request that
+    rd.luks.uuid args be removed from the upgrade kernel cmdline.
+    """
+    cmdline = next(api.consume(KernelCmdline), None)
+    if not cmdline:
+        api.current_logger().debug('No KernelCmdline message received, nothing to do.')
+        return
+
+    rdluks_args = [arg for arg in cmdline.parameters if arg.key == 'rd.luks.uuid']
+
+    if not rdluks_args:
+        api.current_logger().debug('No rd.luks.uuid args found on the source kernel cmdline.')
+        return
+
+    api.current_logger().debug(
+        'Requesting removal of rd.luks.uuid args from the upgrade kernel cmdline: %s',
+        ['{}={}'.format(a.key, a.value) for a in rdluks_args]
+    )
+    api.produce(UpgradeKernelCmdlineArgTasks(to_remove=rdluks_args))
+
+    # When installing the target kernel RPM, the cmdline is copied from the booted system.
+    # As we remove the rd.luks.uuid args, we would accidentally remove them also from the
+    # target entry. Therefore, we add them back in here.
+    api.produce(TargetKernelCmdlineArgTasks(to_add=rdluks_args))
+
+
 def check_invalid_luks_devices():
     luks_dumps = next(api.consume(LuksDumps), None)
     if not luks_dumps:
@@ -148,3 +186,4 @@ def check_invalid_luks_devices():
                     DracutModule(name='clevis-pin-tpm2')
                 ])
             )
+            _emit_rdluks_undesired_for_upgrade_cmdline()
