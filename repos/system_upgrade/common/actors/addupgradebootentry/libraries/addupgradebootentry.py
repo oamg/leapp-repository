@@ -50,7 +50,9 @@ def collect_undesired_args(livemode_enabled):
         args = dict(zip(('ro', 'rhgb', 'quiet'), itertools.repeat(None)))
         args['rd.lvm.lv'] = _get_rdlvm_arg_values()
 
-    return set(args.items())
+    undesired = set(args.items())
+    undesired |= collect_set_of_kernel_args_from_msgs(UpgradeKernelCmdlineArgTasks, 'to_remove')
+    return undesired
 
 
 def format_grubby_args_from_args_set(args_dict):

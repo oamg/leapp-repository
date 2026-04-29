@@ -39,10 +39,14 @@ class LateTargetKernelCmdlineArgTasks(Model):
 class UpgradeKernelCmdlineArgTasks(Model):
     """
     Modifications of the upgrade kernel cmdline.
+
+    The arguments in to_remove have precedence over argument in to_add. That is, if 'ARG'
+    is in to_remove, it is guaranteed to be removed (even if it is also in to_add).
     """
     topic = SystemInfoTopic
 
     to_add = fields.List(fields.Model(KernelCmdlineArg), default=[])
+    to_remove = fields.List(fields.Model(KernelCmdlineArg), default=[])
 
 
 class KernelCmdline(Model):
