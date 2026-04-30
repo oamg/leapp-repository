@@ -137,7 +137,7 @@ do_upgrade() {
 
 save_journal() {
     # Q: would it be possible that journal will not be flushed completely yet?
-    echo "writing logs to disk and rebooting"
+    echo "writing logs to disk"
 
     local logfile="/sysroot/tmp-leapp-upgrade.log"
 
@@ -213,7 +213,12 @@ sync
 #Failed to talk to init daemon: Host is down
 #"""
 if [ "$result" == "0" ]; then
-    [ -f "${NEWROOT}/.noreboot" ] || reboot
+    if [ -f "${NEWROOT}/.noreboot" ]; then
+        echo "Reboot suppressed by ${NEWROOT}/.noreboot"
+    else
+        echo "Rebooting..."
+        reboot
+    fi
 else
     echo >&2 "The upgrade container returned a non-zero exit code."
     exit $result
