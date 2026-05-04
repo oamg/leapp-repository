@@ -1,8 +1,8 @@
 import warnings
 
 from leapp.exceptions import StopActorExecutionError
-from leapp.libraries.common import module as module_lib
 from leapp.libraries.common import rpms
+from leapp.libraries.common.dnflibs import dnfmodule
 from leapp.libraries.stdlib import api
 from leapp.models import InstalledRPM, RPM
 
@@ -99,8 +99,14 @@ def get_package_repository_data():
 def map_modular_rpms_to_modules():
     """
     Map modular packages to the module streams they come from.
+
+    :returns: Mapping of RPM NEVRA tuples to (module_name, stream) tuples
+    :rtype: dict
+
+    .. seealso::
+        :func:`leapp.libraries.common.dnflibs.dnfmodule.get_modules`
     """
-    modules = module_lib.get_modules()
+    modules = dnfmodule.get_modules()
     # empty on RHEL 7 because of no modules
     if not modules:
         return {}

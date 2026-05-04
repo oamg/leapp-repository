@@ -1,5 +1,9 @@
 import logging
 import os
+import shutil
+import tempfile
+
+import pytest
 
 from leapp.repository.manager import RepositoryManager
 from leapp.repository.scan import find_and_scan_repositories
@@ -96,3 +100,21 @@ def pytest_runtestloop(session):
         )
     except AttributeError:
         pass
+
+
+@pytest.fixture
+def leapp_tmpdir():
+    """
+    Create a temporary directory with 'leapptest-' prefix in /tmp.
+
+    This fixture automatically creates and cleans up a temporary directory
+    that follows the project's naming convention for test directories.
+
+    :returns: Path to the temporary directory
+    :rtype: str
+    """
+    tmpdir = tempfile.mkdtemp(prefix='leapptest-', dir='/tmp')
+    try:
+        yield tmpdir
+    finally:
+        shutil.rmtree(tmpdir)

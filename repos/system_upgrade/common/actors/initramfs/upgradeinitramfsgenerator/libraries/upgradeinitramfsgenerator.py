@@ -4,8 +4,9 @@ import shutil
 from collections import namedtuple
 
 from leapp.exceptions import StopActorExecutionError
-from leapp.libraries.common import dnfplugin, mounting
+from leapp.libraries.common import mounting
 from leapp.libraries.common.config.version import get_target_major_version
+from leapp.libraries.common.dnflibs import dnfplugin
 from leapp.libraries.stdlib import api, CalledProcessError
 from leapp.models import RequiredUpgradeInitramPackages  # deprecated
 from leapp.models import UpgradeDracutModule  # deprecated
@@ -168,6 +169,14 @@ def _get_dracut_modules():
 
 
 def _install_initram_deps(packages):
+    """
+    Install initramfs dependencies into the target userspace.
+
+    :param packages: List of package names to install
+
+    .. seealso::
+        :func:`leapp.libraries.common.dnflibs.dnfplugin.install_initramdisk_requirements`
+    """
     used_repos = api.consume(UsedTargetRepositories)
     target_userspace_info = next(api.consume(TargetUserSpaceInfo), None)
 

@@ -4,8 +4,8 @@ import pytest
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import rpmscanner
-from leapp.libraries.common import module as module_lib
 from leapp.libraries.common import rpms, testutils
+from leapp.libraries.common.dnflibs import dnfmodule
 from leapp.libraries.stdlib import api
 from leapp.models import InstalledRPM, RPM
 from leapp.snactor.fixture import current_actor_context
@@ -103,20 +103,20 @@ MODULES = [
 
 @pytest.mark.skipif(no_yum and no_dnf, reason='yum/dnf is unavailable')
 def test_actor_execution(monkeypatch, current_actor_context):
-    monkeypatch.setattr(rpmscanner.module_lib, 'get_modules', lambda: [])
+    monkeypatch.setattr(rpmscanner.dnfmodule, 'get_modules', lambda: [])
     current_actor_context.run()
     assert current_actor_context.consume(InstalledRPM)
     assert current_actor_context.consume(InstalledRPM)[0].items
 
 
 def test_map_modular_rpms_to_modules_empty(monkeypatch):
-    monkeypatch.setattr(module_lib, 'get_modules', lambda: [])
+    monkeypatch.setattr(dnfmodule, 'get_modules', lambda: [])
     mapping = rpmscanner.map_modular_rpms_to_modules()
     assert not mapping
 
 
 def test_map_modular_rpms_to_modules(monkeypatch):
-    monkeypatch.setattr(module_lib, 'get_modules', lambda: MODULES)
+    monkeypatch.setattr(dnfmodule, 'get_modules', lambda: MODULES)
     mapping = rpmscanner.map_modular_rpms_to_modules()
     assert mapping[
         ('afterburn', '0', '4.2.0', '1.module_f31+6825+8330d585', 'x86_64')
@@ -154,7 +154,7 @@ PACKAGE_REPOS = {
 
 
 def test_process(monkeypatch):
-    monkeypatch.setattr(module_lib, 'get_modules', lambda: MODULES)
+    monkeypatch.setattr(dnfmodule, 'get_modules', lambda: MODULES)
     monkeypatch.setattr(rpmscanner, 'get_package_repository_data', lambda: PACKAGE_REPOS)
     monkeypatch.setattr(rpms, 'get_installed_rpms', lambda: INSTALLED_RPMS)
     monkeypatch.setattr(api, 'produce', testutils.produce_mocked())

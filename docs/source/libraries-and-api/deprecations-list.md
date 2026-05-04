@@ -18,6 +18,11 @@ Only the versions in which a deprecation has been made are listed.
   - **`LEAPP_NO_NETWORK_RENAMING`** - It becomes obsoleted by the solution based on `net.naming-scheme` which replaces the legacy solution based on created udev link files correcting NIC names during the upgrade.
 - Models:
   - **`RenamedInterfaces`** - Information provided in this message is not always complete and it's not used since the `net.naming-scheme` kernel command line argument is set during the upgrade.
+- Shared libraries
+  - **`leapp.libraries.common.dnfconfig`** - Moved to `leapp.libraries.common.dnflibs.dnfconfig`. Original library is deprecated.
+  - **`leapp.libraries.common.dnfplugin`** - Moved to `leapp.libraries.common.dnflibs.dnfplugin`. Original library is deprecated.
+  - **`leapp.libraries.common.module`** - Replaced by `leapp.libraries.common.dnflibs.dnfmodule` (renamed for clarity). Original library is deprecated.
+
 
 ## v0.24.0 <span style="font-size:0.5em; font-weight:normal">(till September 2026)</span>
 - Shared libraries
