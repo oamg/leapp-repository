@@ -45,23 +45,23 @@ class logger_mocked:
         self.warnmsg = []
         self.errmsg = []
 
-    def debug(self, *args):
+    def debug(self, *args, **kwargs):
         self.dbgmsg.extend(args)
 
-    def info(self, *args):
+    def info(self, *args, **kwargs):
         self.infomsg.extend(args)
 
     @deprecated(since='2020-09-23', message=(
         'The logging.warn method has been deprecated since Python 3.3.'
         'Use the warning method instead.'
     ))
-    def warn(self, *args):
+    def warn(self, *args, **kwargs):
         self.warnmsg.extend(args)
 
-    def warning(self, *args):
+    def warning(self, *args, **kwargs):
         self.warnmsg.extend(args)
 
-    def error(self, *args):
+    def error(self, *args, **kwargs):
         self.errmsg.extend(args)
 
     def __call__(self):
