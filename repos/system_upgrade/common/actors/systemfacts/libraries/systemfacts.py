@@ -230,6 +230,24 @@ def get_repositories_status():
             })
 
 
+def _bootloader_entries_contain_enforcing_one():
+    """
+    True if grubby reports enforcing=1 in any boot loader entry's kernel arguments.
+    """
+    try:
+        out = run(['/usr/sbin/grubby', '--info', 'ALL'], split=False)['stdout']
+    except (OSError, CalledProcessError):
+        api.current_logger().debug(
+            'grubby --info ALL failed; assuming no bootloader enforcing=1', exc_info=True
+        )
+        return False
+
+    for line in out.splitlines():
+        if line.startswith('args=') and 'enforcing=1' in line[len('args='):].strip('"').split():
+            return True
+    return False
+
+
 def get_selinux_status():
     """ Get SELinux status information """
     # will be None if something went wrong or contain SELinuxFacts otherwise
@@ -258,6 +276,8 @@ def get_selinux_status():
         outdata['runtime_mode'] = 'permissive'
         outdata['static_mode'] = 'disabled'
         outdata['policy'] = 'targeted'
+
+    outdata['enforcing_via_any_cmdline'] = _bootloader_entries_contain_enforcing_one()
 
     res = SELinuxFacts(**outdata)
     return res

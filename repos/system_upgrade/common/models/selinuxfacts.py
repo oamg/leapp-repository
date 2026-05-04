@@ -10,3 +10,7 @@ class SELinuxFacts(Model):
     enabled = fields.Boolean()
     policy = fields.StringEnum(['targeted', 'minimum', 'mls'])
     mls_enabled = fields.Boolean()
+    enforcing_via_any_cmdline = fields.Boolean(default=False)
+    """
+    True when any bootloader entries have set enforcing=1.
+    """
