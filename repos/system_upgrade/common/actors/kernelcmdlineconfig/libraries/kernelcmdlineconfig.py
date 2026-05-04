@@ -88,6 +88,24 @@ def retrieve_arguments_to_modify():
     return kernelargs_msgs_to_add, kernelargs_msgs_to_remove
 
 
+def remove_args_from_all_kernels(kernelargs_msgs_to_remove, configs_to_modify_explicitly=None):
+    """
+    Apply --remove-args to every boot entry (grubby ALL).
+
+    TargetKernelCmdlineArgTasks.to_remove must affect all installed kernels so stale options
+    (e.g. enforcing=1 on an older entry) are not left behind after upgrade.
+    """
+    if not kernelargs_msgs_to_remove:
+        return
+    remove_str = format_kernelarg_msgs_for_grubby_cmd(kernelargs_msgs_to_remove)
+    grubby_cmd = ['grubby', '--update-kernel=ALL', '--remove-args', remove_str]
+    if configs_to_modify_explicitly:
+        for config_to_modify in configs_to_modify_explicitly:
+            run_grubby_cmd(grubby_cmd + ['-c', config_to_modify])
+    else:
+        run_grubby_cmd(grubby_cmd)
+
+
 def modify_args_for_default_kernel(kernel_info,
                                    kernelargs_msgs_to_add,
                                    kernelargs_msgs_to_remove,
@@ -225,11 +243,15 @@ def modify_kernel_args_in_boot_cfg(configs_to_modify_explicitly=None):
         # Nothing to do
         return
 
-    # Modify the kernel cmdline for the default kernel
-    modify_args_for_default_kernel(kernel_info,
-                                   kernelargs_msgs_to_add,
-                                   kernelargs_msgs_to_remove,
-                                   configs_to_modify_explicitly)
+    if kernelargs_msgs_to_remove:
+        remove_args_from_all_kernels(kernelargs_msgs_to_remove, configs_to_modify_explicitly)
+
+    # Additions apply only to the default target kernel; removals were applied to ALL above.
+    if kernelargs_msgs_to_add:
+        modify_args_for_default_kernel(kernel_info,
+                                       kernelargs_msgs_to_add,
+                                       [],
+                                       configs_to_modify_explicitly)
 
     # Copy kernel params from the default kernel to all the kernels
     kernel_root, kernel_args = retrieve_args_for_default_kernel(kernel_info)

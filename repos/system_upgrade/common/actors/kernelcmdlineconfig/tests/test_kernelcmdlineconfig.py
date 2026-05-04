@@ -56,35 +56,38 @@ class MockedRun:
 
 
 @pytest.mark.parametrize(
-    ('msgs', 'expected_grubby_kernelopt_args'),
+    ('msgs', 'expected_modification_cmds'),
     [
         (
             [KernelCmdlineArg(key='key1', value='value1'), KernelCmdlineArg(key='key2', value='value2')],
-            ['--args', 'key1=value1 key2=value2']
+            [['grubby', '--update-kernel=/boot/vmlinuz-X', '--args', 'key1=value1 key2=value2']],
         ),
         (
             [TargetKernelCmdlineArgTasks(to_add=[KernelCmdlineArg(key='key1', value='value1'),
                                                  KernelCmdlineArg(key='key2')])],
-            ['--args', 'key1=value1 key2']
+            [['grubby', '--update-kernel=/boot/vmlinuz-X', '--args', 'key1=value1 key2']],
         ),
         (
             [TargetKernelCmdlineArgTasks(to_add=[KernelCmdlineArg(key='key1', value='value1')]),
              KernelCmdlineArg(key='key2', value='value2')],
-            ['--args', 'key1=value1 key2=value2']
+            [['grubby', '--update-kernel=/boot/vmlinuz-X', '--args', 'key1=value1 key2=value2']],
         ),
         (
             [TargetKernelCmdlineArgTasks(to_add=[KernelCmdlineArg(key='key1', value='value1')],
                                          to_remove=[KernelCmdlineArg(key='key3')]),
              KernelCmdlineArg(key='key2', value='value2')],
-            ['--args', 'key1=value1 key2=value2', '--remove-args', 'key3']
+            [
+                ['grubby', '--update-kernel=ALL', '--remove-args', 'key3'],
+                ['grubby', '--update-kernel=/boot/vmlinuz-X', '--args', 'key1=value1 key2=value2'],
+            ],
         ),
         (
             [TargetKernelCmdlineArgTasks(to_remove=[KernelCmdlineArg(key='key3'), KernelCmdlineArg(key='key4')])],
-            ['--remove-args', 'key3 key4']
+            [['grubby', '--update-kernel=ALL', '--remove-args', 'key3 key4']],
         ),
     ]
 )
-def test_kernelcmdline_config_valid_msgs(monkeypatch, tmpdir, msgs, expected_grubby_kernelopt_args):
+def test_kernelcmdline_config_valid_msgs(monkeypatch, tmpdir, msgs, expected_modification_cmds):
     kernel_img_path = '/boot/vmlinuz-X'
     kernel_info = InstalledTargetKernelInfo(pkg_nevra=TARGET_KERNEL_NEVRA,
                                             uname_r='',
@@ -92,8 +95,11 @@ def test_kernelcmdline_config_valid_msgs(monkeypatch, tmpdir, msgs, expected_gru
                                             initramfs_path='/boot/initramfs-X')
     msgs += [kernel_info]
 
-    grubby_base_cmd = ['grubby', '--update-kernel={}'.format(kernel_img_path)]
-    expected_grubby_cmd = grubby_base_cmd + expected_grubby_kernelopt_args
+    info_cmd = ['grubby', '--info', kernel_img_path]
+    editenv_cmd = ["grub2-editenv", "-", "set", "kernelopts=root={} {}".format(
+        SAMPLE_KERNEL_ROOT, SAMPLE_KERNEL_ARGS)]
+
+    expected_x86 = expected_modification_cmds + [info_cmd, editenv_cmd]
 
     mocked_run = MockedRun(
         outputs={" ".join(("grubby", "--info", kernel_img_path)): SAMPLE_GRUBBY_INFO_OUTPUT}
@@ -105,8 +111,7 @@ def test_kernelcmdline_config_valid_msgs(monkeypatch, tmpdir, msgs, expected_gru
                                            msgs=msgs)
                         )
     kernelcmdlineconfig.modify_kernel_args_in_boot_cfg()
-    assert mocked_run.commands and len(mocked_run.commands) == 3
-    assert expected_grubby_cmd == mocked_run.commands.pop(0)
+    assert mocked_run.commands == expected_x86
 
     mocked_run = MockedRun(
         outputs={" ".join(("grubby", "--info", kernel_img_path)): SAMPLE_GRUBBY_INFO_OUTPUT}
@@ -115,10 +120,13 @@ def test_kernelcmdline_config_valid_msgs(monkeypatch, tmpdir, msgs, expected_gru
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(architecture.ARCH_S390X, msgs=msgs))
     monkeypatch.setattr(kernelcmdlineconfig, 'KERNEL_CMDLINE_FILE', str(tmpdir / 'cmdline'))
 
+    expected_s390 = []
+    for cmd in expected_modification_cmds:
+        expected_s390.extend((cmd, ['/usr/sbin/zipl']))
+    expected_s390.append(info_cmd)
+
     kernelcmdlineconfig.modify_kernel_args_in_boot_cfg()
-    assert mocked_run.commands and len(mocked_run.commands) == 3
-    assert expected_grubby_cmd == mocked_run.commands.pop(0)
-    assert ['/usr/sbin/zipl'] == mocked_run.commands.pop(0)
+    assert mocked_run.commands == expected_s390
 
 
 def test_kernelcmdline_explicit_configs(monkeypatch):
@@ -145,11 +153,10 @@ def test_kernelcmdline_explicit_configs(monkeypatch):
     configs = ['/boot/grub2/grub.cfg', '/boot/efi/EFI/redhat/grub.cfg']
     kernelcmdlineconfig.modify_kernel_args_in_boot_cfg(configs_to_modify_explicitly=configs)
 
-    grubby_cmd_without_config = ['grubby', '--update-kernel={}'.format(kernel_img_path),
-                                 '--remove-args', 'key1=value1']
+    grubby_all_remove = ['grubby', '--update-kernel=ALL', '--remove-args', 'key1=value1']
     expected_cmds = [
-        grubby_cmd_without_config + ['-c', '/boot/grub2/grub.cfg'],
-        grubby_cmd_without_config + ['-c', '/boot/efi/EFI/redhat/grub.cfg'],
+        grubby_all_remove + ['-c', '/boot/grub2/grub.cfg'],
+        grubby_all_remove + ['-c', '/boot/efi/EFI/redhat/grub.cfg'],
         grubby_cmd_info,
         ["grub2-editenv", "-", "set", "kernelopts=root={} {}".format(
             SAMPLE_KERNEL_ROOT, SAMPLE_KERNEL_ARGS)],
