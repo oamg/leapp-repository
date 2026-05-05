@@ -249,6 +249,19 @@ class IsolatedActions:
         """
         shutil.copy2(self.full_path(src), dst)
 
+    def listdir(self, path):
+        """
+        List files in the directory at the given path in the isolated environment
+
+        The function calls os.listdir with the given path, any exceptions raised are propagated.
+
+        :param path: The path in the isolated environment.
+
+        .. seealso::
+           :func:`os.listdir`
+        """
+        return os.listdir(self.full_path(path))
+
     @classmethod
     def is_isolated(cls):
         """
