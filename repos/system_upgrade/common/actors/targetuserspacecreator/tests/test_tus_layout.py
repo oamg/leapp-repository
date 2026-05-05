@@ -127,6 +127,7 @@ def test_scratch_container(monkeypatch):
         mounts_dir='/var/lib/leapp/scratch/mounts',
         installroot_overlay_mountpoint='/el9target',
         persistent_pkg_cache_path='/var/lib/leapp/persistent_package_cache',
+        userspace_gpg_keys_dir='/leapp-trusted-gpg-keys',
     )
     inputs = MockInputData(storage_info='STORAGE_INFO', target_iso='TARGET_ISO')
 

@@ -29,6 +29,8 @@ _INSTALLROOT_DIRNAME_TEMPLATE = 'el{target_major}target'
 
 _PERSISTENT_PKG_CACHE_DIRNAME = 'persistent_package_cache'
 
+_USERSPACE_GPG_KEYS_DIRNAME = 'leapp-trusted-gpg-keys'
+
 
 class Layout:
     """Value object describing where the actor builds the target userspace."""
@@ -41,6 +43,7 @@ class Layout:
         mounts_dir,
         installroot_overlay_mountpoint,
         persistent_pkg_cache_path,
+        userspace_gpg_keys_dir,
     ):
         """
         Initialize the layout value object.
@@ -57,6 +60,8 @@ class Layout:
         :type installroot_overlay_mountpoint: str
         :param persistent_pkg_cache_path: Path to the developer-only persistent package cache.
         :type persistent_pkg_cache_path: str
+        :param userspace_gpg_keys_dir: Path to the trusted GPG keys directory inside the target userspace.
+        :type userspace_gpg_keys_dir: str
         """
         self.container_root = container_root
         self.userspace_path = userspace_path
@@ -64,6 +69,7 @@ class Layout:
         self.mounts_dir = mounts_dir
         self.installroot_overlay_mountpoint = installroot_overlay_mountpoint
         self.persistent_pkg_cache_path = persistent_pkg_cache_path
+        self.userspace_gpg_keys_dir = userspace_gpg_keys_dir
 
 
 def compute():
@@ -87,6 +93,7 @@ def compute():
     installroot_dirname = _INSTALLROOT_DIRNAME_TEMPLATE.format(target_major=target_major)
     installroot_overlay_mountpoint = os.path.join('/', installroot_dirname)
     persistent_pkg_cache_path = os.path.join(container_root, _PERSISTENT_PKG_CACHE_DIRNAME)
+    userspace_gpg_keys_dir = os.path.join('/', _USERSPACE_GPG_KEYS_DIRNAME)
 
     return Layout(
         container_root=container_root,
@@ -95,6 +102,7 @@ def compute():
         mounts_dir=mounts_dir,
         installroot_overlay_mountpoint=installroot_overlay_mountpoint,
         persistent_pkg_cache_path=persistent_pkg_cache_path,
+        userspace_gpg_keys_dir=userspace_gpg_keys_dir
     )
 
 
