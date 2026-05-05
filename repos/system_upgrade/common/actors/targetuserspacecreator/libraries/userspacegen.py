@@ -160,15 +160,58 @@ def _backup_to_persistent_package_cache(userspace_dir):
             shutil.move(src_cache, PERSISTENT_PACKAGE_CACHE_DIR)
 
 
-def _import_gpg_keys(context, install_root_dir):
-     # Import the target distro target version GPG key to be able to verify the
-     # installation of initial packages
+def _import_gpg_keys_to_context(context, install_root_dir):
+    """
+    Import RPM GPG keys from a directory on the host using rpm from the context
+
+    On 9->10 attempt to import all (not just PQC) keys using /usr/bin/pqrpm/rpmkeys.
+    Otherwise PQC keys are not imported.
+    """
+
     try:
         # Import also any other keys provided by the customer in the same directory
         for certpath in iter_gpg_keyfiles(include_pqc=False):
-            cmd = ["rpm", "--root", install_root_dir, "--import", certpath]
+            cmd = [
+                "rpm",
+                "--root", install_root_dir,
+                "--import", certpath,
+            ]
             context.call(cmd, callback_raw=utils.logging_handler)
     except CalledProcessError as exc:
+        raise StopActorExecutionError(
+            message=(
+                'Unable to import GPG certificates to install target OS userspace packages.'
+            ),
+            details={'details': str(exc), 'stderr': exc.stderr}
+        )
+
+    if matches_version(['<= 10.0'], get_target_version()):
+        # on 10.0 there is no support for pqc in rpm
+        return
+
+    # on RHEL 9 the system rpm stack doesn't understand PQC (gpg v6) keys,
+    # there is a separate stack in /usr/lib/pqrpm that does. The pqc keys
+    # need to be imported using /usr/lib/pqrpm/bin/rpmkeys.
+
+    # do not check if we have the binary, just try importing and see if it
+    # fails with ENOENT
+    # TODO check if the pqrpm pkg is installed
+    api.current_logger().debug('Trying to import keys to pqrpmdb')
+    try:
+        for certpath in iter_gpg_keyfiles(include_pqc=True):
+            cmd = [
+                "/usr/lib/pqrpm/bin/rpmkeys",
+                "--root", install_root_dir,
+                "--import", certpath,
+            ]
+            context.call(cmd, callback_raw=utils.logging_handler)
+    except CalledProcessError as exc:
+        if "execv(/usr/lib/pqrpm/bin/rpmkeys) failed: No such file or directory" in exc.stderr:
+            api.current_logger().debug(
+                "/usr/lib/pqrpm/bin/rpmkeys does not exist, skip importing keys to pqrpmdb"
+            )
+            return
+
         raise StopActorExecutionError(
             message=(
                 'Unable to import GPG certificates to install target OS userspace packages.'
@@ -221,7 +264,7 @@ def prepare_target_userspace(context, userspace_dir, enabled_repos, packages):
         if not is_nogpgcheck_set():
             # Import the target distro target version GPG key to be able to
             # verify the installation of initial packages
-            _import_gpg_keys(context, install_root_dir)
+            _import_gpg_keys_to_context(context, install_root_dir)
 
         repos_opt = [['--enablerepo', repo] for repo in enabled_repos]
         repos_opt = list(itertools.chain(*repos_opt))
