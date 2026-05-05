@@ -18,6 +18,7 @@ write leapp actors for **In-Place Upgrades (IPU)** with the leapp framework.
     :glob:
 
     setup-devel-env
+    setup-devel-tools
     howto-first-actor-upgrade
     howto-single-actor-run
     custom-content
