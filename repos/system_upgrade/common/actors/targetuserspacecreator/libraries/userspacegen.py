@@ -70,6 +70,7 @@ PROD_CERTS_FOLDER = 'prod-certs'
 PERSISTENT_PACKAGE_CACHE_DIR = '/var/lib/leapp/persistent_package_cache'
 DEDICATED_LEAPP_PART_URL = 'https://access.redhat.com/solutions/7011704'
 FMT_LIST_SEPARATOR = '\n    - '
+USERSPACE_GPG_CERTS_DIR = '/leapp-trusted-gpg-keys'
 
 
 def _check_deprecated_rhsm_skip():
@@ -226,6 +227,33 @@ def _import_gpg_keys_to_context(context, install_root_dir):
         )
 
 
+def _import_gpg_keys_in_context(context: mounting.IsolatedActions, certs_dir):
+    """
+    Import RPM GPG keys from a directory in the context using rpm from the context
+    """
+
+    def get_certs_paths(certs_dir):
+        paths = [os.path.join(certs_dir, name) for name in context.listdir(certs_dir)]
+        return [path for path in paths if os.path.isfile(context.full_path(path))]
+
+    try:
+        # Import also any other keys provided by the customer in the same directory
+        pqc_dir = os.path.join(certs_dir, 'pqc')
+        for certpath in get_certs_paths(certs_dir) + get_certs_paths(pqc_dir):
+            cmd = [
+                "rpm",
+                "--import", certpath,
+            ]
+            context.call(cmd, callback_raw=utils.logging_handler)
+    except CalledProcessError as exc:
+        raise StopActorExecutionError(
+            message=(
+                'Unable to import PQC GPG certificates to install late stage target OS userspace packages.'
+            ),
+            details={'details': str(exc), 'stderr': exc.stderr}
+        )
+
+
 def _handle_transaction_err_msg_size(err):
     NO_SPACE_STR = 'more space needed on the'
 
@@ -341,6 +369,13 @@ def prepare_target_userspace(context, userspace_dir, enabled_repos, packages):
                     details['hint'] = check_rhel_release_hint
 
             raise StopActorExecutionError(message=message, details=details)
+
+    # the PQC keys have to be imported also using the RHEL 10 rpm
+    if not is_nogpgcheck_set() and matches_version(['>= 10.1'], get_target_version()):
+        certs_path = '/leapp-trusted-gpg-keys'
+        with mounting.NspawnActions(base_dir=userspace_dir) as context:
+            context.copytree_to(get_path_to_gpg_certs(), certs_path)
+            _import_gpg_keys_in_context(context, certs_path, target_major_version)
 
 
 def _query_rpm_for_pkg_files(context, pkgs):
