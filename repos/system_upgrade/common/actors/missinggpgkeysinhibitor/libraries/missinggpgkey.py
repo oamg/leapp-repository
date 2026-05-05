@@ -4,6 +4,7 @@ import re
 import shutil
 import tempfile
 
+from leapp.libraries.common.rpms import has_package
 from six.moves import urllib
 
 from leapp import reporting

@@ -27,6 +27,7 @@ from leapp.models import RequiredTargetUserspacePackages  # deprecated
 from leapp.models import TMPTargetRepositoriesFacts  # deprecated all the time
 from leapp.models import (
     CustomTargetRepositoryFile,
+    DNFWorkaround,
     PkgManagerInfo,
     RepositoriesFacts,
     RHELTargetRepository,
@@ -363,6 +364,15 @@ def prepare_target_userspace(context, userspace_dir, enabled_repos, packages):
         with mounting.NspawnActions(base_dir=userspace_dir) as container:
             container.copytree_to(get_path_to_gpg_certs(), USERSPACE_GPG_CERTS_DIR)
             _import_gpg_keys_in_context(container, USERSPACE_GPG_CERTS_DIR)
+
+        api.produce(
+            DNFWorkaround(
+                display_name="import trusted gpg keys to RPM DB from target userspace",
+                script_path=api.current_actor().get_common_tool_path("importrpmgpgkeysintarget"),
+                script_args=[USERSPACE_GPG_CERTS_DIR],
+                execution_context='container',
+            )
+        )
 
 
 def _query_rpm_for_pkg_files(context, pkgs):
