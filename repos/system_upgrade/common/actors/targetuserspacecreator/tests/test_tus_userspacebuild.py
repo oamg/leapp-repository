@@ -3,10 +3,11 @@ import os
 import pytest
 from test_tus_mock_utils import make_cpe, MockContext, MockInputData, MockNspawnActions, RunSpy
 
+from leapp import models
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import tus_userspacebuild
 from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked
-from leapp.libraries.stdlib import api
+from leapp.libraries.stdlib import api, CalledProcessError
 from leapp.models import CopyFile, TargetUserSpaceInfo, UsedTargetRepositories, UsedTargetRepository
 
 _DEDICATED_LEAPP_PARTITION_URL = 'https://access.redhat.com/solutions/5057391'
@@ -16,6 +17,7 @@ _IMPORT_KEYFILES = {
     False: ['/keys/root-key'],
     True: ['/keys/root-key', '/keys/pqc/pqc-key'],
 }
+_PQRPM_RPMKEYS = '/usr/lib/pqrpm/bin/rpmkeys'
 
 
 class MockCM:
@@ -141,20 +143,96 @@ def test_persistent_cache_push_enabled(monkeypatch):
     assert moves == [(src, '/cache')]
 
 
-def test_import_gpg_keys_with_keys(monkeypatch):
-    context = MockContext()
+class _ImportKeysContext:
+    """Records emitted commands and can fail on a chosen binary."""
+
+    def __init__(self, fail_on=None, stderr=''):
+        self.calls = []
+        self._fail_on = fail_on
+        self._stderr = stderr
+
+    def call(self, cmd, **dummy_kwargs):
+        self.calls.append(cmd)
+        if self._fail_on and cmd[0] == self._fail_on:
+            result = {'stdout': '', 'stderr': self._stderr, 'exit_code': 1, 'signal': None, 'pid': 1}
+            raise CalledProcessError('failed', cmd, result)
+        return {'exit_code': 0}
+
+    def binaries(self):
+        return [cmd[0] for cmd in self.calls]
+
+    def imported_paths(self, binary):
+        return [cmd[cmd.index('--import') + 1] for cmd in self.calls if cmd[0] == binary]
+
+
+def _installed_rpms(pqrpm_installed):
+    items = [models.RPM(
+        name='rpm', version='4.17.1', release='1', epoch='0', packager='', arch='x86_64', pgpsig=''
+    )]
+    if pqrpm_installed:
+        items.append(models.RPM(
+            name='pqrpm', version='1.0', release='1', epoch='0', packager='', arch='x86_64', pgpsig=''
+        ))
+    return models.InstalledRPM(items=items)
+
+
+def _setup_import_keys(monkeypatch, target_version, keyfiles_by_scope, pqrpm_installed=False):
+    """Stub the version and keyfile discovery used by _import_gpg_keys_to_scratch."""
     monkeypatch.setattr(
-        tus_userspacebuild,
-        "iter_gpg_keyfiles",
-        lambda include_pqc: iter(_IMPORT_KEYFILES[include_pqc]),
+        tus_userspacebuild.api, 'current_actor',
+        CurrentActorMocked(dst_ver=target_version, msgs=[_installed_rpms(pqrpm_installed)])
+    )
+    monkeypatch.setattr(
+        tus_userspacebuild, 'iter_gpg_keyfiles',
+        lambda include_pqc: iter(keyfiles_by_scope[include_pqc])
     )
 
-    tus_userspacebuild._import_gpg_keys(context, '/installroot')
 
-    # pqc should not be included yet
-    assert context.calls == [
-        ['rpm', '--root', '/installroot', '--import', '/keys/root-key'],
-    ]
+@pytest.mark.parametrize('target_version, expected_pqrpm_imports', [
+    # on 10.0 there is no PQC support in rpm, so pqrpm import must not be attempted
+    ('10.0', []),
+    # newer targets import all (v4 + pqc) keys into the separate pqrpmdb
+    ('10.1', ['/keys/root-key', '/keys/pqc/pqc-key']),
+])
+def test_import_gpg_keys_to_scratch_version_gating(monkeypatch, target_version, expected_pqrpm_imports):
+    _setup_import_keys(monkeypatch, target_version, _IMPORT_KEYFILES, pqrpm_installed=True)
+    context = _ImportKeysContext()
+
+    tus_userspacebuild._import_gpg_keys_to_scratch(context, '/instroot')
+
+    assert context.imported_paths('rpm') == ['/keys/root-key']
+    assert context.imported_paths(_PQRPM_RPMKEYS) == expected_pqrpm_imports
+    # keys are always imported into the given install root, regardless of arg order
+    for cmd in context.calls:
+        assert '--root' in cmd
+        assert cmd[cmd.index('--root') + 1] == '/instroot'
+
+
+def test_import_gpg_keys_to_scratch_skips_pqrpm_when_not_installed(monkeypatch):
+    # rpmkeys used for the pqrpmdb import comes from the source system's 'pqrpm'
+    # package; without it installed there is no binary to import with, so the
+    # pqrpm import is skipped even on a PQC-capable target
+    _setup_import_keys(monkeypatch, '10.1', _IMPORT_KEYFILES, pqrpm_installed=False)
+    context = _ImportKeysContext()
+
+    tus_userspacebuild._import_gpg_keys_to_scratch(context, '/instroot')
+
+    assert context.imported_paths('rpm') == ['/keys/root-key']
+    assert context.imported_paths(_PQRPM_RPMKEYS) == []
+
+
+@pytest.mark.parametrize('fail_on, stderr', [
+    # a rpm import failure is always fatal
+    ('rpm', 'rpm import failure'),
+    # a pqrpm import failure other than the missing binary is fatal
+    (_PQRPM_RPMKEYS, 'some other rpmkeys failure'),
+])
+def test_import_gpg_keys_to_scratch_import_error_raises(monkeypatch, fail_on, stderr):
+    _setup_import_keys(monkeypatch, '10.1', _IMPORT_KEYFILES, pqrpm_installed=True)
+    context = _ImportKeysContext(fail_on=fail_on, stderr=stderr)
+
+    with pytest.raises(CalledProcessError):
+        tus_userspacebuild._import_gpg_keys_to_scratch(context, '/instroot')
 
 
 @pytest.mark.parametrize('nogpgcheck', [False, True])
@@ -320,7 +398,7 @@ def test_build_returns_target_userspace_info(monkeypatch):
     monkeypatch.setattr(tus_userspacebuild, '_persistent_cache_push', lambda *a, **k: None)
     monkeypatch.setattr(tus_userspacebuild, '_persistent_cache_pull', lambda *a, **k: None)
     monkeypatch.setattr(tus_userspacebuild, '_create_target_userspace_dir', lambda *a, **k: None)
-    monkeypatch.setattr(tus_userspacebuild, '_import_gpg_keys', lambda *a, **k: None)
+    monkeypatch.setattr(tus_userspacebuild, '_import_gpg_keys_to_scratch', lambda *a, **k: None)
     monkeypatch.setattr(tus_userspacebuild.mounting, 'BindMount', MockCM)
     monkeypatch.setattr(tus_userspacebuild.mounting, 'NspawnActions', MockNspawnActions)
     monkeypatch.setattr(tus_userspacebuild.tus_repoaccess, 'prep_repository_access', lambda *a, **k: None)
