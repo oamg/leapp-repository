@@ -1,27 +1,24 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import multipathconfread
-from leapp.models import DistributionSignedRPM, MultipathConfFacts8to9, MultipathInfo
+from leapp.models import DistributionSignedRPM, MultipathConfFacts9to10, MultipathInfo
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 
-class MultipathConfRead(Actor):
+class MultipathConfRead9to10(Actor):
     """
     Read multipath configuration files and extract the necessary information
 
     Related files:
       - /etc/multipath.conf
       - /etc/multipath/ - any files inside the directory
-      - /etc/xdrdevices.conf
 
-    Two kinds of messages are generated:
-      - MultipathInfo - general information about multipath, version agnostic
-      - upgrade-path-specific messages such as MultipathConfFacts8to9 (produced only
-        when upgrading from 8 to 9)
+    Produces MultipathInfo with general information about multipath, and
+    MultipathConfFacts9to10 with details needed for the 9 to 10 upgrade.
     """
 
-    name = 'multipath_conf_read'
+    name = 'multipath_conf_read_9to10'
     consumes = (DistributionSignedRPM,)
-    produces = (MultipathInfo, MultipathConfFacts8to9)
+    produces = (MultipathInfo, MultipathConfFacts9to10)
     tags = (FactsPhaseTag, IPUWorkflowTag)
 
     def process(self):

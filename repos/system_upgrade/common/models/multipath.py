@@ -14,7 +14,32 @@ class MultipathInfo(Model):
     """
 
     config_dir = fields.Nullable(fields.String())
-    """ Value of config_dir in the defaults section. None if not set. """
+    """
+    The location of config_dir, if it should be copied to the same location
+    in the target userspace. None if it should be copied to a different
+    location (handled by upgrade-specific models).
+    """
+
+    bindings_file = fields.Nullable(fields.String())
+    """
+    The location of bindings_file, if it should be copied to the same location
+    in the target userspace. None if it should be copied to a different
+    location (handled by upgrade-specific models).
+    """
+
+    wwids_file = fields.Nullable(fields.String())
+    """
+    The location of wwids_file, if it should be copied to the same location
+    in the target userspace. None if it should be copied to a different
+    location (handled by upgrade-specific models).
+    """
+
+    prkeys_file = fields.Nullable(fields.String())
+    """
+    The location of prkeys_file, if it should be copied to the same location
+    in the target userspace. None if it should be copied to a different
+    location (handled by upgrade-specific models).
+    """
 
 
 class UpdatedMultipathConfig(Model):
@@ -34,45 +59,3 @@ class MultipathConfigUpdatesInfo(Model):
 
     updates = fields.List(fields.Model(UpdatedMultipathConfig), default=[])
     """ Collection of multipath config updates that must be performed during the upgrade. """
-
-
-class MultipathConfig8to9(Model):
-    """
-    Model information about multipath configuration file important for the 8>9 upgrade path.
-
-    Note: This model is in the common repository due to the technical reasons
-          (reusing parser code in a single actor), and it should not be emitted on
-          non-8to9 upgrade paths. In the future, this model will likely be moved into
-          el8toel9 repository.
-    """
-    topic = SystemInfoTopic
-
-    pathname = fields.String()
-    """Config file path name"""
-
-    config_dir = fields.Nullable(fields.String())
-    """Value of config_dir in the defaults section. None if not set"""
-
-    enable_foreign_exists = fields.Boolean(default=False)
-    """True if enable_foreign is set in the defaults section"""
-
-    invalid_regexes_exist = fields.Boolean(default=False)
-    """True if any regular expressions have the value of "*" """
-
-    allow_usb_exists = fields.Boolean(default=False)
-    """True if allow_usb_devices is set in the defaults section."""
-
-
-class MultipathConfFacts8to9(Model):
-    """
-    Model representing information from multipath configuration files important for the 8>9 upgrade path.
-
-    Note: This model is in the common repository due to the technical reasons
-          (reusing parser code in a single actor), and it should not be emitted on
-          non-8to9 upgrade paths. In the future, this model will likely be moved into
-          el8toel9 repository.
-    """
-    topic = SystemInfoTopic
-
-    configs = fields.List(fields.Model(MultipathConfig8to9), default=[])
-    """List of multipath configuration files"""

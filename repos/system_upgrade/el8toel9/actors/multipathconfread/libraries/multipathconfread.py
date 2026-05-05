@@ -2,7 +2,6 @@ import errno
 import os
 
 from leapp.libraries.common import multipathutil
-from leapp.libraries.common.config.version import get_source_major_version
 from leapp.libraries.common.rpms import has_package
 from leapp.libraries.stdlib import api
 from leapp.models import DistributionSignedRPM, MultipathConfFacts8to9, MultipathConfig8to9, MultipathInfo
@@ -10,8 +9,12 @@ from leapp.models import DistributionSignedRPM, MultipathConfFacts8to9, Multipat
 _regexes = ('vendor', 'product', 'revision', 'product_blacklist', 'devnode',
             'wwid', 'property', 'protocol')
 
+_DEFAULT_BINDINGS_FILE = '/etc/multipath/bindings'
+_DEFAULT_WWIDS_FILE = '/etc/multipath/wwids'
+_DEFAULT_PRKEYS_FILE = '/etc/multipath/prkeys'
 
-def _parse_config(path):
+
+def _parse_config(path, file_locs):
     contents = multipathutil.read_config(path)
     if contents is None:
         return None
@@ -45,20 +48,22 @@ def _parse_config(path):
             elif data.option == 'allow_usb_devices':
                 conf.allow_usb_exists = True
             elif data.option == 'config_dir':
-                conf.config_dir = data.value
+                conf.config_dir = os.path.normpath(data.value)
+            elif data.option in ('bindings_file', 'wwids_file', 'prkeys_file'):
+                file_locs[data.option] = os.path.normpath(data.value)
         if data.option in _regexes and data.value == '*':
             conf.invalid_regexes_exist = True
     return conf
 
 
-def _parse_config_dir(config_dir):
+def _parse_config_dir(config_dir, file_locs):
     res = []
     try:
         for config_file in sorted(os.listdir(config_dir)):
             path = os.path.join(config_dir, config_file)
             if not path.endswith('.conf'):
                 continue
-            conf = _parse_config(path)
+            conf = _parse_config(path, file_locs)
             if conf:
                 res.append(conf)
     except OSError as e:
@@ -83,11 +88,22 @@ def is_processable():
     return res
 
 
+def setup_default_file_locations():
+    file_locs = {
+        "bindings_file": _DEFAULT_BINDINGS_FILE,
+        "wwids_file": _DEFAULT_WWIDS_FILE,
+        "prkeys_file": _DEFAULT_PRKEYS_FILE,
+    }
+    return file_locs
+
+
 def scan_and_emit_multipath_info(default_config_path='/etc/multipath.conf'):
     if not is_processable():
         return
 
-    primary_config = _parse_config(default_config_path)
+    file_locs = setup_default_file_locations()
+
+    primary_config = _parse_config(default_config_path, file_locs)
     if not primary_config:
         api.current_logger().debug(
             'Primary multipath config /etc/multipath.conf is not present - multipath '
@@ -101,12 +117,17 @@ def scan_and_emit_multipath_info(default_config_path='/etc/multipath.conf'):
         is_configured=True,
         config_dir=primary_config.config_dir or '/etc/multipath/conf.d'
     )
+
+    secondary_configs = _parse_config_dir(
+        multipath_info.config_dir,
+        file_locs
+    )
+
+    multipath_info.bindings_file = file_locs['bindings_file']
+    multipath_info.wwids_file = file_locs['wwids_file']
+    multipath_info.prkeys_file = file_locs['prkeys_file']
     api.produce(multipath_info)
 
-    # Handle upgrade-path-specific config actions
-    if get_source_major_version() == '8':
-        secondary_configs = _parse_config_dir(multipath_info.config_dir)
-        all_configs = [primary_config] + secondary_configs
-
-        config_facts_for_8to9 = MultipathConfFacts8to9(configs=all_configs)
-        api.produce(config_facts_for_8to9)
+    all_configs = [primary_config] + secondary_configs
+    config_facts_for_8to9 = MultipathConfFacts8to9(configs=all_configs)
+    api.produce(config_facts_for_8to9)

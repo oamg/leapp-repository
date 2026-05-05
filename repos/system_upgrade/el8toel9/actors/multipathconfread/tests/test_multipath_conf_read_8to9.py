@@ -78,9 +78,9 @@ two_defaults_conf = build_config(
     os.path.join(TEST_DIR, 'two_defaults.conf'), None, True, False, False)
 
 
-def mock_parse_config(path):
+def mock_parse_config(path, file_locs):
     """Convert config_dir into full pathname"""
-    conf = multipathconfread._parse_config_orig(path)
+    conf = multipathconfread._parse_config_orig(path, file_locs)
     if not conf:
         return None
     if conf.config_dir:
@@ -99,7 +99,9 @@ def test_parse_config():
                 'two_defaults.conf': two_defaults_conf,
                 'empty.conf': empty_conf}
     for config_name, expected_data in test_map.items():
-        config = multipathconfread._parse_config(os.path.join(TEST_DIR, config_name))
+        file_locs = multipathconfread.setup_default_file_locations()
+        config = multipathconfread._parse_config(
+            os.path.join(TEST_DIR, config_name), file_locs)
         assert config
         assert_config(config, expected_data)
 
@@ -133,6 +135,9 @@ def test_get_facts_missing_dir(monkeypatch, primary_config, expected_configs):
     assert len(general_info) == 1
     assert general_info[0].is_configured
     # general_info[0].config_dir is with the MultipathConfFacts8to9 messages below
+    assert general_info[0].bindings_file == '/etc/multipath/bindings'
+    assert general_info[0].wwids_file == '/etc/multipath/wwids'
+    assert general_info[0].prkeys_file == '/etc/multipath/prkeys'
 
     msgs = [msg for msg in produce_mock.model_instances if isinstance(msg, MultipathConfFacts8to9)]
     assert len(msgs) == 1
@@ -144,31 +149,32 @@ def test_get_facts_missing_dir(monkeypatch, primary_config, expected_configs):
         assert_config(actual_config, expected_config)
 
 
-def test_only_general_info_is_produced_on_9to10(monkeypatch):
-    default_config_path = '/etc/multipath.conf'
-
-    def parse_config_mock(path):
-        assert path == default_config_path
-        return MultipathConfig8to9(pathname=path)
-
-    monkeypatch.setattr(multipathconfread, '_parse_config', parse_config_mock)
+def test_file_locations_nondefault(monkeypatch):
+    """Check that non-default file locations are tracked correctly."""
     monkeypatch.setattr(multipathconfread, 'is_processable', lambda: True)
 
     produce_mock = produce_mocked()
     monkeypatch.setattr(api, 'produce', produce_mock)
 
-    actor_mock = CurrentActorMocked(src_ver='9.6', dst_ver='10.0')
+    actor_mock = CurrentActorMocked(src_ver='8.10', dst_ver='9.6')
     monkeypatch.setattr(api, 'current_actor', actor_mock)
 
-    multipathconfread.scan_and_emit_multipath_info(default_config_path)
+    # Create a test config with non-default file locations
+    file_locs = multipathconfread.setup_default_file_locations()
+    file_locs['bindings_file'] = '/tmp/bindings'
+    file_locs['wwids_file'] = '/tmp/wwids'
 
-    assert produce_mock.called
+    def mock_parse(path, fl):
+        fl.update(file_locs)
+        return MultipathConfig8to9(pathname=path)
 
-    general_info_msgs = [msg for msg in produce_mock.model_instances if isinstance(msg, MultipathInfo)]
-    assert len(general_info_msgs) == 1
-    general_info = general_info_msgs[0]
-    assert general_info.is_configured
-    assert general_info.config_dir == '/etc/multipath/conf.d'
+    monkeypatch.setattr(multipathconfread, '_parse_config', mock_parse)
+    monkeypatch.setattr(multipathconfread, '_parse_config_dir', lambda d, fl: [])
 
-    msgs = [msg for msg in produce_mock.model_instances if isinstance(msg, MultipathConfFacts8to9)]
-    assert not msgs
+    multipathconfread.scan_and_emit_multipath_info('/etc/multipath.conf')
+
+    general_info = [msg for msg in produce_mock.model_instances if isinstance(msg, MultipathInfo)]
+    assert len(general_info) == 1
+    assert general_info[0].bindings_file == '/tmp/bindings'
+    assert general_info[0].wwids_file == '/tmp/wwids'
+    assert general_info[0].prkeys_file == '/etc/multipath/prkeys'

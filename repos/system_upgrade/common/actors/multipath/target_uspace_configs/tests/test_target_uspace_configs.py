@@ -84,3 +84,120 @@ def test_production_conditions(monkeypatch, multipath_info, should_produce):
         assert dracut_modules == ['multipath']
     else:
         assert not produce_mock.called
+
+
+def test_file_locations_copied(monkeypatch):
+    """Test that bindings/wwids/prkeys files are copied to target userspace."""
+    produce_mock = produce_mocked()
+    monkeypatch.setattr(api, 'produce', produce_mock)
+
+    multipath_info = MultipathInfo(
+        is_configured=True,
+        config_dir='/etc/multipath/conf.d',
+        bindings_file='/etc/multipath/bindings',
+        wwids_file='/etc/multipath/wwids',
+        prkeys_file='/etc/multipath/prkeys',
+    )
+    msgs = [multipath_info, MultipathConfigUpdatesInfo(updates=[])]
+    actor_mock = CurrentActorMocked(msgs=msgs)
+    monkeypatch.setattr(api, 'current_actor', actor_mock)
+
+    existing_files = {
+        '/etc/multipath/conf.d',
+        '/etc/multipath/bindings',
+        '/etc/multipath/wwids',
+        '/etc/multipath/prkeys',
+    }
+
+    def exists_mock(path):
+        return path in existing_files
+
+    monkeypatch.setattr(os.path, 'exists', exists_mock)
+    monkeypatch.setattr(os, 'listdir', lambda path: [])
+
+    actor_lib.process()
+
+    _target_uspace_tasks = [
+        msg for msg in produce_mock.model_instances if isinstance(msg, TargetUserSpaceUpgradeTasks)
+    ]
+    assert len(_target_uspace_tasks) == 1
+
+    copies = {(copy.src, copy.dst) for copy in _target_uspace_tasks[0].copy_files}
+    assert ('/etc/multipath/bindings', '/etc/multipath/bindings') in copies
+    assert ('/etc/multipath/wwids', '/etc/multipath/wwids') in copies
+    assert ('/etc/multipath/prkeys', '/etc/multipath/prkeys') in copies
+
+
+def test_file_locations_not_copied_when_missing(monkeypatch):
+    """Test that non-existent files are not copied."""
+    produce_mock = produce_mocked()
+    monkeypatch.setattr(api, 'produce', produce_mock)
+
+    multipath_info = MultipathInfo(
+        is_configured=True,
+        config_dir='/etc/multipath/conf.d',
+        bindings_file='/etc/multipath/bindings',
+    )
+    msgs = [multipath_info, MultipathConfigUpdatesInfo(updates=[])]
+    actor_mock = CurrentActorMocked(msgs=msgs)
+    monkeypatch.setattr(api, 'current_actor', actor_mock)
+
+    def exists_mock(path):
+        return path == '/etc/multipath/conf.d'
+
+    monkeypatch.setattr(os.path, 'exists', exists_mock)
+    monkeypatch.setattr(os, 'listdir', lambda path: [])
+
+    actor_lib.process()
+
+    _target_uspace_tasks = [
+        msg for msg in produce_mock.model_instances if isinstance(msg, TargetUserSpaceUpgradeTasks)
+    ]
+    assert len(_target_uspace_tasks) == 1
+
+    copies = {copy.src for copy in _target_uspace_tasks[0].copy_files}
+    # bindings_file doesn't exist on disk, so should not be copied
+    assert '/etc/multipath/bindings' not in copies
+
+
+def test_file_locations_overridden_by_updates(monkeypatch):
+    """Test that UpdatedMultipathConfig entries override file copy sources."""
+    produce_mock = produce_mocked()
+    monkeypatch.setattr(api, 'produce', produce_mock)
+
+    multipath_info = MultipathInfo(
+        is_configured=True,
+        config_dir='/etc/multipath/conf.d',
+        bindings_file='/etc/multipath/bindings',
+    )
+    # The patcher says to move /tmp/bindings -> /etc/multipath/bindings
+    update = UpdatedMultipathConfig(
+        updated_config_location='/tmp/bindings',
+        target_path='/etc/multipath/bindings'
+    )
+    msgs = [multipath_info, MultipathConfigUpdatesInfo(updates=[update])]
+    actor_mock = CurrentActorMocked(msgs=msgs)
+    monkeypatch.setattr(api, 'current_actor', actor_mock)
+
+    existing_files = {
+        '/etc/multipath/conf.d',
+        '/etc/multipath/bindings',
+    }
+
+    def exists_mock(path):
+        return path in existing_files
+
+    monkeypatch.setattr(os.path, 'exists', exists_mock)
+    monkeypatch.setattr(os, 'listdir', lambda path: [])
+
+    actor_lib.process()
+
+    _target_uspace_tasks = [
+        msg for msg in produce_mock.model_instances if isinstance(msg, TargetUserSpaceUpgradeTasks)
+    ]
+    assert len(_target_uspace_tasks) == 1
+
+    copies = {(copy.src, copy.dst) for copy in _target_uspace_tasks[0].copy_files}
+    # Original bindings file should be removed and replaced by the update source
+    assert ('/etc/multipath/bindings', '/etc/multipath/bindings') not in copies
+    assert ('/tmp/bindings', '/etc/multipath/bindings') in copies
