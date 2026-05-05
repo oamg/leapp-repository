@@ -18,11 +18,12 @@ from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import tus_constants, tus_repoaccess, tus_rhui
 from leapp.libraries.common import mounting, rhsm, utils
 from leapp.libraries.common.config import get_env, get_source_distro_id, get_target_distro_id
-from leapp.libraries.common.config.version import get_target_major_version, get_target_version
+from leapp.libraries.common.config.version import get_target_major_version, get_target_version, matches_target_version
 from leapp.libraries.common.dnflibs import dnfplugin
 from leapp.libraries.common.gpg import iter_gpg_keyfiles
+from leapp.libraries.common.rpms import has_package
 from leapp.libraries.stdlib import api, CalledProcessError, run
-from leapp.models import TargetUserSpaceInfo
+from leapp.models import InstalledRPM, TargetUserSpaceInfo
 
 _DEDICATED_LEAPP_PARTITION_URL = 'https://access.redhat.com/solutions/5057391'
 
@@ -83,7 +84,7 @@ def _persistent_cache_push(persistent_cache_path, installroot):
         shutil.move(src, persistent_cache_path)
 
 
-def _import_gpg_keys(context_scratch, installroot):
+def _import_gpg_keys_to_scratch(context_scratch, installroot):
     """
     Import the trusted target GPG keys into the installroot rpm database.
 
@@ -91,15 +92,47 @@ def _import_gpg_keys(context_scratch, installroot):
     it via ``rpm --import``. If the certificates directory does not exist, logs a
     warning and returns without importing anything.
 
+    If source has 'pqrpm' installed and target is >= 10.1 attempt to import all
+    (not just PQC) keys using /usr/bin/pqrpm/rpmkeys. Otherwise PQC keys are
+    not imported.
+
     :param context_scratch: The scratch container context used to run commands.
     :type context_scratch: mounting.IsolatedActions
     :param installroot: Path (relative to the context) of the installroot rpm database.
     :type installroot: str
     :raises CalledProcessError: If an ``rpm --import`` invocation fails.
     """
+
     # Import also any other keys provided by the customer in the same directory
     for certpath in iter_gpg_keyfiles(include_pqc=False):
-        cmd = ["rpm", "--root", installroot, "--import", certpath]
+        cmd = [
+            "rpm",
+            "--root", installroot,
+            "--import", certpath,
+        ]
+        context_scratch.call(cmd, callback_raw=utils.logging_handler)
+
+    # On RHEL 9 the system rpm stack doesn't understand PQC (gpg v6) keys,
+    # there is a separate stack in /usr/lib/pqrpm that does. The pqc keys
+    # need to be imported using /usr/lib/pqrpm/bin/rpmkeys.
+    # This needs to be done if the following applies:
+    # - if 'pqrpm' is not installed, PQC is not enabled on the source system
+    # - if target is 9.X or 10.0 there is no pqc support
+    # Note that this imports to the pqrpmdb -
+    # /usr/lib/pqrpm/lib/sysimage/rpm/ inside the source overlay, not to the
+    # "main" rpmdb.
+    source_has_pqc = has_package(InstalledRPM, 'pqrpm')
+    target_has_pqc = matches_target_version('>= 10.1')
+    if not source_has_pqc or not target_has_pqc:
+        return
+
+    api.current_logger().debug('Trying to import keys to pqrpmdb')
+    for certpath in iter_gpg_keyfiles(include_pqc=True):
+        cmd = [
+            "/usr/lib/pqrpm/bin/rpmkeys",
+            "--root", installroot,
+            "--import", certpath,
+        ]
         context_scratch.call(cmd, callback_raw=utils.logging_handler)
 
 
@@ -357,7 +390,9 @@ def build(context_scratch, layout, inputs, used_repos):
     with mounting.BindMount(source=layout.userspace_path, target=installroot):
         if not inputs.nogpgcheck:
             try:
-                _import_gpg_keys(context_scratch, layout.installroot_overlay_mountpoint)
+                _import_gpg_keys_to_scratch(
+                    context_scratch, layout.installroot_overlay_mountpoint
+                )
             except CalledProcessError as e:
                 raise StopActorExecutionError(
                     message=(

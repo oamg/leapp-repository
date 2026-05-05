@@ -2,6 +2,7 @@ from leapp.actors import Actor
 from leapp.libraries.actor import tus_userspacegen
 from leapp.models import (
     CustomTargetRepositoryFile,
+    InstalledRPM,
     PkgManagerInfo,
     Report,
     RepositoriesFacts,
@@ -33,6 +34,7 @@ class TargetUserspaceCreator(Actor):
     name = 'target_userspace_creator'
     consumes = (
         CustomTargetRepositoryFile,
+        InstalledRPM,
         RHSMInfo,
         RHUIInfo,
         RepositoriesFacts,
