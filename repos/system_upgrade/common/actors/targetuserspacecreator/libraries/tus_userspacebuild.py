@@ -20,7 +20,7 @@ from leapp.libraries.common import mounting, rhsm, utils
 from leapp.libraries.common.config import get_env, get_source_distro_id, get_target_distro_id
 from leapp.libraries.common.config.version import get_target_major_version, get_target_version, matches_target_version
 from leapp.libraries.common.dnflibs import dnfplugin
-from leapp.libraries.common.gpg import iter_gpg_keyfiles
+from leapp.libraries.common.gpg import get_path_to_gpg_certs, iter_gpg_keyfiles
 from leapp.libraries.common.rpms import has_package
 from leapp.libraries.stdlib import api, CalledProcessError, run
 from leapp.models import InstalledRPM, TargetUserSpaceInfo
@@ -134,6 +134,19 @@ def _import_gpg_keys_to_scratch(context_scratch, installroot):
             "--import", certpath,
         ]
         context_scratch.call(cmd, callback_raw=utils.logging_handler)
+
+
+def _import_gpg_keys_to_target_userspace(context_tus, certs_dir):
+    """
+    Import RPM GPG keys from a directory in the context using rpm from the context
+    """
+    container_certs_dir = os.path.join(context_tus.base_dir, os.path.relpath(certs_dir, '/'))
+    for certpath in iter_gpg_keyfiles(container_certs_dir, include_pqc=True):
+        cmd = [
+            "rpm",
+            "--import", os.path.relpath(certpath, context_tus.base_dir),
+        ]
+        context_tus.call(cmd, callback_raw=utils.logging_handler)
 
 
 def _build_dnf_install_cmd(installroot, releasever, repoids, skip_rhsm, nogpgcheck, packages):
@@ -413,6 +426,30 @@ def build(context_scratch, layout, inputs, used_repos):
             context_scratch.call(cmd)
         except CalledProcessError as e:
             _diagnose_dnf_failure(e, inputs)
+
+    # Before userspace installation, PQC keys are imported using pqrpm, which
+    # imports to the pqrpmdb inside scratch. To make transactions ran using
+    # 'rpm' from target userspace, such as installation of initramfs deps work,
+    # the keys need to be imported to the rpmdb inside target userspace.
+
+    # The 'rpm' installed in target userspace can import PQC keys on >= 10.1.
+    target_has_pqc = matches_target_version('>= 10.1')
+    # TODO(mmatuska): can this be put into the 'with' below?
+    if not inputs.nogpgcheck and target_has_pqc:
+        with mounting.NspawnActions(base_dir=layout.userspace_path) as container:
+            container.copytree_to(get_path_to_gpg_certs(), layout.userspace_gpg_keys_dir)
+            # TODO(mmatuska): we could move the exception handling into the import
+            # function, same for the import above
+            try:
+                _import_gpg_keys_to_target_userspace(container, layout.userspace_gpg_keys_dir)
+            except CalledProcessError as exc:
+                raise StopActorExecutionError(
+                    message=(
+                        'Unable to import PQC GPG certificates to install late stage target OS'
+                        ' userspace packages.'
+                    ),
+                    details={'details': str(exc), 'stderr': exc.stderr}
+                )
 
     # Prepare certificate / repository-file access inside the built userspace.
     tus_repoaccess.prep_repository_access(context_scratch, layout.userspace_path)
