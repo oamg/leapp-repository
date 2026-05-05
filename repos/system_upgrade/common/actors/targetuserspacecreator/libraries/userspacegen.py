@@ -21,7 +21,7 @@ from leapp.libraries.common.config.version import (
     matches_version,
 )
 from leapp.libraries.common.dnflibs import dnfplugin
-from leapp.libraries.common.gpg import is_nogpgcheck_set, iter_gpg_keyfiles
+from leapp.libraries.common.gpg import get_path_to_gpg_certs, is_nogpgcheck_set, iter_gpg_keyfiles
 from leapp.libraries.stdlib import api, CalledProcessError, config, format_list, run
 from leapp.models import RequiredTargetUserspacePackages  # deprecated
 from leapp.models import TMPTargetRepositoriesFacts  # deprecated all the time
@@ -70,6 +70,7 @@ from leapp.utils.deprecation import suppress_deprecation
 PROD_CERTS_FOLDER = 'prod-certs'
 PERSISTENT_PACKAGE_CACHE_DIR = '/var/lib/leapp/persistent_package_cache'
 DEDICATED_LEAPP_PART_URL = 'https://access.redhat.com/solutions/7011704'
+USERSPACE_GPG_CERTS_DIR = '/leapp-trusted-gpg-keys'
 
 
 def _check_deprecated_rhsm_skip():
@@ -220,6 +221,27 @@ def _import_gpg_keys_to_context(context, install_root_dir):
         )
 
 
+def _import_gpg_keys_in_context(context, certs_dir):
+    """
+    Import RPM GPG keys from a directory in the context using rpm from the context
+    """
+    try:
+        container_certs_dir = os.path.join(context.base_dir, os.path.relpath(certs_dir, '/'))
+        for certpath in iter_gpg_keyfiles(container_certs_dir, include_pqc=True):
+            cmd = [
+                "rpm",
+                "--import", os.path.relpath(certpath, context.base_dir),
+            ]
+            context.call(cmd, callback_raw=utils.logging_handler)
+    except CalledProcessError as exc:
+        raise StopActorExecutionError(
+            message=(
+                'Unable to import PQC GPG certificates to install late stage target OS userspace packages.'
+            ),
+            details={'details': str(exc), 'stderr': exc.stderr}
+        )
+
+
 def _handle_transaction_err_msg_size(err):
     NO_SPACE_STR = 'more space needed on the'
 
@@ -335,6 +357,12 @@ def prepare_target_userspace(context, userspace_dir, enabled_repos, packages):
                     details['hint'] = check_rhel_release_hint
 
             raise StopActorExecutionError(message=message, details=details)
+
+    # the PQC keys have to be imported also using the RHEL 10 rpm
+    if not is_nogpgcheck_set() and matches_version(['>= 10.1'], get_target_version()):
+        with mounting.NspawnActions(base_dir=userspace_dir) as container:
+            container.copytree_to(get_path_to_gpg_certs(), USERSPACE_GPG_CERTS_DIR)
+            _import_gpg_keys_in_context(container, USERSPACE_GPG_CERTS_DIR)
 
 
 def _query_rpm_for_pkg_files(context, pkgs):
