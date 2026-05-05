@@ -8,7 +8,7 @@ from six.moves import urllib
 
 from leapp import reporting
 from leapp.exceptions import StopActorExecution, StopActorExecutionError
-from leapp.libraries.common.config.version import get_target_major_version
+from leapp.libraries.common.config.version import get_target_major_version, matches_source_version
 from leapp.libraries.common.gpg import get_gpg_fp_from_file, get_path_to_gpg_certs, is_nogpgcheck_set
 from leapp.libraries.stdlib import api, format_list
 from leapp.models import (
@@ -256,6 +256,15 @@ def _report_repos_missing_keys(repos):
 
 
 def register_dnfworkaround():
+    # If the source is >= 9.7 && < 10.0, there is no way to import PQC (v6) GPG
+    # keys to the regular rpmdb (not to be confused with the pqrpm).
+    # The workaround needs to be run in the target userspace context
+    # which is capable of importing such keys. A different workaround is
+    # registered in the targetusersapcecreator actor to do just that.
+    # 10.0 is a special case - there is no PQC support at all so no way to import PQC keys
+    if matches_source_version('9.7', '9.8', '9.9', '9.10'):
+        return
+
     api.produce(DNFWorkaround(
         display_name='import trusted gpg keys to RPM DB',
         script_path=api.current_actor().get_common_tool_path('importrpmgpgkeys'),

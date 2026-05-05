@@ -2,6 +2,7 @@ from leapp.actors import Actor
 from leapp.libraries.actor import tus_userspacegen
 from leapp.models import (
     CustomTargetRepositoryFile,
+    DNFWorkaround,
     InstalledRPM,
     PkgManagerInfo,
     Report,
@@ -44,7 +45,13 @@ class TargetUserspaceCreator(Actor):
         TargetUserSpacePreupgradeTasks,
         PkgManagerInfo,
     )
-    produces = (TargetUserSpaceInfo, UsedTargetRepositories, RepositoriesFactsTarget, Report)
+    produces = (
+        DNFWorkaround,
+        TargetUserSpaceInfo,
+        UsedTargetRepositories,
+        RepositoriesFactsTarget,
+        Report,
+    )
     tags = (IPUWorkflowTag, TargetTransactionFactsPhaseTag)
 
     def process(self):

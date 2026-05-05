@@ -23,7 +23,7 @@ from leapp.libraries.common.dnflibs import dnfplugin
 from leapp.libraries.common.gpg import get_path_to_gpg_certs, iter_gpg_keyfiles
 from leapp.libraries.common.rpms import has_package
 from leapp.libraries.stdlib import api, CalledProcessError, run
-from leapp.models import InstalledRPM, TargetUserSpaceInfo
+from leapp.models import DNFWorkaround, InstalledRPM, TargetUserSpaceInfo
 
 _DEDICATED_LEAPP_PARTITION_URL = 'https://access.redhat.com/solutions/5057391'
 
@@ -450,6 +450,15 @@ def build(context_scratch, layout, inputs, used_repos):
                     ),
                     details={'details': str(exc), 'stderr': exc.stderr}
                 )
+
+        api.produce(
+            DNFWorkaround(
+                display_name="import trusted gpg keys to RPM DB from target userspace",
+                script_path=api.current_actor().get_common_tool_path("importrpmgpgkeysintarget"),
+                script_args=[layout.userspace_gpg_keys_dir],
+                execution_context='container',
+            )
+        )
 
     # Prepare certificate / repository-file access inside the built userspace.
     tus_repoaccess.prep_repository_access(context_scratch, layout.userspace_path)
