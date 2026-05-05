@@ -1484,10 +1484,11 @@ _IMPORT_KEYFILES = {
 class _ImportKeysContext:
     """Records emitted commands and can fail on a chosen binary."""
 
-    def __init__(self, fail_on=None, stderr=''):
+    def __init__(self, fail_on=None, stderr='', base_dir='/'):
         self.calls = []
         self._fail_on = fail_on
         self._stderr = stderr
+        self.base_dir = base_dir
 
     def call(self, cmd, **dummy_kwargs):
         self.calls.append(cmd)
@@ -1560,3 +1561,58 @@ def test_import_gpg_keys_to_context_import_error_raises(monkeypatch, fail_on, st
 
     with pytest.raises(StopActorExecutionError):
         userspacegen._import_gpg_keys_to_context(context, '/instroot')
+
+
+def _setup_import_keys_in_context(monkeypatch, keyfiles):
+    """Stub keyfile discovery for _import_gpg_keys_in_context, capturing its args."""
+    captured = {}
+
+    def fake_iter(root_dir, include_pqc):
+        captured['root_dir'] = root_dir
+        captured['include_pqc'] = include_pqc
+        return iter(keyfiles)
+
+    monkeypatch.setattr(userspacegen, 'iter_gpg_keyfiles', fake_iter)
+    return captured
+
+
+def test_import_gpg_keys_in_context_imports_all_keys(monkeypatch):
+    # v4 keys live at the top level, v6 (pqc) keys in the 'pqc' subdir; both are imported
+    keyfiles = [
+        '/base/leapp-trusted-gpg-keys/root-key',
+        '/base/leapp-trusted-gpg-keys/pqc/pqc-key',
+    ]
+    captured = _setup_import_keys_in_context(monkeypatch, keyfiles)
+    context = _ImportKeysContext(base_dir='/base')
+
+    userspacegen._import_gpg_keys_in_context(context, '/leapp-trusted-gpg-keys')
+
+    # keys are discovered in the certs dir copied inside the container, pqc included
+    assert captured['root_dir'] == '/base/leapp-trusted-gpg-keys'
+    assert captured['include_pqc'] is True
+    # every key is imported with the container's own rpm (no --root), using
+    # paths relative to the container base dir
+    assert context.binaries() == ['rpm', 'rpm']
+    assert context.imported_paths('rpm') == [
+        'leapp-trusted-gpg-keys/root-key',
+        'leapp-trusted-gpg-keys/pqc/pqc-key',
+    ]
+    for cmd in context.calls:
+        assert '--root' not in cmd
+
+
+def test_import_gpg_keys_in_context_no_keys_imports_nothing(monkeypatch):
+    _setup_import_keys_in_context(monkeypatch, [])
+    context = _ImportKeysContext(base_dir='/base')
+
+    userspacegen._import_gpg_keys_in_context(context, '/leapp-trusted-gpg-keys')
+
+    assert not context.calls
+
+
+def test_import_gpg_keys_in_context_import_error_raises(monkeypatch):
+    _setup_import_keys_in_context(monkeypatch, ['/base/leapp-trusted-gpg-keys/root-key'])
+    context = _ImportKeysContext(base_dir='/base', fail_on='rpm', stderr='rpm import failure')
+
+    with pytest.raises(StopActorExecutionError):
+        userspacegen._import_gpg_keys_in_context(context, '/leapp-trusted-gpg-keys')
