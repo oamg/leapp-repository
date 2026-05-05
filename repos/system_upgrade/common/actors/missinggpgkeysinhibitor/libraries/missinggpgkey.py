@@ -4,6 +4,7 @@ import re
 import shutil
 import tempfile
 
+from leapp.libraries.common.rpms import has_package
 from six.moves import urllib
 
 from leapp import reporting
@@ -256,7 +257,7 @@ def _report_repos_missing_keys(repos):
     )
 
 
-def register_dnfworkaround():
+def register_dnfworkarounds():
     api.produce(DNFWorkaround(
         display_name='import trusted gpg keys to RPM DB',
         script_path=api.current_actor().get_common_tool_path('importrpmgpgkeys'),
@@ -357,4 +358,4 @@ def process():
     if repos_missing_keys:
         _report_repos_missing_keys(repos_missing_keys)
 
-    register_dnfworkaround()
+    register_dnfworkarounds()
