@@ -1,6 +1,14 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import checkselinux
-from leapp.models import KernelCmdlineArg, Report, SELinuxFacts, SelinuxPermissiveDecision, SelinuxRelabelDecision
+from leapp.models import (
+    KernelCmdline,
+    KernelCmdlineArg,
+    Report,
+    SELinuxFacts,
+    SelinuxPermissiveDecision,
+    SelinuxRelabelDecision,
+    TargetKernelCmdlineArgTasks
+)
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
@@ -13,12 +21,13 @@ class CheckSelinux(Actor):
     """
 
     name = 'check_se_linux'
-    consumes = (SELinuxFacts,)
+    consumes = (SELinuxFacts, KernelCmdline)
     produces = (
         KernelCmdlineArg,
         Report,
         SelinuxPermissiveDecision,
         SelinuxRelabelDecision,
+        TargetKernelCmdlineArgTasks,
     )
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 

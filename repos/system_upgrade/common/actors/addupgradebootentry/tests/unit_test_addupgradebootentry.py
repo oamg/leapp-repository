@@ -60,16 +60,22 @@ run_args_add = [
     'debug enforcing=0 plymouth.enable=0 rd.plymouth=0'
     ]
 
+run_args_remove_enforcing = [
+    '/usr/sbin/grubby',
+    '--update-kernel', '/abc',
+    '--remove-args', 'enforcing=1',
+]
+
 run_args_zipl = ['/usr/sbin/zipl']
 
 
 @pytest.mark.parametrize('run_args, arch', [
     # non s390x
-    (RunArgs(run_args_remove, run_args_add, None, 2), ARCH_X86_64),
+    (RunArgs(run_args_remove, run_args_add, None, 3), ARCH_X86_64),
     # s390x
-    (RunArgs(run_args_remove, run_args_add, run_args_zipl, 3), ARCH_S390X),
+    (RunArgs(run_args_remove, run_args_add, run_args_zipl, 4), ARCH_S390X),
     # config file specified
-    (RunArgs(run_args_remove, run_args_add, None, 2), ARCH_X86_64),
+    (RunArgs(run_args_remove, run_args_add, None, 3), ARCH_X86_64),
 ])
 def test_add_boot_entry(monkeypatch, run_args, arch):
     def get_boot_file_paths_mocked():
@@ -85,6 +91,7 @@ def test_add_boot_entry(monkeypatch, run_args, arch):
     assert len(addupgradebootentry.run.args) == run_args.args_len
     assert addupgradebootentry.run.args[0] == run_args.args_remove
     assert addupgradebootentry.run.args[1] == run_args.args_add
+    assert addupgradebootentry.run.args[2] == run_args_remove_enforcing
     assert api.produce.model_instances == [
         LateTargetKernelCmdlineArgTasks(to_remove=[KernelCmdlineArg(key='debug'),
                                                    KernelCmdlineArg(key='enforcing', value='0'),
@@ -93,7 +100,7 @@ def test_add_boot_entry(monkeypatch, run_args, arch):
     ]
 
     if run_args.args_zipl:
-        assert addupgradebootentry.run.args[2] == run_args.args_zipl
+        assert addupgradebootentry.run.args[3] == run_args.args_zipl
 
 
 @pytest.mark.parametrize('is_leapp_invoked_with_debug', [True, False])
@@ -132,11 +139,13 @@ def test_add_boot_entry_configs(monkeypatch):
 
     addupgradebootentry.add_boot_entry(CONFIGS)
 
-    assert len(addupgradebootentry.run.args) == 4
+    assert len(addupgradebootentry.run.args) == 6
     assert addupgradebootentry.run.args[0] == run_args_remove + ['-c', CONFIGS[0]]
     assert addupgradebootentry.run.args[1] == run_args_remove + ['-c', CONFIGS[1]]
     assert addupgradebootentry.run.args[2] == run_args_add + ['-c', CONFIGS[0]]
-    assert addupgradebootentry.run.args[3] == run_args_add + ['-c', CONFIGS[1]]
+    assert addupgradebootentry.run.args[3] == run_args_remove_enforcing + ['-c', CONFIGS[0]]
+    assert addupgradebootentry.run.args[4] == run_args_add + ['-c', CONFIGS[1]]
+    assert addupgradebootentry.run.args[5] == run_args_remove_enforcing + ['-c', CONFIGS[1]]
     assert api.produce.model_instances == [
         LateTargetKernelCmdlineArgTasks(to_remove=[KernelCmdlineArg(key='debug'),
                                                    KernelCmdlineArg(key='enforcing', value='0'),

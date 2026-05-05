@@ -45,9 +45,13 @@ def collect_upgrade_kernel_args(livemode_enabled):
 
 
 def collect_undesired_args(livemode_enabled):
-    args = {}
+    """
+    Always remove ``enforcing=1`` so it is not carried onto the interim upgrade entry
+    Live mode additionally drops args that conflict with the squashfs-based boot path.
+    """
+    args = {'enforcing': '1'}
     if livemode_enabled:
-        args = dict(zip(('ro', 'rhgb', 'quiet'), itertools.repeat(None)))
+        args.update(dict(zip(('ro', 'rhgb', 'quiet'), itertools.repeat(None))))
         args['rd.lvm.lv'] = _get_rdlvm_arg_values()
 
     return set(args.items())
