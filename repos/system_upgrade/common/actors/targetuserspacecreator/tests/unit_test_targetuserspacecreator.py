@@ -1468,3 +1468,95 @@ def test_if_adjust_dnf_stream_variable_only_for_centos(
 
     userspacegen._gather_target_repositories(MockedMountingBase, testInData, None)
     assert adjust_called == should_adjust
+
+
+_PQRPM_RPMKEYS = '/usr/lib/pqrpm/bin/rpmkeys'
+_PQRPM_ENOENT_STDERR = (
+    'execv(/usr/lib/pqrpm/bin/rpmkeys) failed: No such file or directory'
+)
+# root holds v4 keys, the 'pqc' subdir holds v6 keys; include_pqc=True yields both
+_IMPORT_KEYFILES = {
+    False: ['/keys/root-key'],
+    True: ['/keys/root-key', '/keys/pqc/pqc-key'],
+}
+
+
+class _ImportKeysContext:
+    """Records emitted commands and can fail on a chosen binary."""
+
+    def __init__(self, fail_on=None, stderr=''):
+        self.calls = []
+        self._fail_on = fail_on
+        self._stderr = stderr
+
+    def call(self, cmd, **dummy_kwargs):
+        self.calls.append(cmd)
+        if self._fail_on and cmd[0] == self._fail_on:
+            result = {'stdout': '', 'stderr': self._stderr, 'exit_code': 1, 'signal': None, 'pid': 1}
+            raise CalledProcessError('failed', cmd, result)
+        return {'exit_code': 0}
+
+    def binaries(self):
+        return [cmd[0] for cmd in self.calls]
+
+    def imported_paths(self, binary):
+        return [cmd[cmd.index('--import') + 1] for cmd in self.calls if cmd[0] == binary]
+
+
+def _setup_import_keys(monkeypatch, target_version, keyfiles_by_scope):
+    """Stub the version and keyfile discovery used by _import_gpg_keys_to_context."""
+    monkeypatch.setattr(userspacegen.api, 'current_actor', CurrentActorMocked(dst_ver=target_version))
+    monkeypatch.setattr(
+        userspacegen, 'iter_gpg_keyfiles',
+        lambda include_pqc: iter(keyfiles_by_scope[include_pqc])
+    )
+
+
+@pytest.mark.parametrize('target_version, expected_pqrpm_imports', [
+    # on 10.0 there is no PQC support in rpm, so pqrpm import must not be attempted
+    ('10.0', []),
+    # newer targets import all (v4 + pqc) keys into the separate pqrpmdb
+    ('10.1', ['/keys/root-key', '/keys/pqc/pqc-key']),
+])
+def test_import_gpg_keys_to_context_version_gating(monkeypatch, target_version, expected_pqrpm_imports):
+    _setup_import_keys(monkeypatch, target_version, _IMPORT_KEYFILES)
+    context = _ImportKeysContext()
+
+    userspacegen._import_gpg_keys_to_context(context, '/instroot')
+
+    assert context.imported_paths('rpm') == ['/keys/root-key']
+    assert context.imported_paths(_PQRPM_RPMKEYS) == expected_pqrpm_imports
+    # keys are always imported into the given install root, regardless of arg order
+    for cmd in context.calls:
+        assert '--root' in cmd
+        assert cmd[cmd.index('--root') + 1] == '/instroot'
+
+
+def test_import_gpg_keys_to_context_pqrpm_missing_is_ignored(monkeypatch):
+    # a missing pqrpm binary (ENOENT) is logged, not fatal
+    _setup_import_keys(monkeypatch, '10.1', _IMPORT_KEYFILES)
+    logger = logger_mocked()
+    monkeypatch.setattr(userspacegen.api, 'current_logger', logger)
+    context = _ImportKeysContext(fail_on=_PQRPM_RPMKEYS, stderr=_PQRPM_ENOENT_STDERR)
+
+    userspacegen._import_gpg_keys_to_context(context, '/instroot')
+
+    # rpm impot succeeded, pqrpm import was attempted once and then given up on
+    assert context.imported_paths('rpm') == ['/keys/root-key']
+    assert context.imported_paths(_PQRPM_RPMKEYS) == ['/keys/root-key']
+    # the missing binary is reported and the import is skipped, not fatal
+    assert any('does not exist' in msg for msg in logger.dbgmsg)
+
+
+@pytest.mark.parametrize('fail_on, stderr', [
+    # a rpm import failure is always fatal
+    ('rpm', 'rpm import failure'),
+    # a pqrpm import failure other than the missing binary is fatal
+    (_PQRPM_RPMKEYS, 'some other rpmkeys failure'),
+])
+def test_import_gpg_keys_to_context_import_error_raises(monkeypatch, fail_on, stderr):
+    _setup_import_keys(monkeypatch, '10.1', _IMPORT_KEYFILES)
+    context = _ImportKeysContext(fail_on=fail_on, stderr=stderr)
+
+    with pytest.raises(StopActorExecutionError):
+        userspacegen._import_gpg_keys_to_context(context, '/instroot')
