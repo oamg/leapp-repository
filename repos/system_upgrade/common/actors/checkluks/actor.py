@@ -1,6 +1,15 @@
 from leapp.actors import Actor
 from leapp.libraries.actor.checkluks import check_invalid_luks_devices
-from leapp.models import CephInfo, LuksDumps, StorageInfo, TargetUserSpaceUpgradeTasks, UpgradeInitramfsTasks
+from leapp.models import (
+    CephInfo,
+    KernelCmdline,
+    LuksDumps,
+    StorageInfo,
+    TargetKernelCmdlineArgTasks,
+    TargetUserSpaceUpgradeTasks,
+    UpgradeInitramfsTasks,
+    UpgradeKernelCmdlineArgTasks
+)
 from leapp.reporting import Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
@@ -15,8 +24,14 @@ class CheckLuks(Actor):
     """
 
     name = 'check_luks'
-    consumes = (CephInfo, LuksDumps, StorageInfo)
-    produces = (Report, TargetUserSpaceUpgradeTasks, UpgradeInitramfsTasks)
+    consumes = (CephInfo, KernelCmdline, LuksDumps, StorageInfo)
+    produces = (
+        Report,
+        TargetKernelCmdlineArgTasks,
+        TargetUserSpaceUpgradeTasks,
+        UpgradeInitramfsTasks,
+        UpgradeKernelCmdlineArgTasks
+    )
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 
     def process(self):
