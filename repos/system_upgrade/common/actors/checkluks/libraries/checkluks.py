@@ -111,6 +111,7 @@ def check_invalid_luks_devices():
 
     luks1_partitions = []
     no_tpm2_partitions = []
+    ok_partitions = []
     ceph_vol = _get_ceph_volumes()
     for luks_dump in luks_dumps.dumps:
         # if the device is managed by ceph, don't inhibit
@@ -126,25 +127,30 @@ def check_invalid_luks_devices():
         if luks1_partitions or no_tpm2_partitions:
             report_inhibitor(luks1_partitions, no_tpm2_partitions)
         else:
-            required_crypt_rpms = [
-                'clevis',
-                'clevis-dracut',
-                'clevis-systemd',
-                'clevis-udisks2',
-                'clevis-luks',
-                'cryptsetup',
-                'tpm2-tss',
-                'tpm2-tools',
-                'tpm2-abrmd'
-            ]
-            api.produce(TargetUserSpaceUpgradeTasks(
-                copy_files=[CopyFile(src="/etc/crypttab")],
-                install_rpms=required_crypt_rpms)
-            )
-            api.produce(UpgradeInitramfsTasks(
-                include_files=['/etc/crypttab'],
-                include_dracut_modules=[
-                    DracutModule(name='clevis'),
-                    DracutModule(name='clevis-pin-tpm2')
-                ])
-            )
+            ok_partitions.append(luks_dump.device_name)
+
+    if luks1_partitions or no_tpm2_partitions:
+        report_inhibitor(luks1_partitions, no_tpm2_partitions)
+    elif ok_partitions:
+        required_crypt_rpms = [
+            'clevis',
+            'clevis-dracut',
+            'clevis-systemd',
+            'clevis-udisks2',
+            'clevis-luks',
+            'cryptsetup',
+            'tpm2-tss',
+            'tpm2-tools',
+            'tpm2-abrmd'
+        ]
+        api.produce(TargetUserSpaceUpgradeTasks(
+            copy_files=[CopyFile(src="/etc/crypttab")],
+            install_rpms=required_crypt_rpms)
+        )
+        api.produce(UpgradeInitramfsTasks(
+            include_files=['/etc/crypttab'],
+            include_dracut_modules=[
+                DracutModule(name='clevis'),
+                DracutModule(name='clevis-pin-tpm2')
+            ])
+        )
