@@ -1,5 +1,7 @@
 import os
 
+import pytest
+
 from leapp.libraries.actor import scanpulseaudio
 from leapp.libraries.actor.scanpulseaudio import _get_dropin_dirs_with_content, _get_user_config_dirs, scan_pulseaudio
 
@@ -36,16 +38,24 @@ class TestGetUserConfigDirs:
         monkeypatch.setattr(os.path, 'isdir', lambda _: False)
         assert _get_user_config_dirs() == []
 
-    def test_user_config_found(self, monkeypatch):
+    @pytest.mark.parametrize(
+        'home_dir, expect',
+        [
+            ('/home/testuser', ['/home/testuser/.config/pulse']),
+            ('', []),
+        ],
+    )
+    def test_user_config_found(self, monkeypatch, home_dir, expect):
         monkeypatch.setattr(os.path, 'isdir', lambda path: path == '/home/testuser/.config/pulse')
         monkeypatch.setattr(os, 'listdir', lambda _: ['default.pa'])
 
         class FakeUser:
-            pw_dir = '/home/testuser'
+            pw_name = 'testuser'
+            pw_dir = home_dir
 
-        monkeypatch.setattr(scanpulseaudio.pwd, 'getpwall', lambda: [FakeUser()])
+        monkeypatch.setattr(scanpulseaudio.pwd, 'getpwall', lambda: [FakeUser])
         result = _get_user_config_dirs()
-        assert result == ['/home/testuser/.config/pulse']
+        assert result == expect
 
 
 class TestScanPulseaudio:

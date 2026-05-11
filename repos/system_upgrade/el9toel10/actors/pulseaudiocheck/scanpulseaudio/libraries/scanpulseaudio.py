@@ -2,6 +2,7 @@ import os
 import pwd
 
 from leapp.libraries.common.rpms import check_file_modification
+from leapp.libraries.stdlib import api
 from leapp.models import PulseAudioConfiguration
 
 # System-wide PulseAudio configuration directory
@@ -54,6 +55,9 @@ def _get_user_config_dirs():
     """
     found = []
     for user in pwd.getpwall():
+        if not user.pw_dir:
+            api.current_logger().debug('User "{}" has no valid home entry, skipping.'.format(user.pw_name))
+            continue
         pulse_dir = os.path.join(user.pw_dir, _USER_CONFIG_SUBDIR)
         if os.path.isdir(pulse_dir) and os.listdir(pulse_dir):
             found.append(pulse_dir)
