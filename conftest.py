@@ -12,24 +12,42 @@ logging.getLogger("parso").setLevel(logging.INFO)
 
 
 def _load_and_add_repo(manager, repo_path):
-    repo = find_and_scan_repositories(
+    manager_with_new_repos = find_and_scan_repositories(
         repo_path,
         include_locals=True
     )
-    unloaded = set()
-    loaded = {r.repo_id for r in manager.repos}
-    if hasattr(repo, 'repos'):
-        for repo in repo.repos:
+
+    newly_discovered_repo_ids = set()
+    already_known_repoids = {r.repo_id for r in manager.repos}
+    if hasattr(manager_with_new_repos, 'repos'):
+        for repo in manager_with_new_repos.repos:
             if not manager.repo_by_id(repo.repo_id):
                 manager.add_repo(repo)
-                unloaded.add(repo.repo_id)
+                newly_discovered_repo_ids.add(repo.repo_id)
     else:
         manager.add_repo(repo)
-    if not loaded:
+    if not already_known_repoids:
         manager.load(skip_actors_discovery=True)
     else:
-        for repo_id in unloaded:
+        for repo_id in newly_discovered_repo_ids:
             manager.repo_by_id(repo_id).load(skip_actors_discovery=True)
+
+
+def _cleanup_actor_context_from_session(collector):
+    is_actor_context_attached = hasattr(collector.session, "current_actor_path")
+
+    if not is_actor_context_attached:
+        return  # Nothing to clean
+
+    try:
+        collector.session.current_actor_context.__exit__(
+            None, None, None
+        )
+        delattr(collector.session, 'current_actor_path')
+        collector.session.current_actor_context = None
+        collector.session.current_actor = None
+    except AttributeError:
+        pass
 
 
 def pytest_collectstart(collector):
@@ -38,14 +56,21 @@ def pytest_collectstart(collector):
         if not current_repo_basedir:
             # This is not a repository
             return
+
         if not hasattr(collector.session, "leapp_repository"):
             collector.session.leapp_repository = RepositoryManager()
             collector.session.repo_base_dir = current_repo_basedir
             _load_and_add_repo(collector.session.leapp_repository, current_repo_basedir)
         else:
-            if not collector.session.leapp_repository.repo_by_id(
-                get_repository_id(current_repo_basedir)
-            ):
+            repo_id = get_repository_id(current_repo_basedir)
+            repo = collector.session.leapp_repository.repo_by_id(repo_id)
+            if not repo:
+                # We are about to load a new repository, which will append module loaders
+                # to sys.meta_path. Cleaning actor context will restore the meta_path used
+                # when the context was entered, so if we did the cleanup later we would
+                # undo appends to the meta_path.
+                _cleanup_actor_context_from_session(collector)
+
                 _load_and_add_repo(collector.session.leapp_repository, current_repo_basedir)
 
         # we're forcing the actor context switch only when traversing new
