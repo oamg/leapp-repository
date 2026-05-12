@@ -17,7 +17,8 @@ from leapp.libraries.common.config import (
 from leapp.libraries.common.config.version import (
     get_source_major_version,
     get_target_major_version,
-    get_target_version
+    get_target_version,
+    matches_version,
 )
 from leapp.libraries.common.gpg import get_path_to_gpg_certs, is_nogpgcheck_set
 from leapp.libraries.stdlib import api, CalledProcessError, config, run
@@ -69,6 +70,7 @@ PROD_CERTS_FOLDER = 'prod-certs'
 PERSISTENT_PACKAGE_CACHE_DIR = '/var/lib/leapp/persistent_package_cache'
 DEDICATED_LEAPP_PART_URL = 'https://access.redhat.com/solutions/7011704'
 FMT_LIST_SEPARATOR = '\n    - '
+USERSPACE_GPG_CERTS_DIR = '/leapp-trusted-gpg-keys'
 
 
 def _check_deprecated_rhsm_skip():
@@ -159,20 +161,94 @@ def _backup_to_persistent_package_cache(userspace_dir):
             shutil.move(src_cache, PERSISTENT_PACKAGE_CACHE_DIR)
 
 
-def _import_gpg_keys(context, install_root_dir, target_major_version):
+def _import_gpg_keys_to_context(context, install_root_dir):
+    """
+    Import RPM GPG keys from a directory on the host using rpm from the context
+
+    On 9->10 attempt to import all (not just PQC) keys using /usr/bin/pqrpm/rpmkeys.
+    Otherwise PQC keys are not imported.
+    """
+
+    def get_certs_paths(certs_dir):
+        paths = [os.path.join(certs_dir, name) for name in os.listdir(certs_dir)]
+        return [path for path in paths if os.path.isfile(path)]
+
     certs_path = get_path_to_gpg_certs()
-    # Import the target distro target version GPG key to be able to verify the
-    # installation of initial packages
     try:
         # Import also any other keys provided by the customer in the same directory
-        for certname in os.listdir(certs_path):
-            cmd = ['rpm', '--root', install_root_dir, '--import', os.path.join(certs_path, certname)]
+        for certpath in get_certs_paths(certs_path):
+            cmd = [
+                "rpm",
+                "--root", install_root_dir,
+                "--import", certpath,
+            ]
             context.call(cmd, callback_raw=utils.logging_handler)
     except CalledProcessError as exc:
         raise StopActorExecutionError(
             message=(
-                'Unable to import GPG certificates to install RHEL {} userspace packages.'
-                .format(target_major_version)
+                'Unable to import GPG certificates to install target OS userspace packages.'
+            ),
+            details={'details': str(exc), 'stderr': exc.stderr}
+        )
+
+    # on 10.0 there is no support for pqc in rpm
+    if matches_version(['<= 10.0'], get_target_version()):
+        return
+
+    # on RHEL 9 the system rpm stack doesn't understand PQC (gpg v6) keys,
+    # there is a separate stack in /usr/lib/pqrpm that does. The pqc keys
+    # need to be imported using /usr/lib/pqrpm/bin/rpmkeys.
+
+    # do not check if we have the binary, just try importing and see if it
+    # fails with ENOENT
+    api.current_logger().debug('Trying to import keys to pqrpmdb')
+    pqc_certs_path = get_path_to_gpg_certs(subdir='pqc')
+    certs_paths = get_certs_paths(certs_path) + get_certs_paths(pqc_certs_path)
+    try:
+        for certpath in certs_paths:
+            cmd = [
+                "/usr/lib/pqrpm/bin/rpmkeys",
+                "--root", install_root_dir,
+                "--import", certpath,
+            ]
+            context.call(cmd, callback_raw=utils.logging_handler)
+    except CalledProcessError as exc:
+        if "execv(/usr/lib/pqrpm/bin/rpmkeys) failed: No such file or directory" in exc.stderr:
+            api.current_logger().debug(
+                "/usr/lib/pqrpm/bin/rpmkeys does not exist, skip importing keys to pqrpmdb "
+            )
+            return
+
+        raise StopActorExecutionError(
+            message=(
+                'Unable to import GPG certificates to install target OS userspace packages.'
+            ),
+            details={'details': str(exc), 'stderr': exc.stderr}
+        )
+
+
+def _import_gpg_keys_in_context(context: mounting.IsolatedActions, certs_dir):
+    """
+    Import RPM GPG keys from a directory in the context using rpm from the context
+    """
+
+    def get_certs_paths(certs_dir):
+        paths = [os.path.join(certs_dir, name) for name in context.listdir(certs_dir)]
+        return [path for path in paths if os.path.isfile(context.full_path(path))]
+
+    try:
+        # Import also any other keys provided by the customer in the same directory
+        pqc_dir = os.path.join(certs_dir, 'pqc')
+        for certpath in get_certs_paths(certs_dir) + get_certs_paths(pqc_dir):
+            cmd = [
+                "rpm",
+                "--import", certpath,
+            ]
+            context.call(cmd, callback_raw=utils.logging_handler)
+    except CalledProcessError as exc:
+        raise StopActorExecutionError(
+            message=(
+                'Unable to import PQC GPG certificates to install late stage target OS userspace packages.'
             ),
             details={'details': str(exc), 'stderr': exc.stderr}
         )
@@ -220,7 +296,9 @@ def prepare_target_userspace(context, userspace_dir, enabled_repos, packages):
     with mounting.BindMount(source=userspace_dir, target=os.path.join(context.base_dir, install_root_dir.lstrip('/'))):
         _restore_persistent_package_cache(userspace_dir)
         if not is_nogpgcheck_set():
-            _import_gpg_keys(context, install_root_dir, target_major_version)
+            # Import the target distro target version GPG key to be able to
+            # verify the installation of initial packages
+            _import_gpg_keys_to_context(context, install_root_dir, target_major_version)
 
         repos_opt = [['--enablerepo', repo] for repo in enabled_repos]
         repos_opt = list(itertools.chain(*repos_opt))
@@ -291,6 +369,13 @@ def prepare_target_userspace(context, userspace_dir, enabled_repos, packages):
                     details['hint'] = check_rhel_release_hint
 
             raise StopActorExecutionError(message=message, details=details)
+
+    # the PQC keys have to be imported also using the RHEL 10 rpm
+    if not is_nogpgcheck_set() and matches_version(['>= 10.1'], get_target_version()):
+        certs_path = '/leapp-trusted-gpg-keys'
+        with mounting.NspawnActions(base_dir=userspace_dir) as context:
+            context.copytree_to(get_path_to_gpg_certs(), certs_path)
+            _import_gpg_keys_in_context(context, certs_path, target_major_version)
 
 
 def _query_rpm_for_pkg_files(context, pkgs):
