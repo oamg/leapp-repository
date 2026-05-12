@@ -1,4 +1,5 @@
 from leapp.actors import Actor
+from leapp.configs.common.rhui import all_rhui_cfg
 from leapp.libraries.actor import removeobsoleterpmgpgkeys
 from leapp.models import DNFWorkaround, InstalledRPM
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
@@ -17,10 +18,14 @@ class RemoveObsoleteGpgKeys(Actor):
     - If converting, the obsolete keys are all of the keys provided by the
       vendor of the source distribution.
 
+    Additionally, if RHUI configuration is active (use_config=True), GPG keys
+    specified in the RHUI obsolete_gpg_keys configuration will also be removed.
+
     A DNFWorkaround is registered to actually remove the keys.
     """
 
     name = "remove_obsolete_gpg_keys"
+    config_schemas = all_rhui_cfg
     consumes = (InstalledRPM,)
     produces = (DNFWorkaround,)
     tags = (FactsPhaseTag, IPUWorkflowTag)
