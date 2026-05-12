@@ -116,6 +116,30 @@ class RhuiTargetRepositoriesToUse(Config):
     default = list()
 
 
+class RhuiObsoleteGpgKeys(Config):
+    section = RHUI_CONFIG_SECTION
+    name = "obsolete_gpg_keys"
+    type_ = fields.List(fields.String())
+    description = """
+        List of obsolete cloud vendor GPG keys to remove from the RPM database during the upgrade.
+
+        These are GPG keys used by cloud providers to sign RHUI client packages. These are NOT
+        Red Hat distribution keys.
+
+        Each key should be specified in the format of an NVR of the RPM metapackage for the given key after
+        it's imported to rpmdb:
+            gpg-pubkey-<version>-<release>
+        For example: "gpg-pubkey-d4082792-5b32db75"
+
+        These keys will be removed in addition to any keys marked as obsolete in the
+        distribution-specific configuration. Only keys that are actually installed
+        will be removed.
+
+        Note: This setting only takes effect when use_config is set to True.
+    """
+    default = list()
+
+
 all_rhui_cfg = (
     RhuiTargetPkgs,
     RhuiUpgradeFiles,
@@ -123,5 +147,6 @@ all_rhui_cfg = (
     RhuiCloudProvider,
     RhuiCloudVariant,
     RhuiSourcePkgs,
-    RhuiUseConfig
+    RhuiUseConfig,
+    RhuiObsoleteGpgKeys
 )
