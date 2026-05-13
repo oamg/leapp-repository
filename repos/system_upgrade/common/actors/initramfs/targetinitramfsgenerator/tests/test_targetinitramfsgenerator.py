@@ -71,13 +71,12 @@ def gen_InitrdIncludes(files):
 
 def test_no_includes(monkeypatch):
     run_mocked = RunMocked()
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[]))
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[mk_kernel_info(KERNEL_VERSION)]))
     monkeypatch.setattr(api, 'current_logger', logger_mocked())
     monkeypatch.setattr(targetinitramfsgenerator, 'run', run_mocked)
 
     targetinitramfsgenerator.process()
-    assert NO_INCLUDE_MSG in api.current_logger.dbgmsg
-    assert not run_mocked.called
+    assert run_mocked.called
 
 
 TEST_CASES = [

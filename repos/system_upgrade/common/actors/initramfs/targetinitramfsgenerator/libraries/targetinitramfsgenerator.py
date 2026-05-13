@@ -97,13 +97,15 @@ def _get_modules():
 
 
 def process():
+    """
+    Regenerate target system initramfs.
+
+    The initramfs is regenerated unconditionally always as there might be new configs
+    necessary for boot which are written by us after the RPM transaction installs
+    the target kernel (and generates the target initramfs for the first time).
+    """
     files = _get_files()
     modules = _get_modules()
-
-    if not files and not modules['kernel'] and not modules['dracut']:
-        api.current_logger().debug(
-            'No additional files or modules required to add into the target initramfs.')
-        return
 
     target_kernel_info = next(api.consume(InstalledTargetKernelInfo), None)
     if not target_kernel_info:
