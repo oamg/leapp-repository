@@ -2,7 +2,7 @@ from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common.config.version import get_source_major_version, get_target_major_version
 from leapp.libraries.stdlib import api
-from leapp.models import CustomTargetRepository, RepositoriesBlacklisted, RepositoriesFacts, RepositoriesMapping
+from leapp.models import CustomTargetRepository, RepositoriesFacts
 
 # {OS_MAJOR_VERSION: PESID}
 UNSUPPORTED_PESIDS = {
@@ -123,7 +123,7 @@ def _are_optional_repos_disabled(repo_mapping, repos_on_system):
     return True
 
 
-def process():
+def process(repo_mapping=None):
     """
     Exclude target repositories provided by Red Hat without support.
 
@@ -134,9 +134,17 @@ def process():
       (e.g. via the --enablerepo option or via the /etc/leapp/files/leapp_upgrade_repositories.repo file)
 
     E.g. CRB repository is provided by Red Hat but it is without the support.
+
+    :param repo_mapping: RepositoriesMapping message passed directly by the caller. If None, the message
+                         is consumed from the message bus instead.
+    :returns: Set of repoids to blacklist on the target system.
+    :rtype: set
     """
 
-    repo_mapping = next(api.consume(RepositoriesMapping), None)
+    if not repo_mapping:
+        from leapp.models import RepositoriesMapping
+        repo_mapping = next(api.consume(RepositoriesMapping), None)
+
     repos_facts = next(api.consume(RepositoriesFacts), None)
 
     # Handle required messages not received
@@ -152,9 +160,8 @@ def process():
 
     if not _are_optional_repos_disabled(repo_mapping, repos_facts):
         # nothing to do - an optional repository is enabled
-        return
+        return set()
 
-    # Optional repos are either not present or they are present, but disabled -> blacklist them on target system
     repos_to_exclude = _get_repoids_to_exclude(repo_mapping)
 
     # Do not exclude repos manually enabled from the CLI
@@ -165,4 +172,5 @@ def process():
         _report_using_unsupported_repos(manually_enabled_repos)
     if filtered_repos_to_exclude:
         _report_excluded_repos(filtered_repos_to_exclude)
-        api.produce(RepositoriesBlacklisted(repoids=list(filtered_repos_to_exclude)))
+
+    return filtered_repos_to_exclude
