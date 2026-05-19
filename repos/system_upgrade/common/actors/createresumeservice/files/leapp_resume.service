@@ -8,7 +8,7 @@ Wants=network-online.target
 
 [Service]
 Type=oneshot
-# FIXME: this is temporary workaround for Python3
+SELinuxContext=unconfined_u:unconfined_r:unconfined_t:s0
 ExecStart=/bin/sh -c "/root/tmp_leapp_py3/leapp3 upgrade --resume"
 StandardOutput=journal+console
 # FIXME: this shouldn't be needed, but Satellite upgrade runs installer, and that's slow
