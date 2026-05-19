@@ -6,6 +6,7 @@ from functools import wraps
 from itertools import chain
 
 from leapp import FULL_VERSION
+from leapp.cli.commands.command_utils import DISTRO_NAMES
 from leapp.libraries.stdlib.call import _call
 from leapp.utils.audit import get_messages
 
@@ -13,6 +14,20 @@ try:
     from json.decoder import JSONDecodeError  # pylint: disable=ungrouped-imports
 except ImportError:
     JSONDecodeError = ValueError
+
+
+def _get_os_name(ipu_cfg, direction):
+    """
+    Determine the OS display name from IPUConfig data.
+
+    :param direction: 'source' or 'target'
+    """
+    distro = (ipu_cfg.get('distro') or {}).get(direction, '')
+    version = (ipu_cfg.get('version') or {}).get(direction, '')
+    if not distro:
+        return 'N/A'
+    distro_name = DISTRO_NAMES.get(distro, distro.title())
+    return '{} {}'.format(distro_name, version or 'N/A')
 
 
 def runs_in_container():
@@ -95,10 +110,9 @@ class _BreadCrumbs:
         self._crumbs['run_id'] = os.environ.get('LEAPP_EXECUTION_ID', 'N/A')
         self._crumbs['leapp_file_changes'].extend(self._verify_leapp_pkgs())
         messages = get_messages(('IPUConfig',), self._crumbs['run_id'])
-        versions = json.loads((messages or [{}])[0].get('message', {}).get(
-            'data', '{}')).get('version', {'target': 'N/A', 'source': 'N/A'})
-        self._crumbs['target_os'] = 'Red Hat Enterprise Linux {target}'.format(**versions)
-        self._crumbs['source_os'] = 'Red Hat Enterprise Linux {source}'.format(**versions)
+        ipu_cfg = json.loads((messages or [{}])[0].get('message', {}).get('data', '{}'))
+        self._crumbs['source_os'] = _get_os_name(ipu_cfg, 'source')
+        self._crumbs['target_os'] = _get_os_name(ipu_cfg, 'target')
         self._crumbs['activity_ended'] = datetime.datetime.utcnow().isoformat() + 'Z'
         self._crumbs['env'] = {k: v for k, v in os.environ.items() if k.startswith('LEAPP_')}
         try:

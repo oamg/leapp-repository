@@ -39,6 +39,20 @@ class DistroIDs(str, Enum):
     ALMALINUX = 'almalinux'
 
 
+DISTRO_NAMES = {
+    DistroIDs.RHEL: 'Red Hat Enterprise Linux',
+    DistroIDs.CENTOS: 'CentOS Stream',
+    DistroIDs.ALMALINUX: 'AlmaLinux',
+}
+"""
+Maps distro IDs to their user-facing display names (matching NAME in /etc/os-release).
+
+NOTE: keep in sync with distro_id_to_pretty_name() in
+repos/system_upgrade/common/libraries/distro.py the repo library
+is not importable from the CLI layer.
+"""
+
+
 _DISTRO_VERSION_FORMATS = {
     DistroIDs.RHEL: VersionFormats.MAJOR_MINOR,
     DistroIDs.CENTOS: VersionFormats.MAJOR_ONLY,

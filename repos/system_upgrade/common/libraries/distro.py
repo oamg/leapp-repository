@@ -227,6 +227,10 @@ def distro_id_to_pretty_name(distro_id):
     Get pretty name for the given distro id.
 
     The pretty name is what is found in the NAME field of /etc/os-release.
+
+    NOTE: a parallel mapping exists in commands/command_utils.py
+    (DISTRO_NAMES) for use in the CLI layer which cannot import
+    repo libraries. Keep both in sync when adding a new distro.
     """
     return {
         "rhel": "Red Hat Enterprise Linux",
