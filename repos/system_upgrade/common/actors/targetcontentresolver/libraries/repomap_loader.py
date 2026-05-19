@@ -183,10 +183,12 @@ def scan_repositories(read_repofile_func=_read_repofile):
         mapping = repomap_data.get_mappings(get_source_major_version(), get_target_major_version())
 
         valid_major_versions = [get_source_major_version(), get_target_major_version()]
-        api.produce(RepositoriesMapping(
+        repositories_mapping = RepositoriesMapping(
             mapping=mapping,
             repositories=repomap_data.get_repositories(valid_major_versions)
-        ))
+        )
+        api.produce(repositories_mapping)
+        return repositories_mapping
     except ModelViolationError as err:
         err_message = (
             'The repository mapping file is invalid: '
@@ -200,3 +202,4 @@ def scan_repositories(read_repofile_func=_read_repofile):
     except ValueError as err:
         # The error should contain enough information, so we do not need to clarify it further
         _inhibit_upgrade('The repository mapping file is invalid: {}'.format(err))
+    return None
