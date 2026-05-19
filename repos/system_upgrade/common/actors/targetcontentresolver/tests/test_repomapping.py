@@ -3,8 +3,8 @@ import logging
 
 import pytest
 
-from leapp.libraries.actor import setuptargetrepos_repomap
-from leapp.libraries.actor.setuptargetrepos_repomap import get_default_repository_channels, RepoMapDataHandler
+from leapp.libraries.common import repomap as setuptargetrepos_repomap
+from leapp.libraries.common.repomap import get_default_repository_channels, RepoMapDataHandler
 from leapp.libraries.common.testutils import CurrentActorMocked
 from leapp.libraries.stdlib import api
 from leapp.models import PESIDRepositoryEntry, RepoMapEntry, RepositoriesMapping

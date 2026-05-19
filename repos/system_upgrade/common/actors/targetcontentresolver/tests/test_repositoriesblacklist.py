@@ -8,7 +8,6 @@ from leapp.models import (
     CustomTargetRepository,
     PESIDRepositoryEntry,
     RepoMapEntry,
-    RepositoriesBlacklisted,
     RepositoriesFacts,
     RepositoriesMapping,
     RepositoryData,
@@ -85,29 +84,26 @@ def test_all_target_optionals_blacklisted_when_no_optional_on_source(monkeypatch
     ]
     repo_facts = RepositoriesFacts(repositories=repos_files)
 
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[repo_facts, repomap_opts_only]))
-    monkeypatch.setattr(api, 'produce', produce_mocked())
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[repo_facts]))
     monkeypatch.setattr(reporting, 'create_report', produce_mocked())
 
-    repositoriesblacklist.process()
+    result = repositoriesblacklist.process(repomap_opts_only)
 
-    assert api.produce.called
-    assert 'codeready-builder-for-rhel-9-x86_64-rpms' in api.produce.model_instances[0].repoids
+    assert 'codeready-builder-for-rhel-9-x86_64-rpms' in result
 
 
 def test_with_no_mapping_for_optional_repos(monkeypatch, repomap_opts_only, repofacts_opts_disabled):
     """
-    Tests whether nothing gets produced if no valid target is found for an optional repository in mapping data.
+    Tests whether an empty set is returned if no valid target is found for an optional repository in mapping data.
     """
 
     repomap_opts_only.repositories[1].pesid = 'test_pesid'
 
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[repofacts_opts_disabled, repomap_opts_only]))
-    monkeypatch.setattr(api, 'produce', produce_mocked())
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[repofacts_opts_disabled]))
 
-    repositoriesblacklist.process()
+    result = repositoriesblacklist.process(repomap_opts_only)
 
-    assert not api.produce.called
+    assert not result
 
 
 def test_blacklist_produced_when_optional_repo_disabled(monkeypatch, repofacts_opts_disabled, repomap_opts_only):
@@ -118,74 +114,65 @@ def test_blacklist_produced_when_optional_repo_disabled(monkeypatch, repofacts_o
     monkeypatch.setattr(
         api,
         "current_actor",
-        CurrentActorMocked(msgs=[repofacts_opts_disabled, repomap_opts_only]),
+        CurrentActorMocked(msgs=[repofacts_opts_disabled]),
     )
-    monkeypatch.setattr(api, "produce", produce_mocked())
     monkeypatch.setattr(reporting, "create_report", produce_mocked())
 
-    repositoriesblacklist.process()
+    result = repositoriesblacklist.process(repomap_opts_only)
 
-    assert api.produce.model_instances, 'A blacklist should get generated.'
+    assert result, 'A blacklist should get generated.'
 
     expected_blacklisted_repoid = 'codeready-builder-for-rhel-9-x86_64-rpms'
     err_msg = 'Blacklist does not contain expected repoid.'
-    assert expected_blacklisted_repoid in api.produce.model_instances[0].repoids, err_msg
+    assert expected_blacklisted_repoid in result, err_msg
 
 
 def test_no_blacklist_produced_when_optional_repo_enabled(monkeypatch, repofacts_opts_disabled, repomap_opts_only):
     """
-    Tests whether nothing is produced when an optional repository is enabled.
+    Tests whether an empty set is returned when an optional repository is enabled.
 
     Data are set up in such a fashion so that the determined blacklist would not be empty.
     """
 
     repofacts_opts_disabled.repositories[0].data[0].enabled = True
 
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[repofacts_opts_disabled, repomap_opts_only]))
-    monkeypatch.setattr(api, "produce", produce_mocked())
-    monkeypatch.setattr(reporting, "create_report", produce_mocked())
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[repofacts_opts_disabled]))
 
-    repositoriesblacklist.process()
+    result = repositoriesblacklist.process(repomap_opts_only)
 
-    assert not api.produce.called
+    assert not result
 
 
 def test_repositoriesblacklist_not_empty(monkeypatch, repofacts_opts_disabled, repomap_opts_only):
     """
-    Tests whether a message containing correct packages from the determined blacklist is produced.
+    Tests whether the correct set of blacklisted repoids is returned.
     """
 
     blacklisted_repoid = 'test'
     monkeypatch.setattr(repositoriesblacklist, "_get_repoids_to_exclude", lambda dummy_mapping: {blacklisted_repoid})
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[repofacts_opts_disabled, repomap_opts_only]))
-    monkeypatch.setattr(api, "produce", produce_mocked())
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[repofacts_opts_disabled]))
     monkeypatch.setattr(reporting, "create_report", produce_mocked())
 
-    repositoriesblacklist.process()
-    assert api.produce.called == 1
-    assert isinstance(api.produce.model_instances[0], RepositoriesBlacklisted)
-    assert api.produce.model_instances[0].repoids[0] == blacklisted_repoid
+    result = repositoriesblacklist.process(repomap_opts_only)
+    assert blacklisted_repoid in result
     assert reporting.create_report.called == 1
 
 
 def test_repositoriesblacklist_empty(monkeypatch, repofacts_opts_disabled, repomap_opts_only):
     """
-    Tests whether nothing is produced if there are some disabled optional
+    Tests whether an empty set is returned if there are some disabled optional
     repos, but an empty blacklist is determined from the repo mapping data.
     """
 
-    msgs_to_feed = [repofacts_opts_disabled, repomap_opts_only]
-
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=msgs_to_feed))
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[repofacts_opts_disabled]))
     monkeypatch.setattr(
         repositoriesblacklist,
         "_get_repoids_to_exclude",
         lambda dummy_mapping: set()
     )
-    monkeypatch.setattr(api, "produce", produce_mocked())
 
-    repositoriesblacklist.process()
-    assert api.produce.called == 0
+    result = repositoriesblacklist.process(repomap_opts_only)
+    assert not result
 
 
 @pytest.mark.parametrize(
@@ -206,16 +193,15 @@ def test_enablerepo_option(monkeypatch,
     Tests whether the actor respects CustomTargetRepository messages when constructing the blacklist.
     """
 
-    msgs_to_feed = [repomap_opts_only, repofacts_opts_disabled]
+    msgs_to_feed = [repofacts_opts_disabled]
 
     if enabled_repo:
         msgs_to_feed.append(CustomTargetRepository(repoid=enabled_repo))
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=msgs_to_feed))
-    monkeypatch.setattr(api, 'produce', produce_mocked())
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
-    repositoriesblacklist.process()
+    result = repositoriesblacklist.process(repomap_opts_only)
     assert reporting.create_report.report_fields["title"] == exp_report_title
     if message_produced:
-        assert isinstance(api.produce.model_instances[0], RepositoriesBlacklisted)
+        assert result
     else:
-        assert not api.produce.model_instances
+        assert not result

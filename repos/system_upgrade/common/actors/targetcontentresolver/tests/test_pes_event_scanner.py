@@ -307,15 +307,14 @@ def test_transaction_configuration_has_effect(monkeypatch):
 def test_repository_blacklist_is_correctly_applied(monkeypatch):
     _Pkg = partial(Package, modulestream=None)
 
-    monkeypatch.setattr(pes_events_scanner, 'get_blacklisted_repoids', lambda: {'repo-a', 'repo-b', 'repo-c'})
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked())
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
 
     source_pkgs = {_Pkg('pkg-b', 'repo-b')}
     target_pkgs = {_Pkg('pkg-a', 'repo-a'), _Pkg('pkg-b', 'repo-b'), _Pkg('pkg-c', 'repo-c'), _Pkg('pkg-d', 'repo-d')}
 
-    blacklisted_repoids, target_pkgs = pes_events_scanner.remove_new_packages_from_blacklisted_repos(source_pkgs,
-                                                                                                     target_pkgs)
+    blacklisted_repoids, target_pkgs = pes_events_scanner.remove_new_packages_from_blacklisted_repos(
+        source_pkgs, target_pkgs, {'repo-a', 'repo-b', 'repo-c'})
     result = pkgs_into_tuples(target_pkgs)
 
     assert blacklisted_repoids == {'repo-a', 'repo-b', 'repo-c'}
@@ -342,15 +341,14 @@ def test_blacklisted_repoid_is_not_produced(monkeypatch):
     monkeypatch.setattr(pes_events_scanner, 'get_installed_pkgs', lambda: installed_pkgs)
     monkeypatch.setattr(pes_events_scanner, 'get_pes_events', lambda folder, filename: events)
     monkeypatch.setattr(pes_events_scanner, 'apply_transaction_configuration', lambda pkgs, transaction_cfg: pkgs)
-    monkeypatch.setattr(pes_events_scanner, 'get_blacklisted_repoids', lambda: {'blacklisted-rhel9'})
     monkeypatch.setattr(pes_events_scanner, 'replace_pesids_with_repoids_in_packages',
-                        lambda pkgs, src_pkgs_repoids: pkgs)
+                        lambda pkgs, src_pkgs_repoids, repo_map_msg=None: pkgs)
 
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked())
     monkeypatch.setattr(api, 'produce', produce_mocked())
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
 
-    pes_events_scanner.process()
+    setup_tasks = pes_events_scanner.process(blacklisted_repoids={'blacklisted-rhel9'})
 
     assert not reporting.create_report.called
 
@@ -361,9 +359,8 @@ def test_blacklisted_repoid_is_not_produced(monkeypatch):
                  'no PESRpmTransactionTasks should be produced, however, they were.')
     assert not rpm_tasks, fail_desc
 
-    repo_setup_tasks = [msg for msg in api.produce.model_instances if isinstance(msg, RepositoriesSetupTasks)]
-    assert len(repo_setup_tasks) == 1
-    assert repo_setup_tasks[0].to_enable == ['repoid-rhel9']
+    assert setup_tasks is not None
+    assert setup_tasks.to_enable == ['repoid-rhel9']
 
 
 @pytest.mark.parametrize(
@@ -501,10 +498,10 @@ def test_transaction_configuration_is_applied(monkeypatch):
     monkeypatch.setattr(pes_events_scanner, 'remove_undesired_events', lambda events, releases: events)
     monkeypatch.setattr(pes_events_scanner, '_get_enabled_modules', lambda *args: [])
     monkeypatch.setattr(pes_events_scanner, 'replace_pesids_with_repoids_in_packages',
-                        lambda target_pkgs, repoids_of_source_pkgs: target_pkgs)
+                        lambda target_pkgs, repoids_of_source_pkgs, repo_map_msg=None: target_pkgs)
     monkeypatch.setattr(pes_events_scanner,
                         'remove_new_packages_from_blacklisted_repos',
-                        lambda source_pkgs, target_pkgs: (set(), target_pkgs))
+                        lambda source_pkgs, target_pkgs, bl=None: (set(), target_pkgs))
 
     msgs = [
         RpmTransactionTasks(to_remove=['pkg-not-in-events']),
@@ -517,9 +514,10 @@ def test_transaction_configuration_is_applied(monkeypatch):
 
     monkeypatch.setattr(api, 'produce', produce_mocked())
 
-    pes_events_scanner.process()
+    setup_tasks = pes_events_scanner.process()
 
-    assert api.produce.called == 2
+    assert api.produce.called == 1
+    assert setup_tasks is not None
 
     produced_rpm_transaction_tasks = [
         msg for msg in api.produce.model_instances if isinstance(msg, PESRpmTransactionTasks)

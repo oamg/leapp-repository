@@ -8,7 +8,6 @@ from leapp.models import (
     InstalledRPM,
     PESIDRepositoryEntry,
     RepoMapEntry,
-    RepositoriesBlacklisted,
     RepositoriesFacts,
     RepositoriesMapping,
     RepositoriesSetupTasks,
@@ -54,19 +53,17 @@ def test_custom_repos(monkeypatch):
                                          baseurl='https://.../dist/rhel/blacklisted/8/os',
                                          enabled=True)
 
-    repos_blacklisted = RepositoriesBlacklisted(repoids=['rhel-8-blacklisted-rpms'])
-
     repositories_mapping = RepositoriesMapping(
         mapping=[],
         repositories=[]
     )
 
-    msgs = [custom, blacklisted, repos_blacklisted, repositories_mapping]
+    msgs = [custom, blacklisted, repositories_mapping]
 
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=msgs))
     monkeypatch.setattr(api, 'produce', produce_mocked())
 
-    setuptargetrepos.process()
+    setuptargetrepos.process(blacklisted_repoids={'rhel-8-blacklisted-rpms'})
 
     assert api.produce.called
 
@@ -82,14 +79,13 @@ def test_repositories_setup_tasks(monkeypatch):
     """
     repositories_setup_tasks = RepositoriesSetupTasks(to_enable=['rhel-8-server-rpms',
                                                                  'rhel-8-blacklisted-rpms'])
-    repos_blacklisted = RepositoriesBlacklisted(repoids=['rhel-8-blacklisted-rpms'])
     repositories_mapping = RepositoriesMapping(mapping=[], repositories=[])
-    msgs = [repositories_setup_tasks, repos_blacklisted, repositories_mapping]
+    msgs = [repositories_setup_tasks, repositories_mapping]
 
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=msgs))
     monkeypatch.setattr(api, 'produce', produce_mocked())
 
-    setuptargetrepos.process()
+    setuptargetrepos.process(blacklisted_repoids={'rhel-8-blacklisted-rpms'})
 
     assert api.produce.called
 
@@ -187,9 +183,7 @@ def test_repos_mapping_for_distro(monkeypatch, src_distro, dst_distro):
         ]
     )
 
-    repos_blacklisted = RepositoriesBlacklisted(repoids=['{}-9-blacklisted-rpms'.format(dst_distro)])
-
-    msgs = [facts, repomap, repos_blacklisted, installed_rpms]
+    msgs = [facts, repomap, installed_rpms]
 
     monkeypatch.setattr(
         api,
@@ -198,7 +192,7 @@ def test_repos_mapping_for_distro(monkeypatch, src_distro, dst_distro):
     )
     monkeypatch.setattr(api, 'produce', produce_mocked())
 
-    setuptargetrepos.process()
+    setuptargetrepos.process(blacklisted_repoids={'{}-9-blacklisted-rpms'.format(dst_distro)})
     assert api.produce.called
 
     distro_repos = api.produce.model_instances[0].distro_repos

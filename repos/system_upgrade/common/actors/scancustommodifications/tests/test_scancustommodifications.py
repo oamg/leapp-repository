@@ -44,13 +44,11 @@ S.5....T.  c etc/leapp/files/pes-events.json
     ('repos/system_upgrade/common/libraries/dnfplugin.py', ''),
     ('repos/system_upgrade/common/libraries/testutils.py', ''),
     # the rest of false positives discovered by dkubek
-    ('repos/system_upgrade/common/actors/setuptargetrepos/libraries/setuptargetrepos_repomap.py', 'setuptargetrepos'),
+    ('repos/system_upgrade/common/libraries/repomap.py', ''),
     ('repos/system_upgrade/el8toel9/actors/sssdfacts/libraries/sssdfacts8to9.py', 'sssd_facts_8to9'),
     ('repos/system_upgrade/el8toel9/actors/nisscanner/libraries/nisscan.py', 'nis_scanner'),
-    ('repos/system_upgrade/common/actors/setuptargetrepos/libraries/setuptargetrepos_repomap.py', 'setuptargetrepos'),
-    ('repos/system_upgrade/common/actors/repositoriesmapping/libraries/repositoriesmapping.py', 'repository_mapping'),
-    ('repos/system_upgrade/common/actors/peseventsscanner/libraries/peseventsscanner_repomap.py',
-     'pes_events_scanner')
+    ('repos/system_upgrade/common/actors/targetcontentresolver/libraries/repositoriesmapping.py',
+     'target_content_resolver')
 ])
 def test_deduce_actor_name_from_file(a_file, name):
     assert scancustommodifications.deduce_actor_name(a_file) == name

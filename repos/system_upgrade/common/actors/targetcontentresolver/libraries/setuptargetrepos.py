@@ -1,4 +1,5 @@
-from leapp.libraries.actor import setuptargetrepos_repomap
+from leapp.libraries.actor.pes_events_scanner import get_enabled_repoids as _get_enabled_repoids
+from leapp.libraries.common import repomap as setuptargetrepos_repomap
 from leapp.libraries.common.config import get_source_distro_id, get_target_distro_id
 from leapp.libraries.common.config.version import get_source_major_version, get_source_version
 from leapp.libraries.stdlib import api
@@ -6,8 +7,6 @@ from leapp.models import (
     CustomTargetRepository,
     DistroTargetRepository,
     InstalledRPM,
-    RepositoriesBlacklisted,
-    RepositoriesFacts,
     RepositoriesMapping,
     RepositoriesSetupTasks,
     RHELTargetRepository,
@@ -24,35 +23,12 @@ RHUI_CLIENT_REPOIDS_RHEL88_TO_RHEL810 = {
 }
 
 
-def _get_enabled_repoids():
-    """
-    Collects repoids of all enabled repositories on the source system.
-
-    :returns: Set of all enabled repository IDs present on the source system.
-    :rtype: Set[str]
-    """
-    enabled_repoids = set()
-    for repos in api.consume(RepositoriesFacts):
-        for repo_file in repos.repositories:
-            for repo in repo_file.data:
-                if repo.enabled:
-                    enabled_repoids.add(repo.repoid)
-    return enabled_repoids
-
-
 def _get_repoids_from_installed_packages():
     repoids_from_installed_packages = set()
     for installed_packages in api.consume(InstalledRPM):
         for rpm_package in installed_packages.items:
             repoids_from_installed_packages.add(rpm_package.repository)
     return repoids_from_installed_packages
-
-
-def _get_blacklisted_repoids():
-    repos_blacklisted = set()
-    for blacklist in api.consume(RepositoriesBlacklisted):
-        repos_blacklisted.update(blacklist.repoids)
-    return repos_blacklisted
 
 
 def _get_custom_target_repos():
@@ -84,16 +60,25 @@ def _get_mapped_repoids(repomap, src_repoids):
 
 
 @suppress_deprecation(RHELTargetRepository)
-def process():
+def process(repositories_map_msg=None, internal_setup_tasks=None, blacklisted_repoids=None):
+    """
+    Determine the final list of target repositories.
+
+    :param repositories_map_msg: RepositoriesMapping message passed directly by the caller. If None, the message
+                                 is consumed from the message bus instead.
+    :param internal_setup_tasks: Optional RepositoriesSetupTasks from the PES events scanner step. These are merged
+                                 with any external RepositoriesSetupTasks consumed from the message bus.
+    :param blacklisted_repoids: Set of repoids to exclude from target repos. If None, an empty set is used.
+    """
     # Load relevant data from messages
     used_repoids_dict = _get_used_repo_dict()
     enabled_repoids = _get_enabled_repoids()
-    excluded_repoids = _get_blacklisted_repoids()
+    excluded_repoids = blacklisted_repoids if blacklisted_repoids is not None else set()
     custom_repos = _get_custom_target_repos()
     repoids_from_installed_packages = _get_repoids_from_installed_packages()
 
     # Setup repomap handler
-    repo_mappig_msg = next(api.consume(RepositoriesMapping), RepositoriesMapping())
+    repo_mappig_msg = repositories_map_msg or next(api.consume(RepositoriesMapping), RepositoriesMapping())
 
     rhui_info = next(api.consume(RHUIInfo), None)
     cloud_provider = rhui_info.provider if rhui_info else ''
@@ -145,12 +130,14 @@ def process():
             continue
         target_distro_repoids.add(target_pesidrepo.repoid)
 
-    # FIXME: this could possibly result into a try to enable multiple repositories
-    # from the same family (pesid). But unless we have a bug in previous actors,
-    # it should not happen :) it's not blocker error anyway, so survive it.
-    # - We expect to deliver the fix as part of the refactoring when we merge
-    # setuptargetrepos & peseventsscanner actors together (+ blacklistrepos?)
-    for task in api.consume(RepositoriesSetupTasks):
+    # FIXME: this could possibly result in enabling multiple repositories
+    # from the same family (pesid). Proper fix requires deduplication by
+    # PESID family, picking the best candidate per family.
+    all_setup_tasks = list(api.consume(RepositoriesSetupTasks))
+    if internal_setup_tasks:
+        all_setup_tasks.append(internal_setup_tasks)
+
+    for task in all_setup_tasks:
         for repo in task.to_enable:
             if repo in excluded_repoids:
                 api.current_logger().debug('Skipping the {} repo from setup task (excluded).'.format(repo))
