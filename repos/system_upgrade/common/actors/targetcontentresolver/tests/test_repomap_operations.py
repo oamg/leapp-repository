@@ -3,8 +3,8 @@ import logging
 
 import pytest
 
-from leapp.libraries.actor import setuptargetrepos_repomap
-from leapp.libraries.actor.setuptargetrepos_repomap import get_default_repository_channels, RepoMapDataHandler
+from leapp.libraries.actor import repomap_calc
+from leapp.libraries.actor.repomap_calc import get_default_repository_channels, RepoMapDataHandler
 from leapp.libraries.common.testutils import CurrentActorMocked
 from leapp.libraries.stdlib import api
 from leapp.models import PESIDRepositoryEntry, RepoMapEntry, RepositoriesMapping
@@ -287,7 +287,7 @@ def test_get_source_pesid_repos(monkeypatch, repomap_data_for_pesid_repo_retriev
     fail_description = (
         'The get_source_pesid_repos method does not take into account the source system version correctly.'
     )
-    monkeypatch.setattr(setuptargetrepos_repomap, 'get_source_major_version', lambda: '10')
+    monkeypatch.setattr(repomap_calc, 'get_source_major_version', lambda: '10')
 
     # Repeat the same test as above to make sure it respects the source OS major version
     assert [] == handler.get_source_pesid_repos('pesid1'), fail_description
