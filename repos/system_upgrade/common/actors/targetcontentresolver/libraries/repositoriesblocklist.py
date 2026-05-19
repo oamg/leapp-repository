@@ -2,7 +2,14 @@ from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common.config.version import get_source_major_version, get_target_major_version
 from leapp.libraries.stdlib import api
-from leapp.models import CustomTargetRepository, RepositoriesBlacklisted, RepositoriesFacts, RepositoriesMapping
+from leapp.models import (
+    CustomTargetRepository,
+    RepositoriesBlacklisted,
+    RepositoriesBlocklisted,
+    RepositoriesFacts,
+    RepositoriesSetupTasks
+)
+from leapp.utils.deprecation import suppress_deprecation
 
 # {OS_MAJOR_VERSION: PESID}
 UNSUPPORTED_PESIDS = {
@@ -14,11 +21,11 @@ UNSUPPORTED_PESIDS = {
 
 def _report_using_unsupported_repos(repos):
     report = [
-        reporting.Title("Using repository not supported by Red Hat"),
+        reporting.Title('Using repository not supported by Red Hat'),
         reporting.Summary(
-            "The following repositories have been used for the "
-            "upgrade, but they are not supported by the Red Hat.:\n"
-            "- {}".format("\n - ".join(repos))
+            'The following repositories have been used for the '
+            'upgrade, but they are not supported by the Red Hat.:\n'
+            '- {}'.format('\n - '.join(repos))
         ),
         reporting.Severity(reporting.Severity.HIGH),
         reporting.Groups([reporting.Groups.REPOSITORY]),
@@ -28,25 +35,25 @@ def _report_using_unsupported_repos(repos):
 
 def _report_excluded_repos(repos):
     api.current_logger().info(
-        "The CRB repository is not enabled. Excluding {} from the upgrade".format(repos)
+        'The CRB repository is not enabled. Excluding {} from the upgrade'.format(repos)
     )
 
     report = [
-        reporting.Title("Excluded target system repositories"),
+        reporting.Title('Excluded target system repositories'),
         reporting.Summary(
-            "The following repositories are not supported by "
-            "Red Hat and are excluded from the list of repositories "
-            "used during the upgrade.\n- {}".format("\n- ".join(repos))
+            'The following repositories are not supported by '
+            'Red Hat and are excluded from the list of repositories '
+            'used during the upgrade.\n- {}'.format('\n- '.join(repos))
         ),
         reporting.Severity(reporting.Severity.INFO),
         reporting.Groups([reporting.Groups.REPOSITORY]),
         reporting.Groups([reporting.Groups.FAILURE]),
         reporting.Remediation(
             hint=(
-                "If some of excluded repositories are still required to be used"
-                " during the upgrade, execute leapp with the --enablerepo option"
-                " with the repoid of the repository required to be enabled"
-                " as an argument (the option can be used multiple times)."
+                'If some of excluded repositories are still required to be used'
+                ' during the upgrade, execute leapp with the --enablerepo option'
+                ' with the repoid of the repository required to be enabled'
+                ' as an argument (the option can be used multiple times).'
             )
         ),
     ]
@@ -87,10 +94,10 @@ def _get_pesid_repos(repo_mapping, pesid, major_version):
 
 def _get_repoids_to_exclude(repo_mapping):
     """
-    Returns a set of repoids that should be blacklisted on the target system.
+    Returns a set of repoids that should be blocklisted on the target system.
 
     :param RepositoriesMapping repo_mapping: Repository mapping data.
-    :returns: A set of repoids to blacklist on the target system.
+    :returns: A set of repoids to blocklist on the target system.
     :rtype: Set[str]
     """
     pesid_repos_to_exclude = _get_pesid_repos(repo_mapping,
@@ -123,7 +130,7 @@ def _are_optional_repos_disabled(repo_mapping, repos_on_system):
     return True
 
 
-def process():
+def get_blocklisted_repoids(repo_mapping):
     """
     Exclude target repositories provided by Red Hat without support.
 
@@ -134,27 +141,22 @@ def process():
       (e.g. via the --enablerepo option or via the /etc/leapp/files/leapp_upgrade_repositories.repo file)
 
     E.g. CRB repository is provided by Red Hat but it is without the support.
-    """
 
-    repo_mapping = next(api.consume(RepositoriesMapping), None)
+    :param repo_mapping: RepositoriesMapping message.
+    :returns: Set of repoids to blocklist on the target system.
+    :rtype: set
+    """
     repos_facts = next(api.consume(RepositoriesFacts), None)
 
-    # Handle required messages not received
-    missing_messages = []
-    if not repo_mapping:
-        missing_messages.append('RepositoriesMapping')
     if not repos_facts:
-        missing_messages.append('RepositoriesFacts')
-    if missing_messages:
         raise StopActorExecutionError('Actor didn\'t receive required messages: {0}'.format(
-            ', '.join(missing_messages)
+            'RepositoriesFacts'
         ))
 
     if not _are_optional_repos_disabled(repo_mapping, repos_facts):
         # nothing to do - an optional repository is enabled
-        return
+        return set()
 
-    # Optional repos are either not present or they are present, but disabled -> blacklist them on target system
     repos_to_exclude = _get_repoids_to_exclude(repo_mapping)
 
     # Do not exclude repos manually enabled from the CLI
@@ -165,4 +167,39 @@ def process():
         _report_using_unsupported_repos(manually_enabled_repos)
     if filtered_repos_to_exclude:
         _report_excluded_repos(filtered_repos_to_exclude)
-        api.produce(RepositoriesBlacklisted(repoids=list(filtered_repos_to_exclude)))
+
+    return filtered_repos_to_exclude
+
+
+@suppress_deprecation(RepositoriesBlacklisted)
+def compute_blocklist(repo_mapping):
+    """
+    Compute the full blocklist and extract external repoid requests.
+
+    Merges the internally determined blocklist (unsupported repos like CRB)
+    with external blocklist requests from ``RepositoriesSetupTasks.to_block``.
+    When the resulting blocklist is non-empty, produces both
+    ``RepositoriesBlocklisted`` and the deprecated ``RepositoriesBlacklisted``
+    messages.
+
+    Also extracts ``to_enable`` repoids from the same external tasks so that
+    the caller does not need to re-consume the messages.
+
+    :param repo_mapping: RepositoriesMapping message.
+    :returns: Tuple of (full_blocklist_repoids, external_repoids_requests).
+    :rtype: tuple[set, set]
+    """
+    internal_blocklist = get_blocklisted_repoids(repo_mapping)
+
+    external_blocklist_repoids = set()
+    external_repoids_requests = set()
+    for task in api.consume(RepositoriesSetupTasks):
+        external_blocklist_repoids.update(task.to_block)
+        external_repoids_requests.update(task.to_enable)
+
+    full_blocklist_repoids = internal_blocklist.union(external_blocklist_repoids)
+    if full_blocklist_repoids:
+        api.produce(RepositoriesBlocklisted(repoids=sorted(full_blocklist_repoids)))
+        api.produce(RepositoriesBlacklisted(repoids=sorted(full_blocklist_repoids)))
+
+    return full_blocklist_repoids, external_repoids_requests

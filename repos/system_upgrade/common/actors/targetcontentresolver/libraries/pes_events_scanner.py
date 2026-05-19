@@ -3,7 +3,7 @@ from functools import partial
 
 from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
-from leapp.libraries.actor import peseventsscanner_repomap
+from leapp.libraries.actor import repomap_calc
 from leapp.libraries.actor.pes_event_parsing import Action, get_pes_events, Package
 from leapp.libraries.common import rpms
 from leapp.libraries.common.config import get_target_distro_id, version
@@ -16,10 +16,7 @@ from leapp.models import (
     Module,
     PESIDRepositoryEntry,
     PESRpmTransactionTasks,
-    RepositoriesBlacklisted,
     RepositoriesFacts,
-    RepositoriesMapping,
-    RepositoriesSetupTasks,
     RHUIInfo,
     RpmTransactionTasks
 )
@@ -323,11 +320,14 @@ def report_skipped_packages(title, message, skipped_pkgs, remediation=None):
         api.current_logger().info(summary)
 
 
-def remove_new_packages_from_blacklisted_repos(source_pkgs, target_pkgs):
+def remove_new_packages_from_blacklisted_repos(source_pkgs, target_pkgs, blacklisted_repoids=None):
     """
     Remove newly installed packages from blacklisted repositories that were computed to be on the target system.
+
+    :param blacklisted_repoids: Set of repoids to exclude. If None, an empty set is used.
     """
-    blacklisted_repoids = get_blacklisted_repoids()
+    if blacklisted_repoids is None:
+        blacklisted_repoids = set()
     new_pkgs = target_pkgs.difference(source_pkgs)
     pkgs_from_blacklisted_repos = set(pkg for pkg in new_pkgs if pkg.repository in blacklisted_repoids)
 
@@ -338,13 +338,6 @@ def remove_new_packages_from_blacklisted_repos(source_pkgs, target_pkgs):
             skipped_pkgs=pkgs_from_blacklisted_repos,
         )
     return blacklisted_repoids, target_pkgs.difference(pkgs_from_blacklisted_repos)
-
-
-def get_blacklisted_repoids():
-    repos_blacklisted = set()
-    for blacklist in api.consume(RepositoriesBlacklisted):
-        repos_blacklisted.update(blacklist.repoids)
-    return repos_blacklisted
 
 
 def get_enabled_repoids():
@@ -364,44 +357,34 @@ def get_enabled_repoids():
     return enabled_repoids
 
 
-def get_pesid_to_repoid_map(target_pesids):
+def get_pesid_to_repoid_map(target_pesids, repositories_map_msg):
     """
     Get a dictionary mapping all PESID repositories to their corresponding repoid.
 
     :param target_pesids: The set of target PES IDs needed to be mapped
+    :param repositories_map_msg: RepositoriesMapping message.
     :return: Dictionary mapping the target_pesids to their corresponding repoid
     """
-
-    repositories_map_msgs = api.consume(RepositoriesMapping)
-    repositories_map_msg = next(repositories_map_msgs, None)
-    if list(repositories_map_msgs):
-        api.current_logger().warning('Unexpectedly received more than one RepositoriesMapping message.')
-    if not repositories_map_msg:
-        raise StopActorExecutionError(
-            'Cannot parse RepositoriesMapping data properly',
-            details={'Problem': 'Did not receive a message with mapped repositories'}
-        )
-
     rhui_info = next(api.consume(RHUIInfo), None)
     cloud_provider = rhui_info.provider if rhui_info else ''
 
-    repomap = peseventsscanner_repomap.RepoMapDataHandler(repositories_map_msg, cloud_provider=cloud_provider)
+    repomap_handler = repomap_calc.RepoMapDataHandler(repositories_map_msg, cloud_provider=cloud_provider)
 
     # NOTE: We have to calculate expected target repositories like in the setuptargetrepos actor.
     # It's planned to handle this in different a way in future...
 
     enabled_repoids = get_enabled_repoids()
-    default_channels = peseventsscanner_repomap.get_default_repository_channels(repomap, enabled_repoids)
-    repomap.set_default_channels(default_channels)
+    default_channels = repomap_calc.get_default_repository_channels(repomap_handler, enabled_repoids)
+    repomap_handler.set_default_channels(default_channels)
 
-    exp_pesid_repos = repomap.get_expected_target_pesid_repos(enabled_repoids)
+    exp_pesid_repos = repomap_handler.get_expected_target_pesid_repos(enabled_repoids)
     # FIXME: this is hack now. In case some packages will need a repository
     # with pesid that is not mapped by default regarding the enabled repos,
     # let's use this one representative repository (baseos/appstream) to get
     # data for a guess of the best repository from the requires target pesid..
     # FIXME: this could now fail in case all repos are disabled...
     representative_repo = exp_pesid_repos.get(
-        peseventsscanner_repomap.DEFAULT_PESID[version.get_target_major_version()], None
+        repomap_calc.DEFAULT_PESID[version.get_target_major_version()], None
     )
     if not representative_repo:
         api.current_logger().warning('Cannot determine the representative target base repository.')
@@ -409,7 +392,7 @@ def get_pesid_to_repoid_map(target_pesids):
             'Fallback: Create an artificial representative PESIDRepositoryEntry for the repository mapping'
         )
         representative_repo = PESIDRepositoryEntry(
-            pesid=peseventsscanner_repomap.DEFAULT_PESID[version.get_target_major_version()],
+            pesid=repomap_calc.DEFAULT_PESID[version.get_target_major_version()],
             arch=api.current_actor().configuration.architecture,
             major_version=version.get_target_major_version(),
             repoid='artificial-repoid',
@@ -429,7 +412,7 @@ def get_pesid_to_repoid_map(target_pesids):
         if not representative_repo:
             api.current_logger().warning('Cannot find suitable repository for PES ID: {}'.format(pesid))
             continue
-        pesid_repo = repomap._find_repository_target_equivalent(representative_repo, pesid)
+        pesid_repo = repomap_handler._find_repository_target_equivalent(representative_repo, pesid)
 
         if not pesid_repo:
             api.current_logger().warning('Cannot find suitable repository for PES ID: {}'.format(pesid))
@@ -450,7 +433,7 @@ def get_pesid_to_repoid_map(target_pesids):
     return repositories_mapping
 
 
-def replace_pesids_with_repoids_in_packages(packages, source_pkgs_repoids):
+def replace_pesids_with_repoids_in_packages(packages, source_pkgs_repoids, repositories_map_msg):
     """Replace packages with PESID in their .repository field with ones that have repoid providing the package."""
     # We want to map only PESIDs - if some package had no events, it will its repository set to source system repoid
     packages_with_pesid = {pkg for pkg in packages if pkg.repository not in source_pkgs_repoids}
@@ -458,7 +441,7 @@ def replace_pesids_with_repoids_in_packages(packages, source_pkgs_repoids):
 
     required_target_pesids = {pkg.repository for pkg in packages_with_pesid}
 
-    pesid_to_target_repoid_map = get_pesid_to_repoid_map(required_target_pesids)
+    pesid_to_target_repoid_map = get_pesid_to_repoid_map(required_target_pesids, repositories_map_msg)
 
     packages_with_unknown_target_repoid = {
         pkg
@@ -572,11 +555,19 @@ def include_instructions_from_transaction_configuration(rpm_tasks, transaction_c
                                   modules_to_reset=modules_to_reset)
 
 
-def process():
+def scan_pes_events(repositories_map_msg, blacklisted_repoids=None):
+    """
+    Process PES events and compute RPM transaction tasks.
+
+    :param repositories_map_msg: RepositoriesMapping message.
+    :param blacklisted_repoids: Set of repoids to exclude from target packages. If None, an empty set is used.
+    :returns: Set of target repoids that need to be enabled, or None if no PES events are found.
+    :rtype: Optional[set]
+    """
     # Retrieve data - installed_pkgs, transaction configuration, pes events
     events = get_pes_events('/etc/leapp/files', 'pes-events.json')
     if not events:
-        return
+        return None
 
     releases = get_relevant_releases(events)
     installed_pkgs = get_installed_pkgs()
@@ -595,16 +586,14 @@ def process():
                                                                           events, releases)
 
     # Packages coming out of the events have PESID as their repository, however, we need real repoid
-    target_pkgs = replace_pesids_with_repoids_in_packages(target_pkgs, repoids_of_source_pkgs)
+    target_pkgs = replace_pesids_with_repoids_in_packages(target_pkgs, repoids_of_source_pkgs, repositories_map_msg)
 
     # Apply the desired repository blacklisting
     blacklisted_repoids, target_pkgs = remove_new_packages_from_blacklisted_repos(pkgs_to_begin_computation_with,
-                                                                                  target_pkgs)
+                                                                                  target_pkgs, blacklisted_repoids)
 
     # Look at the target packages and determine what repositories to enable
-    target_repoids = sorted(set(p.repository for p in target_pkgs) - blacklisted_repoids - repoids_of_source_pkgs)
-    repos_to_enable = RepositoriesSetupTasks(to_enable=target_repoids)
-    api.produce(repos_to_enable)
+    pes_requested_repoids = set(p.repository for p in target_pkgs) - blacklisted_repoids - repoids_of_source_pkgs
 
     # Compare the packages on source system and the computed packages on target system and determine what to install
     rpm_tasks = compute_rpm_tasks_from_pkg_set_diff(pkgs_to_begin_computation_with, target_pkgs, pkgs_to_demodularize)
@@ -612,3 +601,5 @@ def process():
                                                                     installed_pkgs)
     if rpm_tasks:
         api.produce(rpm_tasks)
+
+    return pes_requested_repoids

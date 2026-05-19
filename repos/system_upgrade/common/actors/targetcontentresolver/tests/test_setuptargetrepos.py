@@ -8,10 +8,8 @@ from leapp.models import (
     InstalledRPM,
     PESIDRepositoryEntry,
     RepoMapEntry,
-    RepositoriesBlacklisted,
     RepositoriesFacts,
     RepositoriesMapping,
-    RepositoriesSetupTasks,
     RepositoryData,
     RepositoryFile,
     RPM
@@ -36,7 +34,7 @@ def test_minimal_execution(monkeypatch):
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=msgs))
     monkeypatch.setattr(api, 'produce', produce_mocked())
 
-    setuptargetrepos.process()
+    setuptargetrepos.setup_target_repos(msgs[0])
 
 
 def test_custom_repos(monkeypatch):
@@ -54,19 +52,17 @@ def test_custom_repos(monkeypatch):
                                          baseurl='https://.../dist/rhel/blacklisted/8/os',
                                          enabled=True)
 
-    repos_blacklisted = RepositoriesBlacklisted(repoids=['rhel-8-blacklisted-rpms'])
-
     repositories_mapping = RepositoriesMapping(
         mapping=[],
         repositories=[]
     )
 
-    msgs = [custom, blacklisted, repos_blacklisted, repositories_mapping]
+    msgs = [custom, blacklisted, repositories_mapping]
 
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=msgs))
     monkeypatch.setattr(api, 'produce', produce_mocked())
 
-    setuptargetrepos.process()
+    setuptargetrepos.setup_target_repos(repositories_mapping, blacklisted_repoids={'rhel-8-blacklisted-rpms'})
 
     assert api.produce.called
 
@@ -77,19 +73,19 @@ def test_custom_repos(monkeypatch):
 
 def test_repositories_setup_tasks(monkeypatch):
     """
-    Tests whether the actor propagates repositories received via a RepositoriesSetupTasks message
+    Tests whether the actor propagates requested repoids
     to the resulting TargetRepositories (and blacklist filtering is applied to them).
     """
-    repositories_setup_tasks = RepositoriesSetupTasks(to_enable=['rhel-8-server-rpms',
-                                                                 'rhel-8-blacklisted-rpms'])
-    repos_blacklisted = RepositoriesBlacklisted(repoids=['rhel-8-blacklisted-rpms'])
     repositories_mapping = RepositoriesMapping(mapping=[], repositories=[])
-    msgs = [repositories_setup_tasks, repos_blacklisted, repositories_mapping]
+    msgs = [repositories_mapping]
 
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=msgs))
     monkeypatch.setattr(api, 'produce', produce_mocked())
 
-    setuptargetrepos.process()
+    setuptargetrepos.setup_target_repos(
+        repositories_mapping,
+        blacklisted_repoids={'rhel-8-blacklisted-rpms'},
+        external_repoids_requests={'rhel-8-server-rpms', 'rhel-8-blacklisted-rpms'})
 
     assert api.produce.called
 
@@ -187,9 +183,7 @@ def test_repos_mapping_for_distro(monkeypatch, src_distro, dst_distro):
         ]
     )
 
-    repos_blacklisted = RepositoriesBlacklisted(repoids=['{}-9-blacklisted-rpms'.format(dst_distro)])
-
-    msgs = [facts, repomap, repos_blacklisted, installed_rpms]
+    msgs = [facts, repomap, installed_rpms]
 
     monkeypatch.setattr(
         api,
@@ -198,7 +192,7 @@ def test_repos_mapping_for_distro(monkeypatch, src_distro, dst_distro):
     )
     monkeypatch.setattr(api, 'produce', produce_mocked())
 
-    setuptargetrepos.process()
+    setuptargetrepos.setup_target_repos(repomap, blacklisted_repoids={'{}-9-blacklisted-rpms'.format(dst_distro)})
     assert api.produce.called
 
     distro_repos = api.produce.model_instances[0].distro_repos
@@ -221,3 +215,58 @@ def test_repos_mapping_for_distro(monkeypatch, src_distro, dst_distro):
         assert produced_rhel_repoids == expected_repoids
     else:
         assert not rhel_repos
+
+
+def test_pes_requested_repoids_added_to_target(monkeypatch):
+    """
+    Tests whether PES-requested repoids are added to the target repositories
+    and that blacklisted PES-requested repoids are excluded.
+    """
+    repositories_mapping = RepositoriesMapping(mapping=[], repositories=[])
+    msgs = [repositories_mapping]
+
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=msgs))
+    monkeypatch.setattr(api, 'produce', produce_mocked())
+
+    setuptargetrepos.setup_target_repos(
+        repositories_mapping,
+        pes_requested_repoids={'pes-repo-1', 'pes-repo-2', 'pes-blocked'},
+        blacklisted_repoids={'pes-blocked'},
+    )
+
+    assert api.produce.called
+
+    distro_repos = api.produce.model_instances[0].distro_repos
+    produced_repoids = {repo.repoid for repo in distro_repos}
+
+    assert 'pes-repo-1' in produced_repoids
+    assert 'pes-repo-2' in produced_repoids
+    assert 'pes-blocked' not in produced_repoids
+
+
+def test_pes_and_external_repoids_combined(monkeypatch):
+    """
+    Tests whether PES-requested and external repoids are combined
+    in the final target repositories, with blacklist filtering applied to both.
+    """
+    repositories_mapping = RepositoriesMapping(mapping=[], repositories=[])
+    msgs = [repositories_mapping]
+
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=msgs))
+    monkeypatch.setattr(api, 'produce', produce_mocked())
+
+    setuptargetrepos.setup_target_repos(
+        repositories_mapping,
+        pes_requested_repoids={'pes-repo'},
+        blacklisted_repoids={'blocked-repo'},
+        external_repoids_requests={'ext-repo', 'blocked-repo'},
+    )
+
+    assert api.produce.called
+
+    distro_repos = api.produce.model_instances[0].distro_repos
+    produced_repoids = {repo.repoid for repo in distro_repos}
+
+    assert 'pes-repo' in produced_repoids
+    assert 'ext-repo' in produced_repoids
+    assert 'blocked-repo' not in produced_repoids
