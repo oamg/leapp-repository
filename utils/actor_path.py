@@ -30,7 +30,17 @@ def main():
         # the scanning and resolving done below
         manager = RepositoryManager()
         for repo in repos:
-            manager.add_repo(scan_repo(os.path.join(SYSUPG_REPO, repo)))
+            repo_path = os.path.join(SYSUPG_REPO, repo)
+            try:
+                repo_obj = scan_repo(repo_path)
+            except KeyError:  # this is not a nice API, should handle this better in the framework
+                sys.stderr.write(
+                    "ERROR: Failed to scan repository at {}, make sure there"
+                    " is a valid leapp repository at the path.\n".format(repo_path)
+                )
+                return
+
+            manager.add_repo(repo_obj)
         _resolve_repository_links(manager=manager, include_locals=True)
         manager.load()
     else:
