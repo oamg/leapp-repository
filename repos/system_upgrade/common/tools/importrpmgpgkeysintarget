@@ -1,0 +1,41 @@
+#!/usr/bin/bash -ef
+
+log_error() {
+  echo >&2 "Error: $1"
+}
+
+log_info() {
+  echo >&2 "Info: $1"
+}
+
+if [ "$#" -lt 2 ]; then
+    log_error "Missing arguments, usage: <target_userspace_dir> <gpg_keys_dir_relative_to_userspace_dir>"
+    exit 1
+elif [ "$#" -ge 3 ]; then
+    log_error "Expected two arguments, received $#. Possibly unescaped whitespaces? '$*'"
+    exit 1
+fi
+
+USERSPACE_DIR="$1"
+USERSPACE_GPG_KEYS_DIR="$2"
+REAL_GPG_KEYS_DIR="$USERSPACE_DIR/$USERSPACE_GPG_KEYS_DIR"
+
+if [ ! -e "$REAL_GPG_KEYS_DIR" ]; then
+    log_error "The $REAL_GPG_KEYS_DIR directory does not exist."
+    exit 1
+fi
+
+error_flag=0
+NSPAWN="systemd-nspawn --register=no --quiet --keep-unit --capability=all --pipe -D $USERSPACE_DIR --bind /:/installroot"
+
+# The 'done' is followed by the command inside process substitution
+while IFS= read -r -d '' key_file; do
+    log_info "Importing GPG keys from: $key_file"
+
+    if ! $NSPAWN /usr/bin/rpmkeys --import --root /installroot "$key_file"; then
+        error_flag=2  # This NOW works! It updates the main shell's variable.
+        log_error "Unable to import GPG keys: $key_file"
+    fi
+done < <($NSPAWN find -L "$USERSPACE_GPG_KEYS_DIR" -type f -print0)
+
+exit $error_flag
