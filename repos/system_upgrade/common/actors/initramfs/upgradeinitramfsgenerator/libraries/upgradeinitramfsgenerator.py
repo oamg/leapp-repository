@@ -14,6 +14,7 @@ from leapp.models import (
     BootContent,
     LiveModeConfig,
     LVMConfig,
+    RaidInfo,
     TargetOSInstallationImage,
     TargetUserSpaceInfo,
     TargetUserSpaceUpgradeTasks,
@@ -384,6 +385,10 @@ def generate_initram_disk(context):
 
     if next(api.consume(LVMConfig), None):
         env_variables.append('LEAPP_DRACUT_LVMCONF="1"')
+
+    raid_info = next(api.consume(RaidInfo), None)
+    if raid_info and raid_info.md_arrays:
+        env_variables.append('LEAPP_DRACUT_MDADMCONF="1"')
 
     env_variables = ' '.join(env_variables)
     env_variables = env_variables.format(
