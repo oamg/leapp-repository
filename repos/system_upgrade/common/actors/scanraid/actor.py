@@ -1,0 +1,21 @@
+from leapp.actors import Actor
+from leapp.libraries.actor import scanraid
+from leapp.models import DistributionSignedRPM, RaidInfo
+from leapp.tags import FactsPhaseTag, IPUWorkflowTag
+
+
+class ScanRaid(Actor):
+    """
+    Detect whether software RAID is in use on the system.
+
+    Checks if the mdadm package is installed and whether any MD arrays
+    are currently assembled and active by inspecting /proc/mdstat.
+    """
+
+    name = 'scan_raid'
+    consumes = (DistributionSignedRPM,)
+    produces = (RaidInfo,)
+    tags = (FactsPhaseTag, IPUWorkflowTag)
+
+    def process(self):
+        scanraid.process()
