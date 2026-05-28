@@ -1,3 +1,8 @@
+---
+name: leapp-actor-dev
+description: Develop or modify leapp-repository actors. Covers actor structure, phase selection, placement rules, and key constraints.
+---
+
 # Developing Leapp Actors
 
 ## Actor structure

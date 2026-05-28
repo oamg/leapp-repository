@@ -1,3 +1,8 @@
+---
+name: leapp-unit-tests
+description: Write or fix unit tests for leapp-repository actors and shared libraries. Covers test placement, mocking patterns, and project conventions.
+---
+
 # Writing Unit Tests
 
 
