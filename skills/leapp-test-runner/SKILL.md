@@ -1,3 +1,8 @@
+---
+name: leapp-test-runner
+description: Run tests and linters for leapp-repository. Covers container-based CI testing, single-actor fast tests, and lint commands.
+---
+
 # Running Tests and Linters
 
 All non-container commands (`make lint`, `make test_no_lint`, `make fast_lint`, `make dev_test_no_lint`) require a local virtualenv and `REPOSITORIES` envar (e.g. `REPOSITORIES=common,el9toel10`). Create the virtualenv with `make install-deps` (RHEL/CentOS) or `make install-deps-fedora` (Fedora) — the Makefile handles activation internally, don't source the venv manually. Set `PYTHON_VENV=pythonX.X` to choose the Python version (default: `python3.6`). Container commands are self-contained and recommended as the default.
