@@ -132,19 +132,6 @@ def test_is_supported_version(monkeypatch, result, src_ver, is_saphana):
     assert version.is_supported_version() == result
 
 
-@pytest.mark.parametrize('result,kernel,release_id', [
-    (False, '3.10.0-790.el7.x86_64', 'rhel'),
-    (False, '3.10.0-790.el7.x86_64', 'fedora'),
-    (False, '3.10.0-790.35.2.rt666.1133.el7.x86_64', 'fedora'),
-    (True, '3.10.0-790.35.2.rt666.1133.el7.x86_64', 'rhel'),
-])
-@suppress_deprecation(version.is_rhel_realtime)
-def test_is_rhel_realtime(monkeypatch, result, kernel, release_id):
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(src_ver='7.9', kernel=kernel,
-                                                                 release_id=release_id))
-    assert version.is_rhel_realtime() == result
-
-
 @pytest.mark.parametrize('result,sys_version', [
     ('7', '7.1.0'),
     ('7', '7.9'),
