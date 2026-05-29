@@ -171,6 +171,19 @@ def matches_version(match_list, detected):
     """
     Check if the `detected` version meets the criteria specified in `match_list`.
 
+    For CentOS Stream (which natively uses only major versions), the match list
+    and the detected version are automatically adjusted to ensure intuitive evaluation:
+
+    - If `match_list` contains only major versions, the comparison is restricted
+      to the major version component:
+        version.matches_version(['> 8', '<= 9'], '9.5')  # True
+
+    - If `match_list` contains major.minor versions but `detected` is a major-only
+      version, the function resolves the input to its defined "virtual version"
+      before evaluation:
+        # e.g., if the virtual version for '9' is defined as '9.5'
+        version.matches_version(['> 8.10', '<= 9.7'], '9')  # True
+
     :param match_list: specification of versions to check against
     :type match_list: list or tuple of strings in one of the two following forms:
                       ``['>'|'>='|'<'|'<='] <integer>.<integer>`` form, where elements are ANDed,

@@ -1,6 +1,7 @@
 from collections import namedtuple
 
 from leapp.exceptions import StopActorExecutionError
+from leapp.libraries.common.config.version import matches_version
 from leapp.libraries.stdlib import api, CalledProcessError, run
 
 KernelPkgInfo = namedtuple('KernelPkgInfo', ('name', 'version', 'release', 'arch', 'nevra'))
@@ -14,6 +15,8 @@ class KernelType:
     REALTIME = 'realtime'
 
 
+# TODO: rename rhel_version to something distro agnostic in the new function
+# when this is deprecated
 def determine_kernel_type_from_uname(rhel_version, kernel_uname_r):
     """
     Determine kernel type from given kernel release (uname-r).
@@ -23,12 +26,7 @@ def determine_kernel_type_from_uname(rhel_version, kernel_uname_r):
     :returns: Kernel type based on a given uname_r
     :rtype: KernelType
     """
-    version_fragments = rhel_version.split('.')
-    major_ver = version_fragments[0]
-    minor_ver = version_fragments[1] if len(version_fragments) > 1 else '0'
-    rhel_version = (major_ver, minor_ver)
-
-    if rhel_version <= ('9', '2'):
+    if matches_version(['<= 9.2'], rhel_version):
         uname_r_infixes = {
             '.rt': KernelType.REALTIME
         }
