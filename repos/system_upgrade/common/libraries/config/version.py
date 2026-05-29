@@ -3,7 +3,6 @@ import re
 
 import six
 
-from leapp.libraries.common import kernel as kernel_lib
 from leapp.libraries.stdlib import api
 from leapp.utils.deprecation import deprecated
 
@@ -333,28 +332,6 @@ def is_rhel_alt():
     conf = api.current_actor().configuration
     # rhel-alt is rhel 7 with kernel 4.x - there is not better detection...
     return conf.os_release.release_id == 'rhel' and conf.kernel[0] == '4'
-
-
-@deprecated(since='2023-08-15', message='This information is now provided by KernelInfo message.')
-def is_rhel_realtime():
-    """
-    Check whether the original system is RHEL Real Time.
-
-    Currently the check is based on the release of the original booted kernel.
-    In case of RHEL, we are sure the release contains the ".rt" string and
-    non-realtime kernels don't. Let's use this minimalistic check for now.
-    In future, we could detect whether the system is preemptive or not based
-    on properties of the kernel (e.g. uname -a tells that information).
-
-    :return: `True` if the orig system is RHEL RT and `False` otherwise.
-    :rtype: bool
-    """
-    conf = api.current_actor().configuration
-    if conf.os_release.release_id != 'rhel':
-        return False
-
-    kernel_type = kernel_lib.determine_kernel_type_from_uname(get_source_version(), conf.kernel)
-    return kernel_type == kernel_lib.KernelType.REALTIME
 
 
 def is_supported_version():
