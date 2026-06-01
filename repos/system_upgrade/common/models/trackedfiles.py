@@ -40,6 +40,11 @@ class FileInfo(Model):
     In such a case the value is always false.
     """
 
+    real_path = fields.String(default="")
+    """
+    The resolved (real) path of the file. Empty string if path does not exist.
+    """
+
 
 class TrackedFilesInfoSource(Model):
     """
