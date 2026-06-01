@@ -10,6 +10,7 @@ from leapp.models import FileInfo, TrackedFilesInfoSource
 TRACKED_FILES = {
     'common': [
         '/etc/pki/tls/openssl.cnf',
+        '/var/run',
     ],
     '8': [
     ],
@@ -56,10 +57,12 @@ def is_modified(input_file):
 
 
 def scan_file(input_file):
+    exists = os.path.exists(input_file)
     data = {
         'path': input_file,
-        'exists': os.path.exists(input_file),
+        'exists': exists,
         'rpm_name': _get_rpm_name(input_file),
+        'real_path': os.path.realpath(input_file) if exists else '',
     }
 
     if data['rpm_name']:

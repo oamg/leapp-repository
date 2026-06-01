@@ -66,22 +66,27 @@ def test_get_rpm_name_error(monkeypatch):
 
 
 @pytest.mark.parametrize(
-    ('input_file', 'exists', 'rpm_name', 'is_modified'),
+    ('input_file', 'exists', 'rpm_name', 'is_modified', 'real_path'),
     (
-        ('/not_existing_file', False, '', False),
-        ('/not_existing_file_rpm_owned', False, 'rpm', False),
-        ('/not_existing_file_rpm_owned_modified', False, 'rpm', True),
-        ('/existing_file_not_modified', True, '', False),
-        ('/existing_file_owned_by_rpm_not_modified', True, 'rpm', False),
-        ('/existing_file_owned_by_rpm_modified', True, 'rpm', True),
+        ('/not_existing_file', False, '', False, ''),
+        ('/not_existing_file_rpm_owned', False, 'rpm', False, ''),
+        ('/not_existing_file_rpm_owned_modified', False, 'rpm', True, ''),
+        ('/existing_file_not_modified', True, '', False, '/existing_file_not_modified'),
+        ('/existing_file_owned_by_rpm_not_modified', True, 'rpm', False, '/existing_file_owned_by_rpm_not_modified'),
+        ('/existing_file_owned_by_rpm_modified', True, 'rpm', True, '/existing_file_owned_by_rpm_modified'),
+        ('/existing_symlink', True, '', False, '/target'),
     )
 )
-def test_scan_file(monkeypatch, input_file, exists, rpm_name, is_modified):
+def test_scan_file(monkeypatch, input_file, exists, rpm_name, is_modified, real_path):
     monkeypatch.setattr(scansourcefiles, 'is_modified', lambda _: is_modified)
     monkeypatch.setattr(scansourcefiles, '_get_rpm_name', lambda _: rpm_name)
     monkeypatch.setattr(os.path, 'exists', lambda _: exists)
+    monkeypatch.setattr(os.path, 'realpath', lambda _: real_path)
 
-    expected_model_output = FileInfo(path=input_file, exists=exists, rpm_name=rpm_name, is_modified=is_modified)
+    expected_model_output = FileInfo(
+        path=input_file, exists=exists, rpm_name=rpm_name,
+        is_modified=is_modified, real_path=real_path
+    )
     assert scansourcefiles.scan_file(input_file) == expected_model_output
 
 
