@@ -9,6 +9,28 @@ from leapp.models import LiveModeConfig, StorageInfo, TargetUserSpaceInfo, Upgra
 
 BIND_MOUNT_SYSROOT_BOOT_UNIT = 'boot.mount'
 
+# Virtual/pseudo filesystem types that must not be mounted during the upgrade initramfs phase.
+# Their mount points (e.g. /dev/hugepages2M) may not exist under /sysroot, causing the initramfs
+# systemd to fail. These filesystems are kernel-managed and are not needed for the upgrade itself.
+# Mirrors the OVERLAY_DO_NOT_MOUNT set in overlaygen.py for the same reason.
+PSEUDO_FS_TYPES = frozenset([
+    'hugetlbfs',
+    'tmpfs',
+    'devtmpfs',
+    'devpts',
+    'sysfs',
+    'proc',
+    'cgroup',
+    'cgroup2',
+    'securityfs',
+    'selinuxfs',
+    'debugfs',
+    'mqueue',
+    'pstore',
+    'efivarfs',
+    'bpf',
+])
+
 
 def run_systemd_fstab_generator(output_directory):
     api.current_logger().debug(
@@ -86,6 +108,45 @@ def _prefix_mount_unit_with_sysroot(mount_unit_path, new_unit_destination):
     api.current_logger().debug(
         'Done. Modified mount unit successfully written to {}'.format(new_unit_destination)
     )
+
+
+def _get_mount_unit_fs_type(unit_path):
+    """Return the filesystem type declared in a systemd mount unit, or None."""
+    try:
+        with open(unit_path) as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith('Type='):
+                    return line.split('=', 1)[1].strip()
+    except OSError:
+        pass
+    return None
+
+
+def remove_pseudo_fs_mount_units(dir_with_mount_units):
+    """
+    Remove mount units for virtual/pseudo filesystems from the upgrade initramfs workspace.
+
+    systemd-fstab-generator produces mount units for every fstab entry, including pseudo
+    filesystems such as hugetlbfs (e.g. /dev/hugepages2M, /dev/hugepages1G). When these
+    units are later prefixed with /sysroot and included in the upgrade initramfs, systemd
+    tries to mount them at paths that may not exist under /sysroot, causing the upgrade
+    initramfs boot to fail with "mount point does not exist" errors.
+
+    These filesystems are managed by the kernel and systemd on the running target system
+    and do not need to be set up during the upgrade initramfs phase.
+    """
+    for unit_name in list(os.listdir(dir_with_mount_units)):
+        if not unit_name.endswith('.mount'):
+            continue
+        unit_path = os.path.join(dir_with_mount_units, unit_name)
+        fs_type = _get_mount_unit_fs_type(unit_path)
+        if fs_type in PSEUDO_FS_TYPES:
+            api.current_logger().debug(
+                'Removing mount unit %s (Type=%s) - pseudo filesystem not needed in upgrade initramfs.',
+                unit_name, fs_type
+            )
+            _delete_file(unit_path)
 
 
 def prefix_all_mount_units_with_sysroot(dir_containing_units):
@@ -366,6 +427,7 @@ def setup_storage_initialization():
         with tempfile.TemporaryDirectory(dir='/var/lib/leapp/', prefix='tmp_systemd_fstab_') as workspace_path:
             run_systemd_fstab_generator(workspace_path)
             remove_units_for_targets_that_are_already_mounted_by_dracut(workspace_path)
+            remove_pseudo_fs_mount_units(workspace_path)
             prefix_all_mount_units_with_sysroot(workspace_path)
             inject_bundled_units(workspace_path)
             fix_symlinks_in_targets(workspace_path)
