@@ -134,6 +134,50 @@ def test_prefix_all_mount_units_with_sysroot(monkeypatch):
         assert should_be_deleted == was_deleted
 
 
+def test_parse_unit_missing_file(monkeypatch, leapp_tmpdir):
+    """A non-existent unit file results in an empty dict without raising."""
+    monkeypatch.setattr(api, 'current_logger', logger_mocked())
+
+    unit_path = os.path.join(leapp_tmpdir, 'does-not-exist.mount')
+
+    assert mount_unit_generator.parse_unit(unit_path) == {}
+    assert api.current_logger.dbgmsg
+
+
+def test_parse_unit_parses_options_and_type(leapp_tmpdir):
+    """Options and Type keys are extracted, Options being split into a list."""
+    unit_path = os.path.join(leapp_tmpdir, 'home.mount')
+    with open(unit_path, 'w') as unit_file:
+        unit_file.write(
+            '[Unit]\n'
+            'Description=Mount unit for /home\n'
+            '\n'
+            '[Mount]\n'
+            'What=/dev/sda1\n'
+            'Where=/home\n'
+            'Type=xfs\n'
+            'Options=defaults,nofail,x-systemd.device-timeout=0\n'
+        )
+
+    unit_properties = mount_unit_generator.parse_unit(unit_path)
+
+    assert unit_properties == {
+        'Type': 'xfs',
+        'Options': ['defaults', 'nofail', 'x-systemd.device-timeout=0'],
+    }
+
+
+def test_parse_unit_strips_whitespace_around_options(leapp_tmpdir):
+    """Whitespace surrounding comma-separated Options values is stripped."""
+    unit_path = os.path.join(leapp_tmpdir, 'var.mount')
+    with open(unit_path, 'w') as unit_file:
+        unit_file.write('Options = nofail , x-systemd.device-timeout=0 \n')
+
+    unit_properties = mount_unit_generator.parse_unit(unit_path)
+
+    assert unit_properties == {'Options': ['nofail', 'x-systemd.device-timeout=0']}
+
+
 @pytest.mark.parametrize('dirname', (
     'local-fs.target.requires',
     'local-fs.target.wants',
@@ -328,18 +372,56 @@ def test_injection_of_sysroot_boot_bindmount_unit(monkeypatch, has_separate_boot
         assert was_copyfile_for_sysroot_boot_called
 
 
-TEST_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'files')
+@pytest.mark.parametrize('dirname', (
+    'local-fs.target.requires',
+    'local-fs.target.wants',
+))
+def test_fix_symlinks_in_dir_skips_pseudo_fs_in_requires(monkeypatch, dirname):
+    """Pseudo FS mount units should be excluded from .requires directories."""
 
+    DIR_PATH = os.path.join('/test/dir/', dirname)
 
-@pytest.mark.parametrize(
-    ('unit_filename', 'is_nofail'),
-    [
-        ('unit.mount', False),
-        ('unit-nofail.mount', True),
-        ('non-existing-unit.mount', False),  # This file does not exist in the files/
+    def mock_rmtree(dir_path):
+        assert dir_path == DIR_PATH
+
+    def mock_mkdir(dir_path):
+        assert dir_path == DIR_PATH
+
+    def mock_listdir(dir_path):
+        return ['sysroot-home.mount', 'sysroot-hugepages.mount', 'not-a-mount.service', 'sysroot-nofail.mount']
+
+    def mock_os_path_exist(dir_path):
+        assert dir_path == DIR_PATH
+        return dir_path == DIR_PATH
+
+    def mock_parse_unit(unit_path):
+        return {
+            'Type': 'hugetlbfs' if 'hugepages' in unit_path else 'xfs',
+            'Options': ['nofail'] if 'nofail' in unit_path else ['']
+        }
+
+    expected_calls = [
+        ['ln', '-s', '../sysroot-home.mount', os.path.join(DIR_PATH, 'sysroot-home.mount')],
     ]
-)
-def test_is_unit_marked_with_nofail(unit_filename, is_nofail):
-    unit_path = os.path.join(TEST_DIR, unit_filename)
-    determined_no_fail = mount_unit_generator.is_unit_marked_with_nofail(unit_path)
-    assert determined_no_fail == is_nofail
+    if dirname.endswith('.wants'):
+        expected_calls.extend((
+            ['ln', '-s', '../sysroot-hugepages.mount', os.path.join(DIR_PATH, 'sysroot-hugepages.mount')],
+            ['ln', '-s', '../sysroot-nofail.mount', os.path.join(DIR_PATH, 'sysroot-nofail.mount')]
+        ))
+
+    def mock_run(command):
+        assert command in expected_calls
+        return {
+            "stdout": "",
+            "stderr": "",
+            "exit_code": 0,
+        }
+
+    monkeypatch.setattr('shutil.rmtree', mock_rmtree)
+    monkeypatch.setattr('os.mkdir', mock_mkdir)
+    monkeypatch.setattr('os.listdir', mock_listdir)
+    monkeypatch.setattr('os.path.exists', mock_os_path_exist)
+    monkeypatch.setattr(mount_unit_generator, 'run', mock_run)
+    monkeypatch.setattr(mount_unit_generator, 'parse_unit', mock_parse_unit)
+
+    mount_unit_generator._fix_symlinks_in_dir('/test/dir', dirname)

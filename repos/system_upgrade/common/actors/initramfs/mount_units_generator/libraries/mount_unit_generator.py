@@ -9,6 +9,28 @@ from leapp.models import LiveModeConfig, StorageInfo, TargetUserSpaceInfo, Upgra
 
 BIND_MOUNT_SYSROOT_BOOT_UNIT = 'boot.mount'
 
+# Virtual/pseudo filesystem types that should be treated as nofail during the upgrade initramfs phase.
+# Their mount units are kept but placed only in .wants (not .requires) directories, so systemd
+# will attempt to mount them but continue booting if the mount fails (e.g. mount point does not
+# exist under /sysroot).
+PSEUDO_FS_TYPES = frozenset([
+    'hugetlbfs',
+    'tmpfs',
+    'devtmpfs',
+    'devpts',
+    'sysfs',
+    'proc',
+    'cgroup',
+    'cgroup2',
+    'securityfs',
+    'selinuxfs',
+    'debugfs',
+    'mqueue',
+    'pstore',
+    'efivarfs',
+    'bpf',
+])
+
 
 def run_systemd_fstab_generator(output_directory):
     api.current_logger().debug(
@@ -110,25 +132,33 @@ def prefix_all_mount_units_with_sysroot(dir_containing_units):
         api.current_logger().debug('Original mount unit {} removed.'.format(unit_file_path))
 
 
-def is_unit_marked_with_nofail(unit_path: str) -> bool:
+def parse_unit(unit_path: str) -> dict:
     try:
         with open(unit_path) as in_file:
             lines = [line.strip() for line in in_file.readlines()]
     except OSError:
         api.current_logger().debug(
-            'Could not read the unit {} to determine whether it is nofail.'.format(unit_path)
+            'Could not read the unit {} to parse it contents.'.format(unit_path)
         )
-        return False  # This way, the unit will end up in target's '.requires', so it is a safe choice
+        return {}
+
+    unit_properties = {}
 
     for line in lines:
+        if not line.startswith(('Options', 'Type')):
+            continue
+        line_fragments = line.split('=', 1)
+        if len(line_fragments) <= 1:
+            continue  # Should not happen
+
+        option_value = [opt.strip() for opt in line_fragments[1].split(',')]
+
         if line.startswith('Options'):
-            line_fragments = line.split('=', 1)
-            if len(line_fragments) <= 1:
-                continue  # Should not happen
-            used_options = [opt.strip() for opt in line_fragments[1].split(',')]
-            if 'nofail' in used_options:
-                return True
-    return False
+            unit_properties['Options'] = option_value
+        elif line.startswith('Type'):
+            unit_properties['Type'] = option_value[0]
+
+    return unit_properties
 
 
 def _fix_symlinks_in_dir(dir_containing_mount_units, target_dir):
@@ -164,8 +194,11 @@ def _fix_symlinks_in_dir(dir_containing_mount_units, target_dir):
         if not unit_file.endswith('.mount'):
             continue
 
-        is_nofail = is_unit_marked_with_nofail(os.path.join(dir_containing_mount_units, unit_file))
-        if is_nofail and will_units_be_required:
+        unit_full_path = os.path.join(dir_containing_mount_units, unit_file)
+        unit_properties = parse_unit(unit_full_path)
+        is_nofail = 'nofail' in unit_properties.get('Options', tuple())
+        is_pseudo_fs = unit_properties.get('Type') in PSEUDO_FS_TYPES
+        if (is_nofail or is_pseudo_fs) and will_units_be_required:
             continue
 
         place_fastlink_at = os.path.join(target_dir_path, unit_file)
@@ -226,6 +259,7 @@ def fix_symlinks_in_targets(dir_containing_mount_units):
         'remote-fs-pre.target.requires',
         'remote-fs-pre.target.wants',
     ]
+
     for tdir in dir_list:
         _fix_symlinks_in_dir(dir_containing_mount_units, tdir)
 
