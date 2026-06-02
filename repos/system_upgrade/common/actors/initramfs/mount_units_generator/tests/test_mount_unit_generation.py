@@ -328,6 +328,42 @@ def test_injection_of_sysroot_boot_bindmount_unit(monkeypatch, has_separate_boot
         assert was_copyfile_for_sysroot_boot_called
 
 
+def test_remove_pseudo_fs_mount_units(monkeypatch, tmp_path):
+    """Pseudo FS mount units (hugetlbfs, tmpfs, etc.) should be removed entirely."""
+    hugetlb_unit = tmp_path / 'dev-hugepages2M.mount'
+    hugetlb_unit.write_text('[Unit]\nDescription=Huge Pages\n[Mount]\nWhere=/dev/hugepages2M\nType=hugetlbfs\n')
+
+    xfs_unit = tmp_path / 'home.mount'
+    xfs_unit.write_text('[Unit]\nDescription=Home\n[Mount]\nWhere=/home\nType=xfs\n')
+
+    monkeypatch.setattr(api, 'current_logger', logger_mocked())
+
+    mount_unit_generator.remove_pseudo_fs_mount_units(str(tmp_path))
+
+    assert not hugetlb_unit.exists()
+    assert xfs_unit.exists()
+
+
+def test_remove_pseudo_fs_mount_units_keeps_regular(monkeypatch, tmp_path):
+    """Regular filesystem mount units should not be removed."""
+    xfs_unit = tmp_path / 'var.mount'
+    xfs_unit.write_text('[Unit]\n[Mount]\nWhere=/var\nType=xfs\n')
+
+    ext4_unit = tmp_path / 'data.mount'
+    ext4_unit.write_text('[Unit]\n[Mount]\nWhere=/data\nType=ext4\n')
+
+    service_file = tmp_path / 'foo.service'
+    service_file.write_text('[Unit]\nDescription=foo\n')
+
+    monkeypatch.setattr(api, 'current_logger', logger_mocked())
+
+    mount_unit_generator.remove_pseudo_fs_mount_units(str(tmp_path))
+
+    assert xfs_unit.exists()
+    assert ext4_unit.exists()
+    assert service_file.exists()
+
+
 TEST_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'files')
 
 

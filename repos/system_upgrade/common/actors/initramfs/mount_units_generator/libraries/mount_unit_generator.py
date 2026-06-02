@@ -9,6 +9,24 @@ from leapp.models import LiveModeConfig, StorageInfo, TargetUserSpaceInfo, Upgra
 
 BIND_MOUNT_SYSROOT_BOOT_UNIT = 'boot.mount'
 
+PSEUDO_FS_TYPES = frozenset([
+    'hugetlbfs',
+    'tmpfs',
+    'devtmpfs',
+    'devpts',
+    'sysfs',
+    'proc',
+    'cgroup',
+    'cgroup2',
+    'securityfs',
+    'selinuxfs',
+    'debugfs',
+    'mqueue',
+    'pstore',
+    'efivarfs',
+    'bpf',
+])
+
 
 def run_systemd_fstab_generator(output_directory):
     api.current_logger().debug(
@@ -86,6 +104,19 @@ def _prefix_mount_unit_with_sysroot(mount_unit_path, new_unit_destination):
     api.current_logger().debug(
         'Done. Modified mount unit successfully written to {}'.format(new_unit_destination)
     )
+
+
+def _get_mount_unit_fs_type(unit_path):
+    """Return the filesystem type declared in a systemd mount unit, or None."""
+    try:
+        with open(unit_path) as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith('Type='):
+                    return line.split('=', 1)[1].strip()
+    except OSError:
+        pass
+    return None
 
 
 def prefix_all_mount_units_with_sysroot(dir_containing_units):
@@ -226,6 +257,7 @@ def fix_symlinks_in_targets(dir_containing_mount_units):
         'remote-fs-pre.target.requires',
         'remote-fs-pre.target.wants',
     ]
+
     for tdir in dir_list:
         _fix_symlinks_in_dir(dir_containing_mount_units, tdir)
 
@@ -278,6 +310,28 @@ def copy_units_into_system_location(upgrade_container_ctx, dir_with_our_mount_un
             copied_files.append(dst_file[prefix_len_to_drop:])
 
     return copied_files
+
+
+def remove_pseudo_fs_mount_units(dir_with_our_mount_units):
+    """
+    Remove mount units for virtual/pseudo filesystems that are not needed during the upgrade.
+
+    Pseudo filesystem entries (hugetlbfs, tmpfs, etc.) from the source system's /etc/fstab
+    become mount units whose target directories may not exist under /sysroot, causing boot
+    failures.  These filesystems serve no purpose during the upgrade initramfs phase, so
+    the simplest and safest approach is to drop them entirely.
+    """
+    for unit_file in os.listdir(dir_with_our_mount_units):
+        if not unit_file.endswith('.mount'):
+            continue
+        unit_path = os.path.join(dir_with_our_mount_units, unit_file)
+        fs_type = _get_mount_unit_fs_type(unit_path)
+        if fs_type in PSEUDO_FS_TYPES:
+            api.current_logger().debug(
+                'Removing pseudo filesystem mount unit {} (type={}) - not needed during upgrade.'
+                .format(unit_file, fs_type)
+            )
+            _delete_file(unit_path)
 
 
 def remove_units_for_targets_that_are_already_mounted_by_dracut(dir_with_our_mount_units):
@@ -365,6 +419,7 @@ def setup_storage_initialization():
     with mounting.NspawnActions(base_dir=userspace_info.path) as upgrade_container_ctx:
         with tempfile.TemporaryDirectory(dir='/var/lib/leapp/', prefix='tmp_systemd_fstab_') as workspace_path:
             run_systemd_fstab_generator(workspace_path)
+            remove_pseudo_fs_mount_units(workspace_path)
             remove_units_for_targets_that_are_already_mounted_by_dracut(workspace_path)
             prefix_all_mount_units_with_sysroot(workspace_path)
             inject_bundled_units(workspace_path)
