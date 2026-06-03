@@ -109,6 +109,45 @@ class RepoMapData:
 
         return map_list
 
+    def validate_target_pesids_for_ipu(self, target_distro, arch):
+        """
+        Validate that all PESIDs are associated with a repository
+
+        If a PESID is mapped as a target PESID in the mapping section, check
+        that the PESID is associated with some repository for the given IPU
+        i.e. a repository matching the given source and target distro and
+        architecture and the target major version exists in the repositories
+        section.
+
+        The check doesn't really make sense for a PESID mapped as a source,
+        because it not being present in repositories section for the given IPU
+        can be intentional and is valid.
+        """
+        # TODO maybe take into account just the current source/target version?
+        # But we can check them without further input unlike the distro and
+        # arch.
+        repo_lookup = set()
+        for repo in self.repositories:
+            repo_lookup.add((repo.pesid, repo.major_version, repo.distro, repo.arch))
+
+        for upg_path, mappings in self.mapping.items():
+            target_ver = upg_path.split(':')[1]
+
+            for _source_pesid, target_pesids_by_distro in mappings.items():
+                default = target_pesids_by_distro['default']
+                pesids_for_distro = target_pesids_by_distro.get(target_distro, default)
+
+                for pesid in pesids_for_distro:
+                    if (pesid, target_ver, target_distro, arch) not in repo_lookup:
+                        raise ValueError(
+                            "Target PESID {} does not have any associated repository"
+                            " for major version {} and distro {}.".format(
+                                pesid,
+                                target_ver,
+                                target_distro,
+                            )
+                        )
+
     @staticmethod
     def load_from_dict(data):
         if data['version_format'] != RepoMapData.VERSION_FORMAT:
@@ -157,12 +196,14 @@ class RepoMapData:
                         )
 
                 for pesid in [entry['source']] + [id for ids in entry['target'].values() for id in ids]:
-                    # FIXME: this check isn't complete since the distro field was
-                    # introduced for repositories, because the PESID might be
-                    # associated with just repositories for a particular
-                    # distro(s) and therefore might not be for the source or
-                    # target distro.
-                    # However this is better than nothing.
+                    # NOTE: this check isn't complete for target repositories,
+                    # since the distro field was introduced for repositories,
+                    # because the PESID might be associated with just
+                    # repositories for a particular distro(s) and therefore
+                    # might not be for the target distro.
+                    # This is therefore a very simple check, for a proper one
+                    # the :py:func:`validate_target_pesids_for_ipu` can be
+                    # used.
                     if pesid not in existing_pesids:
                         raise ValueError(
                             'The {} pesid is not related to any repository.'.format(pesid)
@@ -228,6 +269,9 @@ def scan_repositories(read_repofile_func=_read_repofile):
 
         src_distro, dst_distro = get_source_distro_id(), get_target_distro_id()
         src_ver, dst_ver = get_source_major_version(), get_target_major_version()
+        arch = api.current_actor().configuration.architecture
+
+        repomap_data.validate_target_pesids_for_ipu(dst_distro, arch)
 
         mapping = repomap_data.get_mappings(src_ver, dst_ver, dst_distro)
         if mapping is None:
@@ -242,7 +286,7 @@ def scan_repositories(read_repofile_func=_read_repofile):
         repos = repomap_data.get_repositories(
             [src_ver, dst_ver],
             [src_distro, dst_distro],
-            [api.current_actor().configuration.architecture],
+            [arch],
         )
 
         api.produce(RepositoriesMapping(mapping=mapping, repositories=repos))
