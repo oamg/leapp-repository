@@ -10,7 +10,7 @@
           "source": "pesid1",
           "target": {
             "default": ["pesid2", "pesid3"],
-            "centos": ["pesid6", "pesid7"]
+            "centos": ["pesid7"]
           }
         }
       ]
@@ -22,8 +22,9 @@
         {
           "source": "pesid3",
           "target": {
-            "default": ["pesid4", "pesid5"],
-            "almalinux": ["pesid6"]
+            "default": ["pesid4"],
+            "centos": ["pesid4"],
+            "almalinux": ["pesid9"]
           }
         }
       ]
@@ -70,11 +71,50 @@
       ]
     },
     {
+      "pesid": "pesid2",
+      "entries": [
+        {
+          "major_version": "8",
+          "repoid": "some-rhel-8-repoid1",
+          "arch": "x86_64",
+          "repo_type": "rpm",
+          "channel": "eus",
+          "distro": "almalinux"
+        }
+      ]
+    },
+    {
       "pesid": "pesid3",
       "entries": [
         {
           "major_version": "8",
           "repoid": "some-rhel-8-repoid2",
+          "arch": "x86_64",
+          "repo_type": "rpm",
+          "channel": "eus",
+          "distro": "rhel"
+        }
+      ]
+    },
+    {
+      "pesid": "pesid3",
+      "entries": [
+        {
+          "major_version": "8",
+          "repoid": "some-rhel-8-repoid2",
+          "arch": "x86_64",
+          "repo_type": "rpm",
+          "channel": "eus",
+          "distro": "almalinux"
+        }
+      ]
+    },
+    {
+      "pesid": "pesid4",
+      "entries": [
+        {
+          "major_version": "9",
+          "repoid": "some-rhel-9-repo1",
           "arch": "x86_64",
           "repo_type": "rpm",
           "channel": "eus",
@@ -91,7 +131,7 @@
           "arch": "x86_64",
           "repo_type": "rpm",
           "channel": "eus",
-          "distro": "rhel"
+          "distro": "centos"
         }
       ]
     },

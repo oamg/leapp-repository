@@ -79,6 +79,26 @@ CENTOS_REPOS = [
 
 ALMA_REPOS = [
     PESIDRepositoryEntry(
+        pesid='pesid2',
+        major_version='8',
+        repoid='some-rhel-8-repoid1',
+        arch='x86_64',
+        repo_type='rpm',
+        channel='eus',
+        rhui='',
+        distro='almalinux',
+    ),
+    PESIDRepositoryEntry(
+        pesid='pesid3',
+        major_version='8',
+        repoid='some-rhel-8-repoid2',
+        arch='x86_64',
+        repo_type='rpm',
+        channel='eus',
+        rhui='',
+        distro='almalinux',
+    ),
+    PESIDRepositoryEntry(
         pesid='pesid8',
         major_version='8',
         repoid='some-almalinux-8-repoid1',
@@ -96,12 +116,12 @@ ALMA_REPOS = [
     [
         ('rhel', 'rhel', {'pesid2', 'pesid3'}, RHEL_REPOS),
         # has specific mapping
-        ('centos', 'centos', {'pesid6', 'pesid7'}, CENTOS_REPOS),
+        ('centos', 'centos', {'pesid7'}, CENTOS_REPOS),
         # no specific mapping, should use default, same as rhel
         ('almalinux', 'almalinux', {'pesid2', 'pesid3'}, ALMA_REPOS),
         # conversions
         ('centos', 'rhel', {'pesid2', 'pesid3'}, RHEL_REPOS + CENTOS_REPOS),
-        ('rhel', 'centos', {'pesid6', 'pesid7'}, RHEL_REPOS + CENTOS_REPOS),
+        ('rhel', 'centos', {'pesid7'}, RHEL_REPOS + CENTOS_REPOS),
         ('almalinux', 'rhel', {'pesid2', 'pesid3'}, RHEL_REPOS + ALMA_REPOS),
     ]
 )
@@ -389,3 +409,104 @@ def test_load_repositories_mapping_raises_on_invalid_data(monkeypatch):
 
     with pytest.raises(StopActorExecutionError):
         repomap_loader.load_repositories_mapping(lambda dummy: {})
+
+
+@pytest.mark.parametrize(
+    "target_repo",
+    [
+        # mapped for a different version
+        {
+            "pesid": "target_pesid1",
+            "entries": [
+                {
+                    "major_version": "7",
+                    "repoid": "some-rhel-9-repo1",
+                    "arch": "x86_64",
+                    "repo_type": "rpm",
+                    "channel": "eus",
+                    "distro": "rhel",
+                }
+            ],
+        },
+        # mapped for a different distro
+        {
+            "pesid": "target_pesid2",
+            "entries": [
+                {
+                    "major_version": "7",
+                    "repoid": "some-rhel-9-repo1",
+                    "arch": "x86_64",
+                    "repo_type": "rpm",
+                    "channel": "eus",
+                    "distro": "rhel",
+                }
+            ],
+        },
+        # mapped for a different arch
+        {
+            "pesid": "target_pesid3",
+            "entries": [
+                {
+                    "major_version": "7",
+                    "repoid": "some-rhel-9-repo1",
+                    "arch": "aarch64",
+                    "repo_type": "rpm",
+                    "channel": "eus",
+                    "distro": "rhel",
+                }
+            ],
+        },
+    ],
+)
+def test_scan_repositories_with_non_existing_pesids_mapped(monkeypatch, target_repo):
+    """
+    Tests whether a PESID present in mapping as a target, but not present in
+    repositories with the given target distro and architecture is detected.
+    """
+
+    json_data = {
+        'datetime': '202107141655Z',
+        'version_format': repomap_loader.RepoMapData.VERSION_FORMAT,
+        'mapping': [
+            {
+                'source_major_version': '7',
+                'target_major_version': '8',
+                'entries': [
+                    {
+                        'source': 'source_pesid',
+                        'target': {
+                            'default': [target_repo['pesid']]
+                        },
+                    }
+                ],
+            }
+        ],
+        'repositories': [
+            {
+                'pesid': 'source_pesid',
+                'entries': [
+                    {
+                        'major_version': '7',
+                        'repoid': 'some-rhel-9-repo1',
+                        'arch': 'x86_64',
+                        "repo_type": "rpm",
+                        "channel": "eus",
+                        "distro": "rhel",
+                    }
+                ],
+            },
+            target_repo,
+        ],
+    }
+
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(src_ver='7.9', dst_ver='8.4'))
+    monkeypatch.setattr(api, 'produce', produce_mocked())
+
+    with pytest.raises(StopActorExecutionError) as error_info:
+        repomap_loader.load_repositories_mapping(lambda dummy: json_data)
+
+    msg = (
+        "Target PESID {} does not have any associated repository"
+        " for major version 8 and distro rhel"
+    ).format(target_repo["pesid"])
+    assert msg in error_info.value.message
