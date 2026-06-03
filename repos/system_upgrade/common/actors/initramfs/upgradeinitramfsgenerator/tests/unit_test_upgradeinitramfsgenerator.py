@@ -11,6 +11,8 @@ from leapp.utils.deprecation import suppress_deprecation
 
 from leapp.models import (  # isort:skip
     FIPSInfo,
+    KernelInfo,
+    RPM,
     RequiredUpgradeInitramPackages,  # deprecated
     UpgradeDracutModule,  # deprecated
     BootContent,
@@ -356,7 +358,7 @@ def test_generate_initram_disk(monkeypatch, input_msgs, dracut_modules, kernel_m
     curr_actor = CurrentActorMocked(msgs=input_msgs, arch=architecture.ARCH_X86_64)
     monkeypatch.setattr(upgradeinitramfsgenerator.api, 'current_actor', curr_actor)
     monkeypatch.setattr(upgradeinitramfsgenerator, 'copy_dracut_modules', MockedCopyArgs())
-    monkeypatch.setattr(upgradeinitramfsgenerator, '_get_target_kernel_version', lambda _: '')
+    monkeypatch.setattr(upgradeinitramfsgenerator, '_get_target_kernel_version', lambda _: '5.14.0-100.el9.x86_64')
     monkeypatch.setattr(upgradeinitramfsgenerator, 'copy_kernel_modules', MockedCopyArgs())
     monkeypatch.setattr(upgradeinitramfsgenerator, 'copy_boot_files', lambda dummy: None)
     monkeypatch.setattr(upgradeinitramfsgenerator, '_get_fspace', MockedGetFspace(2*2**30))
@@ -381,6 +383,8 @@ def test_generate_initram_disk(monkeypatch, input_msgs, dracut_modules, kernel_m
         assert module in _kernel_modules
         detected_kernel_modules.add(module)
     assert detected_kernel_modules == _kernel_modules
+
+    assert upgradeinitramfsgenerator.copy_kernel_modules.args[2] == '5.14.0-100.el9.x86_64'
 
     # TODO(pstodulk): this test is not created properly, as context.call check
     # is skipped completely. Testing will more convenient with fixed #376
@@ -423,26 +427,28 @@ def test_copy_modules_fail(monkeypatch, kind):
     context.copytree_to = copytree_to_error
     monkeypatch.setattr(os.path, 'exists', mock_context_path_exists)
     monkeypatch.setattr(upgradeinitramfsgenerator.api, 'current_logger', MockedLogger())
-    monkeypatch.setattr(upgradeinitramfsgenerator, '_get_target_kernel_modules_dir', lambda _: '/kernel_modules')
 
     module_class = None
     copy_fn = None
-    dst_path = None
+    dst_dir = None
     if kind == 'dracut':
         module_class = DracutModule
         copy_fn = upgradeinitramfsgenerator.copy_dracut_modules
-        dst_path = 'dracut'
+        dst_dir = 'dracut'
     elif kind == 'kernel':
         module_class = KernelModule
         copy_fn = upgradeinitramfsgenerator.copy_kernel_modules
-        dst_path = 'kernel_modules'
+        dst_dir = 'lib/modules/dummy/extra/leapp'
 
     modules = [module_class(name='foo', module_path='/path/foo')]
     with pytest.raises(StopActorExecutionError) as err:
-        copy_fn(context, modules)
+        if kind == 'dracut':
+            copy_fn(context, modules)
+        else:
+            copy_fn(context, modules, 'dummy')
     assert err.value.message.startswith('Failed to install {kind} modules'.format(kind=kind))
-    expected_err_log = 'Failed to copy {kind} module "foo" from "/path/foo" to "/base/dir/{dst_path}"'.format(
-            kind=kind, dst_path=dst_path)
+    expected_err_log = 'Failed to copy {kind} module "foo" from "/path/foo" to "/base/dir/{dst_dir}"'.format(
+            kind=kind, dst_dir=dst_dir)
     assert expected_err_log in upgradeinitramfsgenerator.api.current_logger.errmsg
 
 
@@ -456,7 +462,6 @@ def test_copy_modules_duplicate_skip(monkeypatch, kind):
 
     monkeypatch.setattr(os.path, 'exists', mock_context_path_exists)
     monkeypatch.setattr(upgradeinitramfsgenerator.api, 'current_logger', MockedLogger())
-    monkeypatch.setattr(upgradeinitramfsgenerator, '_get_target_kernel_modules_dir', lambda _: '/kernel_modules')
 
     module_class = None
     copy_fn = None
@@ -470,7 +475,10 @@ def test_copy_modules_duplicate_skip(monkeypatch, kind):
     module = module_class(name='foo', module_path='/path/foo')
     modules = [module, module]
 
-    copy_fn(context, modules)
+    if kind == 'dracut':
+        copy_fn(context, modules)
+    else:
+        copy_fn(context, modules, 'dummy')
 
     debugmsg = 'The foo {kind} module has been already installed. Skipping.'.format(kind=kind)
     assert context.content
@@ -558,3 +566,89 @@ def test_prepare_boot_files_for_livemode(monkeypatch):
     assert boot_content.kernel_path == '/boot/vmlinuz-upgrade.x86_64'
     assert boot_content.initram_path == '/boot/initramfs-upgrade.x86_64.img'
     assert boot_content.kernel_hmac_path == '/boot/.vmlinuz-upgrade.x86_64.hmac'
+
+
+def _make_kernel_info(page_size='4k', arch='aarch64'):
+    return KernelInfo(
+        pkg=RPM(name='kernel-core', arch=arch, version='5.14.0', release='100.el9',
+                epoch='0', packager='', pgpsig='SIG'),
+        type='ordinary',
+        uname_r='5.14.0-100.el9.{}'.format(arch),
+        page_size=page_size,
+    )
+
+
+@pytest.mark.parametrize('page_size,arch,expected_pkg,expected_uname_r', [
+    ('4k', 'aarch64', 'kernel-core', '5.14.0-100.el9.aarch64'),
+    ('4k', 'x86_64', 'kernel-core', '5.14.0-100.el9.x86_64'),
+    ('4k', 's390x', 'kernel-core', '5.14.0-100.el9.s390x'),
+    # aarch64: 64k page size and special kernel packages
+    ('64k', 'aarch64', 'kernel-64k-core', '5.14.0-100.el9.aarch64+64k'),
+    # ppc64le: 64k page size but standard kernel packages
+    ('64k', 'ppc64le', 'kernel-core', '5.14.0-100.el9.ppc64le'),
+])
+def test_get_target_kernel_version_page_size(monkeypatch, page_size, arch, expected_pkg, expected_uname_r):
+    kernel_info = _make_kernel_info(page_size, arch)
+    monkeypatch.setattr(upgradeinitramfsgenerator.api, 'current_actor',
+                        CurrentActorMocked(arch=arch, msgs=[kernel_info]))
+
+    context = MockedContext()
+    target_nevra = '{}-5.14.0-100.el9.{}'.format(expected_pkg, arch)
+    queried_cmds = []
+
+    def mock_call(cmd, *args, **kwargs):
+        queried_cmds.append(cmd)
+        if cmd[:2] == ['rpm', '-qa']:
+            return {'stdout': [target_nevra]}
+        if cmd[:3] == ['rpm', '-q', '--provides']:
+            return {'stdout': ['kernel-uname-r = {}'.format(expected_uname_r)]}
+        return {'stdout': []}
+
+    context.call = mock_call
+
+    version = upgradeinitramfsgenerator._get_target_kernel_version(context)
+    assert version == expected_uname_r
+    assert queried_cmds[0] == ['rpm', '-qa', expected_pkg]
+    assert queried_cmds[1] == ['rpm', '-q', '--provides', target_nevra]
+
+
+def test_get_target_kernel_version_no_kernel_info(monkeypatch):
+    monkeypatch.setattr(upgradeinitramfsgenerator.api, 'current_actor',
+                        CurrentActorMocked(msgs=[]))
+
+    context = MockedContext()
+
+    with pytest.raises(StopActorExecutionError, match='Could not retrieve KernelInfo message'):
+        upgradeinitramfsgenerator._get_target_kernel_version(context)
+
+
+def test_get_target_kernel_version_empty_results(monkeypatch):
+    kernel_info = _make_kernel_info(page_size='4k', arch='x86_64')
+    monkeypatch.setattr(upgradeinitramfsgenerator.api, 'current_actor',
+                        CurrentActorMocked(arch='x86_64', msgs=[kernel_info]))
+
+    context = MockedContext()
+    context.call = lambda cmd, *args, **kwargs: {'stdout': []}
+
+    with pytest.raises(StopActorExecutionError, match='Cannot get version of the installed kernel'):
+        upgradeinitramfsgenerator._get_target_kernel_version(context)
+
+
+def test_get_target_kernel_version_empty_uname_r(monkeypatch):
+    kernel_info = _make_kernel_info(page_size='4k', arch='x86_64')
+    monkeypatch.setattr(upgradeinitramfsgenerator.api, 'current_actor',
+                        CurrentActorMocked(arch='x86_64', msgs=[kernel_info]))
+
+    context = MockedContext()
+
+    def mock_call(cmd, *args, **kwargs):
+        if cmd[:2] == ['rpm', '-qa']:
+            return {'stdout': ['kernel-core-5.14.0-100.el9.x86_64']}
+        if cmd[:3] == ['rpm', '-q', '--provides']:
+            return {'stdout': ['some-other-provide = foo']}
+        return {'stdout': []}
+
+    context.call = mock_call
+
+    with pytest.raises(StopActorExecutionError, match='Cannot get version of the installed kernel'):
+        upgradeinitramfsgenerator._get_target_kernel_version(context)

@@ -1,12 +1,15 @@
 import os
 import re
 
+from leapp.exceptions import StopActorExecutionError
+from leapp.libraries.common import kernel as kernel_lib
 from leapp.libraries.common.config import architecture, version
 from leapp.libraries.stdlib import api
 from leapp.utils.deprecation import suppress_deprecation
 
 from leapp.models import (  # isort:skip
     CopyFile,
+    KernelInfo,
     LiveModeConfig,
     RequiredUpgradeInitramPackages,  # deprecated
     UpgradeDracutModule,  # deprecated
@@ -28,9 +31,6 @@ _REQUIRED_PACKAGES = [
     'hostname',
     'iscsi-initiator-utils',
     'kbd',
-    'kernel',
-    'kernel-core',
-    'kernel-modules',
     'keyutils',
     'kmod',
     'lldpad',
@@ -95,6 +95,18 @@ def _create_initram_packages():
         required_pkgs.append('NetworkManager')
     if version.get_target_major_version() == '9':
         required_pkgs += ['policycoreutils', 'rng-tools']
+
+    kernel_info = next(api.consume(KernelInfo), None)
+    if not kernel_info:
+        raise StopActorExecutionError('Could not retrieve KernelInfo message.')
+    page_size = kernel_info.page_size
+    kernel_packages = kernel_lib.get_target_kernel_pkg_names(
+        kernel_lib.KernelType.ORDINARY,
+        page_size,
+        api.current_actor().configuration.architecture
+    )
+    required_pkgs.extend(kernel_packages)
+
     return (
         RequiredUpgradeInitramPackages(packages=required_pkgs),
         TargetUserSpaceUpgradeTasks(install_rpms=required_pkgs)

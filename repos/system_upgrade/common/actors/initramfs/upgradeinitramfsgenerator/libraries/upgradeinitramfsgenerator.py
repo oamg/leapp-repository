@@ -4,6 +4,7 @@ import shutil
 from collections import namedtuple
 
 from leapp.exceptions import StopActorExecutionError
+from leapp.libraries.common import kernel as kernel_lib
 from leapp.libraries.common import mounting
 from leapp.libraries.common.config.version import get_target_major_version
 from leapp.libraries.common.dnflibs import dnfplugin
@@ -12,6 +13,7 @@ from leapp.models import RequiredUpgradeInitramPackages  # deprecated
 from leapp.models import UpgradeDracutModule  # deprecated
 from leapp.models import (
     BootContent,
+    KernelInfo,
     LiveModeConfig,
     LVMConfig,
     RAIDInfo,
@@ -33,51 +35,40 @@ def _get_target_kernel_version(context):
     """
     Get the version of the most recent kernel version within the container.
     """
+    kernel_info = next(api.consume(KernelInfo), None)
+    if not kernel_info:
+        raise StopActorExecutionError('Could not retrieve KernelInfo message.')
+    page_size = kernel_info.page_size
+    arch = api.current_actor().configuration.architecture
+    kernel_pkg_names = kernel_lib.get_target_kernel_pkg_names(kernel_lib.KernelType.ORDINARY, page_size, arch)
+    kernel_core_pkg = kernel_pkg_names.core
 
-    kernel_version = None
     try:
-        # NOTE: Currently we install/use always kernel-core in the upgrade
-        # initramfs. We do not use currently any different kernel package
-        # in the container. Note this could change in future e.g. on aarch64
-        # for IPU 9 -> 10.
-        # TODO(pstodulk): Investigate situation on ARM systems. OAMG-11433
-        results = context.call(['rpm', '-qa', 'kernel-core'], split=True)['stdout']
+        results = context.call(['rpm', '-qa', kernel_core_pkg], split=True)['stdout']
     except CalledProcessError:
         raise StopActorExecutionError(
             'Cannot get version of the installed kernel inside container.',
             details={'Problem': 'Could not query the currently installed kernel inside container using rpm.'})
 
+    if not results:
+        raise StopActorExecutionError(
+            'Cannot get version of the installed kernel inside container.',
+            details={'Problem': 'An rpm query for the available kernels did not produce any results.'})
+
     if len(results) > 1:
-        # this is should not happen. It's hypothetic situation, which alone it's
-        # already error. So skipping more sophisticated implementation.
-        # The container is always created during the upgrade and as that we expect
-        # always one-and-only kernel installed.
         raise StopActorExecutionError(
             'Cannot get version of the installed kernel inside container.',
             details={'Problem': 'Detected unexpectedly multiple kernels inside target userspace container.'}
         )
 
-    # kernel version == version-release from package
-    kernel_version = '-'.join(results[0].rsplit("-", 2)[-2:])
-    api.current_logger().debug('Detected kernel version inside container: {}.'.format(kernel_version))
-
+    kernel_version = kernel_lib.get_uname_r_provided_by_kernel_pkg(results[0], context=context)
     if not kernel_version:
         raise StopActorExecutionError(
             'Cannot get version of the installed kernel inside container.',
-            details={'Problem': 'An rpm query for the available kernels did not produce any results.'})
+            details={'Problem': 'Failed to determine uname-r provided by {}.'.format(results[0])})
 
+    api.current_logger().debug('Detected kernel version inside container: {}.'.format(kernel_version))
     return kernel_version
-
-
-def _get_target_kernel_modules_dir(context):
-    """
-    Return the path where the custom kernel modules should be copied.
-    """
-
-    kernel_version = _get_target_kernel_version(context)
-    modules_dir = os.path.join('/', 'lib', 'modules', kernel_version, 'extra', 'leapp')
-
-    return modules_dir
 
 
 def _reinstall_leapp_repository_hint():
@@ -153,7 +144,7 @@ def copy_dracut_modules(context, modules):
     _copy_modules(context, modules, DRACUT_DIR, 'dracut')
 
 
-def copy_kernel_modules(context, modules):
+def copy_kernel_modules(context, modules, kernel_version):
     """
     Copy kernel modules into the target userspace.
 
@@ -161,7 +152,7 @@ def copy_kernel_modules(context, modules):
     StopActorExecutionError exception is raised.
     """
 
-    dst_dir = _get_target_kernel_modules_dir(context)
+    dst_dir = os.path.join('/', 'lib', 'modules', kernel_version, 'extra', 'leapp')
     _copy_modules(context, modules, dst_dir, 'kernel')
 
 
@@ -396,8 +387,10 @@ def generate_initram_disk(context):
     # Issue #645
     initramfs_includes = collect_initramfs_includes()
 
+    kernel_version = _get_target_kernel_version(context)
+
     copy_dracut_modules(context, initramfs_includes.dracut_modules)
-    copy_kernel_modules(context, initramfs_includes.kernel_modules)
+    copy_kernel_modules(context, initramfs_includes.kernel_modules, kernel_version)
 
     def fmt_module_list(module_list):
         return ','.join(mod.name for mod in module_list)
@@ -422,7 +415,7 @@ def generate_initram_disk(context):
 
     env_variables = ' '.join(env_variables)
     env_variables = env_variables.format(
-        kernel_version=_get_target_kernel_version(context),
+        kernel_version=kernel_version,
         dracut_modules=fmt_module_list(initramfs_includes.dracut_modules),
         kernel_modules=fmt_module_list(initramfs_includes.kernel_modules),
         arch=api.current_actor().configuration.architecture,
@@ -481,7 +474,7 @@ def _generate_livemode_initramfs(context, userspace_initramfs_dest, target_kerne
     initramfs_includes = collect_initramfs_includes()
 
     copy_dracut_modules(context, initramfs_includes.dracut_modules)
-    copy_kernel_modules(context, initramfs_includes.kernel_modules)
+    copy_kernel_modules(context, initramfs_includes.kernel_modules, target_kernel_ver)
 
     md_cmdline_conf = write_md_uuid_cmdline_conf(context)
     if md_cmdline_conf:

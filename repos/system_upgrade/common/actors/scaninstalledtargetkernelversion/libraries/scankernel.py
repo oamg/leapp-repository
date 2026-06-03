@@ -11,23 +11,15 @@ from leapp.utils.deprecation import suppress_deprecation
 KernelBootFiles = namedtuple('KernelBootFiles', ('vmlinuz_path', 'initramfs_path'))
 
 
-def get_kernel_pkg_name(rhel_major_version, kernel_type):
+def get_target_kernel_package_nevra(kernel_pkg_name: str) -> str:
     """
-    Get the name of the package providing kernel binaries.
+    Get the NEVRA of the installed target kernel package.
 
-    :param str rhel_major_version: RHEL major version
-    :param KernelType kernel_type: Type of the kernel
-    :returns: Kernel package name
+    :param kernel_pkg_name: Name of the kernel package (e.g. ``kernel-core``)
+    :type kernel_pkg_name: str
+    :returns: NEVRA of the target kernel package, or empty string if not found
     :rtype: str
     """
-    kernel_pkg_name_table = {
-        kernel_lib.KernelType.ORDINARY: 'kernel-core',
-        kernel_lib.KernelType.REALTIME: 'kernel-rt-core'
-    }
-    return kernel_pkg_name_table[kernel_type]
-
-
-def get_target_kernel_package_nevra(kernel_pkg_name):
     try:
         kernel_nevras = run(['rpm', '-q', kernel_pkg_name], split=True)['stdout']
     except CalledProcessError:
@@ -40,10 +32,19 @@ def get_target_kernel_package_nevra(kernel_pkg_name):
     return ''
 
 
-def get_boot_files_provided_by_kernel_pkg(kernel_nevra):
+def get_boot_files_provided_by_kernel_pkg(kernel_nevra: str) -> KernelBootFiles:
+    """
+    Get paths to the vmlinuz and initramfs files provided by a given kernel package.
+
+    :param kernel_nevra: NEVRA of the kernel package
+    :type kernel_nevra: str
+    :returns: Paths to vmlinuz and initramfs in ``/boot``
+    :rtype: KernelBootFiles
+    :raises StopActorExecutionError: If the boot files cannot be determined
+    """
     initramfs_path = ''
     vmlinuz_path = ''
-    err_msg = 'Cannot determine location of the target kernel boot image and corresponding initramfs .'
+    err_msg = 'Cannot determine location of the target kernel boot image and corresponding initramfs.'
     try:
         kernel_pkg_files = run(['rpm', '-q', '-l', kernel_nevra], split=True)['stdout']
         for kernel_file_path in kernel_pkg_files:
@@ -63,7 +64,13 @@ def get_boot_files_provided_by_kernel_pkg(kernel_nevra):
 
 
 @suppress_deprecation(InstalledTargetKernelVersion)
-def process():
+def process() -> None:
+    """
+    Identify the target kernel package and produce ``InstalledTargetKernelInfo``.
+
+    Selects the target kernel package based on the source kernel type and page size.
+    Falls back to a non-realtime kernel if the matching realtime variant is not available.
+    """
     # pylint: disable=no-else-return  # false positive
     # TODO: should we take care about stuff of kernel-rt and kernel in the same
     # time when both are present? or just one? currently, handle only one
@@ -73,19 +80,33 @@ def process():
     if not src_kernel_info:
         return  # Will not happen, other actors would inhibit the upgrade
 
-    target_ver = get_target_major_version()
-    target_kernel_pkg_name = get_kernel_pkg_name(target_ver, src_kernel_info.type)
-    target_kernel_nevra = get_target_kernel_package_nevra(target_kernel_pkg_name)
+    arch = api.current_actor().configuration.architecture
+    target_kernel_pkg_names = kernel_lib.get_target_kernel_pkg_names(
+        src_kernel_info.type,
+        src_kernel_info.page_size,
+        arch
+    )
+    target_kernel_core_pkg = target_kernel_pkg_names.core
+    target_kernel_nevra = get_target_kernel_package_nevra(target_kernel_core_pkg)
 
     if src_kernel_info.type != kernel_lib.KernelType.ORDINARY and not target_kernel_nevra:
-        api.current_logger().warning('The kernel-rt-core rpm from the target RHEL has not been detected. Switching '
-                                     'to non-preemptive kernel.')
-        target_kernel_pkg_name = get_kernel_pkg_name(target_ver, kernel_lib.KernelType.ORDINARY)
-        target_kernel_nevra = get_target_kernel_package_nevra(target_kernel_pkg_name)
+        # Fallback to ordinary kernel if target kernel nevra could not be determined
+        api.current_logger().warning('The %s rpm from the target RHEL has not been detected. Switching '
+                                     'to non-preemptive kernel.', target_kernel_core_pkg)
+        target_kernel_pkg_names = kernel_lib.get_target_kernel_pkg_names(
+            kernel_lib.KernelType.ORDINARY,
+            src_kernel_info.page_size,
+            arch
+        )
+        target_kernel_core_pkg = target_kernel_pkg_names.core
+        target_kernel_nevra = get_target_kernel_package_nevra(target_kernel_core_pkg)
 
     if target_kernel_nevra:
         boot_files = get_boot_files_provided_by_kernel_pkg(target_kernel_nevra)
         target_kernel_version = kernel_lib.get_uname_r_provided_by_kernel_pkg(target_kernel_nevra)
+        if not target_kernel_version:
+            api.current_logger().warning('Failed to determine uname-r provided by %s.', target_kernel_nevra)
+            return
         installed_kernel_info = InstalledTargetKernelInfo(pkg_nevra=target_kernel_nevra,
                                                           uname_r=target_kernel_version,
                                                           kernel_img_path=boot_files.vmlinuz_path,

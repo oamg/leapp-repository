@@ -4,6 +4,7 @@ from leapp.tags import InterimPreparationPhaseTag, IPUWorkflowTag
 from leapp.utils.deprecation import suppress_deprecation
 
 from leapp.models import (  # isort:skip
+    KernelInfo,
     LiveModeConfig,
     RequiredUpgradeInitramPackages,  # deprecated
     UpgradeDracutModule,  # deprecated
@@ -21,10 +22,11 @@ class CommonLeappDracutModules(Actor):
     required to be installed in the target userspace so required fields can be included.
     Modules to be added are specified via the UpgradeDracutModule message.
     Packages to install on the target userspace are specified by the RequiredUpgradeInitramPackages message.
+    Kernel packages are selected based on the source system's kernel page size (e.g. kernel vs kernel-64k).
     """
 
     name = 'common_leapp_dracut_modules'
-    consumes = (LiveModeConfig,)
+    consumes = (KernelInfo, LiveModeConfig,)
     produces = (
         RequiredUpgradeInitramPackages,  # deprecated
         TargetUserSpaceUpgradeTasks,

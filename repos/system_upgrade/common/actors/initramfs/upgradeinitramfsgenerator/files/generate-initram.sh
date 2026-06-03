@@ -7,7 +7,10 @@ stage() {
 }
 
 get_kernel_version() {
-    rpm -qa kernel --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' | sort --version-sort | tail --lines=1
+    # The actor should always provide the version via LEAPP_KERNEL_VERSION and ensure
+    # only one kernel is installed in the container. This is simple fallback in case
+    # the version is not provided.
+    rpm -q --whatprovides kernel --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' | sort --version-sort | tail --lines=1
 }
 
 dracut_install_modules()
