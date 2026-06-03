@@ -17,6 +17,7 @@ Only the versions in which a deprecation has been made are listed.
   - **`LEAPP_DISABLE_NET_NAMING_SCHEMES`** - The `net.naming-scheme` kernel argument provides much better alternative to the legacy solution enabled using this variable. Hence the legacy solution is deprecated together with this environment variable.
   - **`LEAPP_NO_NETWORK_RENAMING`** - It becomes obsoleted by the solution based on `net.naming-scheme` which replaces the legacy solution based on created udev link files correcting NIC names during the upgrade.
 - Models:
+  - **`CurrentKernel`** - The model is not used by any actor and provides incomplete information. Use the `KernelInfo` model instead for information about the source distribution kernel.
   - **`RenamedInterfaces`** - Information provided in this message is not always complete and it's not used since the `net.naming-scheme` kernel command line argument is set during the upgrade.
   - **`RepositoriesBlacklisted`** - To get the list of blocklisted repositories, consume `RepositoriesBlocklisted` message. To request a repository to be blocklisted, use `RepositoriesSetupTasks.to_block` instead.
 - Shared libraries

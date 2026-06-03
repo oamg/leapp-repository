@@ -4,6 +4,9 @@ from leapp.exceptions import StopActorExecutionError
 from leapp.libraries import stdlib
 from leapp.libraries.actor import scankernel
 from leapp.libraries.common import kernel as kernel_lib
+from leapp.libraries.common.config import architecture
+from leapp.libraries.common.config.architecture import ARCH_ARM64, ARCH_PPC64LE, ARCH_X86_64
+from leapp.libraries.common.kernel import KernelPageSize, KernelType
 from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked
 from leapp.libraries.stdlib import api
 from leapp.models import InstalledTargetKernelInfo, InstalledTargetKernelVersion, KernelInfo, RPM
@@ -11,8 +14,14 @@ from leapp.utils.deprecation import suppress_deprecation
 
 TARGET_KERNEL_NEVRA = 'kernel-core-1.2.3-4.el9.x86_64'
 TARGET_RT_KERNEL_NEVRA = 'kernel-rt-core-1.2.3-4.rt56.7.el9.x86_64'
+TARGET_64K_KERNEL_NEVRA = 'kernel-64k-core-1.2.3-4.el10.aarch64'
+TARGET_RT_64K_KERNEL_NEVRA = 'kernel-rt-64k-core-1.2.3-4.el10.aarch64'
+TARGET_PPC_KERNEL_NEVRA = 'kernel-core-1.2.3-4.el10.ppc64le'
 OLD_KERNEL_NEVRA = 'kernel-core-0.1.2-3.el8.x86_64'
 OLD_RT_KERNEL_NEVRA = 'kernel-rt-core-0.1.2-3.rt4.5.el8.x86_64'
+OLD_64K_KERNEL_NEVRA = 'kernel-64k-core-0.1.2-3.el9.aarch64'
+OLD_RT_64K_KERNEL_NEVRA = 'kernel-rt-64k-core-0.1.2-3.el9.aarch64'
+OLD_PPC_KERNEL_NEVRA = 'kernel-core-0.1.2-3.el9.ppc64le'
 
 
 class MockedRun:
@@ -22,7 +31,7 @@ class MockedRun:
         self._stdouts = stdouts
 
     def __call__(self, *args, **kwargs):
-        for key in ('kernel-core', 'kernel-rt-core'):
+        for key in ('kernel-rt-64k-core', 'kernel-64k-core', 'kernel-rt-core', 'kernel-core'):
             if key in args[0]:
                 return {'stdout': self._stdouts.get(key, [])}
         return {'stdout': []}
@@ -30,7 +39,9 @@ class MockedRun:
 
 @suppress_deprecation(InstalledTargetKernelVersion)
 def assert_produced_messages_are_correct(produced_messages, expected_target_nevra, initramfs_path, kernel_img_path):
-    target_evra = expected_target_nevra.replace('kernel-core-', '').replace('kernel-rt-core-', '')
+    target_evra = expected_target_nevra
+    for prefix in ('kernel-rt-64k-core-', 'kernel-64k-core-', 'kernel-rt-core-', 'kernel-core-'):
+        target_evra = target_evra.replace(prefix, '')
     installed_kernel_ver = [msg for msg in produced_messages if isinstance(msg, InstalledTargetKernelVersion)]
     assert len(installed_kernel_ver) == 1, 'Actor should produce InstalledTargetKernelVersion (backwards compat.)'
     assert installed_kernel_ver[0].version == target_evra
@@ -44,38 +55,112 @@ def assert_produced_messages_are_correct(produced_messages, expected_target_nevr
 
 
 @pytest.mark.parametrize(
-    ('is_rt', 'expected_target_nevra', 'stdouts'),
+    ('kernel_type', 'page_size', 'arch', 'expected_target_nevra', 'stdouts', 'dst_ver'),
     [
-        (False, TARGET_KERNEL_NEVRA, {'kernel-core': [OLD_KERNEL_NEVRA, TARGET_KERNEL_NEVRA]}),
-        (False, TARGET_KERNEL_NEVRA, {'kernel-core': [TARGET_KERNEL_NEVRA, OLD_KERNEL_NEVRA]}),
-        (False, TARGET_KERNEL_NEVRA, {
-            'kernel-core': [TARGET_KERNEL_NEVRA, OLD_KERNEL_NEVRA],
-            'kernel-rt-core': [TARGET_RT_KERNEL_NEVRA, OLD_RT_KERNEL_NEVRA],
-        }),
-        (True, TARGET_RT_KERNEL_NEVRA, {
-            'kernel-rt-core': [OLD_RT_KERNEL_NEVRA, TARGET_RT_KERNEL_NEVRA]
-        }),
-        (True, TARGET_RT_KERNEL_NEVRA, {
-            'kernel-rt-core': [TARGET_RT_KERNEL_NEVRA, OLD_RT_KERNEL_NEVRA]
-        }),
-        (True, TARGET_RT_KERNEL_NEVRA, {
-            'kernel-core': [TARGET_KERNEL_NEVRA, OLD_KERNEL_NEVRA],
-            'kernel-rt-core': [TARGET_RT_KERNEL_NEVRA, OLD_RT_KERNEL_NEVRA],
-        }),
+        (
+            KernelType.ORDINARY,
+            KernelPageSize.PAGE_SIZE_4K,
+            ARCH_X86_64,
+            TARGET_KERNEL_NEVRA,
+            {'kernel-core': [OLD_KERNEL_NEVRA, TARGET_KERNEL_NEVRA]},
+            '9.0',
+        ),
+        (
+            KernelType.ORDINARY,
+            KernelPageSize.PAGE_SIZE_4K,
+            ARCH_X86_64,
+            TARGET_KERNEL_NEVRA,
+            {'kernel-core': [TARGET_KERNEL_NEVRA, OLD_KERNEL_NEVRA]},
+            '9.0',
+        ),
+        (
+            KernelType.ORDINARY,
+            KernelPageSize.PAGE_SIZE_4K,
+            ARCH_X86_64,
+            TARGET_KERNEL_NEVRA,
+            {
+                'kernel-core': [TARGET_KERNEL_NEVRA, OLD_KERNEL_NEVRA],
+                'kernel-rt-core': [TARGET_RT_KERNEL_NEVRA, OLD_RT_KERNEL_NEVRA],
+            },
+            '9.0',
+        ),
+        (
+            KernelType.REALTIME,
+            KernelPageSize.PAGE_SIZE_4K,
+            ARCH_X86_64,
+            TARGET_RT_KERNEL_NEVRA,
+            {'kernel-rt-core': [OLD_RT_KERNEL_NEVRA, TARGET_RT_KERNEL_NEVRA]},
+            '9.0',
+        ),
+        (
+            KernelType.REALTIME,
+            KernelPageSize.PAGE_SIZE_4K,
+            ARCH_X86_64,
+            TARGET_RT_KERNEL_NEVRA,
+            {'kernel-rt-core': [TARGET_RT_KERNEL_NEVRA, OLD_RT_KERNEL_NEVRA]},
+            '9.0',
+        ),
+        (
+            KernelType.REALTIME,
+            KernelPageSize.PAGE_SIZE_4K,
+            ARCH_X86_64,
+            TARGET_RT_KERNEL_NEVRA,
+            {
+                'kernel-core': [TARGET_KERNEL_NEVRA, OLD_KERNEL_NEVRA],
+                'kernel-rt-core': [TARGET_RT_KERNEL_NEVRA, OLD_RT_KERNEL_NEVRA],
+            },
+            '9.0',
+        ),
+        # 64k kernel variants on aarch64
+        (
+            KernelType.ORDINARY,
+            KernelPageSize.PAGE_SIZE_64K,
+            ARCH_ARM64,
+            TARGET_64K_KERNEL_NEVRA,
+            {'kernel-64k-core': [OLD_64K_KERNEL_NEVRA, TARGET_64K_KERNEL_NEVRA]},
+            '10.0',
+        ),
+        (
+            KernelType.REALTIME,
+            KernelPageSize.PAGE_SIZE_64K,
+            ARCH_ARM64,
+            TARGET_RT_64K_KERNEL_NEVRA,
+            {'kernel-rt-64k-core': [OLD_RT_64K_KERNEL_NEVRA, TARGET_RT_64K_KERNEL_NEVRA]},
+            '10.0',
+        ),
+        (
+            KernelType.REALTIME,
+            KernelPageSize.PAGE_SIZE_64K,
+            ARCH_ARM64,
+            TARGET_RT_64K_KERNEL_NEVRA,
+            {
+                'kernel-64k-core': [TARGET_64K_KERNEL_NEVRA, OLD_64K_KERNEL_NEVRA],
+                'kernel-rt-64k-core': [TARGET_RT_64K_KERNEL_NEVRA, OLD_RT_64K_KERNEL_NEVRA],
+            },
+            '10.0',
+        ),
+        # 64k page size on ppc64le: standard kernel packages (no kernel-64k RPMs)
+        (
+            KernelType.ORDINARY,
+            KernelPageSize.PAGE_SIZE_64K,
+            ARCH_PPC64LE,
+            TARGET_PPC_KERNEL_NEVRA,
+            {'kernel-core': [OLD_PPC_KERNEL_NEVRA, TARGET_PPC_KERNEL_NEVRA]},
+            '10.0',
+        ),
     ]
 )
-def test_scaninstalledkernel(monkeypatch, is_rt, expected_target_nevra, stdouts):
+def test_scaninstalledkernel(monkeypatch, kernel_type, page_size, arch, expected_target_nevra, stdouts, dst_ver):
     src_kernel_pkg = RPM(name='kernel-core', arch='x86_64', version='0.1.2', release='3',
                          epoch='0', packager='', pgpsig='SOME_OTHER_SIG_X')
-    src_kernel_type = kernel_lib.KernelType.REALTIME if is_rt else kernel_lib.KernelType.ORDINARY
-    src_kernel_info = KernelInfo(pkg=src_kernel_pkg, type=src_kernel_type, uname_r='X')
+    src_kernel_info = KernelInfo(pkg=src_kernel_pkg, type=kernel_type, page_size=page_size, uname_r='X')
 
     def patched_get_boot_files(nevra):
         assert nevra == expected_target_nevra
         return scankernel.KernelBootFiles(vmlinuz_path='/boot/vmlinuz-X', initramfs_path='/boot/initramfs-X')
 
     result = []
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(dst_ver='9.0', msgs=[src_kernel_info]))
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(arch=arch, dst_ver=dst_ver, msgs=[src_kernel_info]))
     monkeypatch.setattr(api, 'produce', result.append)
     monkeypatch.setattr(scankernel, 'run', MockedRun(stdouts))
     monkeypatch.setattr(scankernel, 'get_boot_files_provided_by_kernel_pkg', patched_get_boot_files)
@@ -120,19 +205,43 @@ def test_get_boot_files_provided_by_kernel_pkg(monkeypatch, vmlinuz_path, initra
         assert result.initramfs_path == initramfs_path
 
 
-def test_scaninstalledkernel_missing_rt(monkeypatch):
+@pytest.mark.parametrize(
+    ('page_size', 'arch', 'expected_fallback_nevra', 'stdouts', 'dst_ver'),
+    [
+        (
+            KernelPageSize.PAGE_SIZE_4K,
+            ARCH_X86_64,
+            TARGET_KERNEL_NEVRA,
+            {
+                'kernel-core': [TARGET_KERNEL_NEVRA],
+                'kernel-rt-core': [OLD_RT_KERNEL_NEVRA],
+            },
+            '9.0',
+        ),
+        (
+            KernelPageSize.PAGE_SIZE_64K,
+            ARCH_ARM64,
+            TARGET_64K_KERNEL_NEVRA,
+            {
+                'kernel-64k-core': [TARGET_64K_KERNEL_NEVRA],
+                'kernel-rt-64k-core': [OLD_RT_64K_KERNEL_NEVRA],
+            },
+            '10.0',
+        ),
+    ]
+)
+def test_scaninstalledkernel_missing_rt(monkeypatch, page_size, arch, expected_fallback_nevra, stdouts, dst_ver):
     src_kernel_pkg = RPM(name='kernel-rt-core', arch='x86_64', version='0.1.2', release='3',
                          epoch='0', packager='', pgpsig='SOME_OTHER_SIG_X')
-    src_kernel_type = kernel_lib.KernelType.REALTIME
-    src_kernel_info = KernelInfo(pkg=src_kernel_pkg, type=src_kernel_type, uname_r='X')
+    src_kernel_info = KernelInfo(pkg=src_kernel_pkg, type=KernelType.REALTIME,
+                                 page_size=page_size, uname_r='X')
 
     result = []
-    stdouts = {'kernel-core': [TARGET_KERNEL_NEVRA], 'kernel-rt-core': [OLD_RT_KERNEL_NEVRA]}
 
     def patched_get_boot_content(target_nevra):
         return scankernel.KernelBootFiles(vmlinuz_path='/boot/vmlinuz-X', initramfs_path='/boot/initramfs-X')
 
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(dst_ver='9.0', msgs=[src_kernel_info]))
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(arch=arch, dst_ver=dst_ver, msgs=[src_kernel_info]))
     monkeypatch.setattr(api, 'current_logger', logger_mocked())
     monkeypatch.setattr(api, 'produce', result.append)
     monkeypatch.setattr(scankernel, 'run', MockedRun(stdouts))
@@ -143,13 +252,13 @@ def test_scaninstalledkernel_missing_rt(monkeypatch):
 
     assert api.current_logger.warnmsg
 
-    assert_produced_messages_are_correct(result, TARGET_KERNEL_NEVRA, '/boot/initramfs-X', '/boot/vmlinuz-X')
+    assert_produced_messages_are_correct(result, expected_fallback_nevra, '/boot/initramfs-X', '/boot/vmlinuz-X')
 
 
 def test_scaninstalledkernel_missing(monkeypatch):
     src_kernel_pkg = RPM(name='kernel-rt-core', arch='x86_64', version='0.1.2', release='3',
                          epoch='0', packager='', pgpsig='SOME_OTHER_SIG_X')
-    src_kernel_type = kernel_lib.KernelType.REALTIME
+    src_kernel_type = KernelType.REALTIME
     src_kernel_info = KernelInfo(pkg=src_kernel_pkg, type=src_kernel_type, uname_r='X')
 
     result = []

@@ -105,7 +105,7 @@ def test_no_kernel_version(monkeypatch, msgs):
 
     with pytest.raises(StopActorExecutionError) as e:
         targetinitramfsgenerator.process()
-    assert 'Cannot get version of the installed RHEL-8 kernel' in str(e)
+    assert 'Cannot get version of the installed target OS kernel' in str(e)
     assert not run_mocked.called
 
 

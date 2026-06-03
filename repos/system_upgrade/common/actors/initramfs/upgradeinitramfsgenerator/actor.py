@@ -5,6 +5,7 @@ from leapp.models import UpgradeDracutModule  # deprecated
 from leapp.models import (
     BootContent,
     FIPSInfo,
+    KernelInfo,
     LiveModeConfig,
     LVMConfig,
     RAIDInfo,
@@ -22,9 +23,10 @@ class UpgradeInitramfsGenerator(Actor):
     Creates the upgrade initramfs
 
     Creates an initram disk within a systemd-nspawn container using the target
-    system userspace, including new kernel. The creation of the initram disk
-    can be influenced with the UpgradeInitramfsTasks message (e.g. specifying
-    what files or dracut modules should be installed in the upgrade initramfs)
+    system userspace, including the appropriate kernel variant based on the
+    source system's page size. The creation of the initram disk can be
+    influenced with the UpgradeInitramfsTasks message (e.g. specifying what
+    files or dracut modules should be installed in the upgrade initramfs).
 
     See the UpgradeInitramfsTasks model for more details.
     """
@@ -32,6 +34,7 @@ class UpgradeInitramfsGenerator(Actor):
     name = 'upgrade_initramfs_generator'
     consumes = (
         FIPSInfo,
+        KernelInfo,
         LiveModeConfig,
         LVMConfig,
         RAIDInfo,
