@@ -15,13 +15,11 @@ class InstalledTargetKernelVersion(Model):
 
 
 class KernelInfo(Model):
-    """
-    Information about the booted kernel.
-    """
+    """Information about the booted kernel."""
     topic = SystemInfoTopic
 
     pkg = fields.Model(RPM)
-    """ Package providing the booted kernel. """
+    """Package providing the booted kernel."""
 
     uname_r = fields.String()
     """``uname -r`` of the booted kernel."""
@@ -29,6 +27,9 @@ class KernelInfo(Model):
     type = fields.StringEnum(['ordinary', 'realtime'], default='ordinary')
     # @FixMe(mhecko): I want to use kernel_lib.KernelType here, but I cannot import any library code (yet).
     # #               Figure out how to do it.
+
+    page_size = fields.StringEnum(['4k', '64k'], default='4k')
+    """Memory page size of the kernel. The 64k page size is available only on aarch64 for both kernel types."""
 
 
 class InstalledTargetKernelInfo(Model):
