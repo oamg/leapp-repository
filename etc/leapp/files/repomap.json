@@ -1,6 +1,6 @@
 {
-    "datetime": "202604161146Z",
-    "version_format": "1.3.0",
+    "datetime": "202607211604Z",
+    "version_format": "2.0.0",
     "provided_data_streams": [
         "4.3"
     ],
@@ -11,165 +11,219 @@
             "entries": [
                 {
                     "source": "rhel8-BaseOS",
-                    "target": [
-                        "rhel9-BaseOS"
-                    ]
+                    "target": {
+                        "default": [
+                            "rhel9-BaseOS"
+                        ]
+                    }
                 },
                 {
                     "source": "rhel8-AppStream",
-                    "target": [
-                        "rhel9-AppStream"
-                    ]
+                    "target": {
+                        "default": [
+                            "rhel9-AppStream"
+                        ]
+                    }
                 },
                 {
                     "source": "rhel8-CRB",
-                    "target": [
-                        "rhel9-CRB"
-                    ]
+                    "target": {
+                        "default": [
+                            "rhel9-CRB"
+                        ]
+                    }
                 },
                 {
                     "source": "rhel8-rhui-client-config-server-8-ha",
-                    "target": [
-                        "rhel9-rhui-client-config-server-9"
-                    ]
+                    "target": {
+                        "default": [
+                            "rhel9-rhui-client-config-server-9"
+                        ]
+                    }
                 },
                 {
                     "source": "rhel8-rhui-client-config-server-8",
-                    "target": [
-                        "rhel9-rhui-client-config-server-9"
-                    ]
+                    "target": {
+                        "default": [
+                            "rhel9-rhui-client-config-server-9"
+                        ]
+                    }
                 },
                 {
                     "source": "rhel8-Supplementary",
-                    "target": [
-                        "rhel9-Supplementary"
-                    ]
+                    "target": {
+                        "default": [
+                            "rhel9-Supplementary"
+                        ]
+                    }
                 },
                 {
                     "source": "rhel8-RT",
-                    "target": [
-                        "rhel9-RT"
-                    ]
+                    "target": {
+                        "default": [
+                            "rhel9-RT"
+                        ]
+                    }
                 },
                 {
                     "source": "rhel8-NFV",
-                    "target": [
-                        "rhel9-NFV"
-                    ]
+                    "target": {
+                        "default": [
+                            "rhel9-NFV"
+                        ]
+                    }
                 },
                 {
                     "source": "rhel8-SAP-NetWeaver",
-                    "target": [
-                        "rhel9-SAP-NetWeaver"
-                    ]
+                    "target": {
+                        "default": [
+                            "rhel9-SAP-NetWeaver"
+                        ]
+                    }
                 },
                 {
                     "source": "rhel8-SAP-Solutions",
-                    "target": [
-                        "rhel9-SAP-Solutions"
-                    ]
+                    "target": {
+                        "default": [
+                            "rhel9-SAP-Solutions"
+                        ]
+                    }
                 },
                 {
                     "source": "rhel8-HighAvailability",
-                    "target": [
-                        "rhel9-HighAvailability"
-                    ]
+                    "target": {
+                        "default": [
+                            "rhel9-HighAvailability"
+                        ]
+                    }
                 },
                 {
                     "source": "rhel8-Advanced-Virt",
-                    "target": [
-                        "rhel9-AppStream"
-                    ]
+                    "target": {
+                        "default": [
+                            "rhel9-AppStream"
+                        ]
+                    }
                 },
                 {
                     "source": "rhel8-Advanced-Virt-CRB",
-                    "target": [
-                        "rhel9-CRB"
-                    ]
+                    "target": {
+                        "default": [
+                            "rhel9-CRB"
+                        ]
+                    }
                 },
                 {
                     "source": "rhel8-jbeap-7.4",
-                    "target": [
-                        "rhel9-jbeap-7.4"
-                    ]
+                    "target": {
+                        "default": [
+                            "rhel9-jbeap-7.4"
+                        ]
+                    }
                 },
                 {
                     "source": "rhel8-jbeap-8.0",
-                    "target": [
-                        "rhel9-jbeap-8.0"
-                    ]
+                    "target": {
+                        "default": [
+                            "rhel9-jbeap-8.0"
+                        ]
+                    }
                 },
                 {
                     "source": "rhel8-jbeap-8.1",
-                    "target": [
-                        "rhel9-jbeap-8.1"
-                    ]
+                    "target": {
+                        "default": [
+                            "rhel9-jbeap-8.1"
+                        ]
+                    }
                 },
                 {
                     "source": "rhel8-satellite-6.16",
-                    "target": [
-                        "rhel9-satellite-6.16"
-                    ]
+                    "target": {
+                        "default": [
+                            "rhel9-satellite-6.16"
+                        ]
+                    }
                 },
                 {
                     "source": "rhel8-satellite-capsule-6.16",
-                    "target": [
-                        "rhel9-satellite-capsule-6.16"
-                    ]
+                    "target": {
+                        "default": [
+                            "rhel9-satellite-capsule-6.16"
+                        ]
+                    }
                 },
                 {
                     "source": "rhel8-satellite-maintenance-6.16",
-                    "target": [
-                        "rhel9-satellite-maintenance-6.16"
-                    ]
+                    "target": {
+                        "default": [
+                            "rhel9-satellite-maintenance-6.16"
+                        ]
+                    }
                 },
                 {
                     "source": "rhel8-satellite-utils-6.16",
-                    "target": [
-                        "rhel9-satellite-utils-6.16"
-                    ]
+                    "target": {
+                        "default": [
+                            "rhel9-satellite-utils-6.16"
+                        ]
+                    }
                 },
                 {
                     "source": "rhel8-satellite-client-6",
-                    "target": [
-                        "rhel9-satellite-client-6"
-                    ]
+                    "target": {
+                        "default": [
+                            "rhel9-satellite-client-6"
+                        ]
+                    }
                 },
                 {
                     "source": "rhel8-rhui-client-config-server-8-sap",
-                    "target": [
-                        "rhel9-rhui-client-config-server-9-sap"
-                    ]
+                    "target": {
+                        "default": [
+                            "rhel9-rhui-client-config-server-9-sap"
+                        ]
+                    }
                 },
                 {
                     "source": "rhel8-rhui-microsoft-azure-rhel8",
-                    "target": [
-                        "rhel9-rhui-microsoft-azure-rhel9"
-                    ]
+                    "target": {
+                        "default": [
+                            "rhel9-rhui-microsoft-azure-rhel9"
+                        ]
+                    }
                 },
                 {
                     "source": "rhel8-rhui-microsoft-azure-sap-apps",
-                    "target": [
-                        "rhel9-rhui-microsoft-azure-sap-apps"
-                    ]
+                    "target": {
+                        "default": [
+                            "rhel9-rhui-microsoft-azure-sap-apps"
+                        ]
+                    }
                 },
                 {
                     "source": "rhel8-rhui-microsoft-sap-ha",
-                    "target": [
-                        "rhel9-rhui-microsoft-sap-ha"
-                    ]
+                    "target": {
+                        "default": [
+                            "rhel9-rhui-microsoft-sap-ha"
+                        ]
+                    }
                 },
                 {
                     "source": "rhel8-rhui-google-compute-engine",
-                    "target": [
-                        "rhel9-rhui-google-compute-engine-leapp"
-                    ]
+                    "target": {
+                        "default": [
+                            "rhel9-rhui-google-compute-engine-leapp"
+                        ]
+                    }
                 },
                 {
                     "source": "rhel8-rhui-custom-client-at-alibaba",
-                    "target": [
-                        "rhel9-rhui-custom-client-at-alibaba"
-                    ]
+                    "target": {
+                        "default": [
+                            "rhel9-rhui-custom-client-at-alibaba"
+                        ]
+                    }
                 }
             ]
         },
@@ -179,105 +233,139 @@
             "entries": [
                 {
                     "source": "rhel9-BaseOS",
-                    "target": [
-                        "rhel10-BaseOS"
-                    ]
+                    "target": {
+                        "default": [
+                            "rhel10-BaseOS"
+                        ]
+                    }
                 },
                 {
                     "source": "rhel9-AppStream",
-                    "target": [
-                        "rhel10-AppStream"
-                    ]
+                    "target": {
+                        "default": [
+                            "rhel10-AppStream"
+                        ]
+                    }
                 },
                 {
                     "source": "rhel9-CRB",
-                    "target": [
-                        "rhel10-CRB"
-                    ]
+                    "target": {
+                        "default": [
+                            "rhel10-CRB"
+                        ]
+                    }
                 },
                 {
                     "source": "rhel9-Supplementary",
-                    "target": [
-                        "rhel10-Supplementary"
-                    ]
+                    "target": {
+                        "default": [
+                            "rhel10-Supplementary"
+                        ]
+                    }
                 },
                 {
                     "source": "rhel9-RT",
-                    "target": [
-                        "rhel10-RT"
-                    ]
+                    "target": {
+                        "default": [
+                            "rhel10-RT"
+                        ]
+                    }
                 },
                 {
                     "source": "rhel9-NFV",
-                    "target": [
-                        "rhel10-NFV"
-                    ]
+                    "target": {
+                        "default": [
+                            "rhel10-NFV"
+                        ]
+                    }
                 },
                 {
                     "source": "rhel9-SAP-NetWeaver",
-                    "target": [
-                        "rhel10-SAP-NetWeaver"
-                    ]
+                    "target": {
+                        "default": [
+                            "rhel10-SAP-NetWeaver"
+                        ]
+                    }
                 },
                 {
                     "source": "rhel9-SAP-Solutions",
-                    "target": [
-                        "rhel10-SAP-Solutions"
-                    ]
+                    "target": {
+                        "default": [
+                            "rhel10-SAP-Solutions"
+                        ]
+                    }
                 },
                 {
                     "source": "rhel9-HighAvailability",
-                    "target": [
-                        "rhel10-HighAvailability"
-                    ]
+                    "target": {
+                        "default": [
+                            "rhel10-HighAvailability"
+                        ]
+                    }
                 },
                 {
                     "source": "rhel9-satellite-client-6",
-                    "target": [
-                        "rhel10-satellite-client-6"
-                    ]
+                    "target": {
+                        "default": [
+                            "rhel10-satellite-client-6"
+                        ]
+                    }
                 },
                 {
                     "source": "rhel9-rhui-client-config-server-9",
-                    "target": [
-                        "rhel10-rhui-client-config-server-10"
-                    ]
+                    "target": {
+                        "default": [
+                            "rhel10-rhui-client-config-server-10"
+                        ]
+                    }
                 },
                 {
                     "source": "rhel9-rhui-microsoft-azure-rhel9",
-                    "target": [
-                        "rhel10-rhui-microsoft-azure-rhel10"
-                    ]
+                    "target": {
+                        "default": [
+                            "rhel10-rhui-microsoft-azure-rhel10"
+                        ]
+                    }
                 },
                 {
                     "source": "rhel9-rhui-custom-client-at-alibaba",
-                    "target": [
-                        "rhel10-rhui-custom-client-at-alibaba"
-                    ]
+                    "target": {
+                        "default": [
+                            "rhel10-rhui-custom-client-at-alibaba"
+                        ]
+                    }
                 },
                 {
                     "source": "rhel9-rhui-client-config-server-9-sap",
-                    "target": [
-                        "rhel10-rhui-client-config-server-10-sap"
-                    ]
+                    "target": {
+                        "default": [
+                            "rhel10-rhui-client-config-server-10-sap"
+                        ]
+                    }
                 },
                 {
                     "source": "rhel9-rhui-microsoft-azure-sap-apps",
-                    "target": [
-                        "rhel10-rhui-microsoft-azure-sap-apps"
-                    ]
+                    "target": {
+                        "default": [
+                            "rhel10-rhui-microsoft-azure-sap-apps"
+                        ]
+                    }
                 },
                 {
                     "source": "rhel9-rhui-microsoft-sap-ha",
-                    "target": [
-                        "rhel10-rhui-microsoft-sap-ha"
-                    ]
+                    "target": {
+                        "default": [
+                            "rhel10-rhui-microsoft-sap-ha"
+                        ]
+                    }
                 },
                 {
                     "source": "rhel9-rhui-google-compute-engine",
-                    "target": [
-                        "rhel10-rhui-google-compute-engine-leapp"
-                    ]
+                    "target": {
+                        "default": [
+                            "rhel10-rhui-google-compute-engine-leapp"
+                        ]
+                    }
                 }
             ]
         }
