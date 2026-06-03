@@ -45,17 +45,19 @@ class RepoMapData:
             distro=data['distro'],
         ))
 
-    def get_repositories(self, valid_major_versions, valid_distros):
+    def get_repositories(self, major_versions, distros, arches):
         """
         Get repository entries for the specified major versions and distros
 
-        :return: PESIDRepositoryEntry objects matching the specified major versions and distros
+        :return: PESIDRepositoryEntry objects matching the specified major versions, distros and arches
         :rtype: list[PESIDRepositoryEntry]
         """
         return [
             repo
             for repo in self.repositories
-            if repo.major_version in valid_major_versions and repo.distro in valid_distros
+            if repo.major_version in major_versions
+            and repo.distro in distros
+            and repo.arch in arches
         ]
 
     def _add_mapping(
@@ -124,6 +126,7 @@ class RepoMapData:
             existing_pesids.add(repo_family['pesid'])
             for repo in repo_family['entries']:
                 repomap._add_repository(repo, repo_family['pesid'])
+
 
         # Load mappings
         for mapping in data['mapping']:
@@ -208,7 +211,6 @@ def scan_repositories(read_repofile_func=_read_repofile):
 
     See the description of the actor for more details.
     """
-    # TODO: add filter based on the current arch
     # TODO: deprecate the product type and introduce the "channels" ?.. more or less
     # NOTE: product type is changed, now it's channel: eus,e4s,aus,tus,ga,beta
 
@@ -237,7 +239,11 @@ def scan_repositories(read_repofile_func=_read_repofile):
             )
             _inhibit_upgrade(err_message.format(src_ver, dst_ver))
 
-        repos = repomap_data.get_repositories([src_ver, dst_ver], [src_distro, dst_distro])
+        repos = repomap_data.get_repositories(
+            [src_ver, dst_ver],
+            [src_distro, dst_distro],
+            [api.current_actor().configuration.architecture],
+        )
 
         api.produce(RepositoriesMapping(mapping=mapping, repositories=repos))
 
