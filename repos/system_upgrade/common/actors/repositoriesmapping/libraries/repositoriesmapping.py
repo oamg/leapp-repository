@@ -2,7 +2,7 @@ import os
 from collections import defaultdict
 
 from leapp.exceptions import StopActorExecutionError
-from leapp.libraries.common.config import get_target_distro_id
+from leapp.libraries.common.config import get_source_distro_id, get_target_distro_id
 from leapp.libraries.common.config.version import get_source_major_version, get_target_major_version
 from leapp.libraries.common.fetch import load_data_asset
 from leapp.libraries.common.rpms import get_leapp_packages, LeappComponents
@@ -45,11 +45,18 @@ class RepoMapData:
             distro=data['distro'],
         ))
 
-    def get_repositories(self, valid_major_versions):
+    def get_repositories(self, valid_major_versions, valid_distros):
         """
-        Return the list of PESIDRepositoryEntry object matching the specified major versions.
+        Get repository entries for the specified major versions and distros
+
+        :return: PESIDRepositoryEntry objects matching the specified major versions and distros
+        :rtype: list[PESIDRepositoryEntry]
         """
-        return [repo for repo in self.repositories if repo.major_version in valid_major_versions]
+        return [
+            repo
+            for repo in self.repositories
+            if repo.major_version in valid_major_versions and repo.distro in valid_distros
+        ]
 
     def _add_mapping(
         self,
@@ -216,9 +223,11 @@ def scan_repositories(read_repofile_func=_read_repofile):
     json_data = read_repofile_func(REPOMAP_FILE)
     try:
         repomap_data = RepoMapData.load_from_dict(json_data)
+
+        src_distro, dst_distro = get_source_distro_id(), get_target_distro_id()
         src_ver, dst_ver = get_source_major_version(), get_target_major_version()
 
-        mapping = repomap_data.get_mappings(src_ver, dst_ver, get_target_distro_id())
+        mapping = repomap_data.get_mappings(src_ver, dst_ver, dst_distro)
         if mapping is None:
             # don't really expect this to happen because before it was not
             # handled at all and I am not aware of any crashes
@@ -228,11 +237,10 @@ def scan_repositories(read_repofile_func=_read_repofile):
             )
             _inhibit_upgrade(err_message.format(src_ver, dst_ver))
 
-        valid_major_versions = [get_source_major_version(), get_target_major_version()]
-        api.produce(RepositoriesMapping(
-            mapping=mapping,
-            repositories=repomap_data.get_repositories(valid_major_versions)
-        ))
+        repos = repomap_data.get_repositories([src_ver, dst_ver], [src_distro, dst_distro])
+
+        api.produce(RepositoriesMapping(mapping=mapping, repositories=repos))
+
     except ModelViolationError as err:
         err_message = (
             'The repository mapping file is invalid: '
