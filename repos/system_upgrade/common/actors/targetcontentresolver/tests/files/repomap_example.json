@@ -1,6 +1,6 @@
 {
   "datetime": "202107141655Z",
-  "version_format": "1.3.0",
+  "version_format": "2.0.0",
   "mapping": [
     {
       "source_major_version": "7",
@@ -8,10 +8,10 @@
       "entries": [
         {
           "source": "pesid1",
-          "target": [
-            "pesid2",
-            "pesid3"
-          ]
+          "target": {
+            "default": ["pesid2", "pesid3"],
+            "centos": ["pesid6", "pesid7"]
+          }
         }
       ]
     },
@@ -21,10 +21,10 @@
       "entries": [
         {
           "source": "pesid3",
-          "target": [
-            "pesid4",
-            "pesid5"
-          ]
+          "target": {
+            "default": ["pesid4", "pesid5"],
+            "almalinux": ["pesid6"]
+          }
         }
       ]
     }

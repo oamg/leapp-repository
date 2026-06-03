@@ -2,7 +2,6 @@ import json
 import os
 
 import pytest
-import requests
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import repomap_loader
@@ -22,14 +21,28 @@ def adjust_cwd():
     os.chdir(previous_cwd)
 
 
-def test_scan_existing_valid_data(monkeypatch, adjust_cwd):
+@pytest.mark.parametrize(
+    'target_distro, expect',
+    [
+        ('rhel', {'pesid2', 'pesid3'}),
+        # has specific mapping
+        ('centos', {'pesid6', 'pesid7'}),
+        # no specific mapping, should use default, same as rhel
+        ('almalinux', {'pesid2', 'pesid3'}),
+    ]
+)
+def test_scan_existing_valid_data(monkeypatch, adjust_cwd, target_distro, expect):
     """
     Tests whether an existing valid repomap file is loaded correctly.
     """
 
     with open('files/repomap_example.json') as repomap_file:
         data = json.load(repomap_file)
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(src_ver='7.9', dst_ver='8.4'))
+    monkeypatch.setattr(
+        api,
+        "current_actor",
+        CurrentActorMocked(src_ver="7.9", dst_ver="8.4", dst_distro=target_distro),
+    )
     monkeypatch.setattr(api, 'produce', produce_mocked())
 
     result = repomap_loader.load_repositories_mapping(lambda dummy: data)
@@ -51,7 +64,7 @@ def test_scan_existing_valid_data(monkeypatch, adjust_cwd):
     assert len(repo_mapping.mapping) == 1, fail_description
     fail_description = 'Actor failed to load IPU-relevant mapping data correctly.'
     assert repo_mapping.mapping[0].source == 'pesid1', fail_description
-    assert set(repo_mapping.mapping[0].target) == {'pesid2', 'pesid3'}, fail_description
+    assert set(repo_mapping.mapping[0].target) == expect, fail_description
 
     # 2. Verify that only repositories valid for the current IPU are produced
     pesid_repos = repo_mapping.repositories
@@ -199,7 +212,9 @@ def test_load_repositories_mapping_with_mapping_to_pesid_without_repos(monkeypat
                 'entries':  [
                     {
                         'source': 'source_pesid',
-                        'target': ['nonexisting_pesid']
+                        'target': {
+                            "default": ['nonexisting_pesid']
+                        }
                     }
                 ]
             }
@@ -246,7 +261,9 @@ def test_load_repositories_mapping_with_repo_entry_missing_required_fields(monke
                 'entries':  [
                     {
                         'source': 'source_pesid',
-                        'target': ['target_pesid']
+                        'target': {
+                            "default": ['target_pesid']
+                        }
                     }
                 ]
             }
@@ -284,7 +301,7 @@ def test_load_repositories_mapping_with_repo_entry_missing_required_fields(monke
     assert 'the JSON is missing a required field' in error_info.value.message
 
 
-def test_load_repositories_mapping_with_repo_entry_mapping_target_not_a_list(monkeypatch):
+def test_scan_repositories_with_repo_entry_mapping_target_not_a_list(monkeypatch):
     """
     Tests whether deserialization of a mapping entry that has its target field set to a string
     is handled internally and StopActorExecutionError is propagated to the user.
@@ -300,7 +317,7 @@ def test_load_repositories_mapping_with_repo_entry_mapping_target_not_a_list(mon
                 'entries':  [
                     {
                         'source': 'source_pesid',
-                        'target': 'target_pesid'
+                        'target': ['target_pesid']
                     }
                 ]
             }
@@ -313,6 +330,9 @@ def test_load_repositories_mapping_with_repo_entry_mapping_target_not_a_list(mon
                         'major_version': '7',
                         'repoid': 'some-rhel-9-repo1',
                         'arch': 'x86_64',
+                        'repo_type': 'rpm',
+                        'channel': 'eus',
+                        'distro': 'rhel',
                     }
                 ]
             },
@@ -323,6 +343,9 @@ def test_load_repositories_mapping_with_repo_entry_mapping_target_not_a_list(mon
                         'major_version': '7',
                         'repoid': 'some-rhel-9-repo1',
                         'arch': 'x86_64',
+                        'repo_type': 'rpm',
+                        'channel': 'eus',
+                        'distro': 'rhel',
                     }
                 ]
             }
@@ -335,7 +358,10 @@ def test_load_repositories_mapping_with_repo_entry_mapping_target_not_a_list(mon
     with pytest.raises(StopActorExecutionError) as error_info:
         repomap_loader.load_repositories_mapping(lambda dummy: json_data)
 
-    assert 'repository mapping file is invalid' in error_info.value.message
+    assert (
+        "The 'target' of a mapping entry for PESID source_pesid is <class 'list'>, must be a dict"
+        in error_info.value.message
+    )
 
 
 def test_load_repositories_mapping_raises_on_invalid_data(monkeypatch):
