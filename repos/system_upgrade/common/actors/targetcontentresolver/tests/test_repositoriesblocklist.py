@@ -2,6 +2,7 @@ import pytest
 
 from leapp import reporting
 from leapp.libraries.actor import repositoriesblocklist
+from leapp.libraries.actor.targetcontentresolver import ExternalRepoSetupTasks
 from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked, produce_mocked
 from leapp.libraries.stdlib import api
 from leapp.models import (
@@ -12,7 +13,6 @@ from leapp.models import (
     RepositoriesBlocklisted,
     RepositoriesFacts,
     RepositoriesMapping,
-    RepositoriesSetupTasks,
     RepositoryData,
     RepositoryFile
 )
@@ -228,21 +228,19 @@ def _get_produced_blacklisted():
 def test_compute_blocklist_merges_internal_and_external(monkeypatch):
     """
     compute_blocklist merges internal blocklist with external
-    RepositoriesSetupTasks.to_block and produces both messages.
+    ExternalRepoSetupTasks.to_block and produces both messages.
     """
-    external_tasks = [
-        RepositoriesSetupTasks(to_enable=['some-repo'], to_block=['ext-blocked-1', 'ext-blocked-2']),
-    ]
+    external_tasks = ExternalRepoSetupTasks(
+        to_enable={'some-repo'}, to_block={'ext-blocked-1', 'ext-blocked-2'}, custom=set()
+    )
     monkeypatch.setattr(
         repositoriesblocklist, 'get_blocklisted_repoids', lambda _repo_map: {'crb-repo-1'}
     )
-    monkeypatch.setattr(api, 'consume', lambda _model: iter(external_tasks))
     monkeypatch.setattr(api, 'produce', produce_mocked())
 
-    full_blocklist, external_repoids = repositoriesblocklist.compute_blocklist(None)
+    full_blocklist = repositoriesblocklist.compute_blocklist(None, external_tasks)
 
     assert full_blocklist == {'crb-repo-1', 'ext-blocked-1', 'ext-blocked-2'}
-    assert external_repoids == {'some-repo'}
 
     blocklisted_msgs = _get_produced_blocklisted()
     assert len(blocklisted_msgs) == 1
@@ -255,16 +253,15 @@ def test_compute_blocklist_merges_internal_and_external(monkeypatch):
 
 def test_compute_blocklist_no_messages_when_empty(monkeypatch):
     """No blocklist messages are produced when blocklist is empty."""
+    external_tasks = ExternalRepoSetupTasks(to_enable=set(), to_block=set(), custom=set())
     monkeypatch.setattr(
         repositoriesblocklist, 'get_blocklisted_repoids', lambda _repo_map: set()
     )
-    monkeypatch.setattr(api, 'consume', lambda _model: iter([]))
     monkeypatch.setattr(api, 'produce', produce_mocked())
 
-    full_blocklist, external_repoids = repositoriesblocklist.compute_blocklist(None)
+    full_blocklist = repositoriesblocklist.compute_blocklist(None, external_tasks)
 
     assert full_blocklist == set()
-    assert external_repoids == set()
     assert len(_get_produced_blocklisted()) == 0
     assert len(_get_produced_blacklisted()) == 0
 
@@ -272,53 +269,47 @@ def test_compute_blocklist_no_messages_when_empty(monkeypatch):
 @suppress_deprecation(RepositoriesBlacklisted)
 def test_compute_blocklist_only_internal(monkeypatch):
     """Only internal blocklist when no external tasks are present."""
+    external_tasks = ExternalRepoSetupTasks(to_enable=set(), to_block=set(), custom=set())
     monkeypatch.setattr(
         repositoriesblocklist, 'get_blocklisted_repoids', lambda _repo_map: {'crb-repo-1'}
     )
-    monkeypatch.setattr(api, 'consume', lambda _model: iter([]))
     monkeypatch.setattr(api, 'produce', produce_mocked())
 
-    full_blocklist, external_repoids = repositoriesblocklist.compute_blocklist(None)
+    full_blocklist = repositoriesblocklist.compute_blocklist(None, external_tasks)
 
     assert full_blocklist == {'crb-repo-1'}
-    assert external_repoids == set()
     assert len(_get_produced_blocklisted()) == 1
 
 
-def test_compute_blocklist_multiple_external_tasks(monkeypatch):
-    """Blocklist and to_enable from multiple external tasks are aggregated."""
-    external_tasks = [
-        RepositoriesSetupTasks(to_block=['ext-1'], to_enable=['repo-a']),
-        RepositoriesSetupTasks(to_block=['ext-2', 'ext-3'], to_enable=['repo-b']),
-    ]
+def test_compute_blocklist_aggregated_external_tasks(monkeypatch):
+    """Blocklist from pre-aggregated external tasks is merged with internal."""
+    external_tasks = ExternalRepoSetupTasks(
+        to_enable={'repo-a', 'repo-b'}, to_block={'ext-1', 'ext-2', 'ext-3'}, custom=set()
+    )
     monkeypatch.setattr(
         repositoriesblocklist, 'get_blocklisted_repoids', lambda _repo_map: set()
     )
-    monkeypatch.setattr(api, 'consume', lambda _model: iter(external_tasks))
     monkeypatch.setattr(api, 'produce', produce_mocked())
 
-    full_blocklist, external_repoids = repositoriesblocklist.compute_blocklist(None)
+    full_blocklist = repositoriesblocklist.compute_blocklist(None, external_tasks)
 
     assert full_blocklist == {'ext-1', 'ext-2', 'ext-3'}
-    assert external_repoids == {'repo-a', 'repo-b'}
 
 
 @suppress_deprecation(RepositoriesBlacklisted)
 def test_compute_blocklist_overlapping_internal_and_external(monkeypatch):
     """Overlapping repoids between internal and external blocklists are deduplicated."""
-    external_tasks = [
-        RepositoriesSetupTasks(to_block=['shared-repo', 'ext-only']),
-    ]
+    external_tasks = ExternalRepoSetupTasks(
+        to_enable=set(), to_block={'shared-repo', 'ext-only'}, custom=set()
+    )
     monkeypatch.setattr(
         repositoriesblocklist, 'get_blocklisted_repoids', lambda _repo_map: {'shared-repo', 'internal-only'}
     )
-    monkeypatch.setattr(api, 'consume', lambda _model: iter(external_tasks))
     monkeypatch.setattr(api, 'produce', produce_mocked())
 
-    full_blocklist, external_repoids = repositoriesblocklist.compute_blocklist(None)
+    full_blocklist = repositoriesblocklist.compute_blocklist(None, external_tasks)
 
     assert full_blocklist == {'shared-repo', 'internal-only', 'ext-only'}
-    assert external_repoids == set()
 
     blocklisted_msgs = _get_produced_blocklisted()
     assert len(blocklisted_msgs) == 1
