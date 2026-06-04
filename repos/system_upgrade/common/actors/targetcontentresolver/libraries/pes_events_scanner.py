@@ -320,7 +320,7 @@ def report_skipped_packages(title, message, skipped_pkgs, remediation=None):
         api.current_logger().info(summary)
 
 
-def remove_new_packages_from_blacklisted_repos(source_pkgs, target_pkgs, blacklisted_repoids=None):
+def remove_new_packages_from_blacklisted_repos(source_pkgs, target_pkgs, blacklisted_repoids):
     """
     Remove newly installed packages from blacklisted repositories that were computed to be on the target system.
 
@@ -357,7 +357,7 @@ def get_enabled_repoids():
     return enabled_repoids
 
 
-def get_pesid_to_repoid_map(target_pesids, repositories_map_msg):
+def get_pesid_to_repoid_map(target_pesids, repositories_map_msg, enabled_repoids):
     """
     Get a dictionary mapping all PESID repositories to their corresponding repoid.
 
@@ -373,7 +373,6 @@ def get_pesid_to_repoid_map(target_pesids, repositories_map_msg):
     # NOTE: We have to calculate expected target repositories like in the setuptargetrepos actor.
     # It's planned to handle this in different a way in future...
 
-    enabled_repoids = get_enabled_repoids()
     default_channels = repomap_calc.get_default_repository_channels(repomap_handler, enabled_repoids)
     repomap_handler.set_default_channels(default_channels)
 
@@ -433,7 +432,7 @@ def get_pesid_to_repoid_map(target_pesids, repositories_map_msg):
     return repositories_mapping
 
 
-def replace_pesids_with_repoids_in_packages(packages, source_pkgs_repoids, repositories_map_msg):
+def replace_pesids_with_repoids_in_packages(packages, source_pkgs_repoids, repositories_map_msg, enabled_repoids):
     """Replace packages with PESID in their .repository field with ones that have repoid providing the package."""
     # We want to map only PESIDs - if some package had no events, it will its repository set to source system repoid
     packages_with_pesid = {pkg for pkg in packages if pkg.repository not in source_pkgs_repoids}
@@ -441,7 +440,7 @@ def replace_pesids_with_repoids_in_packages(packages, source_pkgs_repoids, repos
 
     required_target_pesids = {pkg.repository for pkg in packages_with_pesid}
 
-    pesid_to_target_repoid_map = get_pesid_to_repoid_map(required_target_pesids, repositories_map_msg)
+    pesid_to_target_repoid_map = get_pesid_to_repoid_map(required_target_pesids, repositories_map_msg, enabled_repoids)
 
     packages_with_unknown_target_repoid = {
         pkg
@@ -555,7 +554,7 @@ def include_instructions_from_transaction_configuration(rpm_tasks, transaction_c
                                   modules_to_reset=modules_to_reset)
 
 
-def scan_pes_events(repositories_map_msg, blacklisted_repoids=None):
+def scan_pes_events(repositories_map_msg, blacklisted_repoids, enabled_repoids):
     """
     Process PES events and compute RPM transaction tasks.
 
@@ -586,7 +585,12 @@ def scan_pes_events(repositories_map_msg, blacklisted_repoids=None):
                                                                           events, releases)
 
     # Packages coming out of the events have PESID as their repository, however, we need real repoid
-    target_pkgs = replace_pesids_with_repoids_in_packages(target_pkgs, repoids_of_source_pkgs, repositories_map_msg)
+    target_pkgs = replace_pesids_with_repoids_in_packages(
+        target_pkgs,
+        repoids_of_source_pkgs,
+        repositories_map_msg,
+        enabled_repoids
+    )
 
     # Apply the desired repository blacklisting
     blacklisted_repoids, target_pkgs = remove_new_packages_from_blacklisted_repos(pkgs_to_begin_computation_with,

@@ -47,7 +47,6 @@ def _report_excluded_repos(repos):
         ),
         reporting.Severity(reporting.Severity.INFO),
         reporting.Groups([reporting.Groups.REPOSITORY]),
-        reporting.Groups([reporting.Groups.FAILURE]),
         reporting.Remediation(
             hint=(
                 'If some of excluded repositories are still required to be used'
@@ -136,7 +135,7 @@ def get_blocklisted_repoids(repo_mapping):
 
     Conditions to exclude:
     - there are not such repositories already enabled on the source system
-      (e.g. "Optional" repositories)
+      (e.g. "CRB" repositories)
     - such repositories are not required for the upgrade explicitly by the user
       (e.g. via the --enablerepo option or via the /etc/leapp/files/leapp_upgrade_repositories.repo file)
 
@@ -146,12 +145,8 @@ def get_blocklisted_repoids(repo_mapping):
     :returns: Set of repoids to blocklist on the target system.
     :rtype: set
     """
+    # TODO(pstodulk): replace it by enabled_repos
     repos_facts = next(api.consume(RepositoriesFacts), None)
-
-    if not repos_facts:
-        raise StopActorExecutionError('Actor didn\'t receive required messages: {0}'.format(
-            'RepositoriesFacts'
-        ))
 
     if not _are_optional_repos_disabled(repo_mapping, repos_facts):
         # nothing to do - an optional repository is enabled
@@ -172,34 +167,51 @@ def get_blocklisted_repoids(repo_mapping):
 
 
 @suppress_deprecation(RepositoriesBlacklisted)
-def compute_blocklist(repo_mapping):
+def compute_blocklist(repo_mapping, external_tasks):
     """
-    Compute the full blocklist and extract external repoid requests.
+    Create the blocklist of repositories that should be blocked during the upgrade.
 
-    Merges the internally determined blocklist (unsupported repos like CRB)
-    with external blocklist requests from ``RepositoriesSetupTasks.blocklist``.
-    When the resulting blocklist is non-empty, produces both
-    ``RepositoriesBlocklisted`` and the deprecated ``RepositoriesBlacklisted``
-    messages.
+    The content in the CRB repository is considered as unsupported. Hence
+    we do not want to enable such a repository by default on the target system
+    unless
+      * it is explicitely requested, or
+      * it is already enabled on the source system
+    This is important as some functionality originally supported on the source
+    source system can be moved to the CRB repository on the target system.
+    In such a case, we do not want to install automatically such a content
+    that lost a support.
 
-    Also extracts ``to_enable`` repoids from the same external tasks so that
-    the caller does not need to re-consume the messages.
+    For this reason, compute the list of repositories that should be blocklisted
+    and take into account also external requests.
+    In case that multiple requests are raised for a specific repository, the
+    priority order is following:
+        internal block rq > external enable rq > external block rq > external custom rq
+
+    The external custom request has the highest priority as this comes from
+    the system configuration or from the `--enablerepo` option used when executing
+    leapp - so it's understood as decision made by user explicitely for
+    the in-place upgrade purpose. Currently there is no explicit custom
+    configuration to disable a repo.
+
+    Once the list is calculated, the RepositoriesBlocklisted and
+    RepositoriesBlacklisted messages are produced.
 
     :param repo_mapping: RepositoriesMapping message.
-    :returns: Tuple of (full_blocklist_repoids, external_repoids_requests).
-    :rtype: tuple[set, set]
+    :type repo_mapping: RepositoriesMapping
+    :param external_tasks: External repositories tasks represented by object with following fields:
+
+        * ``to_enable`` - repositories that should be enabled
+        * ``blocklist`` - repositories that should be blocklisted
+        * ``custom`` - repositories explicitely requested by user to be used during the upgrade
+
+    :type external_tasks: targetcontentresolver.ExternalRepoSetupTasks
+    :returns: List of blocklisted repositories
+    :rtype: List[str]
     """
     internal_blocklist = get_blocklisted_repoids(repo_mapping)
+    full_blocklist = internal_blocklist.union(external_tasks.blocklist)
+    if full_blocklist:
+        api.produce(RepositoriesBlocklisted(repoids=sorted(full_blocklist)))
+        api.produce(RepositoriesBlacklisted(repoids=sorted(full_blocklist)))
 
-    external_blocklist_repoids = set()
-    external_repoids_requests = set()
-    for task in api.consume(RepositoriesSetupTasks):
-        external_blocklist_repoids.update(task.blocklist)
-        external_repoids_requests.update(task.to_enable)
-
-    full_blocklist_repoids = internal_blocklist.union(external_blocklist_repoids)
-    if full_blocklist_repoids:
-        api.produce(RepositoriesBlocklisted(repoids=sorted(full_blocklist_repoids)))
-        api.produce(RepositoriesBlacklisted(repoids=sorted(full_blocklist_repoids)))
-
-    return full_blocklist_repoids, external_repoids_requests
+    return full_blocklist
