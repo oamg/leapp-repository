@@ -270,7 +270,7 @@ def test_actor_performs(monkeypatch):
     monkeypatch.setattr(api, 'produce', produced_messages)
     monkeypatch.setattr(reporting, 'create_report', created_report)
 
-    pes_events_scanner.scan_pes_events(repositories_mapping)
+    pes_events_scanner.scan_pes_events(repositories_mapping, set(), {'rhel8-repo'})
 
     assert produced_messages.called
 
@@ -341,13 +341,13 @@ def test_blacklisted_repoid_is_not_produced(monkeypatch):
     monkeypatch.setattr(pes_events_scanner, 'get_pes_events', lambda folder, filename: events)
     monkeypatch.setattr(pes_events_scanner, 'apply_transaction_configuration', lambda pkgs, transaction_cfg: pkgs)
     monkeypatch.setattr(pes_events_scanner, 'replace_pesids_with_repoids_in_packages',
-                        lambda pkgs, src_pkgs_repoids, repo_map_msg=None: pkgs)
+                        lambda pkgs, src_pkgs_repoids, repo_map_msg, enabled_repoids: pkgs)
 
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked())
     monkeypatch.setattr(api, 'produce', produce_mocked())
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
 
-    setup_tasks = pes_events_scanner.scan_pes_events(None, blacklisted_repoids={'blacklisted-rhel9'})
+    setup_tasks = pes_events_scanner.scan_pes_events(None, {'blacklisted-rhel9'}, set())
 
     assert not reporting.create_report.called
 
@@ -497,10 +497,10 @@ def test_transaction_configuration_is_applied(monkeypatch):
     monkeypatch.setattr(pes_events_scanner, 'remove_undesired_events', lambda events, releases: events)
     monkeypatch.setattr(pes_events_scanner, '_get_enabled_modules', lambda *args: [])
     monkeypatch.setattr(pes_events_scanner, 'replace_pesids_with_repoids_in_packages',
-                        lambda target_pkgs, repoids_of_source_pkgs, repo_map_msg=None: target_pkgs)
+                        lambda target_pkgs, repoids_of_source_pkgs, repo_map_msg, enabled_repoids: target_pkgs)
     monkeypatch.setattr(pes_events_scanner,
                         'remove_new_packages_from_blacklisted_repos',
-                        lambda source_pkgs, target_pkgs, bl=None: (set(), target_pkgs))
+                        lambda source_pkgs, target_pkgs, bl: (set(), target_pkgs))
 
     msgs = [
         RpmTransactionTasks(to_remove=['pkg-not-in-events']),
@@ -513,7 +513,7 @@ def test_transaction_configuration_is_applied(monkeypatch):
 
     monkeypatch.setattr(api, 'produce', produce_mocked())
 
-    setup_tasks = pes_events_scanner.scan_pes_events(None)
+    setup_tasks = pes_events_scanner.scan_pes_events(None, set(), set())
 
     assert api.produce.called == 1
     assert setup_tasks is not None
