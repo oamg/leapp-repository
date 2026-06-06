@@ -19,7 +19,7 @@ from leapp.utils.deprecation import suppress_deprecation
 def test_process_orchestration(monkeypatch):
     """
     Tests that process() wires data between the four stages correctly:
-    scan_repositories -> compute_blocklist -> scan_pes_events -> setup_target_repos.
+    load_repositories_mapping -> compute_blocklist -> scan_pes_events -> setup_target_repos.
     """
     call_log = []
 
@@ -37,8 +37,8 @@ def test_process_orchestration(monkeypatch):
             self.external_tasks = fake_external_tasks
             self.enabled_repoids = fake_enabled_repoids
 
-    def mock_scan_repositories():
-        call_log.append('scan_repositories')
+    def mock_load_repositories_mapping():
+        call_log.append('load_repositories_mapping')
         return fake_repo_map
 
     def mock_compute_blocklist(repo_mapping, external_tasks, enabled_repoids):
@@ -68,8 +68,8 @@ def test_process_orchestration(monkeypatch):
         FakeInputData,
     )
     monkeypatch.setattr(
-        'leapp.libraries.actor.targetcontentresolver.scan_repositories',
-        mock_scan_repositories,
+        'leapp.libraries.actor.targetcontentresolver.load_repositories_mapping',
+        mock_load_repositories_mapping,
     )
     monkeypatch.setattr(
         'leapp.libraries.actor.targetcontentresolver.repositoriesblocklist.compute_blocklist',
@@ -88,7 +88,7 @@ def test_process_orchestration(monkeypatch):
 
     assert call_log == [
         'InputData',
-        'scan_repositories',
+        'load_repositories_mapping',
         'compute_blocklist',
         'scan_pes_events',
         'setup_target_repos',
