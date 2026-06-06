@@ -34,22 +34,28 @@ def test_minimal_execution(monkeypatch):
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=msgs))
     monkeypatch.setattr(api, 'produce', produce_mocked())
 
-    setuptargetrepos.setup_target_repos(RepoMapDataHandler(repos_mapping))
+    setuptargetrepos.setup_target_repos(
+        RepoMapDataHandler(repos_mapping),
+        enabled_repoids=set(),
+        pes_requested_repoids=set(),
+        blocklisted_repoids=set(),
+        external_repoids_requests=set(),
+    )
 
 
 def test_custom_repos(monkeypatch):
     """
     Tests whether the CustomRepos provided to the actor are propagated to the TargetRepositories after
-    blacklist filtering is applied on them.
+    blocklist filtering is applied on them.
     """
     custom = CustomTargetRepository(repoid='rhel-8-server-rpms',
                                     name='RHEL 8 Server (RPMs)',
                                     baseurl='https://.../dist/rhel/server/8/os',
                                     enabled=True)
 
-    blacklisted = CustomTargetRepository(repoid='rhel-8-blacklisted-rpms',
-                                         name='RHEL 8 Blacklisted (RPMs)',
-                                         baseurl='https://.../dist/rhel/blacklisted/8/os',
+    blocklisted = CustomTargetRepository(repoid='rhel-8-blocklisted-rpms',
+                                         name='RHEL 8 Blocklisted (RPMs)',
+                                         baseurl='https://.../dist/rhel/blocklisted/8/os',
                                          enabled=True)
 
     repositories_mapping = RepositoriesMapping(
@@ -57,13 +63,19 @@ def test_custom_repos(monkeypatch):
         repositories=[]
     )
 
-    msgs = [custom, blacklisted, repositories_mapping]
+    msgs = [custom, blocklisted, repositories_mapping]
 
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=msgs))
     monkeypatch.setattr(api, 'produce', produce_mocked())
 
     handler = RepoMapDataHandler(repositories_mapping)
-    setuptargetrepos.setup_target_repos(handler, blacklisted_repoids={'rhel-8-blacklisted-rpms'})
+    setuptargetrepos.setup_target_repos(
+        handler,
+        enabled_repoids=set(),
+        pes_requested_repoids=set(),
+        blocklisted_repoids={'rhel-8-blocklisted-rpms'},
+        external_repoids_requests=set(),
+    )
 
     assert api.produce.called
 
@@ -75,7 +87,7 @@ def test_custom_repos(monkeypatch):
 def test_repositories_setup_tasks(monkeypatch):
     """
     Tests whether the actor propagates requested repoids
-    to the resulting TargetRepositories (and blacklist filtering is applied to them).
+    to the resulting TargetRepositories (and blocklist filtering is applied to them).
     """
     repositories_mapping = RepositoriesMapping(mapping=[], repositories=[])
     msgs = [repositories_mapping]
@@ -86,8 +98,11 @@ def test_repositories_setup_tasks(monkeypatch):
     handler = RepoMapDataHandler(repositories_mapping)
     setuptargetrepos.setup_target_repos(
         handler,
-        blacklisted_repoids={'rhel-8-blacklisted-rpms'},
-        external_repoids_requests={'rhel-8-server-rpms', 'rhel-8-blacklisted-rpms'})
+        enabled_repoids=set(),
+        pes_requested_repoids=set(),
+        blocklisted_repoids={'rhel-8-blacklisted-rpms'},
+        external_repoids_requests={'rhel-8-server-rpms', 'rhel-8-blacklisted-rpms'},
+    )
 
     assert api.produce.called
 
@@ -195,7 +210,17 @@ def test_repos_mapping_for_distro(monkeypatch, src_distro, dst_distro):
     monkeypatch.setattr(api, 'produce', produce_mocked())
 
     handler = RepoMapDataHandler(repomap)
-    setuptargetrepos.setup_target_repos(handler, blacklisted_repoids={'{}-9-blacklisted-rpms'.format(dst_distro)})
+    enabled_repoids = {
+        '{}-8-server-rpms'.format(src_distro),
+        '{}-8-blacklisted-rpms'.format(src_distro),
+    }
+    setuptargetrepos.setup_target_repos(
+        handler,
+        enabled_repoids=enabled_repoids,
+        pes_requested_repoids=set(),
+        blocklisted_repoids={'{}-9-blacklisted-rpms'.format(dst_distro)},
+        external_repoids_requests=set(),
+    )
     assert api.produce.called
 
     distro_repos = api.produce.model_instances[0].distro_repos
@@ -223,7 +248,7 @@ def test_repos_mapping_for_distro(monkeypatch, src_distro, dst_distro):
 def test_pes_requested_repoids_added_to_target(monkeypatch):
     """
     Tests whether PES-requested repoids are added to the target repositories
-    and that blacklisted PES-requested repoids are excluded.
+    and that blocklisted PES-requested repoids are excluded.
     """
     repositories_mapping = RepositoriesMapping(mapping=[], repositories=[])
     msgs = [repositories_mapping]
@@ -234,8 +259,10 @@ def test_pes_requested_repoids_added_to_target(monkeypatch):
     handler = RepoMapDataHandler(repositories_mapping)
     setuptargetrepos.setup_target_repos(
         handler,
+        enabled_repoids=set(),
         pes_requested_repoids={'pes-repo-1', 'pes-repo-2', 'pes-blocked'},
-        blacklisted_repoids={'pes-blocked'},
+        blocklisted_repoids={'pes-blocked'},
+        external_repoids_requests=set(),
     )
 
     assert api.produce.called
@@ -262,8 +289,9 @@ def test_pes_and_external_repoids_combined(monkeypatch):
     handler = RepoMapDataHandler(repositories_mapping)
     setuptargetrepos.setup_target_repos(
         handler,
+        enabled_repoids=set(),
         pes_requested_repoids={'pes-repo'},
-        blacklisted_repoids={'blocked-repo'},
+        blocklisted_repoids={'blocked-repo'},
         external_repoids_requests={'ext-repo', 'blocked-repo'},
     )
 

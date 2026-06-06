@@ -136,7 +136,8 @@ def process():
 
     setuptargetrepos.setup_target_repos(
         repomap_handler,
+        indata.enabled_repoids,
         pes_requested_repoids=pes_requested_repoids,
-        blacklisted_repoids=blocklisted_repoids,
+        blocklisted_repoids=blocklisted_repoids,
         external_repoids_requests=indata.external_tasks.to_enable,
     )

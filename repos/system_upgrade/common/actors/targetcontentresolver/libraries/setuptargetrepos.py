@@ -1,5 +1,4 @@
 from leapp.libraries.actor import repomap_calc
-from leapp.libraries.actor.pes_events_scanner import get_enabled_repoids
 from leapp.libraries.common.config import get_source_distro_id, get_target_distro_id
 from leapp.libraries.common.config.version import get_source_major_version, get_source_version
 from leapp.libraries.stdlib import api
@@ -57,21 +56,19 @@ def _get_mapped_repoids(repomap, src_repoids):
 
 
 @suppress_deprecation(RHELTargetRepository)
-def setup_target_repos(repomap_handler, pes_requested_repoids=None,
-                       blacklisted_repoids=None, external_repoids_requests=None):
+def setup_target_repos(repomap_handler, enabled_repoids, pes_requested_repoids,
+                       blocklisted_repoids, external_repoids_requests):
     """
     Determine the final list of target repositories.
 
     :param repomap_handler: Operator to work with the repositories mapping data
     :type repomap_handler: repomap_calc.RepoMapDataHandler
     :param pes_requested_repoids: Set of repoids derived from PES events that need to be enabled.
-    :param blacklisted_repoids: Set of repoids to exclude from target repos. If None, an empty set is used.
+    :param blocklisted_repoids: Set of repoids to exclude from target repos. If None, an empty set is used.
     :param external_repoids_requests: Set of repoids requested by external actors (e.g. satellite_upgrade_facts).
     """
     # Load relevant data from messages
     used_repoids_dict = _get_used_repo_dict()
-    enabled_repoids = get_enabled_repoids()
-    excluded_repoids = blacklisted_repoids if blacklisted_repoids is not None else set()
     custom_repos = _get_custom_target_repos()
     repoids_from_installed_packages = _get_repoids_from_installed_packages()
 
@@ -117,7 +114,7 @@ def setup_target_repos(repomap_handler, pes_requested_repoids=None,
                 .format(target_pesid)
             )
             continue
-        if target_pesidrepo.repoid in excluded_repoids:
+        if target_pesidrepo.repoid in blocklisted_repoids:
             api.current_logger().debug('Skipping the {} repo (excluded).'.format(target_pesidrepo.repoid))
             continue
         target_distro_repoids.add(target_pesidrepo.repoid)
@@ -129,7 +126,7 @@ def setup_target_repos(repomap_handler, pes_requested_repoids=None,
     all_requested_repoids.update(external_repoids_requests or set())
 
     for repo in all_requested_repoids:
-        if repo in excluded_repoids:
+        if repo in blocklisted_repoids:
             api.current_logger().debug('Skipping the {} repo from setup task (excluded).'.format(repo))
             continue
         target_distro_repoids.add(repo)
@@ -140,7 +137,7 @@ def setup_target_repos(repomap_handler, pes_requested_repoids=None,
     else:
         rhel_repos = []
     distro_repos = [DistroTargetRepository(repoid=repoid) for repoid in sorted(target_distro_repoids)]
-    custom_repos = [repo for repo in custom_repos if repo.repoid not in excluded_repoids]
+    custom_repos = [repo for repo in custom_repos if repo.repoid not in blocklisted_repoids]
     custom_repos = sorted(custom_repos, key=lambda x: x.repoid)
 
     # produce message about skipped repositories
