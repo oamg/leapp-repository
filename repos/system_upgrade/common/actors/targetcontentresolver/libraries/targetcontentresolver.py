@@ -2,7 +2,7 @@ from collections import namedtuple
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import pes_events_scanner, repositoriesblocklist, setuptargetrepos
-from leapp.libraries.actor.repomap_loader import scan_repositories
+from leapp.libraries.actor.repomap_loader import load_repositories_mapping
 from leapp.libraries.stdlib import api
 from leapp.models import CustomTargetRepository, RepositoriesBlacklisted, RepositoriesFacts, RepositoriesSetupTasks
 from leapp.utils.deprecation import suppress_deprecation
@@ -108,7 +108,7 @@ def process():
        configuration.
     """
     indata = InputData()
-    repositories_map_msg = scan_repositories()
+    repositories_map_msg = load_repositories_mapping()
     blocklisted_repoids = repositoriesblocklist.compute_blocklist(
         repositories_map_msg,
         indata.external_tasks,

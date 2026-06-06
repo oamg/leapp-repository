@@ -32,10 +32,10 @@ def test_scan_existing_valid_data(monkeypatch, adjust_cwd):
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(src_ver='7.9', dst_ver='8.4'))
     monkeypatch.setattr(api, 'produce', produce_mocked())
 
-    result = repomap_loader.scan_repositories(lambda dummy: data)
+    result = repomap_loader.load_repositories_mapping(lambda dummy: data)
 
     assert api.produce.called, 'Actor did not produce any message when deserializing valid repomap data.'
-    assert result is not None, 'scan_repositories should return the RepositoriesMapping message.'
+    assert result is not None, 'load_repositories_mapping should return the RepositoriesMapping message.'
     assert result is api.produce.model_instances[0], (
         'The returned mapping should be the same object that was produced.'
     )
@@ -126,9 +126,9 @@ def test_scan_existing_valid_data(monkeypatch, adjust_cwd):
         assert expected_pesid_repo in pesid_repos, fail_description
 
 
-def test_scan_repositories_with_missing_data(monkeypatch):
+def test_load_repositories_mapping_with_missing_data(monkeypatch):
     """
-    Tests whether the scanning process fails gracefully when no data are read.
+    Tests whether the loading process fails gracefully when no data are read.
     """
     mocked_actor = CurrentActorMocked(src_ver='7.9', dst_ver='8.4', msgs=[])
 
@@ -144,25 +144,25 @@ def test_scan_repositories_with_missing_data(monkeypatch):
     monkeypatch.setattr(fetch, 'read_or_fetch', read_or_fetch_mocked)
 
     with pytest.raises(StopActorExecutionError) as missing_data_error:
-        repomap_loader.scan_repositories()
+        repomap_loader.load_repositories_mapping()
     assert 'does not contain a valid JSON object' in str(missing_data_error)
 
 
-def test_scan_repositories_with_empty_data(monkeypatch):
+def test_load_repositories_mapping_with_empty_data(monkeypatch):
     """
-    Tests whether the scanning process fails gracefully when empty json data received.
+    Tests whether the loading process fails gracefully when empty json data received.
     """
 
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(src_ver='7.9', dst_ver='8.4'))
     monkeypatch.setattr(api, 'produce', produce_mocked())
 
     with pytest.raises(StopActorExecutionError) as empty_data_error:
-        repomap_loader.scan_repositories(lambda dummy: {})
+        repomap_loader.load_repositories_mapping(lambda dummy: {})
     assert 'the JSON is missing a required field' in str(empty_data_error)
 
 
 @pytest.mark.parametrize('version_format', ('0.0.0', '1.0.1', '1.1.0', '2.0.0'))
-def test_scan_repositories_with_bad_json_data_version(monkeypatch, version_format):
+def test_load_repositories_mapping_with_bad_json_data_version(monkeypatch, version_format):
     """
     Tests whether the json data is checked for the version field and error is raised if the version
     does not match the latest one.
@@ -179,12 +179,12 @@ def test_scan_repositories_with_bad_json_data_version(monkeypatch, version_forma
     monkeypatch.setattr(api, 'produce', produce_mocked())
 
     with pytest.raises(StopActorExecutionError) as bad_version_error:
-        repomap_loader.scan_repositories(lambda dummy: json_data)
+        repomap_loader.load_repositories_mapping(lambda dummy: json_data)
 
     assert 'mapping file is invalid' in str(bad_version_error)
 
 
-def test_scan_repositories_with_mapping_to_pesid_without_repos(monkeypatch):
+def test_load_repositories_mapping_with_mapping_to_pesid_without_repos(monkeypatch):
     """
     Tests that the loading of repositories mapping recognizes when there is a mapping with target pesid that does
     not have any repositories and inhibits the upgrade.
@@ -225,12 +225,12 @@ def test_scan_repositories_with_mapping_to_pesid_without_repos(monkeypatch):
     monkeypatch.setattr(api, 'produce', produce_mocked())
 
     with pytest.raises(StopActorExecutionError) as error_info:
-        repomap_loader.scan_repositories(lambda dummy: json_data)
+        repomap_loader.load_repositories_mapping(lambda dummy: json_data)
 
     assert 'pesid is not related to any repository' in error_info.value.message
 
 
-def test_scan_repositories_with_repo_entry_missing_required_fields(monkeypatch):
+def test_load_repositories_mapping_with_repo_entry_missing_required_fields(monkeypatch):
     """
     Tests whether deserialization of pesid repo entries missing some of the required fields
     is handled internally and StopActorExecutionError is propagated to the user.
@@ -279,12 +279,12 @@ def test_scan_repositories_with_repo_entry_missing_required_fields(monkeypatch):
     monkeypatch.setattr(api, 'produce', produce_mocked())
 
     with pytest.raises(StopActorExecutionError) as error_info:
-        repomap_loader.scan_repositories(lambda dummy: json_data)
+        repomap_loader.load_repositories_mapping(lambda dummy: json_data)
 
     assert 'the JSON is missing a required field' in error_info.value.message
 
 
-def test_scan_repositories_with_repo_entry_mapping_target_not_a_list(monkeypatch):
+def test_load_repositories_mapping_with_repo_entry_mapping_target_not_a_list(monkeypatch):
     """
     Tests whether deserialization of a mapping entry that has its target field set to a string
     is handled internally and StopActorExecutionError is propagated to the user.
@@ -333,18 +333,18 @@ def test_scan_repositories_with_repo_entry_mapping_target_not_a_list(monkeypatch
     monkeypatch.setattr(api, 'produce', produce_mocked())
 
     with pytest.raises(StopActorExecutionError) as error_info:
-        repomap_loader.scan_repositories(lambda dummy: json_data)
+        repomap_loader.load_repositories_mapping(lambda dummy: json_data)
 
     assert 'repository mapping file is invalid' in error_info.value.message
 
 
-def test_scan_repositories_returns_none_on_error(monkeypatch):
+def test_load_repositories_mapping_raises_on_invalid_data(monkeypatch):
     """
-    Tests that scan_repositories returns None when the data is invalid
-    and a StopActorExecutionError is raised.
+    Tests that load_repositories_mapping raises StopActorExecutionError
+    when the data is invalid.
     """
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(src_ver='7.9', dst_ver='8.4'))
     monkeypatch.setattr(api, 'produce', produce_mocked())
 
     with pytest.raises(StopActorExecutionError):
-        repomap_loader.scan_repositories(lambda dummy: {})
+        repomap_loader.load_repositories_mapping(lambda dummy: {})
