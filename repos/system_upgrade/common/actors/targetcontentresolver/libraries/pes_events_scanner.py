@@ -16,7 +16,6 @@ from leapp.models import (
     Module,
     PESIDRepositoryEntry,
     PESRpmTransactionTasks,
-    RepositoriesFacts,
     RHUIInfo,
     RpmTransactionTasks
 )
@@ -31,26 +30,6 @@ SKIPPED_PKGS_MSG = (
 
 
 TransactionConfiguration = namedtuple('TransactionConfiguration', ('to_install', 'to_remove', 'to_keep'))
-
-
-def get_cloud_provider_name(cloud_provider_variant):
-    for cloud_provider_prefix in ('aws', 'azure', 'google'):
-        if cloud_provider_variant.startswith(cloud_provider_prefix):
-            return cloud_provider_prefix
-    return cloud_provider_variant
-
-
-def get_best_pesid_candidate(candidate_a, candidate_b, cloud_provider):
-    cdn_candidate = None
-    for candidate in (candidate_a, candidate_b):
-        if candidate.rhui == cloud_provider:
-            return candidate
-        if not candidate.rhui:
-            cdn_candidate = candidate
-
-    # None of the candidate matches cloud provider and none of them is from CDN -
-    # do not return anything as we don't want to get content from different cloud providers
-    return cdn_candidate
 
 
 def get_installed_pkgs():
@@ -112,6 +91,7 @@ def get_relevant_releases(events):
 
 
 def _get_enabled_modules():
+    # TODO(pstodulk): take a look
     enabled_modules_msgs = api.consume(EnabledModules)
     enabled_modules_msg = next(enabled_modules_msgs, None)
     if list(enabled_modules_msgs):
@@ -338,23 +318,6 @@ def remove_new_packages_from_blacklisted_repos(source_pkgs, target_pkgs, blackli
             skipped_pkgs=pkgs_from_blacklisted_repos,
         )
     return blacklisted_repoids, target_pkgs.difference(pkgs_from_blacklisted_repos)
-
-
-def get_enabled_repoids():
-    """
-    Collects repoids of all enabled repositories on the source system.
-
-    :param repositories_facts: Iterable of RepositoriesFacts containing repositories related info about source system.
-    :return: Set of all enabled repository IDs present on the source system.
-    :rtype: Set[str]
-    """
-    enabled_repoids = set()
-    for repos in api.consume(RepositoriesFacts):
-        for repo_file in repos.repositories:
-            for repo in repo_file.data:
-                if repo.enabled:
-                    enabled_repoids.add(repo.repoid)
-    return enabled_repoids
 
 
 def get_pesid_to_repoid_map(target_pesids, repositories_map_msg, enabled_repoids):
