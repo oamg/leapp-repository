@@ -2,6 +2,7 @@ import pytest
 
 from leapp import reporting
 from leapp.libraries.actor import repositoriesblocklist
+from leapp.libraries.actor.repomap_calc import RepoMapDataHandler
 from leapp.libraries.actor.targetcontentresolver import ExternalRepoSetupTasks
 from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked, produce_mocked
 from leapp.libraries.stdlib import api
@@ -56,8 +57,9 @@ def test_crb_repos_blocked_when_no_crb_on_source(monkeypatch, repomap_opts_only)
     ))
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
 
+    handler = RepoMapDataHandler(repomap_opts_only)
     result = repositoriesblocklist._calc_internal_blocklist(
-        repomap_opts_only, _NO_TASKS, enabled_repoids={'rhel-8-server-rpms'}
+        handler, _NO_TASKS, enabled_repoids={'rhel-8-server-rpms'}
     )
 
     assert 'codeready-builder-for-rhel-9-x86_64-rpms' in result
@@ -74,8 +76,9 @@ def test_empty_result_when_no_crb_pesid_in_mapping(monkeypatch, repomap_opts_onl
     ))
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
 
+    handler = RepoMapDataHandler(repomap_opts_only)
     result = repositoriesblocklist._calc_internal_blocklist(
-        repomap_opts_only, _NO_TASKS, enabled_repoids=set()
+        handler, _NO_TASKS, enabled_repoids=set()
     )
 
     assert not result
@@ -90,8 +93,9 @@ def test_blocklist_generated_when_crb_disabled(monkeypatch, repomap_opts_only):
     ))
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
 
+    handler = RepoMapDataHandler(repomap_opts_only)
     result = repositoriesblocklist._calc_internal_blocklist(
-        repomap_opts_only, _NO_TASKS, enabled_repoids=set()
+        handler, _NO_TASKS, enabled_repoids=set()
     )
 
     assert result, 'A blocklist should get generated.'
@@ -109,8 +113,9 @@ def test_no_blocklist_when_crb_enabled_on_source(monkeypatch, repomap_opts_only)
         arch='x86_64', src_ver='8.10', dst_ver='9.6', dst_distro='rhel'
     ))
 
+    handler = RepoMapDataHandler(repomap_opts_only)
     result = repositoriesblocklist._calc_internal_blocklist(
-        repomap_opts_only, _NO_TASKS,
+        handler, _NO_TASKS,
         enabled_repoids={'codeready-builder-for-rhel-8-x86_64-rpms'}
     )
 
@@ -198,8 +203,9 @@ def test_custom_enablerepo_effect(monkeypatch, repomap_opts_only,
         to_enable=set(), to_block=set(), custom=custom_repoids
     )
 
+    handler = RepoMapDataHandler(repomap_opts_only)
     result = repositoriesblocklist._calc_internal_blocklist(
-        repomap_opts_only, external_tasks, enabled_repoids=set()
+        handler, external_tasks, enabled_repoids=set()
     )
 
     if exp_report_title:
@@ -232,21 +238,38 @@ def test_get_crb_repos_filters_by_architecture(monkeypatch):
         ),
     ]
     repo_mapping = RepositoriesMapping(mapping=[], repositories=repos)
+    handler = RepoMapDataHandler(repo_mapping)
 
-    result = repositoriesblocklist._get_crb_repos(repo_mapping, '9')
+    result = repositoriesblocklist._get_crb_repos(handler, False)
 
     assert result == {'crb-x86_64'}
 
 
-def test_no_report_for_non_rhel_distro(monkeypatch, repomap_opts_only):
+def test_no_report_for_non_rhel_distro(monkeypatch):
     """No exclusion report generated for non-RHEL distros, but repos are still excluded."""
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(
-        arch='x86_64', src_ver='8.10', dst_ver='9.6', dst_distro='centos'
+        arch='x86_64', src_ver='8.10', dst_ver='9.6', src_distro='centos', dst_distro='centos'
     ))
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
 
+    centos_repomap = RepositoriesMapping(
+        mapping=[RepoMapEntry(source='rhel8-CRB', target=['rhel9-CRB'])],
+        repositories=[
+            PESIDRepositoryEntry(
+                pesid='rhel8-CRB', major_version='8',
+                repoid='codeready-builder-for-centos-8-x86_64-rpms',
+                rhui='', arch='x86_64', channel='ga', repo_type='rpm', distro='centos',
+            ),
+            PESIDRepositoryEntry(
+                pesid='rhel9-CRB', major_version='9',
+                repoid='codeready-builder-for-centos-9-x86_64-rpms',
+                rhui='', arch='x86_64', channel='ga', repo_type='rpm', distro='centos',
+            ),
+        ]
+    )
+    handler = RepoMapDataHandler(centos_repomap)
     result = repositoriesblocklist._calc_internal_blocklist(
-        repomap_opts_only, _NO_TASKS, enabled_repoids=set()
+        handler, _NO_TASKS, enabled_repoids=set()
     )
 
     assert result

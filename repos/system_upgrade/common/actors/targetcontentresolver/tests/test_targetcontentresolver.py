@@ -23,7 +23,7 @@ def test_process_orchestration(monkeypatch):
     """
     call_log = []
 
-    fake_repo_map = object()
+    fake_repomap_handler = object()
     fake_blocklist = frozenset({'blocked-repo'})
     fake_external_tasks = ExternalRepoSetupTasks(
         to_enable=frozenset({'ext-repo'}), to_block=frozenset(), custom=frozenset()
@@ -37,20 +37,20 @@ def test_process_orchestration(monkeypatch):
             self.external_tasks = fake_external_tasks
             self.enabled_repoids = fake_enabled_repoids
 
-    def mock_load_repositories_mapping():
-        call_log.append('load_repositories_mapping')
-        return fake_repo_map
+    def mock_init_repomap_handler():
+        call_log.append('_init_repomap_handler')
+        return fake_repomap_handler
 
     def mock_compute_blocklist(repo_mapping, external_tasks, enabled_repoids):
         call_log.append('compute_blocklist')
-        assert repo_mapping is fake_repo_map
+        assert repo_mapping is fake_repomap_handler
         assert external_tasks is fake_external_tasks
         assert enabled_repoids is fake_enabled_repoids
         return fake_blocklist
 
     def mock_scan_pes_events(repo_mapping, blacklisted_repoids, enabled_repoids):
         call_log.append('scan_pes_events')
-        assert repo_mapping is fake_repo_map
+        assert repo_mapping is fake_repomap_handler
         assert blacklisted_repoids is fake_blocklist
         assert enabled_repoids is fake_enabled_repoids
         return fake_pes_repoids
@@ -58,7 +58,7 @@ def test_process_orchestration(monkeypatch):
     def mock_setup_target_repos(repo_mapping, pes_requested_repoids=None,
                                 blacklisted_repoids=None, external_repoids_requests=None):
         call_log.append('setup_target_repos')
-        assert repo_mapping is fake_repo_map
+        assert repo_mapping is fake_repomap_handler
         assert pes_requested_repoids is fake_pes_repoids
         assert blacklisted_repoids is fake_blocklist
         assert external_repoids_requests is fake_external_tasks.to_enable
@@ -68,8 +68,8 @@ def test_process_orchestration(monkeypatch):
         FakeInputData,
     )
     monkeypatch.setattr(
-        'leapp.libraries.actor.targetcontentresolver.load_repositories_mapping',
-        mock_load_repositories_mapping,
+        'leapp.libraries.actor.targetcontentresolver._init_repomap_handler',
+        mock_init_repomap_handler,
     )
     monkeypatch.setattr(
         'leapp.libraries.actor.targetcontentresolver.repositoriesblocklist.compute_blocklist',
@@ -88,7 +88,7 @@ def test_process_orchestration(monkeypatch):
 
     assert call_log == [
         'InputData',
-        'load_repositories_mapping',
+        '_init_repomap_handler',
         'compute_blocklist',
         'scan_pes_events',
         'setup_target_repos',
