@@ -10,6 +10,13 @@ class RepositoriesSetupTasks(Model):
     upgrade process. This information should be processed by an actor dedicated to manage
     repositories.
     * 'to_block' field consists of a list of repositories that should be ignored during upgrade process.
+
+    The priority order of the requests is following:
+        to_enable < to_block < "external custom enablement request"
+    The external custom request can be made by user:
+
+        * execute leapp with --enablerepo option
+        * using configuration files
     """
     topic = SystemFactsTopic
 

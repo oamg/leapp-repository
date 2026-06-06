@@ -109,7 +109,11 @@ def process():
     """
     indata = InputData()
     repositories_map_msg = scan_repositories()
-    blocklisted_repoids = repositoriesblocklist.compute_blocklist(repositories_map_msg, indata.external_tasks)
+    blocklisted_repoids = repositoriesblocklist.compute_blocklist(
+        repositories_map_msg,
+        indata.external_tasks,
+        indata.enabled_repoids
+    )
     pes_requested_repoids = pes_events_scanner.scan_pes_events(
         repositories_map_msg,
         blocklisted_repoids,
