@@ -55,12 +55,13 @@ def test_process_orchestration(monkeypatch):
         assert enabled_repoids is fake_enabled_repoids
         return fake_pes_repoids
 
-    def mock_setup_target_repos(repo_mapping, pes_requested_repoids=None,
-                                blacklisted_repoids=None, external_repoids_requests=None):
+    def mock_setup_target_repos(repo_mapping, enabled_repoids, pes_requested_repoids,
+                                blocklisted_repoids, external_repoids_requests):
         call_log.append('setup_target_repos')
         assert repo_mapping is fake_repomap_handler
+        assert enabled_repoids is fake_enabled_repoids
         assert pes_requested_repoids is fake_pes_repoids
-        assert blacklisted_repoids is fake_blocklist
+        assert blocklisted_repoids is fake_blocklist
         assert external_repoids_requests is fake_external_tasks.to_enable
 
     monkeypatch.setattr(
