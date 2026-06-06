@@ -7,6 +7,9 @@ from leapp.libraries.actor.repomap_loader import load_repositories_mapping
 from leapp.libraries.stdlib import api
 from leapp.models import (
     CustomTargetRepository,
+    DistributionSignedRPM,
+    EnabledModules,
+    Module,
     RepositoriesBlacklisted,
     RepositoriesFacts,
     RepositoriesSetupTasks,
@@ -26,6 +29,8 @@ class InputData():
         self._missing_messages = []
 
         self._get_enabled_repoids()
+        self._get_installed_rpms()
+        self._get_enabled_modules()
         self._get_external_reposetup_tasks()
 
         if self._missing_messages:
@@ -92,6 +97,22 @@ class InputData():
                 if repo.enabled:
                     self.enabled_repoids.add(repo.repoid)
 
+    def _get_enabled_modules(self):
+        self.enabled_modules = []
+        modules_facts = self._treat_consume_msg(EnabledModules)
+        if modules_facts is None:
+            return
+
+        # NOTE(pstodulk): This deduplication is weird, not sure why the input
+        # data would not be unique. But let's rather keep for now.
+        uniq_modules = {(module.name, module.stream) for module in modules_facts.modules}
+        self.enabled_modules = [Module(name=ms[0], stream=ms[1]) for ms in uniq_modules]
+
+    def _get_installed_rpms(self):
+        distro_rpms = self._treat_consume_msg(DistributionSignedRPM)
+        if distro_rpms:
+            self.installed_rpms = distro_rpms.items
+
 
 def _init_repomap_handler():
     repomap_msg = load_repositories_mapping()
@@ -131,7 +152,9 @@ def process():
     pes_requested_repoids = pes_events_scanner.scan_pes_events(
         repomap_handler,
         blocklisted_repoids,
-        indata.enabled_repoids
+        indata.enabled_repoids,
+        indata.installed_rpms,
+        indata.enabled_modules
     )
 
     setuptargetrepos.setup_target_repos(

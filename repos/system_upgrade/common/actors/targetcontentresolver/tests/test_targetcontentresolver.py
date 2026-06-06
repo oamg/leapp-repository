@@ -7,11 +7,14 @@ from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked
 from leapp.libraries.stdlib import api
 from leapp.models import (
     CustomTargetRepository,
+    DistributionSignedRPM,
+    EnabledModules,
     RepositoriesBlacklisted,
     RepositoriesFacts,
     RepositoriesSetupTasks,
     RepositoryData,
-    RepositoryFile
+    RepositoryFile,
+    RPM
 )
 from leapp.utils.deprecation import suppress_deprecation
 
@@ -29,6 +32,8 @@ def test_process_orchestration(monkeypatch):
         to_enable=frozenset({'ext-repo'}), to_block=frozenset(), custom=frozenset()
     )
     fake_enabled_repoids = frozenset({'enabled-repo'})
+    fake_installed_rpms = []
+    fake_enabled_modules = []
     fake_pes_repoids = frozenset({'pes-repo'})
 
     class FakeInputData:
@@ -36,6 +41,8 @@ def test_process_orchestration(monkeypatch):
             call_log.append('InputData')
             self.external_tasks = fake_external_tasks
             self.enabled_repoids = fake_enabled_repoids
+            self.installed_rpms = fake_installed_rpms
+            self.enabled_modules = fake_enabled_modules
 
     def mock_init_repomap_handler():
         call_log.append('_init_repomap_handler')
@@ -48,11 +55,13 @@ def test_process_orchestration(monkeypatch):
         assert enabled_repoids is fake_enabled_repoids
         return fake_blocklist
 
-    def mock_scan_pes_events(repo_mapping, blacklisted_repoids, enabled_repoids):
+    def mock_scan_pes_events(repo_mapping, blacklisted_repoids, enabled_repoids, installed_rpms, enabled_modules):
         call_log.append('scan_pes_events')
         assert repo_mapping is fake_repomap_handler
         assert blacklisted_repoids is fake_blocklist
         assert enabled_repoids is fake_enabled_repoids
+        assert installed_rpms is fake_installed_rpms
+        assert enabled_modules is fake_enabled_modules
         return fake_pes_repoids
 
     def mock_setup_target_repos(repo_mapping, enabled_repoids, pes_requested_repoids,
@@ -96,6 +105,11 @@ def test_process_orchestration(monkeypatch):
     ]
 
 
+def _make_base_msgs():
+    """Create DistributionSignedRPM and EnabledModules messages required by InputData."""
+    return [DistributionSignedRPM(items=[]), EnabledModules(modules=[])]
+
+
 def _make_repo_facts(repoids_enabled=None, repoids_disabled=None):
     repos_data = []
     for repoid in (repoids_enabled or []):
@@ -112,7 +126,7 @@ def test_inputdata_collects_enabled_repoids(monkeypatch):
         repoids_enabled=['repo-a', 'repo-b'],
         repoids_disabled=['repo-c'],
     )
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[repo_facts]))
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[repo_facts] + _make_base_msgs()))
 
     indata = InputData()
 
@@ -120,7 +134,7 @@ def test_inputdata_collects_enabled_repoids(monkeypatch):
 
 
 def test_inputdata_raises_when_repofacts_missing(monkeypatch):
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[]))
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=_make_base_msgs()))
 
     with pytest.raises(StopActorExecutionError):
         InputData()
@@ -135,7 +149,7 @@ def test_inputdata_aggregates_external_tasks(monkeypatch):
 
     monkeypatch.setattr(
         api, 'current_actor',
-        CurrentActorMocked(msgs=[repo_facts, setup_tasks_1, setup_tasks_2, custom_1, custom_2])
+        CurrentActorMocked(msgs=[repo_facts, setup_tasks_1, setup_tasks_2, custom_1, custom_2] + _make_base_msgs())
     )
 
     indata = InputData()
@@ -147,7 +161,7 @@ def test_inputdata_aggregates_external_tasks(monkeypatch):
 
 def test_inputdata_empty_external_tasks(monkeypatch):
     repo_facts = _make_repo_facts(repoids_enabled=['repo-a'])
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[repo_facts]))
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[repo_facts] + _make_base_msgs()))
 
     indata = InputData()
 
@@ -161,7 +175,7 @@ def test_inputdata_warns_on_duplicate_repofacts(monkeypatch):
     repo_facts_2 = _make_repo_facts(repoids_enabled=['repo-b'])
     monkeypatch.setattr(
         api, 'current_actor',
-        CurrentActorMocked(msgs=[repo_facts_1, repo_facts_2])
+        CurrentActorMocked(msgs=[repo_facts_1, repo_facts_2] + _make_base_msgs())
     )
     monkeypatch.setattr(api, 'current_logger', logger_mocked())
 
@@ -179,7 +193,7 @@ def test_inputdata_consumes_deprecated_blacklisted(monkeypatch):
 
     monkeypatch.setattr(
         api, 'current_actor',
-        CurrentActorMocked(msgs=[repo_facts, blacklisted])
+        CurrentActorMocked(msgs=[repo_facts, blacklisted] + _make_base_msgs())
     )
 
     indata = InputData()
@@ -196,7 +210,7 @@ def test_inputdata_merges_blacklisted_with_setup_tasks(monkeypatch):
 
     monkeypatch.setattr(
         api, 'current_actor',
-        CurrentActorMocked(msgs=[repo_facts, setup_tasks, blacklisted])
+        CurrentActorMocked(msgs=[repo_facts, setup_tasks, blacklisted] + _make_base_msgs())
     )
 
     indata = InputData()

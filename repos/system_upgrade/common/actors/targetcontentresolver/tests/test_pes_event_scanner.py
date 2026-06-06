@@ -5,10 +5,10 @@ import pytest
 from leapp.libraries.actor import pes_events_scanner
 from leapp.libraries.actor.pes_event_parsing import Event
 from leapp.libraries.actor.pes_events_scanner import (
+    _compute_packages_on_target_system,
+    _compute_rpm_tasks_from_pkg_set_diff,
     Action,
     api,
-    compute_packages_on_target_system,
-    compute_rpm_tasks_from_pkg_set_diff,
     Package,
     reporting,
     TransactionConfiguration
@@ -16,8 +16,6 @@ from leapp.libraries.actor.pes_events_scanner import (
 from leapp.libraries.actor.repomap_calc import RepoMapDataHandler
 from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked, produce_mocked
 from leapp.models import (
-    DistributionSignedRPM,
-    EnabledModules,
     PESIDRepositoryEntry,
     PESRpmTransactionTasks,
     RepoMapEntry,
@@ -135,7 +133,7 @@ def pkgs_into_tuples(pkgs):
 def test_event_application_fundamentals(monkeypatch, installed_pkgs, events, releases, expected_target_pkgs):
     """Trivial checks validating that the core event application algorithm reflects event semantics as expected."""
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked())
-    actual_target_pkgs, dummy_demodularized_pkgs = compute_packages_on_target_system(installed_pkgs, events, releases)
+    actual_target_pkgs, dummy_demodularized_pkgs = _compute_packages_on_target_system(installed_pkgs, events, releases)
 
     # Perform strict comparison
     actual_pkg_tuple_set = {(pkg.name, pkg.repository, pkg.modulestream) for pkg in actual_target_pkgs}
@@ -174,7 +172,9 @@ def test_compute_pkg_state(monkeypatch):
         Package('reintroduced', 'rhel7-repo', None),
     }
 
-    target_pkgs, dummy_demodularized_pkgs = compute_packages_on_target_system(installed_pkgs, events, [(8, 0), (8, 1)])
+    target_pkgs, dummy_demodularized_pkgs = _compute_packages_on_target_system(
+        installed_pkgs, events, [(8, 0), (8, 1)]
+    )
 
     expected_target_pkgs = {
         Package('split01', 'rhel8-repo', None),
@@ -186,7 +186,6 @@ def test_compute_pkg_state(monkeypatch):
 
 
 def test_compute_rpm_tasks_from_pkg_set_diff(monkeypatch):
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[EnabledModules(modules=[])]))
     source_pkgs = {
         Package('removed1', '7repo', None),
         Package('removed2', '7repo', None),
@@ -201,7 +200,7 @@ def test_compute_rpm_tasks_from_pkg_set_diff(monkeypatch):
         Package('installed2', '8repo2', None),
     }
 
-    rpm_tasks = compute_rpm_tasks_from_pkg_set_diff(source_pkgs, target_pkgs, set())
+    rpm_tasks = _compute_rpm_tasks_from_pkg_set_diff(source_pkgs, target_pkgs, set(), [])
 
     assert rpm_tasks.to_install == ['installed1', 'installed2']
     assert rpm_tasks.to_remove == ['removed1', 'removed2']
@@ -236,9 +235,9 @@ def test_actor_performs(monkeypatch):
 
     _RPM = partial(RPM, epoch='', packager='', version='', release='', arch='', pgpsig='')
 
-    installed_pkgs = DistributionSignedRPM(items=[
+    installed_rpms = [
         _RPM(name='split-in'), _RPM(name='moved-in'), _RPM(name='removed')
-    ])
+    ]
 
     repositories_mapping = RepositoriesMapping(
         mapping=[
@@ -251,7 +250,6 @@ def test_actor_performs(monkeypatch):
                                  repo_type='rpm', channel='ga', rhui='', distro='rhel')]
     )
 
-    enabled_modules = EnabledModules(modules=[])
     repo_facts = RepositoriesFacts(
         repositories=[RepositoryFile(file='', data=[RepositoryData(repoid='rhel8-repo', name='RHEL8 repo')])]
     )
@@ -260,7 +258,7 @@ def test_actor_performs(monkeypatch):
         api,
         "current_actor",
         CurrentActorMocked(
-            msgs=[installed_pkgs, repositories_mapping, enabled_modules, repo_facts],
+            msgs=[repositories_mapping, repo_facts],
             src_ver="8.10",
             dst_ver="9.1",
         ),
@@ -273,7 +271,7 @@ def test_actor_performs(monkeypatch):
     monkeypatch.setattr(api, 'produce', produced_messages)
     monkeypatch.setattr(reporting, 'create_report', created_report)
 
-    pes_events_scanner.scan_pes_events(repomap_handler, set(), {'rhel8-repo'})
+    pes_events_scanner.scan_pes_events(repomap_handler, set(), {'rhel8-repo'}, installed_rpms, [])
 
     assert produced_messages.called
 
@@ -299,14 +297,14 @@ def test_transaction_configuration_has_effect(monkeypatch):
     )
 
     packages = {_Pkg('pkg-a'), _Pkg('pkg-c')}
-    _result = pes_events_scanner.apply_transaction_configuration(packages, transaction_cfg)
+    _result = pes_events_scanner._apply_transaction_configuration(packages, transaction_cfg)
     result = {(p.name, p.repository, p.modulestream) for p in _result}
     expected = {('pkg-a', None, None), ('pkg-b', None, None)}
 
     assert result == expected
 
 
-def test_repository_blacklist_is_correctly_applied(monkeypatch):
+def test_repository_blocklist_is_correctly_applied(monkeypatch):
     _Pkg = partial(Package, modulestream=None)
 
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked())
@@ -315,11 +313,10 @@ def test_repository_blacklist_is_correctly_applied(monkeypatch):
     source_pkgs = {_Pkg('pkg-b', 'repo-b')}
     target_pkgs = {_Pkg('pkg-a', 'repo-a'), _Pkg('pkg-b', 'repo-b'), _Pkg('pkg-c', 'repo-c'), _Pkg('pkg-d', 'repo-d')}
 
-    blacklisted_repoids, target_pkgs = pes_events_scanner.remove_new_packages_from_blacklisted_repos(
+    target_pkgs = pes_events_scanner._remove_new_packages_from_blocklisted_repos(
         source_pkgs, target_pkgs, {'repo-a', 'repo-b', 'repo-c'})
     result = pkgs_into_tuples(target_pkgs)
 
-    assert blacklisted_repoids == {'repo-a', 'repo-b', 'repo-c'}
     assert result == {('pkg-b', 'repo-b', None), ('pkg-d', 'repo-d', None)}
 
     assert reporting.create_report.called
@@ -340,17 +337,17 @@ def test_blacklisted_repoid_is_not_produced(monkeypatch):
               (9, 0), (9, 1), []),
     ]
 
-    monkeypatch.setattr(pes_events_scanner, 'get_installed_pkgs', lambda: installed_pkgs)
+    monkeypatch.setattr(pes_events_scanner, '_rpms_to_package_set', lambda rpm_list: installed_pkgs)
     monkeypatch.setattr(pes_events_scanner, 'get_pes_events', lambda folder, filename: events)
-    monkeypatch.setattr(pes_events_scanner, 'apply_transaction_configuration', lambda pkgs, transaction_cfg: pkgs)
-    monkeypatch.setattr(pes_events_scanner, 'replace_pesids_with_repoids_in_packages',
+    monkeypatch.setattr(pes_events_scanner, '_apply_transaction_configuration', lambda pkgs, transaction_cfg: pkgs)
+    monkeypatch.setattr(pes_events_scanner, '_replace_pesids_with_repoids_in_packages',
                         lambda pkgs, src_pkgs_repoids, repo_map_msg, enabled_repoids: pkgs)
 
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked())
     monkeypatch.setattr(api, 'produce', produce_mocked())
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
 
-    setup_tasks = pes_events_scanner.scan_pes_events(None, {'blacklisted-rhel9'}, set())
+    setup_tasks = pes_events_scanner.scan_pes_events(None, {'blacklisted-rhel9'}, set(), [], [])
 
     assert not reporting.create_report.called
 
@@ -383,7 +380,7 @@ def test_modularity_info_distinguishes_pkgs(monkeypatch, installed_pkgs, expecte
     ]
 
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked())
-    target_pkgs, dummy_demodularized_pkgs = compute_packages_on_target_system(installed_pkgs, events, [(8, 1)])
+    target_pkgs, dummy_demodularized_pkgs = _compute_packages_on_target_system(installed_pkgs, events, [(8, 1)])
 
     assert pkgs_into_tuples(target_pkgs) == expected_target_pkgs
 
@@ -403,7 +400,7 @@ def test_pkgs_are_demodularized_when_crossing_major_version(monkeypatch):
         Package('demodularized', 'repo', ('module-demodularized', 'stream'))
     }
 
-    target_pkgs, demodularized_pkgs = compute_packages_on_target_system(installed_pkgs, events, [(8, 0)])
+    target_pkgs, demodularized_pkgs = _compute_packages_on_target_system(installed_pkgs, events, [(8, 0)])
 
     expected_target_pkgs = {
         Package('modular', 'repo1-out', ('module2', 'stream')),
@@ -473,7 +470,7 @@ def test_remove_leapp_related_events(monkeypatch):
               {Package('other-pkg-with-leapp-in-the-name', 'repoid-rhel8', None)}, (7, 0), (8, 0), []),
     ]
 
-    out_events = pes_events_scanner.remove_leapp_related_events(in_events)
+    out_events = pes_events_scanner._remove_leapp_related_events(in_events)
     assert out_events == expected_out_events
 
 
@@ -483,7 +480,7 @@ def test_transaction_configuration_is_applied(monkeypatch):
          Package(name='split-in', repository='rhel7-base', modulestream=None),
          Package(name='pkg-not-in-events', repository='rhel7-base', modulestream=None),
     }
-    monkeypatch.setattr(pes_events_scanner, 'get_installed_pkgs', lambda *args, **kwags: installed_pkgs)
+    monkeypatch.setattr(pes_events_scanner, '_rpms_to_package_set', lambda rpm_list: installed_pkgs)
 
     Pkg = partial(Package, modulestream=None)
     events = [
@@ -496,14 +493,13 @@ def test_transaction_configuration_is_applied(monkeypatch):
               (7, 9), (8, 0), []),
     ]
     monkeypatch.setattr(pes_events_scanner, 'get_pes_events', lambda *args, **kwargs: events)
-    monkeypatch.setattr(pes_events_scanner, 'remove_leapp_related_events', lambda events: events)
-    monkeypatch.setattr(pes_events_scanner, 'remove_undesired_events', lambda events, releases: events)
-    monkeypatch.setattr(pes_events_scanner, '_get_enabled_modules', lambda *args: [])
-    monkeypatch.setattr(pes_events_scanner, 'replace_pesids_with_repoids_in_packages',
+    monkeypatch.setattr(pes_events_scanner, '_remove_leapp_related_events', lambda events: events)
+    monkeypatch.setattr(pes_events_scanner, '_remove_undesired_events', lambda events, releases: events)
+    monkeypatch.setattr(pes_events_scanner, '_replace_pesids_with_repoids_in_packages',
                         lambda target_pkgs, repoids_of_source_pkgs, repo_map_msg, enabled_repoids: target_pkgs)
     monkeypatch.setattr(pes_events_scanner,
-                        'remove_new_packages_from_blacklisted_repos',
-                        lambda source_pkgs, target_pkgs, bl: (set(), target_pkgs))
+                        '_remove_new_packages_from_blocklisted_repos',
+                        lambda source_pkgs, target_pkgs, bl: target_pkgs)
 
     msgs = [
         RpmTransactionTasks(to_remove=['pkg-not-in-events']),
@@ -516,7 +512,7 @@ def test_transaction_configuration_is_applied(monkeypatch):
 
     monkeypatch.setattr(api, 'produce', produce_mocked())
 
-    setup_tasks = pes_events_scanner.scan_pes_events(None, set(), set())
+    setup_tasks = pes_events_scanner.scan_pes_events(None, set(), set(), [], [])
 
     assert api.produce.called == 1
     assert setup_tasks is not None

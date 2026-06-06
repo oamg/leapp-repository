@@ -2,7 +2,6 @@ from collections import defaultdict, namedtuple
 from functools import partial
 
 from leapp import reporting
-from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import repomap_calc
 from leapp.libraries.actor.pes_event_parsing import Action, get_pes_events, Package
 from leapp.libraries.common import rpms
@@ -10,15 +9,7 @@ from leapp.libraries.common.config import get_target_distro_id, version
 from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
 from leapp.libraries.stdlib import api
 from leapp.libraries.stdlib.config import is_verbose
-from leapp.models import (
-    DistributionSignedRPM,
-    EnabledModules,
-    Module,
-    PESIDRepositoryEntry,
-    PESRpmTransactionTasks,
-    RepositoriesFacts,
-    RpmTransactionTasks
-)
+from leapp.models import Module, PESIDRepositoryEntry, PESRpmTransactionTasks, RpmTransactionTasks
 
 SKIPPED_PKGS_MSG = (
     'packages will be skipped because they are available only in '
@@ -32,48 +23,22 @@ SKIPPED_PKGS_MSG = (
 TransactionConfiguration = namedtuple('TransactionConfiguration', ('to_install', 'to_remove', 'to_keep'))
 
 
-def get_cloud_provider_name(cloud_provider_variant):
-    for cloud_provider_prefix in ('aws', 'azure', 'google'):
-        if cloud_provider_variant.startswith(cloud_provider_prefix):
-            return cloud_provider_prefix
-    return cloud_provider_variant
-
-
-def get_best_pesid_candidate(candidate_a, candidate_b, cloud_provider):
-    cdn_candidate = None
-    for candidate in (candidate_a, candidate_b):
-        if candidate.rhui == cloud_provider:
-            return candidate
-        if not candidate.rhui:
-            cdn_candidate = candidate
-
-    # None of the candidate matches cloud provider and none of them is from CDN -
-    # do not return anything as we don't want to get content from different cloud providers
-    return cdn_candidate
-
-
-def get_installed_pkgs():
+def _rpms_to_package_set(rpm_list):
     installed_pkgs = set()
-
-    installed_rh_signed_rpm_msgs = api.consume(DistributionSignedRPM)
-    installed_rh_signed_rpm_msg = next(installed_rh_signed_rpm_msgs, None)
-    if list(installed_rh_signed_rpm_msgs):
-        api.current_logger().warning('Unexpectedly received more than one DistributionSignedRPM message.')
-    if not installed_rh_signed_rpm_msg:
-        raise StopActorExecutionError('Cannot parse PES data properly due to missing list of installed packages',
-                                      details={'Problem': 'Did not receive a message with installed Red Hat-signed '
-                                                          'packages (DistributionSignedRPM)'})
-
-    for pkg in installed_rh_signed_rpm_msg.items:
+    for rpm in rpm_list:
         modulestream = None
-        if pkg.module and pkg.stream:
-            modulestream = (pkg.module, pkg.stream)
-        installed_pkgs.add(Package(name=pkg.name, repository=pkg.repository, modulestream=modulestream))
+        if rpm.module and rpm.stream:
+            modulestream = (rpm.module, rpm.stream)
+        installed_pkgs.add(Package(
+            name=rpm.name,
+            repository=rpm.repository,
+            modulestream=modulestream
+        ))
 
     return installed_pkgs
 
 
-def get_transaction_configuration():
+def _get_transaction_configuration():
     """
     Get pkgs to install, keep and remove from RpmTransactionTasks messages.
 
@@ -94,7 +59,7 @@ def get_transaction_configuration():
     return transaction_configuration
 
 
-def get_relevant_releases(events):
+def _get_relevant_releases(events):
     """
     Get releases present in the PES Events that are relevant for this IPU.
 
@@ -110,24 +75,11 @@ def get_relevant_releases(events):
     return sorted(releases)
 
 
-def _get_enabled_modules():
-    # TODO(pstodulk): take a look
-    enabled_modules_msgs = api.consume(EnabledModules)
-    enabled_modules_msg = next(enabled_modules_msgs, None)
-    if list(enabled_modules_msgs):
-        api.current_logger().warning('Unexpectedly received more than one EnabledModules message.')
-    if not enabled_modules_msg:
-        raise StopActorExecutionError('Cannot parse PES data properly due to missing list of enabled modules',
-                                      details={'Problem': 'Did not receive a message with enabled module '
-                                                          'streams (EnabledModules)'})
-    return enabled_modules_msg.modules
-
-
-def compute_pkg_changes_between_consequent_releases(source_installed_pkgs,
-                                                    events,
-                                                    release,
-                                                    seen_pkgs,
-                                                    pkgs_to_demodularize):
+def _compute_pkg_changes_between_consequent_releases(source_installed_pkgs,
+                                                     events,
+                                                     release,
+                                                     seen_pkgs,
+                                                     pkgs_to_demodularize):
     logger = api.current_logger()
     # Start with the installed packages and modify the set according to release events
     target_pkgs = set(source_installed_pkgs)
@@ -194,7 +146,7 @@ def compute_pkg_changes_between_consequent_releases(source_installed_pkgs,
     return (target_pkgs, pkgs_to_demodularize)
 
 
-def remove_undesired_events(events, relevant_to_releases):
+def _remove_undesired_events(events, relevant_to_releases):
     """
     Conservatively remove events that needless, or cause problems for the current implementation:
     - (needless) events with to_release not in relevant releases
@@ -243,7 +195,7 @@ def remove_undesired_events(events, relevant_to_releases):
     return cleaned_events
 
 
-def compute_packages_on_target_system(source_pkgs, events, releases):
+def _compute_packages_on_target_system(source_pkgs, events, releases):
 
     seen_pkgs = set(source_pkgs)  # Used to track whether PRESENCE events can be applied
     target_pkgs = set(source_pkgs)
@@ -257,9 +209,9 @@ def compute_packages_on_target_system(source_pkgs, events, releases):
             did_processing_cross_major_version = True
             pkgs_to_demodularize = {pkg for pkg in target_pkgs if pkg.modulestream}
 
-        target_pkgs, pkgs_to_demodularize = compute_pkg_changes_between_consequent_releases(target_pkgs, events,
-                                                                                            release, seen_pkgs,
-                                                                                            pkgs_to_demodularize)
+        target_pkgs, pkgs_to_demodularize = _compute_pkg_changes_between_consequent_releases(target_pkgs, events,
+                                                                                             release, seen_pkgs,
+                                                                                             pkgs_to_demodularize)
         seen_pkgs = seen_pkgs.union(target_pkgs)
 
     demodularized_pkgs = {Package(pkg.name, pkg.repository, None) for pkg in pkgs_to_demodularize}
@@ -268,34 +220,33 @@ def compute_packages_on_target_system(source_pkgs, events, releases):
     return (demodularized_target_pkgs, pkgs_to_demodularize)
 
 
-def compute_rpm_tasks_from_pkg_set_diff(source_pkgs, target_pkgs, pkgs_to_demodularize):
+def _compute_rpm_tasks_from_pkg_set_diff(source_pkgs, target_pkgs, pkgs_to_demodularize, modules_to_reset):
     source_state_pkg_names = {pkg.name for pkg in source_pkgs}
     target_state_pkg_names = {pkg.name for pkg in target_pkgs}
 
     pkgs_to_install = sorted(target_state_pkg_names.difference(source_state_pkg_names))
     pkgs_to_remove = sorted(source_state_pkg_names.difference(target_state_pkg_names))
 
-    if pkgs_to_install or pkgs_to_remove:
-        # NOTE(mhecko): Here we do not want to consider any package that does not have a reference in PES data. There
-        # might be missing modularity information, and although the algorithm is correct, trying to enable
-        # a non-existent modulestream due to missing modulestream information results in a crash.
-        target_pkgs_without_demodularized_pkgs = target_pkgs.difference(pkgs_to_demodularize)
+    if not (pkgs_to_install or pkgs_to_remove):
+        return None
 
-        # Collect the enabled modules as tuples in a set, so we produce every module to reset exactly once
-        enabled_modules = {(module.name, module.stream) for module in _get_enabled_modules()}
-        modules_to_reset = [Module(name=ms[0], stream=ms[1]) for ms in enabled_modules]
+    # NOTE(mhecko): Here we do not want to consider any package that does not have a reference in PES data. There
+    # might be missing modularity information, and although the algorithm is correct, trying to enable
+    # a non-existent modulestream due to missing modulestream information results in a crash.
+    target_pkgs_without_demodularized_pkgs = target_pkgs.difference(pkgs_to_demodularize)
 
-        target_modulestreams = {pkg.modulestream for pkg in target_pkgs_without_demodularized_pkgs if pkg.modulestream}
-        modules_to_enable = [Module(name=ms[0], stream=ms[1]) for ms in target_modulestreams]
+    target_modulestreams = {pkg.modulestream for pkg in target_pkgs_without_demodularized_pkgs if pkg.modulestream}
+    modules_to_enable = [Module(name=ms[0], stream=ms[1]) for ms in target_modulestreams]
 
-        return PESRpmTransactionTasks(to_install=pkgs_to_install,
-                                      to_remove=pkgs_to_remove,
-                                      modules_to_enable=modules_to_enable,
-                                      modules_to_reset=modules_to_reset)
-    return None
+    return PESRpmTransactionTasks(
+        to_install=pkgs_to_install,
+        to_remove=pkgs_to_remove,
+        modules_to_enable=modules_to_enable,
+        modules_to_reset=modules_to_reset
+    )
 
 
-def report_skipped_packages(title, message, skipped_pkgs, remediation=None):
+def _report_skipped_packages(title, message, skipped_pkgs, remediation=None):
     skipped_pkgs = sorted(skipped_pkgs)
 
     def make_summary_entry_for_skipped_pkg(pkg):
@@ -320,44 +271,25 @@ def report_skipped_packages(title, message, skipped_pkgs, remediation=None):
         api.current_logger().info(summary)
 
 
-def remove_new_packages_from_blacklisted_repos(source_pkgs, target_pkgs, blacklisted_repoids):
+def _remove_new_packages_from_blocklisted_repos(source_pkgs, target_pkgs, blocklisted_repoids):
     """
-    Remove newly installed packages from blacklisted repositories that were computed to be on the target system.
+    Remove newly installed packages from blocklisted repositories that were computed to be on the target system.
 
-    :param blacklisted_repoids: Set of repoids to exclude. If None, an empty set is used.
+    :param blocklisted_repoids: Set of repoids to exclude. If None, an empty set is used.
     """
-    if blacklisted_repoids is None:
-        blacklisted_repoids = set()
     new_pkgs = target_pkgs.difference(source_pkgs)
-    pkgs_from_blacklisted_repos = set(pkg for pkg in new_pkgs if pkg.repository in blacklisted_repoids)
+    pkgs_from_blocklisted_repos = set(pkg for pkg in new_pkgs if pkg.repository in blocklisted_repoids)
 
-    if pkgs_from_blacklisted_repos:
-        report_skipped_packages(
+    if pkgs_from_blocklisted_repos:
+        _report_skipped_packages(
             title='Packages available in excluded repositories will not be installed',
             message=SKIPPED_PKGS_MSG,
-            skipped_pkgs=pkgs_from_blacklisted_repos,
+            skipped_pkgs=pkgs_from_blocklisted_repos,
         )
-    return blacklisted_repoids, target_pkgs.difference(pkgs_from_blacklisted_repos)
+    return target_pkgs.difference(pkgs_from_blocklisted_repos)
 
 
-def get_enabled_repoids():
-    """
-    Collects repoids of all enabled repositories on the source system.
-
-    :param repositories_facts: Iterable of RepositoriesFacts containing repositories related info about source system.
-    :return: Set of all enabled repository IDs present on the source system.
-    :rtype: Set[str]
-    """
-    enabled_repoids = set()
-    for repos in api.consume(RepositoriesFacts):
-        for repo_file in repos.repositories:
-            for repo in repo_file.data:
-                if repo.enabled:
-                    enabled_repoids.add(repo.repoid)
-    return enabled_repoids
-
-
-def get_pesid_to_repoid_map(target_pesids, repomap_handler, enabled_repoids):
+def _get_pesid_to_repoid_map(target_pesids, repomap_handler, enabled_repoids):
     """
     Get a dictionary mapping all PESID repositories to their corresponding repoid.
 
@@ -430,7 +362,7 @@ def get_pesid_to_repoid_map(target_pesids, repomap_handler, enabled_repoids):
     return repositories_mapping
 
 
-def replace_pesids_with_repoids_in_packages(packages, source_pkgs_repoids, repomap_handler, enabled_repoids):
+def _replace_pesids_with_repoids_in_packages(packages, source_pkgs_repoids, repomap_handler, enabled_repoids):
     """Replace packages with PESID in their .repository field with ones that have repoid providing the package."""
     # We want to map only PESIDs - if some package had no events, it will its repository set to source system repoid
     packages_with_pesid = {pkg for pkg in packages if pkg.repository not in source_pkgs_repoids}
@@ -438,7 +370,7 @@ def replace_pesids_with_repoids_in_packages(packages, source_pkgs_repoids, repom
 
     required_target_pesids = {pkg.repository for pkg in packages_with_pesid}
 
-    pesid_to_target_repoid_map = get_pesid_to_repoid_map(required_target_pesids, repomap_handler, enabled_repoids)
+    pesid_to_target_repoid_map = _get_pesid_to_repoid_map(required_target_pesids, repomap_handler, enabled_repoids)
 
     packages_with_unknown_target_repoid = {
         pkg
@@ -447,7 +379,7 @@ def replace_pesids_with_repoids_in_packages(packages, source_pkgs_repoids, repom
     }
 
     if packages_with_unknown_target_repoid:
-        report_skipped_packages(
+        _report_skipped_packages(
             title='Packages from unknown repositories may not be installed',
             message='packages may not be installed or upgraded due to repositories unknown to leapp:',
             skipped_pkgs=packages_with_unknown_target_repoid,
@@ -458,7 +390,8 @@ def replace_pesids_with_repoids_in_packages(packages, source_pkgs_repoids, repom
                 ' You can also review the projected DNF upgrade transaction result'
                 ' in the logs to see what is going to happen, as this does not necessarily mean'
                 ' that the listed packages will not be upgraded. You can also'
-                ' install any missing packages after the in-place upgrade manually.'.format(
+                ' install any missing packages after the in-place upgrade manually.'
+                .format(
                     'RHEL (provided by Red Hat on CDN)'
                     if get_target_distro_id() == 'rhel'
                     else DISTRO_REPORT_NAMES.target
@@ -474,7 +407,7 @@ def replace_pesids_with_repoids_in_packages(packages, source_pkgs_repoids, repom
     return packages_with_repoid.union(packages_without_pesid)
 
 
-def apply_transaction_configuration(source_pkgs, transaction_configuration):
+def _apply_transaction_configuration(source_pkgs, transaction_configuration):
     source_pkgs_with_conf_applied = set(source_pkgs)
 
     source_pkgs_with_conf_applied = source_pkgs.union(transaction_configuration.to_install)
@@ -494,7 +427,7 @@ def apply_transaction_configuration(source_pkgs, transaction_configuration):
     return source_pkgs_with_conf_applied
 
 
-def remove_leapp_related_events(events):
+def _remove_leapp_related_events(events):
     major_vers = ['7', '8', '9']
     leapp_pkgs = rpms.get_leapp_dep_packages(major_vers) + rpms.get_leapp_packages(major_vers)
     res = []
@@ -508,7 +441,7 @@ def remove_leapp_related_events(events):
     return res
 
 
-def include_instructions_from_transaction_configuration(rpm_tasks, transaction_configuration, installed_pkgs):
+def _include_instructions_from_transaction_configuration(rpm_tasks, transaction_configuration, installed_pkgs):
     """
     Extend current rpm_tasks applying data from transaction_configuration
 
@@ -552,13 +485,13 @@ def include_instructions_from_transaction_configuration(rpm_tasks, transaction_c
                                   modules_to_reset=modules_to_reset)
 
 
-def scan_pes_events(repomap_handler, blacklisted_repoids, enabled_repoids):
+def scan_pes_events(repomap_handler, blocklisted_repoids, enabled_repoids, installed_rpms, enabled_modules):
     """
     Process PES events and compute RPM transaction tasks.
 
     :param repomap_handler: Operator to work with the repositories mapping data
     :type repomap_handler: repomap_calc.RepoMapDataHandler
-    :param blacklisted_repoids: Set of repoids to exclude from target packages. If None, an empty set is used.
+    :param blocklisted_repoids: Set of repoids to exclude from target packages. If None, an empty set is used.
     :returns: Set of target repoids that need to be enabled, or None if no PES events are found.
     :rtype: Optional[set]
     """
@@ -567,41 +500,55 @@ def scan_pes_events(repomap_handler, blacklisted_repoids, enabled_repoids):
     if not events:
         return None
 
-    releases = get_relevant_releases(events)
-    installed_pkgs = get_installed_pkgs()
-    transaction_configuration = get_transaction_configuration()
-    pkgs_to_begin_computation_with = apply_transaction_configuration(installed_pkgs, transaction_configuration)
+    releases = _get_relevant_releases(events)
+    installed_pkgs = _rpms_to_package_set(installed_rpms)
+    transaction_configuration = _get_transaction_configuration()
+    pkgs_to_begin_computation_with = _apply_transaction_configuration(installed_pkgs, transaction_configuration)
 
     # Keep track of what repoids have the source packages to be able to determine what are the PESIDs of the computed
     # packages of the target system, so we can distinguish what needs to be repomapped
     repoids_of_source_pkgs = {pkg.repository for pkg in pkgs_to_begin_computation_with}
 
-    events = remove_leapp_related_events(events)
-    events = remove_undesired_events(events, releases)
+    events = _remove_leapp_related_events(events)
+    events = _remove_undesired_events(events, releases)
 
     # Apply events - compute what packages should the target system have
-    target_pkgs, pkgs_to_demodularize = compute_packages_on_target_system(pkgs_to_begin_computation_with,
-                                                                          events, releases)
+    target_pkgs, pkgs_to_demodularize = _compute_packages_on_target_system(
+        pkgs_to_begin_computation_with,
+        events,
+        releases
+    )
 
     # Packages coming out of the events have PESID as their repository, however, we need real repoid
-    target_pkgs = replace_pesids_with_repoids_in_packages(
+    target_pkgs = _replace_pesids_with_repoids_in_packages(
         target_pkgs,
         repoids_of_source_pkgs,
         repomap_handler,
         enabled_repoids
     )
 
-    # Apply the desired repository blacklisting
-    blacklisted_repoids, target_pkgs = remove_new_packages_from_blacklisted_repos(pkgs_to_begin_computation_with,
-                                                                                  target_pkgs, blacklisted_repoids)
+    # Apply the desired repository blocklisting
+    target_pkgs = _remove_new_packages_from_blocklisted_repos(
+        pkgs_to_begin_computation_with,
+        target_pkgs,
+        blocklisted_repoids
+    )
 
     # Look at the target packages and determine what repositories to enable
-    pes_requested_repoids = set(p.repository for p in target_pkgs) - blacklisted_repoids - repoids_of_source_pkgs
+    pes_requested_repoids = set(p.repository for p in target_pkgs) - blocklisted_repoids - repoids_of_source_pkgs
 
     # Compare the packages on source system and the computed packages on target system and determine what to install
-    rpm_tasks = compute_rpm_tasks_from_pkg_set_diff(pkgs_to_begin_computation_with, target_pkgs, pkgs_to_demodularize)
-    rpm_tasks = include_instructions_from_transaction_configuration(rpm_tasks, transaction_configuration,
-                                                                    installed_pkgs)
+    rpm_tasks = _compute_rpm_tasks_from_pkg_set_diff(
+        pkgs_to_begin_computation_with,
+        target_pkgs,
+        pkgs_to_demodularize,
+        enabled_modules
+    )
+    rpm_tasks = _include_instructions_from_transaction_configuration(
+        rpm_tasks,
+        transaction_configuration,
+        installed_pkgs
+    )
     if rpm_tasks:
         api.produce(rpm_tasks)
 
