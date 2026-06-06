@@ -41,10 +41,11 @@ def test_process_orchestration(monkeypatch):
         call_log.append('scan_repositories')
         return fake_repo_map
 
-    def mock_compute_blocklist(repo_mapping, external_tasks):
+    def mock_compute_blocklist(repo_mapping, external_tasks, enabled_repoids):
         call_log.append('compute_blocklist')
         assert repo_mapping is fake_repo_map
         assert external_tasks is fake_external_tasks
+        assert enabled_repoids is fake_enabled_repoids
         return fake_blocklist
 
     def mock_scan_pes_events(repo_mapping, blacklisted_repoids, enabled_repoids):
