@@ -8,7 +8,6 @@ from leapp.models import (
     DistroTargetRepository,
     InstalledRPM,
     RHELTargetRepository,
-    RHUIInfo,
     SkippedRepositories,
     TargetRepositories,
     UsedRepositories
@@ -58,12 +57,13 @@ def _get_mapped_repoids(repomap, src_repoids):
 
 
 @suppress_deprecation(RHELTargetRepository)
-def setup_target_repos(repositories_map_msg, pes_requested_repoids=None,
+def setup_target_repos(repomap_handler, pes_requested_repoids=None,
                        blacklisted_repoids=None, external_repoids_requests=None):
     """
     Determine the final list of target repositories.
 
-    :param repositories_map_msg: RepositoriesMapping message.
+    :param repomap_handler: Operator to work with the repositories mapping data
+    :type repomap_handler: repomap_calc.RepoMapDataHandler
     :param pes_requested_repoids: Set of repoids derived from PES events that need to be enabled.
     :param blacklisted_repoids: Set of repoids to exclude from target repos. If None, an empty set is used.
     :param external_repoids_requests: Set of repoids requested by external actors (e.g. satellite_upgrade_facts).
@@ -74,14 +74,6 @@ def setup_target_repos(repositories_map_msg, pes_requested_repoids=None,
     excluded_repoids = blacklisted_repoids if blacklisted_repoids is not None else set()
     custom_repos = _get_custom_target_repos()
     repoids_from_installed_packages = _get_repoids_from_installed_packages()
-
-    # Setup repomap handler
-    repo_mapping_msg = repositories_map_msg
-
-    rhui_info = next(api.consume(RHUIInfo), None)
-    cloud_provider = rhui_info.provider if rhui_info else ''
-
-    repomap_handler = repomap_calc.RepoMapDataHandler(repo_mapping_msg, cloud_provider=cloud_provider)
 
     # Filter set of repoids from installed packages so that it contains only repoids with mapping
     repoids_from_installed_packages_with_mapping = _get_mapped_repoids(

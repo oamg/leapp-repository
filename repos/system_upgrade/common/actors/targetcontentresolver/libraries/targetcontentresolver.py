@@ -2,9 +2,16 @@ from collections import namedtuple
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import pes_events_scanner, repositoriesblocklist, setuptargetrepos
+from leapp.libraries.actor.repomap_calc import RepoMapDataHandler
 from leapp.libraries.actor.repomap_loader import load_repositories_mapping
 from leapp.libraries.stdlib import api
-from leapp.models import CustomTargetRepository, RepositoriesBlacklisted, RepositoriesFacts, RepositoriesSetupTasks
+from leapp.models import (
+    CustomTargetRepository,
+    RepositoriesBlacklisted,
+    RepositoriesFacts,
+    RepositoriesSetupTasks,
+    RHUIInfo
+)
 from leapp.utils.deprecation import suppress_deprecation
 
 
@@ -68,6 +75,13 @@ def _get_enabled_repoids():
     return enabled_repoids
 
 
+def _init_repomap_handler():
+    repomap_msg = load_repositories_mapping()
+    rhui_info = next(api.consume(RHUIInfo), None)
+    cloud_provider = rhui_info.provider if rhui_info else ''
+    return RepoMapDataHandler(repomap_msg, cloud_provider=cloud_provider)
+
+
 def process():
     """
     Orchestrate the four stages of target content resolution.
@@ -97,20 +111,20 @@ def process():
         raise StopActorExecutionError(str(e))
 
     external_tasks = _get_external_reposetup_tasks()
-    repositories_map_msg = load_repositories_mapping()
+    repomap_handler = _init_repomap_handler()
     blocklisted_repoids = repositoriesblocklist.compute_blocklist(
-        repositories_map_msg,
+        repomap_handler,
         external_tasks,
         enabled_repoids
     )
     pes_requested_repoids = pes_events_scanner.scan_pes_events(
-        repositories_map_msg,
+        repomap_handler,
         blocklisted_repoids,
         enabled_repoids
     )
 
     setuptargetrepos.setup_target_repos(
-        repositories_map_msg,
+        repomap_handler,
         pes_requested_repoids=pes_requested_repoids,
         blacklisted_repoids=blocklisted_repoids,
         external_repoids_requests=external_tasks.to_enable,

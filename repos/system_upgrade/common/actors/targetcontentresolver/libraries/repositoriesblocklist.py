@@ -46,44 +46,39 @@ def _report_excluded_repos(repos):
     reporting.create_report(report)
 
 
-def _get_crb_repos(repo_mapping, major_version):
+def _get_crb_repos(repo_mapping,  flag_source_os):
     """
-    Return set of relevant CRB repoids for the specified major version
+    Return set of relevant CRB repoids for the source or target OS.
 
-    Only CRB repositories for the current architecture and distribution are
-    relevant.
-
-    :param repo_mapping: RepositoriesMapping message.
-    :type repo_mapping: RepositoriesMapping
-    :param major_version: The OS major version.
-    :type major_version: str
+    :param repo_mapping: Operator to work with the repositories mapping data
+    :type repo_mapping: repomap_calc.RepoMapDataHandler
+    :param flag_source_os: Set True for the source OS, False for the target OS.
+    :type flag_source_os: bool
     :returns: A set of repoids with the specified pesid and major version.
     :rtype: Set[str]
     """
-    pesid = f'rhel{major_version}-CRB'
     curr_arch = api.current_actor().configuration.architecture
-    crb_repoids = set()
-    for pesid_repo in repo_mapping.repositories:
-        if pesid_repo.major_version != major_version or pesid_repo.arch != curr_arch:
-            # irrelevant repository
-            continue
-        if pesid_repo.pesid == pesid and pesid_repo.major_version == major_version:
-            crb_repoids.add(pesid_repo.repoid)
-    return crb_repoids
+    if flag_source_os:
+        pesid = 'rhel{}-CRB'.format(get_source_major_version())
+        crb_repos = repo_mapping.get_source_pesid_repos(pesid)
+    else:
+        pesid = 'rhel{}-CRB'.format(get_target_major_version())
+        crb_repos = repo_mapping.get_target_pesid_repos(pesid)
+    return {repo.repoid for repo in crb_repos if repo.arch == curr_arch}
 
 
 def _are_crb_repos_disabled(repo_mapping, enabled_repoids):
     """
     Checks whether all CRB repositories are disabled.
 
-    :param repo_mapping: RepositoriesMapping message.
-    :type repo_mapping: RepositoriesMapping
+    :param repo_mapping: Operator to work with the repositories mapping data
+    :type repo_mapping: repomap_calc.RepoMapDataHandler
     :param enabled_repoids: Set of repoids enabled on the source system.
     :type enabled_repoids: Set[str]
     :returns: False if any CRB repositories are enabled on the source system, True otherwise.
     :rtype: bool
     """
-    return enabled_repoids.isdisjoint(_get_crb_repos(repo_mapping, get_source_major_version()))
+    return enabled_repoids.isdisjoint(_get_crb_repos(repo_mapping, True))
 
 
 def _calc_internal_blocklist(repo_mapping, external_tasks, enabled_repoids):
@@ -98,8 +93,8 @@ def _calc_internal_blocklist(repo_mapping, external_tasks, enabled_repoids):
     Also report explicitly enabled and blocklisted CRB repositories, unless
     CRB is already already enabled on the source system.
 
-    :param repo_mapping: RepositoriesMapping message.
-    :type repo_mapping: RepositoriesMapping
+    :param repo_mapping: Operator to work with the repositories mapping data
+    :type repo_mapping: repomap_calc.RepoMapDataHandler
     :param external_tasks: External repositories tasks represented by object with following fields:
 
         * ``to_enable`` - repositories that should be enabled
@@ -116,7 +111,7 @@ def _calc_internal_blocklist(repo_mapping, external_tasks, enabled_repoids):
         # nothing to do - no CRB repo is enabled
         return set()
 
-    repos_to_exclude = _get_crb_repos(repo_mapping, get_target_major_version())
+    repos_to_exclude = _get_crb_repos(repo_mapping, False)
 
     # Do not exclude repositories explicitly required by user for the upgrade
     manually_enabled_repos = external_tasks.custom & repos_to_exclude
@@ -166,8 +161,8 @@ def compute_blocklist(repo_mapping, external_tasks, enabled_repoids):
     the in-place upgrade purpose. Currently there is no explicit custom
     configuration to disable a repo.
 
-    :param repo_mapping: RepositoriesMapping message.
-    :type repo_mapping: RepositoriesMapping
+    :param repo_mapping: Operator to work with the repositories mapping data
+    :type repo_mapping: repomap_calc.RepoMapDataHandler
     :param external_tasks: External repositories tasks represented by object with following fields:
 
         * ``to_enable`` - repositories that should be enabled
