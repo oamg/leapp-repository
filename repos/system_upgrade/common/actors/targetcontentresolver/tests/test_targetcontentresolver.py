@@ -7,11 +7,13 @@ from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked
 from leapp.libraries.stdlib import api
 from leapp.models import (
     CustomTargetRepository,
+    RepositoriesBlacklisted,
     RepositoriesFacts,
     RepositoriesSetupTasks,
     RepositoryData,
     RepositoryFile
 )
+from leapp.utils.deprecation import suppress_deprecation
 
 
 def test_process_orchestration(monkeypatch):
@@ -165,3 +167,37 @@ def test_inputdata_warns_on_duplicate_repofacts(monkeypatch):
 
     assert indata.enabled_repoids == {'repo-a'}
     assert any('more than one' in msg for msg in api.current_logger.warnmsg)
+
+
+@suppress_deprecation(RepositoriesBlacklisted)
+def test_inputdata_consumes_deprecated_blacklisted(monkeypatch):
+    """RepositoriesBlacklisted repoids are added to external_tasks.to_block."""
+    repo_facts = _make_repo_facts(repoids_enabled=['repo-a'])
+    blacklisted = RepositoriesBlacklisted(repoids=['bl-1', 'bl-2'])
+
+    monkeypatch.setattr(
+        api, 'current_actor',
+        CurrentActorMocked(msgs=[repo_facts, blacklisted])
+    )
+
+    indata = InputData()
+
+    assert indata.external_tasks.to_block == {'bl-1', 'bl-2'}
+
+
+@suppress_deprecation(RepositoriesBlacklisted)
+def test_inputdata_merges_blacklisted_with_setup_tasks(monkeypatch):
+    """RepositoriesBlacklisted repoids are merged with RepositoriesSetupTasks.to_block."""
+    repo_facts = _make_repo_facts(repoids_enabled=['repo-a'])
+    setup_tasks = RepositoriesSetupTasks(to_enable=['en-1'], to_block=['bl-from-setup'])
+    blacklisted = RepositoriesBlacklisted(repoids=['bl-from-deprecated'])
+
+    monkeypatch.setattr(
+        api, 'current_actor',
+        CurrentActorMocked(msgs=[repo_facts, setup_tasks, blacklisted])
+    )
+
+    indata = InputData()
+
+    assert indata.external_tasks.to_block == {'bl-from-setup', 'bl-from-deprecated'}
+    assert indata.external_tasks.to_enable == {'en-1'}
