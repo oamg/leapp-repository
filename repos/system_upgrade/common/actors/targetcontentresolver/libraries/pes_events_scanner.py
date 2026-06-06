@@ -17,7 +17,6 @@ from leapp.models import (
     PESIDRepositoryEntry,
     PESRpmTransactionTasks,
     RepositoriesFacts,
-    RHUIInfo,
     RpmTransactionTasks
 )
 
@@ -112,6 +111,7 @@ def get_relevant_releases(events):
 
 
 def _get_enabled_modules():
+    # TODO(pstodulk): take a look
     enabled_modules_msgs = api.consume(EnabledModules)
     enabled_modules_msg = next(enabled_modules_msgs, None)
     if list(enabled_modules_msgs):
@@ -357,22 +357,20 @@ def get_enabled_repoids():
     return enabled_repoids
 
 
-def get_pesid_to_repoid_map(target_pesids, repositories_map_msg, enabled_repoids):
+def get_pesid_to_repoid_map(target_pesids, repomap_handler, enabled_repoids):
     """
     Get a dictionary mapping all PESID repositories to their corresponding repoid.
 
     :param target_pesids: The set of target PES IDs needed to be mapped
-    :param repositories_map_msg: RepositoriesMapping message.
+    :param repomap_handler: Operator to work with the repositories mapping data
+    :type repomap_handler: repomap_calc.RepoMapDataHandler
     :return: Dictionary mapping the target_pesids to their corresponding repoid
     """
-    rhui_info = next(api.consume(RHUIInfo), None)
-    cloud_provider = rhui_info.provider if rhui_info else ''
-
-    repomap_handler = repomap_calc.RepoMapDataHandler(repositories_map_msg, cloud_provider=cloud_provider)
-
     # NOTE: We have to calculate expected target repositories like in the setuptargetrepos actor.
     # It's planned to handle this in different a way in future...
-
+    # TODO(pstodulk): ?? hmm..what about moving it to the orchestrator?
+    # TODO(pstodulk): what about returning requests just for PESIDS? Setuptargetrepo
+    # lib will pick the right one for us later.
     default_channels = repomap_calc.get_default_repository_channels(repomap_handler, enabled_repoids)
     repomap_handler.set_default_channels(default_channels)
 
@@ -432,7 +430,7 @@ def get_pesid_to_repoid_map(target_pesids, repositories_map_msg, enabled_repoids
     return repositories_mapping
 
 
-def replace_pesids_with_repoids_in_packages(packages, source_pkgs_repoids, repositories_map_msg, enabled_repoids):
+def replace_pesids_with_repoids_in_packages(packages, source_pkgs_repoids, repomap_handler, enabled_repoids):
     """Replace packages with PESID in their .repository field with ones that have repoid providing the package."""
     # We want to map only PESIDs - if some package had no events, it will its repository set to source system repoid
     packages_with_pesid = {pkg for pkg in packages if pkg.repository not in source_pkgs_repoids}
@@ -440,7 +438,7 @@ def replace_pesids_with_repoids_in_packages(packages, source_pkgs_repoids, repos
 
     required_target_pesids = {pkg.repository for pkg in packages_with_pesid}
 
-    pesid_to_target_repoid_map = get_pesid_to_repoid_map(required_target_pesids, repositories_map_msg, enabled_repoids)
+    pesid_to_target_repoid_map = get_pesid_to_repoid_map(required_target_pesids, repomap_handler, enabled_repoids)
 
     packages_with_unknown_target_repoid = {
         pkg
@@ -554,11 +552,12 @@ def include_instructions_from_transaction_configuration(rpm_tasks, transaction_c
                                   modules_to_reset=modules_to_reset)
 
 
-def scan_pes_events(repositories_map_msg, blacklisted_repoids, enabled_repoids):
+def scan_pes_events(repomap_handler, blacklisted_repoids, enabled_repoids):
     """
     Process PES events and compute RPM transaction tasks.
 
-    :param repositories_map_msg: RepositoriesMapping message.
+    :param repomap_handler: Operator to work with the repositories mapping data
+    :type repomap_handler: repomap_calc.RepoMapDataHandler
     :param blacklisted_repoids: Set of repoids to exclude from target packages. If None, an empty set is used.
     :returns: Set of target repoids that need to be enabled, or None if no PES events are found.
     :rtype: Optional[set]
@@ -588,7 +587,7 @@ def scan_pes_events(repositories_map_msg, blacklisted_repoids, enabled_repoids):
     target_pkgs = replace_pesids_with_repoids_in_packages(
         target_pkgs,
         repoids_of_source_pkgs,
-        repositories_map_msg,
+        repomap_handler,
         enabled_repoids
     )
 

@@ -13,6 +13,7 @@ from leapp.libraries.actor.pes_events_scanner import (
     reporting,
     TransactionConfiguration
 )
+from leapp.libraries.actor.repomap_calc import RepoMapDataHandler
 from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked, produce_mocked
 from leapp.models import (
     DistributionSignedRPM,
@@ -265,12 +266,14 @@ def test_actor_performs(monkeypatch):
         ),
     )
 
+    repomap_handler = RepoMapDataHandler(repositories_mapping)
+
     produced_messages = produce_mocked()
     created_report = create_report_mocked()
     monkeypatch.setattr(api, 'produce', produced_messages)
     monkeypatch.setattr(reporting, 'create_report', created_report)
 
-    pes_events_scanner.scan_pes_events(repositories_mapping, set(), {'rhel8-repo'})
+    pes_events_scanner.scan_pes_events(repomap_handler, set(), {'rhel8-repo'})
 
     assert produced_messages.called
 
