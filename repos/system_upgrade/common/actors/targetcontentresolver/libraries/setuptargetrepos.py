@@ -1,5 +1,4 @@
 from leapp.libraries.actor import repomap_calc
-from leapp.libraries.actor.pes_events_scanner import get_enabled_repoids
 from leapp.libraries.common.config import get_source_distro_id, get_target_distro_id
 from leapp.libraries.common.config.version import get_source_major_version, get_source_version
 from leapp.libraries.stdlib import api
@@ -57,7 +56,7 @@ def _get_mapped_repoids(repomap, src_repoids):
 
 
 @suppress_deprecation(RHELTargetRepository)
-def setup_target_repos(repomap_handler, pes_requested_repoids=None,
+def setup_target_repos(repomap_handler, enabled_repoids, pes_requested_repoids=None,
                        blacklisted_repoids=None, external_repoids_requests=None):
     """
     Determine the final list of target repositories.
@@ -70,7 +69,6 @@ def setup_target_repos(repomap_handler, pes_requested_repoids=None,
     """
     # Load relevant data from messages
     used_repoids_dict = _get_used_repo_dict()
-    enabled_repoids = get_enabled_repoids()
     excluded_repoids = blacklisted_repoids if blacklisted_repoids is not None else set()
     custom_repos = _get_custom_target_repos()
     repoids_from_installed_packages = _get_repoids_from_installed_packages()

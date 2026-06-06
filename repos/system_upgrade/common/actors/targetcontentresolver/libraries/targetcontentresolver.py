@@ -125,6 +125,7 @@ def process():
 
     setuptargetrepos.setup_target_repos(
         repomap_handler,
+        enabled_repoids,
         pes_requested_repoids=pes_requested_repoids,
         blacklisted_repoids=blocklisted_repoids,
         external_repoids_requests=external_tasks.to_enable,
