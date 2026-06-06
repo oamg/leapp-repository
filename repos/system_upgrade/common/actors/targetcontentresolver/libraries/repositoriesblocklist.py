@@ -1,21 +1,7 @@
 from leapp import reporting
-from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common.config.version import get_source_major_version, get_target_major_version
 from leapp.libraries.stdlib import api
-from leapp.models import (
-    CustomTargetRepository,
-    RepositoriesBlacklisted,
-    RepositoriesBlocklisted,
-    RepositoriesFacts,
-    RepositoriesSetupTasks
-)
-
-# {OS_MAJOR_VERSION: PESID}
-UNSUPPORTED_PESIDS = {
-    "8": "rhel8-CRB",
-    "9": "rhel9-CRB",
-    "10": "rhel10-CRB"
-}
+from leapp.models import RepositoriesBlocklisted
 
 
 def _report_using_unsupported_repos(repos):
@@ -28,6 +14,7 @@ def _report_using_unsupported_repos(repos):
         ),
         reporting.Severity(reporting.Severity.HIGH),
         reporting.Groups([reporting.Groups.REPOSITORY]),
+        reporting.Key('e931e4c299de7d276238e5d0b363c010e8587977')
     ]
     reporting.create_report(report)
 
@@ -54,110 +41,94 @@ def _report_excluded_repos(repos):
                 ' as an argument (the option can be used multiple times).'
             )
         ),
+        reporting.Key('1b9132cb2362ae7830e48eee7811be9527747de8')
     ]
     reporting.create_report(report)
 
 
-def _get_manually_enabled_repos():
+def _get_crb_repos(repo_mapping, major_version):
     """
-    Get a set of repositories (repoids) that are manually enabled.
+    Return set of relevant CRB repoids for the specified major version
 
-    manually enabled means (
-        specified by --enablerepo option of the leapp command or
-        inside the /etc/leapp/files/leapp_upgrade_repositories.repo),
-    )
-    :rtype: set [repoid]
-    """
-    try:
-        return {repo.repoid for repo in api.consume(CustomTargetRepository)}
-    except StopIteration:
-        return set()
-
-
-def _get_pesid_repos(repo_mapping, pesid, major_version):
-    """
-    Returns a list of pesid repos with the specified pesid and major version.
-
-    :param str pesid: The PES ID representing the family of repositories.
-    :param str major_version: The major version of the RHEL OS.
-    :returns: A set of repoids with the specified pesid and major version.
-    :rtype: List[PESIDRepositoryEntry]
-    """
-    pesid_repos = []
-    for pesid_repo in repo_mapping.repositories:
-        if pesid_repo.pesid == pesid and pesid_repo.major_version == major_version:
-            pesid_repos.append(pesid_repo)
-    return pesid_repos
-
-
-def _get_repoids_to_exclude(repo_mapping):
-    """
-    Returns a set of repoids that should be blocklisted on the target system.
-
-    :param RepositoriesMapping repo_mapping: Repository mapping data.
-    :returns: A set of repoids to blocklist on the target system.
-    :rtype: Set[str]
-    """
-    pesid_repos_to_exclude = _get_pesid_repos(repo_mapping,
-                                              UNSUPPORTED_PESIDS[get_target_major_version()],
-                                              get_target_major_version())
-    return {pesid_repo.repoid for pesid_repo in pesid_repos_to_exclude}
-
-
-def _are_optional_repos_disabled(repo_mapping, repos_on_system):
-    """
-    Checks whether all optional repositories are disabled.
-
-    :param RepositoriesMapping repo_mapping: Repository mapping data.
-    :param RepositoriesFacts repos_on_system: Installed repositories on the source system.
-    :returns: True if there are any optional repositories enabled on the source system.
-    """
-
-    # Get a set of all repo_ids that are optional
-    optional_pesid_repos = _get_pesid_repos(repo_mapping,
-                                            UNSUPPORTED_PESIDS[get_source_major_version()],
-                                            get_source_major_version())
-
-    optional_repoids = [optional_pesid_repo.repoid for optional_pesid_repo in optional_pesid_repos]
-
-    # Gather all optional repositories on the source system that are not enabled
-    for repofile in repos_on_system.repositories:
-        for repository in repofile.data:
-            if repository.repoid in optional_repoids and repository.enabled:
-                return False
-    return True
-
-
-def get_blocklisted_repoids(repo_mapping):
-    """
-    Exclude target repositories provided by Red Hat without support.
-
-    Conditions to exclude:
-    - there are not such repositories already enabled on the source system
-      (e.g. "CRB" repositories)
-    - such repositories are not required for the upgrade explicitly by the user
-      (e.g. via the --enablerepo option or via the /etc/leapp/files/leapp_upgrade_repositories.repo file)
-
-    E.g. CRB repository is provided by Red Hat but it is without the support.
+    Only CRB repositories for the current architecture and distribution are
+    relevant.
 
     :param repo_mapping: RepositoriesMapping message.
-    :returns: Set of repoids to blocklist on the target system.
-    :rtype: set
+    :type repo_mapping: RepositoriesMapping
+    :param major_version: The OS major version.
+    :type major_version: str
+    :returns: A set of repoids with the specified pesid and major version.
+    :rtype: Set[str]
     """
-    # TODO(pstodulk): replace it by enabled_repos
-    repos_facts = next(api.consume(RepositoriesFacts), None)
+    pesid = f'rhel{major_version}-CRB'
+    curr_arch = api.current_actor().configuration.architecture
+    crb_repoids = set()
+    for pesid_repo in repo_mapping.repositories:
+        if pesid_repo.major_version != major_version or pesid_repo.arch != curr_arch:
+            # irrelevant repository
+            continue
+        if pesid_repo.pesid == pesid and pesid_repo.major_version == major_version:
+            crb_repoids.add(pesid_repo.repoid)
+    return crb_repoids
 
-    if not _are_optional_repos_disabled(repo_mapping, repos_facts):
-        # nothing to do - an optional repository is enabled
+
+def _are_crb_repos_disabled(repo_mapping, enabled_repoids):
+    """
+    Checks whether all CRB repositories are disabled.
+
+    :param repo_mapping: RepositoriesMapping message.
+    :type repo_mapping: RepositoriesMapping
+    :param enabled_repoids: Set of repoids enabled on the source system.
+    :type enabled_repoids: Set[str]
+    :returns: False if any CRB repositories are enabled on the source system, True otherwise.
+    :rtype: bool
+    """
+    return enabled_repoids.isdisjoint(_get_crb_repos(repo_mapping, get_source_major_version()))
+
+
+def _calc_internal_blocklist(repo_mapping, external_tasks, enabled_repoids):
+    """
+    Calculate the internal blocklist of target CRB repositories.
+
+    Conditions to exclude:
+    - no CRB repositories are enabled on the source system
+    - repository is not explicitly configured by user to be used during the upgrade
+      (e.g. via the --enablerepo option or via the /etc/leapp/files/leapp_upgrade_repositories.repo file)
+
+    Also report explicitly enabled and blocklisted CRB repositories, unless
+    CRB is already already enabled on the source system.
+
+    :param repo_mapping: RepositoriesMapping message.
+    :type repo_mapping: RepositoriesMapping
+    :param external_tasks: External repositories tasks represented by object with following fields:
+
+        * ``to_enable`` - repositories that should be enabled
+        * ``blocklist`` - repositories that should be blocklisted
+        * ``custom`` - repositories explicitly requested by user to be used during the upgrade
+
+    :type external_tasks: targetcontentresolver.ExternalRepoSetupTasks
+    :param enabled_repoids: Set of repoids enabled on the source system.
+    :type enabled_repoids: Set[str]
+    :returns: Set of CRB repoids to blocklist on the target system.
+    :rtype: Set[str]
+    """
+    if not _are_crb_repos_disabled(repo_mapping, enabled_repoids):
+        # nothing to do - no CRB repo is enabled
         return set()
 
-    repos_to_exclude = _get_repoids_to_exclude(repo_mapping)
+    repos_to_exclude = _get_crb_repos(repo_mapping, get_target_major_version())
 
-    # Do not exclude repos manually enabled from the CLI
-    manually_enabled_repos = _get_manually_enabled_repos() & repos_to_exclude
+    # Do not exclude repositories explicitly required by user for the upgrade
+    manually_enabled_repos = external_tasks.custom & repos_to_exclude
+
+    # FIXME(pstodulk): actually, if any target CRB repo is enabled during the
+    # upgrade, we should ignore any other as well.
     filtered_repos_to_exclude = repos_to_exclude - manually_enabled_repos
 
     if manually_enabled_repos:
+        # FIXME(pstodulk): This is wrong. This is valid only for RHEL systems
+        # and the report itself is confusing - as it is actually only about
+        # CRB repositories and not any other.
         _report_using_unsupported_repos(manually_enabled_repos)
     if filtered_repos_to_exclude:
         _report_excluded_repos(filtered_repos_to_exclude)
@@ -165,14 +136,18 @@ def get_blocklisted_repoids(repo_mapping):
     return filtered_repos_to_exclude
 
 
-def compute_blocklist(repo_mapping, external_tasks):
+def compute_blocklist(repo_mapping, external_tasks, enabled_repoids):
     """
     Create the blocklist of repositories that should be blocked during the upgrade.
+
+    Additional effects:
+      * Once the list is calculated the RepositoriesBlocklisted message is produced.
+      * Generate reports related CRB repositories
 
     The content in the CRB repository is considered as unsupported. Hence
     we do not want to enable such a repository by default on the target system
     unless
-      * it is explicitely requested, or
+      * it is explicitly requested, or
       * it is already enabled on the source system
     This is important as some functionality originally supported on the source
     source system can be moved to the CRB repository on the target system.
@@ -187,11 +162,9 @@ def compute_blocklist(repo_mapping, external_tasks):
 
     The external custom request has the highest priority as this comes from
     the system configuration or from the `--enablerepo` option used when executing
-    leapp - so it's understood as decision made by user explicitely for
+    leapp - so it's understood as decision made by user explicitly for
     the in-place upgrade purpose. Currently there is no explicit custom
     configuration to disable a repo.
-
-    Once the list is calculated the RepositoriesBlocklisted message is produced.
 
     :param repo_mapping: RepositoriesMapping message.
     :type repo_mapping: RepositoriesMapping
@@ -199,13 +172,15 @@ def compute_blocklist(repo_mapping, external_tasks):
 
         * ``to_enable`` - repositories that should be enabled
         * ``blocklist`` - repositories that should be blocklisted
-        * ``custom`` - repositories explicitely requested by user to be used during the upgrade
+        * ``custom`` - repositories explicitly requested by user to be used during the upgrade
 
     :type external_tasks: targetcontentresolver.ExternalRepoSetupTasks
+    :param enabled_repoids: Set of repoids enabled on the source system.
+    :type enabled_repoids: Set[str]
     :returns: List of blocklisted repositories
     :rtype: List[str]
     """
-    internal_blocklist = get_blocklisted_repoids(repo_mapping)
+    internal_blocklist = _calc_internal_blocklist(repo_mapping, external_tasks, enabled_repoids)
     full_blocklist = internal_blocklist.union(external_tasks.blocklist)
     if full_blocklist:
         api.produce(RepositoriesBlocklisted(repoids=sorted(full_blocklist)))

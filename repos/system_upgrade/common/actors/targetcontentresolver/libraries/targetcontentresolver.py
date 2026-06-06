@@ -19,6 +19,7 @@ class MissingMessage(Exception):
 
 ExternalRepoSetupTasks = namedtuple('ExternalRepoSetupTasks', ('to_enable', 'blocklist', 'custom'))
 
+
 @suppress_deprecation(RepositoriesBlacklisted)
 def _get_external_reposetup_tasks():
     """
@@ -97,7 +98,11 @@ def process():
 
     external_tasks = _get_external_reposetup_tasks()
     repositories_map_msg = scan_repositories()
-    blocklisted_repoids = repositoriesblocklist.compute_blocklist(repositories_map_msg, external_tasks)
+    blocklisted_repoids = repositoriesblocklist.compute_blocklist(
+        repositories_map_msg,
+        external_tasks,
+        enabled_repoids
+    )
     pes_requested_repoids = pes_events_scanner.scan_pes_events(
         repositories_map_msg,
         blocklisted_repoids,
