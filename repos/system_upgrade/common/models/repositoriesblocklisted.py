@@ -23,12 +23,14 @@ class RepositoriesBlocklisted(Model):
     since='2026-06-01',
     message=(
         'This model has been deprecated and replaced. '
-        'To get the list of blocklisted repositories, use RepositoriesBlocklisted. '
-        'To request a repository to be blocklisted, use RepositoriesSetupTasks.blocklist.'
+        'To get the list of blocklisted repositories, consume RepositoriesBlocklisted. '
+        'To request a repository to be blocklisted, produce RepositoriesSetupTasks.to_block.'
     ),
 )
 class RepositoriesBlacklisted(RepositoriesBlocklisted):
     """
-    Repository IDs that should be ignored by Leapp during the upgrade process.
+    Specify list of repository IDs that should be blocked during the upgrade.
+
+    Note this is deprecated and you should use RepositoriesSetupTasks.to_block
     """
     topic = SystemFactsTopic

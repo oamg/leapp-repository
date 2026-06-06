@@ -9,14 +9,12 @@ from leapp.models import (
     CustomTargetRepository,
     PESIDRepositoryEntry,
     RepoMapEntry,
-    RepositoriesBlacklisted,
     RepositoriesBlocklisted,
     RepositoriesFacts,
     RepositoriesMapping,
     RepositoryData,
     RepositoryFile
 )
-from leapp.utils.deprecation import suppress_deprecation
 
 
 @pytest.fixture
@@ -216,19 +214,13 @@ def test_enablerepo_option(monkeypatch,
 
 
 def _get_produced_blocklisted():
-    return [m for m in api.produce.model_instances
-            if isinstance(m, RepositoriesBlocklisted) and not isinstance(m, RepositoriesBlacklisted)]
+    return [m for m in api.produce.model_instances if isinstance(m, RepositoriesBlocklisted)]
 
 
-def _get_produced_blacklisted():
-    return [m for m in api.produce.model_instances if isinstance(m, RepositoriesBlacklisted)]
-
-
-@suppress_deprecation(RepositoriesBlacklisted)
 def test_compute_blocklist_merges_internal_and_external(monkeypatch):
     """
     compute_blocklist merges internal blocklist with external
-    ExternalRepoSetupTasks.to_block and produces both messages.
+    ExternalRepoSetupTasks.to_block and produces RepositoriesBlocklisted.
     """
     external_tasks = ExternalRepoSetupTasks(
         to_enable={'some-repo'}, to_block={'ext-blocked-1', 'ext-blocked-2'}, custom=set()
@@ -246,10 +238,6 @@ def test_compute_blocklist_merges_internal_and_external(monkeypatch):
     assert len(blocklisted_msgs) == 1
     assert set(blocklisted_msgs[0].repoids) == full_blocklist
 
-    blacklisted_msgs = _get_produced_blacklisted()
-    assert len(blacklisted_msgs) == 1
-    assert set(blacklisted_msgs[0].repoids) == full_blocklist
-
 
 def test_compute_blocklist_no_messages_when_empty(monkeypatch):
     """No blocklist messages are produced when blocklist is empty."""
@@ -263,10 +251,8 @@ def test_compute_blocklist_no_messages_when_empty(monkeypatch):
 
     assert full_blocklist == set()
     assert len(_get_produced_blocklisted()) == 0
-    assert len(_get_produced_blacklisted()) == 0
 
 
-@suppress_deprecation(RepositoriesBlacklisted)
 def test_compute_blocklist_only_internal(monkeypatch):
     """Only internal blocklist when no external tasks are present."""
     external_tasks = ExternalRepoSetupTasks(to_enable=set(), to_block=set(), custom=set())
@@ -296,7 +282,6 @@ def test_compute_blocklist_aggregated_external_tasks(monkeypatch):
     assert full_blocklist == {'ext-1', 'ext-2', 'ext-3'}
 
 
-@suppress_deprecation(RepositoriesBlacklisted)
 def test_compute_blocklist_overlapping_internal_and_external(monkeypatch):
     """Overlapping repoids between internal and external blocklists are deduplicated."""
     external_tasks = ExternalRepoSetupTasks(
@@ -314,7 +299,3 @@ def test_compute_blocklist_overlapping_internal_and_external(monkeypatch):
     blocklisted_msgs = _get_produced_blocklisted()
     assert len(blocklisted_msgs) == 1
     assert set(blocklisted_msgs[0].repoids) == full_blocklist
-
-    blacklisted_msgs = _get_produced_blacklisted()
-    assert len(blacklisted_msgs) == 1
-    assert set(blacklisted_msgs[0].repoids) == full_blocklist
