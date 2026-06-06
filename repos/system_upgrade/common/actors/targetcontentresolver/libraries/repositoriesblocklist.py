@@ -9,7 +9,6 @@ from leapp.models import (
     RepositoriesFacts,
     RepositoriesSetupTasks
 )
-from leapp.utils.deprecation import suppress_deprecation
 
 # {OS_MAJOR_VERSION: PESID}
 UNSUPPORTED_PESIDS = {
@@ -166,7 +165,6 @@ def get_blocklisted_repoids(repo_mapping):
     return filtered_repos_to_exclude
 
 
-@suppress_deprecation(RepositoriesBlacklisted)
 def compute_blocklist(repo_mapping, external_tasks):
     """
     Create the blocklist of repositories that should be blocked during the upgrade.
@@ -193,8 +191,7 @@ def compute_blocklist(repo_mapping, external_tasks):
     the in-place upgrade purpose. Currently there is no explicit custom
     configuration to disable a repo.
 
-    Once the list is calculated, the RepositoriesBlocklisted and
-    RepositoriesBlacklisted messages are produced.
+    Once the list is calculated the RepositoriesBlocklisted message is produced.
 
     :param repo_mapping: RepositoriesMapping message.
     :type repo_mapping: RepositoriesMapping
@@ -212,6 +209,5 @@ def compute_blocklist(repo_mapping, external_tasks):
     full_blocklist = internal_blocklist.union(external_tasks.blocklist)
     if full_blocklist:
         api.produce(RepositoriesBlocklisted(repoids=sorted(full_blocklist)))
-        api.produce(RepositoriesBlacklisted(repoids=sorted(full_blocklist)))
 
     return full_blocklist

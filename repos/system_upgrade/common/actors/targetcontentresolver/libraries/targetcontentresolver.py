@@ -4,7 +4,8 @@ from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import pes_events_scanner, repositoriesblocklist, setuptargetrepos
 from leapp.libraries.actor.repomap_loader import scan_repositories
 from leapp.libraries.stdlib import api
-from leapp.models import CustomTargetRepository, RepositoriesFacts, RepositoriesSetupTasks
+from leapp.models import CustomTargetRepository, RepositoriesBlacklisted, RepositoriesFacts, RepositoriesSetupTasks
+from leapp.utils.deprecation import suppress_deprecation
 
 
 class MissingMessage(Exception):
@@ -18,7 +19,7 @@ class MissingMessage(Exception):
 
 ExternalRepoSetupTasks = namedtuple('ExternalRepoSetupTasks', ('to_enable', 'blocklist', 'custom'))
 
-
+@suppress_deprecation(RepositoriesBlacklisted)
 def _get_external_reposetup_tasks():
     """
     Collect repository related tasks from other actors (or configs in future).
@@ -34,6 +35,10 @@ def _get_external_reposetup_tasks():
     for task in api.consume(RepositoriesSetupTasks):
         tasks.blocklist.update(task.blocklist)
         tasks.to_enable.update(task.to_enable)
+
+    # DEPRECATED: Drop after 2026-07
+    for task in api.consume(RepositoriesBlacklisted):
+        tasks.blocklist.update(task.repoids)
 
     tasks.custom.update({repo.repoid for repo in api.consume(CustomTargetRepository)})
     return tasks
