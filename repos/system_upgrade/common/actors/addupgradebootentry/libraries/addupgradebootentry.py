@@ -39,9 +39,11 @@ def collect_upgrade_kernel_args(livemode_enabled):
         args.update(livemode_args)
 
     upgrade_kernel_args = collect_set_of_kernel_args_from_msgs(UpgradeKernelCmdlineArgTasks, 'to_add')
-    args.update(upgrade_kernel_args)
-
-    return set(args.items())
+    # For convenience, we have args being a dictionary as we know what keys/values will be stored in this code.
+    # Howerever, args coming from the rest of the upgrade process can contain multiple args with the same keys
+    # but different values, i.e., rd.md.uuid, so we have to work with sets from now on.
+    all_args = set(args.items()) | upgrade_kernel_args
+    return all_args
 
 
 def collect_undesired_args(livemode_enabled):
