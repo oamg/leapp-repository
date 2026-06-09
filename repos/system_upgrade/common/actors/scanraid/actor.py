@@ -9,7 +9,7 @@ class ScanRaid(Actor):
     Detect whether software RAID is in use on the system.
 
     Checks if the mdadm package is installed and whether any MD arrays
-    are currently assembled and active by inspecting /proc/mdstat.
+    are currently assembled and active by scanning mdadm configuration.
     """
 
     name = 'scan_raid'

@@ -387,7 +387,7 @@ def generate_initram_disk(context):
         env_variables.append('LEAPP_DRACUT_LVMCONF="1"')
 
     raid_info = next(api.consume(RaidInfo), None)
-    if raid_info and raid_info.mdraid_used:
+    if raid_info and raid_info.md_arrays:
         env_variables.append('LEAPP_DRACUT_MDADMCONF="1"')
 
     env_variables = ' '.join(env_variables)

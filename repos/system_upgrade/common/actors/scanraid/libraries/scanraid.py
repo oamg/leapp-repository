@@ -1,27 +1,34 @@
 import os
+import re
 
 from leapp.libraries.common.rpms import has_package
-from leapp.libraries.stdlib import api
-from leapp.models import DistributionSignedRPM, RaidInfo
+from leapp.libraries.stdlib import api, CalledProcessError, run
+from leapp.models import DistributionSignedRPM, MDArray, RaidInfo
 
-PROC_MDSTAT = '/proc/mdstat'
+MDADM_SCAN_CMD = ['mdadm', '--detail', '--scan', '--verbose']
+UUID_PATTERN = re.compile(r'UUID=([0-9a-fA-F:]+)')
 
 
-def _has_active_arrays():
-    """
-    Parse /proc/mdstat and return True if at least one active array exists.
+def _scan_md_array_uuids():
+    if not os.path.exists('/usr/sbin/mdadm'):
+        api.current_logger().debug('mdadm is not available. Skipping.')
+        return []
 
-    An active array line looks like:
-        md0 : active raid1 sda1[0] sdb1[1]
-    Lines containing ' : active ' indicate assembled arrays.
-    """
-    if not os.path.isfile(PROC_MDSTAT):
-        return False
-    with open(PROC_MDSTAT) as f:
-        for line in f:
-            if ' : active ' in line:
-                return True
-    return False
+    try:
+        result = run(MDADM_SCAN_CMD)
+    except CalledProcessError as err:
+        api.current_logger().warning('Failed to scan mdadm arrays: %s', err)
+        return []
+
+    uuids = []
+    for line in result['stdout'].splitlines():
+        if not line.startswith('ARRAY '):
+            continue
+        match = UUID_PATTERN.search(line)
+        if match:
+            uuids.append(match.group(1))
+
+    return uuids
 
 
 def process():
@@ -29,9 +36,10 @@ def process():
         api.current_logger().debug('The mdadm package is not installed. Skipping.')
         return
 
-    if not _has_active_arrays():
-        api.current_logger().debug('No active MD arrays found in %s.', PROC_MDSTAT)
+    uuids = _scan_md_array_uuids()
+    if not uuids:
+        api.current_logger().debug('No active mdadm software RAID arrays found.')
         return
 
     api.current_logger().info('Detected active mdadm software RAID arrays.')
-    api.produce(RaidInfo(mdraid_used=True))
+    api.produce(RaidInfo(md_arrays=[MDArray(UUID=uuid) for uuid in uuids]))
