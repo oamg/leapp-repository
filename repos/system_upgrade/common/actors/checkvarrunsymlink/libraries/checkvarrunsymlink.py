@@ -21,7 +21,12 @@ def process():
         return
 
     real_path = _get_real_path(tracked_files)
-    if real_path is None or real_path == '/run':
+    if real_path is None:
+        api.current_logger().warning(
+            '/var/run not found in TrackedFilesInfoSource. Skipping the symlink check.'
+        )
+        return
+    if real_path == '/run':
         return
 
     reporting.create_report([
