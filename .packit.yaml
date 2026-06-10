@@ -158,7 +158,7 @@ jobs:
     - aws
   targets:
     epel-8-x86_64:
-      distros: [RHEL-8.10-rhui]
+      distros: [RHEL-8-rhui]
   identifier: sanity-abstract-8to9-aws
 
 - &beaker-minimal-8to9-abstract-ondemand
@@ -235,28 +235,6 @@ jobs:
   env:
     <<: *env-810to96
 
-- &sanity-810to96-aws
-  <<: *sanity-abstract-8to9-aws
-  trigger: pull_request
-  targets:
-    epel-8-x86_64:
-      distros: [RHEL-8.10-rhui]
-  identifier: sanity-8.10to9.6-aws
-  tf_extra_params:
-    test:
-      tmt:
-        plan_filter: 'tag:8to9 & tag:rhui-aws-tier0 & enabled:true & tag:-rhsm'
-    environments:
-      - tmt:
-          context: *tmt-context-810to96
-        settings:
-          provisioning:
-            tags:
-              BusinessUnit: sst_upgrades@leapp_upstream_test
-  env:
-    <<: *env-810to96
-
-
 # ###################################################################### #
 # ############################# 8.10 > 9.8 ############################# #
 # ###################################################################### #
@@ -308,6 +286,24 @@ jobs:
         plan_filter: 'tag:8to9 & tag:kernel-rt & enabled:true'
     environments:
       - *tmt-env-settings-810to98
+  env:
+    <<: *env-810to98
+
+- &sanity-810to98-aws
+  <<: *sanity-abstract-8to9-aws
+  trigger: pull_request
+  identifier: sanity-8.10to9.8-aws
+  tf_extra_params:
+    test:
+      tmt:
+        plan_filter: 'tag:8to9 & tag:rhui-aws-tier0 & enabled:true & tag:-rhsm'
+    environments:
+      - tmt:
+          context: *tmt-context-810to98
+        settings:
+          provisioning:
+            tags:
+              BusinessUnit: sst_upgrades@leapp_upstream_test
   env:
     <<: *env-810to98
 
@@ -452,7 +448,7 @@ jobs:
     - aws
   targets:
     epel-9-x86_64:
-      distros: [RHEL-9.6-rhui]
+      distros: [RHEL-9-rhui]
   identifier: sanity-abstract-9to10-aws
 
 - &beaker-minimal-9to10-abstract-ondemand
@@ -595,6 +591,24 @@ jobs:
         plan_filter: 'tag:9to10 & tag:kernel-rt & enabled:true & tag:-rhsm'
     environments:
       - *tmt-env-settings-98to102
+  env:
+    <<: *env-98to102
+
+- &sanity-98to102-aws
+  <<: *sanity-abstract-9to10-aws
+  trigger: pull_request
+  identifier: sanity-9.8to10.2-aws
+  tf_extra_params:
+    test:
+      tmt:
+        plan_filter: 'tag:9to10 & tag:rhui-aws-tier0 & enabled:true & tag:-rhsm'
+    environments:
+      - tmt:
+          context: *tmt-context-98to102
+        settings:
+          provisioning:
+            tags:
+              BusinessUnit: sst_upgrades@leapp_upstream_test
   env:
     <<: *env-98to102
 
