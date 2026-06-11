@@ -1,13 +1,7 @@
 import os
 
 from leapp.libraries.stdlib import api
-from leapp.models import (
-    CopyFile,
-    KernelCmdlineArg,
-    RaidInfo,
-    TargetUserSpaceUpgradeTasks,
-    UpgradeKernelCmdlineArgTasks
-)
+from leapp.models import CopyFile, RaidInfo, TargetUserSpaceUpgradeTasks
 
 # Host paths for mdadm configuration (see mdadm.conf(5) FILES section).
 MDADM_CONFIG_PATHS = (
@@ -37,9 +31,3 @@ def process():
         )
     else:
         api.produce(TargetUserSpaceUpgradeTasks(copy_files=copy_files))
-
-    rdmd_args = [
-        KernelCmdlineArg(key='rd.md.uuid', value=md_array.UUID)
-        for md_array in raid_info.md_arrays
-    ]
-    api.produce(UpgradeKernelCmdlineArgTasks(to_add=rdmd_args))

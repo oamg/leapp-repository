@@ -3,7 +3,7 @@ import os
 from leapp.libraries.actor import checkraid
 from leapp.libraries.common.testutils import CurrentActorMocked, produce_mocked
 from leapp.libraries.stdlib import api
-from leapp.models import MDArray, RaidInfo, TargetUserSpaceUpgradeTasks, UpgradeKernelCmdlineArgTasks
+from leapp.models import MDArray, RaidInfo, TargetUserSpaceUpgradeTasks
 
 
 def _mock_path_checks(monkeypatch, files=(), directories=()):
@@ -34,7 +34,7 @@ def test_md_arrays_with_conf_dir(monkeypatch):
 
     checkraid.process()
 
-    assert api.produce.called == 2
+    assert api.produce.called == 1
     copy_tasks = [m for m in api.produce.model_instances if isinstance(m, TargetUserSpaceUpgradeTasks)]
     assert len(copy_tasks) == 1
     assert [task.src for task in copy_tasks[0].copy_files] == [
@@ -89,8 +89,7 @@ def test_md_arrays_no_config_paths(monkeypatch):
 
     copy_tasks = [m for m in api.produce.model_instances if isinstance(m, TargetUserSpaceUpgradeTasks)]
     assert not copy_tasks
-    upgrade_msgs = [m for m in api.produce.model_instances if isinstance(m, UpgradeKernelCmdlineArgTasks)]
-    assert len(upgrade_msgs) == 1
+    assert not api.produce.called
 
 
 def test_no_raid_info(monkeypatch):
@@ -111,22 +110,3 @@ def test_no_md_arrays(monkeypatch):
     checkraid.process()
 
     assert not api.produce.called
-
-
-def test_md_arrays_emit_rdmd_uuid(monkeypatch):
-    _mock_path_checks(monkeypatch, files=('/etc/mdadm.conf',))
-
-    msgs = [RaidInfo(md_arrays=_md_arrays('aaa:bbb', 'ccc:ddd'))]
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=msgs))
-    monkeypatch.setattr(api, 'produce', produce_mocked())
-
-    checkraid.process()
-
-    upgrade_msgs = [m for m in api.produce.model_instances if isinstance(m, UpgradeKernelCmdlineArgTasks)]
-    assert len(upgrade_msgs) == 1
-
-    added_keys_values = {(arg.key, arg.value) for arg in upgrade_msgs[0].to_add}
-    assert added_keys_values == {
-        ('rd.md.uuid', 'aaa:bbb'),
-        ('rd.md.uuid', 'ccc:ddd'),
-    }
