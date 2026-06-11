@@ -7,7 +7,7 @@ from leapp.models import (
     FIPSInfo,
     LiveModeConfig,
     LVMConfig,
-    RaidInfo,
+    RAIDInfo,
     TargetOSInstallationImage,
     TargetUserSpaceInfo,
     TargetUserSpaceUpgradeTasks,
@@ -34,7 +34,7 @@ class UpgradeInitramfsGenerator(Actor):
         FIPSInfo,
         LiveModeConfig,
         LVMConfig,
-        RaidInfo,
+        RAIDInfo,
         RequiredUpgradeInitramPackages,  # deprecated
         TargetOSInstallationImage,
         TargetUserSpaceInfo,
