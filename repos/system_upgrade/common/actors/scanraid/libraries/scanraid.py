@@ -1,4 +1,3 @@
-import os
 import re
 
 from leapp.libraries.common.rpms import has_package
@@ -10,10 +9,6 @@ UUID_PATTERN = re.compile(r'UUID=([0-9a-fA-F:]+)')
 
 
 def _scan_md_array_uuids():
-    if not os.path.exists('/usr/sbin/mdadm'):
-        api.current_logger().debug('mdadm is not available. Skipping.')
-        return []
-
     try:
         result = run(MDADM_SCAN_CMD)
     except CalledProcessError as err:

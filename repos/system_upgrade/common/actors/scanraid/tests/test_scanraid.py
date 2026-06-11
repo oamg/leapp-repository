@@ -1,5 +1,3 @@
-import os
-
 import pytest
 
 from leapp.libraries.actor import scanraid
@@ -62,7 +60,6 @@ def test_mdadm_not_installed(monkeypatch):
 def test_mdadm_installed_with_active_arrays(monkeypatch):
     run_mocked = RunMocked(stdout=MDADM_SCAN_WITH_ARRAY)
     monkeypatch.setattr(scanraid, 'run', run_mocked)
-    monkeypatch.setattr(os.path, 'exists', lambda path: path == '/usr/sbin/mdadm')
 
     msgs = [DistributionSignedRPM(items=[_MDADM_RPM])]
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=msgs))
@@ -82,7 +79,6 @@ def test_mdadm_installed_with_active_arrays(monkeypatch):
 def test_mdadm_installed_with_multiple_arrays(monkeypatch):
     run_mocked = RunMocked(stdout=MDADM_SCAN_WITH_TWO_ARRAYS)
     monkeypatch.setattr(scanraid, 'run', run_mocked)
-    monkeypatch.setattr(os.path, 'exists', lambda path: path == '/usr/sbin/mdadm')
 
     msgs = [DistributionSignedRPM(items=[_MDADM_RPM])]
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=msgs))
@@ -100,7 +96,6 @@ def test_mdadm_installed_with_multiple_arrays(monkeypatch):
 def test_mdadm_installed_no_active_arrays(monkeypatch):
     run_mocked = RunMocked(stdout='')
     monkeypatch.setattr(scanraid, 'run', run_mocked)
-    monkeypatch.setattr(os.path, 'exists', lambda path: path == '/usr/sbin/mdadm')
 
     msgs = [DistributionSignedRPM(items=[_MDADM_RPM])]
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=msgs))
@@ -115,7 +110,6 @@ def test_mdadm_installed_no_active_arrays(monkeypatch):
 def test_mdadm_installed_scan_failure(monkeypatch):
     run_mocked = RunMocked(raise_err=True)
     monkeypatch.setattr(scanraid, 'run', run_mocked)
-    monkeypatch.setattr(os.path, 'exists', lambda path: path == '/usr/sbin/mdadm')
     monkeypatch.setattr(api, 'current_logger', logger_mocked())
 
     msgs = [DistributionSignedRPM(items=[_MDADM_RPM])]
@@ -127,18 +121,3 @@ def test_mdadm_installed_scan_failure(monkeypatch):
     assert run_mocked.called == 1
     assert not api.produce.called
     assert api.current_logger.warnmsg
-
-
-def test_mdadm_installed_no_mdadm_binary(monkeypatch):
-    run_mocked = RunMocked()
-    monkeypatch.setattr(scanraid, 'run', run_mocked)
-    monkeypatch.setattr(os.path, 'exists', lambda path: False)
-
-    msgs = [DistributionSignedRPM(items=[_MDADM_RPM])]
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=msgs))
-    monkeypatch.setattr(api, 'produce', produce_mocked())
-
-    scanraid.process()
-
-    assert not run_mocked.called
-    assert not api.produce.called
