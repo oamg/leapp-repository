@@ -14,7 +14,7 @@ from leapp.models import (
     BootContent,
     LiveModeConfig,
     LVMConfig,
-    RaidInfo,
+    RAIDInfo,
     TargetOSInstallationImage,
     TargetUserSpaceInfo,
     TargetUserSpaceUpgradeTasks,
@@ -25,6 +25,7 @@ from leapp.utils.deprecation import suppress_deprecation
 
 INITRAM_GEN_SCRIPT_NAME = 'generate-initram.sh'
 DRACUT_DIR = '/dracut'
+LEAPP_CMDLINE_CONF_PATH = '/etc/cmdline.d/50-leapp.conf'
 DEDICATED_LEAPP_PART_URL = 'https://access.redhat.com/solutions/7011704'
 
 
@@ -329,6 +330,32 @@ def _check_free_space(context):
         )
 
 
+def write_md_uuid_cmdline_conf(context):
+    """
+    Write /etc/cmdline.d/50-leapp.conf into the target userspace when MD RAID is in use.
+
+    :returns: Path of the written file, or None if no file was written.
+    :rtype: str or None
+    """
+    raid_info = next(api.consume(RAIDInfo), None)
+    if not raid_info or not raid_info.md_arrays:
+        return None
+
+    md_uuids = ['rd.md.uuid={}'.format(md_array.uuid) for md_array in raid_info.md_arrays]
+    content = '{}\n'.format(' '.join(md_uuids))
+
+    context.makedirs(os.path.dirname(LEAPP_CMDLINE_CONF_PATH), exists_ok=True)
+    with context.open(LEAPP_CMDLINE_CONF_PATH, mode='w') as cmdline_conf:
+        cmdline_conf.write(content)
+
+    api.current_logger().debug(
+        'Written {path} with content: {content}'.format(
+            path=LEAPP_CMDLINE_CONF_PATH, content=content.rstrip('\n')
+        )
+    )
+    return LEAPP_CMDLINE_CONF_PATH
+
+
 InitramfsIncludes = namedtuple('InitramfsIncludes', ('files', 'dracut_modules', 'kernel_modules'))
 
 
@@ -375,6 +402,10 @@ def generate_initram_disk(context):
     def fmt_module_list(module_list):
         return ','.join(mod.name for mod in module_list)
 
+    md_cmdline_conf = write_md_uuid_cmdline_conf(context)
+    if md_cmdline_conf:
+        initramfs_includes.files.append(md_cmdline_conf)
+
     env_variables = [
         'LEAPP_KERNEL_VERSION={kernel_version}',
         'LEAPP_ADD_DRACUT_MODULES="{dracut_modules}"',
@@ -386,8 +417,7 @@ def generate_initram_disk(context):
     if next(api.consume(LVMConfig), None):
         env_variables.append('LEAPP_DRACUT_LVMCONF="1"')
 
-    raid_info = next(api.consume(RaidInfo), None)
-    if raid_info and raid_info.md_arrays:
+    if md_cmdline_conf:
         env_variables.append('LEAPP_DRACUT_MDADMCONF="1"')
 
     env_variables = ' '.join(env_variables)
@@ -452,6 +482,10 @@ def _generate_livemode_initramfs(context, userspace_initramfs_dest, target_kerne
 
     copy_dracut_modules(context, initramfs_includes.dracut_modules)
     copy_kernel_modules(context, initramfs_includes.kernel_modules)
+
+    md_cmdline_conf = write_md_uuid_cmdline_conf(context)
+    if md_cmdline_conf:
+        initramfs_includes.files.append(md_cmdline_conf)
 
     dracut_modules = ['livenet', 'dmsquash-live'] + [mod.name for mod in initramfs_includes.dracut_modules]
 
