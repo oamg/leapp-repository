@@ -345,7 +345,7 @@ def write_md_uuid_cmdline_conf(context):
     content = '{}\n'.format(' '.join(md_uuids))
 
     context.makedirs(os.path.dirname(LEAPP_CMDLINE_CONF_PATH), exists_ok=True)
-    with context.open(LEAPP_CMDLINE_CONF_PATH, 'w') as cmdline_conf:
+    with context.open(LEAPP_CMDLINE_CONF_PATH, mode='w') as cmdline_conf:
         cmdline_conf.write(content)
 
     api.current_logger().debug(

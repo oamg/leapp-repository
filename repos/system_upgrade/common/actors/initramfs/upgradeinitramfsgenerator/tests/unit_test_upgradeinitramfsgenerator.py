@@ -138,7 +138,7 @@ class MockedContext:
     def full_path(self, path):
         return os.path.join(self.base_dir, os.path.abspath(path).lstrip('/'))
 
-    def open(self, path, *args, mode='r', **kwargs):
+    def open(self, path, *args, mode='r', **kwargs):  # pylint: disable=no-self-use
         if 'w' not in mode:
             raise NotImplementedError('MockedContext.open only supports write mode')
 
@@ -146,7 +146,7 @@ class MockedContext:
         contents = []
 
         class _Writer:
-            def write(self, data):
+            def write(self, data):  # pylint: disable=no-self-use
                 contents.append(data)
 
             def __enter__(self):
