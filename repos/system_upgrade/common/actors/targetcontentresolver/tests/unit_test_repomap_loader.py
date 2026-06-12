@@ -5,7 +5,7 @@ import pytest
 import requests
 
 from leapp.exceptions import StopActorExecutionError
-from leapp.libraries.actor import repositoriesmapping
+from leapp.libraries.actor import repomap_loader
 from leapp.libraries.common import fetch
 from leapp.libraries.common.testutils import CurrentActorMocked, produce_mocked
 from leapp.libraries.stdlib import api
@@ -32,7 +32,7 @@ def test_scan_existing_valid_data(monkeypatch, adjust_cwd):
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(src_ver='7.9', dst_ver='8.4'))
     monkeypatch.setattr(api, 'produce', produce_mocked())
 
-    repositoriesmapping.scan_repositories(lambda dummy: data)
+    repomap_loader.scan_repositories(lambda dummy: data)
 
     assert api.produce.called, 'Actor did not produce any message when deserializing valid repomap data.'
 
@@ -140,7 +140,7 @@ def test_scan_repositories_with_missing_data(monkeypatch):
     monkeypatch.setattr(fetch, 'read_or_fetch', read_or_fetch_mocked)
 
     with pytest.raises(StopActorExecutionError) as missing_data_error:
-        repositoriesmapping.scan_repositories()
+        repomap_loader.scan_repositories()
     assert 'does not contain a valid JSON object' in str(missing_data_error)
 
 
@@ -153,7 +153,7 @@ def test_scan_repositories_with_empty_data(monkeypatch):
     monkeypatch.setattr(api, 'produce', produce_mocked())
 
     with pytest.raises(StopActorExecutionError) as empty_data_error:
-        repositoriesmapping.scan_repositories(lambda dummy: {})
+        repomap_loader.scan_repositories(lambda dummy: {})
     assert 'the JSON is missing a required field' in str(empty_data_error)
 
 
@@ -175,7 +175,7 @@ def test_scan_repositories_with_bad_json_data_version(monkeypatch, version_forma
     monkeypatch.setattr(api, 'produce', produce_mocked())
 
     with pytest.raises(StopActorExecutionError) as bad_version_error:
-        repositoriesmapping.scan_repositories(lambda dummy: json_data)
+        repomap_loader.scan_repositories(lambda dummy: json_data)
 
     assert 'mapping file is invalid' in str(bad_version_error)
 
@@ -187,7 +187,7 @@ def test_scan_repositories_with_mapping_to_pesid_without_repos(monkeypatch):
     """
     json_data = {
         'datetime': '202107141655Z',
-        'version_format': repositoriesmapping.RepoMapData.VERSION_FORMAT,
+        'version_format': repomap_loader.RepoMapData.VERSION_FORMAT,
         'mapping': [
             {
                 'source_major_version': '7',
@@ -221,7 +221,7 @@ def test_scan_repositories_with_mapping_to_pesid_without_repos(monkeypatch):
     monkeypatch.setattr(api, 'produce', produce_mocked())
 
     with pytest.raises(StopActorExecutionError) as error_info:
-        repositoriesmapping.scan_repositories(lambda dummy: json_data)
+        repomap_loader.scan_repositories(lambda dummy: json_data)
 
     assert 'pesid is not related to any repository' in error_info.value.message
 
@@ -234,7 +234,7 @@ def test_scan_repositories_with_repo_entry_missing_required_fields(monkeypatch):
 
     json_data = {
         'datetime': '202107141655Z',
-        'version_format': repositoriesmapping.RepoMapData.VERSION_FORMAT,
+        'version_format': repomap_loader.RepoMapData.VERSION_FORMAT,
         'mapping': [
             {
                 'source_major_version': '7',
@@ -275,7 +275,7 @@ def test_scan_repositories_with_repo_entry_missing_required_fields(monkeypatch):
     monkeypatch.setattr(api, 'produce', produce_mocked())
 
     with pytest.raises(StopActorExecutionError) as error_info:
-        repositoriesmapping.scan_repositories(lambda dummy: json_data)
+        repomap_loader.scan_repositories(lambda dummy: json_data)
 
     assert 'the JSON is missing a required field' in error_info.value.message
 
@@ -288,7 +288,7 @@ def test_scan_repositories_with_repo_entry_mapping_target_not_a_list(monkeypatch
 
     json_data = {
         'datetime': '202107141655Z',
-        'version_format': repositoriesmapping.RepoMapData.VERSION_FORMAT,
+        'version_format': repomap_loader.RepoMapData.VERSION_FORMAT,
         'mapping': [
             {
                 'source_major_version': '7',
@@ -329,6 +329,6 @@ def test_scan_repositories_with_repo_entry_mapping_target_not_a_list(monkeypatch
     monkeypatch.setattr(api, 'produce', produce_mocked())
 
     with pytest.raises(StopActorExecutionError) as error_info:
-        repositoriesmapping.scan_repositories(lambda dummy: json_data)
+        repomap_loader.scan_repositories(lambda dummy: json_data)
 
     assert 'repository mapping file is invalid' in error_info.value.message

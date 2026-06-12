@@ -9,9 +9,6 @@ from leapp.libraries.stdlib import api
 from leapp.models import PESIDRepositoryEntry, RepoMapEntry, RepositoriesMapping
 from leapp.models.fields import ModelViolationError
 
-OLD_REPOMAP_FILE = 'repomap.csv'
-"""The name of the old, deprecated repository mapping file (no longer used)."""
-
 REPOMAP_FILE = 'repomap.json'
 """The name of the new repository mapping file."""
 
@@ -159,23 +156,21 @@ def _read_repofile(repofile):
     return repofile_data
 
 
-def scan_repositories(read_repofile_func=_read_repofile):
+def load_repositories_mapping(read_repofile_func=_read_repofile):
     """
-    Scan the repository mapping file and produce RepositoriesMap msg.
+    Load the mapping of DNF repositories related to the current upgrade path.
 
-    See the description of the actor for more details.
+    Read the mapping from the repomap.json file and filter out data irrelevant
+    for the current and target system major version.
+
+    Produce and return the RepositoriesMapping message.
+
+    :param read_repofile_func: The function that accept filename string to read the repomap file and return dict
+    :type read_repofile_func: Callable[[str], Dict]
+    :rtype: RepositoriesMapping
+    :raises StopActorExecutionError: When cannot produce valid RepositoriesMapping
     """
     # TODO: add filter based on the current arch
-    # TODO: deprecate the product type and introduce the "channels" ?.. more or less
-    # NOTE: product type is changed, now it's channel: eus,e4s,aus,tus,ga,beta
-
-    if os.path.exists(os.path.join('/etc/leapp/files', OLD_REPOMAP_FILE)):
-        # NOTE: what about creating the report (instead of warning)
-        api.current_logger().warning(
-            'The old repomap file /etc/leapp/files/repomap.csv is present.'
-            ' The file has been replaced by the repomap.json file and it is'
-            ' not used anymore.'
-        )
 
     json_data = read_repofile_func(REPOMAP_FILE)
     try:
@@ -183,10 +178,11 @@ def scan_repositories(read_repofile_func=_read_repofile):
         mapping = repomap_data.get_mappings(get_source_major_version(), get_target_major_version())
 
         valid_major_versions = [get_source_major_version(), get_target_major_version()]
-        api.produce(RepositoriesMapping(
+        repositories_mapping = RepositoriesMapping(
             mapping=mapping,
             repositories=repomap_data.get_repositories(valid_major_versions)
-        ))
+        )
+        api.produce(repositories_mapping)
     except ModelViolationError as err:
         err_message = (
             'The repository mapping file is invalid: '
@@ -200,3 +196,5 @@ def scan_repositories(read_repofile_func=_read_repofile):
     except ValueError as err:
         # The error should contain enough information, so we do not need to clarify it further
         _inhibit_upgrade('The repository mapping file is invalid: {}'.format(err))
+
+    return repositories_mapping
