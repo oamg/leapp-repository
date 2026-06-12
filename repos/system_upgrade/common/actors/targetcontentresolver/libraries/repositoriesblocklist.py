@@ -110,7 +110,7 @@ def _calc_internal_blocklist(repo_mapping, external_tasks, enabled_repoids):
         # TODO(pstodulk): unify reports about blocklisted repos and effect on
         # rpms tasks in pes_events_scanner
         _report_excluded_repos(repos_to_exclude)
-    
+
     return repos_to_exclude
 
 
