@@ -7,6 +7,8 @@ from leapp.libraries.actor.repomap_loader import load_repositories_mapping
 from leapp.libraries.stdlib import api
 from leapp.models import (
     CustomTargetRepository,
+    DistributionSignedRPM,
+    EnabledModules,
     RepositoriesBlacklisted,
     RepositoriesFacts,
     RepositoriesSetupTasks,
@@ -14,65 +16,96 @@ from leapp.models import (
 )
 from leapp.utils.deprecation import suppress_deprecation
 
-
-class MissingMessage(Exception):
-    """
-    Raised when specified leapp message is missing.
-    """
-    def __init__(self, message_type):
-        self.message_type = message_type
-        super().__init__(f'Missing leapp message {message_type}')
-
-
 ExternalRepoSetupTasks = namedtuple('ExternalRepoSetupTasks', ('to_enable', 'blocklist', 'custom'))
 
 
-@suppress_deprecation(RepositoriesBlacklisted)
-def _get_external_reposetup_tasks():
+class InputData():
     """
-    Collect repository related tasks from other actors (or configs in future).
-
-    This includes consumption of RepositoriesSetupTasks and CustomTargetRepository.
-    The second one should be understood as task as well based on the definition,
-    even when the name does not suggest it's actually task as well.
-
-    Return named tuple with `to_enable`, `blocklist`, and `custom` fields.
-    The last one is based on reposids in CustomTargetRepository messages.
+    Provide data from consumed messages
     """
-    tasks = ExternalRepoSetupTasks(set(), set(), set())
-    for task in api.consume(RepositoriesSetupTasks):
-        tasks.blocklist.update(task.blocklist)
-        tasks.to_enable.update(task.to_enable)
 
-    # DEPRECATED: Drop after 2026-07
-    for task in api.consume(RepositoriesBlacklisted):
-        tasks.blocklist.update(task.repoids)
+    def __init__(self):
+        self._missing_messages = []
 
-    tasks.custom.update({repo.repoid for repo in api.consume(CustomTargetRepository)})
-    return tasks
+        self._get_enabled_repoids()
+        self._get_installed_rpms()
+        self._get_enabled_modules()
+        self.external_tasks = self._get_external_reposetup_tasks()
 
+        if self._missing_messages:
+            # NOTE(pstodulk): This would be an invalid object,
+            # so let's end the story here.
+            raise StopActorExecutionError(
+                 message='Cannot calculate target content requirements',
+                 details={
+                     'details': 'Some of required leapp messages are missing.',
+                     'missing': [i.__name__ for i in self._missing_messages]
+                 }
+            )
 
-def _get_enabled_repoids():
-    """
-    Return set of repository IDs enabled on the source system.
+    def _treat_consume_msg(self, model):
+        msgs = api.consume(model)
+        msg = next(msgs, None)
+        if list(msgs):
+            w_msg = f'Unexpectedly received more than one {model.__name__} message.'
+            api.current_logger().warning(w_msg)
+        if not msg:
+            self._missing_messages.append(model)
+            return None
+        return msg
 
-    The information is consumed from the RepositoriesFacts message.
+    @suppress_deprecation(RepositoriesBlacklisted)
+    def _get_external_reposetup_tasks(self):
+        """
+        Collect repository related tasks from other actors (or configs in future).
 
-    :return: Set of all enabled repository IDs present on the source system.
-    :rtype: Set[str]
-    :raises MissingMessage: When RepositoriesFacts message is missing.
-    """
-    repos_facts = next(api.consume(RepositoriesFacts), None)
-    if not repos_facts:
-        raise MissingMessage(RepositoriesFacts)
+        This includes consumption of RepositoriesSetupTasks and CustomTargetRepository.
+        The second one should be understood as task as well based on the definition,
+        even when the name does not suggest it's actually task as well.
 
-    enabled_repoids = set()
-    for repos in api.consume(RepositoriesFacts):
-        for repo_file in repos.repositories:
-            for repo in repo_file.data:
-                if repo.enabled:
-                    enabled_repoids.add(repo.repoid)
-    return enabled_repoids
+        Return named tuple with `to_enable`, `blocklist`, and `custom` fields.
+        The last one is based on reposids in CustomTargetRepository messages.
+        """
+        self.tasks = ExternalRepoSetupTasks(set(), set(), set())
+        for task in api.consume(RepositoriesSetupTasks):
+            self.tasks.blocklist.update(task.blocklist)
+            self.tasks.to_enable.update(task.to_enable)
+
+        # DEPRECATED: Drop after 2026-07
+        for task in api.consume(RepositoriesBlacklisted):
+            self.tasks.blocklist.update(task.repoids)
+
+        self.tasks.custom.update({repo.repoid for repo in api.consume(CustomTargetRepository)})
+
+    def _get_enabled_repoids(self):
+        """
+        Return set of repository IDs enabled on the source system.
+
+        The information is consumed from the RepositoriesFacts message.
+
+        :return: Set of all enabled repository IDs present on the source system.
+        :rtype: Set[str]
+        """
+        repos_facts = self._treat_consume_msg(RepositoriesFacts)
+        if repos_facts is None:
+            return
+
+        self.enabled_repoids = set()
+        for repos in repos_facts:
+            for repo_file in repos.repositories:
+                for repo in repo_file.data:
+                    if repo.enabled:
+                        self.enabled_repoids.add(repo.repoid)
+
+    def _get_enabled_modules(self):
+        modules_facts = self._treat_consume_msg(EnabledModules)
+        if modules_facts:
+            self.enabled_modules = modules_facts.modules
+
+    def _get_installed_rpms(self):
+        distro_rpms = self._treat_consume_msg(DistributionSignedRPM)
+        if distro_rpms:
+            self.installed_rpms = distro_rpms.items
 
 
 def _init_repomap_handler():
@@ -103,30 +136,23 @@ def process():
        source repos, installed package repos, and custom/blacklisted repo
        configuration.
     """
-    try:
-        enabled_repoids = _get_enabled_repoids()
-    except MissingMessage as e:
-        # TODO(pstodulk): That's placeholder, I expect to stack info about more
-        # missing packages as progressing with the changes.
-        raise StopActorExecutionError(str(e))
-
-    external_tasks = _get_external_reposetup_tasks()
+    indata = InputData()
     repomap_handler = _init_repomap_handler()
     blocklisted_repoids = repositoriesblocklist.compute_blocklist(
         repomap_handler,
-        external_tasks,
-        enabled_repoids
+        indata.external_tasks,
+        indata.enabled_repoids
     )
     pes_requested_repoids = pes_events_scanner.scan_pes_events(
         repomap_handler,
         blocklisted_repoids,
-        enabled_repoids
+        indata.enabled_repoids
     )
 
     setuptargetrepos.setup_target_repos(
         repomap_handler,
-        enabled_repoids,
+        indata.enabled_repoids,
         pes_requested_repoids=pes_requested_repoids,
         blacklisted_repoids=blocklisted_repoids,
-        external_repoids_requests=external_tasks.to_enable,
+        external_repoids_requests=indata.external_tasks.to_enable,
     )
