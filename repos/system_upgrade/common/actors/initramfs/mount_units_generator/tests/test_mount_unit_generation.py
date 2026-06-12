@@ -328,6 +328,46 @@ def test_injection_of_sysroot_boot_bindmount_unit(monkeypatch, has_separate_boot
         assert was_copyfile_for_sysroot_boot_called
 
 
+@pytest.mark.parametrize('fs_type,should_be_removed', [
+    ('hugetlbfs', True),
+    ('tmpfs', True),
+    ('devtmpfs', True),
+    ('devpts', True),
+    ('sysfs', True),
+    ('proc', True),
+    ('cgroup', True),
+    ('cgroup2', True),
+    ('xfs', False),
+    ('ext4', False),
+    ('btrfs', False),
+    (None, False),  # unit without a Type= line
+])
+def test_remove_pseudo_fs_mount_units(monkeypatch, fs_type, should_be_removed):
+    unit_name = 'dev-hugepages2M.mount'
+    unit_path = '/workspace/{}'.format(unit_name)
+    deleted = []
+
+    monkeypatch.setattr(api, 'current_logger', logger_mocked())
+    monkeypatch.setattr(os, 'listdir', lambda _: [unit_name])
+    monkeypatch.setattr(mount_unit_generator, '_get_mount_unit_fs_type', lambda _: fs_type)
+    monkeypatch.setattr(mount_unit_generator, '_delete_file', lambda p: deleted.append(p))
+
+    mount_unit_generator.remove_pseudo_fs_mount_units('/workspace')
+
+    if should_be_removed:
+        assert deleted == [unit_path]
+    else:
+        assert deleted == []
+
+
+def test_remove_pseudo_fs_mount_units_skips_non_mount_files(monkeypatch):
+    monkeypatch.setattr(api, 'current_logger', logger_mocked())
+    monkeypatch.setattr(os, 'listdir', lambda _: ['some.service', 'local-fs.target.requires'])
+    monkeypatch.setattr(mount_unit_generator, '_delete_file', lambda p: (_ for _ in ()).throw(AssertionError('should not delete')))
+
+    mount_unit_generator.remove_pseudo_fs_mount_units('/workspace')
+
+
 TEST_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'files')
 
 
