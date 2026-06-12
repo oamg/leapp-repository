@@ -1,22 +1,8 @@
 from leapp import reporting
+from leapp.libraries.common.config import get_target_distro_id
 from leapp.libraries.common.config.version import get_source_major_version, get_target_major_version
 from leapp.libraries.stdlib import api
 from leapp.models import RepositoriesBlocklisted
-
-
-def _report_using_unsupported_repos(repos):
-    report = [
-        reporting.Title('Using repository not supported by Red Hat'),
-        reporting.Summary(
-            'The following repositories have been used for the '
-            'upgrade, but they are not supported by the Red Hat.:\n'
-            '- {}'.format('\n - '.join(repos))
-        ),
-        reporting.Severity(reporting.Severity.HIGH),
-        reporting.Groups([reporting.Groups.REPOSITORY]),
-        reporting.Key('e931e4c299de7d276238e5d0b363c010e8587977')
-    ]
-    reporting.create_report(report)
 
 
 def _report_excluded_repos(repos):
@@ -108,7 +94,7 @@ def _calc_internal_blocklist(repo_mapping, external_tasks, enabled_repoids):
     :rtype: Set[str]
     """
     if not _are_crb_repos_disabled(repo_mapping, enabled_repoids):
-        # nothing to do - no CRB repo is enabled
+        # nothing to do - a CRB repo is enabled
         return set()
 
     repos_to_exclude = _get_crb_repos(repo_mapping, False)
@@ -116,19 +102,16 @@ def _calc_internal_blocklist(repo_mapping, external_tasks, enabled_repoids):
     # Do not exclude repositories explicitly required by user for the upgrade
     manually_enabled_repos = external_tasks.custom & repos_to_exclude
 
-    # FIXME(pstodulk): actually, if any target CRB repo is enabled during the
-    # upgrade, we should ignore any other as well.
-    filtered_repos_to_exclude = repos_to_exclude - manually_enabled_repos
-
     if manually_enabled_repos:
-        # FIXME(pstodulk): This is wrong. This is valid only for RHEL systems
-        # and the report itself is confusing - as it is actually only about
-        # CRB repositories and not any other.
-        _report_using_unsupported_repos(manually_enabled_repos)
-    if filtered_repos_to_exclude:
-        _report_excluded_repos(filtered_repos_to_exclude)
+        # NOTE(pstodulk): Same like in case that a CRB repo is enabled on src OS
+        return set()
 
-    return filtered_repos_to_exclude
+    if get_target_distro_id() == 'rhel':
+        # TODO(pstodulk): unify reports about blocklisted repos and effect on
+        # rpms tasks in pes_events_scanner
+        _report_excluded_repos(repos_to_exclude)
+    
+    return repos_to_exclude
 
 
 def compute_blocklist(repo_mapping, external_tasks, enabled_repoids):
