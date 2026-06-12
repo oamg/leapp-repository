@@ -398,6 +398,21 @@ def test_modify_grubenv_to_have_separate_blsdir(monkeypatch, has_separate_boot):
     addupgradebootentry.modify_our_grubenv_to_have_separate_blsdir(efi_info)
 
 
+def test_collect_upgrade_kernel_args_includes_duplicate_keys(monkeypatch):
+    msgs = [
+        UpgradeKernelCmdlineArgTasks(to_add=[
+            KernelCmdlineArg(key='rd.md.uuid', value='md-aaa'),
+            KernelCmdlineArg(key='rd.md.uuid', value='md-bbb'),
+        ]),
+    ]
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=msgs))
+
+    args = addupgradebootentry.collect_upgrade_kernel_args(livemode_enabled=False)
+
+    assert ('rd.md.uuid', 'md-aaa') in args
+    assert ('rd.md.uuid', 'md-bbb') in args
+
+
 def test_collect_undesired_args_includes_upgrade_to_remove(monkeypatch):
     msgs = [
         UpgradeKernelCmdlineArgTasks(to_remove=[
