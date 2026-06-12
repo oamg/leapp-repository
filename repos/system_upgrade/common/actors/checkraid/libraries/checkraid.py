@@ -1,7 +1,7 @@
 import os
 
 from leapp.libraries.stdlib import api
-from leapp.models import CopyFile, RaidInfo, TargetUserSpaceUpgradeTasks
+from leapp.models import CopyFile, RAIDInfo, TargetUserSpaceUpgradeTasks
 
 # Host paths for mdadm configuration (see mdadm.conf(5) FILES section).
 MDADM_CONFIG_PATHS = (
@@ -19,7 +19,7 @@ def _mdadm_config_paths_present():
 
 
 def process():
-    raid_info = next(api.consume(RaidInfo), None)
+    raid_info = next(api.consume(RAIDInfo), None)
     if not raid_info or not raid_info.md_arrays:
         return
 

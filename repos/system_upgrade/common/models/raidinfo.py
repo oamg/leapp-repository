@@ -7,16 +7,13 @@ class MDArray(Model):
 
     topic = SystemInfoTopic
 
-    UUID = fields.String()
+    uuid = fields.String()
     """UUID of the mdadm array."""
 
 
-class RaidInfo(Model):
+class RAIDInfo(Model):
     """Information about RAID usage on the source system."""
     topic = SystemInfoTopic
-
-    dmraid_used = fields.Boolean(default=False)
-    """Whether dmraid (device-mapper RAID / fake RAID) is in use."""
 
     md_arrays = fields.List(fields.Model(MDArray), default=[])
     """List of active mdadm software RAID arrays."""

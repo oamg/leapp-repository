@@ -2,7 +2,7 @@ import re
 
 from leapp.libraries.common.rpms import has_package
 from leapp.libraries.stdlib import api, CalledProcessError, run
-from leapp.models import DistributionSignedRPM, MDArray, RaidInfo
+from leapp.models import DistributionSignedRPM, MDArray, RAIDInfo
 
 MDADM_SCAN_CMD = ['mdadm', '--detail', '--scan', '--verbose']
 UUID_PATTERN = re.compile(r'UUID=([0-9a-fA-F:]+)')
@@ -37,4 +37,4 @@ def process():
         return
 
     api.current_logger().info('Detected active mdadm software RAID arrays.')
-    api.produce(RaidInfo(md_arrays=[MDArray(UUID=uuid) for uuid in uuids]))
+    api.produce(RAIDInfo(md_arrays=[MDArray(uuid=uuid) for uuid in uuids]))

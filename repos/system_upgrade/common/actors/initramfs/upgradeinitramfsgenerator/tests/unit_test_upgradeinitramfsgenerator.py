@@ -18,7 +18,7 @@ from leapp.models import (  # isort:skip
     DracutModule,
     KernelModule,
     MDArray,
-    RaidInfo,
+    RAIDInfo,
     TargetUserSpaceUpgradeTasks,
     UpgradeInitramfsTasks,
 )
@@ -138,7 +138,7 @@ class MockedContext:
     def full_path(self, path):
         return os.path.join(self.base_dir, os.path.abspath(path).lstrip('/'))
 
-    def open(self, path, mode='r', *args, **kwargs):
+    def open(self, path, *args, mode='r', **kwargs):
         if 'w' not in mode:
             raise NotImplementedError('MockedContext.open only supports write mode')
 
@@ -210,14 +210,14 @@ def _sort_files(copy_files):
 
 @pytest.mark.parametrize('raid_info,expected_path,expected_content', [
     (None, None, None),
-    (RaidInfo(md_arrays=[]), None, None),
+    (RAIDInfo(md_arrays=[]), None, None),
     (
-        RaidInfo(md_arrays=[MDArray(UUID='aaa:bbb')]),
+        RAIDInfo(md_arrays=[MDArray(uuid='aaa:bbb')]),
         upgradeinitramfsgenerator.LEAPP_CMDLINE_CONF_PATH,
         'rd.md.uuid=aaa:bbb\n',
     ),
     (
-        RaidInfo(md_arrays=[MDArray(UUID='aaa:bbb'), MDArray(UUID='ccc:ddd')]),
+        RAIDInfo(md_arrays=[MDArray(uuid='aaa:bbb'), MDArray(uuid='ccc:ddd')]),
         upgradeinitramfsgenerator.LEAPP_CMDLINE_CONF_PATH,
         'rd.md.uuid=aaa:bbb rd.md.uuid=ccc:ddd\n',
     ),
@@ -239,7 +239,7 @@ def test_write_md_uuid_cmdline_conf(monkeypatch, raid_info, expected_path, expec
 
 def test_generate_initram_disk_includes_md_cmdline_conf(monkeypatch):
     context = MockedContext()
-    raid_info = RaidInfo(md_arrays=[MDArray(UUID='aaa:bbb')])
+    raid_info = RAIDInfo(md_arrays=[MDArray(uuid='aaa:bbb')])
     input_msgs = gen_UDM_list(MODULES[0]) + [raid_info]
     curr_actor = CurrentActorMocked(msgs=input_msgs, arch=architecture.ARCH_X86_64)
     monkeypatch.setattr(upgradeinitramfsgenerator.api, 'current_actor', curr_actor)

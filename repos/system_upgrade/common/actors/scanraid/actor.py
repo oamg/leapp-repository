@@ -1,6 +1,6 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import scanraid
-from leapp.models import DistributionSignedRPM, RaidInfo
+from leapp.models import DistributionSignedRPM, RAIDInfo
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 
@@ -14,7 +14,7 @@ class ScanRaid(Actor):
 
     name = 'scan_raid'
     consumes = (DistributionSignedRPM,)
-    produces = (RaidInfo,)
+    produces = (RAIDInfo,)
     tags = (FactsPhaseTag, IPUWorkflowTag)
 
     def process(self):

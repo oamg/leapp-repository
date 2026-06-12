@@ -3,7 +3,7 @@ import os
 from leapp.libraries.actor import checkraid
 from leapp.libraries.common.testutils import CurrentActorMocked, produce_mocked
 from leapp.libraries.stdlib import api
-from leapp.models import MDArray, RaidInfo, TargetUserSpaceUpgradeTasks
+from leapp.models import MDArray, RAIDInfo, TargetUserSpaceUpgradeTasks
 
 
 def _mock_path_checks(monkeypatch, files=(), directories=()):
@@ -18,7 +18,7 @@ def _mock_path_checks(monkeypatch, files=(), directories=()):
 
 
 def _md_arrays(*uuids):
-    return [MDArray(UUID=uuid) for uuid in uuids]
+    return [MDArray(uuid=uuid) for uuid in uuids]
 
 
 def test_md_arrays_with_conf_dir(monkeypatch):
@@ -28,7 +28,7 @@ def test_md_arrays_with_conf_dir(monkeypatch):
         directories=('/etc/mdadm.conf.d',),
     )
 
-    msgs = [RaidInfo(md_arrays=_md_arrays('aaa:bbb'))]
+    msgs = [RAIDInfo(md_arrays=_md_arrays('aaa:bbb'))]
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=msgs))
     monkeypatch.setattr(api, 'produce', produce_mocked())
 
@@ -46,7 +46,7 @@ def test_md_arrays_with_conf_dir(monkeypatch):
 def test_md_arrays_without_conf_dir(monkeypatch):
     _mock_path_checks(monkeypatch, files=('/etc/mdadm.conf',))
 
-    msgs = [RaidInfo(md_arrays=_md_arrays('aaa:bbb'))]
+    msgs = [RAIDInfo(md_arrays=_md_arrays('aaa:bbb'))]
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=msgs))
     monkeypatch.setattr(api, 'produce', produce_mocked())
 
@@ -64,7 +64,7 @@ def test_md_arrays_alternative_mdadm_conf(monkeypatch):
         directories=('/etc/mdadm/mdadm.conf.d',),
     )
 
-    msgs = [RaidInfo(md_arrays=_md_arrays('aaa:bbb'))]
+    msgs = [RAIDInfo(md_arrays=_md_arrays('aaa:bbb'))]
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=msgs))
     monkeypatch.setattr(api, 'produce', produce_mocked())
 
@@ -81,7 +81,7 @@ def test_md_arrays_alternative_mdadm_conf(monkeypatch):
 def test_md_arrays_no_config_paths(monkeypatch):
     _mock_path_checks(monkeypatch)
 
-    msgs = [RaidInfo(md_arrays=_md_arrays('aaa:bbb'))]
+    msgs = [RAIDInfo(md_arrays=_md_arrays('aaa:bbb'))]
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=msgs))
     monkeypatch.setattr(api, 'produce', produce_mocked())
 
@@ -103,7 +103,7 @@ def test_no_raid_info(monkeypatch):
 
 
 def test_no_md_arrays(monkeypatch):
-    msgs = [RaidInfo(md_arrays=[])]
+    msgs = [RAIDInfo(md_arrays=[])]
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=msgs))
     monkeypatch.setattr(api, 'produce', produce_mocked())
 

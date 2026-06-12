@@ -3,7 +3,7 @@ import pytest
 from leapp.libraries.actor import scanraid
 from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked, produce_mocked
 from leapp.libraries.stdlib import api, CalledProcessError
-from leapp.models import DistributionSignedRPM, MDArray, RaidInfo, RPM
+from leapp.models import DistributionSignedRPM, MDArray, RAIDInfo, RPM
 
 _MDADM_RPM = RPM(
     name='mdadm',
@@ -71,9 +71,8 @@ def test_mdadm_installed_with_active_arrays(monkeypatch):
     assert api.produce.called == 1
     assert len(api.produce.model_instances) == 1
     produced = api.produce.model_instances[0]
-    assert isinstance(produced, RaidInfo)
-    assert produced.md_arrays == [MDArray(UUID='c4acea6e:d56e1598:91822e3f:fb26832c')]
-    assert produced.dmraid_used is False
+    assert isinstance(produced, RAIDInfo)
+    assert produced.md_arrays == [MDArray(uuid='c4acea6e:d56e1598:91822e3f:fb26832c')]
 
 
 def test_mdadm_installed_with_multiple_arrays(monkeypatch):
@@ -87,7 +86,7 @@ def test_mdadm_installed_with_multiple_arrays(monkeypatch):
     scanraid.process()
 
     produced = api.produce.model_instances[0]
-    assert [md_array.UUID for md_array in produced.md_arrays] == [
+    assert [md_array.uuid for md_array in produced.md_arrays] == [
         'c4acea6e:d56e1598:91822e3f:fb26832c',
         '5eb8cf98:a8d13c2e:3e91b4ca:2e1ac678',
     ]

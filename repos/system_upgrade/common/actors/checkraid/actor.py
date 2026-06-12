@@ -1,6 +1,6 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import checkraid
-from leapp.models import RaidInfo, TargetUserSpaceUpgradeTasks
+from leapp.models import RAIDInfo, TargetUserSpaceUpgradeTasks
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
 
@@ -14,7 +14,7 @@ class CheckRaid(Actor):
     """
 
     name = 'check_raid'
-    consumes = (RaidInfo,)
+    consumes = (RAIDInfo,)
     produces = (TargetUserSpaceUpgradeTasks,)
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 

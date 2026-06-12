@@ -14,7 +14,7 @@ from leapp.models import (
     BootContent,
     LiveModeConfig,
     LVMConfig,
-    RaidInfo,
+    RAIDInfo,
     TargetOSInstallationImage,
     TargetUserSpaceInfo,
     TargetUserSpaceUpgradeTasks,
@@ -337,11 +337,11 @@ def write_md_uuid_cmdline_conf(context):
     :returns: Path of the written file, or None if no file was written.
     :rtype: str or None
     """
-    raid_info = next(api.consume(RaidInfo), None)
+    raid_info = next(api.consume(RAIDInfo), None)
     if not raid_info or not raid_info.md_arrays:
         return None
 
-    md_uuids = ['rd.md.uuid={}'.format(md_array.UUID) for md_array in raid_info.md_arrays]
+    md_uuids = ['rd.md.uuid={}'.format(md_array.uuid) for md_array in raid_info.md_arrays]
     content = '{}\n'.format(' '.join(md_uuids))
 
     context.makedirs(os.path.dirname(LEAPP_CMDLINE_CONF_PATH), exists_ok=True)
