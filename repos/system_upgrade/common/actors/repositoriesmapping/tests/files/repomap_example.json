@@ -1,6 +1,6 @@
 {
   "datetime": "202107141655Z",
-  "version_format": "1.3.0",
+  "version_format": "1.4.0",
   "mapping": [
     {
       "source_major_version": "7",
@@ -8,10 +8,10 @@
       "entries": [
         {
           "source": "pesid1",
-          "target": [
-            "pesid2",
-            "pesid3"
-          ]
+          "target": {
+            "default": ["pesid2", "pesid3"],
+            "centos": ["pesid7"]
+          }
         }
       ]
     },
@@ -21,10 +21,11 @@
       "entries": [
         {
           "source": "pesid3",
-          "target": [
-            "pesid4",
-            "pesid5"
-          ]
+          "target": {
+            "default": ["pesid4"],
+            "centos": ["pesid4"],
+            "almalinux": ["pesid9"]
+          }
         }
       ]
     }
@@ -37,6 +38,19 @@
           "major_version": "7",
           "repoid": "some-rhel-7-repoid",
           "arch": "x86_64",
+          "repo_type": "rpm",
+          "channel": "eus",
+          "distro": "rhel"
+        }
+      ]
+    },
+    {
+      "pesid": "pesid1",
+      "entries": [
+        {
+          "major_version": "7",
+          "repoid": "some-rhel-7-repoid",
+          "arch": "aarch64",
           "repo_type": "rpm",
           "channel": "eus",
           "distro": "rhel"
@@ -57,11 +71,50 @@
       ]
     },
     {
+      "pesid": "pesid2",
+      "entries": [
+        {
+          "major_version": "8",
+          "repoid": "some-rhel-8-repoid1",
+          "arch": "x86_64",
+          "repo_type": "rpm",
+          "channel": "eus",
+          "distro": "almalinux"
+        }
+      ]
+    },
+    {
       "pesid": "pesid3",
       "entries": [
         {
           "major_version": "8",
           "repoid": "some-rhel-8-repoid2",
+          "arch": "x86_64",
+          "repo_type": "rpm",
+          "channel": "eus",
+          "distro": "rhel"
+        }
+      ]
+    },
+    {
+      "pesid": "pesid3",
+      "entries": [
+        {
+          "major_version": "8",
+          "repoid": "some-rhel-8-repoid2",
+          "arch": "x86_64",
+          "repo_type": "rpm",
+          "channel": "eus",
+          "distro": "almalinux"
+        }
+      ]
+    },
+    {
+      "pesid": "pesid4",
+      "entries": [
+        {
+          "major_version": "9",
+          "repoid": "some-rhel-9-repo1",
           "arch": "x86_64",
           "repo_type": "rpm",
           "channel": "eus",
@@ -78,7 +131,7 @@
           "arch": "x86_64",
           "repo_type": "rpm",
           "channel": "eus",
-          "distro": "rhel"
+          "distro": "centos"
         }
       ]
     },

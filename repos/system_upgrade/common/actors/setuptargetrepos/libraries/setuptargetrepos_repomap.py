@@ -25,9 +25,9 @@ class RepoMapDataHandler:
     def __init__(
         self,
         repo_map,
-        source_distro="",
-        target_distro="",
-        cloud_provider="",
+        source_distro='',
+        target_distro='',
+        cloud_provider='',
         default_channels=None,
     ):
         """
@@ -40,7 +40,7 @@ class RepoMapDataHandler:
         :type repo_map: RepositoryMapping
         :param source_distro: The distribution to map repos from, default to current
         :type source_distro: str
-        :param target_distro: The distribution to map repos to, default to current target distro
+        :param target_distro: The distribution to map repos to, default to current
         :type target_distro: str
         :param default_channels: A list of default channels to use when a target repository
                                  equivalent exactly matching a source repository was not found.
@@ -118,14 +118,6 @@ class RepoMapDataHandler:
         """
         matching_pesid_repos = []
         for pesid_repo in self.repositories:
-            # FIXME(pstodulk): Why we do not check actually architecture here?
-            # It seems obvious we should check it, but it's not clear why we
-            # don't and investigation might be required.
-            # For the investigation:
-            # # check repoids matching various architectures
-            # # check repoids without $arch in substring on how many architectures they are present
-            # Investigate and: add a comment with an explanation or fix the
-            # condition.
             if (
                 pesid_repo.repoid == repoid
                 and pesid_repo.major_version == major_version
@@ -133,9 +125,6 @@ class RepoMapDataHandler:
             ):
                 matching_pesid_repos.append(pesid_repo)
 
-        # FIXME: when a PESID is present for multiple architectures, there
-        # are multiple matching repos even though there should really be just
-        # one, the condition below fails even though it shouldn't
         if len(matching_pesid_repos) == 1:
             # Perform no heuristics if only a single pesid repository with matching repoid found
             return matching_pesid_repos[0]
@@ -233,10 +222,9 @@ class RepoMapDataHandler:
         for candidate in self.get_target_pesid_repos(target_pesid):
             matches_rhui = candidate.rhui == src_pesidrepo.rhui
             matches_repo_type = candidate.repo_type == 'rpm'
-            matches_arch = candidate.arch == api.current_actor().configuration.architecture
             matches_distro = candidate.distro == self.target_distro
 
-            if matches_rhui and matches_arch and matches_distro and matches_repo_type:
+            if matches_rhui and matches_distro and matches_repo_type:
                 # user can specify in future the specific channel should be
                 # prioritized always (e.g. want to go to EUS...).
                 channel = self.prio_channel or src_pesidrepo.channel
