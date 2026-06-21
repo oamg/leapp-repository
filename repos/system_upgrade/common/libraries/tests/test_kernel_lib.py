@@ -1,5 +1,3 @@
-import functools
-
 import pytest
 
 from leapp.libraries.common import kernel as kernel_lib
@@ -22,7 +20,6 @@ from leapp.libraries.stdlib import api, CalledProcessError
         (('9.3', None), '5.14.0-354.el9.x86_64+rt', KernelType.REALTIME),
         (('9.3', None), '5.14.0-354.el9.aarch64+64k', KernelType.ORDINARY),
         (('9.3', None), '5.14.0-354.el9.aarch64+rt-64k', KernelType.REALTIME),
-        (('9.3', None), '5.14.0-354.el9.aarch64+rt_64k', KernelType.REALTIME),
         # centos
         (('8', '8.7'), '4.18.0-425.3.1.el8.x86_64', KernelType.ORDINARY),
         (('8', '8.7'), '4.18.0-425.3.1.rt7.213.el8.x86_64', KernelType.REALTIME),
@@ -32,7 +29,6 @@ from leapp.libraries.stdlib import api, CalledProcessError
         (('9', '9.3'), '5.14.0-354.el9.x86_64+rt', KernelType.REALTIME),
         (('9', '9.3'), '5.14.0-354.el9.aarch64+64k', KernelType.ORDINARY),
         (('9', '9.3'), '5.14.0-354.el9.aarch64+rt-64k', KernelType.REALTIME),
-        (('9', '9.3'), '5.14.0-354.el9.aarch64+rt_64k', KernelType.REALTIME),
     )
 )
 def test_determine_kernel_type_from_uname(monkeypatch, version, uname_r, expected_kernel_type):
@@ -80,24 +76,26 @@ def test_determine_kernel_page_size_getconf_failure(monkeypatch):
     assert api.current_logger.warnmsg
 
 
-def _mock_context_for_provides(kernel_nevra, provides_lines):
+def _mock_context_for_file_list(kernel_nevra, file_lines):
     class _MockContext:
-        def call(self, cmd, *args, **kwargs):
-            assert cmd == ['rpm', '-q', '--provides', kernel_nevra]
-            return {'stdout': provides_lines}
+        def call(self, cmd, *args, **kwargs):  # pylint: disable=no-self-use
+            assert cmd == ['rpm', '-q', '-l', kernel_nevra]
+            return {'stdout': file_lines}
     return _MockContext()
 
 
 def test_get_uname_r_provided_by_kernel_pkg():
     kernel_nevra = 'kernel-core-5.14.0-354.el9.x86_64'
-    provides_lines = [
-        'kmod(virtio_ring.ko)',
-        'kernel(zlib_inflate_blob) = 0x65408378',
-        'kernel-uname-r = 5.14.0-354.el9.x86_64'
+    file_lines = [
+        '/lib/modules',
+        '/lib/modules/5.14.0-354.el9.x86_64',
+        '/lib/modules/5.14.0-354.el9.x86_64/.vmlinuz.hmac',
+        '/lib/modules/5.14.0-354.el9.x86_64/vmlinuz',
+        '/boot/vmlinuz-5.14.0-354.el9.x86_64',
     ]
 
     uname_r = kernel_lib.get_uname_r_provided_by_kernel_pkg(
-        kernel_nevra, context=_mock_context_for_provides(kernel_nevra, provides_lines)
+        kernel_nevra, context=_mock_context_for_file_list(kernel_nevra, file_lines)
     )
     assert uname_r == '5.14.0-354.el9.x86_64'
 
@@ -106,9 +104,9 @@ def test_get_uname_r_provided_by_kernel_pkg_default_context(monkeypatch):
     kernel_nevra = 'kernel-core-5.14.0-354.el9.x86_64'
 
     def run_mocked(cmd, *args, **kwargs):
-        assert cmd == ['rpm', '-q', '--provides', kernel_nevra]
+        assert cmd == ['rpm', '-q', '-l', kernel_nevra]
         return {'stdout': [
-            'kernel-uname-r = 5.14.0-354.el9.x86_64'
+            '/lib/modules/5.14.0-354.el9.x86_64/vmlinuz'
         ]}
 
     monkeypatch.setattr(kernel_lib.mounting, 'run', run_mocked)
@@ -118,49 +116,45 @@ def test_get_uname_r_provided_by_kernel_pkg_default_context(monkeypatch):
 
 
 @pytest.mark.parametrize(
-    ('uname_r', 'expected_nevra'),
+    ('uname_r', 'whatprovides_nevras', 'expected_nevra'),
     (
-        ('5.14.0-354.el9.x86_64', 'kernel-core-5.14.0-354.el9.x86_64.rpm'),
-        ('5.14.0-354.el9.x86_64+rt', 'kernel-rt-core-5.14.0-354.el9.x86_64.rpm'),
-        ('5.14.0-687.el9.aarch64+64k', 'kernel-64k-core-5.14.0-687.el9.aarch64.rpm'),
-        # RPM provides +rt_64k (underscore), uname -r reports +rt-64k (hyphen)
-        ('5.14.0-687.el9.aarch64+rt-64k', 'kernel-rt-64k-core-5.14.0-687.el9.aarch64.rpm'),
-        # Reversed: uname -r reports +rt_64k (underscore)
-        ('5.14.0-687.el9.aarch64+rt_64k', 'kernel-rt-64k-core-5.14.0-687.el9.aarch64.rpm'),
-        ('unknown', None),
+        ('5.14.0-354.el9.x86_64',
+         ['kernel-modules-core-5.14.0-354.el9.x86_64', 'kernel-core-5.14.0-354.el9.x86_64'],
+         'kernel-core-5.14.0-354.el9.x86_64'),
+        ('5.14.0-354.el9.x86_64+rt',
+         ['kernel-rt-modules-core-5.14.0-354.el9.x86_64', 'kernel-rt-core-5.14.0-354.el9.x86_64'],
+         'kernel-rt-core-5.14.0-354.el9.x86_64'),
+        ('5.14.0-687.el9.aarch64+64k',
+         ['kernel-64k-modules-core-5.14.0-687.el9.aarch64', 'kernel-64k-core-5.14.0-687.el9.aarch64'],
+         'kernel-64k-core-5.14.0-687.el9.aarch64'),
+        ('5.14.0-687.el9.aarch64+rt-64k',
+         ['kernel-rt-64k-modules-core-5.14.0-687.el9.aarch64', 'kernel-rt-64k-core-5.14.0-687.el9.aarch64'],
+         'kernel-rt-64k-core-5.14.0-687.el9.aarch64'),
+        ('unknown', None, None),
     )
 )
-def test_get_kernel_pkg_info_for_uname_r(monkeypatch, uname_r, expected_nevra):
+def test_get_kernel_pkg_info_for_uname_r(monkeypatch, uname_r, whatprovides_nevras, expected_nevra):
     def run_mocked(cmd, *args, **kwargs):
-        assert cmd[0:3] == ['rpm', '-q', '--whatprovides']
-        output_lines = [
-            'kernel-core-5.14.0-354.el9.x86_64.rpm',
-            'kernel-rt-core-5.14.0-354.el9.x86_64.rpm',
-            'kernel-64k-core-5.14.0-687.el9.aarch64.rpm',
-            'kernel-rt-64k-core-5.14.0-687.el9.aarch64.rpm',
-        ]
-        return {'stdout': output_lines}
+        assert cmd[:3] == ['rpm', '-q', '--whatprovides']
+        assert cmd[3] == '/lib/modules/{}'.format(uname_r)
+        if whatprovides_nevras is None:
+            raise CalledProcessError(
+                message='rpm query failed', command=cmd,
+                result={'exit_code': 1, 'stdout': '', 'stderr': ''})
+        return {'stdout': whatprovides_nevras}
 
-    def get_uname_provided_by_pkg_mocked(pkg_nevra):
-        nevra_uname_table = {
-            'kernel-core-5.14.0-354.el9.x86_64.rpm': '5.14.0-354.el9.x86_64',
-            'kernel-rt-core-5.14.0-354.el9.x86_64.rpm': '5.14.0-354.el9.x86_64+rt',
-            'kernel-64k-core-5.14.0-687.el9.aarch64.rpm': '5.14.0-687.el9.aarch64+64k',
-            'kernel-rt-64k-core-5.14.0-687.el9.aarch64.rpm': '5.14.0-687.el9.aarch64+rt_64k',
-        }
-        return nevra_uname_table[pkg_nevra]
+    def get_kernel_pkg_info_mocked(nevra):
+        name = nevra.rsplit('-', 2)[0]
+        return kernel_lib.KernelPkgInfo(name=name, version='', release='', arch='', nevra=nevra)
 
     monkeypatch.setattr(kernel_lib, 'run', run_mocked)
-    monkeypatch.setattr(kernel_lib, 'get_uname_r_provided_by_kernel_pkg', get_uname_provided_by_pkg_mocked)
-
-    mk_pkg_info = functools.partial(kernel_lib.KernelPkgInfo, name='', version='', release='', arch='')
-    monkeypatch.setattr(kernel_lib,
-                        'get_kernel_pkg_info',
-                        lambda dummy_nevra: mk_pkg_info(nevra=dummy_nevra))
+    monkeypatch.setattr(kernel_lib, 'get_kernel_pkg_info', get_kernel_pkg_info_mocked)
 
     if expected_nevra:
         pkg_info = kernel_lib.get_kernel_pkg_info_for_uname_r(uname_r)
-        assert pkg_info == mk_pkg_info(nevra=expected_nevra)
+        assert pkg_info.nevra == expected_nevra
+        assert pkg_info.name.endswith('-core')
+        assert '-modules' not in pkg_info.name
     else:
         with pytest.raises(kernel_lib.KernelPackageInfoError):
             kernel_lib.get_kernel_pkg_info_for_uname_r(uname_r)

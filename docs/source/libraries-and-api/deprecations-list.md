@@ -21,6 +21,7 @@ Only the versions in which a deprecation has been made are listed.
   - **`RenamedInterfaces`** - Information provided in this message is not always complete and it's not used since the `net.naming-scheme` kernel command line argument is set during the upgrade.
   - **`RepositoriesBlacklisted`** - To get the list of blocklisted repositories, consume `RepositoriesBlocklisted` message. To request a repository to be blocklisted, use `RepositoriesSetupTasks.to_block` instead.
 - Shared libraries
+  - **`leapp.libraries.common.kernel.KERNEL_UNAME_R_PROVIDES`** - The constant is no longer used.
   - **`leapp.libraries.common.dnfconfig`** - Moved to `leapp.libraries.common.dnflibs.dnfconfig`. Original library is deprecated.
   - **`leapp.libraries.common.dnfplugin`** - Moved to `leapp.libraries.common.dnflibs.dnfplugin`. Original library is deprecated.
   - **`leapp.libraries.common.module`** - Replaced by `leapp.libraries.common.dnflibs.dnfmodule` (renamed for clarity). Original library is deprecated.

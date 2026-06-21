@@ -600,8 +600,8 @@ def test_get_target_kernel_version_page_size(monkeypatch, page_size, arch, expec
         queried_cmds.append(cmd)
         if cmd[:2] == ['rpm', '-qa']:
             return {'stdout': [target_nevra]}
-        if cmd[:3] == ['rpm', '-q', '--provides']:
-            return {'stdout': ['kernel-uname-r = {}'.format(expected_uname_r)]}
+        if cmd[:3] == ['rpm', '-q', '-l']:
+            return {'stdout': ['/lib/modules/{}/vmlinuz'.format(expected_uname_r)]}
         return {'stdout': []}
 
     context.call = mock_call
@@ -609,7 +609,7 @@ def test_get_target_kernel_version_page_size(monkeypatch, page_size, arch, expec
     version = upgradeinitramfsgenerator._get_target_kernel_version(context)
     assert version == expected_uname_r
     assert queried_cmds[0] == ['rpm', '-qa', expected_pkg]
-    assert queried_cmds[1] == ['rpm', '-q', '--provides', target_nevra]
+    assert queried_cmds[1] == ['rpm', '-q', '-l', target_nevra]
 
 
 def test_get_target_kernel_version_no_kernel_info(monkeypatch):
@@ -644,8 +644,8 @@ def test_get_target_kernel_version_empty_uname_r(monkeypatch):
     def mock_call(cmd, *args, **kwargs):
         if cmd[:2] == ['rpm', '-qa']:
             return {'stdout': ['kernel-core-5.14.0-100.el9.x86_64']}
-        if cmd[:3] == ['rpm', '-q', '--provides']:
-            return {'stdout': ['some-other-provide = foo']}
+        if cmd[:3] == ['rpm', '-q', '-l']:
+            return {'stdout': ['/boot/vmlinuz-5.14.0-100.el9.x86_64']}
         return {'stdout': []}
 
     context.call = mock_call
