@@ -16,6 +16,7 @@ class KernelPackageInfoError(StopActorExecutionError):
     """
 
 
+# Deprecated: KERNEL_UNAME_R_PROVIDES is no longer used.
 KERNEL_UNAME_R_PROVIDES = ['kernel-uname-r', 'kernel-rt-uname-r']
 
 
@@ -27,11 +28,6 @@ class KernelType:
 class KernelPageSize:
     PAGE_SIZE_4K = '4k'
     PAGE_SIZE_64K = '64k'
-
-
-def _normalize_rt64k_suffix(uname_r):
-    # TODO(pmocary): Remove when the kernel-rt-64k RPM provides match the actual uname -r output.
-    return uname_r.replace('+rt_64k', '+rt-64k')
 
 
 # TODO: rename rhel_version to something distro agnostic in the new function
@@ -62,7 +58,6 @@ def determine_kernel_type_from_uname(rhel_version: str, kernel_uname_r: str) -> 
             '+rt-64k': KernelType.REALTIME,
         }
 
-        kernel_uname_r = _normalize_rt64k_suffix(kernel_uname_r)
         for suffix, kernel_type in uname_r_suffixes.items():
             if kernel_uname_r.endswith(suffix):
                 return kernel_type
@@ -90,8 +85,8 @@ def get_uname_r_provided_by_kernel_pkg(kernel_pkg_nevra: str, context: mounting.
     """
     Get kernel release (uname-r) provided by a given kernel package.
 
-    Calls the ``rpm`` command internally. Returns an empty string if the rpm query fails or no
-    matching provide is found.
+    Extracts the kernel version from the package's ``/lib/modules/<version>`` file paths.
+    Returns an empty string if the rpm query fails or no matching path is found.
 
     :param kernel_pkg_nevra: NEVRA of an installed kernel package
     :type kernel_pkg_nevra: str
@@ -103,19 +98,20 @@ def get_uname_r_provided_by_kernel_pkg(kernel_pkg_nevra: str, context: mounting.
     """
     context = context or mounting.NotIsolatedActions(base_dir='/')
     try:
-        provides = context.call(['rpm', '-q', '--provides', kernel_pkg_nevra],
-                                split=True,
-                                callback_raw=lambda fd, value: None,
-                                callback_linebuffered=lambda fd, value: None)['stdout']
+        file_list = context.call(['rpm', '-q', '-l', kernel_pkg_nevra],
+                                 split=True,
+                                 callback_raw=lambda fd, value: None,
+                                 callback_linebuffered=lambda fd, value: None)['stdout']
     except CalledProcessError:
         return ''
-    for provide_line in provides:
-        if '=' not in provide_line:
+    modules_prefix = '/lib/modules/'
+    for file_path in file_list:
+        if not file_path.startswith(modules_prefix):
             continue
-        provide, value = provide_line.split('=', 1)
-        provide = provide.strip()
-        if provide in KERNEL_UNAME_R_PROVIDES:
-            return value.strip()
+        # Strip the /lib/modules/ prefix and take the first path component (the kernel version)
+        version = file_path[len(modules_prefix):].split('/', 1)[0]
+        if version:
+            return version
     return ''
 
 
@@ -144,33 +140,34 @@ def get_kernel_pkg_info_for_uname_r(uname_r: str) -> KernelPkgInfo:
     """
     Identify the kernel package providing a kernel with the given kernel release (uname-r).
 
+    Queries RPM for packages owning ``/lib/modules/<uname_r>`` and returns info about the ``-core``
+    kernel package among the results.
+
     :param uname_r: Kernel release (uname-r)
     :type uname_r: str
     :returns: Information about the kernel package providing given uname_r
     :rtype: KernelPkgInfo
     :raises KernelPackageInfoError: If no package provides given uname_r or if the internal rpm query fails
     """
-    kernel_pkg_nevras = []
-    for kernel_uname_r_provide in KERNEL_UNAME_R_PROVIDES:
-        try:
-            kernel_pkg_nevras += run(['rpm', '-q', '--whatprovides', kernel_uname_r_provide], split=True)['stdout']
-        except CalledProcessError:  # There is nothing providing a particular provide, e.g, kernel-rt-uname-r
-            continue  # Nothing bad happened, continue
+    try:
+        pkg_nevras = run(['rpm', '-q', '--whatprovides', '/lib/modules/{}'.format(uname_r)],
+                         split=True)['stdout']
+    except CalledProcessError as err:
+        raise KernelPackageInfoError(
+            message='Unable to obtain kernel information of the booted kernel.',
+            details={'Problem': 'No package owns /lib/modules/{}: {}'.format(uname_r, err)})
 
-    kernel_pkg_nevras = set(kernel_pkg_nevras)
-
-    uname_r = _normalize_rt64k_suffix(uname_r)
-    for kernel_pkg_nevra in kernel_pkg_nevras:
-        provided_uname = get_uname_r_provided_by_kernel_pkg(kernel_pkg_nevra)  # We know all packages provide a uname
-        if not provided_uname:
-            api.current_logger().warning('Failed to obtain uname-r provided by %s', kernel_pkg_nevra)
+    for pkg_nevra in pkg_nevras:
+        # Skip packages that are clearly not kernel core packages to avoid unnecessary rpm queries
+        if '-core' not in pkg_nevra or '-modules' in pkg_nevra:
             continue
-        provided_uname = _normalize_rt64k_suffix(provided_uname)
-        if provided_uname == uname_r:
-            return get_kernel_pkg_info(kernel_pkg_nevra)
+        pkg_info = get_kernel_pkg_info(pkg_nevra)
+        if pkg_info.name.endswith('-core'):
+            return pkg_info
 
-    raise KernelPackageInfoError(message='Unable to obtain kernel information of the booted kernel: no package is '
-                                         'providing the booted kernel release returned by uname.')
+    raise KernelPackageInfoError(
+        message='Unable to obtain kernel information of the booted kernel.',
+        details={'Problem': 'No installed package owning /lib/modules/{} is a kernel core package.'.format(uname_r)})
 
 
 def get_target_kernel_pkg_names(kernel_type: str, kernel_page_size: str, arch: str) -> KernelPkgNames:
