@@ -142,6 +142,25 @@ def process():
        source repos, installed package repos, and custom/blacklisted repo
        configuration.
     """
+    # TODO: update pes_even_scanner to work just with PESIDs instead of repoids.
+    # The blocklisted events needs to be then evaluated / calculated after
+    # the setuptargetrepos calculations. Similarly we can update the blocklist
+    # library. The setuptargetrepos tells exactly what's going to be allowed
+    # (repoids) and based on that we can finish the calculations.
+    # This includes:
+    # * all reports will be generated (or directly called) from the orchestrator
+    # * all/most of messages should be produced in the orchestrator
+    # * we will need at least 2 public functions in pes_events_scanner
+    # # and repositoriesblocklist libs:
+    # #   * these that we have right now
+    # #   * additional ones for the final calculation / filtering based on
+    # #     the real list of blocklisted repoids
+    # TL;DR; the workflow will be like this:
+    # * Make interim pes-events calculation (work just with PESIDS)
+    # * Make interim blocklist calculation
+    # * Calc expected & really blocked target repositories
+    # * take the result and finish the calculation
+    # * generate reports & messages
     indata = InputData()
     repomap_handler = _init_repomap_handler()
     blocklisted_repoids = repositoriesblocklist.compute_blocklist(
