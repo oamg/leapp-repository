@@ -100,13 +100,14 @@ def get_gpg_fp_from_file(key_path):
 
 # TODO when a need for the same function for source arises, or when there is
 # reason to deprecate this (re)name this to include "target"
-def get_path_to_gpg_certs():
+def get_path_to_gpg_certs(subdir=None):
     """
     Get path to the directory with trusted target gpg keys in the common leapp repository.
 
     GPG keys stored under this directory are considered as trusted and are
     installed during the upgrade process.
 
+    :param subdir: Path to a specific subdirectory in the directory (e.g. pqc)
     :return: Path to the directory with GPG keys stored under the common leapp repository.
     :rtype: str
     """
@@ -117,12 +118,12 @@ def get_path_to_gpg_certs():
     if target_product_type == 'beta':
         certs_dir = '{}beta'.format(target_major_version)
     distro = config.get_target_distro_id()
-    return os.path.join(
+    path = os.path.join(
         api.get_common_folder_path('distro'),
         distro,
         GPG_CERTS_FOLDER,
-        certs_dir
-    )
+        certs_dir)
+    return os.path.join(path, subdir) if subdir else path
 
 
 def is_nogpgcheck_set():

@@ -7,7 +7,8 @@
         "45689c882fa658e0": ["gpg-pubkey-2fa658e0-45700c69"],
         "f76f66c3d4082792": ["gpg-pubkey-d4082792-5b32db75"],
         "5054e4a45a6340b3": ["gpg-pubkey-5a6340b3-6229229e"],
-        "219180cddb42a60e": ["gpg-pubkey-db42a60e-37ea5438"]
+        "219180cddb42a60e": ["gpg-pubkey-db42a60e-37ea5438"],
+        "fcd355b305707a62": ["gpg-pubkey-05707a62-68e6a1f3"]
     },
     "obsoleted-keys": {
         "7": [],

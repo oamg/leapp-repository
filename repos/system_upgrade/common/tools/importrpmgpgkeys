@@ -24,7 +24,8 @@ fi
 error_flag=0
 IFS=$'\n'
 # shellcheck disable=SC2044
-for key_file in $(find -L "$1" -type f); do
+# using -maxdepth here to avoid descending into the pqc subdir
+for key_file in $(find -L "$1" -maxdepth 1 -type f); do
     log_info "Importing GPG keys from: $key_file"
     rpm --import "$key_file" || {
       error_flag=2
