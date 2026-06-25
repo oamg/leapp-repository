@@ -1,5 +1,5 @@
 from leapp.libraries.stdlib import api
-from leapp.models import DistributionSignedRPM, RepositoriesBlacklisted, RepositoriesSetupTasks
+from leapp.models import DistributionSignedRPM, RepositoriesSetupTasks
 from leapp.reporting import create_report, Title, Summary, Severity, Groups, Remediation
 
 EAP_RHEL9_REPOS = {
@@ -59,6 +59,5 @@ def process():
     ]
 
     api.current_logger().info('Enabling repos: {}'.format(to_enable))
-    api.current_logger().info('Blocklisting repos: {}'.format(to_blocklist))
-    api.produce(RepositoriesSetupTasks(to_enable=to_enable))
-    api.produce(RepositoriesBlacklisted(repoids=to_blocklist))
+    api.current_logger().info('Blocking repos: {}'.format(to_blocklist))
+    api.produce(RepositoriesSetupTasks(to_enable=to_enable, to_block=to_blocklist))
