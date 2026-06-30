@@ -142,6 +142,10 @@ help:
 	@echo "  test_container_all_no_lint  run tests without linting in all available containers"
 	@echo "  clean_containers            clean all testing and building container images (to force a rebuild for example)"
 	@echo ""
+	@echo "  stubgen                     generates Python type stubs reflecting runtime module layout"
+	@echo "                              - can help make type checking tools and language servers understand module layout"
+	@echo "                              - stubs are static, required occasional regeneration"
+	@echo ""
 	@echo "* Targets test, lint and test_no_lint support environment variables ACTOR and"
 	@echo "  TEST_LIBS."
 	@echo "* If ACTOR=<actor> is specified, targets are run against the specified actor."
@@ -549,5 +553,8 @@ _warn_misssing_repos_if_using_actor:
 		exit 1; \
 	fi
 
-.PHONY: help build clean prepare source srpm copr_build _build_local build_container print_release register install-deps install-deps-fedora  lint test_no_lint test dashboard_data fast_lint _warn_missing_repos_if_using_actor
+stubgen:
+	./utils/stubgen/build_stubs.sh .stubs_tmp typings
+
+.PHONY: help build clean prepare source srpm copr_build _build_local build_container print_release register install-deps install-deps-fedora  lint test_no_lint test dashboard_data fast_lint _warn_missing_repos_if_using_actor stubgen
 .PHONY: test_container test_container_no_lint test_container_all test_container_all_no_lint clean_containers _build_container_image _test_container_ipu dev_test_no_lint
