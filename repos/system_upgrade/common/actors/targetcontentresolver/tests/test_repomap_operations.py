@@ -256,10 +256,9 @@ def mapping_data_for_find_repository_equiv():
         make_pesid_repo('pesid1', '7', 'pesid1-repoid', channel='e4s', rhui='aws'),
         make_pesid_repo('pesid2', '8', 'pesid2-repoid1-centos', distro='centos'),
         make_pesid_repo('pesid2', '8', 'pesid2-repoid1'),
-        make_pesid_repo('pesid2', '8', 'pesid2-repoid2-s390x', arch='s390x'),
         # This repository is a better candidate than the full match equivalent, but _find_repository_target_equivalent
         # should not take into account channel priorities
-        make_pesid_repo('pesid2', '8', 'pesid2-repoid2', arch='x86_64', channel='eus'),
+        make_pesid_repo('pesid2', '8', 'pesid2-repoid2', channel='eus'),
         make_pesid_repo('pesid2', '8', 'pesid2-repoid3-srpm', repo_type='srpm'),
         make_pesid_repo('pesid2', '8', 'pesid2-repoid4.1', rhui='aws'),
         make_pesid_repo('pesid2', '8', 'pesid2-repoid4.2', channel='eus', rhui='aws'),
@@ -323,13 +322,13 @@ def test_find_repository_target_equivalent_fallback_to_default(monkeypatch,
 
     fail_description = (
         'The _find_repository_target_equivalent failed to find repository with some of the fallback channels.')
-    expected_target_equivalent = repositories[7]
+    expected_target_equivalent = repositories[6]
     actual_target_equivalent = handler._find_repository_target_equivalent(repositories[1], 'pesid2')
     assert expected_target_equivalent == actual_target_equivalent, fail_description
 
     handler.set_default_channels(['eus', 'ga'])
 
-    expected_target_equivalent = repositories[8]
+    expected_target_equivalent = repositories[7]
     actual_target_equivalent = handler._find_repository_target_equivalent(repositories[1], 'pesid2')
     assert expected_target_equivalent == actual_target_equivalent, fail_description
 
@@ -342,12 +341,12 @@ def test_find_repository_target_equivalent_no_target_equivalent(monkeypatch,
     Verifies that the  does not crash when there is no target repository that is equivalent to the
     source repository.
     """
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(arch='s390x', src_ver='7.9', dst_ver='8.4'))
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(arch='x86_64', src_ver='7.9', dst_ver='8.4'))
     handler = RepoMapDataHandler(mapping_data_for_find_repository_equiv)
 
     fail_description = 'The _find_repository_target_equivalent found target equivalent when there are none.'
 
-    repository_with_no_equivalent = make_pesid_repo('pesid1', '7', 'pesid1-some-repoid', arch='s390x', rhui='aws')
+    repository_with_no_equivalent = make_pesid_repo('pesid1', '7', 'pesid1-some-repoid', rhui='azure')
     target_equivalent = handler._find_repository_target_equivalent(repository_with_no_equivalent, 'pesid2')
     assert target_equivalent is None, fail_description
 
@@ -371,14 +370,14 @@ def test_get_mapped_target_pesid_repos(monkeypatch, mapping_data_for_find_reposi
     target_pesid_repos_map = handler.get_mapped_target_pesid_repos(repositories[0])
     expected_pesid_to_best_candidate_map = {
         'pesid2': repositories[3],
-        'pesid3': repositories[9]
+        'pesid3': repositories[8]
     }
     assert target_pesid_repos_map == expected_pesid_to_best_candidate_map, fail_description
 
     # The pesid3 does not have an equivalent for provided source pesid repository (due to not having any rhui repos)
     target_pesid_repos_map = handler.get_mapped_target_pesid_repos(repositories[1])
     expected_pesid_to_best_candidate_map = {
-        'pesid2': repositories[7],
+        'pesid2': repositories[6],
         'pesid3': None
     }
     assert target_pesid_repos_map == expected_pesid_to_best_candidate_map, fail_description
@@ -404,7 +403,7 @@ def test_get_mapped_target_repoids(monkeypatch, mapping_data_for_find_repository
         'to be enabled on the target system.')
     # Both pesid2 and pesid3 have an equivalent for provided source pesid repository
     actual_target_repoids = handler.get_mapped_target_repoids(repositories[0])
-    expected_target_repoids = {repositories[3].repoid, repositories[9].repoid}
+    expected_target_repoids = {repositories[3].repoid, repositories[8].repoid}
     assert len(actual_target_repoids) == len(expected_target_repoids), fail_description
     assert set(actual_target_repoids) == expected_target_repoids, fail_description
 
