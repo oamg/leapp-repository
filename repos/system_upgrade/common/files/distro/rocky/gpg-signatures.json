@@ -1,0 +1,11 @@
+{
+    "keys": {
+        "15af5dac6d745a60": ["gpg-pubkey-6d745a60-60287f36"],
+        "702d426d350d275d": ["gpg-pubkey-350d275d-6279464b"],
+        "5b106c736fedfc85": ["gpg-pubkey-6fedfc85-682ae1a9"]
+    },
+    "obsoleted-keys": {
+        "9": ["gpg-pubkey-6d745a60-60287f36"],
+        "10": ["gpg-pubkey-350d275d-6279464b"]
+    }
+}

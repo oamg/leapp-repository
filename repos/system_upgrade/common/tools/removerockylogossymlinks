@@ -1,0 +1,13 @@
+#!/usr/bin/bash -e
+
+handle_symlink() {
+    if [ ! -L "$1" ]; then
+        return
+    fi
+
+    unlink "$1"
+
+    return 0
+}
+
+handle_symlink /usr/share/redhat-logos
