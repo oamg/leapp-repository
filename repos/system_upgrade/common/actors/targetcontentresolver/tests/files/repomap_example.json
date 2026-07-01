@@ -44,6 +44,19 @@
       ]
     },
     {
+      "pesid": "pesid1",
+      "entries": [
+        {
+          "major_version": "7",
+          "repoid": "some-rhel-7-repoid",
+          "arch": "aarch64",
+          "repo_type": "rpm",
+          "channel": "eus",
+          "distro": "rhel"
+        }
+      ]
+    },
+    {
       "pesid": "pesid2",
       "entries": [
         {

@@ -42,17 +42,19 @@ class RepoMapData:
             distro=data['distro'],
         ))
 
-    def get_repositories(self, valid_major_versions, valid_distros):
+    def get_repositories(self, major_versions, distros, arches):
         """
         Get repository entries for the specified major versions and distros
 
-        :return: PESIDRepositoryEntry objects matching the specified major versions and distros
+        :return: PESIDRepositoryEntry objects matching the specified major versions, distros and arches
         :rtype: list[PESIDRepositoryEntry]
         """
         return [
             repo
             for repo in self.repositories
-            if repo.major_version in valid_major_versions and repo.distro in valid_distros
+            if repo.major_version in major_versions
+            and repo.distro in distros
+            and repo.arch in arches
         ]
 
     def _add_mapping(
@@ -213,7 +215,6 @@ def load_repositories_mapping(read_repofile_func=_read_repofile):
     :rtype: RepositoriesMapping
     :raises StopActorExecutionError: When cannot produce valid RepositoriesMapping
     """
-    # TODO: add filter based on the current arch
 
     json_data = read_repofile_func(REPOMAP_FILE)
     try:
@@ -232,7 +233,12 @@ def load_repositories_mapping(read_repofile_func=_read_repofile):
             )
             _inhibit_upgrade(err_message.format(src_ver, dst_ver))
 
-        repos = repomap_data.get_repositories([src_ver, dst_ver], [src_distro, dst_distro])
+        repos = repomap_data.get_repositories(
+            [src_ver, dst_ver],
+            [src_distro, dst_distro],
+            [api.current_actor().configuration.architecture],
+        )
+
         repositories_mapping = RepositoriesMapping(mapping=mapping, repositories=repos)
         api.produce(repositories_mapping)
     except ModelViolationError as err:
