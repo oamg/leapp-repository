@@ -97,6 +97,35 @@ _DISTRO_REPOFILES_MAP = {
             '/etc/yum.repos.d/almalinux-rt.repo': (ARCH_X86_64,),
         },
     },
+    'rocky': {
+        '8': {
+            '/etc/yum.repos.d/Rocky-AppStream.repo': ARCH_ACCEPTED,
+            '/etc/yum.repos.d/Rocky-BaseOS.repo': ARCH_ACCEPTED,
+            '/etc/yum.repos.d/Rocky-Debuginfo.repo': ARCH_ACCEPTED,
+            '/etc/yum.repos.d/Rocky-Devel.repo': ARCH_ACCEPTED,
+            '/etc/yum.repos.d/Rocky-Extras.repo': ARCH_ACCEPTED,
+            '/etc/yum.repos.d/Rocky-HighAvailability.repo': ARCH_ACCEPTED,
+            '/etc/yum.repos.d/Rocky-Media.repo': ARCH_ACCEPTED,
+            '/etc/yum.repos.d/Rocky-NFV.repo': ARCH_ACCEPTED,
+            '/etc/yum.repos.d/Rocky-Plus.repo': ARCH_ACCEPTED,
+            '/etc/yum.repos.d/Rocky-PowerTools.repo': ARCH_ACCEPTED,
+            '/etc/yum.repos.d/Rocky-ResilientStorage.repo': ARCH_ACCEPTED,
+            '/etc/yum.repos.d/Rocky-RT.repo': ARCH_ACCEPTED,
+            '/etc/yum.repos.d/Rocky-Sources.repo': ARCH_ACCEPTED,
+        },
+        '9': {
+            '/etc/yum.repos.d/rocky.repo': ARCH_ACCEPTED,
+            '/etc/yum.repos.d/rocky-addons.repo': ARCH_ACCEPTED,
+            '/etc/yum.repos.d/rocky-extras.repo': ARCH_ACCEPTED,
+            '/etc/yum.repos.d/rocky-devel.repo': ARCH_ACCEPTED,
+        },
+        '10': {
+            '/etc/yum.repos.d/rocky.repo': ARCH_ACCEPTED,
+            '/etc/yum.repos.d/rocky-addons.repo': ARCH_ACCEPTED,
+            '/etc/yum.repos.d/rocky-extras.repo': ARCH_ACCEPTED,
+            '/etc/yum.repos.d/rocky-devel.repo': ARCH_ACCEPTED,
+        },
+    },
 }
 
 
@@ -236,6 +265,7 @@ def distro_id_to_pretty_name(distro_id):
         "rhel": "Red Hat Enterprise Linux",
         "centos": "CentOS Stream",
         "almalinux": "AlmaLinux",
+        "rocky": "Rocky Linux",
     }[distro_id]
 
 
@@ -249,7 +279,8 @@ def _distro_id_to_report_name(distro_id):
     return {
         "rhel": "RHEL",
         "centos": "CentOS Stream",
-        "almalinux": "AlmaLinux"
+        "almalinux": "AlmaLinux",
+        "rocky": "Rocky Linux"
     }[distro_id]
 
 

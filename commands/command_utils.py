@@ -37,12 +37,14 @@ class DistroIDs(str, Enum):
     RHEL = 'rhel'
     CENTOS = 'centos'
     ALMALINUX = 'almalinux'
+    ROCKY = 'rocky'
 
 
 DISTRO_NAMES = {
     DistroIDs.RHEL: 'Red Hat Enterprise Linux',
     DistroIDs.CENTOS: 'CentOS Stream',
     DistroIDs.ALMALINUX: 'AlmaLinux',
+    DistroIDs.ROCKY: 'Rocky Linux',
 }
 """
 Maps distro IDs to their user-facing display names (matching NAME in /etc/os-release).
@@ -57,6 +59,7 @@ _DISTRO_VERSION_FORMATS = {
     DistroIDs.RHEL: VersionFormats.MAJOR_MINOR,
     DistroIDs.CENTOS: VersionFormats.MAJOR_ONLY,
     DistroIDs.ALMALINUX: VersionFormats.MAJOR_MINOR,
+    DistroIDs.ROCKY: VersionFormats.MAJOR_MINOR,
 }
 """
 Maps distro ID to the expected OS version format.
