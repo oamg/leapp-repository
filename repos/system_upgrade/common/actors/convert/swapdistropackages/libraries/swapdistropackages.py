@@ -54,6 +54,26 @@ _CONFIG = {
             "epel-release",
         },
     },
+    ("rocky", "rhel"): {
+        "swap": {
+            "rocky-logos": "redhat-logos",
+            "rocky-logos-httpd": "redhat-logos-httpd",
+            "rocky-logos-ipa": "redhat-logos-ipa",
+            "rocky-indexhtml": "redhat-indexhtml",
+            "rocky-backgrounds": "redhat-backgrounds",
+            "rocky-release": "redhat-release",
+        },
+        "remove": {
+            "rocky-repos",
+            "rocky-gpg-keys",
+            "rocky-backgrounds-extras",
+
+            "rocky-release-*",
+            "centos-release-*",
+            "elrepo-release",
+            "epel-release",
+        },
+    },
 }
 
 
