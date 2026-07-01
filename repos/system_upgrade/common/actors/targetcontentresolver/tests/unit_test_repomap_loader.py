@@ -21,17 +21,93 @@ def adjust_cwd():
     os.chdir(previous_cwd)
 
 
+RHEL_REPOS = [
+    PESIDRepositoryEntry(
+        pesid='pesid1',
+        major_version='7',
+        repoid='some-rhel-7-repoid',
+        arch='x86_64',
+        repo_type='rpm',
+        channel='eus',
+        rhui='',
+        distro='rhel',
+    ),
+    PESIDRepositoryEntry(
+        pesid='pesid2',
+        major_version='8',
+        repoid='some-rhel-8-repoid1',
+        arch='x86_64',
+        repo_type='rpm',
+        channel='eus',
+        rhui='',
+        distro='rhel',
+    ),
+    PESIDRepositoryEntry(
+        pesid='pesid3',
+        major_version='8',
+        repoid='some-rhel-8-repoid2',
+        arch='x86_64',
+        repo_type='rpm',
+        channel='eus',
+        rhui='',
+        distro='rhel',
+    ),
+]
+
+CENTOS_REPOS = [
+    PESIDRepositoryEntry(
+        pesid='pesid6',
+        major_version='7',
+        repoid='some-centos-9-repoid1',
+        arch='x86_64',
+        repo_type='rpm',
+        channel='ga',
+        rhui='',
+        distro='centos',
+        ),
+    PESIDRepositoryEntry(
+        pesid='pesid7',
+        major_version='8',
+        repoid='some-centos-10-repoid1',
+        arch='x86_64',
+        repo_type='rpm',
+        channel='ga',
+        rhui='',
+        distro='centos',
+    ),
+]
+
+ALMA_REPOS = [
+    PESIDRepositoryEntry(
+        pesid='pesid8',
+        major_version='8',
+        repoid='some-almalinux-8-repoid1',
+        arch='x86_64',
+        repo_type='rpm',
+        channel='ga',
+        rhui='',
+        distro='almalinux',
+    ),
+]
+
+
 @pytest.mark.parametrize(
-    'target_distro, expect',
+    'src_distro, dst_distro, expect_mapping, expect_repos',
     [
-        ('rhel', {'pesid2', 'pesid3'}),
+        ('rhel', 'rhel', {'pesid2', 'pesid3'}, RHEL_REPOS),
         # has specific mapping
-        ('centos', {'pesid6', 'pesid7'}),
+        ('centos', 'centos', {'pesid6', 'pesid7'}, CENTOS_REPOS),
         # no specific mapping, should use default, same as rhel
-        ('almalinux', {'pesid2', 'pesid3'}),
+        ('almalinux', 'almalinux', {'pesid2', 'pesid3'}, ALMA_REPOS),
+        # conversions
+        ('centos', 'rhel', {'pesid2', 'pesid3'}, RHEL_REPOS + CENTOS_REPOS),
+        ('rhel', 'centos', {'pesid6', 'pesid7'}, RHEL_REPOS + CENTOS_REPOS),
+        ('almalinux', 'rhel', {'pesid2', 'pesid3'}, RHEL_REPOS + ALMA_REPOS),
     ]
 )
-def test_scan_existing_valid_data(monkeypatch, adjust_cwd, target_distro, expect):
+def test_scan_existing_valid_data(
+    monkeypatch, adjust_cwd, src_distro, dst_distro, expect_mapping, expect_repos
+):
     """
     Tests whether an existing valid repomap file is loaded correctly.
     """
@@ -41,7 +117,9 @@ def test_scan_existing_valid_data(monkeypatch, adjust_cwd, target_distro, expect
     monkeypatch.setattr(
         api,
         "current_actor",
-        CurrentActorMocked(src_ver="7.9", dst_ver="8.4", dst_distro=target_distro),
+        CurrentActorMocked(
+            src_ver="7.9", dst_ver="8.4", src_distro=src_distro, dst_distro=dst_distro
+        ),
     )
     monkeypatch.setattr(api, 'produce', produce_mocked())
 
@@ -64,78 +142,15 @@ def test_scan_existing_valid_data(monkeypatch, adjust_cwd, target_distro, expect
     assert len(repo_mapping.mapping) == 1, fail_description
     fail_description = 'Actor failed to load IPU-relevant mapping data correctly.'
     assert repo_mapping.mapping[0].source == 'pesid1', fail_description
-    assert set(repo_mapping.mapping[0].target) == expect, fail_description
+    assert set(repo_mapping.mapping[0].target) == expect_mapping, fail_description
 
     # 2. Verify that only repositories valid for the current IPU are produced
     pesid_repos = repo_mapping.repositories
     fail_description = 'Actor produced incorrect number of IPU-relevant pesid repos.'
-    assert len(pesid_repos) == 6, fail_description
-
-    expected_pesid_repos = [
-        PESIDRepositoryEntry(
-            pesid='pesid1',
-            major_version='7',
-            repoid='some-rhel-7-repoid',
-            arch='x86_64',
-            repo_type='rpm',
-            channel='eus',
-            rhui='',
-            distro='rhel',
-        ),
-        PESIDRepositoryEntry(
-            pesid='pesid2',
-            major_version='8',
-            repoid='some-rhel-8-repoid1',
-            arch='x86_64',
-            repo_type='rpm',
-            channel='eus',
-            rhui='',
-            distro='rhel',
-        ),
-        PESIDRepositoryEntry(
-            pesid='pesid3',
-            major_version='8',
-            repoid='some-rhel-8-repoid2',
-            arch='x86_64',
-            repo_type='rpm',
-            channel='eus',
-            rhui='',
-            distro='rhel',
-        ),
-        PESIDRepositoryEntry(
-            pesid='pesid6',
-            major_version='7',
-            repoid='some-centos-9-repoid1',
-            arch='x86_64',
-            repo_type='rpm',
-            channel='ga',
-            rhui='',
-            distro='centos',
-        ),
-        PESIDRepositoryEntry(
-            pesid='pesid7',
-            major_version='8',
-            repoid='some-centos-10-repoid1',
-            arch='x86_64',
-            repo_type='rpm',
-            channel='ga',
-            rhui='',
-            distro='centos',
-        ),
-        PESIDRepositoryEntry(
-            pesid='pesid8',
-            major_version='8',
-            repoid='some-almalinux-8-repoid1',
-            arch='x86_64',
-            repo_type='rpm',
-            channel='ga',
-            rhui='',
-            distro='almalinux',
-        ),
-    ]
+    assert len(pesid_repos) == len(expect_repos), fail_description
 
     fail_description = 'Expected pesid repo is not present in the deserialization output.'
-    for expected_pesid_repo in expected_pesid_repos:
+    for expected_pesid_repo in expect_repos:
         assert expected_pesid_repo in pesid_repos, fail_description
 
 
