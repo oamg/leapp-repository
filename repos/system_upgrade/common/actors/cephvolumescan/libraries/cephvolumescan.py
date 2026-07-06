@@ -57,6 +57,16 @@ def get_ceph_lvm_list():
     return json_output
 
 
+def _get_luks_uuid(lv_path):
+    try:
+        output = run(['blkid', '-s', 'UUID', '-o', 'value', lv_path])
+    except CalledProcessError:
+        api.current_logger().warning('Failed to get LUKS UUID for %s', lv_path)
+        return None
+    uuid = output['stdout'].strip()
+    return uuid if uuid else None
+
+
 def encrypted_osds_list():
     result = []
     if os.path.isfile(CEPH_CONF):
@@ -64,7 +74,12 @@ def encrypted_osds_list():
         if output is not None:
             try:
                 for key in output:
-                    result.extend([element['lv_uuid'] for element in output[key] if element['tags']['ceph.encrypted']])
+                    for element in output[key]:
+                        if element['tags']['ceph.encrypted']:
+                            lv_path = '/dev/{}/{}'.format(element['vg_name'], element['lv_name'])
+                            luks_uuid = _get_luks_uuid(lv_path)
+                            if luks_uuid:
+                                result.append(luks_uuid)
             except KeyError:
                 # TODO: possibly raise a report item with a medium risk factor
                 # TODO: possibly create list of problematic osds, extend the cephinfo
