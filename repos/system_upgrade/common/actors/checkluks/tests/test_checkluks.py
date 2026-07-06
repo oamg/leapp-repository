@@ -120,13 +120,14 @@ def test_actor_with_luks2_clevis_tpm_token(monkeypatch, current_actor_context):
 
 def test_actor_with_luks2_ceph(monkeypatch, current_actor_context):
     monkeypatch.setattr(checkluks, 'get_source_major_version', lambda: '8')
-    ceph_volume = ['sda']
+    luks_uuid = '0edb8c11-1a04-4abd-a12d-93433ee7b8d8'
+    ceph_volume = [luks_uuid]
     current_actor_context.feed(CephInfo(encrypted_volumes=ceph_volume))
     luks_dump = LuksDump(
         version=2,
-        uuid='0edb8c11-1a04-4abd-a12d-93433ee7b8d8',
-        device_path='/dev/sda',
-        device_name='sda',
+        uuid=luks_uuid,
+        device_path='/dev/dm-3',
+        device_name='ceph--xxx-osd--block--yyy',
         tokens=[LuksToken(token_id=0, keyslot=1, token_type='clevis')])
     current_actor_context.feed(LuksDumps(dumps=[luks_dump]))
     current_actor_context.run()

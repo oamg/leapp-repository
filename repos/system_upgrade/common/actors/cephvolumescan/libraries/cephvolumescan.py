@@ -57,17 +57,32 @@ def get_ceph_lvm_list():
     return json_output
 
 
+def _get_luks_uuid(lv_path):
+    try:
+        output = run(['blkid', '-s', 'UUID', '-o', 'value', lv_path])
+    except CalledProcessError:
+        api.current_logger().warning('Failed to get LUKS UUID for %s', lv_path)
+        return None
+    uuid = output['stdout'].strip()
+    return uuid if uuid else None
+
+
 def encrypted_osds_list():
     result = []
-    if os.path.isfile(CEPH_CONF):
-        output = get_ceph_lvm_list()
-        if output is not None:
-            try:
-                for key in output:
-                    result.extend([element['lv_uuid'] for element in output[key] if element['tags']['ceph.encrypted']])
-            except KeyError:
-                # TODO: possibly raise a report item with a medium risk factor
-                # TODO: possibly create list of problematic osds, extend the cephinfo
-                # #     model to include the list and then report it.
-                api.current_logger().warning('ceph-osd is installed but no encrypted osd has been found')
+    if not os.path.isfile(CEPH_CONF):
+        return result
+    output = get_ceph_lvm_list()
+    if output is None:
+        return result
+    try:
+        for key in output:
+            for element in output[key]:
+                if not element['tags']['ceph.encrypted']:
+                    continue
+                lv_path = '/dev/{}/{}'.format(element['vg_name'], element['lv_name'])
+                luks_uuid = _get_luks_uuid(lv_path)
+                if luks_uuid:
+                    result.append(luks_uuid)
+    except KeyError:
+        api.current_logger().warning('ceph-osd is installed but no encrypted osd has been found')
     return result

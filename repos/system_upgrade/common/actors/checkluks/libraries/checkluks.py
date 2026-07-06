@@ -153,7 +153,7 @@ def check_invalid_luks_devices():
     ceph_vol = _get_ceph_volumes()
     for luks_dump in luks_dumps.dumps:
         # if the device is managed by ceph, don't inhibit
-        if luks_dump.device_name in ceph_vol:
+        if luks_dump.uuid in ceph_vol:
             api.current_logger().debug('Skipping LUKS CEPH volume: {}'.format(luks_dump.device_name))
             continue
 

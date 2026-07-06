@@ -112,15 +112,32 @@ def test_get_ceph_lvm_list(m_run, m_osd_container, m_has_package):
     assert cephvolumescan.get_ceph_lvm_list() == CEPH_LVM_LIST
 
 
+BLKID_UUIDS = {
+    '/dev/ceph-a696c40d-6b1d-448d-a40e-fadca22b64bc/osd-block-c5215ba7-517b-45c7-88df-37a03eeaa0e9':
+        'aaa11111-1111-1111-1111-111111111111',
+    '/dev/ceph-b78309b3-bd80-4399-87a3-ac647b216b63/osd-db-b04857a0-a2a2-40c3-a490-cbe1f892a76c':
+        'bbb22222-2222-2222-2222-222222222222',
+    '/dev/ceph-e3e0345b-8be1-40a7-955a-378ba967f954/osd-block-477c303f-5eaf-4be8-b5cc-f6073eb345bf':
+        'ccc33333-3333-3333-3333-333333333333',
+}
+
+
+def _mock_run_blkid(cmd):
+    lv_path = cmd[-1]
+    return {'stdout': BLKID_UUIDS[lv_path] + '\n'}
+
+
+@patch('leapp.libraries.actor.cephvolumescan.run')
 @patch('leapp.libraries.actor.cephvolumescan.os.path.isfile')
 @patch('leapp.libraries.actor.cephvolumescan.get_ceph_lvm_list')
-def test_encrypted_osds_list(m_get_ceph_lvm_list, m_isfile):
+def test_encrypted_osds_list(m_get_ceph_lvm_list, m_isfile, m_run):
 
     m_get_ceph_lvm_list.return_value = CEPH_LVM_LIST
     m_isfile.return_value = True
+    m_run.side_effect = _mock_run_blkid
 
     assert cephvolumescan.encrypted_osds_list() == [
-        'Tyc0TH-RDxr-ebAF-9mWF-Kh5R-YnvJ-cEcGVn',
-        'zcvGix-drzz-JwzP-6ktU-Od6W-N5jL-kxRFa3',
-        'Mz1dep-D715-Wxh1-zUuS-0cOA-mKXE-UxaEM3'
+        'aaa11111-1111-1111-1111-111111111111',
+        'bbb22222-2222-2222-2222-222222222222',
+        'ccc33333-3333-3333-3333-333333333333'
     ]
