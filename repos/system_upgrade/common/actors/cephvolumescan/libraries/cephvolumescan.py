@@ -79,7 +79,7 @@ def encrypted_osds_list():
             for element in output[key]:
                 if not element['tags']['ceph.encrypted']:
                     continue
-                lv_path = '/dev/{}/{}'.format(element['vg_name'], element['lv_name'])
+                lv_path = os.path.join('/dev', element['vg_name'], element['lv_name'])
                 luks_uuid = _get_luks_uuid(lv_path)
                 if luks_uuid:
                     result.append(luks_uuid)
