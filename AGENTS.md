@@ -71,6 +71,8 @@ Load the relevant skill for the task at hand:
 - **Run tests / lint** → `skills/leapp-test-runner/`
 - **Write or fix unit tests** → `skills/leapp-unit-tests/`
 - **Develop or modify actors** → `skills/leapp-actor-dev/`
+- **Draft commit / PR text** → `skills/leapp-commit-pr-text/`
+- **Review code / PRs** → `skills/leapp-code-review/`
 
 
 ## Definition of Done
