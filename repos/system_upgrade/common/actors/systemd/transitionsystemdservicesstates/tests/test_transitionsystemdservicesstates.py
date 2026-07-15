@@ -129,43 +129,47 @@ def test_service_preset_missing_presets(presets):
 
 
 def test_tasks_produced_reports_created(monkeypatch):
+    """
+    Test that reports are created and contain the right services
+    """
     services_source = [
         SystemdServiceFile(name="rsyncd.service", state="enabled"),
-        SystemdServiceFile(name="test.service", state="enabled"),
+        SystemdServiceFile(name="all_enabled.service", state="enabled"),
         SystemdServiceFile(name="newly_enabled.service", state="disabled"),
+        SystemdServiceFile(name="enabled_by_preset.service", state="disabled"),
+        SystemdServiceFile(name="enabled_despite_target_preset_disable.service", state="enabled"),
     ]
-    service_info_source = SystemdServicesInfoSource(service_files=services_source)
-
     presets_source = [
         SystemdServicePreset(service="rsyncd.service", state="enable"),
-        SystemdServicePreset(service="test.service", state="enable"),
+        SystemdServicePreset(service="all_enabled.service", state="enable"),
         SystemdServicePreset(service="newly_enabled.service", state="disable"),
+        SystemdServicePreset(service="enabled_by_preset.service", state="disable"),
+        SystemdServicePreset(service="enabled_despite_target_preset_disable.service", state="enable"),
     ]
-    preset_info_source = SystemdServicesPresetInfoSource(presets=presets_source)
-
     services_target = [
         SystemdServiceFile(name="rsyncd.service", state="disabled"),
-        SystemdServiceFile(name="test.service", state="enabled"),
+        SystemdServiceFile(name="all_enabled.service", state="enabled"),
         SystemdServiceFile(name="newly_enabled.service", state="enabled"),
+        SystemdServiceFile(name="enabled_by_preset.service", state="disabled"),
+        SystemdServiceFile(name="enabled_despite_target_preset_disable.service", state="disabled"),
     ]
-    service_info_target = SystemdServicesInfoTarget(service_files=services_target)
-
     presets_target = [
         SystemdServicePreset(service="rsyncd.service", state="enable"),
-        SystemdServicePreset(service="test.service", state="enable"),
+        SystemdServicePreset(service="all_enabled.service", state="enable"),
         SystemdServicePreset(service="newly_enabled.service", state="enable"),
+        SystemdServicePreset(service="enabled_by_preset.service", state="enable"),
+        SystemdServicePreset(service="enabled_despite_target_preset_disable.service", state="disable"),
     ]
-    preset_info_target = SystemdServicesPresetInfoTarget(presets=presets_target)
 
     monkeypatch.setattr(
         api,
         "current_actor",
         CurrentActorMocked(
             msgs=[
-                service_info_source,
-                service_info_target,
-                preset_info_source,
-                preset_info_target,
+                SystemdServicesInfoSource(service_files=services_source),
+                SystemdServicesInfoTarget(service_files=services_target),
+                SystemdServicesPresetInfoSource(presets=presets_source),
+                SystemdServicesPresetInfoTarget(presets=presets_target),
             ]
         ),
     )
@@ -173,34 +177,46 @@ def test_tasks_produced_reports_created(monkeypatch):
     created_reports = create_report_mocked()
     monkeypatch.setattr(reporting, "create_report", created_reports)
 
-    expected_tasks = SystemdServicesTasks(to_enable=["rsyncd.service"], to_disable=[])
     transitionsystemdservicesstates.process()
 
     assert created_reports.called == 2
+    reports = {r["title"]: r["summary"] for r in created_reports.reports}
+
+    newly_enabled_summary = reports["Some systemd services were newly enabled"]
+    assert "newly_enabled.service" in newly_enabled_summary
+    assert "enabled_by_preset.service" in newly_enabled_summary
+    for s in ["rsyncd.service", "all_enabled.service", "enabled_despite_target_preset_disable.service"]:
+        assert s not in newly_enabled_summary
+
+    kept_enabled_summary = reports["Previously enabled systemd services were kept enabled"]
+    assert "enabled_despite_target_preset_disable.service" in kept_enabled_summary
+    # rsyncd is covered by the generic part of the kept enabled report, not listed explicitly
+    for s in ["rsyncd.service", "all_enabled.service", "newly_enabled.service", "enabled_by_preset.service"]:
+        assert s not in kept_enabled_summary
+
     assert api.produce.called
-    assert api.produce.model_instances[0].to_enable == expected_tasks.to_enable
-    assert api.produce.model_instances[0].to_disable == expected_tasks.to_disable
+    produced_tasks = api.produce.model_instances[0]
+    assert produced_tasks.to_enable == [
+        "rsyncd.service",
+        "enabled_by_preset.service",
+        "enabled_despite_target_preset_disable.service",
+    ]
+    assert produced_tasks.to_disable == []
 
 
 @pytest.mark.parametrize(
-    "tasks, expect_extended_summary",
+    "services, expect_extended_summary",
     (
-        (
-            SystemdServicesTasks(
-                to_enable=["test.service", "other.service"],
-                to_disable=["another.service"],
-            ),
-            True,
-        ),
-        (SystemdServicesTasks(), False),
-        (SystemdServicesTasks(to_enable=[], to_disable=["some.service"]), False),
+        (['explictly-enabled.service', 'explictly-enabled2.service'], True),
+        (['explictly-enabled.service'], True),
+        ([], False),
     ),
 )
-def test_report_kept_enabled(monkeypatch, tasks, expect_extended_summary):
+def test_report_kept_enabled(monkeypatch, services, expect_extended_summary):
     created_reports = create_report_mocked()
     monkeypatch.setattr(reporting, "create_report", created_reports)
 
-    transitionsystemdservicesstates._report_kept_enabled(tasks)
+    transitionsystemdservicesstates._report_kept_enabled(services)
 
     extended_summary_str = (
         "The following services were originally disabled by preset on the"
@@ -210,7 +226,7 @@ def test_report_kept_enabled(monkeypatch, tasks, expect_extended_summary):
     assert created_reports.called == 1
     if expect_extended_summary:
         assert extended_summary_str in created_reports.report_fields["summary"]
-        all(s in created_reports.report_fields['summary'] for s in tasks.to_enable)
+        assert all(s in created_reports.report_fields['summary'] for s in services)
     else:
         assert extended_summary_str not in created_reports.report_fields["summary"]
 
