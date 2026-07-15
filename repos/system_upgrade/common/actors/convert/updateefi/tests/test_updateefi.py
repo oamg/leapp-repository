@@ -333,7 +333,7 @@ class TestRemoveSourceEFIDir:
 
         mock_rmdir.assert_called_once_with(self.SOURCE_EFIDIR)
         mock_exists.assert_called_once_with(self.SOURCE_EFIDIR)
-        msg = "Didn't remove the source EFI directory {}, it does not exist".format(
+        msg = "Coudln't remove the source EFI directory {}, it's not empty".format(
             self.SOURCE_EFIDIR
         )
         assert msg in mock_logger.dbgmsg[0]

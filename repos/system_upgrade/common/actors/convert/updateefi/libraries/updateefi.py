@@ -119,7 +119,7 @@ def _try_remove_source_efi_dir():
     except OSError as e:
         if e.errno == errno.ENOTEMPTY:
             api.current_logger().debug(
-                "Didn't remove the source EFI directory {}, it does not exist".format(
+                "Coudln't remove the source EFI directory {}, it's not empty".format(
                     efi_dir_source
                 )
             )
@@ -127,7 +127,7 @@ def _try_remove_source_efi_dir():
                 "During the upgrade, the EFI binaries and grub configuration files"
                 f" were migrated from the source OS EFI directory {efi_dir_source}"
                 f" to the target OS EFI directory {target_efi_dir}."
-                f" Leftover files were detected in {target_efi_dir}, review them"
+                f" Leftover files were detected in {efi_dir_source}, review them"
                 " and migrate them manually."
             )
             reporting.create_report([
