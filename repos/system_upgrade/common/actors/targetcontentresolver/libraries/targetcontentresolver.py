@@ -40,7 +40,7 @@ class InputData():
                  message='Cannot calculate target content requirements',
                  details={
                      'details': 'Some of required leapp messages are missing.',
-                     'missing': [i.__name__ for i in self._missing_messages]
+                     'missing': ', '.join(i.__name__ for i in self._missing_messages)
                  }
             )
 
