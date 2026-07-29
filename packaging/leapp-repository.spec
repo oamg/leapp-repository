@@ -299,6 +299,11 @@ do
     ln -s  %{repositorydir}/$REPOSITORY  %{buildroot}%{_sysconfdir}/leapp/repos.d/$REPOSITORY
 done;
 
+# Enable custom repository discovery - any leapp repository created under
+# custom-repositories/ will be automatically discovered by leapp without
+# requiring manual symlink creation.
+ln -s  %{custom_repositorydir}  %{buildroot}%{_sysconfdir}/leapp/repos.d/custom-repositories
+
 # __python2 could be problematic on systems with Python3 only, but we have
 # no choice as __python became error on F33+:
 #   https://fedoraproject.org/wiki/Changes/PythonMacroError
