@@ -72,18 +72,24 @@ git repo and register related leapp repositories using `snactor` manually. See
    only there.
    ```
 
-5. Create a symlink in `/etc/leapp/repos.d/` to register your repository for leapp:
+5. If you do not find an `/etc/leapp/repos.d/custom-repositories` symlink on
+   the system, create it manually:
    ```shell
-   ln -s /usr/share/leapp-repository/custom-repositories/<repository_name> /etc/leapp/repos.d/
+   ln -s /usr/share/leapp-repository/custom-repositories /etc/leapp/repos.d/custom-repositories
    ```
+
+   This symlink ensures that any leapp repository created under
+   `/usr/share/leapp-repository/custom-repositories/` is discovered by leapp
+   without any additional steps.
 
    ```{note}
-   This step is required to be done just on the system where the custom repository
-   is installed so leapp will discover the repository.
+   The symlink is nowadays part of upstream development packages and will be
+   part of `leapp-upgrade-*` RPM packages of v0.26.0 and newer.
    ```
 
-Note that such a created leapp repository can be installed to other systems as it is,
-just the symlink needs to be always created as well (step `5`).
+Note that such a created leapp repository can be installed to other systems as it is.
+Ensure the target system has the symlink (step 5) and the repository is placed under
+`/usr/share/leapp-repository/custom-repositories/`.
 
 ## Create custom actor
 
