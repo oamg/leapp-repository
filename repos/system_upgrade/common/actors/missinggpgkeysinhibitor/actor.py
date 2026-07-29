@@ -2,6 +2,7 @@ from leapp.actors import Actor
 from leapp.libraries.actor import missinggpgkey
 from leapp.models import (
     DNFWorkaround,
+    InstalledRPM,
     TargetUserSpaceInfo,
     TMPTargetRepositoriesFacts,
     TrustedGpgKeys,
@@ -28,6 +29,7 @@ class MissingGpgKeysInhibitor(Actor):
 
     name = 'missing_gpg_keys_inhibitor'
     consumes = (
+        InstalledRPM,
         TrustedGpgKeys,
         TMPTargetRepositoriesFacts,
         TargetUserSpaceInfo,

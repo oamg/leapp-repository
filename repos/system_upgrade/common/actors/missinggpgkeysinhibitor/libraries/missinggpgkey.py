@@ -4,6 +4,7 @@ import re
 import shutil
 import tempfile
 
+from leapp.libraries.common.rpms import has_package
 from six.moves import urllib
 
 from leapp import reporting
@@ -13,6 +14,7 @@ from leapp.libraries.common.gpg import get_gpg_fp_from_file, get_path_to_gpg_cer
 from leapp.libraries.stdlib import api
 from leapp.models import (
     DNFWorkaround,
+    InstalledRPM,
     TargetUserSpaceInfo,
     TMPTargetRepositoriesFacts,
     TrustedGpgKeys,
@@ -261,12 +263,28 @@ def _report_repos_missing_keys(repos):
     )
 
 
-def register_dnfworkaround():
+def register_dnfworkarounds():
     api.produce(DNFWorkaround(
         display_name='import trusted gpg keys to RPM DB',
         script_path=api.current_actor().get_common_tool_path('importrpmgpgkeys'),
         script_args=[get_path_to_gpg_certs()],
     ))
+
+    # FIXME: This is stolen form userspacegen.py, because there is no way to
+    # get the information about what the userspace dir is before the target
+    # userspace creator is executed. There should probably be some actor in
+    # checks phase that sends a message about this or maybe a common library
+    # which just defines them as constants as they never really change.
+    # Same for the gpg keys dir.
+    userspace_dir = '/var/lib/leapp/el{}userspace'.format(get_target_major_version())
+    userspace_gpg_keys_dir = '/leapp-trusted-gpg-keys'
+
+    if has_package(InstalledRPM, 'pqrpm'):
+        api.produce(DNFWorkaround(
+            display_name='import trusted gpg keys to RPM DB in target',
+            script_path=api.current_actor().get_common_tool_path('importrpmgpgkeysintarget'),
+            script_args=[userspace_dir, userspace_gpg_keys_dir],
+        ))
 
 
 @suppress_deprecation(TMPTargetRepositoriesFacts)
@@ -362,4 +380,4 @@ def process():
     if repos_missing_keys:
         _report_repos_missing_keys(repos_missing_keys)
 
-    register_dnfworkaround()
+    register_dnfworkarounds()
