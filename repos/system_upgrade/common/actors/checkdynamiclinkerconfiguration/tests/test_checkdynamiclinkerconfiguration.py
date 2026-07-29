@@ -47,6 +47,10 @@ def test_check_ld_so_configuration(monkeypatch, included_configs_modifications, 
 
     assert reporting.create_report.called == 1
     assert 'configuration for dynamic linker' in reporting.create_report.reports[0]['title']
+    external_links = reporting.create_report.reports[0].get('detail', {}).get('external', [])
+    assert any(
+        'https://access.redhat.com/solutions/7130046' in link.get('url', '') for link in external_links
+    )
     summary = reporting.create_report.reports[0]['summary']
 
     if any(included_configs_modifications):
