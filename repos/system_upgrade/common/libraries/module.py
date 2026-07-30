@@ -11,7 +11,7 @@ from leapp.libraries.common.dnflibs import dnfmodule as _dnfmodule
 from leapp.utils.deprecation import deprecated
 
 
-@deprecated(since='2026-03-10', message=(
+@deprecated(since='2026-07-30', message=(
     'This function has been moved to leapp.libraries.common.dnflibs.dnfmodule module. '
     'Please update your imports to use the new location.'
 ))
@@ -22,7 +22,7 @@ def get_modules(base=None):
     return _dnfmodule.get_modules(base)
 
 
-@deprecated(since='2026-03-10', message=(
+@deprecated(since='2026-07-30', message=(
     'This function has been moved to leapp.libraries.common.dnflibs.dnfmodule module. '
     'Please update your imports to use the new location.'
 ))
@@ -33,7 +33,7 @@ def get_enabled_modules():
     return _dnfmodule.get_enabled_modules()
 
 
-@deprecated(since='2026-03-10', message=(
+@deprecated(since='2026-07-30', message=(
     'This function has been moved to leapp.libraries.common.dnflibs.dnfmodule module. '
     'Please update your imports to use the new location.'
 ))

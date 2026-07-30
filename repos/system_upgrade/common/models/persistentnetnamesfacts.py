@@ -84,7 +84,7 @@ class PersistentNetNamesFactsInitramfs(PersistentNetNamesFacts):
 
 
 @deprecated(
-    since="2026-03-18",
+    since="2026-07-30",
     message=(
         "Information provided in this message is not always complete and it's"
         " not used nowadays when net naming scheme is set during the upgrade."
@@ -108,7 +108,7 @@ class RenamedInterface(Model):
 
 
 @deprecated(
-    since="2026-03-18",
+    since="2026-07-30",
     message=(
         "Information provided in this message is not always complete and it's"
         " not used nowadays when net naming scheme is set during the upgrade."
