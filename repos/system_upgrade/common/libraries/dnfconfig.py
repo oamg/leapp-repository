@@ -11,7 +11,7 @@ from leapp.libraries.common.dnflibs import dnfconfig as _dnfconfig
 from leapp.utils.deprecation import deprecated
 
 
-@deprecated(since='2026-03-10', message=(
+@deprecated(since='2026-07-30', message=(
     'This function has been moved to leapp.libraries.common.dnflibs.dnfconfig module. '
     'Please update your imports to use the new location.'
 ))

@@ -20,7 +20,7 @@ class RepositoriesBlocklisted(Model):
 
 
 @deprecated(
-    since='2026-06-01',
+    since='2026-07-30',
     message=(
         'This model has been deprecated and replaced. '
         'To get the list of blocklisted repositories, consume RepositoriesBlocklisted. '

@@ -4,7 +4,7 @@ from leapp.utils.deprecation import deprecated
 
 
 @deprecated(
-    since='2026-06-04',
+    since='2026-07-30',
     message='This model has been deprecated! Use KernelInfo model for information about source distribution kernel.'
 )
 class CurrentKernel(Model):
