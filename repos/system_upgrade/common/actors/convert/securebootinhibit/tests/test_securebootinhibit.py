@@ -7,52 +7,93 @@ from leapp.libraries.stdlib import api
 from leapp.models import FirmwareFacts
 
 
+def _ff(firmware='efi', secureboot_enabled=None, efi_vars_accessible=None):
+    return FirmwareFacts(
+        firmware=firmware,
+        ppc64le_opal=None,
+        secureboot_enabled=secureboot_enabled,
+        efi_vars_accessible=efi_vars_accessible,
+    )
+
+
+class _CurrentActorWithDialog(CurrentActorMocked):
+    def __init__(self, *args, **kwargs):
+        self._sb_answer = kwargs.pop('sb_answer', None)
+        super().__init__(*args, **kwargs)
+
+    def get_sb_answer(self):
+        return self._sb_answer
+
+
 @pytest.mark.parametrize(
     'ff,is_conversion,should_inhibit', [
-        # conversion, secureboot enabled = inhibit
-        (
-            FirmwareFacts(firmware='efi', ppc64le_opal=None, secureboot_enabled=True),
-            True,
-            True
-        ),
-        (
-            FirmwareFacts(firmware='efi', ppc64le_opal=None, secureboot_enabled=True),
-            False,
-            False
-        ),
-        # bios is ok
-        (
-            FirmwareFacts(firmware='bios', ppc64le_opal=None, secureboot_enabled=False),
-            False,
-            False
-        ),
-        # bios is ok during conversion too
-        (
-            FirmwareFacts(firmware='bios', ppc64le_opal=None, secureboot_enabled=False),
-            True,
-            False
-        ),
-        (
-            FirmwareFacts(firmware='efi', ppc64le_opal=None, secureboot_enabled=False),
-            True,
-            False
-        ),
-        (
-            FirmwareFacts(firmware='efi', ppc64le_opal=None, secureboot_enabled=False),
-            False,
-            False
-        ),
+        # SB enabled + conversion = inhibit
+        (_ff(secureboot_enabled=True, efi_vars_accessible=True), True, True),
+        # SB enabled + no conversion = no report
+        (_ff(secureboot_enabled=True, efi_vars_accessible=True), False, False),
+        # SB disabled + conversion = no report
+        (_ff(secureboot_enabled=False, efi_vars_accessible=True), True, False),
+        # SB disabled + no conversion = no report
+        (_ff(secureboot_enabled=False, efi_vars_accessible=True), False, False),
+        # BIOS + conversion = no report
+        (_ff(firmware='bios', secureboot_enabled=False), True, False),
+        # BIOS + no conversion = no report
+        (_ff(firmware='bios', secureboot_enabled=False), False, False),
     ]
 )
-def test_process(monkeypatch, ff, is_conversion, should_inhibit):
+def test_process_definitive_sb_state(monkeypatch, ff, is_conversion, should_inhibit):
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[ff]))
-    monkeypatch.setattr(reporting, "create_report", create_report_mocked())
-    monkeypatch.setattr(securebootinhibit, "is_conversion", lambda: is_conversion)
+    monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
+    monkeypatch.setattr(securebootinhibit, 'is_conversion', lambda: is_conversion)
 
     securebootinhibit.process()
 
     if should_inhibit:
         assert reporting.create_report.called == 1
         assert reporting.Groups.INHIBITOR in reporting.create_report.report_fields['groups']
+        assert reporting.create_report.report_fields['title'] == (
+            "Detected enabled Secure Boot when trying to convert the system"
+        )
+    else:
+        assert not reporting.create_report.called
+
+
+def test_sb_none_efi_vars_accessible(monkeypatch):
+    """HW does not support Secure Boot -- efi_vars work, sb is None."""
+    ff = _ff(secureboot_enabled=None, efi_vars_accessible=True)
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[ff]))
+    monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
+    monkeypatch.setattr(securebootinhibit, 'is_conversion', lambda: True)
+
+    securebootinhibit.process()
+
+    assert not reporting.create_report.called
+
+
+@pytest.mark.parametrize(
+    'sb_answer,should_inhibit,expected_title,efi_vars_accessible', [
+        (False, False, None, False),
+        (True, True, "Detected enabled Secure Boot when trying to convert the system", False),
+        (None, True, "Cannot determine the Secure Boot status", False),
+        (None, True, "Cannot determine the Secure Boot status", None),
+    ]
+)
+def test_sb_none_efi_vars_inaccessible_dialog(monkeypatch, sb_answer, should_inhibit, expected_title,
+                                              efi_vars_accessible):
+    """EFI vars inaccessible or None -- dialog determines outcome."""
+    ff = _ff(secureboot_enabled=None, efi_vars_accessible=efi_vars_accessible)
+    monkeypatch.setattr(
+        api, 'current_actor',
+        _CurrentActorWithDialog(sb_answer=sb_answer, msgs=[ff]),
+    )
+    monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
+    monkeypatch.setattr(securebootinhibit, 'is_conversion', lambda: True)
+
+    securebootinhibit.process()
+
+    if should_inhibit:
+        assert reporting.create_report.called == 1
+        assert reporting.Groups.INHIBITOR in reporting.create_report.report_fields['groups']
+        assert reporting.create_report.report_fields['title'] == expected_title
     else:
         assert not reporting.create_report.called
