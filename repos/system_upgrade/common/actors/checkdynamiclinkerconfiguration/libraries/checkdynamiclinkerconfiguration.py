@@ -19,6 +19,11 @@ def _report_custom_dynamic_linker_configuration(summary):
         reporting.Remediation(hint=('Remove or revert the custom dynamic linker configurations and apply the changes '
                                     'using the ldconfig command. In case of possible active software collections we '
                                     'suggest disabling them persistently.')),
+        reporting.ExternalLink(
+            url='https://access.redhat.com/solutions/7130046',
+            title='Leapp upgrade command returns Error: No handle specified'
+                  ' with Message: Unable to install RHEL X userspace packages.'
+        ),
         reporting.RelatedResource('file', '/etc/ld.so.conf'),
         reporting.RelatedResource('directory', '/etc/ld.so.conf.d'),
         reporting.Severity(reporting.Severity.HIGH),
