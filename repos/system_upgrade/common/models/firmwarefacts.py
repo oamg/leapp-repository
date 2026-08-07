@@ -18,3 +18,12 @@ class FirmwareFacts(Model):
     Note that some machines do not support SecureBoot at all - even for systems booted with UEFI.
     For systems booted with UEFI that does not support SecureBoot set None.
     """
+
+    efi_vars_accessible = fields.Nullable(fields.Boolean())
+    """
+    Whether EFI runtime variables are accessible.
+
+    True when mokutil can query EFI vars (even if SecureBoot is unsupported).
+    False when mokutil fails with "EFI variables are not supported".
+    None for BIOS systems or when mokutil is not installed.
+    """

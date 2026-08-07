@@ -156,7 +156,7 @@ def test_get_secure_boot_state_ok(mocked_run: mock.MagicMock, is_enabled):
 
     out = _get_secure_boot_state()
 
-    assert out == is_enabled
+    assert out == (is_enabled, True)
     mocked_run.assert_called_once_with(['mokutil', '--sb-state'])
 
 
@@ -166,7 +166,7 @@ def test_get_secure_boot_state_no_mokutil(mocked_run: mock.MagicMock):
 
     out = _get_secure_boot_state()
 
-    assert out is False
+    assert out == (False, None)
     mocked_run.assert_called_once_with(['mokutil', '--sb-state'])
 
 
@@ -185,7 +185,26 @@ def test_get_secure_boot_state_not_supported(mocked_run: mock.MagicMock):
 
     out = _get_secure_boot_state()
 
-    assert out is None
+    assert out == (None, True)
+    mocked_run.assert_called_once_with(cmd)
+
+
+@mock.patch('leapp.libraries.actor.systemfacts.run')
+def test_get_secure_boot_state_efi_vars_unavailable(mocked_run: mock.MagicMock):
+    cmd = ['mokutil', '--sb-state']
+    result = {
+        'stderr': 'EFI variables are not supported on this system',
+        'exit_code': 1,
+    }
+    mocked_run.side_effect = CalledProcessError(
+        "Command mokutil --sb-state failed with exit code 1.",
+        cmd,
+        result
+    )
+
+    out = _get_secure_boot_state()
+
+    assert out == (None, False)
     mocked_run.assert_called_once_with(cmd)
 
 
@@ -193,7 +212,7 @@ def test_get_secure_boot_state_not_supported(mocked_run: mock.MagicMock):
 def test_get_secure_boot_state_failed(mocked_run: mock.MagicMock):
     cmd = ['mokutil', '--sb-state']
     result = {
-        'stderr': 'EFI variables are not supported on this system',
+        'stderr': 'Unexpected mokutil error',
         'exit_code': 1,
     }
     mocked_run.side_effect = CalledProcessError(
@@ -211,11 +230,12 @@ def test_get_secure_boot_state_failed(mocked_run: mock.MagicMock):
     mocked_run.assert_called_once_with(cmd)
 
 
-def _ff(firmware, ppc64le_opal, is_secureboot):
+def _ff(firmware, ppc64le_opal, is_secureboot, efi_vars_accessible=None):
     return FirmwareFacts(
         firmware=firmware,
         ppc64le_opal=ppc64le_opal,
-        secureboot_enabled=is_secureboot
+        secureboot_enabled=is_secureboot,
+        efi_vars_accessible=efi_vars_accessible,
     )
 
 
@@ -223,17 +243,19 @@ def _ff(firmware, ppc64le_opal, is_secureboot):
     "has_sys_efi, has_sys_opal, is_ppc, secboot_state, expect",
     [
         # 1. Standard BIOS on x86
-        (False, False, False, None, _ff("bios", None, None)),
+        (False, False, False, None,           _ff("bios", None,  None,  None)),
         # 2. EFI on x86 with Secure Boot Enabled
-        (True,  False, False, True,  _ff("efi",  None, True)),
+        (True,  False, False, (True,  True),  _ff("efi",  None,  True,  True)),
         # 3. EFI on x86 with Secure Boot Disabled
-        (True,  False, False, False, _ff("efi",  None, False)),
+        (True,  False, False, (False, True),  _ff("efi",  None,  False, True)),
         # 4. PPC64LE with OPAL (No EFI)
-        (False, True,  True,  None,  _ff("bios", True, None)),
+        (False, True,  True,  None,           _ff("bios", True,  None,  None)),
         # 5. PPC64LE without OPAL (No EFI)
-        (False, False, True,  None,  _ff("bios", False, None)),
+        (False, False, True,  None,           _ff("bios", False, None,  None)),
         # 6. EFI on PPC64LE with OPAL
-        (True,  True,  True,  True,  _ff("efi",  True, True)),
+        (True,  True,  True,  (True,  True),  _ff("efi",  True,  True,  True)),
+        # 7. EFI on x86 with EFI vars unavailable
+        (True,  False, False, (None,  False), _ff("efi",  None,  None,  False)),
     ]
 )
 def test_get_firmware_logic(

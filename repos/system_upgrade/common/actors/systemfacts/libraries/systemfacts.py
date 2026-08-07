@@ -315,20 +315,40 @@ def get_firewalls_status():
 
 
 def _get_secure_boot_state():
+    """Determine the Secure Boot state using mokutil.
+
+    :returns: A tuple of (secureboot_enabled, efi_vars_accessible) where:
+
+        - *secureboot_enabled*:
+          - ``True`` -- Secure Boot is enabled.
+          - ``False`` -- mokutil is not available (OSError); Secure Boot state is unknown.
+          - ``None`` -- the system does not support Secure Boot, or EFI variables are inaccessible.
+        - *efi_vars_accessible*:
+          - ``True`` -- EFI variables are accessible (mokutil ran successfully or reported
+            unsupported Secure Boot).
+          - ``False`` -- EFI variables are not accessible.
+          - ``None`` -- mokutil is not available; EFI variable accessibility is unknown.
+    :rtype: tuple(bool or None, bool or None)
+    :raises StopActorExecutionError: When mokutil fails for an unexpected reason.
+    """
     try:
         stdout = run(['mokutil', '--sb-state'])['stdout']
-        return 'enabled' in stdout
+        return ('enabled' in stdout, True)
     except CalledProcessError as e:
         if "doesn't support Secure Boot" in e.stderr:
-            return None
+            return (None, True)
+        if "EFI variables are not supported" in e.stderr:
+            api.current_logger().warning(
+                'EFI variables are not accessible: %s', e.stderr
+            )
+            return (None, False)
 
         raise StopActorExecutionError('Failed to determine SecureBoot state: {}'.format(e))
     except OSError as e:
-        # shim depends on mokutil, if it's not installed assume SecureBoot is disabled
         api.current_logger().debug(
             'Failed to execute mokutil, assuming SecureBoot is disabled: {}'.format(e)
         )
-        return False
+        return (False, None)
 
 
 def get_firmware():
@@ -339,10 +359,16 @@ def get_firmware():
         ppc64le_opal = os.path.isdir('/sys/firmware/opal/')
 
     is_secureboot = None
+    efi_vars_accessible = None
     if firmware == 'efi':
-        is_secureboot = _get_secure_boot_state()
+        is_secureboot, efi_vars_accessible = _get_secure_boot_state()
 
-    return FirmwareFacts(firmware=firmware, ppc64le_opal=ppc64le_opal, secureboot_enabled=is_secureboot)
+    return FirmwareFacts(
+        firmware=firmware,
+        ppc64le_opal=ppc64le_opal,
+        secureboot_enabled=is_secureboot,
+        efi_vars_accessible=efi_vars_accessible,
+    )
 
 
 @aslist
