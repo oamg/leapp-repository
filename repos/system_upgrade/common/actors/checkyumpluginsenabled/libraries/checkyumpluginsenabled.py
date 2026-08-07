@@ -2,11 +2,11 @@ import os
 
 from leapp import reporting
 from leapp.libraries.common.rhsm import skip_rhsm
+from leapp.libraries.stdlib import format_list
 
 # If LEAPP_NO_RHSM is set, subscription-manager and product-id will not be
 # considered as required when checking whether the required plugins are enabled.
 REQUIRED_DNF_PLUGINS = {'subscription-manager', 'product-id'}
-FMT_LIST_SEPARATOR = '\n    - '
 
 
 def check_required_dnf_plugins_enabled(pkg_manager_info):
@@ -24,9 +24,7 @@ def check_required_dnf_plugins_enabled(pkg_manager_info):
         missing_required_plugins -= {'subscription-manager', 'product-id'}
 
     if missing_required_plugins:
-        missing_required_plugins_text = ''
-        for missing_plugin in missing_required_plugins:
-            missing_required_plugins_text += '{0}{1}'.format(FMT_LIST_SEPARATOR, missing_plugin)
+        missing_required_plugins_text = format_list(missing_required_plugins)
 
         # dnf_conf_path - enable/disable plugins globally
         # rhsm_plugin_conf, product_id_plugin_conf - plugins can be disabled individually
@@ -44,7 +42,7 @@ def check_required_dnf_plugins_enabled(pkg_manager_info):
         reporting.create_report([
             reporting.Title('Required DNF plugins are not being loaded.'),
             reporting.Summary(
-                'The following DNF plugins are not being loaded: {}'.format(missing_required_plugins_text)
+                'The following DNF plugins are not being loaded:{}'.format(missing_required_plugins_text)
             ),
             reporting.Remediation(
                 hint=(

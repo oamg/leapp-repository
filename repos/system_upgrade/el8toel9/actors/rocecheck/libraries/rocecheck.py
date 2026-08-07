@@ -2,10 +2,9 @@ from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common.config import architecture, get_target_distro_id
 from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
-from leapp.libraries.stdlib import api
+from leapp.libraries.stdlib import api, format_list
 from leapp.models import KernelCmdline, RoceDetected
 
-FMT_LIST_SEPARATOR = '\n    - {}'
 DOC_URL = 'https://red.ht/predictable-network-interface-device-names-on-the-system-z-platform'
 
 
@@ -34,10 +33,6 @@ def is_kernel_arg_set():
     return False
 
 
-def _fmt_list(items):
-    return ''.join([FMT_LIST_SEPARATOR.format(i) for i in items])
-
-
 def _report_wrong_setup(roce):
     roce_nics = roce.roce_nics_connected + roce.roce_nics_connecting
 
@@ -50,7 +45,7 @@ def _report_wrong_setup(roce):
         ' For more information, see: {url}'
         '\n\nRoCE detected on the following NICs:{nics}'
     ).format(
-        nics=_fmt_list(roce_nics),
+        nics=format_list(roce_nics),
         url=DOC_URL,
         **DISTRO_REPORT_NAMES,
     )

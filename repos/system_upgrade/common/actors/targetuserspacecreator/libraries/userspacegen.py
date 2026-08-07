@@ -21,7 +21,7 @@ from leapp.libraries.common.config.version import (
 )
 from leapp.libraries.common.dnflibs import dnfplugin
 from leapp.libraries.common.gpg import get_path_to_gpg_certs, is_nogpgcheck_set
-from leapp.libraries.stdlib import api, CalledProcessError, config, run
+from leapp.libraries.stdlib import api, CalledProcessError, config, format_list, run
 from leapp.models import RequiredTargetUserspacePackages  # deprecated
 from leapp.models import TMPTargetRepositoriesFacts  # deprecated all the time
 from leapp.models import (
@@ -69,7 +69,6 @@ from leapp.utils.deprecation import suppress_deprecation
 PROD_CERTS_FOLDER = 'prod-certs'
 PERSISTENT_PACKAGE_CACHE_DIR = '/var/lib/leapp/persistent_package_cache'
 DEDICATED_LEAPP_PART_URL = 'https://access.redhat.com/solutions/7011704'
-FMT_LIST_SEPARATOR = '\n    - '
 
 
 def _check_deprecated_rhsm_skip():
@@ -786,18 +785,17 @@ def _inhibit_on_duplicate_repos(repofiles):
 
     if not duplicates:
         return
-    list_separator_fmt = '\n    - '
     api.current_logger().warning(
-        'The following repoids are defined multiple times:{0}{1}'
-        .format(list_separator_fmt, list_separator_fmt.join(sorted(duplicates)))
+        'The following repoids are defined multiple times:{}'
+        .format(format_list(duplicates))
     )
 
     reporting.create_report([
         reporting.Title('A YUM/DNF repository defined multiple times'),
         reporting.Summary(
             'The following repositories are defined multiple times inside the'
-            ' "upgrade" container:{0}{1}'
-            .format(list_separator_fmt, list_separator_fmt.join(sorted(duplicates)))
+            ' "upgrade" container:{}'
+            .format(format_list(duplicates))
         ),
         reporting.Severity(reporting.Severity.MEDIUM),
         reporting.Groups([reporting.Groups.REPOSITORY]),
@@ -1027,10 +1025,9 @@ def gather_target_repositories(context, indata):
     distro_repoids = _get_distro_available_repoids(context, indata)
     if distro_repoids:
         api.current_logger().info(
-            "The following repoids are considered as provided by the '{}' distribution:{}{}".format(
+            "The following repoids are considered as provided by the '{}' distribution:{}".format(
                 get_target_distro_id(),
-                FMT_LIST_SEPARATOR,
-                FMT_LIST_SEPARATOR.join(sorted(distro_repoids)),
+                format_list(distro_repoids),
             )
         )
     else:
@@ -1110,8 +1107,8 @@ def gather_target_repositories(context, indata):
                 'This can happen when a repository ID was entered incorrectly either'
                 ' while using the --enablerepo option of leapp, or in a third party actor that produces a'
                 ' CustomTargetRepositoryMessage.\n'
-                'The following repositories IDs could not be found in the target configuration:\n'
-                '- {}\n'.format('\n- '.join(sorted(missing_custom_repoids)))
+                'The following repositories IDs could not be found in the target configuration:{}'
+                .format(format_list(missing_custom_repoids))
             ),
             reporting.Groups([reporting.Groups.REPOSITORY]),
             reporting.Groups([reporting.Groups.INHIBITOR]),

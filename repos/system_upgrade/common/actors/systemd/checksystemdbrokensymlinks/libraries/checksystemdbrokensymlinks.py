@@ -2,10 +2,8 @@ import os
 
 from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
-from leapp.libraries.stdlib import api
+from leapp.libraries.stdlib import api, format_list
 from leapp.models import SystemdBrokenSymlinksSource, SystemdServicesInfoSource
-
-FMT_LIST_SEPARATOR = '\n    - '
 
 
 def _report_broken_symlinks(symlinks):
@@ -17,8 +15,8 @@ def _report_broken_symlinks(symlinks):
         ' has not been properly modified.'
         ' These symlinks will not be handled during the in-place upgrade'
         ' as they are already broken.'
-        ' The list of detected broken systemd symlinks:{}{}'
-        .format(FMT_LIST_SEPARATOR, FMT_LIST_SEPARATOR.join(sorted(symlinks)))
+        ' The list of detected broken systemd symlinks:{}'
+        .format(format_list(symlinks))
     )
 
     command = ['/usr/bin/rm'] + symlinks
@@ -44,8 +42,8 @@ def _report_enabled_services_broken_symlinks(symlinks):
         ' to existing systemd units, but on different paths. This could lead'
         ' in future to unexpected behaviour. Also, these symlinks will not be'
         ' handled during the in-place upgrade as they are already broken.'
-        ' The list of detected broken symlinks:{}{}'
-        .format(FMT_LIST_SEPARATOR, FMT_LIST_SEPARATOR.join(sorted(symlinks)))
+        ' The list of detected broken symlinks:{}'
+        .format(format_list(symlinks))
     )
 
     hint = (

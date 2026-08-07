@@ -1,16 +1,11 @@
 from leapp import reporting
 from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
-from leapp.libraries.stdlib import api
+from leapp.libraries.stdlib import api, format_list
 
-FMT_LIST_SEPARATOR = '\n    - '
 RESOURCES = [
     reporting.RelatedResource('package', 'openssl'),
     reporting.RelatedResource('file', '/etc/pki/tls/openssl.cnf')
 ]
-
-
-def _formatted_list_output(input_list, sep=FMT_LIST_SEPARATOR):
-    return ['{}{}'.format(sep, item) for item in input_list]
 
 
 # NOTE: This is taken from the el8toel9 library in
@@ -117,7 +112,7 @@ def check_openssl_engines(config):
                 ' The following OpenSSL engines are configured inside the'
                 ' /etc/pki/tls/openssl.cnf file:{engines}'.format(
                     target=DISTRO_REPORT_NAMES.target,
-                    engines=''.join(_formatted_list_output(enabled_engines)),
+                    engines=format_list(enabled_engines),
                 )
             ),
             reporting.Remediation(hint=(

@@ -1,3 +1,4 @@
+from leapp.libraries.stdlib import format_list
 from leapp.models import KnownHostsProxyConfig, Report
 
 
@@ -25,5 +26,4 @@ def test_sssdchecks__files(current_actor_context):
     assert report['title'] == 'The sss_ssh_knownhostsproxy will be replaced by sss_ssh_knownhosts'
     assert 'sss_ssh_knownhosts tool.' in report['summary']
 
-    FMT_LIST_SEPARATOR = '\n    - '
-    assert "{}{}".format(FMT_LIST_SEPARATOR, FMT_LIST_SEPARATOR.join(all_files)) in report['summary']
+    assert format_list(all_files, callback_sort=None) in report['summary']

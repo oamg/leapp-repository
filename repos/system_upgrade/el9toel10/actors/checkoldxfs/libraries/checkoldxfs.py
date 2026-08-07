@@ -1,14 +1,8 @@
 from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
-from leapp.libraries.stdlib import api
+from leapp.libraries.stdlib import api, format_list
 from leapp.models import XFSInfoFacts
-
-FMT_LIST_SEPARATOR = '\n    - '
-
-
-def _formatted_list_output(input_list, sep=FMT_LIST_SEPARATOR):
-    return ['{}{}'.format(sep, item) for item in input_list]
 
 
 def process():
@@ -78,7 +72,7 @@ def _report_bigtime(invalid_bigtime):
         ' failures.'
         ' Following XFS file systems have not enabled the "bigtime" feature:{fs_list}'.format(
             distro=DISTRO_REPORT_NAMES.target,
-            fs_list=''.join(_formatted_list_output(invalid_bigtime))
+            fs_list=format_list(invalid_bigtime)
         )
     )
 
@@ -116,7 +110,7 @@ def _inhibit_crc(invalid_crc):
         ' the target kernel. Such filesystems cannot be mounted by target'
         ' system kernel and so the upgrade cannot proceed successfully.'
         ' Following XFS filesystems have v4 format:{}'
-        .format(''.join(_formatted_list_output(invalid_crc)))
+        .format(format_list(invalid_crc))
     )
     remediation_hint = (
         'Migrate XFS v4 filesystems to new XFS v5 format.'

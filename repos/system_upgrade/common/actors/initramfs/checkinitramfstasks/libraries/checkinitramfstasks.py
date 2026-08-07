@@ -2,7 +2,7 @@ import os
 from collections import defaultdict
 
 from leapp import reporting
-from leapp.libraries.stdlib import api
+from leapp.libraries.stdlib import api, format_list
 from leapp.models import TargetInitramfsTasks, UpgradeInitramfsTasks
 
 DRACUT_MOD_DIR = '/usr/lib/dracut/modules.d/'
@@ -15,11 +15,8 @@ SUMMARY_FMT = (
 
 
 def _printable_modules(conflicts):
-    list_separator_fmt = '\n    - '
-    for name, paths in conflicts.items():
-        paths = sorted([str(i) for i in paths])
-        output = ['{}{}: {}'.format(list_separator_fmt, name, paths)]
-    return ''.join(output)
+    items = ['{}: {}'.format(name, sorted([str(i) for i in paths])) for name, paths in conflicts.items()]
+    return format_list(items)
 
 
 def _treat_path_dracut(dmodule):

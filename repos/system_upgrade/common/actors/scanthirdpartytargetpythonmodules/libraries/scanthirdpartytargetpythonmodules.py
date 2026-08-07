@@ -7,15 +7,10 @@ import rpm
 
 from leapp.libraries.common.config.version import get_target_major_version
 from leapp.libraries.common.rpms import has_package
-from leapp.libraries.stdlib import api, run
+from leapp.libraries.stdlib import api, format_list, run
 from leapp.models import DistributionSignedRPM, ThirdPartyTargetPythonModules
 
 PYTHON_EXTENSIONS = (".py", ".so", ".pyc")
-FMT_LIST_SEPARATOR = '\n  - '
-
-
-def _formatted_list_output(input_list, sep=FMT_LIST_SEPARATOR):
-    return ['{}{}'.format(sep, item) for item in input_list]
 
 
 def get_python_sys_paths(python_interpreter):
@@ -175,14 +170,14 @@ def process():
         if third_party_rpms:
             api.current_logger().info(
                 'Complete list of third-party RPM packages:{}'.format(
-                    ''.join(_formatted_list_output(third_party_rpms))
+                    format_list(third_party_rpms)
                 )
             )
 
         if all_third_party_files:
             api.current_logger().info(
                 'Complete list of third-party Python modules:{}'.format(
-                    ''.join(_formatted_list_output(all_third_party_files))
+                    format_list(all_third_party_files)
                 )
             )
 

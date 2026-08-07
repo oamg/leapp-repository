@@ -1,5 +1,6 @@
 from leapp import reporting
 from leapp.actors import Actor
+from leapp.libraries.stdlib import format_list
 from leapp.models import XorgDrvFacts
 from leapp.reporting import create_report, Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
@@ -8,7 +9,7 @@ SUMMARY_XORG_DEPRECATE_DRIVERS_FMT = (
     'Leapp has detected the use of some deprecated Xorg drivers. '
     'Using these drivers could lead to a broken graphical session after the upgrade. '
     'Any custom configuration related to these drivers will be ignored. '
-    'The list of used deprecated drivers: {}')
+    'The list of used deprecated drivers:{}')
 
 SUMMARY_XORG_DEPRECATE_DRIVERS_HINT = (
     'Please uninstall the Xorg driver and remove the corresponding driver '
@@ -16,17 +17,17 @@ SUMMARY_XORG_DEPRECATE_DRIVERS_HINT = (
     'such as `/etc/X11/xorg.conf` and `/etc/X11/xorg.conf.d/` and reboot before '
     'upgrading to make sure you have a graphical session after upgrading.'
 )
-FMT_LIST_SEPARATOR = '\n    - {}'
 
 
 def _printable_drv(facts):
-    output = ''
+    items = []
     for fact in facts:
         for driver in fact.xorg_drivers:
-            output += FMT_LIST_SEPARATOR.format(driver.driver)
+            item = driver.driver
             if driver.has_options:
-                output += ' (with custom driver options)'
-    return output
+                item += ' (with custom driver options)'
+            items.append(item)
+    return format_list(items, callback_sort=None)
 
 
 class XorgDrvCheck8to9(Actor):

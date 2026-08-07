@@ -1,8 +1,6 @@
 from leapp import reporting
-from leapp.libraries.stdlib import api
+from leapp.libraries.stdlib import api, format_list
 from leapp.models import IfCfg, NetworkManagerConnection, SystemdServicesInfoSource
-
-FMT_LIST_SEPARATOR = '\n    - '
 
 
 def process():
@@ -59,7 +57,7 @@ def process():
                    ' that use the phased out WEP algorithm is present in the system'
                    ' and will not work after the upgrade.'
                    ' Files with the problematic configuration:{}').format(
-            ''.join(['{}{}'.format(FMT_LIST_SEPARATOR, bfile) for bfile in wep_files])
+            format_list(wep_files)
         )
         remediation = ('Remove configuration for networks that use WEP or'
                        ' upgrade the networks to use more secure encryption'
@@ -87,7 +85,7 @@ def process():
             ' connections will not be active unless NetworkManager is enabled.'
             ' Files with the problematic configuration:{}'
         ).format(
-            ''.join(['{}{}'.format(FMT_LIST_SEPARATOR, f) for f in nm_controlled_files])
+            format_list(nm_controlled_files)
         )
         remediation = (
             'Either enable the NetworkManager service before upgrading, or add'

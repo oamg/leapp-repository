@@ -1,5 +1,6 @@
 from leapp import reporting
 from leapp.actors import Actor
+from leapp.libraries.stdlib import format_list
 from leapp.models import Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
@@ -46,7 +47,7 @@ class UnsupportedUpgradeCheck(Actor):
                         'guaranteed and the upgrade is unsupported.\n'
                         'You can bypass this error by setting the LEAPP_UNSUPPORTED variable but by doing so, '
                         'you continue at your own risk.\n'
-                        'Found development variables:\n- {}\n'.format('\n- '.join([v.name for v in devel_vars]))
+                        'Found development variables:{}'.format(format_list([v.name for v in devel_vars]))
                     ),
                     reporting.Severity(reporting.Severity.HIGH),
                     reporting.Groups([reporting.Groups.INHIBITOR]),

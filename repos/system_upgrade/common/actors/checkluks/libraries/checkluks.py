@@ -1,7 +1,7 @@
 from leapp import reporting
 from leapp.libraries.common.config.version import get_source_major_version
 from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
-from leapp.libraries.stdlib import api
+from leapp.libraries.stdlib import api, format_list
 from leapp.models import (
     CephInfo,
     CopyFile,
@@ -21,12 +21,6 @@ from leapp.reporting import create_report
 # https://red.ht/convert-to-luks2-rhel9
 CLEVIS_DOC_URL_FMT = 'https://red.ht/clevis-tpm2-luks-auto-unlock-rhel{}'
 LUKS2_CONVERT_DOC_URL_FMT = 'https://red.ht/convert-to-luks2-rhel{}'
-
-FMT_LIST_SEPARATOR = '\n    - '
-
-
-def _formatted_list_output(input_list, sep=FMT_LIST_SEPARATOR):
-    return ['{}{}'.format(sep, item) for item in input_list]
 
 
 def _at_least_one_tpm_token(luks_dump):
@@ -59,7 +53,7 @@ def report_inhibitor(luks1_partitions, no_tpm2_partitions):
             ' it has some limitations in comparison to LUKS2.'
             ' Only the LUKS2 format is supported for upgrades.'
             ' The following LUKS1 partitions have been discovered on your system:{partitions}'
-            .format(**DISTRO_REPORT_NAMES, partitions=''.join(_formatted_list_output(luks1_partitions)))
+            .format(**DISTRO_REPORT_NAMES, partitions=format_list(luks1_partitions))
         )
         report_hints.append(reporting.Remediation(
             hint=(
@@ -80,9 +74,9 @@ def report_inhibitor(luks1_partitions, no_tpm2_partitions):
             ' encrypted devices during the upgrade process.'
             ' Currently we support automatic unlocking during the upgrade only'
             ' for volumes bound to Clevis TPM2 token.'
-            ' The following LUKS2 devices without Clevis TPM2 token '
-            ' have been discovered on your system: {}'
-            .format(''.join(_formatted_list_output(no_tpm2_partitions)))
+            ' The following LUKS2 devices without Clevis TPM2 token'
+            ' have been discovered on your system:{}'
+            .format(format_list(no_tpm2_partitions))
         )
 
         report_hints.append(reporting.Remediation(

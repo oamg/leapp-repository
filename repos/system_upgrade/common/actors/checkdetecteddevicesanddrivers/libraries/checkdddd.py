@@ -4,7 +4,7 @@ from enum import IntEnum
 from leapp import reporting
 from leapp.libraries.common.config.version import get_source_major_version, get_target_major_version
 from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
-from leapp.libraries.stdlib import api
+from leapp.libraries.stdlib import api, format_list
 from leapp.models import DetectedDeviceOrDriver
 
 
@@ -29,10 +29,9 @@ def create_inhibitors(inhibiting_entries):
             reporting.Summary(
                 (
                     'Support for the following {source_distro} {source_version} device drivers has'
-                    ' been removed in {target_distro} {target_version}:\n'
-                    '     - {drivers}\n'
+                    ' been removed in {target_distro} {target_version}:{drivers}'
                 ).format(
-                    drivers='\n     - '.join([entry.driver_name for entry in drivers]),
+                    drivers=format_list([entry.driver_name for entry in drivers]),
                     target_version=get_target_major_version(),
                     source_version=get_source_major_version(),
                     **DISTRO_REPORT_NAMES
@@ -68,11 +67,10 @@ def create_inhibitors(inhibiting_entries):
             ),
             reporting.Summary(
                 (
-                    'Support for the following devices has been removed in {target_distro} {version}:\n'
-                    '     - {devices}\n'
+                    'Support for the following devices has been removed in {target_distro} {version}:{devices}'
                 ).format(
-                    devices='\n     - '.join(['{name} ({pci})'.format(name=entry.device_name,
-                                             pci=entry.device_id) for entry in devices]),
+                    devices=format_list(['{name} ({pci})'.format(name=entry.device_name,
+                                         pci=entry.device_id) for entry in devices]),
                     version=get_target_major_version(),
                     **DISTRO_REPORT_NAMES
                 )
@@ -93,10 +91,9 @@ def create_inhibitors(inhibiting_entries):
             ),
             reporting.Summary(
                 (
-                    'Support for the following processors has been removed in {target_distro} {version}:\n'
-                    '     - {processors}\n'
+                    'Support for the following processors has been removed in {target_distro} {version}:{processors}'
                 ).format(
-                    processors='\n     - '.join([entry.device_name for entry in cpus]),
+                    processors=format_list([entry.device_name for entry in cpus]),
                     version=get_target_major_version(),
                     **DISTRO_REPORT_NAMES
                 )
@@ -122,10 +119,9 @@ def create_warnings(unmaintained_entries):
             reporting.Summary(
                 (
                     'The following {source_distro} {source_version} device drivers are no longer'
-                    ' maintained {target_distro} {target_version}:\n'
-                    '     - {drivers}\n'
+                    ' maintained {target_distro} {target_version}:{drivers}'
                 ).format(
-                    drivers='\n     - '.join([entry.driver_name for entry in drivers]),
+                    drivers=format_list([entry.driver_name for entry in drivers]),
                     target_version=get_target_major_version(),
                     source_version=get_source_major_version(),
                     **DISTRO_REPORT_NAMES
@@ -146,10 +142,10 @@ def create_warnings(unmaintained_entries):
             reporting.Summary(
                 (
                     'The support for the following devices has been removed in {target_distro} {version} and '
-                    'are no longer maintained:\n     - {devices}\n'
+                    'are no longer maintained:{devices}'
                 ).format(
-                    devices='\n     - '.join(['{name} ({pci})'.format(name=entry.device_name,
-                                             pci=entry.device_id) for entry in devices]),
+                    devices=format_list(['{name} ({pci})'.format(name=entry.device_name,
+                                         pci=entry.device_id) for entry in devices]),
                     version=get_target_major_version(),
                     **DISTRO_REPORT_NAMES
                 )
@@ -168,10 +164,9 @@ def create_warnings(unmaintained_entries):
             ),
             reporting.Summary(
                 (
-                    'The following processors are no longer maintained in {target_distro} {version}:\n'
-                    '     - {processors}\n'
+                    'The following processors are no longer maintained in {target_distro} {version}:{processors}'
                 ).format(
-                    processors='\n     - '.join([entry.device_name for entry in cpus]),
+                    processors=format_list([entry.device_name for entry in cpus]),
                     version=get_target_major_version(),
                     **DISTRO_REPORT_NAMES
                 )

@@ -1,9 +1,7 @@
 from leapp import reporting
 from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
-from leapp.libraries.stdlib import api
+from leapp.libraries.stdlib import api, format_list
 from leapp.models import CryptoPolicyInfo, InstalledRPM
-
-FMT_LIST_SEPARATOR = '\n    - '
 
 # FIXME(pstodulk): Adding the links to the summary as information inside has
 # serious impact. This will create a duplication of links for Satellite and
@@ -62,10 +60,9 @@ def process():
     bad_rpms = _get_rpms_with_sha1_sig()
     cpi = next(api.consume(CryptoPolicyInfo), None)
     if bad_rpms:
-        bad_rpms_str = ''.join([
-            '{prefix}{pkgname} ({sig})'.format(prefix=FMT_LIST_SEPARATOR, pkgname=pkg.name, sig=pkg.pgpsig)
-            for pkg in bad_rpms
-        ])
+        bad_rpms_str = format_list(
+            ['{} ({})'.format(pkg.name, pkg.pgpsig) for pkg in bad_rpms]
+        )
         report = [
             reporting.Title('Detected RPMs with RSA/SHA1 signature'),
             reporting.Summary(SUMMARY_FMT.format(

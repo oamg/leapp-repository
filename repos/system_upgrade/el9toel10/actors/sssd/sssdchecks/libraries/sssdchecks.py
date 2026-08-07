@@ -1,6 +1,5 @@
 from leapp import reporting
-
-FMT_LIST_SEPARATOR = '\n    - '
+from leapp.libraries.stdlib import format_list
 
 
 def check_config(model):
@@ -17,9 +16,8 @@ def check_config(model):
         'to reflect this by updating every mention of sss_ssh_knownhostsproxy by '
         'the corresponding mention of sss_ssh_knownhosts, even those commented out. '
         'SSSD\'s ssh service will be enabled if not already done.\n\n'
-        'The following files will be updated:{}{}'.format(
-            FMT_LIST_SEPARATOR,
-            FMT_LIST_SEPARATOR.join(model.sssd_config_files + model.ssh_config_files)
+        'The following files will be updated:{}'.format(
+            format_list(model.sssd_config_files + model.ssh_config_files, callback_sort=None)
         )
     )
 
