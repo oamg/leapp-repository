@@ -1,6 +1,6 @@
 from leapp import reporting
 from leapp.libraries.common.config import architecture, version
-from leapp.libraries.stdlib import api
+from leapp.libraries.stdlib import api, format_list
 from leapp.models import SapHanaInfo
 
 # SAP HANA Compatibility
@@ -82,9 +82,7 @@ def _create_detected_instances_list(details):
                                                 instances=', '.join(meta['numbers']),
                                                 admin=meta['admin'],
                                                 path=meta['path']))
-    if result:
-        return '- {}'.format('\n- '.join(result))
-    return ''
+    return format_list(result, callback_sort=None)
 
 
 def _min_ver_string():

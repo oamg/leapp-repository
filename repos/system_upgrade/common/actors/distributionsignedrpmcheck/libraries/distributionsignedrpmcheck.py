@@ -1,9 +1,7 @@
 from leapp import reporting
-from leapp.libraries.stdlib import api
+from leapp.libraries.stdlib import api, format_list
 from leapp.libraries.stdlib.config import is_verbose
 from leapp.models import ThirdPartyRPM
-
-FMT_LIST_SEPARATOR = "\n    - "
 
 
 def _generate_report(packages):
@@ -24,8 +22,8 @@ def _generate_report(packages):
         " cannot be satisfied and hence such packages cannot be installed on"
         " the target system.\n\n"
         "The following packages have not been signed by the vendor of the"
-        " distribution:{}{}"
-    ).format(FMT_LIST_SEPARATOR, FMT_LIST_SEPARATOR.join(packages))
+        " distribution:{}"
+    ).format(format_list(packages))
     hint = (
         "The most simple solution that does not require additional knowledge"
         " about the upgrade process is the uninstallation of such packages"
@@ -71,7 +69,6 @@ def get_third_party_pkgs():
         )
 
     third_party_pkgs = list(set(pkg.name for pkg in data.items))
-    third_party_pkgs.sort()
     return third_party_pkgs
 
 

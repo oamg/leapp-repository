@@ -3,9 +3,9 @@ import os
 from leapp import reporting
 from leapp.libraries.common.config import version
 from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
+from leapp.libraries.stdlib import format_list
 
 COMMON_REPORT_TAGS = [reporting.Groups.SANITY]
-FMT_LIST_SEPARATOR = '\n    - '
 
 related = [reporting.RelatedResource('file', '/etc/os-release')]
 
@@ -41,9 +41,9 @@ def check_os_version():
             ),
             reporting.Summary(
                 'The supported OS releases for the upgrade process:'
-                '{}{}\n\nThe detected OS release is: {}'.format(FMT_LIST_SEPARATOR,
-                                                                FMT_LIST_SEPARATOR.join(supported_releases),
-                                                                current_release)
+                '{}\n\nThe detected OS release is: {}'.format(
+                    format_list(supported_releases, callback_sort=None),
+                    current_release)
             ),
             reporting.Severity(reporting.Severity.HIGH),
             reporting.Groups(COMMON_REPORT_TAGS),

@@ -1,8 +1,6 @@
 from leapp import reporting
 from leapp.libraries.common.config import get_env, version
-from leapp.libraries.stdlib import api
-
-FMT_LIST_SEPARATOR = '\n    - '
+from leapp.libraries.stdlib import api, format_list
 
 
 def get_supported_target_versions():
@@ -62,10 +60,9 @@ def process():
             ' is not supported from the current system version. Follow the official'
             ' documentation for up to date information about supported upgrade'
             ' paths and future plans (see the attached link).'
-            ' The in-place upgrade is enabled to the following versions of the target system:{sep}{ver_list}'
+            ' The in-place upgrade is enabled to the following versions of the target system:{ver_list}'
             .format(
-                sep=FMT_LIST_SEPARATOR,
-                ver_list=FMT_LIST_SEPARATOR.join(supported_target_versions),
+                ver_list=format_list(supported_target_versions, callback_sort=None),
                 tgt_ver=target_version
             )
         ),

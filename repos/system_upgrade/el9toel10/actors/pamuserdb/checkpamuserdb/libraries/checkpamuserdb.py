@@ -1,10 +1,8 @@
 from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
-from leapp.libraries.stdlib import api
+from leapp.libraries.stdlib import api, format_list
 from leapp.models import PamUserDbLocation
-
-FMT_LIST_SEPARATOR = "\n    - "
 
 
 def process():
@@ -19,9 +17,8 @@ def process():
                 'On {target_distro} 10, GDMB is used by pam_userdb as it\'s backend database,'
                 ' replacing BerkeleyDB. Existing pam_userdb databases will be'
                 ' converted to GDBM. The following databases will be converted:'
-                '{sep}{locations}'.format(
-                    sep=FMT_LIST_SEPARATOR,
-                    locations=FMT_LIST_SEPARATOR.join(msg.locations),
+                '{locations}'.format(
+                    locations=format_list(msg.locations),
                     target_distro=DISTRO_REPORT_NAMES.target,
                 )
             ),

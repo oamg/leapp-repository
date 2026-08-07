@@ -8,7 +8,7 @@ from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import repofileutils
 from leapp.libraries.common.config import get_env, get_target_distro_id
-from leapp.libraries.stdlib import api, CalledProcessError
+from leapp.libraries.stdlib import api, CalledProcessError, format_list
 from leapp.models import RHSMInfo
 
 _RE_REPO_UID = re.compile(r'Repo ID:\s*([^\s]+)')
@@ -195,10 +195,9 @@ def get_available_repo_ids(context):
             rhsm_repos.sort()
             break
 
-    list_separator_fmt = '\n    - '
     if rhsm_repos:
-        api.current_logger().info('The following repoids are available through RHSM:{0}{1}'
-                                  .format(list_separator_fmt, list_separator_fmt.join(rhsm_repos)))
+        api.current_logger().info('The following repoids are available through RHSM:{}'
+                                  .format(format_list(rhsm_repos)))
     else:
         api.current_logger().info('There are no repos available through RHSM.')
     return rhsm_repos
@@ -215,17 +214,16 @@ def _inhibit_on_duplicate_repos(repofiles):
 
     if not duplicates:
         return
-    list_separator_fmt = '\n    - '
     api.current_logger().warning(
-        'The following repoids are defined multiple times:{0}{1}'
-        .format(list_separator_fmt, list_separator_fmt.join(duplicates))
+        'The following repoids are defined multiple times:{}'
+        .format(format_list(duplicates))
     )
 
     reporting.create_report([
         reporting.Title('A YUM/DNF repository defined multiple times'),
         reporting.Summary(
-            'The following repositories are defined multiple times:{0}{1}'
-            .format(list_separator_fmt, list_separator_fmt.join(duplicates))
+            'The following repositories are defined multiple times:{}'
+            .format(format_list(duplicates))
         ),
         reporting.Severity(reporting.Severity.MEDIUM),
         reporting.Groups([reporting.Groups.REPOSITORY]),

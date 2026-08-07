@@ -5,7 +5,7 @@ from typing import List
 from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common.config.version import get_source_major_version
-from leapp.libraries.stdlib import api
+from leapp.libraries.stdlib import api, format_list
 from leapp.models import (
     CopyFile,
     DracutModule,
@@ -22,7 +22,6 @@ from leapp.models import (
     UpgradeKernelCmdlineArgTasks
 )
 
-FMT_LIST_SEPARATOR = '\n    - '
 FABRICS_TRANSPORT_TYPES = ['fc', 'tcp', 'rdma']
 BROKEN_TRANSPORT_TYPES = ['tcp', 'rdma']
 SAFE_TRANSPORT_TYPES = ['pcie', 'fc']
@@ -74,20 +73,6 @@ class NVMEDeviceCollection:
             fabrics_devices.extend(self.device_by_transport[transport])
 
         return fabrics_devices
-
-
-def _format_list(data, sep=FMT_LIST_SEPARATOR, callback_sort=sorted, limit=0):
-    # NOTE(pstodulk): Teaser O:-> https://issues.redhat.com/browse/RHEL-126447
-
-    def identity(values):
-        return values
-
-    if callback_sort is None:
-        callback_sort = identity
-    res = ['{}{}'.format(sep, item) for item in callback_sort(data)]
-    if limit:
-        return ''.join(res[:limit])
-    return ''.join(res)
 
 
 def is_livemode_enabled() -> bool:
@@ -326,8 +311,8 @@ def check_unhandled_devices_present_in_fstab(nvme_device_collection: NVMEDeviceC
     if required_unhandled_dev_nodes:
         summary = (
             'The system has NVMe devices with a transport type that is currently '
-            'not handled during the upgrade process present in fstab. Problematic devices: {0}'
-        ).format(_format_list(required_unhandled_dev_nodes))
+            'not handled during the upgrade process present in fstab. Problematic devices:{0}'
+        ).format(format_list(required_unhandled_dev_nodes))
 
         reporting.create_report([
             reporting.Title('NVMe devices with unhandled transport type present in fstab'),

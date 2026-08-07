@@ -1,6 +1,7 @@
 from leapp import reporting
 from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
 from leapp.libraries.common.rpms import has_package
+from leapp.libraries.stdlib import format_list
 from leapp.models import DistributionSignedRPM
 
 # List of Xorg server packages to check
@@ -13,9 +14,6 @@ _XORG_PACKAGES = [
     'xorg-x11-server-utils',
     'xorg-x11-utils',
 ]
-
-# Separator for list formatting in reports
-FMT_LIST_SEPARATOR = '\n    - '
 
 
 def _report_xorg_installed(packages):
@@ -33,11 +31,10 @@ def _report_xorg_installed(packages):
         "Xorg server packages have been detected on your system. The Xorg server is no longer available "
         "in {distro} 10. Applications and services that depend on Xorg server packages will "
         "not work after the upgrade. Migrate to Wayland or maintain the Xorg packages through alternative means. "
-        "The following Xorg server packages have been detected and are not available in {distro} 10:{sep}{list}"
+        "The following Xorg server packages have been detected and are not available in {distro} 10:{list}"
     ).format(
         distro=DISTRO_REPORT_NAMES.target,
-        sep=FMT_LIST_SEPARATOR,
-        list=FMT_LIST_SEPARATOR.join(packages),
+        list=format_list(packages),
     )
 
     reporting.create_report([

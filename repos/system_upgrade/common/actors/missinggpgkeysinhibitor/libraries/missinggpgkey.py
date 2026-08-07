@@ -10,7 +10,7 @@ from leapp import reporting
 from leapp.exceptions import StopActorExecution, StopActorExecutionError
 from leapp.libraries.common.config.version import get_target_major_version
 from leapp.libraries.common.gpg import get_gpg_fp_from_file, get_path_to_gpg_certs, is_nogpgcheck_set
-from leapp.libraries.stdlib import api
+from leapp.libraries.stdlib import api, format_list
 from leapp.models import (
     DNFWorkaround,
     TargetUserSpaceInfo,
@@ -19,8 +19,6 @@ from leapp.models import (
     UsedTargetRepositories
 )
 from leapp.utils.deprecation import suppress_deprecation
-
-FMT_LIST_SEPARATOR = '\n    - '
 
 
 def _expand_vars(path):
@@ -143,11 +141,10 @@ def _report(title, summary, keys, inhibitor=False):
         ' review is required, so any spurious keys are not imported in the system'
         ' during the in-place upgrade.'
         ' The following additional gpg keys are required to be imported during'
-        ' the upgrade:{sep}{key_list}'
+        ' the upgrade:{key_list}'
         .format(
             summary=summary,
-            sep=FMT_LIST_SEPARATOR,
-            key_list=FMT_LIST_SEPARATOR.join(keys)
+            key_list=format_list(keys, callback_sort=None)
         )
     )
     hint = (
@@ -224,11 +221,9 @@ def _report_repos_missing_keys(repos):
         ' Leapp is not able to guarantee validity of such gpg keys and manual'
         ' review is required, so any spurious keys are not imported in the system'
         ' during the in-place upgrade.'
-        ' The following repositories require some attention before the upgrade:'
-        ' {sep}{key_list}'
+        ' The following repositories require some attention before the upgrade:{key_list}'
         .format(
-            sep=FMT_LIST_SEPARATOR,
-            key_list=FMT_LIST_SEPARATOR.join(repos)
+            key_list=format_list(repos, callback_sort=None)
         )
     )
     hint = (

@@ -1,10 +1,8 @@
 import os
 
 from leapp import reporting
-from leapp.libraries.stdlib import api
+from leapp.libraries.stdlib import api, format_list
 from leapp.models import StorageInfo
-
-FMT_LIST_SEPARATOR = '\n    - '
 
 
 def _get_common_path(path1, path2):
@@ -78,8 +76,8 @@ def check_fstab_mount_order():
         summary += '\nDetected order of overshadowing mount points: {}'.format(', '.join(overshadowing_in_order))
         hint += (
             ' Reorder the detected overshadowing entries. Possible order of all mount '
-            'points without overshadowing:{}{}'
-        ).format(FMT_LIST_SEPARATOR, FMT_LIST_SEPARATOR.join(overshadowing_fixed))
+            'points without overshadowing:{}'
+        ).format(format_list(overshadowing_fixed, callback_sort=None))
 
     reporting.create_report([
         reporting.Title(

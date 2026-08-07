@@ -1,16 +1,14 @@
 from leapp import reporting
-from leapp.libraries.stdlib import api
+from leapp.libraries.stdlib import api, format_list
 from leapp.models import SystemdServicesTasks
-
-FMT_LIST_SEPARATOR = '\n    - '
 
 
 def _inhibit_upgrade_with_conflicts(conflicts):
     summary = (
         'The requested states for systemd services on the target system are in conflict.'
         ' The following systemd services were requested to be both enabled and'
-        ' disabled on the target system:{}{}'
-        .format(FMT_LIST_SEPARATOR, FMT_LIST_SEPARATOR.join(sorted(conflicts)))
+        ' disabled on the target system:{}'
+        .format(format_list(conflicts))
     )
     report = [
         reporting.Title('Conflicting requirements of systemd service states'),

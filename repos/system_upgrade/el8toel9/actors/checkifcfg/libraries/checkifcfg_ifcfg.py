@@ -3,16 +3,8 @@ import os
 from leapp import reporting
 from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
 from leapp.libraries.common.rpms import has_package
-from leapp.libraries.stdlib import api
+from leapp.libraries.stdlib import api, format_list
 from leapp.models import IfCfg, InstalledRPM, RpmTransactionTasks
-
-FMT_LIST_SEPARATOR = '\n    - '
-
-
-def _format_files_list(files):
-    return "".join(
-        ["{}{}".format(FMT_LIST_SEPARATOR, f) for f in files]
-    )
 
 
 def process():
@@ -87,7 +79,7 @@ def process():
             " NetworkManager. Files for device types that are not"
             " supported by NetworkManager are present in the system."
             " Files with the problematic configuration:{bad_files}".format(
-                bad_files=_format_files_list(bad_type_files),
+                bad_files=format_list(bad_type_files),
                 **DISTRO_REPORT_NAMES,
             )
         )
@@ -121,7 +113,7 @@ def process():
             ' prohibit NetworkManager from loading it.'
             ' Files with the problematic configuration:{bad_files}'
         ).format(
-            bad_files=_format_files_list(not_controlled_files),
+            bad_files=format_list(not_controlled_files),
             **DISTRO_REPORT_NAMES,
         )
         remediation = ('Ensure the ifcfg files comply with format described in'

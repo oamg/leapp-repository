@@ -1,23 +1,19 @@
 from leapp import reporting
-from leapp.libraries.stdlib import api
+from leapp.libraries.stdlib import api, FMT_LIST_SEPARATOR, format_list
 from leapp.models import ThirdPartyTargetPythonModules
 
-FMT_LIST_SEPARATOR = '\n    - '
 MAX_REPORTED_ITEMS = 30
 
 
-def _formatted_list_output_with_max_items(input_list, sep=FMT_LIST_SEPARATOR, max_items=MAX_REPORTED_ITEMS):
+def _formatted_list_output_with_max_items(input_list, max_items=MAX_REPORTED_ITEMS):
     if not input_list:
         return ''
 
-    total_count = len(input_list)
-    items_to_show = input_list[:max_items]
-    formatted = ['{}{}'.format(sep, item) for item in items_to_show]
+    result = format_list(input_list, limit=max_items, callback_sort=None)
+    if len(input_list) > max_items:
+        result += '{}... and {} more'.format(FMT_LIST_SEPARATOR, len(input_list) - max_items)
 
-    if total_count > max_items:
-        formatted.append('{}... and {} more'.format(sep, total_count - max_items))
-
-    return ''.join(formatted)
+    return result
 
 
 def check_third_party_target_python_modules(third_party_target_python_modules):

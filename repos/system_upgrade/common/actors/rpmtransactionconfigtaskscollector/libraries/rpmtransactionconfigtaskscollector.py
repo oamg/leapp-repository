@@ -1,6 +1,6 @@
 import os.path
 
-from leapp.libraries.stdlib import api
+from leapp.libraries.stdlib import api, format_list
 from leapp.models import DistributionSignedRPM, RpmTransactionTasks
 
 
@@ -29,8 +29,8 @@ def load_tasks(base_dir, logger):
     filtered = set(to_install) - set(to_install_filtered)
     if filtered:
         api.current_logger().debug(
-            'The following packages from "to_install" file will be ignored as they are already installed:\n- %s',
-            '\n- '.join(filtered)
+            'The following packages from "to_install" file will be ignored as they are already installed:%s',
+            format_list(filtered)
         )
 
     return RpmTransactionTasks(

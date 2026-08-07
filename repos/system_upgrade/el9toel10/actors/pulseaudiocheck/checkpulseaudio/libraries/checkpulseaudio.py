@@ -1,10 +1,8 @@
 from leapp import reporting
 from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
 from leapp.libraries.common.rpms import has_package
-from leapp.libraries.stdlib import api
+from leapp.libraries.stdlib import api, format_list
 from leapp.models import DistributionSignedRPM, PulseAudioConfiguration
-
-FMT_LIST_SEPARATOR = '\n    - '
 
 
 def _report_custom_pulseaudio_config(modified_defaults, dropin_dirs, user_config_dirs):
@@ -21,24 +19,21 @@ def _report_custom_pulseaudio_config(modified_defaults, dropin_dirs, user_config
     details = []
     if modified_defaults:
         details.append(
-            'The following default PulseAudio configuration files have been modified:{sep}{files}'.format(
-                sep=FMT_LIST_SEPARATOR,
-                files=FMT_LIST_SEPARATOR.join(modified_defaults),
+            'The following default PulseAudio configuration files have been modified:{}'.format(
+                format_list(modified_defaults),
             )
         )
     if dropin_dirs:
         details.append(
             'The following PulseAudio drop-in configuration directories contain custom '
-            'fragments:{sep}{dirs}'.format(
-                sep=FMT_LIST_SEPARATOR,
-                dirs=FMT_LIST_SEPARATOR.join(dropin_dirs),
+            'fragments:{}'.format(
+                format_list(dropin_dirs),
             )
         )
     if user_config_dirs:
         details.append(
-            'Per-user PulseAudio configuration was found in:{sep}{dirs}'.format(
-                sep=FMT_LIST_SEPARATOR,
-                dirs=FMT_LIST_SEPARATOR.join(user_config_dirs),
+            'Per-user PulseAudio configuration was found in:{}'.format(
+                format_list(user_config_dirs),
             )
         )
 

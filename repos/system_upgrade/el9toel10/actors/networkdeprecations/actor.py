@@ -3,14 +3,9 @@ import os
 from leapp import reporting
 from leapp.actors import Actor
 from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
+from leapp.libraries.stdlib import format_list
 from leapp.models import IfCfg, NetworkManagerConfig, Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
-
-FMT_LIST_SEPARATOR = '\n    - '
-
-
-def _formatted_list_output(input_list, sep=FMT_LIST_SEPARATOR):
-    return ['{}{}'.format(sep, item) for item in sorted(input_list)]
 
 
 class CheckNetworkDeprecations9to10(Actor):
@@ -63,7 +58,7 @@ class CheckNetworkDeprecations9to10(Actor):
                 ' natively and therefore can not be migrated automatically.'
                 ' The following configuration files were found:{files}'
                 .format(
-                    files=''.join(_formatted_list_output(conn.values())),
+                    files=format_list(conn.values()),
                     target_distro=DISTRO_REPORT_NAMES.target
                 )
             ),
@@ -97,7 +92,7 @@ class CheckNetworkDeprecations9to10(Actor):
                 'Files that used to accompany legacy network configuration in "ifcfg"'
                 ' format are present, even though the configuration itself is not'
                 ' longer there. These files will be ignored:{}'
-                .format(''.join(_formatted_list_output(conn.values())))
+                .format(format_list(conn.values()))
             ),
             reporting.Remediation(hint='Verify that the files were not left behind by incomplete'
                                        ' migration, fix up configuration if necessary, and remove'
@@ -119,7 +114,7 @@ class CheckNetworkDeprecations9to10(Actor):
                 'In {target_distro} 10, support for these files is no longer'
                 ' enabled and the configuration will be ignored. The following files'
                 ' were found:{conns}'.format(
-                    conns=''.join(_formatted_list_output(conn.values())),
+                    conns=format_list(conn.values()),
                     target_distro=DISTRO_REPORT_NAMES.target,
                 )
             ),

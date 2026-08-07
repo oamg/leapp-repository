@@ -1,13 +1,11 @@
 from leapp import reporting
-from leapp.libraries.stdlib import api
+from leapp.libraries.stdlib import api, format_list
 from leapp.models import DynamicLinkerConfiguration
 
 LD_SO_CONF_DIR = '/etc/ld.so.conf.d'
 LD_SO_CONF_MAIN = '/etc/ld.so.conf'
 LD_LIBRARY_PATH_VAR = 'LD_LIBRARY_PATH'
 LD_PRELOAD_VAR = 'LD_PRELOAD'
-FMT_LIST_SEPARATOR_1 = '\n- '
-FMT_LIST_SEPARATOR_2 = '\n    - '
 
 
 def _report_custom_dynamic_linker_configuration(summary):
@@ -39,9 +37,9 @@ def check_dynamic_linker_configuration():
     custom_configurations = ''
     if configuration.main_config.modified:
         custom_configurations += (
-            '{}The {} file has unexpected contents:{}{}'
-            .format(FMT_LIST_SEPARATOR_1, LD_SO_CONF_MAIN,
-                    FMT_LIST_SEPARATOR_2, FMT_LIST_SEPARATOR_2.join(configuration.main_config.modified_lines))
+            '\n- The {} file has unexpected contents:{}'
+            .format(LD_SO_CONF_MAIN,
+                    format_list(configuration.main_config.modified_lines, callback_sort=None))
         )
 
     custom_configs = []
@@ -51,15 +49,14 @@ def check_dynamic_linker_configuration():
 
     if custom_configs:
         custom_configurations += (
-            '{}The following drop in config files were marked as custom:{}{}'
-            .format(FMT_LIST_SEPARATOR_1, FMT_LIST_SEPARATOR_2, FMT_LIST_SEPARATOR_2.join(custom_configs))
+            '\n- The following drop in config files were marked as custom:{}'
+            .format(format_list(custom_configs))
         )
 
     if configuration.used_variables:
         custom_configurations += (
-            '{}The following variables contain unexpected dynamic linker configuration:{}{}'
-            .format(FMT_LIST_SEPARATOR_1, FMT_LIST_SEPARATOR_2,
-                    FMT_LIST_SEPARATOR_2.join(configuration.used_variables))
+            '\n- The following variables contain unexpected dynamic linker configuration:{}'
+            .format(format_list(configuration.used_variables))
         )
 
     if custom_configurations:

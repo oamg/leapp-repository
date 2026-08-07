@@ -1,7 +1,7 @@
 from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common.config import version
-from leapp.libraries.stdlib import api
+from leapp.libraries.stdlib import api, format_list
 from leapp.models import (
     SystemdServicesInfoSource,
     SystemdServicesInfoTarget,
@@ -9,8 +9,6 @@ from leapp.models import (
     SystemdServicesPresetInfoTarget,
     SystemdServicesTasks
 )
-
-FMT_LIST_SEPARATOR = "\n    - "
 
 
 def _get_desired_service_state(state_source, preset_source, preset_target):
@@ -166,8 +164,8 @@ def _report_kept_enabled(tasks):
     if tasks.to_enable:
         summary += (
             "The following services were originally disabled by preset on the"
-            " upgraded system and Leapp attempted to enable them:{}{}"
-        ).format(FMT_LIST_SEPARATOR, FMT_LIST_SEPARATOR.join(sorted(tasks.to_enable)))
+            " upgraded system and Leapp attempted to enable them:{}"
+        ).format(format_list(tasks.to_enable))
         # TODO(mmatuska): When post-upgrade reports are implemented in
         # `setsystemdservicesstates actor, add a note here to check the reports
         # if the enabling failed
@@ -198,8 +196,8 @@ def _report_newly_enabled(newly_enabled):
 
     summary = (
         "The following services were disabled before the upgrade and were set"
-        " to enabled by a systemd preset after the upgrade:{}{}".format(
-            FMT_LIST_SEPARATOR, FMT_LIST_SEPARATOR.join(sorted(newly_enabled))
+        " to enabled by a systemd preset after the upgrade:{}".format(
+            format_list(newly_enabled)
         )
     )
 

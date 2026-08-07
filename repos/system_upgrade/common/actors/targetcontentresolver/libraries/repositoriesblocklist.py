@@ -1,7 +1,7 @@
 from leapp import reporting
 from leapp.libraries.common.config import get_target_distro_id
 from leapp.libraries.common.config.version import get_source_major_version, get_target_major_version
-from leapp.libraries.stdlib import api
+from leapp.libraries.stdlib import api, format_list
 from leapp.models import RepositoriesBlocklisted
 
 
@@ -15,7 +15,7 @@ def _report_excluded_repos(repos):
         reporting.Summary(
             'The following repositories are not supported by '
             'Red Hat and are excluded from the list of repositories '
-            'used during the upgrade.\n- {}'.format('\n- '.join(repos))
+            'used during the upgrade.{}'.format(format_list(repos))
         ),
         reporting.Severity(reporting.Severity.INFO),
         reporting.Groups([reporting.Groups.REPOSITORY]),

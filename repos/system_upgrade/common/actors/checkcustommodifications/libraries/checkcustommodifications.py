@@ -1,25 +1,17 @@
 from leapp import reporting
-from leapp.libraries.stdlib import api
+from leapp.libraries.stdlib import api, format_list
 from leapp.models import CustomModifications
-
-FMT_LIST_SEPARATOR = "\n    - "
 
 
 def _pretty_files(messages):
     """
     Return formatted string of discovered files from obtained CustomModifications messages.
     """
-    flist = []
+    items = []
     for msg in messages:
         actor = ' (Actor: {})'.format(msg.actor_name) if msg.actor_name else ''
-        flist.append(
-            '{sep}{filename}{actor}'.format(
-                sep=FMT_LIST_SEPARATOR,
-                filename=msg.filename,
-                actor=actor
-            )
-        )
-    return ''.join(flist)
+        items.append('{}{}'.format(msg.filename, actor))
+    return format_list(items)
 
 
 def _is_modified_config(msg):

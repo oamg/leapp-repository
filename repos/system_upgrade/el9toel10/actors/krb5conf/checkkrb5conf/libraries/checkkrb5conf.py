@@ -1,16 +1,8 @@
 from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
-from leapp.libraries.stdlib import api
+from leapp.libraries.stdlib import api, format_list
 from leapp.models import OutdatedKrb5conf
-
-FMT_LIST_SEPARATOR = "\n    - "
-
-
-def __human_readable_list(unmanaged_files):
-    if unmanaged_files:
-        return FMT_LIST_SEPARATOR + FMT_LIST_SEPARATOR.join(unmanaged_files)
-    return ''
 
 
 def process():
@@ -27,7 +19,7 @@ def process():
                 'the location of the reference X.509 CA bundle '
                 'file was modified. The following unmanaged MIT krb5 '
                 'configuration files have to be updated to point to the new '
-                'bundle file:' + __human_readable_list(msg.unmanaged_files)),
+                'bundle file:' + format_list(msg.unmanaged_files)),
             reporting.Severity(reporting.Severity.INFO),
             reporting.Groups([reporting.Groups.SECURITY, reporting.Groups.AUTHENTICATION])
         ])
@@ -46,7 +38,7 @@ def process():
                 'RPMs were updated to reflect this change, or you may be '
                 'unable to complete Kerberos PKINIT pre-authentication (e.g. '
                 'using user certificates, or smartcards). The following files '
-                'are affected:' + __human_readable_list(file_paths_from_rpm)),
+                'are affected:' + format_list(file_paths_from_rpm)),
             reporting.Severity(reporting.Severity.MEDIUM),
             reporting.Groups([reporting.Groups.SECURITY, reporting.Groups.AUTHENTICATION])
         ])

@@ -1,9 +1,7 @@
 from leapp import reporting
 from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
-from leapp.libraries.stdlib import api
+from leapp.libraries.stdlib import api, format_list
 from leapp.models import LeftoverPackages, RemovedPackages
-
-FMT_LIST_SEPARATOR = '\n    - '
 
 
 def process():
@@ -15,12 +13,11 @@ def process():
         title = 'Leftover packages from the original OS have been removed'
         removed = ['-'.join([pkg.name, pkg.version, pkg.release]) for pkg in removed_packages.items]
         summary = (
-            'Following {source_distro} packages have been removed:{sep}{list}\n'
+            'Following {source_distro} packages have been removed:{list}\n'
             'Dependent packages may have been removed as well, please check that you are not missing '
             'any packages.'
             .format(
-                sep=FMT_LIST_SEPARATOR,
-                list=FMT_LIST_SEPARATOR.join(removed),
+                list=format_list(removed),
                 **DISTRO_REPORT_NAMES
             )
         )
@@ -35,11 +32,10 @@ def process():
 
     if leftover_packages and leftover_packages.items:
         summary = (
-            'Following {source_distro} packages have not been upgraded:{sep}{list}\n'
+            'Following {source_distro} packages have not been upgraded:{list}\n'
             'Please remove these packages to keep your system in supported state.'
             .format(
-                sep=FMT_LIST_SEPARATOR,
-                list=FMT_LIST_SEPARATOR.join(leftover_pkgs_to_remove),
+                list=format_list(leftover_pkgs_to_remove),
                 **DISTRO_REPORT_NAMES
             )
         )

@@ -1,10 +1,8 @@
 from leapp import reporting
 from leapp.libraries.common.gpg import is_nogpgcheck_set
 from leapp.libraries.common.rpms import get_installed_rpms
-from leapp.libraries.stdlib import api
+from leapp.libraries.stdlib import api, format_list
 from leapp.models import TrustedGpgKeys
-
-FMT_LIST_SEPARATOR = '\n    - '
 
 
 def _get_installed_fps_tuple():
@@ -40,10 +38,9 @@ def _report_cannot_check_keys(installed_fps):
         ' in the start of the upgrade process on the original system.'
         ' Unexpected unexpected installed GPG keys could be e.g. a mark of'
         ' a malicious attempt to hijack the upgrade process.'
-        ' The list of all GPG keys in RPM DB:{sep}{key_list}'
+        ' The list of all GPG keys in RPM DB:{key_list}'
         .format(
-            sep=FMT_LIST_SEPARATOR,
-            key_list=FMT_LIST_SEPARATOR.join(installed_fps)
+            key_list=format_list(installed_fps, callback_sort=None)
         )
     )
     hint = (
@@ -68,11 +65,9 @@ def _report_unexpected_keys(unexpected_fps):
         'The system contains unexpected GPG keys after upgrade.'
         ' This can be caused e.g. by a manual intervention'
         ' or by malicious attempt to hijack the upgrade process.'
-        ' The unexpected keys are the following:'
-        ' {sep}{key_list}'
+        ' The unexpected keys are the following:{key_list}'
         .format(
-            sep=FMT_LIST_SEPARATOR,
-            key_list=FMT_LIST_SEPARATOR.join(unexpected_fps)
+            key_list=format_list(unexpected_fps, callback_sort=None)
         )
     )
     hint = (
