@@ -73,6 +73,20 @@ _CONFIG = {
             "epel-release",
         },
     },
+    ("ol", "rhel"): {
+        "swap": {
+            "oracle-logos": "redhat-logos",
+            "oracle-logos-httpd": "redhat-logos-httpd",
+            "oracle-logos-ipa": "redhat-logos-ipa",
+            "oracle-indexhtml": "redhat-indexhtml",
+            "oracle-backgrounds": "redhat-backgrounds",
+            "oraclelinux-release": "redhat-release",
+        },
+        "remove": {
+            "oraclelinux-release-el*",
+            "oraclelinux-*-release-*",
+        },
+    },
 }
 
 
