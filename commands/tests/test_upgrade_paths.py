@@ -21,6 +21,9 @@ from leapp.exceptions import CommandError
         "alma": {
             "default": {"7.9": ["8.4"], "8.6": ["9.0"], "8.7": ["9.1"]}
         },
+        "ol": {
+            "default": {"8.10": ["9.0", "9.1"], "8": ["9.0", "9.1"]}
+        },
     },
 )
 def test_get_target_version(mock_open, monkeypatch):
@@ -56,6 +59,14 @@ def test_get_target_version(mock_open, monkeypatch):
     # rhel->centos, reverse virtual versions lookup
     set_etc_osrelease('rhel', '8.6')
     assert command_utils.get_target_version('default', 'centos') == '9'
+
+    # ol->ol
+    set_etc_osrelease('ol', '8.10')
+    assert command_utils.get_target_version('default', 'ol') == '9.1'
+
+    # ol->rhel, cross-distro lookup by matching version
+    set_etc_osrelease('ol', '8.10')
+    assert command_utils.get_target_version('default', 'rhel') == '9.0'
 
 
 @mock.patch(

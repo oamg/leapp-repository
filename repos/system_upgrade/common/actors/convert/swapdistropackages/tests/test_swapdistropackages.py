@@ -190,6 +190,66 @@ def test_process_ok(monkeypatch):
     assert set(produced.to_remove) == set(expected.to_remove)
 
 
+def test_process_ok_ol_to_rhel(monkeypatch):
+    def _msg_pkgs(pkgnames):
+        rpms = []
+        for name in pkgnames:
+            rpms.append(RPM(
+                name=name,
+                epoch="0",
+                packager="packager",
+                version="1.2",
+                release="el9",
+                arch="noarch",
+                pgpsig="",
+            ))
+        return DistributionSignedRPM(items=rpms)
+
+    oracle_rpms = [
+        "oracle-logos",
+        "oracle-logos-httpd",
+        "oracle-logos-ipa",
+        "oracle-indexhtml",
+        "oracle-backgrounds",
+        "oraclelinux-release",
+        "oraclelinux-release-el9",
+        "oraclelinux-developer-release-el9",
+        "oraclelinux-automation-manager-release-el9",
+    ]
+    # plymouth-theme-spinner is removed by the swaporaclepackages workaround and
+    # only reinstalled via the "install" set, so it ends up in to_install (with
+    # the RHEL build) but not in to_remove.
+    rpms = oracle_rpms + ["plymouth-theme-spinner"]
+    curr_actor_mocked = CurrentActorMocked(
+        src_distro="ol",
+        dst_distro="rhel",
+        msgs=[_msg_pkgs(rpms)],
+    )
+    monkeypatch.setattr(api, 'current_actor', curr_actor_mocked)
+    produce_mock = produce_mocked()
+    monkeypatch.setattr(api, 'produce', produce_mock)
+
+    swapdistropackages.process()
+
+    expected = RpmTransactionTasks(
+        to_install=[
+            "redhat-logos",
+            "redhat-logos-httpd",
+            "redhat-logos-ipa",
+            "redhat-indexhtml",
+            "redhat-backgrounds",
+            "redhat-release",
+            "plymouth-theme-spinner",
+        ],
+        to_remove=oracle_rpms,
+    )
+
+    assert produce_mock.called == 1
+    produced = produce_mock.model_instances[0]
+    assert set(produced.to_install) == set(expected.to_install)
+    assert set(produced.to_remove) == set(expected.to_remove)
+
+
 def test_process_no_config_skip(monkeypatch):
     curr_actor_mocked = CurrentActorMocked(
         src_distro="distroA", dst_distro="distroB", msgs=[DistributionSignedRPM()]
@@ -208,7 +268,7 @@ def test_process_no_config_skip(monkeypatch):
     ) in api.current_logger.warnmsg[0]
 
 
-@pytest.mark.parametrize("distro", ["rhel", "centos"])
+@pytest.mark.parametrize("distro", ["rhel", "centos", "ol"])
 def test_process_not_converting_skip(monkeypatch, distro):
     curr_actor_mocked = CurrentActorMocked(
         src_distro=distro, dst_distro=distro, msgs=[DistributionSignedRPM()]

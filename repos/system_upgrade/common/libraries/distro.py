@@ -127,6 +127,23 @@ _DISTRO_REPOFILES_MAP = {
             '/etc/yum.repos.d/rocky-devel.repo': ARCH_ACCEPTED,
         },
     },
+    'ol': {
+        '8': {
+            '/etc/yum.repos.d/oracle-linux-ol8.repo': ARCH_ACCEPTED,
+            '/etc/yum.repos.d/uek-ol8.repo': ARCH_ACCEPTED,
+            '/etc/yum.repos.d/virt-ol8.repo': ARCH_ACCEPTED,
+        },
+        '9': {
+            '/etc/yum.repos.d/oracle-linux-ol9.repo': ARCH_ACCEPTED,
+            '/etc/yum.repos.d/uek-ol9.repo': ARCH_ACCEPTED,
+            '/etc/yum.repos.d/virt-ol9.repo': ARCH_ACCEPTED,
+        },
+        '10': {
+            '/etc/yum.repos.d/oracle-linux-ol10.repo': ARCH_ACCEPTED,
+            '/etc/yum.repos.d/uek-ol10.repo': ARCH_ACCEPTED,
+            '/etc/yum.repos.d/virt-ol10.repo': ARCH_ACCEPTED,
+        },
+    },
 }
 
 
@@ -267,6 +284,7 @@ def distro_id_to_pretty_name(distro_id):
         "centos": "CentOS Stream",
         "almalinux": "AlmaLinux",
         "rocky": "Rocky Linux",
+        "ol": "Oracle Linux",
     }[distro_id]
 
 
@@ -281,7 +299,8 @@ def _distro_id_to_report_name(distro_id):
         "rhel": "RHEL",
         "centos": "CentOS Stream",
         "almalinux": "AlmaLinux",
-        "rocky": "Rocky Linux"
+        "rocky": "Rocky Linux",
+        "ol": "Oracle Linux",
     }[distro_id]
 
 
@@ -349,6 +368,9 @@ def get_distro_efidir_canon_path(distro_id):
     """
     if distro_id == "rhel":
         return os.path.join(efi.EFI_MOUNTPOINT, "EFI", "redhat")
+
+    if distro_id == "ol":
+        return os.path.join(efi.EFI_MOUNTPOINT, "EFI", "oracle")
 
     return os.path.join(efi.EFI_MOUNTPOINT, "EFI", distro_id)
 

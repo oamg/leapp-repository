@@ -20,7 +20,7 @@ def test_rocky_produces_workaround(monkeypatch):
     assert workaround.display_name == 'Rocky Linux compatibility symlinks fix'
 
 
-@pytest.mark.parametrize('distro', ['rhel', 'centos', 'almalinux'])
+@pytest.mark.parametrize('distro', ['rhel', 'centos', 'almalinux', 'ol'])
 def test_non_rocky_skips(monkeypatch, distro):
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(src_distro=distro, dst_distro='rhel'))
     produce_mock = produce_mocked()
