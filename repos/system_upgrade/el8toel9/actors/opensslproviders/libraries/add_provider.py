@@ -132,10 +132,9 @@ def process(openssl_messages):
             reporting.Groups([
                     reporting.Groups.SECURITY,
                     reporting.Groups.NETWORK,
-                    reporting.Groups.SERVICES
-            ]),
-            reporting.Groups([
-                reporting.Groups.POST
+                    reporting.Groups.SERVICES,
+                    reporting.Groups.POST,
+                    reporting.Groups.FAILURE,
             ]),
             reporting.RelatedResource('package', 'openssl'),
             reporting.RelatedResource('file', '/etc/pki/tls/openssl.cnf')

@@ -1,6 +1,7 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import add_provider
 from leapp.models import OpenSslConfig
+from leapp.reporting import Report
 from leapp.tags import ApplicationsPhaseTag, IPUWorkflowTag
 
 
@@ -34,7 +35,7 @@ class OpenSslProviders(Actor):
 
     name = 'open_ssl_providers'
     consumes = (OpenSslConfig,)
-    produces = ()
+    produces = (Report,)
     tags = (IPUWorkflowTag, ApplicationsPhaseTag,)
 
     def process(self):
