@@ -29,9 +29,9 @@ def test_inhibit_on_iso_mount_failure(monkeypatch, mount_successful):
         assert is_inhibitor(create_report_mock.reports[0])
 
 
-@pytest.mark.parametrize(('detected_iso_rhel_ver', 'required_target_ver', 'should_inhibit'),
+@pytest.mark.parametrize(('detected_iso_os_ver', 'required_target_ver', 'should_inhibit'),
                          (('8.6', '8.6', False), ('7.9', '8.6', True), ('8.5', '8.6', False), ('', '8.6', True)))
-def test_inhibit_on_detected_rhel_version(monkeypatch, detected_iso_rhel_ver, required_target_ver, should_inhibit):
+def test_inhibit_on_detected_iso_version(monkeypatch, detected_iso_os_ver, required_target_ver, should_inhibit):
     create_report_mock = create_report_mocked()
     monkeypatch.setattr(reporting, 'create_report', create_report_mock)
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(dst_ver=required_target_ver))
@@ -39,10 +39,10 @@ def test_inhibit_on_detected_rhel_version(monkeypatch, detected_iso_rhel_ver, re
     target_iso_msg = TargetOSInstallationImage(path='',
                                                mountpoint='',
                                                repositories=[],
-                                               rhel_version=detected_iso_rhel_ver,
+                                               os_version=detected_iso_os_ver,
                                                was_mounted_successfully=True)
 
-    check_target_iso.inhibit_if_wrong_iso_rhel_version(target_iso_msg)
+    check_target_iso.inhibit_if_wrong_iso_os_version(target_iso_msg)
 
     expected_report_count = 1 if should_inhibit else 0
     assert create_report_mock.called == expected_report_count
@@ -52,7 +52,7 @@ def test_inhibit_on_detected_rhel_version(monkeypatch, detected_iso_rhel_ver, re
 
 @pytest.mark.parametrize(('iso_repoids', 'should_inhibit'),
                          ((('BaseOS', 'AppStream'), False), (('BaseOS',), True), (('AppStream',), True), ((), True)))
-def test_inhibit_on_invalid_rhel_version(monkeypatch, iso_repoids, should_inhibit):
+def test_inhibit_on_invalid_os_version(monkeypatch, iso_repoids, should_inhibit):
     create_report_mock = create_report_mocked()
     monkeypatch.setattr(reporting, 'create_report', create_report_mock)
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked())
@@ -64,7 +64,7 @@ def test_inhibit_on_invalid_rhel_version(monkeypatch, iso_repoids, should_inhibi
                                                repositories=iso_repositories,
                                                was_mounted_successfully=True)
 
-    check_target_iso.inihibit_if_iso_does_not_contain_basic_repositories(target_iso_msg)
+    check_target_iso.inhibit_if_iso_does_not_contain_basic_repositories(target_iso_msg)
 
     expected_report_count = 1 if should_inhibit else 0
     assert create_report_mock.called == expected_report_count
