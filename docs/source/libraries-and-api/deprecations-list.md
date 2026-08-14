@@ -13,7 +13,9 @@ framework, see {ref}`deprecation:list of the deprecated functionality in leapp`.
 Only the versions in which a deprecation has been made are listed.
 
 ## Next release <span style="font-size:0.5em; font-weight:normal">(till TODO date)</span>
-- Nothing deprecated yet
+- Models:
+- **`rhel_version`** field in the `TargetOSInstallationImage` model is replaced by the
+`os_version` field.
 
 ## v0.25.0 <span style="font-size:0.5em; font-weight:normal">(till January 2027)</span>
 - Environment variables
