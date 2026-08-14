@@ -14,6 +14,11 @@ from leapp.models import DistributionSignedRPM, RpmTransactionTasks
 # the target distro
 # The "remove" set lists packages or glob pattern for matching packages from
 # the source distro to remove without any replacement.
+# The "install" set lists target packages to (re)install in the main transaction
+# when the same-named package is currently installed on the source system. It is
+# used for packages that a pre-transaction workaround has to remove first (e.g.
+# swaporaclepackages removes plymouth-theme-spinner to swap in redhat-logos, and
+# the RHEL build has to be put back here).
 _CONFIG = {
     ("centos", "rhel"): {
         "swap": {
@@ -86,6 +91,11 @@ _CONFIG = {
             "oraclelinux-release-el*",
             "oraclelinux-*-release-*",
         },
+        # Removed by swaporaclepackages because it file-conflicts with redhat-logos;
+        # reinstall the RHEL build in the main transaction.
+        "install": {
+            "plymouth-theme-spinner",
+        },
     },
 }
 
@@ -115,6 +125,10 @@ def _make_transaction_tasks(config, rpms):
     for pkg in config.get("remove", {}):
         matches = _glob_match_rpms(rpms, pkg)
         to_remove.update(matches)
+
+    for pkg in config.get("install", {}):
+        if pkg in rpms:
+            to_install.add(pkg)
 
     return RpmTransactionTasks(to_install=list(to_install), to_remove=list(to_remove))
 

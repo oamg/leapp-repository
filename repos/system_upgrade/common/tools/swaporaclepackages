@@ -1,0 +1,167 @@
+#!/usr/bin/bash -e
+#
+# Swap Oracle Linux packages for their Red Hat counterparts on /installroot,
+# from inside the target userspace container.
+#
+# Usage: swaporaclepackages [--offline] <releasever> <repoid> [<repoid> ...]
+#
+
+offline=0
+if [ "$1" = "--offline" ]; then
+    offline=1
+    shift
+fi
+
+# repoids are only needed for the online download.
+if [ "$#" -lt 1 ] || { [ "${offline}" -eq 0 ] && [ "$#" -lt 2 ]; }; then
+    echo "Usage: $0 [--offline] <releasever> <repoid> [repoid ...]" >&2
+    exit 1
+fi
+
+releasever=$1
+shift
+major=${releasever%%.*}
+# leapp only supports sequential major upgrades.
+source_major=$((major - 1))
+
+# source_pkg -> target_pkg (acted on only if source_pkg is installed).
+declare -A PKG_SWAP=(
+    [oraclelinux-release]=redhat-release
+    [oracle-logos]=redhat-logos
+    [oracle-logos-httpd]=redhat-logos-httpd
+    [oracle-logos-ipa]=redhat-logos-ipa
+    [oracle-backgrounds]=redhat-backgrounds
+    [oracle-indexhtml]=redhat-indexhtml
+)
+
+# File-conflict with the RHEL replacements; remove here (the shell installs only
+# local RPMs) and let the main transaction reinstall the RHEL build.
+CONFLICT_REMOVES=(
+    plymouth-theme-spinner
+)
+
+repo_opts=()
+for repo in "$@"; do
+    repo_opts+=(--enablerepo "${repo}")
+done
+
+plugin_opts=()
+if [ "${LEAPP_NO_RHSM:-0}" = "1" ]; then
+    plugin_opts+=(--disableplugin subscription-manager)
+fi
+
+# Query/download from the target repositories in the container.
+target_opts=(
+    --setopt=module_platform_id="platform:el${major}"
+    --setopt=keepcache=1
+    --releasever "${releasever}"
+    --disablerepo '*'
+    "${repo_opts[@]}"
+    "${plugin_opts[@]}"
+)
+
+# Swap into /installroot from local RPMs only. module_platform_id must match the
+# source platform: /installroot's still-enabled source modules require it, else
+# the transaction fails with "nothing provides module(platform:el${source_major})".
+shell_opts=(
+    --installroot=/installroot
+    --setopt=module_platform_id="platform:el${source_major}"
+    --releasever "${releasever}"
+    --disablerepo '*'
+    "${plugin_opts[@]}"
+)
+
+# Downloaded in the online phases, reused offline. Under /var/lib (not /var/tmp)
+# so it survives the reboot into the upgrade initramfs; never cleaned up.
+RPM_CACHE_DIR=/var/lib/leapp-ol-swap-rpms
+
+rpm_files=()
+swapped_src=()
+remove_pkgs=()
+
+for src_pkg in "${!PKG_SWAP[@]}"; do
+    if ! rpm --root=/installroot -q "${src_pkg}" >/dev/null 2>&1; then
+        continue
+    fi
+
+    tgt_pkg=${PKG_SWAP[${src_pkg}]}
+    # Per-package dir so e.g. redhat-logos-*.rpm does not match redhat-logos-httpd.
+    pkg_destdir="${RPM_CACHE_DIR}/${tgt_pkg}"
+
+    if [ "${offline}" -eq 1 ]; then
+        rpm_file=$(find "${pkg_destdir}" -maxdepth 1 -type f -name '*.rpm' 2>/dev/null | head -n1)
+        if [ -z "${rpm_file}" ]; then
+            echo "Expected pre-downloaded RPM for ${tgt_pkg} not found in ${pkg_destdir}." >&2
+            echo "The package download phase must run before the upgrade transaction." >&2
+            exit 1
+        fi
+        echo "Reusing cached ${tgt_pkg}: ${rpm_file} (replaces ${src_pkg})" >&2
+    else
+        pkg_nevra=$(dnf repoquery --available --latest-limit=1 -q "${target_opts[@]}" "${tgt_pkg}" | head -n1)
+        if [ -z "${pkg_nevra}" ]; then
+            echo "Could not find ${tgt_pkg} in the enabled target repositories." >&2
+            exit 1
+        fi
+
+        echo "Resolved target ${tgt_pkg}: ${pkg_nevra} (replaces ${src_pkg})" >&2
+
+        # Start clean so a stale download never shadows the resolved RPM.
+        rm -rf "${pkg_destdir}"
+        mkdir -p "${pkg_destdir}"
+        dnf download -y --destdir "${pkg_destdir}" "${target_opts[@]}" "${pkg_nevra}"
+        rpm_file=$(find "${pkg_destdir}" -maxdepth 1 -type f -name '*.rpm' | head -n1)
+        if [ -z "${rpm_file}" ]; then
+            echo "Failed to download ${pkg_nevra}." >&2
+            exit 1
+        fi
+    fi
+
+    rpm_files+=("${rpm_file}")
+    swapped_src+=("${src_pkg}")
+    remove_pkgs+=("${src_pkg}")
+done
+
+if [ "${#rpm_files[@]}" -eq 0 ]; then
+    echo "No Oracle packages to swap; nothing to do." >&2
+    exit 0
+fi
+
+for pkg in "${CONFLICT_REMOVES[@]}"; do
+    if rpm --root=/installroot -q "${pkg}" >/dev/null 2>&1; then
+        echo "Removing conflicting package ${pkg} in the same transaction" >&2
+        remove_pkgs+=("${pkg}")
+    fi
+done
+
+# BZ 1773483: all local packages must be on the first "install" line.
+shell_instructions="install ${rpm_files[*]}"$'\n'
+for pkg in "${remove_pkgs[@]}"; do
+    shell_instructions+="remove ${pkg}"$'\n'
+done
+shell_instructions+='transaction run'$'\n'
+
+echo "Running dnf shell against /installroot:" >&2
+printf '%s' "${shell_instructions}" >&2
+
+printf '%s' "${shell_instructions}" | dnf -y "${shell_opts[@]}" shell
+
+# "dnf shell" can exit 0 without swapping (epoch/obsoletes no-op); verify.
+for i in "${!swapped_src[@]}"; do
+    src_pkg=${swapped_src[$i]}
+    tgt_pkg=${PKG_SWAP[${src_pkg}]}
+
+    if rpm --root=/installroot -q "${src_pkg}" >/dev/null 2>&1; then
+        echo "Failed to swap out ${src_pkg}; it is still installed in /installroot." >&2
+        exit 1
+    fi
+
+    tgt_vendor=$(rpm --root=/installroot -q --qf '%{VENDOR}' "${tgt_pkg}" 2>/dev/null || true)
+    if [ -z "${tgt_vendor}" ]; then
+        echo "Failed to install ${tgt_pkg} in /installroot (replacement for ${src_pkg})." >&2
+        exit 1
+    fi
+    if printf '%s' "${tgt_vendor}" | grep -qi oracle; then
+        echo "Failed to swap ${tgt_pkg}; it is still provided by an Oracle build (vendor: ${tgt_vendor})." >&2
+        exit 1
+    fi
+done
