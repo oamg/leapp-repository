@@ -52,7 +52,7 @@ def test_process_definitive_sb_state(monkeypatch, ff, is_conversion, should_inhi
         assert reporting.create_report.called == 1
         assert reporting.Groups.INHIBITOR in reporting.create_report.report_fields['groups']
         assert reporting.create_report.report_fields['title'] == (
-            "Detected enabled Secure Boot when trying to convert the system"
+            'Detected enabled Secure Boot when trying to convert the system'
         )
     else:
         assert not reporting.create_report.called
@@ -73,9 +73,9 @@ def test_sb_none_efi_vars_accessible(monkeypatch):
 @pytest.mark.parametrize(
     'sb_answer,should_inhibit,expected_title,efi_vars_accessible', [
         (False, False, None, False),
-        (True, True, "Detected enabled Secure Boot when trying to convert the system", False),
-        (None, True, "Cannot determine the Secure Boot status", False),
-        (None, True, "Cannot determine the Secure Boot status", None),
+        (True, True, 'Detected enabled Secure Boot when trying to convert the system', False),
+        (None, True, 'Cannot determine the Secure Boot state', False),
+        (None, True, 'Cannot determine the Secure Boot state', None),
     ]
 )
 def test_sb_none_efi_vars_inaccessible_dialog(monkeypatch, sb_answer, should_inhibit, expected_title,

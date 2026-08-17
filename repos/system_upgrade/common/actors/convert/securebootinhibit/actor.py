@@ -33,8 +33,8 @@ class SecureBootInhibit(Actor):
                         ' If unsure, check your UEFI firmware settings.'
                     ),
                     reason=(
-                        'EFI runtime variables are not accessible, so the Secure Boot'
-                        ' state cannot be determined automatically.'
+                        'The Secure Boot state cannot be determined automatically'
+                        ' because UEFI runtime variables are not accessible.'
                     ),
                 ),
             ),
