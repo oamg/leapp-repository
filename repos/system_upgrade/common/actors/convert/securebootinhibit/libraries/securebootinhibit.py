@@ -5,17 +5,26 @@ from leapp.libraries.stdlib import api
 from leapp.models import FirmwareFacts
 
 
-def _report_secureboot_enabled(extra_hint=''):
+def _report_secureboot_enabled(answered_by_user):
+    answerfile_hint = ""
+    if answered_by_user:
+        # extra space in the beginning due to pasting inside the hint str
+        answerfile_hint = (
+            " "
+            "Then update your answer about the secure boot in the answerfile"
+            " to reflect the new state (for key: 'confirm_secureboot_enabled')."
+        )
+
     hint = (
-        "Disable Secure Boot to be able to convert the system to"
-        " a different Linux distribution. Then re-enable Secure Boot"
-        " again after the conversion process is finished successfully."
+        "To be able to convert the system to a different Linux distribution,"
+        " disable Secure Boot.{} Then re-enable Secure Boot"
+        " again after the upgrade process with conversion is finished successfully."
         " Check instructions for your current OS, or hypervisor in"
         " case of virtual machines, for more information how to"
         " disable Secure Boot."
+        .format(answerfile_hint)
     )
-    if extra_hint:
-        hint += ' ' + extra_hint
+
     reporting.create_report([
         reporting.Title(
             "Detected enabled Secure Boot when trying to convert the system"
@@ -43,33 +52,23 @@ def process():
             details={"details": "Actor did not receive FirmwareFacts message."},
         )
 
-    if ff.firmware != 'efi':
+    if ff.firmware != 'efi' or ff.secureboot_enabled is False:
         return
 
     secureboot_enabled = ff.secureboot_enabled
-
-    # Hardware does not support Secure Boot (EFI vars readable, state is None).
     if secureboot_enabled is None and ff.efi_vars_accessible is True:
-        api.current_logger().info(
-            "EFI variables are accessible but Secure Boot is not supported"
-            " by the hardware; proceeding."
-        )
+        # HW does not support Secure Boot (EFI vars readable, SB state is None).
+        api.current_logger().info("Secure Boot is not supported by the HW. Skipping.")
         return
 
-    # EFI runtime variables inaccessible -> the user's answer is our only source.
     answered_by_user = False
     if secureboot_enabled is None:
+        # Cannot determine the SB state (no EFI vars) -> get answer from user
         secureboot_enabled = api.current_actor().get_sb_answer()
         answered_by_user = True
 
     if secureboot_enabled is True:
-        _report_secureboot_enabled(
-            extra_hint=(
-                "If Secure Boot is already disabled and the answer was"
-                " incorrect, change the value of 'confirm_secureboot_enabled'"
-                " from True to False in the answer file and re-run."
-            ) if answered_by_user else '',
-        )
+        _report_secureboot_enabled(answered_by_user)
         return
 
     if secureboot_enabled is False:
@@ -87,9 +86,8 @@ def process():
             "The system is booted in UEFI mode but the Secure Boot state"
             " cannot be determined automatically because EFI runtime"
             " variables are not accessible. The Secure Boot status is"
-            " important for the conversion process as converting with"
-            " Secure Boot enabled could lead to a system that fails"
-            " to boot."
+            " important to be able to determine next steps for the in-place"
+            " upgrade process with the conversion."
         ),
         reporting.Severity(reporting.Severity.HIGH),
         reporting.Groups([reporting.Groups.INHIBITOR, reporting.Groups.BOOT]),
