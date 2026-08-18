@@ -13,8 +13,22 @@ class FirmwareFacts(Model):
 
     secureboot_enabled = fields.Nullable(fields.Boolean())
     """
-    Check whether SecureBoot is enabled, always False on BIOS systems
+    Check whether SecureBoot is enabled.
 
-    Note that some machines do not support SecureBoot at all - even for systems booted with UEFI.
-    For systems booted with UEFI that does not support SecureBoot set None.
+    The value can be None in these cases:
+        * on BIOS systems (mokutil is never called)
+        * on systems that do not support SecureBoot (even when booted with UEFI)
+        * on systems with disabled EFI variables (usually on Real Time systems due to effect on latency)
+    """
+
+    efi_vars_accessible = fields.Nullable(fields.Boolean())
+    """
+    True if EFI runtime variables are accessible via mokutil.
+
+    Checking this value is useful on systems booted with UEFI when the information about
+    the Secure Boot settings is not determined (`secureboot_enabled` is None).
+    Other values:
+
+        * False if mokutil fails with "EFI variables are not supported".
+        * None for BIOS systems or when mokutil is not installed.
     """
