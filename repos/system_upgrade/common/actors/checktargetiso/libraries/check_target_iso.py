@@ -131,13 +131,13 @@ def inhibit_if_iso_not_located_on_persistent_partition(iso):
         raise StopActorExecutionError('Actor did not receive any StorageInfo message.')
 
     # Assumes that the path has been already checked for validity, e.g., the ISO path points to a file
-    iso_mountpoint = iso.path
+    iso_mountpoint = os.path.realpath(iso.path)
     while not os.path.ismount(iso_mountpoint):  # Guaranteed to terminate because we must reach / eventually
         iso_mountpoint = os.path.dirname(iso_mountpoint)
 
     is_iso_on_persistent_partition = False
     for fstab_entry in storage_info.fstab:
-        if fstab_entry.fs_file == iso_mountpoint:
+        if os.path.realpath(fstab_entry.fs_file) == iso_mountpoint:
             is_iso_on_persistent_partition = True
             break
 
