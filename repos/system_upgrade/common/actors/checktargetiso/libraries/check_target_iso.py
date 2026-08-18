@@ -81,22 +81,19 @@ def inhibit_if_failed_to_mount_iso(iso):
 def inhibit_if_wrong_iso_os_version(iso):
     # If the major version could not be determined, the iso.os_version will be an empty string
     if not iso.os_version:
-        target_distro = DISTRO_REPORT_NAMES.target
-
         reporting.create_report([
             reporting.Title(
-                'Failed to determine target OS version provided by the supplied installation image.'
+                'Failed to determine target OS provided by the supplied installation image.'
             ),
             reporting.Summary(
-                'Could not determine what {target_distro} version does the supplied installation image'
-                ' located at {iso_path} provide.'.format(
-                    target_distro=target_distro,
-                    iso_path=iso.path
-                )
+                'Could not determine what OS or OS version is provided by the supplied'
+                f' installation image located at {iso.path}.'
             ),
             reporting.Remediation(
-                hint='Check that the supplied image is a valid {} installation image.'.format(
-                    target_distro
+                hint=(
+                    'Check that the supplied image is a valid installation image of the'
+                    f' target OS and version for the upgrade - {DISTRO_REPORT_NAMES.target}'
+                    f' {version.get_target_major_version()}.'
                 )
             ),
             reporting.Severity(reporting.Severity.HIGH),

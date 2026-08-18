@@ -14,14 +14,24 @@ def etc_release_extract_version(etc_release_contents, target_distro):
     :return: The parsed version or None if it couldn't be determined
     :rtype: str | None
     """
-    # 'Red Hat Enterprise Linux Server release 7.9 (Maipo)' -> ['Red Hat...', '7.9 (Maipo)']
-    # Red Hat Enterprise Linux release 8.10 (Ootpa)
+    # 'Red Hat Enterprise Linux release 8.10 (Ootpa)' -> ['Red Hat Enterprise Linux', '8.10 (Ootpa)']
+    # Red Hat Enterprise Linux release 9.8 (Plow)
     # CentOS Stream release 8
+    api.current_logger().debug(
+        'Determining OS version from etc release contents: {}'.format(etc_release_contents)
+    )
     product_release_fragments = etc_release_contents.split('release')
     if len(product_release_fragments) != 2:
+        api.current_logger().debug('Failed to determine OS version: Unexpected format of etc release')
         return None  # Unlikely. Either way we failed to parse the release
 
-    if not product_release_fragments[0].startswith(distro_id_to_pretty_name(target_distro)):
+    required_distro = distro_id_to_pretty_name(target_distro)
+    determined_distro = product_release_fragments[0].strip()
+    if not determined_distro.startswith(required_distro):
+        api.current_logger().debug(
+            'Failed to determine OS version: The OS name from etc release ({}) does not match the'
+            ' requested target distro ({})'.format(determined_distro, required_distro)
+        )
         return None
 
     determined_ver = product_release_fragments[1].strip().split(' ', 1)[0]  # Remove release name (Maipo)
