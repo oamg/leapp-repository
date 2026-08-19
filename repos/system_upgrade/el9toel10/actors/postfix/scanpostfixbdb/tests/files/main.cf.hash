@@ -1,0 +1,5 @@
+alias_maps = hash:/etc/aliases
+alias_database = hash:/etc/aliases
+default_database_type = hash
+# commented hash:/etc/aliases should be ignored
+smtp_tls_CAfile = /etc/pki/tls/certs/ca-bundle.crt
