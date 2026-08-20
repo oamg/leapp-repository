@@ -181,6 +181,14 @@ def test_get_obsolete_keys_incomplete_data(
                 "gpg-pubkey-db42a60e-37ea5438",
             ],
         ),
+        (
+            "ol",
+            [
+                "gpg-pubkey-ad986da3-5cabf60d",
+                "gpg-pubkey-8d8b756f-629e59ec",
+                "gpg-pubkey-ec551f03-53619141",
+            ],
+        ),
     ],
 )
 def test_get_source_distro_keys(monkeypatch, distro, expected):

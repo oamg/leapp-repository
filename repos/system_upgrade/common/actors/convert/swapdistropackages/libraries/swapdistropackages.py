@@ -14,6 +14,10 @@ from leapp.models import DistributionSignedRPM, RpmTransactionTasks
 # the target distro
 # The "remove" set lists packages or glob pattern for matching packages from
 # the source distro to remove without any replacement.
+# The "install" set lists packages to (re)install without removing anything -
+# packages the swap_distro_packages_workaround actor removes (to avoid a target
+# file conflict) that must be brought back, with deps, by the upgrade
+# transaction. Only packages already installed on the source system are added.
 _CONFIG = {
     ("centos", "rhel"): {
         "swap": {
@@ -40,7 +44,6 @@ _CONFIG = {
             "almalinux-logos": "redhat-logos",
             "almalinux-logos-httpd": "redhat-logos-httpd",
             "almalinux-logos-ipa": "redhat-logos-ipa",
-            "almalinux-indexhtml": "redhat-indexhtml",
             "almalinux-backgrounds": "redhat-backgrounds",
             "almalinux-release": "redhat-release",
         },
@@ -59,7 +62,6 @@ _CONFIG = {
             "rocky-logos": "redhat-logos",
             "rocky-logos-httpd": "redhat-logos-httpd",
             "rocky-logos-ipa": "redhat-logos-ipa",
-            "rocky-indexhtml": "redhat-indexhtml",
             "rocky-backgrounds": "redhat-backgrounds",
             "rocky-release": "redhat-release",
         },
@@ -74,17 +76,22 @@ _CONFIG = {
         },
     },
     ("ol", "rhel"): {
+        # oracle-logos-*, oracle-indexhtml and oracle-backgrounds obsolete their
+        # RHEL counterparts, so they can't be swapped in the main transaction;
+        # swap_distro_packages_workaround removes them and installs the RHEL
+        # versions before the upgrade. They are intentionally not listed here.
         "swap": {
-            "oracle-logos": "redhat-logos",
-            "oracle-logos-httpd": "redhat-logos-httpd",
-            "oracle-logos-ipa": "redhat-logos-ipa",
-            "oracle-indexhtml": "redhat-indexhtml",
-            "oracle-backgrounds": "redhat-backgrounds",
             "oraclelinux-release": "redhat-release",
         },
         "remove": {
             "oraclelinux-release-el*",
             "oraclelinux-*-release-*",
+        },
+        # plymouth-theme-spinner is removed by the swaporaclepackages workaround and
+        # only reinstalled via the "install" set, so it ends up in to_install (with
+        # the RHEL build) but not in to_remove.
+        "install": {
+            "plymouth-theme-spinner",
         },
     },
 }
@@ -116,6 +123,10 @@ def _make_transaction_tasks(config, rpms):
         matches = _glob_match_rpms(rpms, pkg)
         to_remove.update(matches)
 
+    for pkg in config.get("install", {}):
+        if pkg in rpms:
+            to_install.add(pkg)
+
     return RpmTransactionTasks(to_install=list(to_install), to_remove=list(to_remove))
 
 
@@ -141,4 +152,19 @@ def process():
 
     rpms = {rpm.name for rpm in rpms_msg.items}
     task = _make_transaction_tasks(config, rpms)
+
+    # Oracle's redhat-release has a higher epoch than RHEL's, so dnf treats it as
+    # newer and considers the RHEL redhat-release already satisfied; the
+    # oraclelinux-release -> redhat-release swap above then never installs it.
+
+    # Removing Oracle's redhat-release here lets the RHEL one in.
+    # For el8 -> el9, the el9 redhat-release is satisfied by the rpm already on the el8 system,
+    # so the swap can run early.
+    # For el9 -> el10, the el10 redhat-release requires a newer rpm than el9 ships, which is
+    # available when the target repos are enabled, so during the main upgrade transaction.
+    is_ol_to_rhel = (source_distro, target_distro) == ("ol", "rhel")
+    if is_ol_to_rhel and get_target_major_version() == "10" and "redhat-release" in rpms:
+        if "redhat-release" not in task.to_remove:
+            task.to_remove.append("redhat-release")
+
     api.produce(task)
