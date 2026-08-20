@@ -370,7 +370,7 @@ def get_distro_efidir_canon_path(distro_id):
         return os.path.join(efi.EFI_MOUNTPOINT, "EFI", "redhat")
 
     if distro_id == "ol":
-        return os.path.join(efi.EFI_MOUNTPOINT, "EFI", "oracle")
+        return os.path.join(efi.EFI_MOUNTPOINT, "EFI", "redhat")
 
     return os.path.join(efi.EFI_MOUNTPOINT, "EFI", distro_id)
 

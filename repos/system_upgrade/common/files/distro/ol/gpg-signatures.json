@@ -1,7 +1,12 @@
 {
     "keys": {
-        "82562ea9ad986da3": [],
-        "bc4d06a08d8b756f": []
+        "82562ea9ad986da3": ["gpg-pubkey-ad986da3-5cabf60d"],
+        "bc4d06a08d8b756f": ["gpg-pubkey-8d8b756f-629e59ec"],
+        "72f97b74ec551f03": ["gpg-pubkey-ec551f03-53619141"]
     },
-    "obsoleted-keys": {}
+    "obsoleted-keys": {
+        "8": ["gpg-pubkey-ec551f03-53619141"],
+        "9": ["gpg-pubkey-ad986da3-5cabf60d"],
+        "10": []
+    }
 }

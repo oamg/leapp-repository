@@ -220,6 +220,12 @@ def test_process_ok_ol_to_rhel(monkeypatch):
     # only reinstalled via the "install" set, so it ends up in to_install (with
     # the RHEL build) but not in to_remove.
     rpms = oracle_rpms + ["plymouth-theme-spinner"]
+    expected_to_remove = [
+        "oraclelinux-release",
+        "oraclelinux-release-el9",
+        "oraclelinux-developer-release-el9",
+        "oraclelinux-automation-manager-release-el9",
+    ]
     curr_actor_mocked = CurrentActorMocked(
         src_distro="ol",
         dst_distro="rhel",
@@ -233,15 +239,10 @@ def test_process_ok_ol_to_rhel(monkeypatch):
 
     expected = RpmTransactionTasks(
         to_install=[
-            "redhat-logos",
-            "redhat-logos-httpd",
-            "redhat-logos-ipa",
-            "redhat-indexhtml",
-            "redhat-backgrounds",
             "redhat-release",
             "plymouth-theme-spinner",
         ],
-        to_remove=oracle_rpms,
+        to_remove=expected_to_remove,
     )
 
     assert produce_mock.called == 1
