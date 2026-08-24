@@ -7,6 +7,7 @@ upstream_package_name: leapp-repository
 downstream_package_name: leapp-repository
 upstream_tag_template: 'v{version}'
 merge_pr_in_ci: false
+osh_diff_scan_after_copr_build: false
 
 srpm_build_deps:
 - make
@@ -25,15 +26,147 @@ actions:
   # builds from PRs should have lower NVR than those from main branch
   - bash -c "sed -i \"s/1%{?dist}/0%{?dist}/g\" packaging/leapp-repository.spec"
 
+# Shared abstract test definitions live under `_:` (Packit ignores this key;
+# see packit docs: 'yaml anchors'), so they don't need dummy `trigger: ignore`
+# job entries in `jobs:`.
+_:
+  sanity-abstract-8to9: &sanity-abstract-8to9
+    job: tests
+    trigger: pull_request
+    fmf_url: "https://gitlab.cee.redhat.com/oamg/leapp-tests"
+    fmf_ref: "next"
+    use_internal_tf: True
+    labels:
+      - sanity
+    targets:
+      epel-8-x86_64:
+        distros: [RHEL-8.10.0-Nightly]
+    tf_extra_params:
+      test:
+        tmt:
+          plan_filter: 'tag:8to9'
+      environments:
+        - &tmt-env-settings-810to96
+          tmt:
+            context: &tmt-context-810to96
+              distro: "rhel-8.10"
+              distro_target: "rhel-9.6"
+          settings: &default-provisioning-settings
+            provisioning:
+              tags:
+                BusinessUnit: sst_upgrades@leapp_upstream_test
+        - &tmt-env-settings-810to98
+          tmt:
+            context: &tmt-context-810to98
+              distro: "rhel-8.10"
+              distro_target: "rhel-9.8"
+          settings: *default-provisioning-settings
+        - &tmt-env-settings-810to99
+          tmt:
+            context: &tmt-context-810to99
+              distro: "rhel-8.10"
+              distro_target: "rhel-9.9"
+          settings: *default-provisioning-settings
+
+  sanity-abstract-8to9-aws: &sanity-abstract-8to9-aws
+    <<: *sanity-abstract-8to9
+    labels:
+      - sanity
+      - aws
+    targets:
+      epel-8-x86_64:
+        distros: [RHEL-8-rhui]
+
+  ondemand-8to9-abstract: &ondemand-8to9-abstract
+    <<: *sanity-abstract-8to9
+    manual_trigger: True
+
+  sanity-abstract-9to10: &sanity-abstract-9to10
+    job: tests
+    trigger: pull_request
+    fmf_url: "https://gitlab.cee.redhat.com/oamg/leapp-tests"
+    fmf_ref: "next"
+    use_internal_tf: True
+    labels:
+      - sanity
+    targets:
+      epel-9-x86_64:
+        distros: [RHEL-9.6.0-Nightly]
+    tf_extra_params:
+      test:
+        tmt:
+          plan_filter: 'tag:9to10'
+      environments:
+        - &tmt-env-settings-centos9to10
+          tmt:
+            context: &tmt-context-centos9to10
+              distro: "centos-9"
+              distro_target: "centos-10"
+          settings: *default-provisioning-settings
+        - &tmt-env-settings-96to100
+          tmt:
+            context: &tmt-context-96to100
+              distro: "rhel-9.6"
+              distro_target: "rhel-10.0"
+          settings: *default-provisioning-settings
+        - &tmt-env-settings-98to102
+          tmt:
+            context: &tmt-context-98to102
+              distro: "rhel-9.8"
+              distro_target: "rhel-10.2"
+          settings: *default-provisioning-settings
+        - &tmt-env-settings-almalinux-9_8-to-rhel-10_2
+          tmt:
+            context: &tmt-context-almalinux-9_8-to-rhel-10_2
+              distro: "alma-9.8"
+              distro_target: "rhel-10.2"
+          settings: *default-provisioning-settings
+        - &tmt-env-settings-rockylinux-9_8-to-rhel-10_2
+          tmt:
+            context: &tmt-context-rockylinux-9_8-to-rhel-10_2
+              distro: "rocky-9.8"
+              distro_target: "rhel-10.2"
+          settings: *default-provisioning-settings
+        - &tmt-env-settings-centos9torhel102
+          tmt:
+            context: &tmt-context-centos9torhel102
+              distro: "centos-9"
+              distro_target: "rhel-10.2"
+          settings: *default-provisioning-settings
+        - &tmt-env-settings-99to103
+          tmt:
+            context: &tmt-context-99to103
+              distro: "rhel-9.9"
+              distro_target: "rhel-10.3"
+          settings: *default-provisioning-settings
+        - &tmt-env-settings-centos9torhel103
+          tmt:
+            context: &tmt-context-centos9torhel103
+              distro: "centos-9"
+              distro_target: "rhel-10.3"
+          settings: *default-provisioning-settings
+
+  sanity-abstract-9to10-aws: &sanity-abstract-9to10-aws
+    <<: *sanity-abstract-9to10
+    labels:
+      - sanity
+      - aws
+    targets:
+      epel-9-x86_64:
+        distros: [RHEL-9-rhui]
+
+  ondemand-9to10-abstract: &ondemand-9to10-abstract
+    <<: *sanity-abstract-9to10
+    manual_trigger: True
+
 jobs:
 - job: copr_build
   trigger: pull_request
-  metadata:
-    owner: "@oamg"
-    project: leapp
-    targets:
-    - epel-8-x86_64
-    - epel-9-x86_64
+  owner: "@oamg"
+  project: leapp
+  targets:
+  - epel-8-x86_64
+  - epel-9-x86_64
   actions:
     create-archive:
     - bash -c "rm -f packaging/deps-pkgs.tar.gz"
@@ -47,13 +180,12 @@ jobs:
     - bash -c "sed -i \"s/1%{?dist}/0%{?dist}/g\" packaging/leapp-repository.spec"
 - job: copr_build
   trigger: commit
-  metadata:
-    branch: main
-    owner: "@oamg"
-    project: leapp
-    targets:
-    - epel-8-x86_64
-    - epel-9-x86_64
+  branch: main
+  owner: "@oamg"
+  project: leapp
+  targets:
+  - epel-8-x86_64
+  - epel-9-x86_64
   actions:
     create-archive:
     - bash -c "rm -f packaging/deps-pkgs.tar.gz"
@@ -67,12 +199,11 @@ jobs:
     - bash -c "sed -i \"s/1%{?dist}/100%{?dist}/g\" packaging/leapp-repository.spec"
 - job: copr_build
   trigger: release
-  metadata:
-    owner: "@oamg"
-    project: leapp
-    targets:
-    - epel-8-x86_64
-    - epel-9-x86_64
+  owner: "@oamg"
+  project: leapp
+  targets:
+  - epel-8-x86_64
+  - epel-9-x86_64
   actions:
     create-archive:
     - bash -c "rm -f packaging/deps-pkgs.tar.gz"
@@ -104,78 +235,9 @@ jobs:
 # is the last RHEL 8 release and all new future tests will start from this
 # one release.
 
-# This job is never triggered - we define abstract anchor that are reused in jobs that 'inherit'
-# and have actionable triggers
-- &sanity-abstract-8to9
-  job: tests
-  trigger: ignore
-  fmf_url: "https://gitlab.cee.redhat.com/oamg/leapp-tests"
-  fmf_ref: "next"
-  use_internal_tf: True
-  labels:
-    - sanity
-  targets:
-    epel-8-x86_64:
-      distros: [RHEL-8.10.0-Nightly]
-  identifier: sanity-abstract-8to9
-  tf_extra_params:
-    test:
-      tmt:
-        plan_filter: 'tag:8to9'
-    environments:
-      - &tmt-env-settings-810to96
-        tmt:
-          context: &tmt-context-810to96
-            distro: "rhel-8.10"
-            distro_target: "rhel-9.6"
-        settings:
-          provisioning:
-            tags:
-              BusinessUnit: sst_upgrades@leapp_upstream_test
-      - &tmt-env-settings-810to98
-        tmt:
-          context: &tmt-context-810to98
-            distro: "rhel-8.10"
-            distro_target: "rhel-9.8"
-        settings:
-          provisioning:
-            tags:
-              BusinessUnit: sst_upgrades@leapp_upstream_test
-      - &tmt-env-settings-810to99
-        tmt:
-          context: &tmt-context-810to99
-            distro: "rhel-8.10"
-            distro_target: "rhel-9.9"
-        settings:
-          provisioning:
-            tags:
-              BusinessUnit: sst_upgrades@leapp_upstream_test
-
-- &sanity-abstract-8to9-aws
-  <<: *sanity-abstract-8to9
-  labels:
-    - sanity
-    - aws
-  targets:
-    epel-8-x86_64:
-      distros: [RHEL-8-rhui]
-  identifier: sanity-abstract-8to9-aws
-
-- &beaker-minimal-8to9-abstract-ondemand
-  <<: *sanity-abstract-8to9
-  manual_trigger: True
-  labels:
-    - beaker-minimal
-  targets:
-    epel-8-x86_64:
-      distros: [RHEL-8.10.0-Nightly]
-  identifier: beaker-minimal-8to9-abstract-ondemand
-
-- &kernel-rt-abstract-8to9-ondemand
-  <<: *beaker-minimal-8to9-abstract-ondemand
-  labels:
-    - kernel-rt
-  identifier: sanity-8to9-kernel-rt-abstract-ondemand
+# NOTE: shared 8-to-9 abstract test definitions now live under the
+# top-level `_:` placeholder above (see packit docs: 'yaml anchors'),
+# so they don't need a dummy `trigger: ignore` job entry here anymore.
 
 # ###################################################################### #
 # ######################### Individual tests ########################### #
@@ -187,8 +249,7 @@ jobs:
 
 - &sanity-810to96
   <<: *sanity-abstract-8to9
-  trigger: pull_request
-  identifier: sanity-8.10to9.6
+  identifier: sanity-8.10_to_9.6
   tf_extra_params:
     test:
       tmt:
@@ -201,13 +262,12 @@ jobs:
 
 # On-demand minimal beaker tests
 - &beaker-minimal-810to96
-  <<: *beaker-minimal-8to9-abstract-ondemand
-  trigger: pull_request
+  <<: *ondemand-8to9-abstract
   labels:
     - beaker-minimal
     - beaker-minimal-8.10to9.6
     - 8.10to9.6
-  identifier: sanity-8.10to9.6-beaker-minimal-ondemand
+  identifier: on-demand-8.10_to_9.6-beaker-minimal
   tf_extra_params:
     test:
       tmt:
@@ -219,13 +279,12 @@ jobs:
 
 # On-demand kernel-rt tests
 - &kernel-rt-810to96
-  <<: *kernel-rt-abstract-8to9-ondemand
-  trigger: pull_request
+  <<: *ondemand-8to9-abstract
   labels:
     - kernel-rt
     - kernel-rt-8.10to9.6
     - 8.10to9.6
-  identifier: sanity-8.10to9.6-kernel-rt-ondemand
+  identifier: on-demand-8.10_to_9.6-kernel-rt
   tf_extra_params:
     test:
       tmt:
@@ -241,8 +300,7 @@ jobs:
 
 - &sanity-810to98
   <<: *sanity-abstract-8to9
-  trigger: pull_request
-  identifier: sanity-8.10to9.8
+  identifier: sanity-8.10_to_9.8
   tf_extra_params:
     test:
       tmt:
@@ -255,13 +313,12 @@ jobs:
 
 # On-demand minimal beaker tests
 - &beaker-minimal-810to98
-  <<: *beaker-minimal-8to9-abstract-ondemand
-  trigger: pull_request
+  <<: *ondemand-8to9-abstract
   labels:
     - beaker-minimal
     - beaker-minimal-8.10to9.8
     - 8.10to9.8
-  identifier: sanity-8.10to9.8-beaker-minimal-ondemand
+  identifier: on-demand-8.10_to_9.8-beaker-minimal
   tf_extra_params:
     test:
       tmt:
@@ -273,13 +330,12 @@ jobs:
 
 # On-demand kernel-rt tests
 - &kernel-rt-810to98
-  <<: *kernel-rt-abstract-8to9-ondemand
-  trigger: pull_request
+  <<: *ondemand-8to9-abstract
   labels:
     - kernel-rt
     - kernel-rt-8.10to9.8
     - 8.10to9.8
-  identifier: sanity-8.10to9.8-kernel-rt-ondemand
+  identifier: on-demand-8.10_to_9.8-kernel-rt
   tf_extra_params:
     test:
       tmt:
@@ -291,19 +347,13 @@ jobs:
 
 - &sanity-810to98-aws
   <<: *sanity-abstract-8to9-aws
-  trigger: pull_request
-  identifier: sanity-8.10to9.8-aws
+  identifier: sanity-8.10_to_9.8-aws
   tf_extra_params:
     test:
       tmt:
         plan_filter: 'tag:8to9 & tag:rhui-aws-tier0 & enabled:true & tag:-rhsm'
     environments:
-      - tmt:
-          context: *tmt-context-810to98
-        settings:
-          provisioning:
-            tags:
-              BusinessUnit: sst_upgrades@leapp_upstream_test
+      - *tmt-env-settings-810to98
   env:
     <<: *env-810to98
 
@@ -313,8 +363,7 @@ jobs:
 
 - &sanity-810to99
   <<: *sanity-abstract-8to9
-  trigger: pull_request
-  identifier: sanity-8.10to9.9
+  identifier: sanity-8.10_to_9.9
   tf_extra_params:
     test:
       tmt:
@@ -327,13 +376,12 @@ jobs:
 
 # On-demand minimal beaker tests
 - &beaker-minimal-810to99
-  <<: *beaker-minimal-8to9-abstract-ondemand
-  trigger: pull_request
+  <<: *ondemand-8to9-abstract
   labels:
     - beaker-minimal
     - beaker-minimal-8.10to9.9
     - 8.10to9.9
-  identifier: sanity-8.10to9.9-beaker-minimal-ondemand
+  identifier: on-demand-8.10_to_9.9-beaker-minimal
   tf_extra_params:
     test:
       tmt:
@@ -345,13 +393,12 @@ jobs:
 
 # On-demand kernel-rt tests
 - &kernel-rt-810to99
-  <<: *kernel-rt-abstract-8to9-ondemand
-  trigger: pull_request
+  <<: *ondemand-8to9-abstract
   labels:
     - kernel-rt
     - kernel-rt-8.10to9.9
     - 8.10to9.9
-  identifier: sanity-8.10to9.9-kernel-rt-ondemand
+  identifier: on-demand-8.10_to_9.9-kernel-rt
   tf_extra_params:
     test:
       tmt:
@@ -369,103 +416,9 @@ jobs:
 # ### Abstract job definitions to make individual tests/jobs smaller ### #
 # ###################################################################### #
 
-- &sanity-abstract-9to10
-  job: tests
-  trigger: ignore
-  fmf_url: "https://gitlab.cee.redhat.com/oamg/leapp-tests"
-  fmf_ref: "next"
-  use_internal_tf: True
-  labels:
-    - sanity
-  targets:
-    epel-9-x86_64:
-      distros: [RHEL-9.6.0-Nightly]
-  identifier: sanity-abstract-9to10
-  tf_extra_params:
-    test:
-      tmt:
-        plan_filter: 'tag:9to10'
-    environments:
-      - &tmt-env-settings-centos9to10
-        tmt:
-          context: &tmt-context-centos9to10
-            distro: "centos-9"
-            distro_target: "centos-10"
-        settings:
-          provisioning:
-            tags:
-              BusinessUnit: sst_upgrades@leapp_upstream_test
-      - &tmt-env-settings-96to100
-        tmt:
-          context: &tmt-context-96to100
-            distro: "rhel-9.6"
-            distro_target: "rhel-10.0"
-        settings:
-          provisioning:
-            tags:
-              BusinessUnit: sst_upgrades@leapp_upstream_test
-      - &tmt-env-settings-98to102
-        tmt:
-          context: &tmt-context-98to102
-            distro: "rhel-9.8"
-            distro_target: "rhel-10.2"
-        settings:
-          provisioning:
-            tags:
-              BusinessUnit: sst_upgrades@leapp_upstream_test
-      - &tmt-env-settings-centos9torhel102
-        tmt:
-          context: &tmt-context-centos9torhel102
-            distro: "centos-9"
-            distro_target: "rhel-10.2"
-        settings:
-          provisioning:
-            tags:
-              BusinessUnit: sst_upgrades@leapp_upstream_test
-      - &tmt-env-settings-99to103
-        tmt:
-          context: &tmt-context-99to103
-            distro: "rhel-9.9"
-            distro_target: "rhel-10.3"
-        settings:
-          provisioning:
-            tags:
-              BusinessUnit: sst_upgrades@leapp_upstream_test
-      - &tmt-env-settings-centos9torhel103
-        tmt:
-          context: &tmt-context-centos9torhel103
-            distro: "centos-9"
-            distro_target: "rhel-10.3"
-        settings:
-          provisioning:
-            tags:
-              BusinessUnit: sst_upgrades@leapp_upstream_test
-
-- &sanity-abstract-9to10-aws
-  <<: *sanity-abstract-9to10
-  labels:
-    - sanity
-    - aws
-  targets:
-    epel-9-x86_64:
-      distros: [RHEL-9-rhui]
-  identifier: sanity-abstract-9to10-aws
-
-- &beaker-minimal-9to10-abstract-ondemand
-  <<: *sanity-abstract-9to10
-  manual_trigger: True
-  labels:
-    - beaker-minimal
-  targets:
-    epel-9-x86_64:
-      distros: [RHEL-9.6.0-Nightly]
-  identifier: beaker-minimal-9to10-abstract-ondemand
-
-- &kernel-rt-abstract-9to10-ondemand
-  <<: *beaker-minimal-9to10-abstract-ondemand
-  labels:
-    - kernel-rt
-  identifier: sanity-9to10-kernel-rt-abstract-ondemand
+# NOTE: shared 9-to-10 abstract test definitions now live under the
+# top-level `_:` placeholder above (see packit docs: 'yaml anchors'),
+# so they no longer need a dummy `trigger: ignore` job entry here.
 
 # ###################################################################### #
 # ######################### Individual tests ########################### #
@@ -477,11 +430,7 @@ jobs:
 
 - &sanity-96to100
   <<: *sanity-abstract-9to10
-  trigger: pull_request
-  identifier: sanity-9.6to10.0
-  targets:
-    epel-9-x86_64:
-      distros: [RHEL-9.6.0-Nightly]
+  identifier: sanity-9.6_to_10.0
   tf_extra_params:
     test:
       tmt:
@@ -494,13 +443,12 @@ jobs:
 
 # On-demand minimal beaker tests
 - &beaker-minimal-96to100
-  <<: *beaker-minimal-9to10-abstract-ondemand
-  trigger: pull_request
+  <<: *ondemand-9to10-abstract
   labels:
     - beaker-minimal
     - beaker-minimal-9.6to10.0
     - 9.6to10.0
-  identifier: sanity-9.6to10.0-beaker-minimal-ondemand
+  identifier: on-demand-9.6_to_10.0-beaker-minimal
   targets:
     epel-9-x86_64:
       distros: [RHEL-9.6-Nightly]
@@ -515,13 +463,12 @@ jobs:
 
 # On-demand kernel-rt tests
 - &kernel-rt-96to100
-  <<: *kernel-rt-abstract-9to10-ondemand
-  trigger: pull_request
+  <<: *ondemand-9to10-abstract
   labels:
     - kernel-rt
     - kernel-rt-9.6to10.0
     - 9.6to10.0
-  identifier: sanity-9.6to10.0-kernel-rt-ondemand
+  identifier: on-demand-9.6_to_10.0-kernel-rt
   tf_extra_params:
     test:
       tmt:
@@ -537,8 +484,7 @@ jobs:
 
 - &sanity-98to102
   <<: *sanity-abstract-9to10
-  trigger: pull_request
-  identifier: sanity-9.8to10.2
+  identifier: sanity-9.8_to_10.2
   targets:
     epel-9-x86_64:
       distros: [RHEL-9.8.0-Nightly]
@@ -554,13 +500,12 @@ jobs:
 
 # On-demand minimal beaker tests
 - &beaker-minimal-98to102
-  <<: *beaker-minimal-9to10-abstract-ondemand
-  trigger: pull_request
+  <<: *ondemand-9to10-abstract
   labels:
     - beaker-minimal
     - beaker-minimal-9.8to10.2
     - 9.8to10.2
-  identifier: sanity-9.8to10.2-beaker-minimal-ondemand
+  identifier: on-demand-9.8_to_10.2-beaker-minimal
   targets:
     epel-9-x86_64:
       distros: [RHEL-9.8-Nightly]
@@ -575,13 +520,12 @@ jobs:
 
 # On-demand kernel-rt tests
 - &kernel-rt-98to102
-  <<: *kernel-rt-abstract-9to10-ondemand
-  trigger: pull_request
+  <<: *ondemand-9to10-abstract
   labels:
     - kernel-rt
     - kernel-rt-9.8to10.2
     - 9.8to10.2
-  identifier: sanity-9.8to10.2-kernel-rt-ondemand
+  identifier: on-demand-9.8_to_10.2-kernel-rt
   targets:
     epel-9-x86_64:
       distros: [RHEL-9.8-Nightly]
@@ -596,19 +540,13 @@ jobs:
 
 - &sanity-98to102-aws
   <<: *sanity-abstract-9to10-aws
-  trigger: pull_request
-  identifier: sanity-9.8to10.2-aws
+  identifier: sanity-RHUI_AWS_9.8_to_10.2
   tf_extra_params:
     test:
       tmt:
         plan_filter: 'tag:9to10 & tag:rhui-aws-tier0 & enabled:true & tag:-rhsm'
     environments:
-      - tmt:
-          context: *tmt-context-98to102
-        settings:
-          provisioning:
-            tags:
-              BusinessUnit: sst_upgrades@leapp_upstream_test
+      - *tmt-env-settings-98to102
   env:
     <<: *env-98to102
 
@@ -618,8 +556,7 @@ jobs:
 
 - &sanity-99to103
   <<: *sanity-abstract-9to10
-  trigger: pull_request
-  identifier: sanity-9.9to10.3
+  identifier: sanity-9.9_to_10.3
   targets:
     epel-9-x86_64:
       distros: [RHEL-9.9.0-Nightly]
@@ -635,13 +572,12 @@ jobs:
 
 # On-demand minimal beaker tests
 - &beaker-minimal-99to103
-  <<: *beaker-minimal-9to10-abstract-ondemand
-  trigger: pull_request
+  <<: *ondemand-9to10-abstract
   labels:
     - beaker-minimal
     - beaker-minimal-9.9to10.3
     - 9.9to10.3
-  identifier: sanity-9.9to10.3-beaker-minimal-ondemand
+  identifier: on-demand-9.9_to_10.3-beaker-minimal
   targets:
     epel-9-x86_64:
       distros: [RHEL-9.9-Nightly]
@@ -656,13 +592,12 @@ jobs:
 
 # On-demand kernel-rt tests
 - &kernel-rt-99to103
-  <<: *kernel-rt-abstract-9to10-ondemand
-  trigger: pull_request
+  <<: *ondemand-9to10-abstract
   labels:
     - kernel-rt
     - kernel-rt-9.9to10.3
     - 9.9to10.3
-  identifier: sanity-9.9to10.3-kernel-rt-ondemand
+  identifier: on-demand-9.9_to_10.3-kernel-rt
   targets:
     epel-9-x86_64:
       distros: [RHEL-9.9-Nightly]
@@ -690,8 +625,7 @@ jobs:
 
 - &sanity-centos9torhel102
   <<: *sanity-abstract-9to10
-  trigger: pull_request
-  identifier: sanity-CentOS9toRHEL10.2
+  identifier: sanity-CentOS_9_to_RHEL_10.2
   targets:
     epel-9-x86_64:
       distros: [CentOS-Stream-9]
@@ -711,8 +645,7 @@ jobs:
 
 - &sanity-centos9torhel103
   <<: *sanity-abstract-9to10
-  trigger: pull_request
-  identifier: sanity-CentOS9toRHEL10.3
+  identifier: sanity-CentOS_9_to_RHEL_10.3
   targets:
     epel-9-x86_64:
       distros: [CentOS-Stream-9]
@@ -736,8 +669,7 @@ jobs:
 
 - &sanity-centos-9to10
   <<: *sanity-abstract-9to10
-  trigger: pull_request
-  identifier: sanity-CentOS9to10
+  identifier: sanity-CentOS_9_to_10
   targets:
     epel-9-x86_64:
       distros: [CentOS-Stream-9]
@@ -747,7 +679,57 @@ jobs:
         plan_filter: 'tag:9to10 & tag:tier0 & enabled:true & tag:-rhsm'
     environments:
       - *tmt-env-settings-centos9to10
-  env: &env-centos9to10
+  env: &env-centos-9to10
     SOURCE_RELEASE: "9"
     TARGET_RELEASE: "10"
     TARGET_OS: "centos"
+
+# ###################################################################### #
+# ##################### Alma Linux > RHEL ############################## #
+# ###################################################################### #
+
+# ###################################################################### #
+# ############################ 9.8 > 10.2 ################################ #
+# ###################################################################### #
+
+- &sanity-almalinux-9_8-to-rhel-10_2
+  <<: *sanity-abstract-9to10
+  identifier: sanity-AlmaLinux_9.8_to_RHEL_10.2
+  targets:
+    epel-9-x86_64:
+      distros: ['AlmaLinux OS 9.8.20260526 x86_64']
+  tf_extra_params:
+    test:
+      tmt:
+        plan_filter: 'tag:9to10 & tag:tier0 & enabled:true & tag:-rhsm'
+    environments:
+      - *tmt-env-settings-almalinux-9_8-to-rhel-10_2
+  env: &env-almalinux-9_8-to-rhel-10_2
+    SOURCE_RELEASE: "9.8"
+    TARGET_RELEASE: "10.2"
+    LEAPP_UNSUPPORTED: 1 # 9.8 is defined as unsupported ATM, will be superseded by 9.9
+    LEAPP_DEVEL_SKIP_CHECK_OS_RELEASE: 1 # 9.8 is defined as unsupported ATM, will be superseded by 9.9
+
+# ###################################################################### #
+# ##################### Rocky Linux > RHEL ############################# #
+# ###################################################################### #
+
+# ###################################################################### #
+# ############################ 9.8 > 10.2 ################################ #
+# ###################################################################### #
+
+- &sanity-rockylinux-9_8-to-rhel-10_2
+  <<: *sanity-abstract-9to10
+  identifier: sanity-RockyLinux_9.8_to_RHEL_10.2
+  targets:
+    epel-9-x86_64:
+      distros: ['Rocky-9-EC2-Base-9.8-20260525.0.x86_64']
+  tf_extra_params:
+    test:
+      tmt:
+        plan_filter: 'tag:9to10 & tag:tier0 & enabled:true & tag:-rhsm'
+    environments:
+      - *tmt-env-settings-rockylinux-9_8-to-rhel-10_2
+  env: &env-rockylinux-9_8-to-rhel-10_2
+    SOURCE_RELEASE: "9.8"
+    TARGET_RELEASE: "10.2"
