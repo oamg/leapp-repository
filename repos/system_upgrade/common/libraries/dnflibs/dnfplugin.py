@@ -19,6 +19,15 @@ DNF_PLUGIN_DATA_PATH = os.path.join('/var/lib/leapp', DNF_PLUGIN_DATA_NAME)
 DNF_PLUGIN_DATA_LOG_PATH = os.path.join('/var/log/leapp', DNF_PLUGIN_DATA_NAME)
 DNF_DEBUG_DATA_PATH = '/var/log/leapp/dnf-debugdata/'
 
+# Name of the Oracle Linux package-swap tool registered as a DNFWorkaround by the
+# swap_oracle_packages actor. Unlike ordinary workarounds this one must run inside
+# the target userspace container against /installroot (it needs the target repos
+# to download the RHEL replacement RPMs), so it is handled separately by
+# apply_ol_packages_workaround() and skipped in apply_workarounds().
+# Keep in sync with swaporaclepackages.OL_SWAP_SCRIPT_NAME.
+OL_SWAP_SCRIPT_NAME = 'swaporaclepackages'
+OL_SWAP_CONTAINER_SCRIPT = os.path.join('/var/tmp', OL_SWAP_SCRIPT_NAME)
+
 _DEDICATED_URL = 'https://access.redhat.com/solutions/7011704'
 _DNF_PLUGIN_PATHS = {
     '9': os.path.join('/lib/python3.9/site-packages/dnf-plugins', DNF_PLUGIN_NAME),
@@ -350,6 +359,10 @@ def apply_workarounds(context=None):
     Note this function consumes DNFWorkaround messages! An actor calling this
     function must list the DNFWorkaround in the list of consumable messages.
 
+    The Oracle Linux package-swap workaround is skipped here on purpose; it must
+    run inside the target userspace container against /installroot and is applied
+    by apply_ol_packages_workaround() instead.
+
     :param context: Execution context (defaults to NotIsolatedActions)
     :type context: mounting.IsolatedActions | None
     :raises RegisteredWorkaroundApplicationError: When a workaround script fails to execute.
@@ -358,6 +371,8 @@ def apply_workarounds(context=None):
     # FIXME(pstodulk): add check that actor is consuming DNFWorkaround, and raise
     # new error if it is not.
     for workaround in api.consume(DNFWorkaround):
+        if os.path.basename(workaround.script_path) == OL_SWAP_SCRIPT_NAME:
+            continue
         try:
             api.show_message('Applying transaction workaround - {}'.format(workaround.display_name))
             if workaround.script_args:
@@ -371,6 +386,73 @@ def apply_workarounds(context=None):
         except (OSError, CalledProcessError) as e:
             raise RegisteredWorkaroundApplicationError(
                 message=f'Failed to execute script to apply transaction workaround {workaround.display_name}.',
+                details={
+                    'error message': str(e),
+                    'workaround name': workaround.display_name
+                }
+            )
+
+
+def apply_ol_packages_workaround(context, target_repoids, offline=False):
+    """
+    Apply the Oracle Linux package swap inside the target userspace container.
+
+    The swap script has to run in the target userspace (not on the source
+    overlay) because it downloads the RHEL replacement RPMs from the enabled
+    target repositories and installs them into /installroot via ``dnf shell``.
+    The script is copied into the container and invoked with the target
+    releasever and the enabled target repository IDs.
+
+    This is a no-op unless the swap_oracle_packages actor registered the
+    workaround (i.e. only on Oracle Linux -> RHEL conversions).
+
+    :param context: Target userspace execution context
+    :type context: mounting.IsolatedActions
+    :param target_repoids: Enabled target repository IDs
+    :type target_repoids: list[str]
+    :param offline: When True (the post-reboot upgrade transaction, which has no
+        network), reuse the RHEL replacement RPMs downloaded during the earlier
+        pre-reboot phases instead of downloading them again.
+    :type offline: bool
+    :raises RegisteredWorkaroundApplicationError: When the workaround script fails.
+    """
+    workarounds = [
+        workaround for workaround in api.consume(DNFWorkaround)
+        if os.path.basename(workaround.script_path) == OL_SWAP_SCRIPT_NAME
+    ]
+    if not workarounds:
+        return
+
+    if int(get_target_major_version()) >= 9:
+        # The swap runs a DNF/RPM transaction against /installroot, which still
+        # uses the BerkeleyDB rpmdb backend on the source system. el9+ can open
+        # bdb only read-only, so a writing transaction fails ("cannot open
+        # Packages database"). Convert it to sqlite first, the same way the main
+        # upgrade transaction does. In the check/download/dry-run phases this
+        # only affects the throwaway source overlay.
+        _rebuild_rpm_db(context, root='/installroot')
+
+    env = {}
+    if get_target_major_version() == '9':
+        # allow handling new RHEL 9 syscalls by systemd-nspawn
+        env = {'SYSTEMD_SECCOMP': '0'}
+
+    releasever = get_target_version()
+    for workaround in workarounds:
+        try:
+            api.show_message('Applying transaction workaround - {}'.format(workaround.display_name))
+            context.copy_to(workaround.script_path, OL_SWAP_CONTAINER_SCRIPT)
+            args = (['--offline'] if offline else []) + [releasever] + list(target_repoids)
+            cmd_str = '{script} {args}'.format(
+                script=OL_SWAP_CONTAINER_SCRIPT,
+                args=' '.join(args)
+            )
+            context.call(['/bin/bash', '-c', cmd_str], env=env)
+        except (OSError, CalledProcessError) as e:
+            raise RegisteredWorkaroundApplicationError(
+                message='Failed to execute script to apply transaction workaround {}.'.format(
+                    workaround.display_name
+                ),
                 details={
                     'error message': str(e),
                     'workaround name': workaround.display_name
@@ -501,6 +583,12 @@ def perform_transaction_install(target_userspace_info, storage_info, used_repos,
 
         if int(get_target_major_version()) >= 9:
             _rebuild_rpm_db(context, root='/installroot')
+
+        # The upgrade transaction runs after the reboot in the interim initramfs
+        # environment, which has no network. Reuse the RHEL replacement RPMs
+        # downloaded during the earlier pre-reboot phases.
+        apply_ol_packages_workaround(context, target_repoids, offline=True)
+
         _transaction(
             context=context, stage=stage, target_repoids=target_repoids, plugin_info=plugin_info,
             xfs_info=xfs_info, tasks=tasks, cmd_prefix=cmd_prefix
@@ -567,6 +655,7 @@ def perform_transaction_check(target_userspace_info,
     with _prepare_perform(used_repos=used_repos, target_userspace_info=target_userspace_info, xfs_info=xfs_info,
                           storage_info=storage_info, target_iso=target_iso) as (context, overlay, target_repoids):
         apply_workarounds(overlay.nspawn())
+        apply_ol_packages_workaround(context, target_repoids)
 
         disable_plugins = []
         if plugin_info:
@@ -631,6 +720,7 @@ def perform_rpm_download(target_userspace_info,
                     disable_plugins += [info.name]
 
         apply_workarounds(overlay.nspawn())
+        apply_ol_packages_workaround(context, target_repoids)
         dnfconfig.exclude_leapp_rpms(context, disable_plugins)
         _transaction(
             context=context, stage=stage, target_repoids=target_repoids, plugin_info=plugin_info, tasks=tasks,
@@ -675,6 +765,7 @@ def perform_dry_run(target_userspace_info,
                           storage_info=storage_info,
                           target_iso=target_iso) as (context, overlay, target_repoids):
         apply_workarounds(overlay.nspawn())
+        apply_ol_packages_workaround(context, target_repoids)
         _transaction(
             context=context, stage='dry-run', target_repoids=target_repoids, plugin_info=plugin_info, tasks=tasks,
             test=True, on_aws=on_aws, xfs_info=xfs_info
