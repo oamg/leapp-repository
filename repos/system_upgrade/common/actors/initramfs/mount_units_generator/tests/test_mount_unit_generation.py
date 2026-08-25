@@ -425,3 +425,55 @@ def test_fix_symlinks_in_dir_skips_pseudo_fs_in_requires(monkeypatch, dirname):
     monkeypatch.setattr(mount_unit_generator, 'parse_unit', mock_parse_unit)
 
     mount_unit_generator._fix_symlinks_in_dir('/test/dir', dirname)
+
+
+@pytest.mark.parametrize('dir_contents,parent_unit,expected', (
+    (['usr-local.mount', 'usr-sap.mount', 'home.mount'], 'usr.mount', True),
+    (['usr-local.mount', 'home.mount'], 'usr.mount', True),
+    (['var.mount', 'home.mount'], 'usr.mount', False),
+    ([], 'usr.mount', False),
+    (['home.mount', 'var.mount', 'usr.mount'], 'usr.mount', False),
+    (['var-log.mount', 'var.mount'], 'var.mount', True),
+    (['home.mount', 'var.mount', 'usr.mount'], '-.mount', False),
+))
+def test_has_child_mount_units(monkeypatch, dir_contents, parent_unit, expected):
+    """Detect whether a parent mount unit has child mount units in the directory."""
+    monkeypatch.setattr('os.listdir', lambda _path: dir_contents)
+    assert mount_unit_generator._has_child_mount_units('/test/dir', parent_unit) is expected
+
+
+def _touch(path):
+    with open(path, 'w'):
+        pass
+
+
+def test_remove_units_preserves_parent_with_child_mount(monkeypatch, leapp_tmpdir):
+    """Parent mount unit is preserved when a child mount unit exists."""
+    monkeypatch.setattr(api, 'current_logger', logger_mocked())
+
+    for unit in ('-.mount', 'usr.mount', 'usr-local.mount'):
+        _touch(os.path.join(leapp_tmpdir, unit))
+
+    mount_unit_generator.remove_units_for_targets_that_are_already_mounted_by_dracut(leapp_tmpdir)
+
+    assert not os.path.exists(os.path.join(leapp_tmpdir, '-.mount'))
+    assert os.path.exists(os.path.join(leapp_tmpdir, 'usr.mount'))
+    assert os.path.exists(os.path.join(leapp_tmpdir, 'usr-local.mount'))
+
+
+def test_remove_units_removes_parent_without_children(monkeypatch, leapp_tmpdir):
+    """Mount unit is removed when no child mount units exist."""
+    monkeypatch.setattr(api, 'current_logger', logger_mocked())
+
+    for unit in ('-.mount', 'usr.mount'):
+        _touch(os.path.join(leapp_tmpdir, unit))
+    os.makedirs(os.path.join(leapp_tmpdir, 'local-fs.target.wants'))
+    _touch(os.path.join(leapp_tmpdir, 'local-fs.target.wants', 'systemd-remount-fs.service'))
+
+    mount_unit_generator.remove_units_for_targets_that_are_already_mounted_by_dracut(leapp_tmpdir)
+
+    assert not os.path.exists(os.path.join(leapp_tmpdir, '-.mount'))
+    assert not os.path.exists(os.path.join(leapp_tmpdir, 'usr.mount'))
+    assert not os.path.exists(
+        os.path.join(leapp_tmpdir, 'local-fs.target.wants', 'systemd-remount-fs.service')
+    )

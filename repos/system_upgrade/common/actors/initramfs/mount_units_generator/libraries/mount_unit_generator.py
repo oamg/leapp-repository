@@ -314,6 +314,20 @@ def copy_units_into_system_location(upgrade_container_ctx, dir_with_our_mount_un
     return copied_files
 
 
+def _has_child_mount_units(dir_path, parent_unit_name):
+    """
+    Check if any mount unit file in dir_path is a child of parent_unit_name.
+
+    Uses systemd unit name convention: /usr/local -> usr-local.mount is a child
+    of /usr -> usr.mount because the name starts with 'usr-'.
+    """
+    parent_prefix = parent_unit_name[:-len('.mount')] + '-'
+    for filename in os.listdir(dir_path):
+        if filename.endswith('.mount') and filename.startswith(parent_prefix):
+            return True
+    return False
+
+
 def remove_units_for_targets_that_are_already_mounted_by_dracut(dir_with_our_mount_units):
     """
     Remove mount units for mount targets that are already mounted by dracut.
@@ -321,6 +335,11 @@ def remove_units_for_targets_that_are_already_mounted_by_dracut(dir_with_our_mou
     Namely, remove mount units:
         '-.mount'   (mounts /)
         'usr.mount' (mounts /usr)
+
+    A mount unit is preserved when child mount units that depend on it exist
+    in the workspace (e.g. usr.mount is kept when usr-local.mount is present),
+    so that systemd's implicit path-based ordering ensures the parent is
+    mounted before its children in the upgrade initramfs.
     """
 
     # NOTE: remount-fs.service creates dependency cycles that are nondeterministically broken
@@ -340,6 +359,13 @@ def remove_units_for_targets_that_are_already_mounted_by_dracut(dir_with_our_mou
 
         if not os.path.exists(unit_location):
             api.current_logger().debug('The {} unit does not exists, no need to remove it.'.format(unit))
+            continue
+
+        if (unit == 'usr.mount' and _has_child_mount_units(dir_with_our_mount_units, unit)):
+            api.current_logger().info(
+                'Keeping the mount unit {} as child mount units exist that depend on it.'
+                .format(unit)
+            )
             continue
 
         _delete_file(unit_location)
