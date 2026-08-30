@@ -29,6 +29,8 @@ def emit_livemode_userspace_requirements():
 
     if livemode_config.capture_upgrade_strace_into:
         packages += ['strace']
+    # TODO: Make this conditional depending on whether we detect stratis on the source system
+    packages += ['stratisd']
 
     packages = sorted(set(packages))
 
