@@ -9,7 +9,12 @@ class CheckInstalledKernels(Actor):
     """
     Inhibit IPU (in-place upgrade) when installed kernels conflict with a safe upgrade.
 
-    a) Inhibit when multiple kernels are installed on a s390x machine
+    a) Inhibit when booted into the Unbreakable Enterprise Kernel (UEK) during conversion
+
+    UEK is not supported for conversion. The system must be booted into the
+    Red Hat Compatible Kernel (RHCK) before proceeding.
+
+    b) Inhibit when multiple kernels are installed on a s390x machine
 
     When on s390x architecture, we are not able to upgrade correctly
     when any kernel is expected to be uninstalled during the rpm
@@ -22,7 +27,7 @@ class CheckInstalledKernels(Actor):
     on s390x unless just one kernel is installed, until the issue will
     be fixed correctly.
 
-    b) Inhibit when machine is not booted into latest installed kernel
+    c) Inhibit when machine is not booted into latest installed kernel
 
     It is strictly required that during the upgrade the machine is
     booted into the latest installed kernel. Upgrading with older

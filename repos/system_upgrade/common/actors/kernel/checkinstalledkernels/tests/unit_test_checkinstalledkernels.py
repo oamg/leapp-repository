@@ -8,6 +8,7 @@ from leapp.libraries.common.config import architecture
 from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked, logger_mocked
 from leapp.libraries.stdlib import api
 from leapp.models import DistributionSignedRPM, KernelInfo, RPM
+from leapp.utils.report import is_inhibitor
 
 RH_PACKAGER = 'Red Hat, Inc. <http://bugzilla.redhat.com/bugzilla>'
 
@@ -28,6 +29,80 @@ def create_rpms(rpm_descriptions):
     rpms = [create_rpm(rpm_desc) for rpm_desc in rpm_descriptions]
     installed_rpms = DistributionSignedRPM(items=rpms)
     return installed_rpms
+
+
+_UEK_KERNELS = [
+    '5.15.0-100.96.32.el8uek.x86_64',
+    '5.15.0-200.136.2.el9uek.aarch64',
+]
+
+_NON_UEK_KERNELS = [
+    '4.18.0-513.5.1.el8.x86_64',
+    '5.14.0-362.8.1.el9.x86_64',
+]
+
+
+def _create_uek_kernel_info(uname_r):
+    """Create a KernelInfo message with a UEK uname_r."""
+    pkg = RPM(
+        name='kernel-uek',
+        epoch='0',
+        version='5.15.0',
+        release='100.96.32.el8uek',
+        arch='x86_64',
+        packager='Oracle America',
+        pgpsig='SOME_SIG',
+    )
+    return KernelInfo(pkg=pkg, uname_r=uname_r)
+
+
+@pytest.mark.parametrize('uname_r', _UEK_KERNELS)
+def test_inhibits_on_uek_kernel_during_conversion(monkeypatch, uname_r):
+    kernel_info = _create_uek_kernel_info(uname_r)
+
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[kernel_info]))
+    monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
+    monkeypatch.setattr(checkinstalledkernels, 'is_conversion', lambda: True)
+
+    checkinstalledkernels.process()
+
+    assert reporting.create_report.called == 1
+    assert is_inhibitor(reporting.create_report.report_fields)
+    assert 'UEK' in reporting.create_report.report_fields['title']
+
+
+@pytest.mark.parametrize('uname_r', _UEK_KERNELS)
+def test_no_uek_inhibitor_outside_conversion(monkeypatch, uname_r):
+    """UEK check should not fire when not in conversion mode."""
+    installed_rpms = create_rpms([
+        RPMDesc(name='kernel-uek', version='5.15.0', release='100.96.32.el8uek', arch='x86_64'),
+    ])
+    kernel_info = _create_uek_kernel_info(uname_r)
+
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[kernel_info, installed_rpms]))
+    monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
+    monkeypatch.setattr(checkinstalledkernels, 'is_conversion', lambda: False)
+
+    checkinstalledkernels.process()
+
+    assert not reporting.create_report.called
+
+
+@pytest.mark.parametrize('uname_r', _NON_UEK_KERNELS)
+def test_no_uek_inhibitor_on_regular_kernel(monkeypatch, uname_r):
+    """Non-UEK kernels should not trigger the UEK inhibitor even during conversion."""
+    installed_rpms = create_rpms([
+        RPMDesc(name='kernel', version='5.14.0', release='362.8.1.el9', arch='x86_64'),
+    ])
+    kernel_info = KernelInfo(pkg=installed_rpms.items[0], uname_r=uname_r)
+
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[kernel_info, installed_rpms]))
+    monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
+    monkeypatch.setattr(checkinstalledkernels, 'is_conversion', lambda: True)
+
+    checkinstalledkernels.process()
+
+    assert not reporting.create_report.called
 
 
 s390x_pkgs_single = [
