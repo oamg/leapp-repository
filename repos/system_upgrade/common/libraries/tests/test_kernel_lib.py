@@ -130,6 +130,9 @@ def test_get_uname_r_provided_by_kernel_pkg_default_context(monkeypatch):
         ('5.14.0-687.el9.aarch64+rt-64k',
          ['kernel-rt-64k-modules-core-5.14.0-687.el9.aarch64', 'kernel-rt-64k-core-5.14.0-687.el9.aarch64'],
          'kernel-rt-64k-core-5.14.0-687.el9.aarch64'),
+        ('5.4.17-2136.332.5.2.el8uek.x86_64',
+         ['kernel-uek-5.4.17-2136.332.5.2.el8uek.x86_64'],
+         'kernel-uek-5.4.17-2136.332.5.2.el8uek.x86_64'),
         ('unknown', None, None),
     )
 )
@@ -153,8 +156,8 @@ def test_get_kernel_pkg_info_for_uname_r(monkeypatch, uname_r, whatprovides_nevr
     if expected_nevra:
         pkg_info = kernel_lib.get_kernel_pkg_info_for_uname_r(uname_r)
         assert pkg_info.nevra == expected_nevra
-        assert pkg_info.name.endswith('-core')
         assert '-modules' not in pkg_info.name
+        assert pkg_info.name.endswith(('-core', '-uek'))
     else:
         with pytest.raises(kernel_lib.KernelPackageInfoError):
             kernel_lib.get_kernel_pkg_info_for_uname_r(uname_r)
