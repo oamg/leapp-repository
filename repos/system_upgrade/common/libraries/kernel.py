@@ -140,8 +140,8 @@ def get_kernel_pkg_info_for_uname_r(uname_r: str) -> KernelPkgInfo:
     """
     Identify the kernel package providing a kernel with the given kernel release (uname-r).
 
-    Queries RPM for packages owning ``/lib/modules/<uname_r>`` and returns info about the ``-core``
-    kernel package among the results.
+    Queries RPM for packages owning ``/lib/modules/<uname_r>`` and returns info about the
+    recognized kernel package (``-core`` or ``-uek``) among the results.
 
     :param uname_r: Kernel release (uname-r)
     :type uname_r: str
@@ -158,16 +158,22 @@ def get_kernel_pkg_info_for_uname_r(uname_r: str) -> KernelPkgInfo:
             details={'Problem': 'No package owns /lib/modules/{}: {}'.format(uname_r, err)})
 
     for pkg_nevra in pkg_nevras:
-        # Skip packages that are clearly not kernel core packages to avoid unnecessary rpm queries
-        if '-core' not in pkg_nevra or '-modules' in pkg_nevra:
+        # Skip modules immediately
+        if '-modules' in pkg_nevra:
+            continue
+
+        # Skip packages that are clearly not kernel core or uek packages to avoid unnecessary rpm queries
+        if '-core' not in pkg_nevra and '-uek' not in pkg_nevra:
             continue
         pkg_info = get_kernel_pkg_info(pkg_nevra)
-        if pkg_info.name.endswith('-core'):
+
+        if pkg_info.name.endswith(('-core', '-uek')):
             return pkg_info
 
     raise KernelPackageInfoError(
         message='Unable to obtain kernel information of the booted kernel.',
-        details={'Problem': 'No installed package owning /lib/modules/{} is a kernel core package.'.format(uname_r)})
+        details={'Problem': 'No installed package owning /lib/modules/{} is a recognized '
+                 'kernel package.'.format(uname_r)})
 
 
 def get_target_kernel_pkg_names(kernel_type: str, kernel_page_size: str, arch: str) -> KernelPkgNames:
