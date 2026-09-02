@@ -13,7 +13,7 @@ except ImportError:
 
 from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
-from leapp.libraries.common.config import architecture, utils
+from leapp.libraries.common.config import architecture, is_conversion, utils
 from leapp.libraries.stdlib import api
 from leapp.models import DistributionSignedRPM, KernelInfo
 
@@ -55,8 +55,37 @@ def get_newest_evr(pkgs):
     return newest_evr
 
 
+def _is_conversion_with_uek(kernel_info):
+    """Check if this is a conversion and the system is booted into UEK."""
+    # TODO: Replace uname_r string check with kernel_info.type once UEK is modeled as a KernelType
+    return is_conversion() and 'uek' in kernel_info.uname_r
+
+
 def process():
     kernel_info = utils._require_exactly_one_message_of_type(KernelInfo)
+
+    if _is_conversion_with_uek(kernel_info):
+        reporting.create_report([
+            reporting.Title('Unbreakable Enterprise Kernel (UEK) is currently in use'),
+            reporting.Summary(
+                'The system is currently booted into the Unbreakable Enterprise Kernel (UEK).'
+                ' The in-place upgrade and conversion are not supported with UEK.'
+                ' The system must be booted into the Red Hat Compatible Kernel (RHCK)'
+                ' before the upgrade and conversion can proceed.'
+            ),
+            reporting.Severity(reporting.Severity.HIGH),
+            reporting.Groups([reporting.Groups.KERNEL, reporting.Groups.BOOT]),
+            reporting.Groups([reporting.Groups.INHIBITOR]),
+            reporting.Remediation(
+                hint=(
+                    'To proceed with the upgrade and conversion, boot into the Red Hat Compatible'
+                    ' Kernel (RHCK). Ensure that the kernel package is installed, set the Red Hat'
+                    ' Compatible Kernel (RHCK) as the default boot kernel, reboot the system.'
+                )
+            ),
+        ])
+        return
+
     pkgs = get_all_pkgs_with_name(kernel_info.pkg.name)
 
     if not pkgs:
