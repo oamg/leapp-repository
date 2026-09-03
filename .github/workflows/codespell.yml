@@ -28,4 +28,5 @@ jobs:
             ./etc/leapp/files/pes-events.json,\
             ./etc/leapp/files/repomap.json,\
             ./repos/system_upgrade/common/files/prod-certs,\
+            ./repos/system_upgrade/common/files/distro/*/rpm-gpg,\
             ./docs/source/_static"

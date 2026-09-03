@@ -1,0 +1,34 @@
+#!/usr/bin/bash -e
+#
+# Apply a set of dnf shell instructions to force-swap distribution packages that
+# cannot be handled by the regular upgrade transaction (e.g. packages pinned by
+# a higher epoch or blocked by unversioned obsoletes).
+#
+# The instructions file and the local RPMs it references are prepared by the
+# swap_distro_packages_workaround actor under /var/lib/leapp/swap-workaround-data.
+#
+# Usage: dnfshellswap <instructions-file> [extra dnf options...]
+
+log_error() {
+    echo >&2 "Error: $1"
+}
+
+log_info() {
+    echo >&2 "Info: $1"
+}
+
+if [ "$#" -eq 0 ]; then
+    log_error "Missing the required path to the dnf shell instructions file."
+    exit 1
+fi
+
+instructions_file="$1"
+shift
+
+if [ ! -f "$instructions_file" ]; then
+    log_error "The dnf shell instructions file ${instructions_file} does not exist, nothing to do."
+    exit 1
+fi
+
+log_info "Applying distribution package swap using ${instructions_file}"
+dnf -y "$@" shell "$instructions_file"
