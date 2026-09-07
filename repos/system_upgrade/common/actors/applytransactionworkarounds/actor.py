@@ -1,6 +1,6 @@
 from leapp.actors import Actor
-from leapp.libraries.common.dnflibs import dnfplugin
-from leapp.models import DNFWorkaround
+from leapp.libraries.actor import applytransactionworkarounds
+from leapp.models import DNFWorkaround, TargetUserSpaceInfo
 from leapp.tags import IPUWorkflowTag, PreparationPhaseTag
 
 
@@ -10,9 +10,9 @@ class ApplyTransactionWorkarounds(Actor):
     """
 
     name = 'applytransactionworkarounds'
-    consumes = (DNFWorkaround,)
+    consumes = (DNFWorkaround, TargetUserSpaceInfo)
     produces = ()
     tags = (IPUWorkflowTag, PreparationPhaseTag)
 
     def process(self):
-        dnfplugin.apply_workarounds()
+        applytransactionworkarounds.process()
