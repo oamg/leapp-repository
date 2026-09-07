@@ -50,7 +50,7 @@ def _check_incompatible_config() -> set[str]:
     """
 
     found_options = set()
-    stderr = run(['mysqld', '--validate-config', '--log-error-verbosity=2'],
+    stderr = run(['mysqld', '--validate-config', '--log-error-verbosity=2', '--user=mysql'],
                  checked=False)['stderr']
 
     if 'deprecated' in stderr:
