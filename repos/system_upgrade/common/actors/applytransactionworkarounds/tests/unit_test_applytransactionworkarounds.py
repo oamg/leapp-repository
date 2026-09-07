@@ -32,6 +32,28 @@ class MockedNotIsolatedActions:
         return self
 
 
+class MockedContext:
+    """Records makedirs/copy_to/call so we can assert what ran where."""
+
+    def __init__(self):
+        self.calls = []
+        self.makedirs_paths = []
+        self.copied = []
+
+    def call(self, args):
+        self.calls.append(args)
+        return {'stdout': ''}
+
+    def makedirs(self, path):
+        self.makedirs_paths.append(path)
+
+    def copy_to(self, src, dst):
+        self.copied.append((src, dst))
+
+
+_CONTAINER_SCRIPTS_DIR = '/var/tmp/dnf_workaround_scripts'
+
+
 def _get_tool_path(name):
     for directory in os.getenv('LEAPP_COMMON_TOOLS', '').split(':'):
         full_path = os.path.join(directory, name)
@@ -59,3 +81,65 @@ def test_prepare_yum_config(monkeypatch):
     assert os.path.basename(actions.args[-1]) == 'handleyumconfig'
     assert actor.show_messages and len(actor.show_messages) == 1
     assert display_name in actor.show_messages[0]
+
+
+def test_apply_workarounds_host_context_runs_on_host(monkeypatch):
+    host = MockedContext()
+    container = MockedContext()
+    actor = ShowMessageCurrentActorMocked(
+        msgs=(
+            # execution_context defaults to 'host'
+            DNFWorkaround(display_name='host wa', script_path='/path/to/hostscript'),
+        ),
+    )
+    monkeypatch.setattr(api, 'current_actor', actor)
+
+    apply_workarounds(host, container)
+
+    # host workaround runs on the host context with its path untouched, nothing copied
+    assert host.calls == [['/bin/bash', '-c', '/path/to/hostscript']]
+    assert not container.calls
+    assert not host.copied and not host.makedirs_paths
+
+
+def test_apply_workarounds_container_context_copies_and_runs_in_container(monkeypatch):
+    host = MockedContext()
+    container = MockedContext()
+    actor = ShowMessageCurrentActorMocked(
+        msgs=(
+            DNFWorkaround(
+                display_name='container wa',
+                script_path='/path/to/containerscript',
+                execution_context='container',
+            ),
+        ),
+    )
+    monkeypatch.setattr(api, 'current_actor', actor)
+
+    apply_workarounds(host, container)
+
+    # the script is copied into the container scripts dir and executed there,
+    # using the copied path, on the container context - never on the host
+    assert not host.calls
+    assert container.makedirs_paths == [_CONTAINER_SCRIPTS_DIR]
+    assert container.copied == [('/path/to/containerscript', _CONTAINER_SCRIPTS_DIR)]
+    expected_path = os.path.join(_CONTAINER_SCRIPTS_DIR, 'containerscript')
+    assert container.calls == [['/bin/bash', '-c', expected_path]]
+
+
+def test_apply_workarounds_appends_script_args(monkeypatch):
+    host = MockedContext()
+    actor = ShowMessageCurrentActorMocked(
+        msgs=(
+            DNFWorkaround(
+                display_name='wa with args',
+                script_path='/path/to/script',
+                script_args=['--foo', 'bar'],
+            ),
+        ),
+    )
+    monkeypatch.setattr(api, 'current_actor', actor)
+
+    apply_workarounds(host, MockedContext())
+
+    assert host.calls == [['/bin/bash', '-c', '/path/to/script --foo bar']]
