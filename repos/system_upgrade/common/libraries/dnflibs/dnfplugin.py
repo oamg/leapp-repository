@@ -343,30 +343,56 @@ def _prepare_transaction(used_repos, target_userspace_info, binds=()):
         yield context, list(target_repoids), target_userspace_info
 
 
-def apply_workarounds(context=None):
+def apply_workarounds(host_context=None, container_context=None):
     """
-    Apply registered workarounds in the given context environment
+    Apply registered workarounds
+
+    Each DNFWorkaround is executed either on the host or inside the target
+    userspace container, depending on its ``execution_context`` field. The
+    workarounds are executed in the order they are consumed.
 
     Note this function consumes DNFWorkaround messages! An actor calling this
     function must list the DNFWorkaround in the list of consumable messages.
 
-    :param context: Execution context (defaults to NotIsolatedActions)
-    :type context: mounting.IsolatedActions | None
+    :param host_context: Execution context for workarounds to be executed on the host
+        (defaults to NotIsolatedActions)
+    :type host_context: mounting.IsolatedActions | None
+    :param container_context: Execution context for workarounds executed inside
+        the target userspace container (defaults to NotIsolatedActions)
+    :type container_context: mounting.IsolatedActions | None
     :raises RegisteredWorkaroundApplicationError: When a workaround script fails to execute.
     """
-    context = context or mounting.NotIsolatedActions(base_dir='/')
+    host_context = host_context or mounting.NotIsolatedActions(base_dir='/')
+    container_context = container_context or mounting.NotIsolatedActions(base_dir='/')
+
     # FIXME(pstodulk): add check that actor is consuming DNFWorkaround, and raise
     # new error if it is not.
+
+    container_scripts_dir = '/var/tmp/dnf_workaround_scripts'
+
     for workaround in api.consume(DNFWorkaround):
         try:
-            api.show_message('Applying transaction workaround - {}'.format(workaround.display_name))
-            if workaround.script_args:
-                cmd_str = '{script} {args}'.format(
-                    script=workaround.script_path,
-                    args=' '.join(workaround.script_args)
-                )
+            api.show_message(f'Applying transaction workaround - {workaround.display_name}')
+
+            if workaround.execution_context == 'host':
+                context = host_context
+                script_path = workaround.script_path
+            elif workaround.execution_context == 'container':
+                context = container_context
+                context.makedirs(container_scripts_dir)
+                context.copy_to(workaround.script_path, container_scripts_dir)
+                script_path = os.path.join(container_scripts_dir, os.path.basename(workaround.script_path))
             else:
-                cmd_str = workaround.script_path
+                # raise an error if new context is added and forgotten to be handled here
+                raise RegisteredWorkaroundApplicationError(
+                    message='Failed to apply transaction workaround: workaround has unknown execution context',
+                    details={
+                        'details': f'expected one of "host", "container", got {workaround.execution_context}',
+                        'workaround name': workaround.display_name
+                    }
+                )
+
+            cmd_str = ' '.join([script_path] + workaround.script_args)
             context.call(['/bin/bash', '-c', cmd_str])
         except (OSError, CalledProcessError) as e:
             raise RegisteredWorkaroundApplicationError(
@@ -566,7 +592,7 @@ def perform_transaction_check(target_userspace_info,
 
     with _prepare_perform(used_repos=used_repos, target_userspace_info=target_userspace_info, xfs_info=xfs_info,
                           storage_info=storage_info, target_iso=target_iso) as (context, overlay, target_repoids):
-        apply_workarounds(overlay.nspawn())
+        apply_workarounds(overlay.nspawn(), context)
 
         disable_plugins = []
         if plugin_info:
@@ -630,7 +656,7 @@ def perform_rpm_download(target_userspace_info,
                 if stage in info.disable_in:
                     disable_plugins += [info.name]
 
-        apply_workarounds(overlay.nspawn())
+        apply_workarounds(overlay.nspawn(), context)
         dnfconfig.exclude_leapp_rpms(context, disable_plugins)
         _transaction(
             context=context, stage=stage, target_repoids=target_repoids, plugin_info=plugin_info, tasks=tasks,
@@ -674,7 +700,7 @@ def perform_dry_run(target_userspace_info,
                           xfs_info=xfs_info,
                           storage_info=storage_info,
                           target_iso=target_iso) as (context, overlay, target_repoids):
-        apply_workarounds(overlay.nspawn())
+        apply_workarounds(overlay.nspawn(), context)
         _transaction(
             context=context, stage='dry-run', target_repoids=target_repoids, plugin_info=plugin_info, tasks=tasks,
             test=True, on_aws=on_aws, xfs_info=xfs_info
