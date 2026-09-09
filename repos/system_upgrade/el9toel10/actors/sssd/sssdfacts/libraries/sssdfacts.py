@@ -18,6 +18,11 @@ def _does_file_contain_expression(file_path, expression):
             'Found a file during a recursive walk, but we failed to open it for reading: {}'.format(file_path)
         )
         return False
+    except UnicodeDecodeError:
+        api.current_logger().warning(
+            'Skipping {} because it does not appear to be a valid UTF-8 text file'.format(file_path)
+        )
+        return False
     except OSError as e:
         raise StopActorExecutionError(
             'Could not open configuration file',
