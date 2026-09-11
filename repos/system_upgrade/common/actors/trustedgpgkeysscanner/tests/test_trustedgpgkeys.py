@@ -66,6 +66,33 @@ def test_get_pubkeys(monkeypatch):
     assert list({pkey.filename for pkey in pubkeys if not pkey.rpmdb})[0] == '/mydir/myfile'
 
 
+def test_get_pubkeys_includes_pqc_keyfiles(monkeypatch):
+    """
+    Keys from the 'pqc' subdirectory are scanned and become trusted keys.
+    """
+    installed_rpms = _get_test_installed_rmps([])
+    mocked_gpg_files = MockedGetGpgFromFile([
+        ('/certs/v4key', ['fd431d51']),
+        ('/certs/pqc/v6key', ['05707a62']),
+    ])
+
+    # the pqc keyfile is only discovered when PQC keys are requested
+    def mocked_iter_gpg_keyfiles(include_pqc):
+        files = ['/certs/v4key']
+        if include_pqc:
+            files.append('/certs/pqc/v6key')
+        return iter(files)
+
+    monkeypatch.setattr(trustedgpgkeys, 'iter_gpg_keyfiles', mocked_iter_gpg_keyfiles)
+    monkeypatch.setattr(trustedgpgkeys, 'get_gpg_fp_from_file', mocked_gpg_files)
+
+    pubkeys = trustedgpgkeys._get_pubkeys(installed_rpms)
+
+    file_fps = {pkey.fingerprint for pkey in pubkeys if not pkey.rpmdb}
+    # both the top-level v4 key and the pqc-subdir v6 key are trusted
+    assert file_fps == {'fd431d51', '05707a62'}
+
+
 def test_process(monkeypatch):
     """
     Executes the "main" function

@@ -11,8 +11,7 @@ def _get_pubkeys(installed_rpms):
     pubkeys = get_pubkeys_from_rpms(installed_rpms)
     db_pubkeys = [key.fingerprint for key in pubkeys]
 
-    # TODO set include_pqc=True when get_gpg_fp_from_file() can handle PQC keys
-    for key_file in iter_gpg_keyfiles(include_pqc=False):
+    for key_file in iter_gpg_keyfiles(include_pqc=True):
         fps = get_gpg_fp_from_file(key_file)
         for fp in fps:
             if fp not in db_pubkeys:
