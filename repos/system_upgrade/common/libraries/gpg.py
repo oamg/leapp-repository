@@ -1,3 +1,4 @@
+from collections import namedtuple
 import os
 
 from leapp.libraries.common import config
@@ -64,28 +65,30 @@ def _parse_fp_from_gpg(output):
     """
     Parse the output of gpg --show-keys --with-colons.
 
+    TODO
     Return list of 8 characters fingerprints per each gpgkey for the given
     output from stdlib.run() or None if some error occurred. Either the
     command return non-zero exit code, the file does not exists, its not
     readable or does not contain any openpgp data.
+
+    Example input (output of gpg2 --show-keys --with-fingerprint):
+    pub:-:4096:1:199E2F91FD431D51:1256212795:::-:::scSC::::::23::0:
+    fpr:::::::::567E347AD0044ADE55BA8A5F199E2F91FD431D51:
+    uid:-::::1256212796::DC1CAEC7997B3575101BB0FCAAC6191792660D8F::Red Hat, Inc. (release key 2) <security@redhat.com>::::::::::0:
+
+    The full fingerprint is field 10 in the fpr line.
+
     """
     if not output or output['exit_code']:
         return []
 
-    # we are interested in the lines of the output starting with "pub:"
-    # the colons are used for separating the fields in output like this
-    # pub:-:4096:1:999F7CBF38AB71F4:1612983048:::-:::escESC::::::23::0:
-    #              ^--------------^ this is the fingerprint we need
-    #                      ^------^ but RPM version is just the last 8 chars lowercase
-    # Also multiple gpg keys can be stored in the file, so go through all "pub"
-    # lines
     gpg_fps = []
     for line in output['stdout']:
-        if not line or not line.startswith('pub:'):
+        if not line or not line.startswith('fpr:'):
             continue
         parts = line.split(':')
-        if len(parts) >= 4 and len(parts[4]) == 16:
-            gpg_fps.append(parts[4][_SHORT_KEY_ID_SLICE['4']].lower())
+        if len(parts) >= 9 and len(parts[9]) == 40:
+            gpg_fps.append(parts[9].lower())
         else:
             api.current_logger().warning(
                 'Cannot parse the gpg2 output. Line: "{}"'
@@ -93,6 +96,40 @@ def _parse_fp_from_gpg(output):
             )
 
     return gpg_fps
+
+
+GpgKeyInfo = namedtuple('GpgKeyInfo', ('fingerprint', 'short_keyid', 'is_pqc'))
+
+
+def _parse_gpg_key_gpg2(key_path):
+    """
+    Return the list of public keys stored in the given file using 'gpg2'
+
+    All the keys are reported as v4 keys. gpg2 cannot read v6 (PQC) keys at
+    all, so such keys are skipped with a warning instead of being reported.
+
+    :param key_path: Path to the file with GPG key(s)
+    :type key_path: str
+    :return: List of the public keys from the given file
+    :rtype: list(dict)
+    """
+    output = _gpg_show_keys(key_path)
+
+    # hardcode is_pqc=False because gpg2 cannot parse v6 keys so no pqc
+    keys = [
+        GpgKeyInfo(
+            fingerprint=fp,
+            short_keyid=fp[_SHORT_KEY_ID_SLICE['4']],
+            is_pqc=False
+        )
+        for fp in _parse_fp_from_gpg(output)
+    ]
+
+    if not keys:
+        api.current_logger().warning(
+            'Unable to read OpenPGP keys from {}: {}'.format(key_path, output.get('stderr', ''))
+        )
+    return keys
 
 
 def _iter_sq_packets(dump):
@@ -152,7 +189,11 @@ def _parse_public_key_packet_sq(body, key_path):
         raise GpgParseError(error)
 
     short_keyid = fields['Fingerprint'].lower()[_SHORT_KEY_ID_SLICE[version]]
-    return short_keyid
+    return GpgKeyInfo(
+        fingerprint=fields['Fingerprint'],
+        short_keyid=short_keyid,
+        is_pqc=version == '6',
+    )
 
 
 def _parse_gpg_key_sq(key_path):
@@ -173,17 +214,39 @@ def _parse_gpg_key_sq(key_path):
         # if can't be read, return empty, same as _parse_fp_from_gpg()
         return []
 
-    fps = []
+    gpg_infos = []
     for header, body in _iter_sq_packets(output['stdout']):
         if header.startswith('Public-Key Packet'):
             try:
-                fps.append(_parse_public_key_packet_sq(body, key_path))
+                gpg_infos.append(_parse_public_key_packet_sq(body, key_path))
             except GpgParseError as err:
                 # just log the exception, same as _parse_fp_from_gpg() does
                 error = 'Failed to parse GPG key {}: {}'.format(key_path, str(err))
                 api.current_logger().error(error)
 
-    return fps
+    return gpg_infos
+
+
+def parse_gpg_key_from_file(key_path):
+    """
+    Return the list of public keys stored in the given file
+
+    Every key is described by its 'version' and 'fingerprint' cut to the short
+    key ID, i.e. the same value as used in the version of the gpg-pubkey RPMs.
+
+    Note that on source systems older than 9.8, where 'sq' is not available,
+    the keys are read by gpg2 and so all of them are reported as v4 keys.
+
+    :param key_path: Path to the file with GPG key(s)
+    :type key_path: str
+    :return: List of the public keys from the given file
+    :rtype: list(GpgKeyInfo)
+    """
+    # TODO: 9.6 will be dropped from upgrade paths at the point this gets released
+    if matches_version(['< 9.8'], get_source_version()):
+        return _parse_gpg_key_gpg2(key_path)
+
+    return _parse_gpg_key_sq(key_path)
 
 
 def get_gpg_fp_from_file(key_path):
@@ -198,18 +261,8 @@ def get_gpg_fp_from_file(key_path):
     :return: List of public key fingerprints from the given file
     :rtype: list(str)
     """
-
-    # TODO 9.6 will be dropped from upgrade paths at the point this gets released
-    if matches_version(['< 9.8'], get_source_version()):
-        res = _gpg_show_keys(key_path)
-        fp = _parse_fp_from_gpg(res)
-        if not fp:
-            error_msg = 'Unable to read OpenPGP keys from {}: {}'.format(key_path, res['stderr'])
-            api.current_logger().warning(error_msg)
-    else:
-        # errors logged inside
-        fp = _parse_gpg_key_sq(key_path)
-    return fp
+    fps = parse_gpg_key_from_file(key_path)
+    return [fp.short_keyid for fp in fps]
 
 
 # TODO when a need for the same function for source arises, or when there is
