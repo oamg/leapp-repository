@@ -34,6 +34,43 @@ _SQ_V6_PUBKEY = (
         '',
     ],
 )
+# the GpgKeyInfo the parsers produce for the pubkey packets above
+_V4_KEY_INFO = gpg.GpgKeyInfo(
+    fingerprint='567e347ad0044ade55ba8a5f199e2f91fd431d51',
+    short_keyid='fd431d51',
+    is_pqc=False,
+)
+_V6_KEY_INFO = gpg.GpgKeyInfo(
+    fingerprint='fcd355b305707a62da143ab6e422397e50fe8467a2a95343d246d6276afedf8f',
+    short_keyid='05707a62',
+    is_pqc=True,
+)
+# 'gpg2 --show-keys --with-colons' output with two v4 keys
+_GPG2_SHOW_KEYS_OUTPUT = {
+    'exit_code': 0,
+    'stdout': [
+        'pub:-:4096:1:199E2F91FD431D51:1256212795:::-:::scSC::::::23::0:',
+        'fpr:::::::::567E347AD0044ADE55BA8A5F199E2F91FD431D51:',
+        'uid:-::::1256212795::DC1CAEC7997B3575101BB0FCAAC6191792660D8F::Red Hat, Inc.::::::::::0:',
+        'pub:-:4096:1:5054E4A45A6340B3:1646863006:::-:::scSC::::::23::0:',
+        'fpr:::::::::7E4624258C406535D56D6F135054E4A45A6340B3:',
+        'uid:-::::1646863006::DA7F68E3872D6E7BDCE05225E7EB5F3ACDD9699F::Red Hat, Inc.::::::::::0:',
+    ],
+    'stderr': '',
+}
+# the GpgKeyInfo the gpg2 path produces for the output above
+_GPG2_KEY_INFOS = [
+    gpg.GpgKeyInfo(
+        fingerprint='567e347ad0044ade55ba8a5f199e2f91fd431d51',
+        short_keyid='fd431d51',
+        is_pqc=False,
+    ),
+    gpg.GpgKeyInfo(
+        fingerprint='7e4624258c406535d56d6f135054e4a45a6340b3',
+        short_keyid='5a6340b3',
+        is_pqc=False,
+    ),
+]
 _SQ_USER_ID = (
     'User ID Packet, old CTB, 51 bytes',
     ['    Value: Red Hat, Inc. (release key 2) <security@redhat.com>', ''],
@@ -159,7 +196,7 @@ def test_gpg_show_keys(loaded_leapp_repository, monkeypatch):
 
     # now, parse the output too
     fp = gpg._parse_fp_from_gpg(res)
-    assert fp == ['fd431d51', '5a6340b3']
+    assert fp == ['567e347ad0044ade55ba8a5f199e2f91fd431d51', '7e4624258c406535d56d6f135054e4a45a6340b3']
 
 
 @pytest.mark.parametrize('res, exp', [
@@ -167,12 +204,81 @@ def test_gpg_show_keys(loaded_leapp_repository, monkeypatch):
     ({'exit_code': 2, 'stdout': '', 'stderr': 'bash: gpg2: command not found...'}, []),
     ({'exit_code': 0, 'stdout': 'Some other output', 'stderr': ''}, []),
     ({'exit_code': 0, 'stdout': ['Some other output', 'other line'], 'stderr': ''}, []),
-    ({'exit_code': 0, 'stdout': ['pub:-:4096:1:199E2F91FD431D:'], 'stderr': ''}, []),
-    ({'exit_code': 0, 'stdout': ['pub:-:4096:1:5054E4A45A6340B3:1..'], 'stderr': ''}, ['5a6340b3']),
+    # fpr line not preceded by a pub record is ignored
+    ({'exit_code': 0, 'stdout': ['fpr:::::::::7E4624258C406535D56D6F135054E4A45A6340B3:'], 'stderr': ''}, []),
+    # fpr line with a fingerprint that is not 40 characters long is skipped
+    ({'exit_code': 0, 'stdout': ['pub:-:4096:1:5054E4A45A6340B3:::', 'fpr:::::::::7E4624258C406535:'],
+      'stderr': ''}, []),
+    ({'exit_code': 0,
+      'stdout': ['pub:-:4096:1:5054E4A45A6340B3:::', 'fpr:::::::::7E4624258C406535D56D6F135054E4A45A6340B3:'],
+      'stderr': ''},
+     ['7e4624258c406535d56d6f135054e4a45a6340b3']),
+    # only the primary key's fpr is collected; the subkey's fpr (after 'sub:') is ignored
+    ({'exit_code': 0,
+      'stdout': [
+          'pub:-:4096:1:199E2F91FD431D51:::',
+          'fpr:::::::::567E347AD0044ADE55BA8A5F199E2F91FD431D51:',
+          'uid:-::::::::Red Hat, Inc.::::::::::0:',
+          'sub:-:4096:1:0000000000000000:::',
+          'fpr:::::::::7E4624258C406535D56D6F135054E4A45A6340B3:',
+      ],
+      'stderr': ''},
+     ['567e347ad0044ade55ba8a5f199e2f91fd431d51']),
+    # a primary key with no fpr of its own is skipped, not given the subkey's fpr
+    ({'exit_code': 0,
+      'stdout': [
+          'pub:-:4096:1:199E2F91FD431D51:::',
+          'sub:-:4096:1:0000000000000000:::',
+          'fpr:::::::::7E4624258C406535D56D6F135054E4A45A6340B3:',
+      ],
+      'stderr': ''},
+     []),
+    # realistic v4 key with three subkeys: only the primary fpr is collected
+    ({'exit_code': 0,
+      'stdout': [
+          'pub:u:4096:1:8EFF1D27F5FF5276:1791547301:::u:::cESCA::::::23::0:',
+          'fpr:::::::::0510D4A5B26CA885A6C4FFC58EFF1D27F5FF5276:',
+          'uid:u::::1791547301::7232916A570414102067E0244C5B3DAD1E681389::Test V4 Multi::::::::::0:',
+          'sub:u:4096:1:664BF4DA20BE399D:1791547319::::::s::::::23:',
+          'fpr:::::::::6DA2598F8B8894E6DE746520664BF4DA20BE399D:',
+          'sub:u:4096:1:2404CFF451EFF777:1791547324::::::e::::::23:',
+          'fpr:::::::::4767BE4752CB8A0B6E92A76F2404CFF451EFF777:',
+          'sub:u:4096:1:49F1C54ED85AECEF:1791547328::::::a::::::23:',
+          'fpr:::::::::EBE6DCF8C3B92478D734BAF549F1C54ED85AECEF:',
+      ],
+      'stderr': ''},
+     ['0510d4a5b26ca885a6c4ffc58eff1d27f5ff5276']),
+    # multiple primary keys: each pub's own fpr is collected, subkey fprs ignored
+    ({'exit_code': 0,
+      'stdout': [
+          'pub:-:4096:1:199E2F91FD431D51:::',
+          'fpr:::::::::567E347AD0044ADE55BA8A5F199E2F91FD431D51:',
+          'sub:-:4096:1:0000000000000000:::',
+          'fpr:::::::::0000000000000000000000000000000000000000:',
+          'pub:-:4096:1:5054E4A45A6340B3:::',
+          'fpr:::::::::7E4624258C406535D56D6F135054E4A45A6340B3:',
+      ],
+      'stderr': ''},
+     ['567e347ad0044ade55ba8a5f199e2f91fd431d51', '7e4624258c406535d56d6f135054e4a45a6340b3']),
 ])
 def test_parse_fp_from_gpg(res, exp):
     fp = gpg._parse_fp_from_gpg(res)
     assert fp == exp
+
+
+def test_parse_gpg_key_gpg2_returns_v4_key_infos(monkeypatch):
+    monkeypatch.setattr(gpg, '_gpg_show_keys', lambda key_path: _GPG2_SHOW_KEYS_OUTPUT)
+    assert gpg._parse_gpg_key_gpg2('/some/key') == _GPG2_KEY_INFOS
+
+
+def test_parse_gpg_key_gpg2_no_keys_warns(monkeypatch):
+    logger = logger_mocked()
+    monkeypatch.setattr(api, 'current_logger', logger)
+    monkeypatch.setattr(gpg, '_gpg_show_keys', lambda key_path: {'exit_code': 2, 'stdout': [], 'stderr': 'boom'})
+
+    # an unreadable or keyless file yields nothing and is logged
+    assert gpg._parse_gpg_key_gpg2('/some/key') == []
+    assert logger.warnmsg
 
 
 def test_pubkeys_from_rpms():
@@ -242,13 +348,14 @@ def test_iter_sq_packets_drops_body_before_first_header():
     assert list(gpg._iter_sq_packets(dump)) == [_SQ_V4_PUBKEY]
 
 
-@pytest.mark.parametrize('pubkey, expected_short_id', [
-    (_SQ_V4_PUBKEY, 'fd431d51'),
-    (_SQ_V6_PUBKEY, '05707a62'),
+@pytest.mark.parametrize('pubkey, expected_info', [
+    (_SQ_V4_PUBKEY, _V4_KEY_INFO),
+    (_SQ_V6_PUBKEY, _V6_KEY_INFO),
 ])
-def test_parse_public_key_packet_sq_returns_short_key_id(pubkey, expected_short_id):
+def test_parse_public_key_packet_sq_returns_key_info(pubkey, expected_info):
+    # the short key id and is_pqc flag are derived from the fingerprint and version
     _header, body = pubkey
-    assert gpg._parse_public_key_packet_sq(body, '/some/key') == expected_short_id
+    assert gpg._parse_public_key_packet_sq(body, '/some/key') == expected_info
 
 
 @pytest.mark.parametrize('body', [
@@ -269,13 +376,13 @@ def test_parse_public_key_packet_sq_unexpected_version_raises():
         gpg._parse_public_key_packet_sq(body, '/some/key')
 
 
-def test_parse_gpg_key_sq_returns_pubkey_short_ids(monkeypatch):
+def test_parse_gpg_key_sq_returns_pubkey_infos(monkeypatch):
     dump = _packets_to_dump([_SQ_V4_PUBKEY, _SQ_USER_ID, _SQ_SIGNATURE, _SQ_V6_PUBKEY])
     monkeypatch.setattr(gpg, 'run', lambda *args, **kwargs: {'stdout': dump})
 
     # only Public-Key Packets are collected; user id and signature packets - the
     # latter also carrying a Version line - are ignored
-    assert gpg._parse_gpg_key_sq('/some/key') == ['fd431d51', '05707a62']
+    assert gpg._parse_gpg_key_sq('/some/key') == [_V4_KEY_INFO, _V6_KEY_INFO]
 
 
 @pytest.mark.parametrize('error', [
@@ -305,29 +412,28 @@ def test_parse_gpg_key_sq_skips_unparseable_key(monkeypatch):
     dump = _packets_to_dump([broken, _SQ_V6_PUBKEY])
     monkeypatch.setattr(gpg, 'run', lambda *args, **kwargs: {'stdout': dump})
 
-    assert gpg._parse_gpg_key_sq('/some/key') == ['05707a62']
+    assert gpg._parse_gpg_key_sq('/some/key') == [_V6_KEY_INFO]
     assert logger.errmsg
 
 
 @pytest.mark.parametrize('src_ver, uses_sq', [
-    # sq is only available since 9.8, older sources keep using gpg2
-    ('9.6', False),
+    # sq is only available since 9.9, older sources keep using gpg2
     ('9.7', False),
-    ('9.8', True),
+    ('9.8', False),
+    ('9.9', True),
     ('10.0', True),
 ])
-def test_get_gpg_fp_from_file_dispatches_on_source_version(monkeypatch, src_ver, uses_sq):
+def test_key_parsing_dispatches_on_source_version(monkeypatch, src_ver, uses_sq):
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(src_ver=src_ver))
 
     def unexpected(*args, **kwargs):
         raise AssertionError('wrong parser used for source version {}'.format(src_ver))
 
-    if uses_sq:
-        monkeypatch.setattr(gpg, '_parse_gpg_key_sq', lambda key_path: ['5a6340b3'])
-        monkeypatch.setattr(gpg, '_gpg_show_keys', unexpected)
-    else:
-        monkeypatch.setattr(gpg, '_gpg_show_keys', lambda key_path: {'stdout': [], 'stderr': ''})
-        monkeypatch.setattr(gpg, '_parse_fp_from_gpg', lambda res: ['5a6340b3'])
-        monkeypatch.setattr(gpg, '_parse_gpg_key_sq', unexpected)
+    key_infos = [_V6_KEY_INFO] if uses_sq else _GPG2_KEY_INFOS
+    monkeypatch.setattr(gpg, '_parse_gpg_key_sq', (lambda key_path: key_infos) if uses_sq else unexpected)
+    monkeypatch.setattr(gpg, '_parse_gpg_key_gpg2', unexpected if uses_sq else (lambda key_path: key_infos))
 
-    assert gpg.get_gpg_fp_from_file('/some/key') == ['5a6340b3']
+    # the chosen parser's GpgKeyInfo list is returned unchanged, incl. the is_pqc flag
+    assert gpg.parse_gpg_key_from_file('/some/key') == key_infos
+    # get_gpg_fp_from_file is a thin wrapper reducing those to the short key ids
+    assert gpg.get_gpg_fp_from_file('/some/key') == [info.short_keyid for info in key_infos]
