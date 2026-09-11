@@ -1,9 +1,12 @@
+import pytest
+
 from leapp import reporting
 from leapp.libraries.actor import trustedgpgkeys
+from leapp.libraries.common.config.version import matches_version
 from leapp.libraries.common.gpg import get_pubkeys_from_rpms
 from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked, logger_mocked, produce_mocked
 from leapp.libraries.stdlib import api
-from leapp.models import GpgKey, InstalledRPM, RPM, TrustedGpgKeys
+from leapp.models import InstalledRPM, RPM, TrustedGpgKeys
 
 
 def _get_test_installed_rmps(fps):
@@ -48,6 +51,8 @@ def test_get_pubkeys(monkeypatch):
     """
     Very basic test of _get_pubkeys function
     """
+    monkeypatch.setattr(api, 'current_actor',  CurrentActorMocked(src_ver='9.6'))
+
     rpm_fps = ['9570ff31', '99900000']
     file_fps = ['0000ff31', '0000ff32']
     installed_rpms = _get_test_installed_rmps(rpm_fps)
@@ -64,6 +69,49 @@ def test_get_pubkeys(monkeypatch):
     assert set(rpm_fps) == {pkey.fingerprint for pkey in pubkeys if pkey.rpmdb}
     assert set(file_fps) == {pkey.fingerprint for pkey in pubkeys if not pkey.rpmdb}
     assert list({pkey.filename for pkey in pubkeys if not pkey.rpmdb})[0] == '/mydir/myfile'
+
+
+@pytest.mark.parametrize(
+    "source_ver, include_pqc",
+    [("8.10", False), ("9.7", False), ("9.8", False), ("9.9", True), ("9.10", True)],
+)
+def test_get_pubkeys_includes_pqc_keyfiles(monkeypatch, source_ver, include_pqc):
+    """
+    Keys from the 'pqc' subdirectory are scanned on source >= 9.9 and become trusted keys.
+    """
+    monkeypatch.setattr(api, 'current_actor',  CurrentActorMocked(src_ver=source_ver))
+
+    installed_rpms = _get_test_installed_rmps([])
+
+    def mocked_get_gpg_fp_from_file(path):
+        if path == '/certs/pqc/v6key':
+            has_sq = matches_version(['>= 9.9'], source_ver)
+            assert has_sq, 'pqc included but the source system does not have sq'
+            return ['05707a62']
+
+        if path == '/certs/v4key':
+            return ['fd431d51']
+
+        assert False, 'unxepected path received'
+
+    # the pqc keyfile is only discovered when PQC keys are requested
+    def mocked_iter_gpg_keyfiles(include_pqc):
+        files = ['/certs/v4key']
+        if include_pqc:
+            files.append('/certs/pqc/v6key')
+        return iter(files)
+
+    monkeypatch.setattr(trustedgpgkeys, 'iter_gpg_keyfiles', mocked_iter_gpg_keyfiles)
+    monkeypatch.setattr(trustedgpgkeys, 'get_gpg_fp_from_file', mocked_get_gpg_fp_from_file)
+
+    pubkeys = trustedgpgkeys._get_pubkeys(installed_rpms)
+
+    file_fps = {pkey.fingerprint for pkey in pubkeys if not pkey.rpmdb}
+    # both the top-level v4 key and the pqc-subdir v6 key are trusted
+    if include_pqc:
+        assert file_fps == {'fd431d51', '05707a62'}
+    else:
+        assert file_fps == {'fd431d51'}
 
 
 def test_process(monkeypatch):
