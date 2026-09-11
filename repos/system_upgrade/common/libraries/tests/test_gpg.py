@@ -6,9 +6,67 @@ import distro
 import pytest
 
 from leapp.libraries.common import gpg
-from leapp.libraries.common.testutils import CurrentActorMocked
-from leapp.libraries.stdlib import api
+from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked
+from leapp.libraries.stdlib import api, CalledProcessError
 from leapp.models import GpgKey, InstalledRPM, RPM
+
+# (header, body) example packets from `sq packet dump` output
+_SQ_V4_PUBKEY = (
+    'Public-Key Packet, old CTB, 525 bytes',
+    [
+        '    Version: 4',
+        '    Creation time: 2009-10-22 11:59:55 UTC',
+        '    Pk algo: RSA',
+        '    Pk size: 4096 bits',
+        '    Fingerprint: 567E347AD0044ADE55BA8A5F199E2F91FD431D51',
+        '    KeyID: 199E2F91FD431D51',
+        '',
+    ],
+)
+_SQ_V6_PUBKEY = (
+    'Public-Key Packet, new CTB, 2659 bytes',
+    [
+        '    Version: 6',
+        '    Creation time: 2025-10-08 17:40:03 UTC',
+        '    Pk algo: ML-DSA-87+Ed448',
+        '    Fingerprint: FCD355B305707A62DA143AB6E422397E50FE8467A2A95343D246D6276AFEDF8F',
+        '    KeyID: FCD355B305707A62',
+        '',
+    ],
+)
+_SQ_USER_ID = (
+    'User ID Packet, old CTB, 51 bytes',
+    ['    Value: Red Hat, Inc. (release key 2) <security@redhat.com>', ''],
+)
+_SQ_SIGNATURE = (
+    'Signature Packet, old CTB, 566 bytes',
+    ['    Version: 4', '    Type: PositiveCertification', ''],
+)
+
+
+def _packets_to_dump(packets):
+    """Flatten a list of (header, body) packets into `sq packet dump`-style lines."""
+    lines = []
+    for header, body in packets:
+        lines.append(header)
+        lines.extend(body)
+    return lines
+
+
+def _packet_body_without(body, field):
+    """Drop the given field line (e.g. 'Version') from a packet body."""
+    return [line for line in body if not line.strip().startswith(field + ':')]
+
+
+def _packet_body_with_version(body, version):
+    """Replace the Version line in a packet body with the given version."""
+    new_body = []
+    for line in body:
+        if line.strip().startswith('Version:'):
+            new_body.append('    Version: {}'.format(version))
+        else:
+            new_body.append(line)
+    return new_body
 
 
 def _touch(path):
@@ -163,3 +221,113 @@ def test_iter_gpg_keyfiles_missing_pqc_subdir(leapp_tmpdir):
     # no 'pqc' subdirectory present - yields only top-level files without an error
     result = {os.path.basename(p) for p in gpg.iter_gpg_keyfiles(leapp_tmpdir, include_pqc=True)}
     assert result == {'key1'}
+
+
+@pytest.mark.parametrize('packets', [
+    [],
+    [_SQ_V4_PUBKEY],
+    # multiple packets of mixed type, incl. blank separator lines in the bodies
+    [_SQ_V4_PUBKEY, _SQ_USER_ID, _SQ_V6_PUBKEY],
+])
+def test_iter_sq_packets_round_trips(packets):
+    # splitting is the inverse of concatenating header + body lines: whatever we
+    # flatten in must come back out grouped exactly the same way
+    assert list(gpg._iter_sq_packets(_packets_to_dump(packets))) == packets
+
+
+def test_iter_sq_packets_drops_body_before_first_header():
+    # indented lines with no preceding header are not attributed to any packet
+    dump = ['    orphan body line'] + _packets_to_dump([_SQ_V4_PUBKEY])
+
+    assert list(gpg._iter_sq_packets(dump)) == [_SQ_V4_PUBKEY]
+
+
+@pytest.mark.parametrize('pubkey, expected_short_id', [
+    (_SQ_V4_PUBKEY, 'fd431d51'),
+    (_SQ_V6_PUBKEY, '05707a62'),
+])
+def test_parse_public_key_packet_sq_returns_short_key_id(pubkey, expected_short_id):
+    _header, body = pubkey
+    assert gpg._parse_public_key_packet_sq(body, '/some/key') == expected_short_id
+
+
+@pytest.mark.parametrize('body', [
+    _packet_body_without(_SQ_V4_PUBKEY[1], 'Version'),
+    _packet_body_without(_SQ_V4_PUBKEY[1], 'Fingerprint'),
+    [],
+])
+def test_parse_public_key_packet_sq_missing_field_raises(body):
+    with pytest.raises(gpg.GpgParseError):
+        gpg._parse_public_key_packet_sq(body, '/some/key')
+
+
+def test_parse_public_key_packet_sq_unexpected_version_raises():
+    # only v4 and v6 short-key-id slices are known; any other version is an error
+    body = _packet_body_with_version(_SQ_V4_PUBKEY[1], '5')
+
+    with pytest.raises(gpg.GpgParseError):
+        gpg._parse_public_key_packet_sq(body, '/some/key')
+
+
+def test_parse_gpg_key_sq_returns_pubkey_short_ids(monkeypatch):
+    dump = _packets_to_dump([_SQ_V4_PUBKEY, _SQ_USER_ID, _SQ_SIGNATURE, _SQ_V6_PUBKEY])
+    monkeypatch.setattr(gpg, 'run', lambda *args, **kwargs: {'stdout': dump})
+
+    # only Public-Key Packets are collected; user id and signature packets - the
+    # latter also carrying a Version line - are ignored
+    assert gpg._parse_gpg_key_sq('/some/key') == ['fd431d51', '05707a62']
+
+
+@pytest.mark.parametrize('error', [
+    OSError('sq is not installed'),
+    CalledProcessError('failed', ['sq'], {'stdout': '', 'stderr': 'boom', 'exit_code': 1}),
+])
+def test_parse_gpg_key_sq_run_error_returns_empty(monkeypatch, error):
+    logger = logger_mocked()
+    monkeypatch.setattr(api, 'current_logger', logger)
+
+    def failing_run(*args, **kwargs):
+        raise error
+
+    monkeypatch.setattr(gpg, 'run', failing_run)
+
+    # a failure to run sq is logged and yields no keys, same as the gpg2 path
+    assert gpg._parse_gpg_key_sq('/some/key') == []
+    assert logger.errmsg
+
+
+def test_parse_gpg_key_sq_skips_unparseable_key(monkeypatch):
+    logger = logger_mocked()
+    monkeypatch.setattr(api, 'current_logger', logger)
+    # the first key is missing its Fingerprint and cannot be parsed; the valid
+    # second key must still be returned
+    broken = (_SQ_V4_PUBKEY[0], _packet_body_without(_SQ_V4_PUBKEY[1], 'Fingerprint'))
+    dump = _packets_to_dump([broken, _SQ_V6_PUBKEY])
+    monkeypatch.setattr(gpg, 'run', lambda *args, **kwargs: {'stdout': dump})
+
+    assert gpg._parse_gpg_key_sq('/some/key') == ['05707a62']
+    assert logger.errmsg
+
+
+@pytest.mark.parametrize('src_ver, uses_sq', [
+    # sq is only available since 9.8, older sources keep using gpg2
+    ('9.6', False),
+    ('9.7', False),
+    ('9.8', True),
+    ('10.0', True),
+])
+def test_get_gpg_fp_from_file_dispatches_on_source_version(monkeypatch, src_ver, uses_sq):
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(src_ver=src_ver))
+
+    def unexpected(*args, **kwargs):
+        raise AssertionError('wrong parser used for source version {}'.format(src_ver))
+
+    if uses_sq:
+        monkeypatch.setattr(gpg, '_parse_gpg_key_sq', lambda key_path: ['5a6340b3'])
+        monkeypatch.setattr(gpg, '_gpg_show_keys', unexpected)
+    else:
+        monkeypatch.setattr(gpg, '_gpg_show_keys', lambda key_path: {'stdout': [], 'stderr': ''})
+        monkeypatch.setattr(gpg, '_parse_fp_from_gpg', lambda res: ['5a6340b3'])
+        monkeypatch.setattr(gpg, '_parse_gpg_key_sq', unexpected)
+
+    assert gpg.get_gpg_fp_from_file('/some/key') == ['5a6340b3']
