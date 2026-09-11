@@ -6,6 +6,7 @@ from leapp.libraries.stdlib import api, run
 from leapp.models import GpgKey
 
 GPG_CERTS_FOLDER = 'rpm-gpg'
+GPG_PQC_CERTS_SUBFOLDER = 'pqc'
 
 
 def get_pubkeys_from_rpms(installed_rpms):
@@ -123,6 +124,42 @@ def get_path_to_gpg_certs():
         GPG_CERTS_FOLDER,
         certs_dir
     )
+
+
+def iter_gpg_keyfiles(root_dir=None, *, include_pqc):
+    """
+    Yield paths to all the keyfiles in the given directory with trusted gpg keys
+
+    The root directory is expected to contain v4 (traditional) keys only and its
+    'pqc' subdirectory v6 (PQC) keys only. This is checked by the
+    trusted_gpg_key_dir_check actor. The 'pqc' subdirectory is optional; it is
+    present for the target systems with PQC support only.
+
+    :param root_dir: Path to the directory with trusted gpg keys
+    :type root_dir: str
+    :param include_pqc: Yield also the keyfiles in the 'pqc' subdirectory
+    :type include_pqc: bool
+    """
+    if root_dir is None:
+        root_dir = get_path_to_gpg_certs()
+
+    for keyfile in os.listdir(root_dir):
+        abs_path = os.path.join(root_dir, keyfile)
+        if os.path.isfile(abs_path):
+            yield abs_path
+
+    if not include_pqc:
+        return
+
+    pqc_path = os.path.join(root_dir, GPG_PQC_CERTS_SUBFOLDER)
+    if not os.path.isdir(pqc_path):
+        # target systems without PQC support do not have the subdirectory
+        return
+
+    for keyfile in os.listdir(pqc_path):
+        abs_path = os.path.join(pqc_path, keyfile)
+        if os.path.isfile(abs_path):
+            yield abs_path
 
 
 def is_nogpgcheck_set():
