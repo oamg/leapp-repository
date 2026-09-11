@@ -20,7 +20,7 @@ from leapp.libraries.common import mounting, rhsm, utils
 from leapp.libraries.common.config import get_env, get_source_distro_id, get_target_distro_id
 from leapp.libraries.common.config.version import get_target_major_version, get_target_version
 from leapp.libraries.common.dnflibs import dnfplugin
-from leapp.libraries.common.gpg import get_path_to_gpg_certs
+from leapp.libraries.common.gpg import iter_gpg_keyfiles
 from leapp.libraries.stdlib import api, CalledProcessError, run
 from leapp.models import TargetUserSpaceInfo
 
@@ -97,14 +97,10 @@ def _import_gpg_keys(context_scratch, installroot):
     :type installroot: str
     :raises CalledProcessError: If an ``rpm --import`` invocation fails.
     """
-    certs_dir = get_path_to_gpg_certs()
-    if not os.path.isdir(certs_dir):
-        api.current_logger().warning('No target GPG keys directory found at {}.'.format(certs_dir))
-        return
-
-    for name in sorted(os.listdir(certs_dir)):
-        key_path = os.path.join(certs_dir, name)
-        context_scratch.call(['rpm', '--root', installroot, '--import', key_path])
+    # Import also any other keys provided by the customer in the same directory
+    for certpath in iter_gpg_keyfiles(include_pqc=False):
+        cmd = ["rpm", "--root", installroot, "--import", certpath]
+        context_scratch.call(cmd, callback_raw=utils.logging_handler)
 
 
 def _build_dnf_install_cmd(installroot, releasever, repoids, skip_rhsm, nogpgcheck, packages):
