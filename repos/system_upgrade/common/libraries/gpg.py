@@ -1,12 +1,28 @@
 import os
 
 from leapp.libraries.common import config
-from leapp.libraries.common.config.version import get_target_major_version
-from leapp.libraries.stdlib import api, run
+from leapp.libraries.common.config.version import get_source_version, get_target_major_version, matches_version
+from leapp.libraries.stdlib import CalledProcessError, api, run
 from leapp.models import GpgKey
 
 GPG_CERTS_FOLDER = 'rpm-gpg'
 GPG_PQC_CERTS_SUBFOLDER = 'pqc'
+
+# The version of the gpg-pubkey RPMs is the last 8 characters of the long key
+# ID, which is a different part of the fingerprint for each key version:
+#
+# v4: 567E347AD0044ADE55BA8A5F199E2F91FD431D51
+#                                     ^------^
+# v6: FCD355B305707A62DA143AB6E422397E50FE8467A2A95343D246D6276AFEDF8F
+#             ^------^
+_SHORT_KEY_ID_SLICE = {
+    '4': slice(32, 40),
+    '6': slice(8, 16),
+}
+
+
+class GpgParseError(Exception):
+    pass
 
 
 def get_pubkeys_from_rpms(installed_rpms):
@@ -69,7 +85,7 @@ def _parse_fp_from_gpg(output):
             continue
         parts = line.split(':')
         if len(parts) >= 4 and len(parts[4]) == 16:
-            gpg_fps.append(parts[4][8:].lower())
+            gpg_fps.append(parts[4][_SHORT_KEY_ID_SLICE['4']].lower())
         else:
             api.current_logger().warning(
                 'Cannot parse the gpg2 output. Line: "{}"'
@@ -77,6 +93,97 @@ def _parse_fp_from_gpg(output):
             )
 
     return gpg_fps
+
+
+def _iter_sq_packets(dump):
+    """
+    Split the output of 'sq packet dump' into single packets
+
+    Yield the (header, body lines) tuple for every packet in the output. Packet
+    headers are the only lines without a leading whitespace, e.g.:
+
+        Public-Key Packet, old CTB, 525 bytes
+            Version: 4
+            ...
+
+    :param dump: Lines of the 'sq packet dump' output
+    :type dump: list(str)
+    """
+    header = None
+    body = []
+    for line in dump:
+        if line and not line[0].isspace():
+            if header is not None:
+                yield header, body
+            header, body = line, []
+        else:
+            body.append(line)
+
+    if header is not None:
+        yield header, body
+
+
+def _parse_public_key_packet_sq(body, key_path):
+    """
+    Return the key described by the body of a single Public-Key Packet
+
+    :param body: Lines of the packet without its header
+    :type body: list(str)
+    :param key_path: Path to the file the packet comes from (used in error messages only)
+    :type key_path: str
+    :return: The 'version' of the key and its 'fingerprint' cut to the short key ID
+    :rtype: dict
+    :raises GpgParseError: The packet lacks a required field or has an unexpected version.
+    """
+    fields = {}
+    for line in body:
+        name, _, value = line.strip().partition(':')
+        if name in ('Version', 'Fingerprint'):
+            fields[name] = value.strip()
+
+    missing = {'Version', 'Fingerprint'} - set(fields)
+    if missing:
+        error = 'Missing fields {} of a key in the keyfile {}'.format(sorted(missing), key_path)
+        raise GpgParseError(error)
+
+    version = fields['Version']
+    if version not in _SHORT_KEY_ID_SLICE:
+        error = 'Unexpected key version \'{}\' in the keyfile {}'.format(version, key_path)
+        raise GpgParseError(error)
+
+    short_keyid = fields['Fingerprint'].lower()[_SHORT_KEY_ID_SLICE[version]]
+    return short_keyid
+
+
+def _parse_gpg_key_sq(key_path):
+    """
+    Return the list of public keys stored in the given file using 'sq'
+
+    :param key_path: Path to the file with GPG key(s)
+    :type key_path: str
+    :return: List of the public keys from the given file
+    :rtype: list(GpgKeyInfo)
+    """
+    try:
+        cmd = ['sq', 'packet', 'dump', key_path]
+        output = run(cmd, split=True)
+    except (OSError, CalledProcessError) as err:
+        error = 'Failed to read fingerprint from GPG key {}: {}'.format(key_path, str(err))
+        api.current_logger().error(error)
+        # if can't be read, return empty, same as _parse_fp_from_gpg()
+        return []
+
+    fps = []
+    for header, body in _iter_sq_packets(output['stdout']):
+        if header.startswith('Public-Key Packet'):
+            try:
+                fps.append(_parse_public_key_packet_sq(body, key_path))
+            except GpgParseError as err:
+                # just log the exception, same as _parse_fp_from_gpg() does
+                error = 'Failed to parse GPG key {}: {}'.format(key_path, str(err))
+                api.current_logger().error(error)
+
+    return fps
 
 
 def get_gpg_fp_from_file(key_path):
@@ -91,11 +198,17 @@ def get_gpg_fp_from_file(key_path):
     :return: List of public key fingerprints from the given file
     :rtype: list(str)
     """
-    res = _gpg_show_keys(key_path)
-    fp = _parse_fp_from_gpg(res)
-    if not fp:
-        error_msg = 'Unable to read OpenPGP keys from {}: {}'.format(key_path, res['stderr'])
-        api.current_logger().warning(error_msg)
+
+    # TODO 9.6 will be dropped from upgrade paths at the point this gets released
+    if matches_version(['< 9.8'], get_source_version()):
+        res = _gpg_show_keys(key_path)
+        fp = _parse_fp_from_gpg(res)
+        if not fp:
+            error_msg = 'Unable to read OpenPGP keys from {}: {}'.format(key_path, res['stderr'])
+            api.current_logger().warning(error_msg)
+    else:
+        # errors logged inside
+        fp = _parse_gpg_key_sq(key_path)
     return fp
 
 
