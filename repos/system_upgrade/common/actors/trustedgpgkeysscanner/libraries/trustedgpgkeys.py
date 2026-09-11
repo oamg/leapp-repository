@@ -1,7 +1,5 @@
-import os
-
 from leapp.exceptions import StopActorExecutionError
-from leapp.libraries.common.gpg import get_gpg_fp_from_file, get_path_to_gpg_certs, get_pubkeys_from_rpms
+from leapp.libraries.common.gpg import get_gpg_fp_from_file, get_pubkeys_from_rpms, iter_gpg_keyfiles
 from leapp.libraries.stdlib import api
 from leapp.models import GpgKey, InstalledRPM, TrustedGpgKeys
 
@@ -12,9 +10,9 @@ def _get_pubkeys(installed_rpms):
     """
     pubkeys = get_pubkeys_from_rpms(installed_rpms)
     db_pubkeys = [key.fingerprint for key in pubkeys]
-    certs_path = get_path_to_gpg_certs()
-    for certname in os.listdir(certs_path):
-        key_file = os.path.join(certs_path, certname)
+
+    # TODO set include_pqc=True when get_gpg_fp_from_file() can handle PQC keys
+    for key_file in iter_gpg_keyfiles(include_pqc=False):
         fps = get_gpg_fp_from_file(key_file)
         for fp in fps:
             if fp not in db_pubkeys:

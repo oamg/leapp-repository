@@ -17,10 +17,11 @@ from leapp.libraries.common.config import (
 from leapp.libraries.common.config.version import (
     get_source_major_version,
     get_target_major_version,
-    get_target_version
+    get_target_version,
+    matches_version,
 )
 from leapp.libraries.common.dnflibs import dnfplugin
-from leapp.libraries.common.gpg import get_path_to_gpg_certs, is_nogpgcheck_set
+from leapp.libraries.common.gpg import is_nogpgcheck_set, iter_gpg_keyfiles
 from leapp.libraries.stdlib import api, CalledProcessError, config, format_list, run
 from leapp.models import RequiredTargetUserspacePackages  # deprecated
 from leapp.models import TMPTargetRepositoriesFacts  # deprecated all the time
@@ -159,20 +160,18 @@ def _backup_to_persistent_package_cache(userspace_dir):
             shutil.move(src_cache, PERSISTENT_PACKAGE_CACHE_DIR)
 
 
-def _import_gpg_keys(context, install_root_dir, target_major_version):
-    certs_path = get_path_to_gpg_certs()
-    # Import the target distro target version GPG key to be able to verify the
-    # installation of initial packages
+def _import_gpg_keys(context, install_root_dir):
+     # Import the target distro target version GPG key to be able to verify the
+     # installation of initial packages
     try:
         # Import also any other keys provided by the customer in the same directory
-        for certname in os.listdir(certs_path):
-            cmd = ['rpm', '--root', install_root_dir, '--import', os.path.join(certs_path, certname)]
+        for certpath in iter_gpg_keyfiles(include_pqc=False):
+            cmd = ["rpm", "--root", install_root_dir, "--import", certpath]
             context.call(cmd, callback_raw=utils.logging_handler)
     except CalledProcessError as exc:
         raise StopActorExecutionError(
             message=(
-                'Unable to import GPG certificates to install RHEL {} userspace packages.'
-                .format(target_major_version)
+                'Unable to import GPG certificates to install target OS userspace packages.'
             ),
             details={'details': str(exc), 'stderr': exc.stderr}
         )
@@ -220,7 +219,9 @@ def prepare_target_userspace(context, userspace_dir, enabled_repos, packages):
     with mounting.BindMount(source=userspace_dir, target=os.path.join(context.base_dir, install_root_dir.lstrip('/'))):
         _restore_persistent_package_cache(userspace_dir)
         if not is_nogpgcheck_set():
-            _import_gpg_keys(context, install_root_dir, target_major_version)
+            # Import the target distro target version GPG key to be able to
+            # verify the installation of initial packages
+            _import_gpg_keys(context, install_root_dir)
 
         repos_opt = [['--enablerepo', repo] for repo in enabled_repos]
         repos_opt = list(itertools.chain(*repos_opt))
