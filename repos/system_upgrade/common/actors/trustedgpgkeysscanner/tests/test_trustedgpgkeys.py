@@ -1,5 +1,3 @@
-import os
-
 from leapp import reporting
 from leapp.libraries.actor import trustedgpgkeys
 from leapp.libraries.common.gpg import get_pubkeys_from_rpms
@@ -55,11 +53,10 @@ def test_get_pubkeys(monkeypatch):
     installed_rpms = _get_test_installed_rmps(rpm_fps)
     mocked_gpg_files = MockedGetGpgFromFile([('/mydir/myfile', ['0000ff31', '0000ff32'])])
 
-    def _mocked_listdir(dummy):
-        return [os.path.basename(i) for i in mocked_gpg_files.get_files()]
-
-    monkeypatch.setattr(trustedgpgkeys.os, 'listdir', _mocked_listdir)
-    monkeypatch.setattr(trustedgpgkeys, 'get_path_to_gpg_certs', lambda: '/mydir/')
+    monkeypatch.setattr(
+        trustedgpgkeys, 'iter_gpg_keyfiles',
+        lambda include_pqc: iter(mocked_gpg_files.get_files())
+    )
     monkeypatch.setattr(trustedgpgkeys, 'get_gpg_fp_from_file', mocked_gpg_files)
 
     pubkeys = trustedgpgkeys._get_pubkeys(installed_rpms)

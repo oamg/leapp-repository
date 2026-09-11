@@ -11,6 +11,17 @@ from leapp.libraries.stdlib import api
 from leapp.models import GpgKey, InstalledRPM, RPM
 
 
+def _touch(path):
+    with open(path, 'w'):
+        pass
+
+
+def _make_pqc_subdir(root):
+    pqc_dir = os.path.join(root, gpg.GPG_PQC_CERTS_SUBFOLDER)
+    os.mkdir(pqc_dir)
+    return pqc_dir
+
+
 @pytest.mark.parametrize('target, product_type, distro, exp', [
     ('9.0', 'beta', 'rhel', '../../files/distro/rhel/rpm-gpg/9beta'),
     ('9.2', 'ga', 'rhel', '../../files/distro/rhel/rpm-gpg/9'),
@@ -126,3 +137,29 @@ def test_pubkeys_from_rpms():
         ],
     )
     assert gpg.get_pubkeys_from_rpms(installed_rpms) == [GpgKey(fingerprint='9570ff31', rpmdb=True)]
+
+
+def test_iter_gpg_keyfiles_excludes_pqc(leapp_tmpdir):
+    _touch(os.path.join(leapp_tmpdir, 'key1'))
+    _touch(os.path.join(leapp_tmpdir, 'key2'))
+    _touch(os.path.join(_make_pqc_subdir(leapp_tmpdir), 'pqckey'))
+
+    result = {os.path.basename(p) for p in gpg.iter_gpg_keyfiles(leapp_tmpdir, include_pqc=False)}
+    # the 'pqc' subdirectory itself is not yielded (only files) and its content is excluded
+    assert result == {'key1', 'key2'}
+
+
+def test_iter_gpg_keyfiles_includes_pqc(leapp_tmpdir):
+    _touch(os.path.join(leapp_tmpdir, 'key1'))
+    _touch(os.path.join(_make_pqc_subdir(leapp_tmpdir), 'pqckey'))
+
+    result = {os.path.basename(p) for p in gpg.iter_gpg_keyfiles(leapp_tmpdir, include_pqc=True)}
+    assert result == {'key1', 'pqckey'}
+
+
+def test_iter_gpg_keyfiles_missing_pqc_subdir(leapp_tmpdir):
+    _touch(os.path.join(leapp_tmpdir, 'key1'))
+
+    # no 'pqc' subdirectory present - yields only top-level files without an error
+    result = {os.path.basename(p) for p in gpg.iter_gpg_keyfiles(leapp_tmpdir, include_pqc=True)}
+    assert result == {'key1'}
