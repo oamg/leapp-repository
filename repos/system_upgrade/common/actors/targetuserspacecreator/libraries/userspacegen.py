@@ -22,12 +22,14 @@ from leapp.libraries.common.config.version import (
 )
 from leapp.libraries.common.dnflibs import dnfplugin
 from leapp.libraries.common.gpg import get_path_to_gpg_certs, is_nogpgcheck_set, iter_gpg_keyfiles
+from leapp.libraries.common.rpms import has_package
 from leapp.libraries.stdlib import api, CalledProcessError, config, format_list, run
 from leapp.models import RequiredTargetUserspacePackages  # deprecated
 from leapp.models import TMPTargetRepositoriesFacts  # deprecated all the time
 from leapp.models import (
     CustomTargetRepositoryFile,
     DNFWorkaround,
+    InstalledRPM,
     PkgManagerInfo,
     RepositoriesFacts,
     RHELTargetRepository,
@@ -187,8 +189,9 @@ def _import_gpg_keys_to_context(context, install_root_dir):
             details={'details': str(exc), 'stderr': exc.stderr}
         )
 
-    if matches_version(['<= 10.0'], get_target_version()):
-        # on 10.0 there is no support for pqc in rpm
+    # on 10.0 there is no support for pqc in rpm
+    # the 'pqrpm' rpm which provides /usr/lib/pqrpm/bin/rpmkeys doesn't have to be installed
+    if matches_version(['<= 10.0'], get_target_version()) or not has_package(InstalledRPM, 'pqrpm'):
         return
 
     # on RHEL 9 the system rpm stack doesn't understand PQC (gpg v6) keys,
@@ -208,12 +211,6 @@ def _import_gpg_keys_to_context(context, install_root_dir):
             ]
             context.call(cmd, callback_raw=utils.logging_handler)
     except CalledProcessError as exc:
-        if "execv(/usr/lib/pqrpm/bin/rpmkeys) failed: No such file or directory" in exc.stderr:
-            api.current_logger().debug(
-                "/usr/lib/pqrpm/bin/rpmkeys does not exist, skip importing keys to pqrpmdb"
-            )
-            return
-
         raise StopActorExecutionError(
             message=(
                 'Unable to import GPG certificates to install target OS userspace packages.'

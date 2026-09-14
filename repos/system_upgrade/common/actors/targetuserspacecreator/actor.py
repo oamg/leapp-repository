@@ -6,6 +6,7 @@ from leapp.models import TMPTargetRepositoriesFacts  # deprecated
 from leapp.models import (
     CustomTargetRepositoryFile,
     DNFWorkaround,
+    InstalledRPM,
     LiveModeConfig,
     PkgManagerInfo,
     Report,
@@ -39,6 +40,7 @@ class TargetUserspaceCreator(Actor):
     name = 'target_userspace_creator'
     consumes = (
         CustomTargetRepositoryFile,
+        InstalledRPM,
         LiveModeConfig,
         RHSMInfo,
         RHUIInfo,
