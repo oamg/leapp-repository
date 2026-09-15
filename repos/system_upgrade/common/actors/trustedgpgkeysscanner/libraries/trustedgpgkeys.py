@@ -40,7 +40,7 @@ def _get_pubkeys_from_pqrmdb():
             continue
 
         # let's make it count as rpmdb=True, because it is imported
-        keys += GpgKey(fingerprint=parts[2], rpmdb=True)
+        keys.append(GpgKey(fingerprint=parts[2], rpmdb=True))
     return keys
 
 
