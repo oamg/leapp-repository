@@ -262,7 +262,7 @@ def register_dnfworkaround():
     # target userspace context so that it is able to import PQC (v6) GPG keys.
     # A different workaround is registered in the targetusersapcecreator actor
     # to do just that.
-    if matches_version(['>= 9.8', '< 10.0'], get_source_version()):
+    if matches_version(['< 9.7', '>= 10.0'], get_source_version()):
         api.produce(DNFWorkaround(
             display_name='import trusted gpg keys to RPM DB',
             script_path=api.current_actor().get_common_tool_path('importrpmgpgkeys'),
