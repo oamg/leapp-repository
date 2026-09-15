@@ -358,4 +358,4 @@ def process():
     if repos_missing_keys:
         _report_repos_missing_keys(repos_missing_keys)
 
-    register_dnfworkarounds()
+    register_dnfworkaround()
