@@ -1,6 +1,8 @@
 from leapp.actors import Actor
+from leapp.exceptions import StopActorExecutionError
+from leapp.libraries.common import mounting
 from leapp.libraries.common.dnflibs import dnfplugin
-from leapp.models import DNFWorkaround
+from leapp.models import DNFWorkaround, TargetUserSpaceInfo
 from leapp.tags import IPUWorkflowTag, PreparationPhaseTag
 
 
@@ -10,9 +12,16 @@ class ApplyTransactionWorkarounds(Actor):
     """
 
     name = 'applytransactionworkarounds'
-    consumes = (DNFWorkaround,)
+    consumes = (DNFWorkaround, TargetUserSpaceInfo)
     produces = ()
     tags = (IPUWorkflowTag, PreparationPhaseTag)
 
     def process(self):
-        dnfplugin.apply_workarounds()
+        target_userspace_info = next(self.consume(TargetUserSpaceInfo), None)
+        if not target_userspace_info:
+            raise StopActorExecutionError("Did not receive the expected TargetUserSpaceInfo message")
+
+        # bind mount installroot so that the workaround can e.g. import gpg keys there
+        bind_mounts = ['/:/installroot']
+        with mounting.NspawnActions(base_dir=target_userspace_info.path, binds=bind_mounts) as context:
+            dnfplugin.apply_workarounds(None, context)

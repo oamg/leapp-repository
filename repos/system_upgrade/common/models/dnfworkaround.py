@@ -17,6 +17,9 @@ class DNFWorkaround(Model):
     script_path = fields.String()
     """
     Absolute path to a bash script to execute
+
+    The path should always be the path on the host, even for workarounds with
+    'container' execution context.
     """
 
     script_args = fields.List(fields.String(), default=[])
@@ -31,4 +34,18 @@ class DNFWorkaround(Model):
     display_name = fields.String()
     """
     Name to display for this script when executed
+    """
+
+    execution_context = fields.StringEnum(choices=['host', 'container'], default='host')
+    """
+    The context in which the workaround is to be executed
+
+    The options are:
+    - host - The host system, overlay in the pre-reboot phases, real host
+             system (/sysroot) in the initramfs environment
+    - container - The target userspace container
+
+    In most cases the 'host' context is preferred, unless there is a specific
+    need for the 'container' context, such as when the workaround needs to run
+    binaries only available on the target system.
     """
