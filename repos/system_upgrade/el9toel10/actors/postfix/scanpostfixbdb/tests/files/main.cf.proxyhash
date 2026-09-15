@@ -1,0 +1,2 @@
+smtp_sasl_password_maps = proxy:hash:/etc/postfix/sasl_passwd
+virtual_alias_maps = btree:/etc/postfix/virtual
