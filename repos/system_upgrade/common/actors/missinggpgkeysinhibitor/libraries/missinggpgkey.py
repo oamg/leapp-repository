@@ -257,7 +257,7 @@ def _report_repos_missing_keys(repos):
     )
 
 
-def register_dnfworkarounds():
+def register_dnfworkaround():
     api.produce(DNFWorkaround(
         display_name='import trusted gpg keys to RPM DB',
         script_path=api.current_actor().get_common_tool_path('importrpmgpgkeys'),
