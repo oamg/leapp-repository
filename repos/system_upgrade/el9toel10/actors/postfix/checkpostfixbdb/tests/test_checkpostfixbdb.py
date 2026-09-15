@@ -62,6 +62,13 @@ def test_process_hash_maps_reported(monkeypatch):
     report = reporting.create_report.reports[0]
     assert 'Berkeley DB' in report['title']
     summary = report['summary']
+    assert 'RHEL 10 no longer provides Berkeley DB' in summary
+    assert 'not exhaustive' in summary
     assert 'alias_maps = hash:/etc/aliases' in summary
     assert 'default_database_type = hash' in summary
     assert checkpostfixbdb.REPORT_KCS_URL in str(report)
+    assert 'postmap/postalias' in str(report)
+    resources = report.get('detail', {}).get('related_resources', [])
+    titles = [res['title'] for res in resources]
+    assert 'postfix' in titles
+    assert '/etc/postfix/main.cf' not in titles

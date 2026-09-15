@@ -7,10 +7,14 @@ from leapp.models import DistributionSignedRPM, PostfixBdbConfiguration
 
 DEFAULT_POSTFIX_PATHS = ['/etc/postfix']
 
-# Map type used as a prefix: hash:/etc/aliases, proxy:hash:/path, ...
-BDB_MAP_RE = re.compile(r'(?:^|[\s,=:])(hash|btree):', re.IGNORECASE)
-# Compiled default on RHEL 9 is hash; an explicit setting of hash/btree is also BDB.
-DEFAULT_DB_RE = re.compile(r'^\s*default_database_type\s*=\s*(hash|btree)\b', re.IGNORECASE)
+# Map type used as a prefix: hash:/etc/aliases, proxy:hash:/path, and
+# master.cf "-o name=hash:/path" overrides. Postfix map types are lowercase.
+BDB_MAP_RE = re.compile(r'(?:^|[\s,=:])(hash|btree):')
+# Compiled default on RHEL 9 is hash. Match main.cf assignments and
+# master.cf "-o default_database_type=hash" overrides.
+DEFAULT_DB_RE = re.compile(
+    r'(?:^|[\s,])(?:-o\s*)?default_database_type\s*=\s*(hash|btree)\b'
+)
 
 
 def _iter_config_files(paths):
@@ -27,7 +31,7 @@ def _iter_config_files(paths):
             for name in sorted(names):
                 if name.endswith('.cf'):
                     yield os.path.join(path, name)
-        elif os.path.isfile(path):
+        elif os.path.isfile(path) and path.endswith('.cf'):
             yield path
 
 
@@ -42,7 +46,7 @@ def _scan_file(path):
                     continue
                 if BDB_MAP_RE.search(stripped) or DEFAULT_DB_RE.search(stripped):
                     occurrences.append('{}: {}'.format(path, stripped))
-    except OSError as err:
+    except (OSError, UnicodeDecodeError) as err:
         api.current_logger().warning(
             'Could not read Postfix configuration file {}: {}'.format(path, err)
         )
@@ -52,6 +56,10 @@ def _scan_file(path):
 def scan_postfix_configuration(conf_paths=None, _context=api):
     """
     Scan Postfix configuration for Berkeley DB (hash/btree) lookup tables.
+
+    This is best-effort: only the given paths (by default /etc/postfix) are
+    read. Custom configuration directories and Postfix multi-instance layouts
+    are not discovered automatically.
 
     :param conf_paths: Files or directories to scan. Defaults to /etc/postfix.
     :return: PostfixBdbConfiguration
