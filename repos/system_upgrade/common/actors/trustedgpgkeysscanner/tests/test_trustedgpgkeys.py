@@ -1,13 +1,16 @@
+import os
+
 import pytest
 
-from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import trustedgpgkeys
-from leapp.libraries.common.config.version import matches_version
-from leapp.libraries.common.gpg import get_pubkeys_from_rpms
-from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked, logger_mocked, produce_mocked
+from leapp.libraries.common.gpg import GpgKeyInfo
+from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked, produce_mocked
 from leapp.libraries.stdlib import api, CalledProcessError
-from leapp.models import GpgKey, InstalledRPM, RPM, TrustedGpgKeys
+from leapp.models import GpgKey, InstalledRPM, MisplacedTrustedGpgKeys, RPM, TrustedGpgKeys
+
+_TRUSTED_DIR = '/certs'
+_PQC_DIR = os.path.join(_TRUSTED_DIR, 'pqc')
 
 
 def _get_test_installed_rmps(fps):
@@ -38,25 +41,37 @@ def _make_rpm(name, version='1.0'):
     return RPM(name=name, version=version, release='1', epoch='0', packager='', arch='x86_64', pgpsig='')
 
 
+def _v4(short_keyid):
+    # the short key id of a v4 key is the last 8 characters of its fingerprint
+    return GpgKeyInfo(fingerprint='0' * 32 + short_keyid, short_keyid=short_keyid, is_pqc=False)
+
+
+def _v6(short_keyid):
+    # the short key id of a v6 key is the 9th-16th character of its fingerprint
+    return GpgKeyInfo(fingerprint='0' * 8 + short_keyid + '0' * 48, short_keyid=short_keyid, is_pqc=True)
+
+
+def _mock_trusted_dir(monkeypatch, keyfiles):
+    """
+    Mock the trusted keys directory with the given {keyfile: [GpgKeyInfo, ...]} content
+    """
+    def mocked_iter_gpg_keyfiles(include_pqc):
+        # mirror the real iter_gpg_keyfiles: skip the 'pqc' subdirectory unless include_pqc
+        for keyfile in keyfiles:
+            if not include_pqc and os.path.dirname(keyfile) == _PQC_DIR:
+                continue
+            yield keyfile
+
+    monkeypatch.setattr(trustedgpgkeys, 'get_path_to_gpg_certs', lambda: _TRUSTED_DIR)
+    monkeypatch.setattr(trustedgpgkeys, 'iter_gpg_keyfiles', mocked_iter_gpg_keyfiles)
+    monkeypatch.setattr(trustedgpgkeys, 'parse_gpg_key_from_file', lambda keyfile: keyfiles[keyfile])
+
+
 # stdout of 'rpm -qa --dbpath <pqrpmdb>'; warnings about v6 keys go to stderr
 _PQRPMDB_STDOUT = [
     'gpg-pubkey-b2973cf6-5dfd1395',
     'gpg-pubkey-05707a62-68e6a1f3',
 ]
-
-
-class MockedGetGpgFromFile:
-    def __init__(self, file_fps_tuples):
-        # e.g. file_fps_tuple = [('/mydir/myfile', ['0000ff31', '0000ff32'])]
-        self._data = {}
-        for fname, fps in file_fps_tuples:
-            self._data[fname] = fps
-
-    def get_files(self):
-        return self._data.keys()
-
-    def __call__(self, fname):
-        return self._data.get(fname, [])
 
 
 def test_get_pubkeys_from_pqrmdb_parses_short_key_ids(monkeypatch):
@@ -104,16 +119,32 @@ def test_get_pubkeys_from_pqrmdb_run_error_raises(monkeypatch):
         trustedgpgkeys._get_pubkeys_from_pqrmdb()
 
 
+@pytest.mark.parametrize('include_pqc', [True, False])
+def test_parse_trusted_keyfiles(monkeypatch, include_pqc):
+    """
+    Every keyfile in the trusted directory is mapped to the keys it contains.
+
+    The keyfiles in the 'pqc' subdirectory are only read when the PQC keys are requested.
+    """
+    keyfiles = {
+        os.path.join(_TRUSTED_DIR, 'v4key'): [_v4('fd431d51')],
+        os.path.join(_PQC_DIR, 'v6key'): [_v6('05707a62')],
+    }
+    _mock_trusted_dir(monkeypatch, keyfiles)
+
+    keyfiles_to_infos = trustedgpgkeys._parse_trusted_keyfiles(include_pqc=include_pqc)
+
+    expected = dict(keyfiles) if include_pqc else {os.path.join(_TRUSTED_DIR, 'v4key'): [_v4('fd431d51')]}
+    assert keyfiles_to_infos == expected
+
+
 def test_get_pubkeys(monkeypatch):
     """
     Very basic test of _get_pubkeys function
     """
-    monkeypatch.setattr(api, 'current_actor',  CurrentActorMocked(src_ver='9.6'))
-
     rpm_fps = ['9570ff31', '99900000']
     file_fps = ['0000ff31', '0000ff32']
     installed_rpms = _get_test_installed_rmps(rpm_fps)
-    mocked_gpg_files = MockedGetGpgFromFile([('/mydir/myfile', ['0000ff31', '0000ff32'])])
 
     def unexpected(*args, **kwargs):
         raise AssertionError('the pqrpmdb must not be queried without pqrpm installed')
@@ -121,60 +152,36 @@ def test_get_pubkeys(monkeypatch):
     # no pqrpm installed, so the pqrpmdb is not queried
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[installed_rpms]))
     monkeypatch.setattr(trustedgpgkeys, 'run', unexpected)
-    monkeypatch.setattr(
-        trustedgpgkeys, 'iter_gpg_keyfiles',
-        lambda include_pqc: iter(mocked_gpg_files.get_files())
-    )
-    monkeypatch.setattr(trustedgpgkeys, 'get_gpg_fp_from_file', mocked_gpg_files)
 
-    pubkeys = trustedgpgkeys._get_pubkeys(installed_rpms)
+    pubkeys = trustedgpgkeys._get_pubkeys(installed_rpms, {'/mydir/myfile': file_fps})
+
     assert len(pubkeys) == len(rpm_fps + file_fps)
     assert set(rpm_fps) == {pkey.fingerprint for pkey in pubkeys if pkey.rpmdb}
     assert set(file_fps) == {pkey.fingerprint for pkey in pubkeys if not pkey.rpmdb}
     assert list({pkey.filename for pkey in pubkeys if not pkey.rpmdb})[0] == '/mydir/myfile'
 
 
-@pytest.mark.parametrize(
-    "source_ver, include_pqc",
-    [("8.10", False), ("9.7", False), ("9.8", False), ("9.9", True), ("9.10", True)],
-)
-def test_get_pubkeys_includes_pqc_keyfiles(monkeypatch, source_ver, include_pqc):
+def test_get_pubkeys_skips_keyfile_keys_already_in_rpmdb(monkeypatch):
     """
-    Keys from the 'pqc' subdirectory are scanned on source >= 9.9 and become trusted keys.
+    A key present both in the rpmdb and in a keyfile is reported once, as an imported key.
     """
-    # no pqrpm installed, so the pqrpmdb is not queried
-    installed_rpms = _get_test_installed_rmps([])
-    monkeypatch.setattr(api, 'current_actor',  CurrentActorMocked(msgs=[installed_rpms], src_ver=source_ver))
+    installed_rpms = _get_test_installed_rmps(['9570ff31'])
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[installed_rpms]))
 
-    def mocked_get_gpg_fp_from_file(path):
-        if path == '/certs/pqc/v6key':
-            has_sq = matches_version(['>= 9.9'], source_ver)
-            assert has_sq, 'pqc included but the source system does not have sq'
-            return ['05707a62']
+    keyfiles_to_fps = {
+        '/certs/imported': ['9570ff31'],
+        # the same key in two keyfiles is reported once too
+        '/certs/custom': ['0000ff31'],
+        '/certs/custom-copy': ['0000ff31'],
+    }
 
-        if path == '/certs/v4key':
-            return ['fd431d51']
+    pubkeys = trustedgpgkeys._get_pubkeys(installed_rpms, keyfiles_to_fps)
 
-        assert False, 'unxepected path received'
-
-    # the pqc keyfile is only discovered when PQC keys are requested
-    def mocked_iter_gpg_keyfiles(include_pqc):
-        files = ['/certs/v4key']
-        if include_pqc:
-            files.append('/certs/pqc/v6key')
-        return iter(files)
-
-    monkeypatch.setattr(trustedgpgkeys, 'iter_gpg_keyfiles', mocked_iter_gpg_keyfiles)
-    monkeypatch.setattr(trustedgpgkeys, 'get_gpg_fp_from_file', mocked_get_gpg_fp_from_file)
-
-    pubkeys = trustedgpgkeys._get_pubkeys(installed_rpms)
-
-    file_fps = {pkey.fingerprint for pkey in pubkeys if not pkey.rpmdb}
-    # both the top-level v4 key and the pqc-subdir v6 key are trusted
-    if include_pqc:
-        assert file_fps == {'fd431d51', '05707a62'}
-    else:
-        assert file_fps == {'fd431d51'}
+    assert len(pubkeys) == 2
+    assert {(k.fingerprint, k.rpmdb, k.filename) for k in pubkeys} == {
+        ('9570ff31', True, None),
+        ('0000ff31', False, '/certs/custom'),
+    }
 
 
 def test_get_pubkeys_merges_pqrpmdb_keys_without_duplicates(monkeypatch):
@@ -183,10 +190,9 @@ def test_get_pubkeys_merges_pqrpmdb_keys_without_duplicates(monkeypatch):
     installed_rpms.items.append(_make_rpm('pqrpm'))
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[installed_rpms]))
     monkeypatch.setattr(api, 'current_logger', logger_mocked())
-    monkeypatch.setattr(trustedgpgkeys, 'iter_gpg_keyfiles', lambda include_pqc: iter([]))
     monkeypatch.setattr(trustedgpgkeys, 'run', lambda *args, **kwargs: {'stdout': _PQRPMDB_STDOUT})
 
-    pubkeys = trustedgpgkeys._get_pubkeys(installed_rpms)
+    pubkeys = trustedgpgkeys._get_pubkeys(installed_rpms, {})
 
     # the pqrpmdb-only key is added, the overlapping one is not duplicated
     assert len(pubkeys) == 3
@@ -194,19 +200,163 @@ def test_get_pubkeys_merges_pqrpmdb_keys_without_duplicates(monkeypatch):
     assert all(k.rpmdb for k in pubkeys)
 
 
+@pytest.mark.parametrize('keyfiles, expected_pqc, expected_classic', [
+    # the correct layout: v4 keys at the top-level, v6 keys in the 'pqc' subdirectory
+    (
+        {
+            os.path.join(_TRUSTED_DIR, 'v4key'): [_v4('fd431d51')],
+            os.path.join(_PQC_DIR, 'v6key'): [_v6('05707a62')],
+        },
+        [],
+        [],
+    ),
+    # a v6 key at the top-level belongs to the 'pqc' subdirectory
+    (
+        {
+            os.path.join(_TRUSTED_DIR, 'v4key'): [_v4('fd431d51')],
+            os.path.join(_TRUSTED_DIR, 'misplaced'): [_v6('05707a62')],
+        },
+        [(os.path.join(_TRUSTED_DIR, 'misplaced'), '05707a62')],
+        [],
+    ),
+    # a v4 key in the 'pqc' subdirectory belongs to the top-level
+    (
+        {
+            os.path.join(_TRUSTED_DIR, 'v4key'): [_v4('fd431d51')],
+            os.path.join(_PQC_DIR, 'misplaced'): [_v4('199e2f91')],
+        },
+        [],
+        [(os.path.join(_PQC_DIR, 'misplaced'), '199e2f91')],
+    ),
+    # only the v6 key of a mixed keyfile at the top-level is misplaced
+    (
+        {os.path.join(_TRUSTED_DIR, 'mixed'): [_v4('fd431d51'), _v6('05707a62')]},
+        [(os.path.join(_TRUSTED_DIR, 'mixed'), '05707a62')],
+        [],
+    ),
+    # only the v4 key of a mixed keyfile in the 'pqc' subdirectory is misplaced
+    (
+        {os.path.join(_PQC_DIR, 'mixed'): [_v4('fd431d51'), _v6('05707a62')]},
+        [],
+        [(os.path.join(_PQC_DIR, 'mixed'), 'fd431d51')],
+    ),
+    # both kinds of misplaced keys are detected at once
+    (
+        {
+            os.path.join(_TRUSTED_DIR, 'misplaced'): [_v6('05707a62')],
+            os.path.join(_PQC_DIR, 'misplaced'): [_v4('199e2f91')],
+        },
+        [(os.path.join(_TRUSTED_DIR, 'misplaced'), '05707a62')],
+        [(os.path.join(_PQC_DIR, 'misplaced'), '199e2f91')],
+    ),
+])
+def test_get_misplaced_keyfiles(monkeypatch, keyfiles, expected_pqc, expected_classic):
+    _mock_trusted_dir(monkeypatch, keyfiles)
+
+    misplaced_pqc, misplaced_classic = trustedgpgkeys._get_misplaced_keyfiles(keyfiles)
+
+    def as_tuples(keys):
+        # the misplaced keys always come from a keyfile, never from the rpmdb
+        assert all(not key.rpmdb for key in keys)
+        return [(key.filename, key.fingerprint) for key in keys]
+
+    assert as_tuples(misplaced_pqc) == expected_pqc
+    assert as_tuples(misplaced_classic) == expected_classic
+
+
+def test_process_no_installed_rpms_raises(monkeypatch):
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked())
+    monkeypatch.setattr(api, 'produce', produce_mocked())
+
+    with pytest.raises(StopActorExecutionError):
+        trustedgpgkeys.process()
+
+    assert api.produce.called == 0
+
+
 def test_process(monkeypatch):
     """
     Executes the "main" function
     """
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(
-        msgs=[_get_test_installed_rmps(['9570ff31'])])
-    )
+    installed_rpms = _get_test_installed_rmps(['9570ff31'])
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[installed_rpms], src_ver='9.9'))
     monkeypatch.setattr(api, 'produce', produce_mocked())
     monkeypatch.setattr(api, 'current_logger', logger_mocked())
-    monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
-    monkeypatch.setattr(trustedgpgkeys, '_get_pubkeys', get_pubkeys_from_rpms)
+    _mock_trusted_dir(monkeypatch, {
+        os.path.join(_TRUSTED_DIR, 'v4key'): [_v4('fd431d51')],
+        os.path.join(_PQC_DIR, 'v6key'): [_v6('05707a62')],
+    })
 
     trustedgpgkeys.process()
+
+    # the layout of the trusted directory is correct, only the trusted keys are produced
     assert api.produce.called == 1
-    assert isinstance(api.produce.model_instances[0], TrustedGpgKeys)
-    assert reporting.create_report.called == 0
+    produced = api.produce.model_instances[0]
+    assert isinstance(produced, TrustedGpgKeys)
+    assert {key.fingerprint for key in produced.items} == {'9570ff31', 'fd431d51', '05707a62'}
+
+
+@pytest.mark.parametrize('src_ver, has_sq', [
+    ('8.10', False),
+    ('9.7', False),
+    ('9.8', False),
+    ('9.9', True),
+    ('9.10', True),
+])
+def test_process_scans_pqc_keyfiles_with_sq_only(monkeypatch, src_ver, has_sq):
+    """
+    The keys from the 'pqc' subdirectory are trusted on source systems with 'sq' only.
+
+    Without 'sq' the v6 keys cannot be parsed at all, so the subdirectory is not scanned.
+    """
+    installed_rpms = _get_test_installed_rmps([])
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[installed_rpms], src_ver=src_ver))
+    monkeypatch.setattr(api, 'produce', produce_mocked())
+    monkeypatch.setattr(api, 'current_logger', logger_mocked())
+    _mock_trusted_dir(monkeypatch, {
+        os.path.join(_TRUSTED_DIR, 'v4key'): [_v4('fd431d51')],
+        os.path.join(_PQC_DIR, 'v6key'): [_v6('05707a62')],
+    })
+
+    trustedgpgkeys.process()
+
+    trusted_keys = api.produce.model_instances[0]
+    expected = {'fd431d51', '05707a62'} if has_sq else {'fd431d51'}
+    assert {key.fingerprint for key in trusted_keys.items} == expected
+
+
+@pytest.mark.parametrize('src_ver, produces_misplaced', [
+    # without 'sq' the misplaced v6 keys cannot be detected, so nothing is produced
+    ('8.10', False),
+    ('9.8', False),
+    ('9.9', True),
+    ('9.10', True),
+])
+def test_process_produces_misplaced_keys(monkeypatch, src_ver, produces_misplaced):
+    """
+    The misplaced keys are reported in a separate message on source systems with 'sq'.
+    """
+    installed_rpms = _get_test_installed_rmps([])
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[installed_rpms], src_ver=src_ver))
+    monkeypatch.setattr(api, 'produce', produce_mocked())
+    monkeypatch.setattr(api, 'current_logger', logger_mocked())
+    _mock_trusted_dir(monkeypatch, {
+        # a v6 key at the top-level and a v4 key in the 'pqc' subdirectory
+        os.path.join(_TRUSTED_DIR, 'misplaced-pqc'): [_v6('05707a62')],
+        os.path.join(_PQC_DIR, 'misplaced-classic'): [_v4('199e2f91')],
+    })
+
+    trustedgpgkeys.process()
+
+    misplaced = [msg for msg in api.produce.model_instances if isinstance(msg, MisplacedTrustedGpgKeys)]
+    if not produces_misplaced:
+        assert not misplaced
+        return
+
+    assert len(misplaced) == 1
+    assert [(key.filename, key.fingerprint) for key in misplaced[0].pqc_keys] == [
+        (os.path.join(_TRUSTED_DIR, 'misplaced-pqc'), '05707a62')
+    ]
+    assert [(key.filename, key.fingerprint) for key in misplaced[0].classic_keys] == [
+        (os.path.join(_PQC_DIR, 'misplaced-classic'), '199e2f91')
+    ]
