@@ -478,11 +478,16 @@ def mocked_rhsm_info():
 
 
 def test_switch_certificate(monkeypatch, context_mocked, actor_mocked):
+    cert_path = '/etc/leapp/repos.d/system_upgrade/common/files/prod-certs/10/479.pem'
+
     monkeypatch.setattr(
         os.path, 'isdir', lambda path: path in ('/etc/pki/product', '/etc/pki/product-default')
     )
 
-    cert_path = '/etc/leapp/repos.d/system_upgrade/common/files/prod-certs/10/479.pem'
+    monkeypatch.setattr(
+        os.path, 'isfile', lambda path: path == cert_path
+    )
+
     rhsm.switch_certificate(context_mocked, mocked_rhsm_info(), cert_path)
 
     assert context_mocked.remove_called == mocked_rhsm_info().existing_product_certificates
