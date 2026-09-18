@@ -1,9 +1,17 @@
+import os
+
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common.config.version import matches_source_version
-from leapp.libraries.common.gpg import get_gpg_fp_from_file, get_pubkeys_from_rpms, iter_gpg_keyfiles
+from leapp.libraries.common.gpg import (
+    get_path_to_gpg_certs,
+    get_pubkeys_from_rpms,
+    GPG_PQC_CERTS_SUBFOLDER,
+    iter_gpg_keyfiles,
+    parse_gpg_key_from_file
+)
 from leapp.libraries.common.rpms import has_package
 from leapp.libraries.stdlib import api, CalledProcessError, run
-from leapp.models import GpgKey, InstalledRPM, TrustedGpgKeys
+from leapp.models import GpgKey, InstalledRPM, MisplacedTrustedGpgKeys, TrustedGpgKeys
 
 
 def _get_pubkeys_from_pqrmdb():
@@ -45,7 +53,17 @@ def _get_pubkeys_from_pqrmdb():
     return keys
 
 
-def _get_pubkeys(installed_rpms):
+def _parse_trusted_keyfiles(include_pqc):
+    """
+    :rtype: Dict[String, List[GpgKeyInfo]]
+    """
+    file_to_fps = {}
+    for key_file in iter_gpg_keyfiles(include_pqc=include_pqc):
+        file_to_fps[key_file] = parse_gpg_key_from_file(key_file)
+    return file_to_fps
+
+
+def _get_pubkeys(installed_rpms, keyfiles_to_fps):
     """
     Get pubkeys from installed rpms and the trusted directory
     """
@@ -60,10 +78,7 @@ def _get_pubkeys(installed_rpms):
         pubkeys += pqc_pubkeys
         db_pubkeys |= {k.fingerprint for k in pqc_pubkeys}
 
-    # without sq there is no way to process PQC keys
-    has_sq = matches_source_version('>= 9.9')
-    for key_file in iter_gpg_keyfiles(include_pqc=has_sq):
-        fps = get_gpg_fp_from_file(key_file)
+    for key_file, fps in keyfiles_to_fps.items():
         for fp in fps:
             if fp not in db_pubkeys:
                 pubkeys.append(GpgKey(fingerprint=fp, rpmdb=False, filename=key_file))
@@ -71,9 +86,43 @@ def _get_pubkeys(installed_rpms):
     return pubkeys
 
 
+def _get_misplaced_keyfiles(keyfiles_to_infos):
+    """
+    Get keys incorrectly placed within the truste GPG keys directory
+    """
+    root_dir = get_path_to_gpg_certs()
+    pqc_dir = os.path.join(root_dir, GPG_PQC_CERTS_SUBFOLDER)
+
+    misplaced_pqc = []  # pqc (v6) keys found at the 'root_dir'
+    misplaced_classic = []  # non-PQC keys found in the 'pqc_dir'
+
+    def make_model(keyfile, info):
+        return GpgKey(
+            fingerprint=info.short_keyid,
+            rpmdb=False,
+            filename=keyfile
+        )
+
+    for keyfile, key_infos in keyfiles_to_infos.items():
+        if os.path.dirname(keyfile) == pqc_dir:
+            misplaced_classic += [
+                make_model(keyfile, key) for key in key_infos if not key.is_pqc
+            ]
+        else:
+            # subdirs other than pqc are ignored by the iterator
+            misplaced_pqc += [
+                make_model(keyfile, key) for key in key_infos if key.is_pqc
+            ]
+
+    return misplaced_pqc, misplaced_classic
+
+
 def process():
     """
     Process keys in RPM DB and the ones in trusted directory to produce a list of trusted keys
+
+    On 9.9 and 9.10 also search for and produce a MisplacedTrustedGpgKeys message with GPG keys
+    misplaced in the trusted directory.
     """
 
     try:
@@ -82,5 +131,25 @@ def process():
         raise StopActorExecutionError(
             'Could not check for valid GPG keys', details={'details': 'No InstalledRPM facts'}
         )
-    pubkeys = _get_pubkeys(installed_rpms)
+
+    has_sq = matches_source_version('>= 9.9')
+    # without sq there is no way to process PQC keys
+    keyfiles_to_infos = _parse_trusted_keyfiles(include_pqc=has_sq)
+
+    keyfiles_to_fps = {
+        keyfile: [key_info.short_keyid for key_info in infos]
+        for keyfile, infos in keyfiles_to_infos.items()
+    }
+    pubkeys = _get_pubkeys(installed_rpms, keyfiles_to_fps)
     api.produce(TrustedGpgKeys(items=pubkeys))
+
+    if not has_sq:
+        return
+
+    misplaced_pqc, misplaced_classic = _get_misplaced_keyfiles(keyfiles_to_infos)
+    if misplaced_pqc or misplaced_classic:
+        api.produce(
+            MisplacedTrustedGpgKeys(
+                pqc_keys=misplaced_pqc, classic_keys=misplaced_classic
+            )
+        )

@@ -36,3 +36,28 @@ class TrustedGpgKeys(Model):
     """
     The trusted GPG keys gathered from the rpmdb (or pqrpmdb) and the trusted keys directory
     """
+
+
+class MisplacedTrustedGpgKeys(Model):
+    """
+    GPG keys placed in an incorrect place inside the trusted keys directory
+
+    Note: Messages of this model are only produced and relevant on source versions 9.9 and 9.10.
+    On these versions post-quantum GPG keys must be placed into a separate 'pqc' subdirectory inside
+    the trusted GPG keys directory while "classic" (non post-quantum) GPG keys must be placed in the
+    top level of the trusted directory.
+
+    .. seealso::
+        The `trustedgpgkeysscanner` and `trustedgpgkeydircheck` actors
+    """
+    topic = SystemFactsTopic
+
+    pqc_keys = fields.List(fields.Model(GpgKey), default=[])
+    """
+    Post-quantum GGP keys placed in an incorrect directory - the top-level of the trusted keys directory
+    """
+
+    classic_keys = fields.List(fields.Model(GpgKey), default=[])
+    """
+    "Classic" GGP keys placed in an incorrect directory - the pqc subdirectory of the trusted keys directory
+    """
