@@ -8,7 +8,7 @@ from six.moves import urllib
 
 from leapp import reporting
 from leapp.exceptions import StopActorExecution, StopActorExecutionError
-from leapp.libraries.common.config.version import get_target_major_version
+from leapp.libraries.common.config.version import get_source_version, get_target_major_version, matches_version
 from leapp.libraries.common.gpg import get_gpg_fp_from_file, get_path_to_gpg_certs, is_nogpgcheck_set
 from leapp.libraries.stdlib import api, format_list
 from leapp.models import (
@@ -257,11 +257,16 @@ def _report_repos_missing_keys(repos):
 
 
 def register_dnfworkaround():
-    api.produce(DNFWorkaround(
-        display_name='import trusted gpg keys to RPM DB',
-        script_path=api.current_actor().get_common_tool_path('importrpmgpgkeys'),
-        script_args=[get_path_to_gpg_certs()],
-    ))
+    # if the source is >= 9.8 && < 10.0, the workaround needs to be run in the
+    # target userspace context so that it is able to import PQC (v6) GPG keys.
+    # A different workaround is registered in the targetusersapcecreator actor
+    # to do just that.
+    if not matches_version(['>= 9.8', '< 10.0'], get_source_version()):
+        api.produce(DNFWorkaround(
+            display_name='import trusted gpg keys to RPM DB',
+            script_path=api.current_actor().get_common_tool_path('importrpmgpgkeys'),
+            script_args=[get_path_to_gpg_certs()],
+        ))
 
 
 @suppress_deprecation(TMPTargetRepositoriesFacts)

@@ -3,7 +3,7 @@ from six.moves.urllib.error import URLError
 
 from leapp import reporting
 from leapp.exceptions import StopActorExecution, StopActorExecutionError
-from leapp.libraries.actor.missinggpgkey import process
+from leapp.libraries.actor.missinggpgkey import process, register_dnfworkaround
 from leapp.libraries.common.gpg import get_pubkeys_from_rpms
 from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked, logger_mocked, produce_mocked
 from leapp.libraries.stdlib import api
@@ -26,6 +26,29 @@ from leapp.utils.deprecation import suppress_deprecation
 # Note, that this is not a real component test as described in the documentation,
 # but basically unit test calling the "main" function process() to simulate the
 # whole process as I was initially advised not to use these component tests.
+
+
+@pytest.mark.parametrize('src_ver, should_register', [
+    # gpg2 is used to import keys directly into the target RPM DB
+    ('8.10', True),
+    ('9.6', True),
+    # 9.8 <= source < 10.0: PQC (v6) keys can be parsed but not imported by the
+    # source RPM stack, so a separate workaround runs in the target userspace
+    ('9.8', False),
+    ('9.10', False),
+    # >= 10.0: the target RPM stack imports the keys directly again
+    ('10.0', True),
+    ('10.1', True),
+])
+def test_register_dnfworkaround_source_version_gating(monkeypatch, src_ver, should_register):
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(src_ver=src_ver))
+    monkeypatch.setattr(api, 'produce', produce_mocked())
+
+    register_dnfworkaround()
+
+    assert api.produce.called == (1 if should_register else 0)
+    if should_register:
+        assert isinstance(api.produce.model_instances[0], DNFWorkaround)
 
 
 def _get_test_gpgkeys_missing():
