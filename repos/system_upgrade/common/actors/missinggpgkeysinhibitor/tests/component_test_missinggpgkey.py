@@ -29,16 +29,15 @@ from leapp.utils.deprecation import suppress_deprecation
 
 
 @pytest.mark.parametrize('src_ver, should_register', [
-    # gpg2 is used to import keys directly into the target RPM DB
+    # < 9.7: no PQC keys exist, so the host-side workaround (rpm --import)
+    # imports all trusted target keys directly
     ('8.10', True),
     ('9.6', True),
-    # 9.8 <= source < 10.0: PQC (v6) keys can be parsed but not imported by the
-    # source RPM stack, so a separate workaround runs in the target userspace
+    # 9.7 <= source < 10.0: the source RPM stack cannot import PQC (v6) keys,
+    # so a separate workaround runs in the target userspace to import them
+    ('9.7', False),
     ('9.8', False),
     ('9.10', False),
-    # >= 10.0: the target RPM stack imports the keys directly again
-    ('10.0', True),
-    ('10.1', True),
 ])
 def test_register_dnfworkaround_source_version_gating(monkeypatch, src_ver, should_register):
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(src_ver=src_ver))

@@ -257,11 +257,11 @@ def _report_repos_missing_keys(repos):
 
 
 def register_dnfworkaround():
-    # if the source is >= 9.8 && < 10.0, the workaround needs to be run in the
+    # if the source is >= 9.7 && < 10.0, the workaround needs to be run in the
     # target userspace context so that it is able to import PQC (v6) GPG keys.
     # A different workaround is registered in the targetusersapcecreator actor
     # to do just that.
-    if not matches_version(['>= 9.8', '< 10.0'], get_source_version()):
+    if not matches_version(['>= 9.7', '< 10.0'], get_source_version()):
         api.produce(DNFWorkaround(
             display_name='import trusted gpg keys to RPM DB',
             script_path=api.current_actor().get_common_tool_path('importrpmgpgkeys'),
