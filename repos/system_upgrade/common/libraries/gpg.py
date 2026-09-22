@@ -235,7 +235,7 @@ def parse_gpg_key_from_file(key_path):
     Every key is described by its 'version' and 'fingerprint' cut to the short
     key ID, i.e. the same value as used in the version of the gpg-pubkey RPMs.
 
-    Note that on source systems older than 9.8, where 'sq' is not available,
+    Note that for source systems older than 9.9, where 'sq' is not available,
     the keys are read by gpg2 and so all of them are reported as v4 keys.
 
     :param key_path: Path to the file with GPG key(s)
@@ -243,8 +243,8 @@ def parse_gpg_key_from_file(key_path):
     :return: List of the public keys from the given file
     :rtype: list(GpgKeyInfo)
     """
-    # TODO: 9.6 will be dropped from upgrade paths at the point this gets released
-    if matches_version(['< 9.8'], get_source_version()):
+    # The sequoia-sq package providing the sq command is available only since RHEL 9.9
+    if matches_version(['< 9.9'], get_source_version()):
         return _parse_gpg_key_gpg2(key_path)
 
     return _parse_gpg_key_sq(key_path)

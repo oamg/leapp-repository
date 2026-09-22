@@ -365,10 +365,10 @@ def test_parse_gpg_key_sq_skips_unparseable_key(monkeypatch):
 
 
 @pytest.mark.parametrize('src_ver, uses_sq', [
-    # sq is only available since 9.8, older sources keep using gpg2
-    ('9.6', False),
+    # sq is only available since 9.9, older sources keep using gpg2
     ('9.7', False),
-    ('9.8', True),
+    ('9.8', False),
+    ('9.9', True),
     ('10.0', True),
 ])
 def test_key_parsing_dispatches_on_source_version(monkeypatch, src_ver, uses_sq):
