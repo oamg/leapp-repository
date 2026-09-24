@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.libraries.actor import userspacegen
+from leapp.libraries.actor import tus_userspacegen
 from leapp.models import RequiredTargetUserspacePackages  # deprecated
 from leapp.models import TMPTargetRepositoriesFacts  # deprecated
 from leapp.models import (
@@ -52,4 +52,4 @@ class TargetUserspaceCreator(Actor):
     tags = (IPUWorkflowTag, TargetTransactionFactsPhaseTag)
 
     def process(self):
-        userspacegen.perform()
+        tus_userspacegen.perform()
