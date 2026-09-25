@@ -90,5 +90,3 @@ Only the versions in which a deprecation has been made are listed.
 - Models
    - **`TMPTargetRepositoriesFacts`** - Deprecated because this model was not intended for customer use.
 
-
-
