@@ -368,7 +368,7 @@ def apply_workarounds(host_context=None, container_context=None):
     # FIXME(pstodulk): add check that actor is consuming DNFWorkaround, and raise
     # new error if it is not.
 
-    container_scripts_dir = '/var/tmp/dnf_workaround_scripts'
+    container_scripts_dir = '/dnf_workaround_scripts'
 
     for workaround in api.consume(DNFWorkaround):
         try:
