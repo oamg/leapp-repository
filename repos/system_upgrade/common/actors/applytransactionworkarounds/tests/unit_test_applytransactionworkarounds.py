@@ -51,7 +51,7 @@ class MockedContext:
         self.copied.append((src, dst))
 
 
-_CONTAINER_SCRIPTS_DIR = '/var/tmp/dnf_workaround_scripts'
+_CONTAINER_SCRIPTS_DIR = '/dnf_workaround_scripts'
 
 
 def _get_tool_path(name):
