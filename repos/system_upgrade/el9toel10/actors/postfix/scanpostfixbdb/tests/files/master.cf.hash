@@ -1,0 +1,8 @@
+# service type  private unpriv  chroot  wakeup  maxproc command + args
+smtp      inet  n       -       n       -       -       smtpd
+  -o smtpd_sasl_auth_enable=yes
+  -o virtual_alias_maps=hash:/etc/postfix/virtual
+  -o default_database_type=hash
+# -o alias_maps=hash:/etc/aliases
+submission inet n       -       n       -       -       smtpd
+  -o smtpd_client_restrictions=permit_mynetworks
