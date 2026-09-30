@@ -1468,3 +1468,159 @@ def test_if_adjust_dnf_stream_variable_only_for_centos(
 
     userspacegen._gather_target_repositories(MockedMountingBase, testInData, None)
     assert adjust_called == should_adjust
+
+
+_PQRPM_RPMKEYS = '/usr/lib/pqrpm/bin/rpmkeys'
+# root holds v4 keys, the 'pqc' subdir holds v6 keys; include_pqc=True yields both
+_IMPORT_KEYFILES = {
+    False: ['/keys/root-key'],
+    True: ['/keys/root-key', '/keys/pqc/pqc-key'],
+}
+
+
+class _ImportKeysContext:
+    """Records emitted commands and can fail on a chosen binary."""
+
+    def __init__(self, fail_on=None, stderr='', base_dir='/'):
+        self.calls = []
+        self._fail_on = fail_on
+        self._stderr = stderr
+        self.base_dir = base_dir
+
+    def call(self, cmd, **dummy_kwargs):
+        self.calls.append(cmd)
+        if self._fail_on and cmd[0] == self._fail_on:
+            result = {'stdout': '', 'stderr': self._stderr, 'exit_code': 1, 'signal': None, 'pid': 1}
+            raise CalledProcessError('failed', cmd, result)
+        return {'exit_code': 0}
+
+    def binaries(self):
+        return [cmd[0] for cmd in self.calls]
+
+    def imported_paths(self, binary):
+        return [cmd[cmd.index('--import') + 1] for cmd in self.calls if cmd[0] == binary]
+
+
+def _installed_rpms(pqrpm_installed):
+    items = [models.RPM(
+        name='rpm', version='4.17.1', release='1', epoch='0', packager='', arch='x86_64', pgpsig=''
+    )]
+    if pqrpm_installed:
+        items.append(models.RPM(
+            name='pqrpm', version='1.0', release='1', epoch='0', packager='', arch='x86_64', pgpsig=''
+        ))
+    return models.InstalledRPM(items=items)
+
+
+def _setup_import_keys(monkeypatch, target_version, keyfiles_by_scope, pqrpm_installed=False):
+    """Stub the version and keyfile discovery used by _import_gpg_keys_to_context."""
+    monkeypatch.setattr(
+        userspacegen.api, 'current_actor',
+        CurrentActorMocked(dst_ver=target_version, msgs=[_installed_rpms(pqrpm_installed)])
+    )
+    monkeypatch.setattr(
+        userspacegen, 'iter_gpg_keyfiles',
+        lambda include_pqc: iter(keyfiles_by_scope[include_pqc])
+    )
+
+
+@pytest.mark.parametrize('target_version, expected_pqrpm_imports', [
+    # on 10.0 there is no PQC support in rpm, so pqrpm import must not be attempted
+    ('10.0', []),
+    # newer targets import all (v4 + pqc) keys into the separate pqrpmdb
+    ('10.1', ['/keys/root-key', '/keys/pqc/pqc-key']),
+])
+def test_import_gpg_keys_to_context_version_gating(monkeypatch, target_version, expected_pqrpm_imports):
+    _setup_import_keys(monkeypatch, target_version, _IMPORT_KEYFILES, pqrpm_installed=True)
+    context = _ImportKeysContext()
+
+    userspacegen._import_gpg_keys_to_context(context, '/instroot')
+
+    assert context.imported_paths('rpm') == ['/keys/root-key']
+    assert context.imported_paths(_PQRPM_RPMKEYS) == expected_pqrpm_imports
+    # keys are always imported into the given install root, regardless of arg order
+    for cmd in context.calls:
+        assert '--root' in cmd
+        assert cmd[cmd.index('--root') + 1] == '/instroot'
+
+
+def test_import_gpg_keys_to_context_skips_pqrpm_when_not_installed(monkeypatch):
+    # rpmkeys used for the pqrpmdb import comes from the source system's 'pqrpm'
+    # package; without it installed there is no binary to import with, so the
+    # pqrpm import is skipped even on a PQC-capable target
+    _setup_import_keys(monkeypatch, '10.1', _IMPORT_KEYFILES, pqrpm_installed=False)
+    context = _ImportKeysContext()
+
+    userspacegen._import_gpg_keys_to_context(context, '/instroot')
+
+    assert context.imported_paths('rpm') == ['/keys/root-key']
+    assert context.imported_paths(_PQRPM_RPMKEYS) == []
+
+
+@pytest.mark.parametrize('fail_on, stderr', [
+    # a rpm import failure is always fatal
+    ('rpm', 'rpm import failure'),
+    # a pqrpm import failure other than the missing binary is fatal
+    (_PQRPM_RPMKEYS, 'some other rpmkeys failure'),
+])
+def test_import_gpg_keys_to_context_import_error_raises(monkeypatch, fail_on, stderr):
+    _setup_import_keys(monkeypatch, '10.1', _IMPORT_KEYFILES, pqrpm_installed=True)
+    context = _ImportKeysContext(fail_on=fail_on, stderr=stderr)
+
+    with pytest.raises(StopActorExecutionError):
+        userspacegen._import_gpg_keys_to_context(context, '/instroot')
+
+
+def _setup_import_keys_in_context(monkeypatch, keyfiles):
+    """Stub keyfile discovery for _import_gpg_keys_in_context, capturing its args."""
+    captured = {}
+
+    def fake_iter(root_dir, include_pqc):
+        captured['root_dir'] = root_dir
+        captured['include_pqc'] = include_pqc
+        return iter(keyfiles)
+
+    monkeypatch.setattr(userspacegen, 'iter_gpg_keyfiles', fake_iter)
+    return captured
+
+
+def test_import_gpg_keys_in_context_imports_all_keys(monkeypatch):
+    # v4 keys live at the top level, v6 (pqc) keys in the 'pqc' subdir; both are imported
+    keyfiles = [
+        '/base/leapp-trusted-gpg-keys/root-key',
+        '/base/leapp-trusted-gpg-keys/pqc/pqc-key',
+    ]
+    captured = _setup_import_keys_in_context(monkeypatch, keyfiles)
+    context = _ImportKeysContext(base_dir='/base')
+
+    userspacegen._import_gpg_keys_in_context(context, '/leapp-trusted-gpg-keys')
+
+    # keys are discovered in the certs dir copied inside the container, pqc included
+    assert captured['root_dir'] == '/base/leapp-trusted-gpg-keys'
+    assert captured['include_pqc'] is True
+    # every key is imported with the container's own rpm (no --root), using
+    # paths relative to the container base dir
+    assert context.binaries() == ['rpm', 'rpm']
+    assert context.imported_paths('rpm') == [
+        'leapp-trusted-gpg-keys/root-key',
+        'leapp-trusted-gpg-keys/pqc/pqc-key',
+    ]
+    for cmd in context.calls:
+        assert '--root' not in cmd
+
+
+def test_import_gpg_keys_in_context_no_keys_imports_nothing(monkeypatch):
+    _setup_import_keys_in_context(monkeypatch, [])
+    context = _ImportKeysContext(base_dir='/base')
+
+    userspacegen._import_gpg_keys_in_context(context, '/leapp-trusted-gpg-keys')
+
+    assert not context.calls
+
+
+def test_import_gpg_keys_in_context_import_error_raises(monkeypatch):
+    _setup_import_keys_in_context(monkeypatch, ['/base/leapp-trusted-gpg-keys/root-key'])
+    context = _ImportKeysContext(base_dir='/base', fail_on='rpm', stderr='rpm import failure')
+
+    with pytest.raises(StopActorExecutionError):
+        userspacegen._import_gpg_keys_in_context(context, '/leapp-trusted-gpg-keys')

@@ -2,7 +2,7 @@
 %global repositorydir %{leapp_datadir}/repositories
 %global custom_repositorydir %{leapp_datadir}/custom-repositories
 
-%define leapp_repo_deps  10
+%define leapp_repo_deps  11
 
 %if 0%{?rhel} == 7
     %define leapp_python_sitelib %{python2_sitelib}
@@ -221,6 +221,8 @@ Requires:   python3-gobject-base
 ############# RHEL 9 dependencies (when the source system is RHEL 9) ##########
 # Required to convert pam_userdb database from BerkeleyDB to GDBM
 Requires:   libdb-utils
+# Required for handling post-quantum GPG keys
+Requires:   sequoia-sq
 %endif
 ##################################################
 # end requirement
