@@ -6,7 +6,7 @@ from leapp.libraries.common import distro, efi, mounting, partitions
 from leapp.libraries.common.config import get_source_distro_id
 from leapp.libraries.common.grub import get_boot_partition
 from leapp.libraries.stdlib import api, CalledProcessError, run
-from leapp.models import ArmWorkaroundEFIBootloaderInfo, EFIBootEntry, TargetUserSpaceInfo
+from leapp.models import ArmWorkaroundEFIBootloaderInfo, EFIBootEntry, PrepareLiveImagePostTasks, TargetUserSpaceInfo
 
 UPGRADE_EFI_ENTRY_LABEL = 'Leapp Upgrade'
 
@@ -78,6 +78,8 @@ def process():
                 upgrade_entry_efi_path=LEAPP_EFIDIR_CANONICAL_PATH,
             )
         )
+
+        api.produce(PrepareLiveImagePostTasks())
 
 
 def _get_userspace_info():

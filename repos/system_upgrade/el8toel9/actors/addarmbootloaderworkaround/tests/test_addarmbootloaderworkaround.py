@@ -8,7 +8,7 @@ from leapp.libraries.actor import addupgradebootloader
 from leapp.libraries.common import efi
 from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked, make_OSError, produce_mocked
 from leapp.libraries.stdlib import api
-from leapp.models import ArmWorkaroundEFIBootloaderInfo, EFIBootEntry, TargetUserSpaceInfo
+from leapp.models import ArmWorkaroundEFIBootloaderInfo, EFIBootEntry, PrepareLiveImagePostTasks, TargetUserSpaceInfo
 
 TEST_RHEL_EFI_ENTRY = efi.EFIBootLoaderEntry(
             '0000',
@@ -244,8 +244,8 @@ def test_process(monkeypatch, distro, efientry):
 
     addupgradebootloader.process()
 
-    assert api.produce.called == 1
-    assert len(api.produce.model_instances) == 1
+    assert api.produce.called == 2
+    assert len(api.produce.model_instances) == 2
 
     efibootentry_fields = ['boot_number', 'label', 'active', 'efi_bin_source']
     expected = ArmWorkaroundEFIBootloaderInfo(
@@ -256,6 +256,8 @@ def test_process(monkeypatch, distro, efientry):
         )
     actual = api.produce.model_instances[0]
     assert actual == expected
+
+    assert isinstance(api.produce.model_instances[1], PrepareLiveImagePostTasks)
 
 
 @pytest.mark.parametrize('is_config_ok', (True, False))
