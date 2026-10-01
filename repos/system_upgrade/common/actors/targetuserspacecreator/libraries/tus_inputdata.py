@@ -75,7 +75,9 @@ def gather():
     rhsm_info = next(api.consume(RHSMInfo), None)
     rhui_info = next(api.consume(RHUIInfo), None)
     target_iso = next(api.consume(TargetOSInstallationImage), None)
+    # FIXME: this should be list
     preupgrade_tasks = next(api.consume(TargetUserSpacePreupgradeTasks), None)
+    ### FIXME: rename to xfs_info to meet with naming in other libs
     ### FIXME orig code uses XFSPresence() as default
     xfs_presence = next(api.consume(XFSPresence), None)
     repositories_facts = next(api.consume(RepositoriesFacts), None)
@@ -98,6 +100,9 @@ def gather():
         )
 
     # Hard-stop #2: RHSM is being skipped but RHSMInfo is present (inconsistent).
+    # FIXME: take a look, originally just a log, I think it's covered by error
+    # somewhere else (earlier actor?) now..
+    # FIXME: check also rest of arts
     if skip_rhsm and rhsm_info:
         raise StopActorExecutionError(
             message='Inconsistent RHSM input.',

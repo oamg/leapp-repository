@@ -20,6 +20,7 @@ from leapp.libraries.common.config import get_env
 from leapp.libraries.common.config.version import get_target_major_version
 from leapp.libraries.stdlib import api, run
 
+# FIXME: drop the constant
 _PERSISTENT_PACKAGE_CACHE_ENV = 'LEAPP_DEVEL_USE_PERSISTENT_PACKAGE_CACHE'
 
 
@@ -80,8 +81,11 @@ def scratch_container(layout, inputs):
     ) as overlay:
         # NullMount (a no-op) is returned when no ISO is present, so this is safe
         # to enter unconditionally.
-        with mounting.mount_upgrade_iso_to_root_dir(overlay.target, inputs.target_iso):
-            with overlay.nspawn() as scratch:
+        # NOTE: switched order - is it relevant? I switched it back. it seems
+        # however that the order should not be relevant - if so, it can be moved
+        # back (the code looked better that way).
+        with overlay.nspawn() as scratch:
+            with mounting.mount_upgrade_iso_to_root_dir(overlay.target, inputs.target_iso):
                 yield scratch
 
 

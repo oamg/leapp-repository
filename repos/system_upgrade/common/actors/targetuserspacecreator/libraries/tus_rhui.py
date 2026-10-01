@@ -42,6 +42,7 @@ def _resolve_copy_target(context, copy_file):
     file lands at ``destination/basename(source)``; otherwise the destination
     path is used unchanged.
     """
+    # FIXME: why this function at all? Check it better with the existing code
     dst = _copy_file_dst(copy_file)
     if os.path.isdir(context.full_path(dst)):
         return os.path.join(dst, os.path.basename(copy_file.src))
@@ -51,6 +52,7 @@ def _resolve_copy_target(context, copy_file):
 def _ensure_parent_dir(context, dst):
     """Create the container-side parent directory of ``dst`` (OSError → hard stop)."""
     parent = os.path.dirname(context.full_path(dst))
+    # FIXME: better would be context.makedirs instead; also changed behaviour
     try:
         if not os.path.isdir(parent):
             os.makedirs(parent)
@@ -69,10 +71,13 @@ def _run_preinstall_tasks(context, preinstall_tasks):
     if not preinstall_tasks:
         return
 
+    # FIXME: add logs
     for path in preinstall_tasks.files_to_remove:
         context.remove(path)
 
     for copy_file in preinstall_tasks.files_to_copy_into_overlay:
+        # FIXME: this seems weird
+        # think about the order.. - maybe update input data?...
         dst = _resolve_copy_target(context, copy_file)
         _ensure_parent_dir(context, dst)
         context.copy_to(copy_file.src, dst)
@@ -195,6 +200,7 @@ def discover_client_exposed_repoids(context, rhui_info):
 
 def _parse_repoids_from_copied_files(context, rhui_info):
     """Parse repoids from the pre-install copied ``.repo`` files (parse fail → hard stop)."""
+    # FIXME. just take it from orig code. this bad
     repoids = set()
     preinstall_tasks = rhui_info.target_client_setup_info.preinstall_tasks
     for copy_file in preinstall_tasks.files_to_copy_into_overlay:
@@ -306,11 +312,13 @@ def perform_client_swap(context, rhui_info, target_major, releasever, skip_rhsm)
     if not setup.bootstrap_target_client:
         return
 
+    # TODO: update the name?
     enable_only_repoids = set()
     has_preinstall_copies = bool(
         setup.preinstall_tasks and setup.preinstall_tasks.files_to_copy_into_overlay
     )
     if setup.enable_only_repoids_in_copied_files and has_preinstall_copies:
+        # FIXME: needs to be changed - give it just related content instead of whole msg
         enable_only_repoids = _parse_repoids_from_copied_files(context, rhui_info)
 
     _swap_clients(context, rhui_info, target_major, releasever, skip_rhsm, enable_only_repoids)
