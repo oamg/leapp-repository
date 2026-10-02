@@ -8,15 +8,6 @@ an import cycle. Keep it free of side effects and of imports from sibling
 ``tus_*`` modules.
 """
 
-# Packages always installed into the target userspace, on top of whatever the
-# TargetUserSpacePreupgradeTasks.install_rpms list requests (§2).
-DEFAULT_INSTALL_PKGS = [
-    'dnf',
-    'dnf-command(config-manager)',
-    'dnf-command(download)',
-    'util-linux',
-]
-
 
 def common_dnf_flags(target_major, releasever, skip_rhsm):
     """

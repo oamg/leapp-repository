@@ -10,7 +10,6 @@ Leaf module: imports only shared leapp libraries and ``tus_constants``.
 """
 
 from leapp.exceptions import StopActorExecutionError
-from leapp.libraries.actor import tus_constants
 from leapp.libraries.common import rhsm
 from leapp.libraries.common.gpg import is_nogpgcheck_set
 from leapp.libraries.stdlib import api
@@ -26,6 +25,15 @@ from leapp.models import (
     TargetUserSpacePreupgradeTasks,
     XFSPresence,
 )
+
+# Packages always installed into the target userspace, on top of whatever the
+# TargetUserSpacePreupgradeTasks.install_rpms list requests
+_DEFAULT_INSTALL_PKGS = [
+    'dnf',
+    'dnf-command(config-manager)',
+    'dnf-command(download)',
+    'util-linux',
+]
 
 
 class InputData(object):
@@ -121,7 +129,7 @@ def gather():
         )
 
     install_rpms = list(preupgrade_tasks.install_rpms) if preupgrade_tasks else []
-    packages = tus_constants.DEFAULT_INSTALL_PKGS + install_rpms
+    packages = _DEFAULT_INSTALL_PKGS + install_rpms
 
     raw_copy_files = preupgrade_tasks.copy_files if preupgrade_tasks else []
     copy_files = _dedup_copy_files(raw_copy_files)
