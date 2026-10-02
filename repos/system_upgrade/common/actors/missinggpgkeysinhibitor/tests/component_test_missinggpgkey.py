@@ -12,16 +12,15 @@ from leapp.models import (
     GpgKey,
     Report,
     RepositoriesFacts,
+    RepositoriesFactsTarget,
     RepositoryData,
     RepositoryFile,
     RPM,
     TargetUserSpaceInfo,
-    TMPTargetRepositoriesFacts,
     TrustedGpgKeys,
     UsedTargetRepositories,
     UsedTargetRepository
 )
-from leapp.utils.deprecation import suppress_deprecation
 
 # Note, that this is not a real component test as described in the documentation,
 # but basically unit test calling the "main" function process() to simulate the
@@ -131,12 +130,11 @@ def _get_test_target_repofile_additional():
     )
 
 
-@suppress_deprecation(TMPTargetRepositoriesFacts)
 def _get_test_tmptargetrepositoriesfacts():
     """
     All target repositories facts
     """
-    return TMPTargetRepositoriesFacts(
+    return RepositoriesFactsTarget(
         repositories=[
             _get_test_target_repofile(),
             _get_test_target_repofile_additional(),
@@ -200,12 +198,11 @@ def test_perform_missing_facts(monkeypatch, msgs):
     assert "Missing TargetUserSpaceInfo data" in api.current_logger.warnmsg[0]
 
 
-@suppress_deprecation(TMPTargetRepositoriesFacts)
 def _get_test_tmptargetrepositoriesfacts_partial():
     return [
         _get_test_gpgkeys(),
         _get_test_usedtargetrepositories(),
-        TMPTargetRepositoriesFacts(
+        RepositoriesFactsTarget(
             repositories=[
                 _get_test_target_repofile(),
                 # missing MyAnotherRepo
@@ -270,7 +267,7 @@ def test_perform_missing_some_repo_facts(monkeypatch):
     """
     Executes the "main" function with missing repositories facts
 
-    This is misalignment in the provided facts UsedTargetRepositories and TMPTargetRepositoriesFacts,
+    This is misalignment in the provided facts UsedTargetRepositories and RepositoriesFactsTarget,
     where we miss some metadata that are required by the first message.
     """
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(
@@ -287,13 +284,12 @@ def test_perform_missing_some_repo_facts(monkeypatch):
     assert reporting.create_report.called == 0
 
 
-@suppress_deprecation(TMPTargetRepositoriesFacts)
 def _get_test_tmptargetrepositoriesfacts_https_unused():
     return [
         _get_test_targuserspaceinfo(),
         _get_test_gpgkeys(),
         _get_test_usedtargetrepositories(),
-        TMPTargetRepositoriesFacts(
+        RepositoriesFactsTarget(
             repositories=[
                 _get_test_target_repofile(),
                 _get_test_target_repofile_additional(),
@@ -336,7 +332,6 @@ def test_perform_https_gpgkey_unused(monkeypatch):
     assert reporting.create_report.called == 0
 
 
-@suppress_deprecation(TMPTargetRepositoriesFacts)
 def get_test_tmptargetrepositoriesfacts_https():
     return (
         _get_test_targuserspaceinfo(),
@@ -348,7 +343,7 @@ def get_test_tmptargetrepositoriesfacts_https():
                 ),
             ]
         ),
-        TMPTargetRepositoriesFacts(
+        RepositoriesFactsTarget(
             repositories=[
                 _get_test_target_repofile(),
                 _get_test_target_repofile_additional(),
@@ -369,7 +364,6 @@ def get_test_tmptargetrepositoriesfacts_https():
     )
 
 
-@suppress_deprecation(TMPTargetRepositoriesFacts)
 def get_test_tmptargetrepositoriesfacts_ftp():
     return (
         _get_test_targuserspaceinfo(),
@@ -381,7 +375,7 @@ def get_test_tmptargetrepositoriesfacts_ftp():
                 ),
             ]
         ),
-        TMPTargetRepositoriesFacts(
+        RepositoriesFactsTarget(
             repositories=[
                 _get_test_target_repofile(),
                 _get_test_target_repofile_additional(),
@@ -482,7 +476,6 @@ def test_perform_ftp_gpgkey(monkeypatch):
     assert 'ftp://example.com/rpm-gpg/key.gpg' in reporting.create_report.reports[0]['summary']
 
 
-@suppress_deprecation(TMPTargetRepositoriesFacts)
 def get_test_data_missing_key():
     return [
         _get_test_targuserspaceinfo(),
@@ -515,7 +508,6 @@ def test_perform_report(monkeypatch):
     assert "/etc/pki/rpm-gpg/RPM-GPG-KEY-my-release" in reporting.create_report.reports[0]['summary']
 
 
-@suppress_deprecation(TMPTargetRepositoriesFacts)
 def get_test_data_no_gpg_data():
     return [
         _get_test_targuserspaceinfo(),
@@ -565,7 +557,6 @@ def test_perform_invalid_key(monkeypatch):
     assert 'file:///etc/pki/rpm-gpg/RPM-GPG-KEY-my-release' in reporting.create_report.reports[0]['summary']
 
 
-@suppress_deprecation(TMPTargetRepositoriesFacts)
 def get_test_data_gpgcheck_without_gpgkey():
     return [
         _get_test_targuserspaceinfo(),
@@ -577,7 +568,7 @@ def get_test_data_gpgcheck_without_gpgkey():
                 ),
             ]
         ),
-        TMPTargetRepositoriesFacts(
+        RepositoriesFactsTarget(
             repositories=[
                 _get_test_target_repofile(),
                 _get_test_target_repofile_additional(),

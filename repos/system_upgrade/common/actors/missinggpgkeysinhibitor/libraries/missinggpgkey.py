@@ -13,12 +13,11 @@ from leapp.libraries.common.gpg import get_gpg_fp_from_file, get_path_to_gpg_cer
 from leapp.libraries.stdlib import api, format_list
 from leapp.models import (
     DNFWorkaround,
+    RepositoriesFactsTarget,
     TargetUserSpaceInfo,
-    TMPTargetRepositoriesFacts,
     TrustedGpgKeys,
     UsedTargetRepositories
 )
-from leapp.utils.deprecation import suppress_deprecation
 
 
 def _expand_vars(path):
@@ -79,10 +78,10 @@ def _consume_data():
         )
 
     try:
-        target_repos = next(api.consume(TMPTargetRepositoriesFacts)).repositories
+        target_repos = next(api.consume(RepositoriesFactsTarget)).repositories
     except StopIteration:
         raise StopActorExecutionError(
-            'Could not check for valid GPG keys', details={'details': 'No TMPTargetRepositoriesFacts facts'}
+            'Could not check for valid GPG keys', details={'details': 'No RepositoriesFactsTarget facts'}
         )
     try:
         trusted_gpg_keys = next(api.consume(TrustedGpgKeys))
@@ -264,13 +263,12 @@ def register_dnfworkaround():
     ))
 
 
-@suppress_deprecation(TMPTargetRepositoriesFacts)
 def process():
     """
     Process the repositories and find missing signing keys
 
     UsedTargetRepositories doesn't contain baseurl attribute. So gathering
-    them from model TMPTargetRepositoriesFacts.
+    them from model RepositoriesFactsTarget.
     """
     # when the user decided to ignore gpg signatures on the packages, we can ignore these checks altogether
     if is_nogpgcheck_set():

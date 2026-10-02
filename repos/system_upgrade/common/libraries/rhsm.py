@@ -7,7 +7,8 @@ import time
 from leapp import reporting
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import repofileutils
-from leapp.libraries.common.config import get_env, get_target_distro_id
+from leapp.libraries.common.config import get_env, get_product_type, get_target_distro_id
+from leapp.libraries.common.config.version import get_target_major_version
 from leapp.libraries.stdlib import api, CalledProcessError, format_list
 from leapp.models import RHSMInfo
 
@@ -28,6 +29,10 @@ _DEFAULT_EXCEPTION_HINT = (
     ' use subscription-manager for the in-place upgrade and you want to'
     ' deliver all target repositories by yourself or using RHUI on public cloud.'
 )
+
+
+class MissingTargetProductCertificate(StopActorExecutionError):
+    pass
 
 
 def _rhsm_retry(max_attempts, sleep=None):
@@ -375,13 +380,87 @@ def set_container_mode(context):
                 message='Cannot set the container mode for the subscription-manager.')
 
 
+def _get_target_product_certificate_path():
+    """
+    Retrieve the required target RHEL product certificate.
+
+    Product certificates are only used for RHEL. Returns None if the target
+    distro is not RHEL.
+
+    :return: The path to the target RHEL product certificate
+    :raises: StopActorExecutionError if cannot determine product certificate name
+    """
+    if get_target_distro_id() != 'rhel':
+        # Unexpected. But keeping it just to be sure - to cause clear error
+        # in caller if it is called by mistake.
+        return None
+
+    architecture = api.current_actor().configuration.architecture
+    target_version = api.current_actor().configuration.version.target
+    target_product_type = get_product_type('target')
+    certs_dir = api.get_common_folder_path('prod-certs')
+
+    # Only RHEL beta release require special certificate.
+    # All other types are safe with "ga" certs.
+    if target_product_type != 'beta':
+        target_product_type = 'ga'
+
+    prod_certs = {
+        'x86_64': {
+            'ga': '479.pem',
+            'beta': '486.pem',
+        },
+        'aarch64': {
+            'ga': '419.pem',
+            'beta': '363.pem',
+        },
+        'ppc64le': {
+            'ga': '279.pem',
+            'beta': '362.pem',
+        },
+        's390x': {
+            'ga': '72.pem',
+            'beta': '433.pem',
+        }
+    }
+
+    try:
+        cert = prod_certs[architecture][target_product_type]
+    except KeyError as e:
+        raise StopActorExecutionError(message='Failed to determine what certificate to use for {}.'.format(e))
+
+    cert_path = os.path.join(certs_dir, target_version, cert)
+    if os.path.isfile(cert_path):
+        return cert_path
+
+    # NOTE(pstodulk): Discussed with RHSM people, we can use any RHEL X.Y
+    # version certificate to access content RHEL X.
+    # However, whatever can happen in future, so we use this just as fallback
+    # which should be safe, and we still plan to bundle minor specific certs.
+    # This change will however resolve problems with testing - which will not
+    # need to wait for new builds in future when the work on next minor version
+    # starts.
+    api.current_logger().debug(
+        'Missing RHEL %s target product certificate: "%s".'
+        ' Fallback to generic major version certificate.',
+        target_version,
+        cert_path,
+        exc_info=True)
+
+    # NOTE(pstodulk): The final check of the path is implemented by caller
+    return os.path.join(certs_dir, get_target_major_version(), cert)
+
+
 @with_rhsm
-def switch_certificate(context, rhsm_info, cert_path):
+def switch_certificate(context, rhsm_info, cert_path=None):
     """
     Perform all actions needed to switch the passed RHSM product certificate.
 
     This function will copy the certificate to /etc/pki/product, and /etc/pki/product-default if necessary, and
     remove other product certificates from there.
+
+    If `certs_path` is not set, determine the expected target product
+    certificate automatically.
 
     :param context: An instance of a mounting.IsolatedActions class
     :type context: mounting.IsolatedActions class
@@ -389,7 +468,21 @@ def switch_certificate(context, rhsm_info, cert_path):
     :type rhsm_info: RHSMInfo model
     :param cert_path: Path to the product certificate to switch to
     :type cert_path: string
+
+    :raises: MissingTargetProductCertificate if a certificate cannot be found
+    :raises: StopActorExecutionError if cannot determine product certificate name
     """
+    # TODO(pstodulk): Add unit tests to cover automatic prod cert discovery and
+    # missing path.
+    if cert_path is None:
+        cert_path = _get_target_product_certificate_path()
+
+    if not os.path.isfile(cert_path):
+        raise MissingTargetProductCertificate(
+            message='Target RHEL product certificate is missing.',
+            details={'cert_path': cert_path}
+        )
+
     for existing in rhsm_info.existing_product_certificates:
         try:
             context.remove(existing)

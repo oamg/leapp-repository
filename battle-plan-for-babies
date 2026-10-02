@@ -1,0 +1,21 @@
+#########################
+
+- list of all use-cases / what it's doing at this moment
+  - create specification of the current behaviour
+
+- all these use-cases must be still covered after the refactoring
+  (but deprecated content)
+
+- split the library into the several files
+- drop constants lib
+
+- drop all deprecated stuff
+  - TMPTargetRepositoriesFacts
+      -> check all use-cases
+      -> replace it by a conceptual solution
+  - targetrepositories.rhel_repos
+
+
+- drop obsolete check of repomap & supported os version
+  (comes from the time when the actor was in the facts phase)
+- update product certs solution - no need to have it in the actor at all

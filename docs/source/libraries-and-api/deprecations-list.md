@@ -86,9 +86,4 @@ Only the versions in which a deprecation has been made are listed.
 - Shared libraries
    - **`leapp.libraries.common.testutils.logger_mocked.warn()`** - The logging.warn method has been deprecated in Python since version  3.3. Use the warning method instead.
 
-## v0.11.0 <span style="font-size:0.5em; font-weight:normal">(till April  2021)</span>
-- Models
-   - **`TMPTargetRepositoriesFacts`** - Deprecated because this model was not intended for customer use.
-
-
 
