@@ -14,7 +14,6 @@ Leaf module: imports only shared leapp libraries and ``tus_constants``.
 import contextlib
 import os
 
-from leapp.libraries.actor import tus_constants
 from leapp.libraries.common import mounting, overlaygen
 from leapp.libraries.common.config import get_env
 from leapp.libraries.common.config.version import get_target_major_version
@@ -48,7 +47,7 @@ def compute():
     container_root = get_env('LEAPP_CONTAINER_ROOT', _DEFAULT_CONTAINER_ROOT)
     target_major = get_target_major_version()
 
-    userspace_dirname = tus_constants.USERSPACE_DIRNAME_TEMPLATE.format(target_major=target_major)
+    userspace_dirname = _USERSPACE_DIRNAME_TEMPLATE.format(target_major=target_major)
     userspace_path = os.path.join(container_root, userspace_dirname)
     scratch_dir = os.path.join(container_root, 'scratch')
     mounts_dir = os.path.join(scratch_dir, 'mounts')
