@@ -16,8 +16,8 @@ from leapp.exceptions import StopActorExecution
 from leapp.libraries.actor import tus_rhui
 from leapp.libraries.common import distro, repofileutils
 from leapp.libraries.common.config import get_source_distro_id, get_target_distro_id, is_conversion
-from leapp.libraries.common.config.version import get_source_major_version
-from leapp.libraries.stdlib import api
+from leapp.libraries.common.config.version import get_source_major_version, get_target_major_version, get_target_version
+from leapp.libraries.stdlib import api, format_list
 from leapp.models import RepositoriesFactsTarget, RHELTargetRepository, UsedTargetRepositories, UsedTargetRepository
 from leapp.utils.deprecation import suppress_deprecation
 
@@ -74,21 +74,6 @@ def _base_repo_check_applies(skip_rhsm):
     return True
 
 
-def _inhibit(title, summary, severity, remediation=None):
-    """Create an inhibitor report and soft-stop the actor (no output messages)."""
-    report_parts = [
-        reporting.Title(title),
-        reporting.Summary(summary),
-        reporting.Severity(severity),
-        reporting.Groups([reporting.Groups.REPOSITORY]),
-        reporting.Groups([reporting.Groups.INHIBITOR]),
-    ]
-    if remediation:
-        report_parts.append(reporting.Remediation(hint=remediation))
-    reporting.create_report(report_parts)
-    raise StopActorExecution()
-
-
 def select_target_repositories(context, inputs):
     """
     Discover and select the usable target repositories (§7, §4 step 4).
@@ -96,6 +81,9 @@ def select_target_repositories(context, inputs):
     :return: :class:`UsedTargetRepositories` with the selected repoids.
     :raises StopActorExecution: on any of inhibitors #2-#5.
     """
+    target_major_ver = get_target_major_version()
+    target_ver = get_target_version()
+
     target_repositories = inputs.target_repositories
 
     distro_repoids = set(distro.get_target_distro_repoids(context))
@@ -123,51 +111,133 @@ def select_target_repositories(context, inputs):
         duplicates = repofileutils.get_duplicate_repositories(
             repofileutils.get_parsed_repofiles(context))
         if duplicates:
-            details = '\n'.join(
-                '{}: {}'.format(repoid, ', '.join(sorted(files)))
-                for repoid, files in sorted(duplicates.items())
-            )
-            _inhibit(
-                'A duplicate repository definition was found',
-                'The following repositories are defined in multiple repository'
-                ' files, which is not supported:\n{}'.format(details),
-                reporting.Severity.MEDIUM,
-                remediation='Remove the duplicate repository definitions.',
-            )
+            reporting.create_report([
+                reporting.Title('A YUM/DNF repository defined multiple times'),
+                reporting.Summary(
+                    'The following repositories are defined multiple times inside the'
+                    ' "upgrade" container:{}'
+                    .format(format_list(duplicates))
+                ),
+                reporting.Severity(reporting.Severity.MEDIUM),
+                reporting.Groups([reporting.Groups.REPOSITORY]),
+                reporting.Groups([reporting.Groups.INHIBITOR]),
+                reporting.Remediation(hint=(
+                    'Remove the duplicate repository definitions or change repoids of'
+                    ' conflicting repositories on the system to prevent the'
+                    ' conflict.'
+                    )
+                )
+            ])
 
     # Inhibitor #3 - missing base repositories (baseos/appstream).
     if _base_repo_check_applies(inputs.skip_rhsm) and not _has_base_repos(discovered):
-        _inhibit(
-            'Cannot find required basic RHEL target repositories',
-            'Cannot find the required basic target repositories (BaseOS and'
-            ' AppStream). These are needed to build the target userspace.',
-            reporting.Severity.HIGH,
-            remediation='Ensure the target BaseOS and AppStream repositories are'
-                        ' available and enabled for the upgrade.',
-        )
+        report = [
+            reporting.Title('Cannot find required basic target OS repositories.'),
+            reporting.Summary(
+                'This can happen when a repository ID was entered incorrectly either while using the --enablerepo'
+                ' option of leapp or in a third party actor that produces a CustomTargetRepositoryMessage.'
+            ),
+            reporting.Groups([reporting.Groups.REPOSITORY]),
+            reporting.Severity(reporting.Severity.HIGH),
+            reporting.Groups([reporting.Groups.INHIBITOR]),
+            reporting.ExternalLink(
+                url='https://access.redhat.com/solutions/5392811',
+                title='RHEL 7 to RHEL 8 LEAPP Upgrade Failing When Using Red Hat Satellite'
+            ),
+            reporting.ExternalLink(
+                # https://red.ht/preparing-for-upgrade-to-rhel8
+                # https://red.ht/preparing-for-upgrade-to-rhel9
+                # https://red.ht/preparing-for-upgrade-to-rhel10
+                url='https://red.ht/preparing-for-upgrade-to-rhel{}'.format(target_major_ver),
+                title='Preparing for the upgrade'
+            ),
+            reporting.Key('f5770a56e540f27d370da7b697cb4a2e81e2c30d'),
+        ]
+        if get_target_distro_id() == 'rhel':
+            report.append(reporting.Remediation(hint=(
+                'It is required to have RHEL repositories on the system'
+                ' provided by the subscription-manager unless the --no-rhsm'
+                ' option is specified. You might be missing a valid SKU for'
+                ' the target system or have a failed network connection.'
+                ' Check whether your system is attached to a valid SKU that is'
+                ' providing RHEL {} repositories.'
+                ' If you are using Red Hat Satellite, read the upgrade documentation'
+                ' to set up Satellite and the system properly.'
+                .format(target_major_ver)))
+            )
+        reporting.create_report(report)
+        raise StopActorExecution()
+
 
     # Inhibitor #4 - no enabled target repositories.
     if not (selected_distro | selected_custom):
-        _inhibit(
-            'There are no enabled target repositories',
-            'No enabled target repositories were found among the requested ones.'
-            ' At least one usable target repository is required.',
-            reporting.Severity.HIGH,
-            remediation='Check the requested target repositories and make sure'
-                        ' they are available for the upgrade.',
-        )
+        reporting.create_report([
+            reporting.Title('There are no enabled target repositories'),
+            reporting.Summary(
+                'This can happen when a system is not correctly registered with the subscription manager'
+                ' or, when the leapp --no-rhsm option has been used, no custom repositories have been'
+                ' passed on the command line.'
+            ),
+            reporting.Groups([reporting.Groups.REPOSITORY]),
+            reporting.Groups([reporting.Groups.INHIBITOR]),
+            reporting.Severity(reporting.Severity.HIGH),
+            reporting.Remediation(hint=(
+                'Ensure the system is correctly registered with the subscription manager and that'
+                ' the current subscription is entitled to install the requested target version {version}.'
+                ' If you used the --no-rhsm option (or the LEAPP_NO_RHSM=1 environment variable is set),'
+                ' ensure the custom repository file is provided with'
+                ' properly defined repositories and that the --enablerepo option for leapp is set if the'
+                ' repositories are defined in any repofiles under the /etc/yum.repos.d/ directory.'
+                ' For more information on custom repository files, see the documentation.'
+                ' Finally, verify that the "/etc/leapp/files/repomap.json" file is up-to-date.'
+            ).format(version=target_ver)),
+            reporting.ExternalLink(
+                # https://red.ht/preparing-for-upgrade-to-rhel8
+                # https://red.ht/preparing-for-upgrade-to-rhel9
+                # https://red.ht/preparing-for-upgrade-to-rhel10
+                url='https://red.ht/preparing-for-upgrade-to-rhel{}'.format(target_major_ver),
+                title='Preparing for the upgrade'
+            ),
+            reporting.ExternalLink(
+                url='https://access.redhat.com/solutions/7001181',
+                title='LEAPP Upgrade Failing from RHEL 7 to RHEL 8 when system is '
+                      'registered to custromer portal'
+            ),
+            reporting.RelatedResource("file", "/etc/leapp/files/repomap.json"),
+            reporting.RelatedResource("file", "/etc/yum.repos.d/")
+        ])
+        raise StopActorExecution()
+
 
     # Inhibitor #5 - missing custom target repositories.
     missing_custom = requested_custom - available
     if missing_custom:
-        _inhibit(
-            'Some required repositories are not available',
-            'The following requested custom target repositories are not'
-            ' available: {}'.format(', '.join(sorted(missing_custom))),
-            reporting.Severity.HIGH,
-            remediation='Make the listed custom repositories available or remove'
-                        ' them from the requested target repositories.',
-        )
+        reporting.create_report([
+            reporting.Title('Some required custom target repositories have not been found'),
+            reporting.Summary(
+                'This can happen when a repository ID was entered incorrectly either'
+                ' while using the --enablerepo option of leapp, or in a third party actor that produces a'
+                ' CustomTargetRepositoryMessage.\n'
+                'The following repositories IDs could not be found in the target configuration:{}'
+                .format(format_list(missing_custom))
+            ),
+            reporting.Groups([reporting.Groups.REPOSITORY]),
+            reporting.Groups([reporting.Groups.INHIBITOR]),
+            reporting.Severity(reporting.Severity.HIGH),
+            reporting.ExternalLink(
+                # NOTE: Article covers both RHEL 7 to RHEL 8 and RHEL 8 to RHEL 9
+                url='https://access.redhat.com/articles/4977891',
+                title='Customizing your Red Hat Enterprise Linux in-place upgrade'
+            ),
+            reporting.Remediation(hint=(
+                'Consider using the custom repository file, which is documented in the official'
+                ' upgrade documentation. Check whether a repository ID has been'
+                ' entered incorrectly with the --enablerepo option of leapp.'
+                ' Check the leapp logs to see the list of all available repositories.'
+            ))
+        ])
+        raise StopActorExecution()
+
 
     selected = sorted(selected_distro | selected_custom)
     api.current_logger().info('Selected target repositories: {}'.format(', '.join(selected)))
