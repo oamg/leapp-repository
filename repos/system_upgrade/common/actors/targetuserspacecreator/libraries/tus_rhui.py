@@ -92,6 +92,7 @@ def _run_postinstall_tasks(context, postinstall_tasks):
         return
 
     for copy_file in postinstall_tasks.files_to_copy:
+        # FIXME. same as above. note original script did not used `-a` option
         dst = _resolve_copy_target(context, copy_file)
         _ensure_parent_dir(context, dst)
         context.call(['cp', '-a', copy_file.src, dst])
@@ -224,6 +225,7 @@ def _swap_clients(context, rhui_info, target_major, releasever, skip_rhsm, enabl
     Run the client swap via ``dnf shell`` (transaction: remove source clients →
     install target clients → run). Swap failure → hard stop.
     """
+    # FIXME: reduce amount of params
     script_lines = []
     if rhui_info.src_client_pkg_names:
         script_lines.append('remove {}'.format(' '.join(rhui_info.src_client_pkg_names)))
@@ -231,7 +233,9 @@ def _swap_clients(context, rhui_info, target_major, releasever, skip_rhsm, enabl
     # TODO transaction run?
     script_lines.append('run')
     script_lines.append('')
-    # TODO name
+    # TODO name & path
+    # it would be nice to actually standardize paths on which we store such
+    # files.
     script_path = '/leapp-rhui-swap.dnfsh'
     with context.open(script_path, 'w') as fobj:
         fobj.write('\n'.join(script_lines))
@@ -245,13 +249,22 @@ def _swap_clients(context, rhui_info, target_major, releasever, skip_rhsm, enabl
     cmd.append(script_path)
 
     try:
+        # TODO: update the logging handled; callback_raw=utils.logging_handler
         context.call(cmd)
     except CalledProcessError as e:
+        # FIXME: `inside DNF shell, failed transaction can end with 0 exit code
+        # see `tools/dnfshellswap` workaround. As we have already negative
+        # experience around RHUI clients in case of some cloud providers, it
+        # would be worthy to cover this more properly.
+        # Add more details into the error msg.
         raise StopActorExecutionError(
             message='Failed to swap RHUI clients to establish content access.',
             details={'details': str(e)}
         )
     finally:
+        # TODO: actually, it would be beneficial to keep the file for debugging
+        # purposes. Just we need to standardize first the path in which it will
+        # be stored. Otherwise we could input this data via stdin instead.
         context.remove(script_path)
 
 
@@ -326,6 +339,7 @@ def perform_client_swap(context, rhui_info, target_major, releasever, skip_rhsm)
     # R4
     _run_postinstall_tasks(context, setup.postinstall_tasks)
 
+    # FIXME: different behaviour from the original.
     client_files = _find_client_files(context, rhui_info, target_major)
     _remove_nonclient_injected_files(context, rhui_info, client_files)
 
