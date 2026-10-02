@@ -24,13 +24,6 @@ DEFAULT_CONTAINER_ROOT = '/var/lib/leapp'
 # major version is substituted in at runtime (§1).
 USERSPACE_DIRNAME_TEMPLATE = 'el{target_major}userspace'
 
-# Report titles (§8). Kept here so producers and tests share a single source.
-REPORT_TITLE_MISSING_CERT = 'Missing target system product certificate'
-REPORT_TITLE_DUPLICATE_REPOS = 'A duplicate repository definition was found'
-REPORT_TITLE_MISSING_BASE_REPOS = 'Cannot find required basic RHEL target repositories'
-REPORT_TITLE_NO_TARGET_REPOS = 'There are no enabled target repositories'
-REPORT_TITLE_MISSING_CUSTOM_REPOS = 'Some required repositories are not available'
-
 
 def common_dnf_flags(target_major, releasever, skip_rhsm):
     """

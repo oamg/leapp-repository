@@ -73,7 +73,7 @@ def test_perform_missing_cert_reports_and_no_produce(monkeypatch):
     assert produced == []
     assert len(reports) == 1
     titles = [p.value for parts in reports for p in parts if type(p).__name__ == 'Title']
-    assert titles == [tus_userspacegen.tus_constants.REPORT_TITLE_MISSING_CERT]
+    assert titles == ['Missing target system product certificate']
 
 
 def test_perform_missing_cert_beta_note(monkeypatch):

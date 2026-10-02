@@ -128,7 +128,7 @@ def test_inhibit_duplicates_when_skip_rhsm(monkeypatch):
     with pytest.raises(StopActorExecution):
         tus_targetrepos.select_target_repositories(None, inputs)
 
-    assert tus_constants.REPORT_TITLE_DUPLICATE_REPOS in _titles(reports)
+    assert 'A duplicate repository definition was found' in _titles(reports)
 
 
 def test_no_duplicate_check_without_skip_rhsm(monkeypatch):
@@ -156,7 +156,7 @@ def test_inhibit_missing_base_repos(monkeypatch):
     with pytest.raises(StopActorExecution):
         tus_targetrepos.select_target_repositories(None, inputs)
 
-    assert tus_constants.REPORT_TITLE_MISSING_BASE_REPOS in _titles(reports)
+    assert 'Cannot find required basic RHEL target repositories' in _titles(reports)
 
 
 def test_base_repo_check_skipped_for_conversion(monkeypatch):
@@ -182,7 +182,7 @@ def test_inhibit_no_enabled_repos(monkeypatch):
     with pytest.raises(StopActorExecution):
         tus_targetrepos.select_target_repositories(None, inputs)
 
-    assert tus_constants.REPORT_TITLE_NO_TARGET_REPOS in _titles(reports)
+    assert 'There are no enabled target repositories' in _titles(reports)
 
 
 # --------------------------------------------------------------------------- #
@@ -198,7 +198,7 @@ def test_inhibit_missing_custom_repos(monkeypatch):
     with pytest.raises(StopActorExecution):
         tus_targetrepos.select_target_repositories(None, inputs)
 
-    assert tus_constants.REPORT_TITLE_MISSING_CUSTOM_REPOS in _titles(reports)
+    assert 'Some required repositories are not available' in _titles(reports)
 
 
 # --------------------------------------------------------------------------- #

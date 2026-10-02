@@ -42,7 +42,7 @@ def _report_missing_target_cert():
             ' sure the target release you selected is available as Beta.'
         )
     reporting.create_report([
-        reporting.Title(tus_constants.REPORT_TITLE_MISSING_CERT),
+        reporting.Title('Missing target system product certificate'),
         reporting.Summary(summary),
         reporting.Severity(reporting.Severity.HIGH),
         reporting.Groups([reporting.Groups.SANITY]),

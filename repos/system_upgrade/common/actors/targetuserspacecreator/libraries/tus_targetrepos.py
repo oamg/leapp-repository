@@ -13,7 +13,7 @@ Mid-layer module: may import ``tus_rhui``; never the reverse.
 
 from leapp import reporting
 from leapp.exceptions import StopActorExecution
-from leapp.libraries.actor import tus_constants, tus_rhui
+from leapp.libraries.actor import tus_rhui
 from leapp.libraries.common import distro, repofileutils
 from leapp.libraries.common.config import get_source_distro_id, get_target_distro_id, is_conversion
 from leapp.libraries.common.config.version import get_source_major_version
@@ -128,7 +128,7 @@ def select_target_repositories(context, inputs):
                 for repoid, files in sorted(duplicates.items())
             )
             _inhibit(
-                tus_constants.REPORT_TITLE_DUPLICATE_REPOS,
+                'A duplicate repository definition was found',
                 'The following repositories are defined in multiple repository'
                 ' files, which is not supported:\n{}'.format(details),
                 reporting.Severity.MEDIUM,
@@ -138,7 +138,7 @@ def select_target_repositories(context, inputs):
     # Inhibitor #3 - missing base repositories (baseos/appstream).
     if _base_repo_check_applies(inputs.skip_rhsm) and not _has_base_repos(discovered):
         _inhibit(
-            tus_constants.REPORT_TITLE_MISSING_BASE_REPOS,
+            'Cannot find required basic RHEL target repositories',
             'Cannot find the required basic target repositories (BaseOS and'
             ' AppStream). These are needed to build the target userspace.',
             reporting.Severity.HIGH,
@@ -149,7 +149,7 @@ def select_target_repositories(context, inputs):
     # Inhibitor #4 - no enabled target repositories.
     if not (selected_distro | selected_custom):
         _inhibit(
-            tus_constants.REPORT_TITLE_NO_TARGET_REPOS,
+            'There are no enabled target repositories',
             'No enabled target repositories were found among the requested ones.'
             ' At least one usable target repository is required.',
             reporting.Severity.HIGH,
@@ -161,7 +161,7 @@ def select_target_repositories(context, inputs):
     missing_custom = requested_custom - available
     if missing_custom:
         _inhibit(
-            tus_constants.REPORT_TITLE_MISSING_CUSTOM_REPOS,
+            'Some required repositories are not available',
             'The following requested custom target repositories are not'
             ' available: {}'.format(', '.join(sorted(missing_custom))),
             reporting.Severity.HIGH,
