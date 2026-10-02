@@ -92,22 +92,23 @@ def _inhibit_no_base_repos(target_major_ver):
             # https://red.ht/preparing-for-upgrade-to-rhel8
             # https://red.ht/preparing-for-upgrade-to-rhel9
             # https://red.ht/preparing-for-upgrade-to-rhel10
-            url='https://red.ht/preparing-for-upgrade-to-rhel{}'.format(target_major_ver),
+            url=f'https://red.ht/preparing-for-upgrade-to-rhel{target_major_ver}',
             title='Preparing for the upgrade'
         ),
         reporting.Key('f5770a56e540f27d370da7b697cb4a2e81e2c30d'),
     ]
     if get_target_distro_id() == 'rhel':
-        report.append(reporting.Remediation(hint=(
-            'It is required to have RHEL repositories on the system'
-            ' provided by the subscription-manager unless the --no-rhsm'
-            ' option is specified. You might be missing a valid SKU for'
-            ' the target system or have a failed network connection.'
-            ' Check whether your system is attached to a valid SKU that is'
-            ' providing RHEL {} repositories.'
-            ' If you are using Red Hat Satellite, read the upgrade documentation'
-            ' to set up Satellite and the system properly.'
-            .format(target_major_ver)))
+        report.append(
+            reporting.Remediation(hint=(
+                'It is required to have RHEL repositories on the system'
+                ' provided by the subscription-manager unless the --no-rhsm'
+                ' option is specified. You might be missing a valid SKU for'
+                ' the target system or have a failed network connection.'
+                ' Check whether your system is attached to a valid SKU that is'
+                f' providing RHEL {target_major_ver} repositories.'
+                ' If you are using Red Hat Satellite, read the upgrade documentation'
+                ' to set up Satellite and the system properly.'
+            ))
         )
     reporting.create_report(report)
 
@@ -119,8 +120,8 @@ def _inhibit_missing_custom_repos(missing_custom_repos):
             'This can happen when a repository ID was entered incorrectly either'
             ' while using the --enablerepo option of leapp, or in a third party actor that produces a'
             ' CustomTargetRepositoryMessage.\n'
-            'The following repositories IDs could not be found in the target configuration:{}'
-            .format(format_list(missing_custom_repos))
+            'The following repositories IDs could not be found in the target configuration:'
+            f'{format_list(missing_custom_repos)}'
         ),
         reporting.Groups([reporting.Groups.REPOSITORY]),
         reporting.Groups([reporting.Groups.INHIBITOR]),
@@ -152,25 +153,25 @@ def _inhibit_no_enabled_target_repos(target_major_ver, target_ver):
         reporting.Severity(reporting.Severity.HIGH),
         reporting.Remediation(hint=(
             'Ensure the system is correctly registered with the subscription manager and that'
-            ' the current subscription is entitled to install the requested target version {version}.'
+            f' the current subscription is entitled to install the requested target version {target_ver}.'
             ' If you used the --no-rhsm option (or the LEAPP_NO_RHSM=1 environment variable is set),'
             ' ensure the custom repository file is provided with'
             ' properly defined repositories and that the --enablerepo option for leapp is set if the'
             ' repositories are defined in any repofiles under the /etc/yum.repos.d/ directory.'
             ' For more information on custom repository files, see the documentation.'
             ' Finally, verify that the "/etc/leapp/files/repomap.json" file is up-to-date.'
-        ).format(version=target_ver)),
+        )),
         reporting.ExternalLink(
             # https://red.ht/preparing-for-upgrade-to-rhel8
             # https://red.ht/preparing-for-upgrade-to-rhel9
             # https://red.ht/preparing-for-upgrade-to-rhel10
-            url='https://red.ht/preparing-for-upgrade-to-rhel{}'.format(target_major_ver),
+            url=f'https://red.ht/preparing-for-upgrade-to-rhel{target_major_ver}',
             title='Preparing for the upgrade'
         ),
         reporting.ExternalLink(
             url='https://access.redhat.com/solutions/7001181',
             title='LEAPP Upgrade Failing from RHEL 7 to RHEL 8 when system is '
-                    'registered to custromer portal'
+                  'registered to custromer portal'
         ),
         reporting.RelatedResource("file", "/etc/leapp/files/repomap.json"),
         reporting.RelatedResource("file", "/etc/yum.repos.d/")
@@ -182,8 +183,7 @@ def _inhibit_duplicate_repos(duplicates):
         reporting.Title('A YUM/DNF repository defined multiple times'),
         reporting.Summary(
             'The following repositories are defined multiple times inside the'
-            ' "upgrade" container:{}'
-            .format(format_list(duplicates))
+            f' "upgrade" container:{format_list(duplicates)}'
         ),
         reporting.Severity(reporting.Severity.MEDIUM),
         reporting.Groups([reporting.Groups.REPOSITORY]),
