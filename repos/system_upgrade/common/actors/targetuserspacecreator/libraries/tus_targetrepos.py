@@ -218,8 +218,12 @@ def select_target_repositories(context, inputs):
             format_list(distro_repoids),
         )
     )
+    if _base_repo_check_applies(inputs.skip_rhsm) and not _has_base_repos(distro_repoids):
+        _inhibit_no_base_repos(target_major_ver)
+        raise StopActorExecution()
 
     rhui_repoids = tus_rhui.discover_client_exposed_repoids(context, inputs.rhui_info)
+
     discovered = distro_repoids | rhui_repoids
     try:
         available = _all_available_repoids(context)
@@ -261,13 +265,6 @@ def select_target_repositories(context, inputs):
                 )
             )
             _inhibit_duplicate_repos(duplicates)
-
-    # Inhibitor #3 - missing base repositories (baseos/appstream).
-    # TODO in orig code this works with distro_repoids only, excluding rhui_repoids, that might be a bug in orig?
-    # TODO in orig this is done right after getting distro repoids
-    if _base_repo_check_applies(inputs.skip_rhsm) and not _has_base_repos(discovered):
-        _inhibit_no_base_repos(target_major_ver)
-        raise StopActorExecution()
 
     # Inhibitor #4 - no enabled target repositories.
     if not (selected_distro | selected_custom):
