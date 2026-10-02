@@ -252,10 +252,8 @@ def select_target_repositories(context, inputs):
     if inputs.skip_rhsm:
         # only if rhsm is skipped, the duplicate repos are not detected
         # automatically and we need to do it extra
-
-        # FIXME handle error
-        duplicates = repofileutils.get_duplicate_repositories(
-            repofileutils.get_parsed_repofiles(context))
+        seen = set()
+        duplicates = {repoid for repoid in available if repoid in seen or seen.add(repoid)}
         if duplicates:
             api.current_logger().warning(
                 'The following repoids are defined multiple times:{}'.format(
