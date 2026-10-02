@@ -12,7 +12,7 @@ Mid-layer module: may import ``tus_rhui``; never the reverse.
 """
 
 from leapp import reporting
-from leapp.exceptions import StopActorExecution
+from leapp.exceptions import StopActorExecution, StopActorExecutionError
 from leapp.libraries.actor import tus_rhui
 from leapp.libraries.common import distro, repofileutils
 from leapp.libraries.common.config import get_source_distro_id, get_target_distro_id, is_conversion
@@ -203,6 +203,7 @@ def select_target_repositories(context, inputs):
 
     :return: :class:`UsedTargetRepositories` with the selected repoids.
     :raises StopActorExecution: on any of inhibitors #2-#5.
+    :raises StopActorExecutionError: on error (e.g. failed parsing repofiles)
     """
     target_major_ver = get_target_major_version()
     target_ver = get_target_version()
@@ -220,7 +221,15 @@ def select_target_repositories(context, inputs):
 
     rhui_repoids = tus_rhui.discover_client_exposed_repoids(context, inputs.rhui_info)
     discovered = distro_repoids | rhui_repoids
-    available = _all_available_repoids(context)
+    try:
+        available = _all_available_repoids(context)
+    except repofileutils.InvalidRepoDefinition as e:
+        raise StopActorExecutionError(
+            message="Failed to parse available repoids: {}".format(str(e)),
+            details={
+                'hint': 'Ensure the repository definition is correct or remove it '
+                        'if the repository is not required for the upgrade.'
+            })
 
     requested_distro = _requested_distro_repoids(target_repositories)
     requested_custom = _requested_custom_repoids(target_repositories)
@@ -286,6 +295,19 @@ def build_target_repositories_snapshot(context):
 
     Preserves ``additional_fields`` (where gpg-key data lives, consumed by
     ``missinggpgkeysinhibitor``).
+
+    :raises StopActorExecutionError: If repofile parsing fails
     """
-    repofiles = repofileutils.get_parsed_repofiles(context)
+    try:
+        repofiles = repofileutils.get_parsed_repofiles(context)
+    except repofileutils.InvalidRepoDefinition as e:
+        raise StopActorExecutionError(
+            message="Failed to parse target system repofiles: {}".format(str(e)),
+            details={
+                'hint': 'Ensure the repository definition is correct or remove it '
+                    'if the repository is not needed anymore. '
+                    'This issue is typically caused by missing definition of the name field. '
+                    'For more information, see: https://access.redhat.com/solutions/6969001.'
+            })
+
     return RepositoriesFactsTarget(repositories=repofiles)
