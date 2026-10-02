@@ -23,6 +23,12 @@ from leapp.libraries.stdlib import api, run
 # FIXME: drop the constant
 _PERSISTENT_PACKAGE_CACHE_ENV = 'LEAPP_DEVEL_USE_PERSISTENT_PACKAGE_CACHE'
 
+# Default container root; overridable via LEAPP_CONTAINER_ROOT
+_DEFAULT_CONTAINER_ROOT = '/var/lib/leapp'
+
+# Name of the target userspace directory
+_USERSPACE_DIRNAME_TEMPLATE = 'el{target_major}userspace'
+
 
 class Layout(object):
     """Plain value object describing where the actor builds the userspace."""
@@ -39,7 +45,7 @@ class Layout(object):
 
 def compute():
     """Resolve the on-disk layout and the recommended overlay free-space reserve."""
-    container_root = get_env('LEAPP_CONTAINER_ROOT', tus_constants.DEFAULT_CONTAINER_ROOT)
+    container_root = get_env('LEAPP_CONTAINER_ROOT', _DEFAULT_CONTAINER_ROOT)
     target_major = get_target_major_version()
 
     userspace_dirname = tus_constants.USERSPACE_DIRNAME_TEMPLATE.format(target_major=target_major)

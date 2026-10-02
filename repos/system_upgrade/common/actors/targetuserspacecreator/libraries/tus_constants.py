@@ -17,13 +17,6 @@ DEFAULT_INSTALL_PKGS = [
     'util-linux',
 ]
 
-# Default container root; overridable via LEAPP_CONTAINER_ROOT (§12).
-DEFAULT_CONTAINER_ROOT = '/var/lib/leapp'
-
-# Name of the target userspace directory inside the container root. The target
-# major version is substituted in at runtime (§1).
-USERSPACE_DIRNAME_TEMPLATE = 'el{target_major}userspace'
-
 
 def common_dnf_flags(target_major, releasever, skip_rhsm):
     """
