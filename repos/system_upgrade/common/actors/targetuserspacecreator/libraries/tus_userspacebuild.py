@@ -18,13 +18,15 @@ from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import tus_constants, tus_layout, tus_repoaccess, tus_rhui
 from leapp.libraries.common import mounting, rhsm
 from leapp.libraries.common.dnflibs import dnfplugin
-from leapp.libraries.common.config import get_source_distro_id, get_target_distro_id
+from leapp.libraries.common.config import get_env, get_source_distro_id, get_target_distro_id
 from leapp.libraries.common.config.version import get_target_version
 from leapp.libraries.common.gpg import get_path_to_gpg_certs
 from leapp.libraries.stdlib import api, CalledProcessError, run
 from leapp.models import TargetUserSpaceInfo
 
 _DEDICATED_LEAPP_PARTITION_URL = 'https://access.redhat.com/solutions/5057391'
+# FIXME: drop the constant
+_PERSISTENT_PACKAGE_CACHE_ENV = 'LEAPP_DEVEL_USE_PERSISTENT_PACKAGE_CACHE'
 
 
 # FIXME uses copying instead of a bind mount
@@ -51,6 +53,53 @@ def _prepared_installroot(context, layout):
 
     # Decouple: copy the built userspace out of the overlay onto the real host.
     context.copytree_from(installroot, layout.userspace_path)
+
+
+def _persistent_cache_enabled():
+    return get_env(_PERSISTENT_PACKAGE_CACHE_ENV, '0') == '1'
+
+
+# FIXME The caches shouldn't work with installroot
+def _persistent_cache_pull(context, layout, installroot):
+    """
+    Restore a previously stored dnf package cache into the installroot (§12, dev only).
+
+    No-op unless ``LEAPP_DEVEL_USE_PERSISTENT_PACKAGE_CACHE=1``. Must be called
+    after the installroot has been (re)created and before ``dnf install``. The
+    persistent store lives on the real host; the installroot lives inside the
+    build overlay, so the copy goes host → container.
+    """
+    if not _persistent_cache_enabled():
+        return
+
+    cache_dir = layout.persistent_pkg_cache_path
+    if not os.path.isdir(cache_dir):
+        return
+
+    dst = os.path.join(installroot, 'var', 'cache', 'dnf')
+    api.current_logger().info('Restoring persistent dnf package cache into the userspace.')
+    context.makedirs(os.path.dirname(dst), exists_ok=True)
+    context.remove_tree(dst)
+    context.copytree_to(cache_dir, dst)
+
+
+def _persistent_cache_push(context, layout, installroot):
+    """
+    Store the installroot dnf package cache in the persistent store (§12, dev only).
+
+    No-op unless ``LEAPP_DEVEL_USE_PERSISTENT_PACKAGE_CACHE=1``. Must be called
+    after a successful build so the cache can be reused on the next run. The copy
+    goes container → host.
+    """
+    if not _persistent_cache_enabled():
+        return
+    src = os.path.join(installroot, 'var', 'cache', 'dnf')
+    if not os.path.isdir(context.full_path(src)):
+        return
+    cache = layout.persistent_pkg_cache_path
+    api.current_logger().info('Storing the userspace dnf package cache for reuse.')
+    run(['rm', '-rf', cache])
+    context.copytree_from(src, cache)
 
 
 def _import_gpg_keys(context, installroot):
@@ -163,7 +212,7 @@ def build(context, layout, inputs, used_repos):
     releasever = get_target_version()
 
     with _prepared_installroot(context, layout) as installroot:
-        tus_layout.persistent_cache_pull(context, layout, installroot)
+        _persistent_cache_pull(context, layout, installroot)
 
         if not inputs.nogpgcheck:
             # FIXME the error from this is handled in a generic handler in _diagnose_dnf_failure
@@ -178,7 +227,7 @@ def build(context, layout, inputs, used_repos):
         except CalledProcessError as e:
             _diagnose_dnf_failure(e, inputs)
 
-        tus_layout.persistent_cache_push(context, layout, installroot)
+        _persistent_cache_push(context, layout, installroot)
 
     # Prepare certificate / repository-file access inside the built userspace (§11).
     tus_repoaccess.prep_repository_access(context, layout.userspace_path)

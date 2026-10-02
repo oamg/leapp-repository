@@ -17,10 +17,6 @@ import os
 from leapp.libraries.common import mounting, overlaygen
 from leapp.libraries.common.config import get_env
 from leapp.libraries.common.config.version import get_target_major_version
-from leapp.libraries.stdlib import api, run
-
-# FIXME: drop the constant
-_PERSISTENT_PACKAGE_CACHE_ENV = 'LEAPP_DEVEL_USE_PERSISTENT_PACKAGE_CACHE'
 
 # Default container root; overridable via LEAPP_CONTAINER_ROOT
 _DEFAULT_CONTAINER_ROOT = '/var/lib/leapp'
@@ -28,17 +24,21 @@ _DEFAULT_CONTAINER_ROOT = '/var/lib/leapp'
 # Name of the target userspace directory
 _USERSPACE_DIRNAME_TEMPLATE = 'el{target_major}userspace'
 
+_PERSISTENT_PKG_CACHE_DIRNAME = 'persistent_package_cache'
+
 
 class Layout(object):
     """Plain value object describing where the actor builds the userspace."""
 
     def __init__(self, container_root, target_major, userspace_path,
-                 scratch_dir, mounts_dir, scratch_reserve):
+                 scratch_dir, mounts_dir, persistent_pkg_cache_path,
+                 scratch_reserve):
         self.container_root = container_root
         self.target_major = target_major
         self.userspace_path = userspace_path
         self.scratch_dir = scratch_dir
         self.mounts_dir = mounts_dir
+        self.persistent_pkg_cache_path = persistent_pkg_cache_path
         self.scratch_reserve = scratch_reserve
 
 
@@ -51,6 +51,8 @@ def compute():
     userspace_path = os.path.join(container_root, userspace_dirname)
     scratch_dir = os.path.join(container_root, 'scratch')
     mounts_dir = os.path.join(scratch_dir, 'mounts')
+    persistent_pkg_cache_path = os.path.join(container_root, _PERSISTENT_PKG_CACHE_DIRNAME)
+
 
     scratch_reserve = overlaygen.get_recommended_leapp_free_space(userspace_path)
 
@@ -60,6 +62,7 @@ def compute():
         userspace_path=userspace_path,
         scratch_dir=scratch_dir,
         mounts_dir=mounts_dir,
+        persistent_pkg_cache_path=persistent_pkg_cache_path,
         scratch_reserve=scratch_reserve,
     )
 
@@ -92,55 +95,3 @@ def scratch_container(layout, inputs):
         with overlay.nspawn() as scratch:
             with mounting.mount_upgrade_iso_to_root_dir(overlay.target, inputs.target_iso):
                 yield scratch
-
-
-def _persistent_cache_dir(layout):
-    return os.path.join(
-        layout.container_root,
-        'el{}_persistent_package_cache'.format(layout.target_major)
-    )
-
-
-def _persistent_cache_enabled():
-    return get_env(_PERSISTENT_PACKAGE_CACHE_ENV, '0') == '1'
-
-
-# FIXME The caches shouldn't work with installroot
-def persistent_cache_pull(context, layout, installroot):
-    """
-    Restore a previously stored dnf package cache into the installroot (§12, dev only).
-
-    No-op unless ``LEAPP_DEVEL_USE_PERSISTENT_PACKAGE_CACHE=1``. Must be called
-    after the installroot has been (re)created and before ``dnf install``. The
-    persistent store lives on the real host; the installroot lives inside the
-    build overlay, so the copy goes host → container.
-    """
-    if not _persistent_cache_enabled():
-        return
-    cache = _persistent_cache_dir(layout)
-    if not os.path.isdir(cache):
-        return
-    dst = os.path.join(installroot, 'var', 'cache', 'dnf')
-    api.current_logger().info('Restoring persistent dnf package cache into the userspace.')
-    context.makedirs(os.path.dirname(dst), exists_ok=True)
-    context.remove_tree(dst)
-    context.copytree_to(cache, dst)
-
-
-def persistent_cache_push(context, layout, installroot):
-    """
-    Store the installroot dnf package cache in the persistent store (§12, dev only).
-
-    No-op unless ``LEAPP_DEVEL_USE_PERSISTENT_PACKAGE_CACHE=1``. Must be called
-    after a successful build so the cache can be reused on the next run. The copy
-    goes container → host.
-    """
-    if not _persistent_cache_enabled():
-        return
-    src = os.path.join(installroot, 'var', 'cache', 'dnf')
-    if not os.path.isdir(context.full_path(src)):
-        return
-    cache = _persistent_cache_dir(layout)
-    api.current_logger().info('Storing the userspace dnf package cache for reuse.')
-    run(['rm', '-rf', cache])
-    context.copytree_from(src, cache)
