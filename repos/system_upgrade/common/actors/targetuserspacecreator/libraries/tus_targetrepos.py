@@ -231,13 +231,26 @@ def select_target_repositories(context, inputs):
     selected_custom = requested_custom & available
 
     # Inhibitor #2 - duplicate repositories, ONLY when RHSM is being skipped.
+    # TODO might be able to drop duplicates detection from the rhsm lib and
+    # then it would be here in a single place
     if inputs.skip_rhsm:
+        # only if rhsm is skipped, the duplicate repos are not detected
+        # automatically and we need to do it extra
+
+        # FIXME handle error
         duplicates = repofileutils.get_duplicate_repositories(
             repofileutils.get_parsed_repofiles(context))
         if duplicates:
+            api.current_logger().warning(
+                'The following repoids are defined multiple times:{}'.format(
+                    format_list(duplicates)
+                )
+            )
             _inhibit_duplicate_repos(duplicates)
 
     # Inhibitor #3 - missing base repositories (baseos/appstream).
+    # TODO in orig code this works with distro_repoids only, excluding rhui_repoids, that might be a bug in orig?
+    # TODO in orig this is done right after getting distro repoids
     if _base_repo_check_applies(inputs.skip_rhsm) and not _has_base_repos(discovered):
         _inhibit_no_base_repos(target_major_ver)
         raise StopActorExecution()
