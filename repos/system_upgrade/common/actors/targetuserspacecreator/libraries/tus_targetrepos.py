@@ -21,8 +21,6 @@ from leapp.libraries.stdlib import api, format_list
 from leapp.models import RepositoriesFactsTarget, RHELTargetRepository, UsedTargetRepositories, UsedTargetRepository
 from leapp.utils.deprecation import suppress_deprecation
 
-# FIXME unhandled exceptions from calls to functions in repofiles lib
-
 
 @suppress_deprecation(RHELTargetRepository)
 def _requested_distro_repoids(target_repositories):
@@ -229,7 +227,7 @@ def select_target_repositories(context, inputs):
         available = _all_available_repoids(context)
     except repofileutils.InvalidRepoDefinition as e:
         raise StopActorExecutionError(
-            message="Failed to parse available repoids: {}".format(str(e)),
+            message=f"Failed to parse available repoids: {str(e)}",
             details={
                 'hint': 'Ensure the repository definition is correct or remove it '
                         'if the repository is not required for the upgrade.'
@@ -297,7 +295,7 @@ def build_target_repositories_snapshot(context):
         repofiles = repofileutils.get_parsed_repofiles(context)
     except repofileutils.InvalidRepoDefinition as e:
         raise StopActorExecutionError(
-            message="Failed to parse target system repofiles: {}".format(str(e)),
+            message=f"Failed to parse target system repofiles: {str(e)}",
             details={
                 'hint': 'Ensure the repository definition is correct or remove it '
                     'if the repository is not needed anymore. '
