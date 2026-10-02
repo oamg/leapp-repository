@@ -76,6 +76,7 @@ def gather():
     rhui_info = next(api.consume(RHUIInfo), None)
     target_iso = next(api.consume(TargetOSInstallationImage), None)
     preupgrade_tasks = next(api.consume(TargetUserSpacePreupgradeTasks), None)
+    ### FIXME orig code uses XFSPresence() as default
     xfs_presence = next(api.consume(XFSPresence), None)
     repositories_facts = next(api.consume(RepositoriesFacts), None)
     pkg_manager_info = next(api.consume(PkgManagerInfo), None)
@@ -85,6 +86,7 @@ def gather():
 
     # Hard-stop #1: no RHSMInfo while RHSM is not being skipped.
     if not rhsm_info and not skip_rhsm:
+        # FIXME orig code has StopActorExecution and log
         raise StopActorExecutionError(
             message='Missing RHSM information.',
             details={
@@ -119,6 +121,7 @@ def gather():
     raw_copy_files = preupgrade_tasks.copy_files if preupgrade_tasks else []
     copy_files = _dedup_copy_files(raw_copy_files)
 
+    # TODO do we want this in the data? makes mocking a little easier maybe
     nogpgcheck = is_nogpgcheck_set()
 
     return InputData(

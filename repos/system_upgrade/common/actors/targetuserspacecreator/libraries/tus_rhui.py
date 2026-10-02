@@ -22,6 +22,7 @@ from leapp.libraries.common import repofileutils
 from leapp.libraries.stdlib import api, CalledProcessError
 
 _YUM_REPOS_D = '/etc/yum.repos.d'
+# TODO?
 _HIDDEN_SUFFIX = '.leapp-hidden'
 
 # repoid substrings excluded from the client-repoid discovery repolist (§13 R2).
@@ -108,6 +109,7 @@ def _client_owned_repofiles(context, rhui_info):
     """
     if not rhui_info.target_client_setup_info.bootstrap_target_client:
         return set()
+    # FIXME old code used rpm -ql, check if that's better fit
     return set(tus_repoaccess._get_files_owned_by_rpms(
         context, _YUM_REPOS_D, pkgs=rhui_info.target_client_pkg_names))
 
@@ -139,11 +141,13 @@ def _hide_repofiles(context, filenames):
 def _restore_repofiles(context, hidden):
     """Restore every previously hidden repofile back to its original name."""
     for hidden_path, original in hidden:
+        # FIXME os.rename
         context.call(['mv', hidden_path, original])
 
 
 def _repolist_repoids(context):
     """Run ``dnf repolist`` and return the enabled repoids, excluding source/debug."""
+    # FIXME this was done better in the old version, e.g. filtering using --(enable|disable)repo
     try:
         result = context.call(['dnf', 'repolist', '--enabled', '--quiet'], split=True)
     except CalledProcessError as e:
@@ -155,6 +159,7 @@ def _repolist_repoids(context):
     repoids = set()
     for line in result['stdout']:
         line = line.strip()
+        # FIXME this probably doesn't work, should be Repo-id, we should redo the function using old code probably
         if not line or line.lower().startswith('repo id'):
             continue
         repoid = line.split()[0]
@@ -217,8 +222,10 @@ def _swap_clients(context, rhui_info, target_major, releasever, skip_rhsm, enabl
     if rhui_info.src_client_pkg_names:
         script_lines.append('remove {}'.format(' '.join(rhui_info.src_client_pkg_names)))
     script_lines.append('install {}'.format(' '.join(rhui_info.target_client_pkg_names)))
+    # TODO transaction run?
     script_lines.append('run')
     script_lines.append('')
+    # TODO name
     script_path = '/leapp-rhui-swap.dnfsh'
     with context.open(script_path, 'w') as fobj:
         fobj.write('\n'.join(script_lines))

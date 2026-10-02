@@ -21,6 +21,8 @@ from leapp.libraries.stdlib import api
 from leapp.models import RepositoriesFactsTarget, RHELTargetRepository, UsedTargetRepositories, UsedTargetRepository
 from leapp.utils.deprecation import suppress_deprecation
 
+# FIXME unhandled exceptions from calls to functions in repofiles lib
+
 
 @suppress_deprecation(RHELTargetRepository)
 def _requested_distro_repoids(target_repositories):
@@ -105,6 +107,15 @@ def select_target_repositories(context, inputs):
     requested_custom = _requested_custom_repoids(target_repositories)
 
     selected_distro = requested_distro & discovered
+    # This TODO is preserved from the code before refactor it's about: requested_distro - distro_repoids
+
+    # TODO: We shall report that the RHEL repos that we deem necessary for
+    # the upgrade are not available; but currently it would just print bunch of
+    # data every time as we maps EUS and other repositories as well. But these
+    # do not have to be necessary available on the target system in the time
+    # of the upgrade. Let's skip it for now until it's clear how we will deal
+    # with it.
+
     selected_custom = requested_custom & available
 
     # Inhibitor #2 - duplicate repositories, ONLY when RHSM is being skipped.

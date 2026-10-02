@@ -27,6 +27,7 @@ from leapp.models import TargetUserSpaceInfo
 _DEDICATED_LEAPP_PARTITION_URL = 'https://access.redhat.com/solutions/5057391'
 
 
+# FIXME uses copying instead of a bind mount
 @contextlib.contextmanager
 def _prepared_installroot(context, layout):
     """
@@ -165,6 +166,7 @@ def build(context, layout, inputs, used_repos):
         tus_layout.persistent_cache_pull(context, layout, installroot)
 
         if not inputs.nogpgcheck:
+            # FIXME the error from this is handled in a generic handler in _diagnose_dnf_failure
             _import_gpg_keys(context, installroot)
 
         cmd = _build_dnf_install_cmd(

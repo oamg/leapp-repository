@@ -96,6 +96,7 @@ def _persistent_cache_enabled():
     return get_env(_PERSISTENT_PACKAGE_CACHE_ENV, '0') == '1'
 
 
+# FIXME The caches shouldn't work with installroot
 def persistent_cache_pull(context, layout, installroot):
     """
     Restore a previously stored dnf package cache into the installroot (§12, dev only).
