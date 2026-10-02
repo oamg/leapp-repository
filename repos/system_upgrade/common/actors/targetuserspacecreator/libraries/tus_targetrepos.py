@@ -197,7 +197,6 @@ def _inhibit_duplicate_repos(duplicates):
     ])
 
 
-
 def select_target_repositories(context, inputs):
     """
     Discover and select the usable target repositories (§7, §4 step 4).
@@ -211,6 +210,14 @@ def select_target_repositories(context, inputs):
     target_repositories = inputs.target_repositories
 
     distro_repoids = set(distro.get_target_distro_repoids(context))
+    # TODO on orig this only works with distro_repoids, but maybe it should count with rhui_repoids too?
+    api.current_logger().info(
+        "The following repoids are considered as provided by the '{}' distribution:{}".format(
+            get_target_distro_id(),
+            format_list(distro_repoids),
+        )
+    )
+
     rhui_repoids = tus_rhui.discover_client_exposed_repoids(context, inputs.rhui_info)
     discovered = distro_repoids | rhui_repoids
     available = _all_available_repoids(context)
