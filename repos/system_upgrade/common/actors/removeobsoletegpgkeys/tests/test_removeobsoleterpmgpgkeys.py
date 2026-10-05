@@ -166,6 +166,7 @@ def test_get_obsolete_keys_incomplete_data(
                 "gpg-pubkey-8483c65d-5ccc5b19",
                 "gpg-pubkey-1d997668-621e3cac",
                 "gpg-pubkey-1d997668-61bae63b",
+                "gpg-pubkey-f220bd72-68ed5521",
             ],
         ),
         (
