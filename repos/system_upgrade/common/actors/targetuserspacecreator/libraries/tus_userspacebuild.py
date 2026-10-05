@@ -12,6 +12,7 @@ integration-verified rather than deeply unit-tested.
 """
 
 import os
+import re
 import shutil
 
 from leapp.exceptions import StopActorExecutionError
@@ -19,7 +20,7 @@ from leapp.libraries.actor import tus_constants, tus_repoaccess, tus_rhui
 from leapp.libraries.common import mounting, rhsm, utils
 from leapp.libraries.common.dnflibs import dnfplugin
 from leapp.libraries.common.config import get_env, get_source_distro_id, get_target_distro_id
-from leapp.libraries.common.config.version import get_target_version
+from leapp.libraries.common.config.version import get_target_major_version, get_target_version
 from leapp.libraries.common.gpg import get_path_to_gpg_certs
 from leapp.libraries.stdlib import api, CalledProcessError, run
 from leapp.models import TargetUserSpaceInfo
@@ -97,65 +98,97 @@ def _build_dnf_install_cmd(installroot, target_major, releasever, repoids, skip_
     return cmd
 
 
-def _dnf_output_text(error):
-    """Concatenate stdout+stderr of a CalledProcessError for text scanning."""
-    parts = []
-    for stream in (getattr(error, 'stdout', None), getattr(error, 'stderr', None)):
-        if not stream:
-            continue
-        if isinstance(stream, list):
-            parts.append('\n'.join(stream))
-        else:
-            parts.append(stream)
-    return '\n'.join(parts)
+def _raise_insufficient_space_error(err):
+    NO_SPACE_STR = 'more space needed on the'
+
+    # Disk Requirements:
+    #   At least <size> more space needed on the <path> filesystem.
+
+    missing_space = [line.strip() for line in err.stderr.split('\n') if NO_SPACE_STR in line]
+    size_str = re.match(r'At least (.*) more space needed', missing_space[0]).group(1)
+    message = 'There is not enough space on the file system hosting /var/lib/leapp.'
+    hint = (
+        'Increase the free space on the filesystem hosting'
+        ' /var/lib/leapp by {} at minimum. It is suggested to provide'
+        ' reasonably more space to be able to perform all planned actions'
+        ' (e.g. when 200MB is missing, add 1700MB or more).\n\n'
+        'It is also a good practice to create dedicated partition'
+        ' for /var/lib/leapp when more space is needed, which can be'
+        ' dropped after the system upgrade is fully completed'
+        ' For more info, see: {}'
+        .format(size_str, _DEDICATED_LEAPP_PARTITION_URL)
+    )
+    # we do not want to confuse customers by the orig msg speaking about
+    # missing space on '/'. Skip the Disk Requirements section.
+    # The information is part of the hint.
+    details = {'hint': hint}
+    raise StopActorExecutionError(message=message, details=details)
 
 
+# TODO there are a lot of direct calls to get source/target distro and
+# version, I don't see better option other than passing everything as an
+# argument (lot of arguments) or just passing the IPUWorkflow config, but
+# that would bypass the functions
 def _diagnose_dnf_failure(error, inputs):
     """
     Translate a dnf ``CalledProcessError`` into a friendly hard stop with the
     applicable hints (§10, hints 1-4). Always raises.
     """
-    output = _dnf_output_text(error)
-    hints = []
+    hint = None
 
-    # Hint 1 - disk space.
-    if 'more space needed on the' in output:
-        raise StopActorExecutionError(
-            message='There is not enough space on the file system to create the'
-                    ' target userspace.',
-            details={
-                'hint': 'Consider using a dedicated partition for /var/lib/leapp.',
-                'link': _DEDICATED_LEAPP_PARTITION_URL,
-                'details': output,
-            }
-        )
+    if 'more space needed on the' in error.stderr:
+        # The stderr contains this error summary:
+        # Disk Requirements:
+        #   At least <size> more space needed on the <path> filesystem.
+        _raise_insufficient_space_error(error)
 
-    # Hint 2 - proxy configured in dnf.conf.
+    # If a proxy was set in dnf config, it should be the reason why dnf
+    # failed since leapp does not support updates behind proxy yet.
     pkg_manager_info = inputs.pkg_manager_info
     if pkg_manager_info and pkg_manager_info.configured_proxies:
-        hints.append('A proxy is configured in dnf.conf. Leapp is not supported'
-                     ' behind a proxy configured that way.')
+        hint = (
+            'DNF failed to install userspace packages, likely due to the proxy '
+            'configuration detected in the YUM/DNF configuration file. '
+            'Make sure the proxy is properly configured in /etc/dnf/dnf.conf. '
+            'It\'s also possible the proxy settings in the DNF configuration file are '
+            'incompatible with the target system. A compatible configuration can be '
+            'placed in /etc/leapp/files/dnf.conf which, if present, will be used during '
+            'the upgrade instead of /etc/dnf/dnf.conf. '
+            'In such case the configuration will also be applied to the target system.'
+        )
 
-    # Hint 3 - proxy configured in a .repo file.
-    repositories_facts = inputs.repositories_facts
-    if repositories_facts:
-        for repofile in repositories_facts.repositories:
-            if any(repo.proxy for repo in repofile.data):
-                hints.append('A proxy is configured in a .repo file. Leapp is not'
-                             ' supported behind a proxy configured that way.')
-                break
+    # Similarly if a proxy was set specifically for one of the repositories.
+    for repo_facts in inputs.repositories_facts:
+        for repo_file in repo_facts.repositories:
+            if any(repo_data.proxy and repo_data.enabled for repo_data in repo_file.data):
+                hint = (
+                    'DNF failed to install userspace packages, likely due to the proxy '
+                    'configuration detected in a repository configuration file.'
+                )
 
-    # Hint 4 - CentOS -> RHEL target not released yet.
     if get_source_distro_id() == 'centos' and get_target_distro_id() == 'rhel':
-        hints.append('The target RHEL version may not be released yet. Try setting'
-                     ' the target version explicitly via LEAPP_DEVEL_TARGET_RELEASE'
-                     ' / --target-version.')
+        check_rhel_release_hint = (
+            'When upgrading and converting from Centos Stream to Red Hat Enterprise Linux'
+            ' (RHEL), the automatically determined latest target version of RHEL'
+            f" '{get_target_version()}' might not yet have been released. If so, specify"
+            ' the latest released RHEL version manually using the --target-version '
+            ' commandline option.'
+        )
 
+        if hint:
+            # keep the proxy hint, we don't know which one is the problem
+            hint = f"{hint}\n\n{check_rhel_release_hint}"
+        else:
+            hint = check_rhel_release_hint
+
+    target_distro = get_target_distro_id()
+    target_major = get_target_major_version()
     raise StopActorExecutionError(
-        message='Failed to install the target userspace packages using dnf.',
+        message=f'Unable to install target {target_distro} {target_major} userspace packages.',
         details={
-            'hints': hints,
-            'details': output,
+            'details': str(error),
+            'hints': hint,
+            'stderr': error.stderr,
         }
     )
 
