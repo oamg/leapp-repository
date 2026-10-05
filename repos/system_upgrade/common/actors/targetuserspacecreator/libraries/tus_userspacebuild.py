@@ -82,6 +82,7 @@ def _import_gpg_keys(context, installroot):
     if not os.path.isdir(certs_dir):
         api.current_logger().warning('No target GPG keys directory found at {}.'.format(certs_dir))
         return
+
     for name in sorted(os.listdir(certs_dir)):
         key_path = os.path.join(certs_dir, name)
         context.call(['rpm', '--root', installroot, '--import', key_path])
@@ -190,8 +191,15 @@ def build(context, layout, inputs, used_repos):
         _persistent_cache_pull(context, layout, installroot)
 
         if not inputs.nogpgcheck:
-            # FIXME the error from this is handled in a generic handler in _diagnose_dnf_failure
-            _import_gpg_keys(context, installroot)
+            try:
+                _import_gpg_keys(context, installroot)
+            except CalledProcessError as e:
+                raise StopActorExecutionError(
+                    message=(
+                        'Unable to import GPG certificates to install target OS userspace packages.'
+                    ),
+                    details={'details': str(e), 'stderr': e.stderr}
+                )
 
         cmd = _build_dnf_install_cmd(
             installroot, layout.target_major, releasever, repoids,
