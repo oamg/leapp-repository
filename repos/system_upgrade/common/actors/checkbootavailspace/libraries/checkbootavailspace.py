@@ -1,8 +1,10 @@
 from __future__ import division
 
+import os
 from os import statvfs
 
 from leapp import reporting
+from leapp.libraries.stdlib import api
 
 MIN_AVAIL_BYTES_FOR_BOOT = 100 * 2**20  # 100 MiB
 
@@ -13,9 +15,34 @@ def check_avail_space_on_boot(boot_avail_space_getter):
         inhibit_upgrade(avail_bytes)
 
 
+def get_leftover_upgrade_boot_files():
+    """
+    Get the leapp upgrade kernel, initramfs and kernel HMAC files left in /boot.
+
+    These files stay in /boot when a previous upgrade attempt failed before
+    the RemoveBootFiles actor could remove them.
+
+    :returns: Paths of the files that exist.
+    :rtype: List[str]
+    """
+    arch = api.current_actor().configuration.architecture
+    kernel = 'vmlinuz-upgrade.{}'.format(arch)
+    names = (kernel, 'initramfs-upgrade.{}.img'.format(arch), '.{}.hmac'.format(kernel))
+    paths = [os.path.join('/boot', name) for name in names]
+    return [path for path in paths if os.path.isfile(path)]
+
+
 def get_avail_bytes_on_boot():
     boot_stat = statvfs('/boot')
-    return boot_stat.f_frsize * boot_stat.f_bavail
+    avail_bytes = boot_stat.f_frsize * boot_stat.f_bavail
+    # The upgrade overwrites these files when it copies the new kernel and
+    # initramfs to /boot, so the space they use is available for the upgrade.
+    for path in get_leftover_upgrade_boot_files():
+        api.current_logger().info(
+            'Counting the space used by {} from a previous upgrade attempt as available.'.format(path)
+        )
+        avail_bytes += os.path.getsize(path)
+    return avail_bytes
 
 
 def is_additional_space_required(avail_bytes):
