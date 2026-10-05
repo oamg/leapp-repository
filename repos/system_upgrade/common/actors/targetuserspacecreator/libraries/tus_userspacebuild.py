@@ -160,13 +160,23 @@ def _diagnose_dnf_failure(error, inputs):
     )
 
 
-def _copy_files(context, copy_files, userspace_path):
-    """Copy the (de-duplicated) requested files into the built userspace."""
-    for copy_file in copy_files:
-        dst = copy_file.dst if copy_file.dst else copy_file.src
-        full_dst = os.path.join(userspace_path, dst.lstrip('/'))
-        run(['mkdir', '-p', os.path.dirname(full_dst)])
-        context.copy_from(copy_file.src, full_dst)
+def _copy_files_to_userspace(context, files):
+    """
+    Copy the files/dirs from the host to the `context` userspace
+
+    :param context: the target userspace context
+    :type context: mounting.IsolatedActions
+    :param files: list of files that should be copied from the host to the context
+    :type files: List[CopyFile]
+    """
+    for file_task in files:
+        if not file_task.dst:
+            file_task.dst = file_task.src
+        if os.path.isdir(file_task.src):
+            context.remove_tree(file_task.dst)
+            context.copytree_to(file_task.src, file_task.dst)
+        else:
+            context.copy_to(file_task.src, file_task.dst)
 
 
 def _create_target_userspace_dir(dst_path):
@@ -241,20 +251,18 @@ def build(context, layout, inputs, used_repos):
     # Prepare certificate / repository-file access inside the built userspace (§11).
     tus_repoaccess.prep_repository_access(context, layout.userspace_path)
 
-    # Copy the requested files into the userspace (§9).
-    _copy_files(context, inputs.copy_files, layout.userspace_path)
+    with mounting.NspawnActions(base_dir=layout.userspace_path) as us_ctx:
+        # Copy the requested files into the userspace (§9).
+        _copy_files_to_userspace(us_ctx, inputs.copy_files)
 
-    # Install the leapp DNF plugin into the userspace (§9).
-    dnfplugin.install(layout.userspace_path)
+        # Install the leapp DNF plugin into the userspace (§9).
+        dnfplugin.install(us_ctx.base_dir)
 
-    # Cloud: R6/R7 injected-repofile cleanup - only when not bootstrapping the
-    # target client, after the plugin install and before container mode is set.
-    if inputs.rhui_info and not inputs.rhui_info.target_client_setup_info.bootstrap_target_client:
-        with mounting.NspawnActions(base_dir=layout.userspace_path) as us_ctx:
+        # Cloud: R6/R7 injected-repofile cleanup - only when not bootstrapping the
+        # target client, after the plugin install and before container mode is set.
+        if inputs.rhui_info and not inputs.rhui_info.target_client_setup_info.bootstrap_target_client:
             tus_rhui.cleanup_injected_repofiles(us_ctx, inputs.rhui_info)
 
-    # (Re-)enter the userspace and set subscription-manager container mode (§9).
-    with mounting.NspawnActions(base_dir=layout.userspace_path) as us_ctx:
         rhsm.set_container_mode(us_ctx)
 
     return TargetUserSpaceInfo(
