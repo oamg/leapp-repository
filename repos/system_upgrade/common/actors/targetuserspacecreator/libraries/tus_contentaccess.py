@@ -10,6 +10,7 @@ Mid-layer module: may import ``tus_rhui``; never the reverse.
 
 import os
 
+from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import tus_rhui
 from leapp.libraries.common import rhsm
 from leapp.libraries.common.config import get_target_distro_id
@@ -30,7 +31,7 @@ def _adjust_dnf_stream_variable(context_scratch, target_major, varfile=_DNF_STRE
     the variable so that the URLs point to the target version repos.
     """
 
-    new_dnf_stream_val = f'{target-major}-stream\n'
+    new_dnf_stream_val = f'{target_major}-stream\n'
     try:
         with context_scratch.open(varfile, 'w') as f:
             f.write(new_dnf_stream_val)
