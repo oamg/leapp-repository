@@ -20,7 +20,7 @@ _YUM_REPOS_D = '/etc/yum.repos.d'
 _DNF_STREAM_VAR = '/etc/dnf/vars/stream'
 
 
-def _adjust_dnf_stream_variable(context, target_major, varfile=_DNF_STREAM_VAR):
+def _adjust_dnf_stream_variable(context_scratch, target_major, varfile=_DNF_STREAM_VAR):
     """
     Adjust the version in the dnf 'stream' variable to the target version.
 
@@ -32,7 +32,7 @@ def _adjust_dnf_stream_variable(context, target_major, varfile=_DNF_STREAM_VAR):
 
     new_dnf_stream_val = f'{target-major}-stream\n'
     try:
-        with context.open(varfile, 'w') as f:
+        with context_scratch.open(varfile, 'w') as f:
             f.write(new_dnf_stream_val)
     except (FileNotFoundError, OSError) as e:
         raise StopActorExecutionError(
@@ -40,28 +40,28 @@ def _adjust_dnf_stream_variable(context, target_major, varfile=_DNF_STREAM_VAR):
             details={'details': str(e)})
 
 
-def _install_custom_repofiles(context, custom_repofiles):
+def _install_custom_repofiles(context_scratch, custom_repofiles):
     """
     Install the required custom repository files into the container.
 
     The repository files are copied from the host into the /etc/yum.repos.d
     directory into the container.
 
-    :param context: the container where the repofiles should be copied
-    :type context: mounting.IsolatedActions class
+    :param context_scratch: the container where the repofiles should be copied
+    :type context_scratch: mounting.IsolatedActions class
     :param custom_repofiles: list of custom repo files
     :type custom_repofiles: List(CustomTargetRepositoryFile)
     """
     for rfile in custom_repofiles:
         dst_path = os.path.join('/etc/yum.repos.d', os.path.basename(rfile.file))
-        context.copy_to(rfile.file, dst_path)
+        context_scratch.copy_to(rfile.file, dst_path)
 
 
-def establish(context, inputs):
+def establish(context_scratch, inputs):
     """
     Establish content access inside the scratch container (§6).
 
-    :param context: An entered nspawn scratch context.
+    :param context_scratch: An entered nspawn scratch context_scratch.
     :param inputs: The :class:`~.tus_inputdata.InputData` value object.
     :raises rhsm.MissingTargetProductCertificate: propagated from
         ``rhsm.switch_certificate`` - translated into inhibitor #1 by the caller.
@@ -71,7 +71,7 @@ def establish(context, inputs):
     # 1. RHUI (cloud) client swap - only when RHUIInfo is consumed.
     if inputs.rhui_info:
         tus_rhui.perform_client_swap(
-            context,
+            context_scratch,
             inputs.rhui_info,
             target_major,
             get_target_version(),
@@ -81,13 +81,13 @@ def establish(context, inputs):
     # 2. RHSM: container mode, then switch to the target product certificate.
     #    switch_certificate is @with_rhsm, so it is a no-op when RHSM is skipped.
     #    MissingTargetProductCertificate is intentionally NOT caught here.
-    rhsm.set_container_mode(context)
-    rhsm.switch_certificate(context, inputs.rhsm_info)
+    rhsm.set_container_mode(context_scratch)
+    rhsm.switch_certificate(context_scratch, inputs.rhsm_info)
 
     # 3. CentOS Stream $stream variable - only for a CentOS target.
     if get_target_distro_id() == 'centos':
         api.current_logger().debug('Writing the dnf $stream variable for the CentOS target.')
-        _adjust_dnf_stream_variable(context, target_major)
+        _adjust_dnf_stream_variable(context_scratch, target_major)
 
     # 4. Install custom repofiles into the container.
-    _install_custom_repofiles(context, inputs.custom_repofiles)
+    _install_custom_repofiles(context_scratch, inputs.custom_repofiles)
