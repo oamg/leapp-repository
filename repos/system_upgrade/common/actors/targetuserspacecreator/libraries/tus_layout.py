@@ -24,6 +24,9 @@ _DEFAULT_CONTAINER_ROOT = '/var/lib/leapp'
 # Name of the target userspace directory
 _USERSPACE_DIRNAME_TEMPLATE = 'el{target_major}userspace'
 
+# Name of the target userspace directory
+_INSTALLROOT_DIRNAME_TEMPLATE = 'el{target_major}target'
+
 _PERSISTENT_PKG_CACHE_DIRNAME = 'persistent_package_cache'
 
 
@@ -31,13 +34,14 @@ class Layout(object):
     """Plain value object describing where the actor builds the userspace."""
 
     def __init__(self, container_root, target_major, userspace_path,
-                 scratch_dir, mounts_dir, persistent_pkg_cache_path,
-                 scratch_reserve):
+                 scratch_dir, mounts_dir, installroot_dirname,
+                 persistent_pkg_cache_path, scratch_reserve):
         self.container_root = container_root
         self.target_major = target_major
         self.userspace_path = userspace_path
         self.scratch_dir = scratch_dir
         self.mounts_dir = mounts_dir
+        self.installroot_dirname = installroot_dirname
         self.persistent_pkg_cache_path = persistent_pkg_cache_path
         self.scratch_reserve = scratch_reserve
 
@@ -51,6 +55,7 @@ def compute():
     userspace_path = os.path.join(container_root, userspace_dirname)
     scratch_dir = os.path.join(container_root, 'scratch')
     mounts_dir = os.path.join(scratch_dir, 'mounts')
+    installroot_dirname = _INSTALLROOT_DIRNAME_TEMPLATE.format(target_major=target_major)
     persistent_pkg_cache_path = os.path.join(container_root, _PERSISTENT_PKG_CACHE_DIRNAME)
 
 
@@ -62,6 +67,7 @@ def compute():
         userspace_path=userspace_path,
         scratch_dir=scratch_dir,
         mounts_dir=mounts_dir,
+        installroot_dirname=installroot_dirname,
         persistent_pkg_cache_path=persistent_pkg_cache_path,
         scratch_reserve=scratch_reserve,
     )

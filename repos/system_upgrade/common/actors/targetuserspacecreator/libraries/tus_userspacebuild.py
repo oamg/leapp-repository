@@ -11,11 +11,11 @@ The "build in the source overlay, then decouple into its own directory" mechanis
 integration-verified rather than deeply unit-tested.
 """
 
-import contextlib
 import os
+import shutil
 
 from leapp.exceptions import StopActorExecutionError
-from leapp.libraries.actor import tus_constants, tus_layout, tus_repoaccess, tus_rhui
+from leapp.libraries.actor import tus_constants, tus_repoaccess, tus_rhui
 from leapp.libraries.common import mounting, rhsm
 from leapp.libraries.common.dnflibs import dnfplugin
 from leapp.libraries.common.config import get_env, get_source_distro_id, get_target_distro_id
@@ -27,32 +27,6 @@ from leapp.models import TargetUserSpaceInfo
 _DEDICATED_LEAPP_PARTITION_URL = 'https://access.redhat.com/solutions/5057391'
 # FIXME: drop the constant
 _PERSISTENT_PACKAGE_CACHE_ENV = 'LEAPP_DEVEL_USE_PERSISTENT_PACKAGE_CACHE'
-
-
-# FIXME uses copying instead of a bind mount
-@contextlib.contextmanager
-def _prepared_installroot(context, layout):
-    """
-    Prepare the installroot inside the build overlay and decouple it on success.
-
-    The real host userspace directory is wiped and recreated; the same path
-    inside the overlay is cleaned and used as the dnf ``--installroot``. On
-    successful completion the freshly-built tree is copied out of the overlay
-    into the real host directory (the "decouple" step).
-    """
-    # Wipe the real host userspace. Do NOT recreate it here: copytree_from below
-    # requires the destination not to exist (it creates it, and any missing
-    # parents, itself).
-    run(['rm', '-rf', layout.userspace_path])
-
-    installroot = layout.userspace_path
-    context.remove_tree(installroot)
-    context.makedirs(installroot)
-
-    yield installroot
-
-    # Decouple: copy the built userspace out of the overlay onto the real host.
-    context.copytree_from(installroot, layout.userspace_path)
 
 
 def _persistent_cache_enabled():
@@ -211,7 +185,8 @@ def build(context, layout, inputs, used_repos):
     repoids = [repo.repoid for repo in used_repos.repos]
     releasever = get_target_version()
 
-    with _prepared_installroot(context, layout) as installroot:
+    installroot = context.full_path(layout.installroot_dirname)
+    with mounting.BindMount(source=layout.userspace_path, target=installroot):
         _persistent_cache_pull(context, layout, installroot)
 
         if not inputs.nogpgcheck:
