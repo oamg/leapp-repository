@@ -215,7 +215,7 @@ def build(context, layout, inputs, used_repos):
     with mounting.BindMount(source=layout.userspace_path, target=installroot):
         if not inputs.nogpgcheck:
             try:
-                _import_gpg_keys(context, installroot)
+                _import_gpg_keys(context, layout.installroot_overlay_mountpoint)
             except CalledProcessError as e:
                 raise StopActorExecutionError(
                     message=(
@@ -225,8 +225,13 @@ def build(context, layout, inputs, used_repos):
                 )
 
         cmd = _build_dnf_install_cmd(
-            installroot, layout.target_major, releasever, repoids,
-            inputs.skip_rhsm, inputs.nogpgcheck, inputs.packages,
+            layout.installroot_overlay_mountpoint,
+            layout.target_major,
+            releasever,
+            repoids,
+            inputs.skip_rhsm,
+            inputs.nogpgcheck,
+            inputs.packages,
         )
         try:
             context.call(cmd)
