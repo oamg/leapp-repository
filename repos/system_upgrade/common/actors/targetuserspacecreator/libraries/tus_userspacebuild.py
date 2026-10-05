@@ -211,7 +211,7 @@ def build(context, layout, inputs, used_repos):
 
     _persistent_cache_pull(layout.persistent_pkg_cache_path, layout.userspace_path)
 
-    installroot = context.full_path(layout.installroot_dirname)
+    installroot = context.full_path(layout.installroot_overlay_mountpoint)
     with mounting.BindMount(source=layout.userspace_path, target=installroot):
         if not inputs.nogpgcheck:
             try:
