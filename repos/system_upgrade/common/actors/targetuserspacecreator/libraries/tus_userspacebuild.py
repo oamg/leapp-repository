@@ -33,8 +33,7 @@ def _persistent_cache_enabled():
     return get_env(_PERSISTENT_PACKAGE_CACHE_ENV, '0') == '1'
 
 
-# FIXME The caches shouldn't work with installroot
-def _persistent_cache_pull(context, layout, installroot):
+def _persistent_cache_pull(persistent_cache_path, installroot):
     """
     Restore a previously stored dnf package cache into the installroot (§12, dev only).
 
@@ -43,21 +42,19 @@ def _persistent_cache_pull(context, layout, installroot):
     persistent store lives on the real host; the installroot lives inside the
     build overlay, so the copy goes host → container.
     """
-    if not _persistent_cache_enabled():
-        return
+    if _persistent_cache_enabled():
+        if not os.path.isdir(persistent_cache_path):
+            return
 
-    cache_dir = layout.persistent_pkg_cache_path
-    if not os.path.isdir(cache_dir):
-        return
-
-    dst = os.path.join(installroot, 'var', 'cache', 'dnf')
-    api.current_logger().info('Restoring persistent dnf package cache into the userspace.')
-    context.makedirs(os.path.dirname(dst), exists_ok=True)
-    context.remove_tree(dst)
-    context.copytree_to(cache_dir, dst)
+        dst = os.path.join(installroot, 'var', 'cache', 'dnf')
+        if os.path.exists(dst):
+            run(['rm', '-rf', dst])
+        shutil.move(persistent_cache_path, dst)
+    # We always want to remove the persistent cache here to unclutter the system
+    run(['rm', '-rf', persistent_cache_path])
 
 
-def _persistent_cache_push(context, layout, installroot):
+def _persistent_cache_push(persistent_cache_path, installroot):
     """
     Store the installroot dnf package cache in the persistent store (§12, dev only).
 
@@ -67,13 +64,12 @@ def _persistent_cache_push(context, layout, installroot):
     """
     if not _persistent_cache_enabled():
         return
+    # cleanup, just in case
+    run(['rm', '-rf', persistent_cache_path])
+
     src = os.path.join(installroot, 'var', 'cache', 'dnf')
-    if not os.path.isdir(context.full_path(src)):
-        return
-    cache = layout.persistent_pkg_cache_path
-    api.current_logger().info('Storing the userspace dnf package cache for reuse.')
-    run(['rm', '-rf', cache])
-    context.copytree_from(src, cache)
+    if os.path.exists(src):
+        shutil.move(src, persistent_cache_path)
 
 
 def _import_gpg_keys(context, installroot):
@@ -204,13 +200,19 @@ def build(context, layout, inputs, used_repos):
     repoids = [repo.repoid for repo in used_repos.repos]
     releasever = get_target_version()
 
+    # Store the cache from previous run before deleting the userspace.
+    # This could be done in the previous run after installing the userspace,
+    # however doing it allows reusing the cache from the previous run even if
+    # persistent pkg cache was disabled for it.
+    _persistent_cache_push(layout.persistent_pkg_cache_path, layout.userspace_path)
+
     run(['rm', '-rf', layout.userspace_path])
     _create_target_userspace_dir(layout.userspace_path)
 
+    _persistent_cache_pull(layout.persistent_pkg_cache_path, layout.userspace_path)
+
     installroot = context.full_path(layout.installroot_dirname)
     with mounting.BindMount(source=layout.userspace_path, target=installroot):
-        _persistent_cache_pull(context, layout, installroot)
-
         if not inputs.nogpgcheck:
             try:
                 _import_gpg_keys(context, installroot)
@@ -230,8 +232,6 @@ def build(context, layout, inputs, used_repos):
             context.call(cmd)
         except CalledProcessError as e:
             _diagnose_dnf_failure(e, inputs)
-
-        _persistent_cache_push(context, layout, installroot)
 
     # Prepare certificate / repository-file access inside the built userspace (§11).
     tus_repoaccess.prep_repository_access(context, layout.userspace_path)
