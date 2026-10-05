@@ -16,7 +16,7 @@ import shutil
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import tus_constants, tus_repoaccess, tus_rhui
-from leapp.libraries.common import mounting, rhsm
+from leapp.libraries.common import mounting, rhsm, utils
 from leapp.libraries.common.dnflibs import dnfplugin
 from leapp.libraries.common.config import get_env, get_source_distro_id, get_target_distro_id
 from leapp.libraries.common.config.version import get_target_version
@@ -173,6 +173,24 @@ def _copy_files(context, copy_files, userspace_path):
         context.copy_from(copy_file.src, full_dst)
 
 
+def _create_target_userspace_dir(dst_path):
+    api.current_logger().debug('Creating target userspace directories.')
+    try:
+        utils.makedirs(dst_path)
+        api.current_logger().debug('Done creating target userspace directories.')
+    except OSError:
+        api.current_logger().error(
+            'Failed to create temporary target userspace directories %s', dst_path, exc_info=True
+        )
+        # This is an attempt for giving the user a chance to resolve it on their own
+        raise StopActorExecutionError(
+            message='Failed to prepare environment for package download while creating directories.',
+            details={
+                'hint': f'Please ensure that {dst_path} is empty and modifiable.'
+            }
+        )
+
+
 def build(context, layout, inputs, used_repos):
     """
     Build the target userspace and return its :class:`TargetUserSpaceInfo` (§9).
@@ -185,6 +203,9 @@ def build(context, layout, inputs, used_repos):
     """
     repoids = [repo.repoid for repo in used_repos.repos]
     releasever = get_target_version()
+
+    run(['rm', '-rf', layout.userspace_path])
+    _create_target_userspace_dir(layout.userspace_path)
 
     installroot = context.full_path(layout.installroot_dirname)
     with mounting.BindMount(source=layout.userspace_path, target=installroot):
