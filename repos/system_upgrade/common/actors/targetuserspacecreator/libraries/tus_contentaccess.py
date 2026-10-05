@@ -20,21 +20,41 @@ _YUM_REPOS_D = '/etc/yum.repos.d'
 _DNF_STREAM_VAR = '/etc/dnf/vars/stream'
 
 
-def _write_stream_variable(context, target_major):
-    """Write ``{major}-stream`` into the dnf ``$stream`` var (CentOS targets only)."""
-    stream_value = '{}-stream'.format(target_major)
-    parent = os.path.dirname(context.full_path(_DNF_STREAM_VAR))
-    if not os.path.isdir(parent):
-        os.makedirs(parent)
-    with context.open(_DNF_STREAM_VAR, 'w') as fobj:
-        fobj.write('{}\n'.format(stream_value))
+def _adjust_dnf_stream_variable(context, target_major, varfile=_DNF_STREAM_VAR):
+    """
+    Adjust the version in the dnf 'stream' variable to the target version.
+
+    URLs in CentOS Stream repofiles contain the $stream variable which,
+    if not adjusted, retains the value from the source system making
+    the URLs point to repos for the source version. This function adjusts
+    the variable so that the URLs point to the target version repos.
+    """
+
+    new_dnf_stream_val = f'{target-major}-stream\n'
+    try:
+        with context.open(varfile, 'w') as f:
+            f.write(new_dnf_stream_val)
+    except (FileNotFoundError, OSError) as e:
+        raise StopActorExecutionError(
+            message='Failed to adjust dnf variable in {} to "{}".'.format(varfile, new_dnf_stream_val),
+            details={'details': str(e)})
 
 
 def _install_custom_repofiles(context, custom_repofiles):
-    """Lay each CustomTargetRepositoryFile into the container's yum.repos.d."""
-    for repofile in custom_repofiles:
-        dst = os.path.join(_YUM_REPOS_D, os.path.basename(repofile.file))
-        context.copy_to(repofile.file, dst)
+    """
+    Install the required custom repository files into the container.
+
+    The repository files are copied from the host into the /etc/yum.repos.d
+    directory into the container.
+
+    :param context: the container where the repofiles should be copied
+    :type context: mounting.IsolatedActions class
+    :param custom_repofiles: list of custom repo files
+    :type custom_repofiles: List(CustomTargetRepositoryFile)
+    """
+    for rfile in custom_repofiles:
+        dst_path = os.path.join('/etc/yum.repos.d', os.path.basename(rfile.file))
+        context.copy_to(rfile.file, dst_path)
 
 
 def establish(context, inputs):
@@ -67,7 +87,7 @@ def establish(context, inputs):
     # 3. CentOS Stream $stream variable - only for a CentOS target.
     if get_target_distro_id() == 'centos':
         api.current_logger().debug('Writing the dnf $stream variable for the CentOS target.')
-        _write_stream_variable(context, target_major)
+        _adjust_dnf_stream_variable(context, target_major)
 
     # 4. Install custom repofiles into the container.
     _install_custom_repofiles(context, inputs.custom_repofiles)
