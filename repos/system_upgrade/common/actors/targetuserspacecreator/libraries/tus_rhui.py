@@ -66,7 +66,7 @@ def _sanitized_copy_files_iter(context, copy_files):
     # NOTE: written sort this way to not affect input objects; as we do not
     # expect this to be a long list, it's ok
     for cfile in sorted(copy_files, lambda x: _resolve_copy_target(context, x)):
-        yield src, _resolve_copy_target(context_scratch, cfile)
+        yield src, _resolve_copy_target(context, cfile)
 
 
 def _run_preinstall_tasks(context_scratch, preinstall_tasks):
@@ -83,16 +83,13 @@ def _run_preinstall_tasks(context_scratch, preinstall_tasks):
         api.current_logger().debug(' -- Removing {} from the scratch container.'.format(fpath))
         context_scratch.remove(fpath)
 
-    for copy_file in preinstall_tasks.files_to_copy_into_overlay:
-        # FIXME: this seems weird
-        # think about the order.. - maybe update input data?...
-        dst = _resolve_copy_target(context_scratch, copy_file)
+    for src, dst in _sanitized_copy_files_iter(context_scratch, preinstall_tasks.files_to_copy_into_overlay):
         api.current_logger().debug(
             ' -- Copying {0} in {1} into the scratch container.'
-            .format(copy_file.src, dst)
+            .format(src, dst)
         )
         context_scratch.makedirs(os.path.dirname(dst), exists_ok=True)
-        context_scratch.copy_to(copy_file.src, dst)
+        context_scratch.copy_to(src, dst)
 
 
 def _run_postinstall_tasks(context_scratch, postinstall_tasks):
@@ -105,18 +102,17 @@ def _run_postinstall_tasks(context_scratch, postinstall_tasks):
         return
 
     api.current_logger().debug('Applying RHUI postinstall tasks.')
-    for copy_file in postinstall_tasks.files_to_copy:
-        dst = _resolve_copy_target(context_scratch, copy_file)
+    for src, dst in _sanitized_copy_files_iter(context_scratch, postinstall_tasks.files_to_copy):
         api.current_logger().debug(
             ' -- Copying {0} to {1} (inside the scratch container).'
-            .format(copy_file.src, dst)
+            .format(src, dst)
         )
         context_scratch.makedirs(os.path.dirname(dst), exists_ok=True)
         # NOTE: Note the use of CP instead of `copy_to` function is esential
         # as this action is designed to be performed inside the scratch
         # container context - so all paths are ment to be valid inside the container.
         # See the TargetRHUIPostInstallTasks model.
-        context_scratch.call(['cp', copy_file.src, dst])
+        context_scratch.call(['cp', src, dst])
 
 
 def _list_repofiles(context):
@@ -147,8 +143,7 @@ def _setup_copied_repofiles(context, rhui_info):
     preinstall_tasks = rhui_info.target_client_setup_info.preinstall_tasks
     if not preinstall_tasks:
         return setup_copied
-    for copy_file in preinstall_tasks.files_to_copy_into_overlay:
-        dst = _resolve_copy_target(context, copy_file)
+    for dummy_src, dst in _sanitized_copy_files_iter(context, preinstall_tasks.files_to_copy_into_overlay):
         if dst.endswith('.repo'):
             setup_copied.add(os.path.basename(dst))
     return setup_copied
@@ -328,11 +323,10 @@ def _remove_nonclient_injected_files(context_scratch, rhui_info, client_files):
     supporting = set(setup.files_supporting_client_operation)
     client_files = set(client_files)
 
-    for copy_file in setup.preinstall_tasks.files_to_copy_into_overlay:
-        dst = _resolve_copy_target(context_scratch, copy_file)
+    for src, dst in _sanitized_copy_files_iter(context_scratch, setup.preinstall_tasks.files_to_copy_into_overlay):
         if dst in client_files:
             continue
-        if copy_file.src in supporting:
+        if src in supporting:
             continue
         context_scratch.remove(dst)
 
@@ -391,8 +385,7 @@ def cleanup_injected_repofiles(context, rhui_info):
     if not setup.preinstall_tasks:
         return
 
-    for copy_file in setup.preinstall_tasks.files_to_copy_into_overlay:
-        dst = _resolve_copy_target(context, copy_file)
+    for dummy_src, dst in _sanitized_copy_files_iter(context, setup.preinstall_tasks.files_to_copy_into_overlay):
         if not dst.endswith('.repo') or not os.path.isfile(context.full_path(dst)):
             continue
         try:
