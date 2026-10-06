@@ -33,11 +33,17 @@ _PERSISTENT_PKG_CACHE_DIRNAME = 'persistent_package_cache'
 class Layout(object):
     """Plain value object describing where the actor builds the userspace."""
 
-    def __init__(self, container_root, target_major, userspace_path,
-                 scratch_dir, mounts_dir, installroot_overlay_mountpoint,
-                 persistent_pkg_cache_path, scratch_reserve):
+    def __init__(
+        self,
+        container_root,
+        userspace_path,
+        scratch_dir,
+        mounts_dir,
+        installroot_overlay_mountpoint,
+        persistent_pkg_cache_path,
+        scratch_reserve,
+    ):
         self.container_root = container_root
-        self.target_major = target_major
         self.userspace_path = userspace_path
         self.scratch_dir = scratch_dir
         self.mounts_dir = mounts_dir
@@ -59,12 +65,10 @@ def compute():
     installroot_overlay_mountpoint = os.path.join('/', installroot_dirname)
     persistent_pkg_cache_path = os.path.join(container_root, _PERSISTENT_PKG_CACHE_DIRNAME)
 
-
     scratch_reserve = overlaygen.get_recommended_leapp_free_space(userspace_path)
 
     return Layout(
         container_root=container_root,
-        target_major=target_major,
         userspace_path=userspace_path,
         scratch_dir=scratch_dir,
         mounts_dir=mounts_dir,
