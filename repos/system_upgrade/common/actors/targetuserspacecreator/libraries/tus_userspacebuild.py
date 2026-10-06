@@ -242,7 +242,6 @@ def build(context, layout, inputs, used_repos):
     """
     repoids = [repo.repoid for repo in used_repos.repos]
     releasever = get_target_version()
-    target_major = get_target_major_version()
 
     # Store the cache from previous run before deleting the userspace.
     # This could be done in the previous run after installing the userspace,
@@ -270,7 +269,6 @@ def build(context, layout, inputs, used_repos):
 
         cmd = _build_dnf_install_cmd(
             layout.installroot_overlay_mountpoint,
-            target_major,
             releasever,
             repoids,
             inputs.skip_rhsm,

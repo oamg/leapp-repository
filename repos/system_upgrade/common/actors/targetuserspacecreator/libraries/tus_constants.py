@@ -8,21 +8,22 @@ an import cycle. Keep it free of side effects and of imports from sibling
 ``tus_*`` modules.
 """
 
+from leapp.libraries.common.config.version import get_major_version
 
-def common_dnf_flags(target_major, releasever, skip_rhsm):
+
+def common_dnf_flags(target_version, skip_rhsm):
     """
     Build the dnf flags shared by the userspace install (§10) and the RHUI
     client swap (§13 R5).
 
-    :param target_major: Target OS major version (e.g. ``'9'``).
-    :param releasever: Target releasever to pass to dnf.
+    :param target_version: Target OS release version to pass to dnf.
     :param skip_rhsm: Whether subscription-manager is being skipped.
     :return: List of dnf command-line arguments.
     """
     flags = [
-        '--setopt=module_platform_id=platform:el{}'.format(target_major),
+        '--setopt=module_platform_id=platform:el{}'.format(get_major_version(target_version)),
         '--setopt=keepcache=1',
-        '--releasever', releasever,
+        '--releasever', target_version,
     ]
     if skip_rhsm:
         flags += ['--disableplugin', 'subscription-manager']

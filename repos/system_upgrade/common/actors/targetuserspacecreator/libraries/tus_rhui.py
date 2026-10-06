@@ -254,7 +254,7 @@ def _parse_repoids_from_copied_files(copy_files):
     return copied_repoids
 
 
-def _swap_clients(context_scratch, rhui_info, target_major, target_version, skip_rhsm, enable_only_repoids):
+def _swap_clients(context_scratch, rhui_info, target_version, skip_rhsm, enable_only_repoids):
     """
     Run the client swap via ``dnf shell`` (transaction: remove source clients →
     install target clients → run). Swap failure → hard stop.
@@ -274,7 +274,7 @@ def _swap_clients(context_scratch, rhui_info, target_major, target_version, skip
         fobj.write('\n'.join(script_lines))
 
     cmd = ['dnf', 'shell', '-y']
-    cmd += tus_constants.common_dnf_flags(target_major, target_version, skip_rhsm)
+    cmd += tus_constants.common_dnf_flags(target_version, skip_rhsm)
     if enable_only_repoids:
         cmd.append('--disablerepo=*')
         for repoid in sorted(enable_only_repoids):
@@ -365,7 +365,7 @@ def perform_client_swap(context_scratch, rhui_info, target_major, target_version
     if setup.enable_only_repoids_in_copied_files and has_preinstall_copies:
         enable_only_repoids = _parse_repoids_from_copied_files(setup.preinstall_tasks.files_to_copy_into_overlay)
 
-    _swap_clients(context_scratch, rhui_info, target_major, target_version, skip_rhsm, enable_only_repoids)
+    _swap_clients(context_scratch, rhui_info, target_version, skip_rhsm, enable_only_repoids)
 
     _run_postinstall_tasks(context_scratch, setup.postinstall_tasks)
 
