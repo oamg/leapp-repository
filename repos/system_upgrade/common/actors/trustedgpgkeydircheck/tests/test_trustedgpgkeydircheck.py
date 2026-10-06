@@ -1,8 +1,9 @@
+import pytest
+
 from leapp import reporting
 from leapp.libraries.actor import trustedgpgkeydircheck
 from leapp.libraries.common.gpg import GpgKeyInfo
 from leapp.libraries.common.testutils import create_report_mocked
-from leapp.libraries.stdlib import api
 
 _TRUST_DIR = '/trust'
 _PQC_PREFIX = '/trust/pqc/'
@@ -39,49 +40,68 @@ def test_nogpgcheck_skips(monkeypatch):
     assert reporting.create_report.called == 0
 
 
-def test_only_v4_keys_no_report(monkeypatch):
-    _setup(monkeypatch, {'/trust/a': [_v4('fd431d51')], '/trust/b': [_v4('199e2f91')]})
+@pytest.mark.parametrize('keyfiles', [
+    # only standard (v4) keys at the top-level
+    {'/trust/standard-key': [_v4('fd431d51')], '/trust/standard-key-2': [_v4('199e2f91')]},
+    # standard (v4) keys at the top-level and pqc (v6) keys in the 'pqc' subfolder
+    {'/trust/standard-key': [_v4('fd431d51')], '/trust/pqc/pqc-key': [_v6('05707a62')]},
+])
+def test_correct_layout_no_report(monkeypatch, keyfiles):
+    _setup(monkeypatch, keyfiles)
     trustedgpgkeydircheck.process()
     assert reporting.create_report.called == 0
 
 
-def test_v6_key_in_root_inhibits(monkeypatch):
-    _setup(monkeypatch, {'/trust/a': [_v4('fd431d51')], '/trust/pqc-key': [_v6('05707a62')]})
-    trustedgpgkeydircheck.process()
-    assert reporting.create_report.called == 1
-    report = reporting.create_report.report_fields
-    assert reporting.Groups.INHIBITOR in report['groups']
-    assert '/trust/pqc-key' in report['summary']
-    assert '05707a62' in report['summary']
-    assert '/trust/a' not in report['summary']
-
-
-def test_mixed_keyfile_lists_only_v6_ids(monkeypatch):
-    _setup(monkeypatch, {'/trust/mixed': [_v4('fd431d51'), _v6('05707a62')]})
-    trustedgpgkeydircheck.process()
-    assert reporting.create_report.called == 1
-    summary = reporting.create_report.report_fields['summary']
-    assert '/trust/mixed' in summary
-    assert '05707a62' in summary
-    # only the misplaced v6 key is reported, not the correctly placed v4 one
-    assert 'fd431d51' not in summary
-
-
-def test_v6_in_root_inhibits_despite_pqc_subfolder(monkeypatch):
-    # A 'pqc' subfolder exists and holds a correctly placed v6 key, but another
-    # v6 key sits at the top-level: the misplaced one must still inhibit.
-    _setup(monkeypatch, {
-        '/trust/a': [_v4('fd431d51')],
-        '/trust/misplaced': [_v6('05707a62')],
-        '/trust/pqc/correct': [_v6('199e2f91')],
-    })
+@pytest.mark.parametrize('keyfiles, present, absent', [
+    # a pqc (v6) key misplaced at the top-level inhibits; the correct standard key is not reported
+    (
+        {'/trust/standard-key': [_v4('fd431d51')], '/trust/misplaced': [_v6('05707a62')]},
+        ['/trust/misplaced', '05707a62'],
+        ['/trust/standard-key'],
+    ),
+    # a mixed keyfile at the top-level reports only its misplaced pqc (v6) key
+    (
+        {'/trust/mixed': [_v4('fd431d51'), _v6('05707a62')]},
+        ['/trust/mixed', '05707a62'],
+        ['fd431d51'],
+    ),
+    # a pqc (v6) key misplaced at the top-level still inhibits despite a correct 'pqc' subfolder
+    (
+        {
+            '/trust/standard-key': [_v4('fd431d51')],
+            '/trust/misplaced': [_v6('05707a62')],
+            '/trust/pqc/pqc-key': [_v6('199e2f91')],
+        },
+        ['/trust/misplaced', '05707a62'],
+        ['/trust/pqc/pqc-key', '199e2f91'],
+    ),
+    # a standard (v4) key misplaced in the 'pqc' subfolder inhibits; the correct standard key is not reported
+    (
+        {'/trust/standard-key': [_v4('fd431d51')], '/trust/pqc/misplaced': [_v4('199e2f91')]},
+        ['/trust/pqc/misplaced', '199e2f91'],
+        ['/trust/standard-key', 'fd431d51'],
+    ),
+    # a mixed keyfile in the 'pqc' subfolder reports only its misplaced standard (v4) key
+    (
+        {'/trust/pqc/mixed': [_v4('fd431d51'), _v6('05707a62')]},
+        ['/trust/pqc/mixed', 'fd431d51'],
+        ['05707a62'],
+    ),
+    # both a misplaced pqc key and a misplaced standard key are reported in a single report
+    (
+        {'/trust/misplaced': [_v6('05707a62')], '/trust/pqc/misplaced': [_v4('199e2f91')]},
+        ['/trust/misplaced', '05707a62', '/trust/pqc/misplaced', '199e2f91'],
+        [],
+    ),
+])
+def test_misplaced_keys_inhibit(monkeypatch, keyfiles, present, absent):
+    _setup(monkeypatch, keyfiles)
     trustedgpgkeydircheck.process()
     assert reporting.create_report.called == 1
     report = reporting.create_report.report_fields
     assert reporting.Groups.INHIBITOR in report['groups']
     summary = report['summary']
-    assert '/trust/misplaced' in summary
-    assert '05707a62' in summary
-    # the correctly placed key inside the 'pqc' subfolder is not reported
-    assert '/trust/pqc/correct' not in summary
-    assert '199e2f91' not in summary
+    for present_substring in present:
+        assert present_substring in summary
+    for absent_substring in absent:
+        assert absent_substring not in summary
