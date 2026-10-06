@@ -18,7 +18,7 @@ import os
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import tus_constants, tus_repoaccess
-from leapp.libraries.common import repofileutils
+from leapp.libraries.common import repofileutils, utils
 from leapp.libraries.stdlib import api, CalledProcessError
 
 _YUM_REPOS_D = '/etc/yum.repos.d'
@@ -31,6 +31,7 @@ _EXCLUDED_REPOID_MARKERS = ('-source-', '-debug-', 'source')
 
 def _copy_file_dst(copy_file):
     """Return the intended destination for a CopyFile (dst may be null → src)."""
+    # TODO(pstodulk): peform the action in data input loading??
     return copy_file.dst if copy_file.dst else copy_file.src
 
 
@@ -42,60 +43,80 @@ def _resolve_copy_target(context, copy_file):
     file lands at ``destination/basename(source)``; otherwise the destination
     path is used unchanged.
     """
-    # FIXME: why this function at all? Check it better with the existing code
     dst = _copy_file_dst(copy_file)
     if os.path.isdir(context.full_path(dst)):
         return os.path.join(dst, os.path.basename(copy_file.src))
     return dst
 
+def _sanitized_copy_files_iter(context, copy_files):
+    """
+    Create sanitized iterator over list of CopyFiles.
 
-def _ensure_parent_dir(context, dst):
-    """Create the container-side parent directory of ``dst`` (OSError → hard stop)."""
-    parent = os.path.dirname(context.full_path(dst))
-    # FIXME: better would be context.makedirs instead; also changed behaviour
-    try:
-        if not os.path.isdir(parent):
-            os.makedirs(parent)
-    except OSError as e:
-        raise StopActorExecutionError(
-            message='Failed to create target userspace directories for RHUI.',
-            details={'details': str(e)}
-        )
+    Return tuple src, dst for each CopyFile object in the list. dst is resolved
+    to reflect the expected dst path:
+      * fill it when dst is empty - path should be same as src then
+      * if dst points to a dir, return path dst/fname
+
+    The resulting list is sorted by the destination path. Note that at this
+    moment there is no copy of dirs in this module, so it should not be a problem,
+    but we will want to apply this on other places possibly as well, and probably
+    it's better to be a little bit more defensive as we do not know what will be
+    in future.
+    """
+    # NOTE: written sort this way to not affect input objects; as we do not
+    # expect this to be a long list, it's ok
+    for cfile in sorted(copy_files, lambda x: _resolve_copy_target(context, x)):
+        yield src, _resolve_copy_target(context_scratch, cfile)
 
 
-def _run_preinstall_tasks(context, preinstall_tasks):
+def _run_preinstall_tasks(context_scratch, preinstall_tasks):
     """
     R3 - pre-install tasks into scratch: removals first, then host→container
     copies (with parent dirs created).
     """
     if not preinstall_tasks:
+        api.current_logger().debug('No RHUI preinstall tasks - skipping.')
         return
 
-    # FIXME: add logs
-    for path in preinstall_tasks.files_to_remove:
-        context.remove(path)
+    api.current_logger().debug('Applying RHUI preinstall tasks.')
+    for fpath in preinstall_tasks.files_to_remove:
+        api.current_logger().debug(' -- Removing {} from the scratch container.'.format(fpath))
+        context_scratch.remove(fpath)
 
     for copy_file in preinstall_tasks.files_to_copy_into_overlay:
         # FIXME: this seems weird
         # think about the order.. - maybe update input data?...
-        dst = _resolve_copy_target(context, copy_file)
-        _ensure_parent_dir(context, dst)
-        context.copy_to(copy_file.src, dst)
+        dst = _resolve_copy_target(context_scratch, copy_file)
+        api.current_logger().debug(
+            ' -- Copying {0} in {1} into the scratch container.'
+            .format(copy_file.src, dst)
+        )
+        context_scratch.makedirs(os.path.dirname(dst), exists_ok=True)
+        context_scratch.copy_to(copy_file.src, dst)
 
 
-def _run_postinstall_tasks(context, postinstall_tasks):
+def _run_postinstall_tasks(context_scratch, postinstall_tasks):
     """
     R4 - post-install tasks inside the container: in-container copies to each
     destination (with parent dirs). Applied only after a successful swap.
     """
     if not postinstall_tasks:
+        api.current_logger().debug('No RHUI postinstall tasks - skipping.')
         return
 
+    api.current_logger().debug('Applying RHUI postinstall tasks.')
     for copy_file in postinstall_tasks.files_to_copy:
-        # FIXME. same as above. note original script did not used `-a` option
-        dst = _resolve_copy_target(context, copy_file)
-        _ensure_parent_dir(context, dst)
-        context.call(['cp', '-a', copy_file.src, dst])
+        dst = _resolve_copy_target(context_scratch, copy_file)
+        api.current_logger().debug(
+            ' -- Copying {0} to {1} (inside the scratch container).'
+            .format(copy_file.src, dst)
+        )
+        context_scratch.makedirs(os.path.dirname(dst), exists_ok=True)
+        # NOTE: Note the use of CP instead of `copy_to` function is esential
+        # as this action is designed to be performed inside the scratch
+        # container context - so all paths are ment to be valid inside the container.
+        # See the TargetRHUIPostInstallTasks model.
+        context_scratch.call(['cp', copy_file.src, dst])
 
 
 def _list_repofiles(context):
@@ -199,28 +220,41 @@ def discover_client_exposed_repoids(context, rhui_info):
         _restore_repofiles(context, hidden)
 
 
-def _parse_repoids_from_copied_files(context, rhui_info):
-    """Parse repoids from the pre-install copied ``.repo`` files (parse fail → hard stop)."""
-    # FIXME. just take it from orig code. this bad
-    repoids = set()
-    preinstall_tasks = rhui_info.target_client_setup_info.preinstall_tasks
-    for copy_file in preinstall_tasks.files_to_copy_into_overlay:
-        dst = _resolve_copy_target(context, copy_file)
-        if not dst.endswith('.repo'):
-            continue
+def _parse_repoids_from_copied_files(copy_files):
+    """
+    Parse repoids from the pre-install copied ``.repo`` files.
+
+    Note the function assumes:
+
+        * sources of repofiles have the .repo suffix (no rename of filenames
+          planned for copying)
+        * files were copied correctly
+        * multiple sources does not point to the same destination
+          (so destination is not replaced several times by preinstall tasks)
+
+    Under these conditions, it's safe to parse repofiles from their original
+    paths.
+    """
+    copied_repofiles = [cfile.src for cfile in copy_files if cfile.src.endswith('.repo')]
+    copied_repoids = set()
+    for repofile in copied_repofiles:
         try:
-            repofile = repofileutils.parse_repofile(context.full_path(dst))
-        except Exception as e:  # noqa: E722; repofileutils raises InvalidRepoDefinition
+            repofile_contents = repofileutils.parse_repofile(repofile)
+        except repofileutils.InvalidRepoDefinition as e:
             raise StopActorExecutionError(
-                message='Failed to parse repositories for RHUI.',
-                details={'details': str(e)}
-            )
-        for repo in repofile.data:
-            repoids.add(repo.repoid)
-    return repoids
+                message="Failed to parse repositories for RHUI: {}".format(str(e)),
+                details={
+                    'hint': 'Ensure the repository definition is correct or remove it'
+                            ' if the repository is not required for the upgrade.'
+                            ' Each repository definition must contain the `name` option'
+                            ' and the location of the repository, configured by'
+                            ' baseurl, mirrorlist, or metalink options.'
+                })
+        copied_repoids.update(entry.repoid for entry in repofile_contents.data)
+    return copied_repoids
 
 
-def _swap_clients(context, rhui_info, target_major, releasever, skip_rhsm, enable_only_repoids):
+def _swap_clients(context_scratch, rhui_info, target_major, target_version, skip_rhsm, enable_only_repoids):
     """
     Run the client swap via ``dnf shell`` (transaction: remove source clients →
     install target clients → run). Swap failure → hard stop.
@@ -230,18 +264,17 @@ def _swap_clients(context, rhui_info, target_major, releasever, skip_rhsm, enabl
     if rhui_info.src_client_pkg_names:
         script_lines.append('remove {}'.format(' '.join(rhui_info.src_client_pkg_names)))
     script_lines.append('install {}'.format(' '.join(rhui_info.target_client_pkg_names)))
-    # TODO transaction run?
-    script_lines.append('run')
+    script_lines.append('transaction run')
     script_lines.append('')
-    # TODO name & path
-    # it would be nice to actually standardize paths on which we store such
-    # files.
+    # TODO(pstodulk): name & path:
+    # # it would be nice to actually standardize paths on which we store such
+    # # files. Keeping as it is now until it's decided.
     script_path = '/leapp-rhui-swap.dnfsh'
-    with context.open(script_path, 'w') as fobj:
+    with context_scratch.open(script_path, 'w') as fobj:
         fobj.write('\n'.join(script_lines))
 
     cmd = ['dnf', 'shell', '-y']
-    cmd += tus_constants.common_dnf_flags(target_major, releasever, skip_rhsm)
+    cmd += tus_constants.common_dnf_flags(target_major, target_version, skip_rhsm)
     if enable_only_repoids:
         cmd.append('--disablerepo=*')
         for repoid in sorted(enable_only_repoids):
@@ -250,7 +283,7 @@ def _swap_clients(context, rhui_info, target_major, releasever, skip_rhsm, enabl
 
     try:
         # TODO: update the logging handled; callback_raw=utils.logging_handler
-        context.call(cmd)
+        context_scratch.call(cmd, callback_raw=utils.logging_handler)
     except CalledProcessError as e:
         # FIXME: `inside DNF shell, failed transaction can end with 0 exit code
         # see `tools/dnfshellswap` workaround. As we have already negative
@@ -265,15 +298,15 @@ def _swap_clients(context, rhui_info, target_major, releasever, skip_rhsm, enabl
         # TODO: actually, it would be beneficial to keep the file for debugging
         # purposes. Just we need to standardize first the path in which it will
         # be stored. Otherwise we could input this data via stdin instead.
-        context.remove(script_path)
+        context_scratch.remove(script_path)
 
 
-def _find_client_files(context, rhui_info, target_major):
+def _find_client_files(context_scratch, rhui_info, target_major):
     """Return files installed by the target client rpm(s) (none → hard stop)."""
     client_files = []
     for pkg in rhui_info.target_client_pkg_names:
         try:
-            result = context.call(['rpm', '-ql', pkg], split=True)
+            result = context_scratch.call(['rpm', '-ql', pkg], split=True)
         except CalledProcessError:
             continue
         client_files.extend(result['stdout'])
@@ -286,7 +319,7 @@ def _find_client_files(context, rhui_info, target_major):
     return client_files
 
 
-def _remove_nonclient_injected_files(context, rhui_info, client_files):
+def _remove_nonclient_injected_files(context_scratch, rhui_info, client_files):
     """
     Remove injected setup files whose container destination is not client-owned
     and whose source is not in ``files_supporting_client_operation`` (§13 R5).
@@ -296,15 +329,15 @@ def _remove_nonclient_injected_files(context, rhui_info, client_files):
     client_files = set(client_files)
 
     for copy_file in setup.preinstall_tasks.files_to_copy_into_overlay:
-        dst = _resolve_copy_target(context, copy_file)
+        dst = _resolve_copy_target(context_scratch, copy_file)
         if dst in client_files:
             continue
         if copy_file.src in supporting:
             continue
-        context.remove(dst)
+        context_scratch.remove(dst)
 
 
-def perform_client_swap(context, rhui_info, target_major, releasever, skip_rhsm):
+def perform_client_swap(context_scratch, rhui_info, target_major, target_version, skip_rhsm):
     """
     R5 - orchestrate the whole RHUI client swap inside the scratch container.
 
@@ -319,29 +352,26 @@ def perform_client_swap(context, rhui_info, target_major, releasever, skip_rhsm)
     setup = rhui_info.target_client_setup_info
 
     # R3
-    _run_preinstall_tasks(context, setup.preinstall_tasks)
+    _run_preinstall_tasks(context_scratch, setup.preinstall_tasks)
 
     # R5: when not bootstrapping, stop right after pre-install (no swap etc.).
     if not setup.bootstrap_target_client:
         return
 
-    # TODO: update the name?
     enable_only_repoids = set()
     has_preinstall_copies = bool(
         setup.preinstall_tasks and setup.preinstall_tasks.files_to_copy_into_overlay
     )
     if setup.enable_only_repoids_in_copied_files and has_preinstall_copies:
-        # FIXME: needs to be changed - give it just related content instead of whole msg
-        enable_only_repoids = _parse_repoids_from_copied_files(context, rhui_info)
+        enable_only_repoids = _parse_repoids_from_copied_files(setup.preinstall_tasks.files_to_copy_into_overlay)
 
-    _swap_clients(context, rhui_info, target_major, releasever, skip_rhsm, enable_only_repoids)
+    _swap_clients(context_scratch, rhui_info, target_major, target_version, skip_rhsm, enable_only_repoids)
 
-    # R4
-    _run_postinstall_tasks(context, setup.postinstall_tasks)
+    _run_postinstall_tasks(context_scratch, setup.postinstall_tasks)
 
     # FIXME: different behaviour from the original.
-    client_files = _find_client_files(context, rhui_info, target_major)
-    _remove_nonclient_injected_files(context, rhui_info, client_files)
+    client_files = _find_client_files(context_scratch, rhui_info, target_major)
+    _remove_nonclient_injected_files(context_scratch, rhui_info, client_files)
 
 
 def cleanup_injected_repofiles(context, rhui_info):
