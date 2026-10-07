@@ -13,11 +13,6 @@ OP_MAP = {
     '<=': operator.le
 }
 
-_SUPPORTED_VERSIONS = {
-    '8': {'rhel': ['8.10'], 'rhel-saphana': ['8.10']},
-    '9': {'rhel': ['9.6', '9.8', '9.9'], 'rhel-saphana': ['9.6', '9.8']},
-}
-
 
 def get_major_version(version):
     """
@@ -78,55 +73,6 @@ def get_target_major_version():
     :returns: The major version of the target system.
     """
     return get_major_version(get_target_version())
-
-
-class _SupportedVersionsDict(dict):
-    """
-    Class for _SUPPORTED_VERSIONS lazy evaluation until ipuworkflowconfig actor data
-    is ready.
-    """
-
-    def __init__(self):  # pylint: disable=W0231
-        self.data = {}
-
-    def _feed_supported_versions(self):
-        major = get_source_major_version()
-        if major not in _SUPPORTED_VERSIONS:
-            raise KeyError('{} is not a supported source version of RHEL'.format(major))
-        self.data = _SUPPORTED_VERSIONS[major]
-
-    def __getitem__(self, key):
-        self._feed_supported_versions()
-        return self.data[key]
-
-    def __iter__(self):
-        self._feed_supported_versions()
-        yield from self.data
-
-    def __repr__(self):
-        self._feed_supported_versions()
-        return repr(self.data)
-
-    def __contains__(self, x):
-        self._feed_supported_versions()
-        return x in self.data
-
-    def __len__(self):
-        self._feed_supported_versions()
-        return len(self.data)
-
-    def __str__(self):
-        self._feed_supported_versions()
-        return str(self.data)
-
-
-SUPPORTED_VERSIONS = _SupportedVersionsDict()
-"""
-Deprecated since 2025-03-31.
-
-Use is_supported_version(), or IPUConfig.supported_upgrade_paths to check what source
-versions are supported for the current (release, flavour).
-"""
 
 
 def _version_to_tuple(version):
