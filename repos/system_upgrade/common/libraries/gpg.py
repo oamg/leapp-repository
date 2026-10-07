@@ -88,7 +88,7 @@ def _parse_fp_from_gpg(output):
         if not line or not line.startswith('fpr:'):
             continue
         parts = line.split(':')
-        if len(parts) >= 9 and len(parts[9]) == 40:
+        if len(parts) >= 10 and len(parts[9]) == 40:
             gpg_fps.append(parts[9].lower())
         else:
             api.current_logger().warning(
