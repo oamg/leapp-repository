@@ -85,12 +85,12 @@ def _import_gpg_keys(context, installroot):
         context.call(['rpm', '--root', installroot, '--import', key_path])
 
 
-def _build_dnf_install_cmd(installroot, target_major, releasever, repoids, skip_rhsm, nogpgcheck, packages):
+def _build_dnf_install_cmd(installroot, releasever, repoids, skip_rhsm, nogpgcheck, packages):
     """Assemble the ``dnf install`` command for the userspace build (§10)."""
     cmd = ['dnf', 'install', '-y']
     if nogpgcheck:
         cmd.append('--nogpgcheck')
-    cmd += tus_constants.common_dnf_flags(target_major, releasever, skip_rhsm)
+    cmd += tus_constants.common_dnf_flags(releasever, skip_rhsm)
     cmd += ['--installroot', installroot, '--disablerepo', '*']
     for repoid in repoids:
         cmd += ['--enablerepo', repoid]
