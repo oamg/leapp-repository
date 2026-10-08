@@ -204,8 +204,8 @@ def _discover_distro_and_rhui_target_repositories(context, rhui_info):
             format_list(distro_repoids),
         )
     )
-    rhui_repoids = tus_rhui.discover_client_exposed_repoids(context, inputs.rhui_info)
-    if inputs.rhui_info:
+    rhui_repoids = tus_rhui.discover_client_exposed_repoids(context, rhui_info)
+    if rhui_info:
         api.current_logger().info(
             'The following repoids are considered as provided by RHUI cloud provider for RHEL:{}'
             .format(format_list(rhui_repoids))
