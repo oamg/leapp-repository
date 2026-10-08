@@ -196,7 +196,7 @@ def _inhibit_duplicate_repos(duplicates):
     ])
 
 
-def _discover_distro_and_rhui_target_repositories(context, rhui_info):
+def _discover_distro_and_rhui_target_repositories(context, rhui_info, target_version):
     distro_repoids = set(distro.get_target_distro_repoids(context))
     api.current_logger().info(
         "The following repoids are considered as provided by the '{}' distribution:{}".format(
@@ -204,7 +204,7 @@ def _discover_distro_and_rhui_target_repositories(context, rhui_info):
             format_list(distro_repoids),
         )
     )
-    rhui_repoids = tus_rhui.discover_client_exposed_repoids(context, rhui_info)
+    rhui_repoids = tus_rhui.discover_client_exposed_repoids(context, rhui_info, target_version)
     if rhui_info:
         api.current_logger().info(
             'The following repoids are considered as provided by RHUI cloud provider for RHEL:{}'
@@ -221,7 +221,9 @@ def select_target_repositories(context, inputs):
     :raises StopActorExecution: on any of inhibitors #2-#5.
     :raises StopActorExecutionError: on error (e.g. failed parsing repofiles)
     """
-    distro_repoids, rhui_repoids = _discover_distro_and_rhui_target_repositories(context, inputs.rhui_info, get_target_version())
+    distro_repoids, rhui_repoids = _discover_distro_and_rhui_target_repositories(
+        context, inputs.rhui_info, get_target_version()
+    )
     if _base_repo_check_applies(inputs.skip_rhsm) and not _has_base_repos(distro_repoids):
         # NOTE(pstodulk): RHUI is specific case - in case of problems, the root cause
         # is different from this inhibitor; either handled already earlier or later
