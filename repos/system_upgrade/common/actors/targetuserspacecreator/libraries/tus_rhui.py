@@ -19,6 +19,7 @@ import os
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import tus_constants, tus_repoaccess
 from leapp.libraries.common import repofileutils, utils
+from leapp.libraries.common.config.version import get_major_version
 from leapp.libraries.stdlib import api, CalledProcessError
 
 _YUM_REPOS_D = '/etc/yum.repos.d'
@@ -48,6 +49,7 @@ def _resolve_copy_target(context, copy_file):
         return os.path.join(dst, os.path.basename(copy_file.src))
     return dst
 
+
 def _sanitized_copy_files_iter(context, copy_files):
     """
     Create sanitized iterator over list of CopyFiles.
@@ -65,8 +67,8 @@ def _sanitized_copy_files_iter(context, copy_files):
     """
     # NOTE: written sort this way to not affect input objects; as we do not
     # expect this to be a long list, it's ok
-    for cfile in sorted(copy_files, lambda x: _resolve_copy_target(context, x)):
-        yield copy_files.src, _resolve_copy_target(context, cfile)
+    for cfile in sorted(copy_files, key=lambda x: _resolve_copy_target(context, x)):
+        yield cfile.src, _resolve_copy_target(context, cfile)
 
 
 def _run_preinstall_tasks(context_scratch, preinstall_tasks):
@@ -296,22 +298,26 @@ def _swap_clients(context_scratch, rhui_info, target_version, skip_rhsm, enable_
         context_scratch.remove(script_path)
 
 
-def _find_client_files(context_scratch, rhui_info, target_major):
+def _find_rhui_client_files(context_scratch, pkgs, target_major_version):
     """Return files installed by the target client rpm(s) (none → hard stop)."""
-    client_files = []
-    for pkg in rhui_info.target_client_pkg_names:
-        try:
-            result = context_scratch.call(['rpm', '-ql', pkg], split=True)
-        except CalledProcessError:
-            continue
-        client_files.extend(result['stdout'])
-
-    if not client_files:
-        raise StopActorExecutionError(
-            message='Could not find the RHEL {} RHUI client rpm(s) needed to'
-                    ' access the target content.'.format(target_major)
+    cmd = ['rpm', '-ql'] + pkgs
+    try:
+        rpm_query_result = context_scratch.call(cmd, split=True)
+    except CalledProcessError as err:
+        api.current_logger().critical(
+            'Failed to query files owned by target RHUI clients (clients=%s). This is caused'
+            ' by failing to install the target clients during the client-swap step.'
+            ' Full error: %s',
+            pkgs, err
         )
-    return client_files
+
+        client_rpms = ', '.join(pkgs)
+        raise StopActorExecutionError(
+            f'Could not find the RHEL {target_major_version} RHUI clients ({client_rpms})'
+            ' in the cloud provider\'s client repository.'
+        )
+
+    return set(rpm_query_result['stdout'])
 
 
 def _remove_nonclient_injected_files(context_scratch, rhui_info, client_files):
@@ -321,17 +327,14 @@ def _remove_nonclient_injected_files(context_scratch, rhui_info, client_files):
     """
     setup = rhui_info.target_client_setup_info
     supporting = set(setup.files_supporting_client_operation)
-    client_files = set(client_files)
 
     for src, dst in _sanitized_copy_files_iter(context_scratch, setup.preinstall_tasks.files_to_copy_into_overlay):
-        if dst in client_files:
-            continue
-        if src in supporting:
+        if dst in client_files or src in supporting:
             continue
         context_scratch.remove(dst)
 
 
-def perform_client_swap(context_scratch, rhui_info, target_major, target_version, skip_rhsm):
+def perform_client_swap(context_scratch, rhui_info, target_version, skip_rhsm):
     """
     R5 - orchestrate the whole RHUI client swap inside the scratch container.
 
@@ -363,8 +366,11 @@ def perform_client_swap(context_scratch, rhui_info, target_major, target_version
 
     _run_postinstall_tasks(context_scratch, setup.postinstall_tasks)
 
-    # FIXME: different behaviour from the original.
-    client_files = _find_client_files(context_scratch, rhui_info, target_major)
+    client_files = _find_rhui_client_files(
+        context_scratch,
+        rhui_info.target_client_pkg_names,
+        get_major_version(target_version)
+    )
     _remove_nonclient_injected_files(context_scratch, rhui_info, client_files)
 
 

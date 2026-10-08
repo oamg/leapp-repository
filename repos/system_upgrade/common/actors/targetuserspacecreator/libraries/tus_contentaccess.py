@@ -74,7 +74,6 @@ def establish(context_scratch, inputs):
         tus_rhui.perform_client_swap(
             context_scratch,
             inputs.rhui_info,
-            target_major,
             get_target_version(),
             inputs.skip_rhsm,
         )

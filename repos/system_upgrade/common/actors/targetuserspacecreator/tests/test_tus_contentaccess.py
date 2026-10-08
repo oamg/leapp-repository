@@ -150,8 +150,8 @@ def test_establish_passes_expected_arguments_to_rhui_swap(monkeypatch, skip_rhsm
 
     tus_contentaccess.establish(context, inputs)
 
-    # perform_client_swap(context, rhui_info, target_major, releasever, skip_rhsm)
-    assert captured['swap_args'] == (context, rhui_info, '9', '9.6', skip_rhsm)
+    # perform_client_swap(context, rhui_info, releasever, skip_rhsm)
+    assert captured['swap_args'] == (context, rhui_info, '9.6', skip_rhsm)
 
 
 def test_establish_propagates_missing_target_certificate(monkeypatch):
