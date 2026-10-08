@@ -221,7 +221,7 @@ def select_target_repositories(context, inputs):
     :raises StopActorExecution: on any of inhibitors #2-#5.
     :raises StopActorExecutionError: on error (e.g. failed parsing repofiles)
     """
-    distro_repoids, rhui_repoids = _discover_distro_and_rhui_target_repositories(context, inputs.rhui_info)
+    distro_repoids, rhui_repoids = _discover_distro_and_rhui_target_repositories(context, inputs.rhui_info, get_target_version())
     if _base_repo_check_applies(inputs.skip_rhsm) and not _has_base_repos(distro_repoids):
         # NOTE(pstodulk): RHUI is specific case - in case of problems, the root cause
         # is different from this inhibitor; either handled already earlier or later

@@ -17,7 +17,7 @@ Leaf module: imports shared leapp libraries, ``tus_constants`` and the frozen
 import os
 
 from leapp.exceptions import StopActorExecutionError
-from leapp.libraries.actor import tus_constants, tus_repoaccess
+from leapp.libraries.actor import tus_constants
 from leapp.libraries.common import repofileutils, utils
 from leapp.libraries.common.config.version import get_major_version
 from leapp.libraries.stdlib import api, CalledProcessError
@@ -118,82 +118,59 @@ def _run_postinstall_tasks(context_scratch, postinstall_tasks):
 
 
 def _list_repofiles(context):
-    """Return the basenames of all ``*.repo`` files in the container's yum.repos.d."""
+    """
+    Return the paths of all ``*.repo`` files in /etc/yum.repos.d
+
+    The paths are relative to ``context.base_dir``
+    """
     repos_dir = context.full_path(_YUM_REPOS_D)
     if not os.path.isdir(repos_dir):
         return []
-    return [name for name in os.listdir(repos_dir) if name.endswith('.repo')]
+
+    basenames = [name for name in os.listdir(repos_dir) if name.endswith('.repo')]
+    return [os.path.join(_YUM_REPOS_D, name) for name in basenames]
 
 
-def _client_owned_repofiles(context, rhui_info):
+def _repofiles_copied_at_setup(context, files_to_copy_into_overlay):
     """
-    Repofiles owned by the target RHUI client rpm(s).
+    Paths of the ``*.repo`` files injected by the pre-install copy tasks.
 
-    When ``bootstrap_target_client`` is false, no files are treated as
-    client-owned (§13 R2).
+    The paths are relative to ``context.base_dir``
     """
-    if not rhui_info.target_client_setup_info.bootstrap_target_client:
-        return set()
-    # FIXME old code used rpm -ql, check if that's better fit
-    return set(tus_repoaccess._get_files_owned_by_rpms(
-        context, _YUM_REPOS_D, pkgs=rhui_info.target_client_pkg_names))
-
-
-def _setup_copied_repofiles(context, rhui_info):
-    """Basenames of the ``*.repo`` files injected by the pre-install copy tasks."""
     setup_copied = set()
-    preinstall_tasks = rhui_info.target_client_setup_info.preinstall_tasks
-    if not preinstall_tasks:
-        return setup_copied
-    for dummy_src, dst in _sanitized_copy_files_iter(context, preinstall_tasks.files_to_copy_into_overlay):
+    for dummy_src, dst in _sanitized_copy_files_iter(context, files_to_copy_into_overlay):
         if dst.endswith('.repo'):
-            setup_copied.add(os.path.basename(dst))
+            setup_copied.add(dst)
     return setup_copied
 
 
-def _hide_repofiles(context, filenames):
-    """Rename the given repofiles out of the way; return list of (hidden, original)."""
-    hidden = []
-    for name in filenames:
-        original = os.path.join(_YUM_REPOS_D, name)
-        hidden_path = original + _HIDDEN_SUFFIX
-        context.call(['mv', original, hidden_path])
-        hidden.append((hidden_path, original))
-    return hidden
+def _dnf_repolist_repoids(context, target_version):
+    """
+    Run ``dnf repolist`` and return the enabled repoids, excluding source/debug
 
-
-def _restore_repofiles(context, hidden):
-    """Restore every previously hidden repofile back to its original name."""
-    for hidden_path, original in hidden:
-        # FIXME os.rename
-        context.call(['mv', hidden_path, original])
-
-
-def _repolist_repoids(context):
-    """Run ``dnf repolist`` and return the enabled repoids, excluding source/debug."""
-    # FIXME this was done better in the old version, e.g. filtering using --(enable|disable)repo
-    try:
-        result = context.call(['dnf', 'repolist', '--enabled', '--quiet'], split=True)
-    except CalledProcessError as e:
-        raise StopActorExecutionError(
-            message='Failed to retrieve repoids provided by target RHUI clients.',
-            details={'details': str(e)}
-        )
-
+    :return: List of repoids enabled in the cotext, excluding source/debug
+    :raises CalledProcessError: When the underlying ``dnf repolist`` call fails
+    """
     repoids = set()
-    for line in result['stdout']:
-        line = line.strip()
-        # FIXME this probably doesn't work, should be Repo-id, we should redo the function using old code probably
-        if not line or line.lower().startswith('repo id'):
-            continue
-        repoid = line.split()[0]
-        if any(marker in repoid for marker in _EXCLUDED_REPOID_MARKERS):
-            continue
-        repoids.add(repoid)
+    cmd = [
+        'dnf', 'repolist',
+        '--releasever', target_version,
+        '-v',
+        '--enablerepo', '*',
+        '--disablerepo', '*-source-*',
+        '--disablerepo', '*-debug-*',
+    ]
+    stdout = context.call(cmd, split=True)['stdout']
+
+    def extract_repoid_from_line(line):
+        return line.split(':', 1)[1].strip()
+
+    repoid_lines = [line for line in stdout.split('\n') if line.startswith('Repo-id')]
+    repoids.update({extract_repoid_from_line(line) for line in repoid_lines})
     return repoids
 
 
-def discover_client_exposed_repoids(context, rhui_info):
+def discover_client_exposed_repoids(context, rhui_info, target_version):
     """
     R2 - discover the repoids exposed by the RHUI clients, leaving
     ``/etc/yum.repos.d`` byte-identical.
@@ -205,16 +182,52 @@ def discover_client_exposed_repoids(context, rhui_info):
     if not rhui_info:
         return set()
 
+    def with_hidden_suffix(path):
+        return '{}.path'.format(path)
+
+    setup_info = rhui_info.target_client_setup_info
+
     all_repofiles = set(_list_repofiles(context))
-    keep_visible = _client_owned_repofiles(context, rhui_info) | _setup_copied_repofiles(context, rhui_info)
+    api.current_logger().debug(
+        '(RHUI Setup) All available repofiles: {0}'.format(' '.join(all_repofiles))
+    )
+
+    target_access_repofiles = set()
+    if setup_info.bootstrap_target_client:
+        target_access_repofiles = _find_rhui_client_repofiles(
+            context, rhui_info, get_major_version(target_version)
+        )
+
+    # Exclude repofiles used to setup the target rhui access as on some platforms
+    # the repos provided by the client are not sufficient to install the client
+    # into target userspace (GCP)
+    copy_tasks = setup_info.preinstall_tasks.files_to_copy_into_overlay
+    repofiles_copied_at_setup = _repofiles_copied_at_setup(context, copy_tasks)
+
+    # Make sure the path is relative to context.base_dir in all of the sets
+    keep_visible = target_access_repofiles | repofiles_copied_at_setup
     foreign = all_repofiles - keep_visible
 
-    hidden = []
+    api.current_logger().debug(
+        'The following repofiles are considered as unknown to'
+        ' the target RHUI content setup and will be ignored: {0}'
+    ).format(' '.join(foreign))
+
+    # Rename non-client repofiles so they will not be recognized when running dnf repolist
+    for repofile in foreign:
+        os.rename(repofile, with_hidden_suffix(repofile))
+
     try:
-        hidden = _hide_repofiles(context, foreign)
-        return _repolist_repoids(context)
+        return _dnf_repolist_repoids(context, target_version)
+    except CalledProcessError as e:
+        raise StopActorExecutionError(
+            message='Failed to retrieve repoids provided by target RHUI clients.',
+            details={'details': str(e), 'stderr': e.stderr}
+        )
     finally:
-        _restore_repofiles(context, hidden)
+        # Revert the renaming of non-client repofiles
+        for repofile in foreign:
+            os.rename(with_hidden_suffix(repofile), repofile)
 
 
 def _parse_repoids_from_copied_files(copy_files):
@@ -298,11 +311,43 @@ def _swap_clients(context_scratch, rhui_info, target_version, skip_rhsm, enable_
         context_scratch.remove(script_path)
 
 
-def _find_rhui_client_files(context_scratch, pkgs, target_major_version):
+def _query_rpm_for_pkg_files(context_scratch, pkgs):
     """Return files installed by the target client rpm(s) (none → hard stop)."""
     cmd = ['rpm', '-ql'] + pkgs
+    result = context_scratch.call(cmd, split=True)
+    return set(result['stdout'])
+
+
+def _find_rhui_client_repofiles(context, pkgs, target_major_version):
+    """
+    Return repofiles installed by the target client rpm(s)
+
+    The paths are relative to ``context.base_dir``
+    """
     try:
-        rpm_query_result = context_scratch.call(cmd, split=True)
+        owned_files = _query_rpm_for_pkg_files(context, pkgs)
+    except CalledProcessError as err:
+        # unclear what might have gone wrong here, the clients should be
+        # properly installed here, report a generic failure with stderr
+        client_rpms = ', '.join(pkgs)
+        msg = (
+            f'Failed to query repofiles owned by the RHEL {target_major_version}'
+            f' RHUI clients {client_rpms}'
+        )
+        raise StopActorExecutionError(msg, details={'details': str(err)})
+
+    def is_repofile(path):
+        dirname = os.path.dirname(path)
+        basename = os.path.basename(path)
+        return dirname == '/etc/yum.repos.d' and basename.endswith('.repo')
+
+    return {path for path in owned_files if is_repofile(path)}
+
+
+def _find_rhui_client_files(context_scratch, pkgs, target_major_version):
+    """Return files installed by the target client rpm(s) (none → hard stop)."""
+    try:
+        return _query_rpm_for_pkg_files(context_scratch, pkgs)
     except CalledProcessError as err:
         api.current_logger().critical(
             'Failed to query files owned by target RHUI clients (clients=%s). This is caused'
@@ -316,8 +361,6 @@ def _find_rhui_client_files(context_scratch, pkgs, target_major_version):
             f'Could not find the RHEL {target_major_version} RHUI clients ({client_rpms})'
             ' in the cloud provider\'s client repository.'
         )
-
-    return set(rpm_query_result['stdout'])
 
 
 def _remove_nonclient_injected_files(context_scratch, rhui_info, client_files):
