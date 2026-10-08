@@ -23,11 +23,6 @@ from leapp.libraries.common.config.version import get_major_version
 from leapp.libraries.stdlib import api, CalledProcessError
 
 _YUM_REPOS_D = '/etc/yum.repos.d'
-# TODO?
-_HIDDEN_SUFFIX = '.leapp-hidden'
-
-# repoid substrings excluded from the client-repoid discovery repolist (§13 R2).
-_EXCLUDED_REPOID_MARKERS = ('-source-', '-debug-', 'source')
 
 
 def _copy_file_dst(copy_file):
