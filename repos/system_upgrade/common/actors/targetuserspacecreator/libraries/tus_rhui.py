@@ -65,10 +65,8 @@ def _sanitized_copy_files_iter(context, copy_files):
     it's better to be a little bit more defensive as we do not know what will be
     in future.
     """
-    # NOTE: written sort this way to not affect input objects; as we do not
-    # expect this to be a long list, it's ok
-    for cfile in sorted(copy_files, key=lambda x: _resolve_copy_target(context, x)):
-        yield cfile.src, _resolve_copy_target(context, cfile)
+    src_dst_pairs = [(c.src, _resolve_copy_target(context, c)) for c in copy_files]
+    yield from sorted(src_dst_pairs, key=lambda p: p[1])
 
 
 def _run_preinstall_tasks(context_scratch, preinstall_tasks):
