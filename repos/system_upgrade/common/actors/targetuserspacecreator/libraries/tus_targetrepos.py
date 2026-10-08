@@ -138,7 +138,8 @@ def _inhibit_missing_custom_repos(missing_custom_repos):
     ])
 
 
-def _inhibit_no_enabled_target_repos(target_major_ver, target_ver):
+def _inhibit_no_enabled_target_repos(target_ver):
+    target_major_ver = get_major_version(target_ver)
     reporting.create_report([
         reporting.Title('There are no enabled target repositories'),
         reporting.Summary(
@@ -195,6 +196,23 @@ def _inhibit_duplicate_repos(duplicates):
     ])
 
 
+def _discover_distro_and_rhui_target_repositories(context, rhui_info):
+    distro_repoids = set(distro.get_target_distro_repoids(context))
+    api.current_logger().info(
+        "The following repoids are considered as provided by the '{}' distribution:{}".format(
+            get_target_distro_id(),
+            format_list(distro_repoids),
+        )
+    )
+    rhui_repoids = tus_rhui.discover_client_exposed_repoids(context, inputs.rhui_info)
+    if inputs.rhui_info:
+        api.current_logger().info(
+            'The following repoids are considered as provided by RHUI cloud provider for RHEL:{}'
+            .format(format_list(rhui_repoids))
+        )
+    return distro_repoids | rhui_repoids
+
+
 def select_target_repositories(context, inputs):
     """
     Discover and select the usable target repositories (§7, §4 step 4).
@@ -203,41 +221,30 @@ def select_target_repositories(context, inputs):
     :raises StopActorExecution: on any of inhibitors #2-#5.
     :raises StopActorExecutionError: on error (e.g. failed parsing repofiles)
     """
-    target_major_ver = get_target_major_version()
-    target_ver = get_target_version()
-
-    target_repositories = inputs.target_repositories
-
-    distro_repoids = set(distro.get_target_distro_repoids(context))
-    # TODO on orig this only works with distro_repoids, but maybe it should count with rhui_repoids too?
-    api.current_logger().info(
-        "The following repoids are considered as provided by the '{}' distribution:{}".format(
-            get_target_distro_id(),
-            format_list(distro_repoids),
-        )
-    )
+    distro_repoids, rhui_repoids = _discover_distro_and_rhui_target_repositories(context, inputs.rhui_info)
     if _base_repo_check_applies(inputs.skip_rhsm) and not _has_base_repos(distro_repoids):
-        _inhibit_no_base_repos(target_major_ver)
+        # NOTE(pstodulk): RHUI is specific case - in case of problems, the root cause
+        # is different from this inhibitor; either handled already earlier or later
+        _inhibit_no_base_repos(get_target_major_version())
         raise StopActorExecution()
 
-    rhui_repoids = tus_rhui.discover_client_exposed_repoids(context, inputs.rhui_info)
-
-    discovered = distro_repoids | rhui_repoids
     try:
         available = _all_available_repoids(context)
     except repofileutils.InvalidRepoDefinition as e:
         raise StopActorExecutionError(
-            message=f"Failed to parse available repoids: {str(e)}",
+            message=f'Failed to parse available repoids: {str(e)}',
             details={
                 'hint': 'Ensure the repository definition is correct or remove it '
                         'if the repository is not required for the upgrade.'
             })
 
+    target_repositories = inputs.target_repositories
     requested_distro = _requested_distro_repoids(target_repositories)
     requested_custom = _requested_custom_repoids(target_repositories)
 
-    selected_distro = requested_distro & discovered
-    # This TODO is preserved from the code before refactor it's about: requested_distro - distro_repoids
+    discovered_repoids = distro_repoids | rhui_repoids
+    selected_distro = requested_distro & discovered_repoids
+    # This TODO is preserved from the code before refactor it's about: requested_distro - discovered_repoids
 
     # TODO: We shall report that the RHEL repos that we deem necessary for
     # the upgrade are not available; but currently it would just print bunch of
@@ -266,7 +273,7 @@ def select_target_repositories(context, inputs):
 
     # Inhibitor #4 - no enabled target repositories.
     if not (selected_distro | selected_custom):
-        _inhibit_no_enabled_target_repos(target_major_ver, target_ver)
+        _inhibit_no_enabled_target_repos(get_target_version())
         raise StopActorExecution()
 
     # Inhibitor #5 - missing custom target repositories.
