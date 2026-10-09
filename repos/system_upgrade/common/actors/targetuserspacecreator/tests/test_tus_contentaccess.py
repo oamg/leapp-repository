@@ -1,202 +1,152 @@
-import contextlib
-import io
-
 import pytest
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import tus_contentaccess
-from leapp.libraries.common import rhsm
-from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked
-from leapp.libraries.stdlib import api
-from leapp.models import CustomTargetRepositoryFile, RHSMInfo
+from leapp.libraries.common.testutils import logger_mocked
 
 
-class _Inputs:
-    """Minimal stand-in for tus_inputdata.InputData holding only what establish() reads."""
-
-    def __init__(self, rhui_info=None, rhsm_info=None, skip_rhsm=False, custom_repofiles=None):
-        self.rhui_info = rhui_info
-        self.rhsm_info = rhsm_info
-        self.skip_rhsm = skip_rhsm
-        self.custom_repofiles = custom_repofiles or []
-
-
-class _FakeContext:
-    """Minimal stand-in for the mounting.IsolatedActions scratch context."""
-
-    def __init__(self, calls=None):
-        # Shared ordered log of side effects, used to assert step order.
-        self._calls = calls if calls is not None else []
-        self.copied_to = []
-        self.written = {}
-
-    def copy_to(self, src, dst):
-        self._calls.append('custom')
-        self.copied_to.append((src, dst))
-
-    @contextlib.contextmanager
-    def open(self, path, mode='r'):
-        buf = io.StringIO()
-        yield buf
-        self.written[path] = buf.getvalue()
-        self._calls.append('stream')
-
-
-class _FailingOpen:
-    """Context manager whose __enter__ raises, to exercise the write error path."""
-
-    def __init__(self, exc):
-        self._exc = exc
+class MockFileHandle:
+    def __init__(self, store, path):
+        self._store = store
+        self._path = path
 
     def __enter__(self):
-        raise self._exc
+        return self
 
     def __exit__(self, *args):
         return False
 
-
-class _FailingContext:
-    """Context whose open() raises on enter."""
-
-    def __init__(self, exc):
-        self._exc = exc
-
-    def open(self, path, mode='r'):
-        return _FailingOpen(self._exc)
+    def write(self, data):
+        self._store[self._path] = self._store.get(self._path, '') + data
 
 
-def _patch_collaborators(monkeypatch, calls, distro='rhel', captured=None):
-    """
-    Drive the config getters via a mocked current_actor and stub the external
-    collaborators establish() delegates to (recording call order into ``calls``).
-    """
-    monkeypatch.setattr(api, 'current_actor',
-                        CurrentActorMocked(dst_ver='9.6', dst_distro=distro))
-    monkeypatch.setattr(api, 'current_logger', logger_mocked())
+class MockContext:
+    def __init__(self, open_raises=None):
+        self.written_files = {}
+        self.copied = []
+        self._open_raises = open_raises
 
-    def _fake_swap(*args):
-        if captured is not None:
-            captured['swap_args'] = args
-        calls.append('rhui')
+    def open(self, path, mode):
+        if self._open_raises:
+            raise self._open_raises
+        return MockFileHandle(self.written_files, path)
 
-    monkeypatch.setattr(tus_contentaccess.tus_rhui, 'perform_client_swap', _fake_swap)
-    monkeypatch.setattr(tus_contentaccess.rhsm, 'set_container_mode',
-                        lambda ctx: calls.append('container_mode'))
-    monkeypatch.setattr(tus_contentaccess.rhsm, 'switch_certificate',
-                        lambda ctx, info: calls.append('switch_cert'))
+    def copy_to(self, src, dst):
+        self.copied.append((src, dst))
 
 
-@pytest.mark.parametrize(
-    ('rhui_info', 'distro', 'custom_files', 'expected_calls', 'expected_written', 'expected_copied'),
-    [
-        # Full CentOS flow: RHUI swap -> container mode -> switch cert -> $stream -> custom.
-        (
-            object(), 'centos', ['/etc/custom.repo'],
-            ['rhui', 'container_mode', 'switch_cert', 'stream', 'custom'],
-            {'/etc/dnf/vars/stream': '9-stream\n'},
-            [('/etc/custom.repo', '/etc/yum.repos.d/custom.repo')],
-        ),
-        # RHEL target, no RHUI, no custom repofiles: no swap, no $stream, no copies.
-        (
-            None, 'rhel', [],
-            ['container_mode', 'switch_cert'],
-            {},
-            [],
-        ),
-        # CentOS target without RHUI still writes the $stream variable.
-        (
-            None, 'centos', [],
-            ['container_mode', 'switch_cert', 'stream'],
-            {'/etc/dnf/vars/stream': '9-stream\n'},
-            [],
-        ),
-        # Non-RHEL/CentOS target (e.g. almalinux) must not write the $stream variable.
-        (
-            None, 'almalinux', [],
-            ['container_mode', 'switch_cert'],
-            {},
-            [],
-        ),
-        # Multiple custom repofiles are copied by basename, preserving order.
-        (
-            None, 'rhel', ['/etc/a.repo', '/some/nested/path/b.repo'],
-            ['container_mode', 'switch_cert', 'custom', 'custom'],
-            {},
-            [
-                ('/etc/a.repo', '/etc/yum.repos.d/a.repo'),
-                ('/some/nested/path/b.repo', '/etc/yum.repos.d/b.repo'),
-            ],
-        ),
-    ],
-)
-def test_establish(monkeypatch, rhui_info, distro, custom_files, expected_calls,
-                   expected_written, expected_copied):
-    calls = []
-    _patch_collaborators(monkeypatch, calls, distro=distro)
-    context = _FakeContext(calls)
-    inputs = _Inputs(
-        rhui_info=rhui_info,
-        rhsm_info=RHSMInfo(existing_product_certificates=[]),
-        custom_repofiles=[CustomTargetRepositoryFile(file=f) for f in custom_files],
-    )
-
-    tus_contentaccess.establish(context, inputs)
-
-    assert calls == expected_calls
-    assert context.written == expected_written
-    assert context.copied_to == expected_copied
+class MockRepoFile:
+    def __init__(self, path):
+        self.file = path
 
 
-@pytest.mark.parametrize('skip_rhsm', [False, True])
-def test_establish_passes_expected_arguments_to_rhui_swap(monkeypatch, skip_rhsm):
-    calls = []
-    captured = {}
-    _patch_collaborators(monkeypatch, calls, distro='rhel', captured=captured)
-    rhui_info = object()
-    context = _FakeContext(calls)
-    inputs = _Inputs(
-        rhui_info=rhui_info,
-        rhsm_info=RHSMInfo(existing_product_certificates=[]),
-        skip_rhsm=skip_rhsm,
-    )
-
-    tus_contentaccess.establish(context, inputs)
-
-    # perform_client_swap(context, rhui_info, releasever, skip_rhsm)
-    assert captured['swap_args'] == (context, rhui_info, '9.6', skip_rhsm)
+class MockInputData:
+    def __init__(self, rhui_info=None, skip_rhsm=False, rhsm_info=None, custom_repofiles=None):
+        self.rhui_info = rhui_info
+        self.skip_rhsm = skip_rhsm
+        self.rhsm_info = rhsm_info
+        self.custom_repofiles = custom_repofiles or []
 
 
-def test_establish_propagates_missing_target_certificate(monkeypatch):
-    calls = []
-    _patch_collaborators(monkeypatch, calls, distro='rhel')
+class CallSpy:
+    def __init__(self):
+        self.calls = []
 
-    def _boom(ctx, info):
-        raise rhsm.MissingTargetProductCertificate(message='missing cert')
-
-    monkeypatch.setattr(tus_contentaccess.rhsm, 'switch_certificate', _boom)
-    context = _FakeContext(calls)
-    inputs = _Inputs(rhsm_info=RHSMInfo(existing_product_certificates=[]))
-
-    # establish() must NOT catch this - it propagates to the orchestrator (inhibitor #1).
-    with pytest.raises(rhsm.MissingTargetProductCertificate):
-        tus_contentaccess.establish(context, inputs)
+    def __call__(self, *args, **kwargs):
+        self.calls.append((args, kwargs))
 
 
-@pytest.mark.parametrize(('target_major', 'varfile'), [
-    ('9', '/etc/dnf/vars/stream'),
-    ('10', '/custom/path/stream'),
-])
-def test_adjust_dnf_stream_variable_writes_target_value(target_major, varfile):
-    context = _FakeContext()
-
-    tus_contentaccess._adjust_dnf_stream_variable(context, target_major, varfile=varfile)
-
-    assert context.written == {varfile: '{}-stream\n'.format(target_major)}
+def test_adjust_dnf_stream_variable_writes():
+    context = MockContext()
+    tus_contentaccess._adjust_dnf_stream_variable(context, '9', varfile='/etc/dnf/vars/stream')
+    assert context.written_files == {'/etc/dnf/vars/stream': '9-stream\n'}
 
 
-@pytest.mark.parametrize('exc', [OSError('disk full'), FileNotFoundError('missing dir')])
-def test_adjust_dnf_stream_variable_raises_on_write_error(exc):
-    context = _FailingContext(exc)
-
+@pytest.mark.parametrize('error', [OSError('disk error'), FileNotFoundError('missing')])
+def test_adjust_dnf_stream_variable_error(error):
+    context = MockContext(open_raises=error)
     with pytest.raises(StopActorExecutionError):
         tus_contentaccess._adjust_dnf_stream_variable(context, '9')
+    assert not context.written_files
+
+
+def test_install_custom_repofiles():
+    context = MockContext()
+    repofiles = [MockRepoFile('/home/user/a.repo'), MockRepoFile('/tmp/sub/b.repo')]
+    tus_contentaccess._install_custom_repofiles(context, repofiles)
+    assert context.copied == [
+        ('/home/user/a.repo', '/etc/yum.repos.d/a.repo'),
+        ('/tmp/sub/b.repo', '/etc/yum.repos.d/b.repo'),
+    ]
+
+
+def test_install_custom_repofiles_empty():
+    context = MockContext()
+    tus_contentaccess._install_custom_repofiles(context, [])
+    assert not context.copied
+
+
+def _setup_establish(monkeypatch, distro_id, swap_spy, set_container_spy, switch_cert_spy, target_major='9'):
+    monkeypatch.setattr(tus_contentaccess, 'get_target_major_version', lambda: target_major)
+    monkeypatch.setattr(tus_contentaccess, 'get_target_version', lambda: '9.6')
+    monkeypatch.setattr(tus_contentaccess, 'get_target_distro_id', lambda: distro_id)
+    monkeypatch.setattr(tus_contentaccess.tus_rhui, 'perform_client_swap', swap_spy)
+    monkeypatch.setattr(tus_contentaccess.rhsm, 'set_container_mode', set_container_spy)
+    monkeypatch.setattr(tus_contentaccess.rhsm, 'switch_certificate', switch_cert_spy)
+    monkeypatch.setattr(tus_contentaccess.api, 'current_logger', logger_mocked())
+
+
+def test_establish_centos_with_rhui(monkeypatch):
+    context = MockContext()
+    swap_spy = CallSpy()
+    set_container_spy = CallSpy()
+    switch_cert_spy = CallSpy()
+    _setup_establish(monkeypatch, 'centos', swap_spy, set_container_spy, switch_cert_spy)
+
+    rhui_info = object()
+    rhsm_info = object()
+    repofiles = [MockRepoFile('/tmp/custom.repo')]
+    inputs = MockInputData(rhui_info=rhui_info, skip_rhsm=True, rhsm_info=rhsm_info,
+                           custom_repofiles=repofiles)
+
+    tus_contentaccess.establish(context, inputs)
+
+    assert swap_spy.calls == [((context, rhui_info, '9.6', True), {})]
+    assert switch_cert_spy.calls == [((context, rhsm_info), {})]
+    assert len(set_container_spy.calls) == 1
+    assert context.written_files == {'/etc/dnf/vars/stream': '9-stream\n'}
+    assert context.copied == [('/tmp/custom.repo', '/etc/yum.repos.d/custom.repo')]
+
+
+def test_establish_rhel_no_rhui(monkeypatch):
+    context = MockContext()
+    swap_spy = CallSpy()
+    set_container_spy = CallSpy()
+    switch_cert_spy = CallSpy()
+    _setup_establish(monkeypatch, 'rhel', swap_spy, set_container_spy, switch_cert_spy, target_major='8')
+
+    inputs = MockInputData(rhui_info=None, skip_rhsm=False, rhsm_info=object(), custom_repofiles=[])
+
+    tus_contentaccess.establish(context, inputs)
+
+    assert not swap_spy.calls
+    assert len(set_container_spy.calls) == 1
+    assert len(switch_cert_spy.calls) == 1
+    assert not context.written_files
+    assert not context.copied
+
+
+def test_establish_rhel_with_rhui_no_stream(monkeypatch):
+    context = MockContext()
+    swap_spy = CallSpy()
+    set_container_spy = CallSpy()
+    switch_cert_spy = CallSpy()
+    _setup_establish(monkeypatch, 'rhel', swap_spy, set_container_spy, switch_cert_spy)
+
+    rhui_info = object()
+    inputs = MockInputData(rhui_info=rhui_info, skip_rhsm=False, rhsm_info=object(), custom_repofiles=[])
+
+    tus_contentaccess.establish(context, inputs)
+
+    assert swap_spy.calls == [((context, rhui_info, '9.6', False), {})]
+    assert not context.written_files

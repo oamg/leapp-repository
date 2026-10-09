@@ -1,93 +1,158 @@
-import contextlib
+import os
+
+import pytest
 
 from leapp.libraries.actor import tus_layout
 
+_SENTINEL_RESERVE = 4242
 
-class _FakeInputs:
-    def __init__(self, storage_info=None, target_iso=None):
+
+class MockGetEnv:
+    """Mock for get_env honoring an optional override for LEAPP_CONTAINER_ROOT."""
+
+    def __init__(self, override=None):
+        self.override = override
+        self.calls = []
+
+    def __call__(self, name, default=None):
+        self.calls.append((name, default))
+        if self.override is not None:
+            return self.override
+        return default
+
+
+class MockGetRecommendedFreeSpace:
+    """Mock for overlaygen.get_recommended_leapp_free_space."""
+
+    def __init__(self, reserve):
+        self.reserve = reserve
+        self.called_with = []
+
+    def __call__(self, userspace_path):
+        self.called_with.append(userspace_path)
+        return self.reserve
+
+
+class MockScratch:
+    """Mock entered nspawn scratch context."""
+
+    def __init__(self):
+        self.entered = False
+        self.exited = False
+
+    def __enter__(self):
+        self.entered = True
+        return self
+
+    def __exit__(self, *args):
+        self.exited = True
+        return False
+
+
+class MockOverlay:
+    """Mock source overlay context manager yielding a scratch via nspawn()."""
+
+    def __init__(self, scratch, target='OVERLAY_TARGET'):
+        self.target = target
+        self._scratch = scratch
+        self.entered = False
+        self.exited = False
+        self.nspawn_called = False
+
+    def __enter__(self):
+        self.entered = True
+        return self
+
+    def __exit__(self, *args):
+        self.exited = True
+        return False
+
+    def nspawn(self):
+        self.nspawn_called = True
+        return self._scratch
+
+
+class MockCreateSourceOverlay:
+    """Mock for overlaygen.create_source_overlay recording its kwargs."""
+
+    def __init__(self, overlay):
+        self.overlay = overlay
+        self.kwargs = None
+
+    def __call__(self, **kwargs):
+        self.kwargs = kwargs
+        return self.overlay
+
+
+class MockMountIso:
+    """Mock callable + context manager for mounting.mount_upgrade_iso_to_root_dir."""
+
+    def __init__(self):
+        self.entered = False
+        self.exited = False
+        self.called_with = None
+
+    def __call__(self, target, target_iso):
+        self.called_with = (target, target_iso)
+        return self
+
+    def __enter__(self):
+        self.entered = True
+        return self
+
+    def __exit__(self, *args):
+        self.exited = True
+        return False
+
+
+class MockInputs:
+    """Minimal stand-in for the InputData value object."""
+
+    def __init__(self, storage_info, target_iso):
         self.storage_info = storage_info
         self.target_iso = target_iso
 
 
-class _FakeOverlay:
-    def __init__(self, events):
-        self.target = '/overlay/target'
-        self._events = events
-
-    def nspawn(self):
-        return _FakeNspawn(self._events)
+def _target_major():
+    return '9'
 
 
-class _FakeNspawn:
-    def __init__(self, events):
-        self._events = events
-
-    def __enter__(self):
-        self._events.append('nspawn-enter')
-        return self
-
-    def __exit__(self, *args):
-        self._events.append('nspawn-exit')
-        return False
-
-
-class _FakeIso:
-    def __init__(self, events):
-        self._events = events
-
-    def __enter__(self):
-        self._events.append('iso-enter')
-        return self
-
-    def __exit__(self, *args):
-        self._events.append('iso-exit')
-        return False
-
-
-def test_compute_default_paths(monkeypatch):
-    monkeypatch.setattr(tus_layout, 'get_env', lambda name, default: default)
-    monkeypatch.setattr(tus_layout, 'get_target_major_version', lambda: '9')
-    monkeypatch.setattr(tus_layout.overlaygen, 'get_recommended_leapp_free_space', lambda path: 2048)
+@pytest.mark.parametrize(
+    ('override', 'container_root'),
+    [
+        (None, '/var/lib/leapp'),
+        ('/custom/root', '/custom/root'),
+    ]
+)
+def test_compute_layout(monkeypatch, override, container_root):
+    get_env = MockGetEnv(override=override)
+    free_space = MockGetRecommendedFreeSpace(_SENTINEL_RESERVE)
+    monkeypatch.setattr(tus_layout, 'get_env', get_env)
+    monkeypatch.setattr(tus_layout, 'get_target_major_version', _target_major)
+    monkeypatch.setattr(tus_layout.overlaygen, 'get_recommended_leapp_free_space', free_space)
 
     layout = tus_layout.compute()
 
-    assert layout.container_root == '/var/lib/leapp'
-    assert layout.userspace_path == '/var/lib/leapp/el9userspace'
-    assert layout.scratch_dir == '/var/lib/leapp/scratch'
-    assert layout.mounts_dir == '/var/lib/leapp/scratch/mounts'
+    assert get_env.calls == [('LEAPP_CONTAINER_ROOT', '/var/lib/leapp')]
+    assert layout.container_root == container_root
+    assert layout.userspace_path == os.path.join(container_root, 'el9userspace')
+    assert layout.scratch_dir == os.path.join(container_root, 'scratch')
+    assert layout.mounts_dir == os.path.join(container_root, 'scratch', 'mounts')
     assert layout.installroot_overlay_mountpoint == '/el9target'
-    assert layout.persistent_pkg_cache_path == '/var/lib/leapp/persistent_package_cache'
-    assert layout.scratch_reserve == 2048
+    assert layout.persistent_pkg_cache_path == os.path.join(container_root, 'persistent_package_cache')
+    assert layout.scratch_reserve == _SENTINEL_RESERVE
+    assert free_space.called_with == [layout.userspace_path]
 
 
-def test_compute_honours_container_root_override(monkeypatch):
-    envs = {'LEAPP_CONTAINER_ROOT': '/custom/root'}
-    monkeypatch.setattr(tus_layout, 'get_env', envs.get)
-    monkeypatch.setattr(tus_layout, 'get_target_major_version', lambda: '10')
-    monkeypatch.setattr(tus_layout.overlaygen, 'get_recommended_leapp_free_space', lambda path: 0)
+def test_scratch_container(monkeypatch):
+    scratch = MockScratch()
+    overlay = MockOverlay(scratch)
+    create_overlay = MockCreateSourceOverlay(overlay)
+    mount_iso = MockMountIso()
+    monkeypatch.setattr(tus_layout.overlaygen, 'create_source_overlay', create_overlay)
+    monkeypatch.setattr(tus_layout.mounting, 'mount_upgrade_iso_to_root_dir', mount_iso)
 
-    layout = tus_layout.compute()
-
-    assert layout.container_root == '/custom/root'
-    assert layout.userspace_path == '/custom/root/el10userspace'
-    assert layout.scratch_dir == '/custom/root/scratch'
-    assert layout.installroot_overlay_mountpoint == '/el10target'
-
-
-def test_compute_passes_userspace_path_to_free_space_helper(monkeypatch):
-    captured = {}
-    monkeypatch.setattr(tus_layout, 'get_env', lambda name, default: default)
-    monkeypatch.setattr(tus_layout, 'get_target_major_version', lambda: '9')
-    monkeypatch.setattr(tus_layout.overlaygen, 'get_recommended_leapp_free_space',
-                        lambda path: captured.setdefault('path', path) or 1)
-
-    tus_layout.compute()
-
-    assert captured['path'] == '/var/lib/leapp/el9userspace'
-
-
-def _mock_layout():
-    return tus_layout.Layout(
+    layout = tus_layout.Layout(
         container_root='/var/lib/leapp',
         userspace_path='/var/lib/leapp/el9userspace',
         scratch_dir='/var/lib/leapp/scratch',
@@ -96,58 +161,26 @@ def _mock_layout():
         persistent_pkg_cache_path='/var/lib/leapp/persistent_package_cache',
         scratch_reserve=1234,
     )
+    inputs = MockInputs(storage_info='STORAGE_INFO', target_iso='TARGET_ISO')
 
+    with tus_layout.scratch_container(layout, inputs) as yielded:
+        assert yielded is scratch
+        assert overlay.entered is True
+        assert overlay.nspawn_called is True
+        assert scratch.entered is True
+        assert mount_iso.entered is True
+        assert overlay.exited is False
+        assert scratch.exited is False
+        assert mount_iso.exited is False
 
-def test_scratch_container_nesting_and_teardown_order(monkeypatch):
-    events = []
-
-    @contextlib.contextmanager
-    def fake_create_source_overlay(**kwargs):
-        events.append('overlay-enter')
-        try:
-            yield _FakeOverlay(events)
-        finally:
-            events.append('overlay-exit')
-
-    def fake_mount_iso(root_dir, target_iso):
-        return _FakeIso(events)
-
-    monkeypatch.setattr(tus_layout.overlaygen, 'create_source_overlay', fake_create_source_overlay)
-    monkeypatch.setattr(tus_layout.mounting, 'mount_upgrade_iso_to_root_dir', fake_mount_iso)
-
-    inputs = _FakeInputs(storage_info=object(), target_iso=None)
-
-    with tus_layout.scratch_container(_mock_layout(), inputs) as scratch:
-        assert isinstance(scratch, _FakeNspawn)
-        events.append('body')
-
-    # Current nesting: overlay -> nspawn -> iso ; torn down in reverse.
-    assert events == [
-        'overlay-enter', 'nspawn-enter', 'iso-enter',
-        'body',
-        'iso-exit', 'nspawn-exit', 'overlay-exit',
-    ]
-
-
-def test_scratch_container_passes_storage_and_reserve_to_overlay(monkeypatch):
-    captured = {}
-
-    @contextlib.contextmanager
-    def fake_create_source_overlay(**kwargs):
-        captured.update(kwargs)
-        yield _FakeOverlay([])
-
-    monkeypatch.setattr(tus_layout.overlaygen, 'create_source_overlay', fake_create_source_overlay)
-    monkeypatch.setattr(tus_layout.mounting, 'mount_upgrade_iso_to_root_dir',
-                        lambda root, iso: _FakeIso([]))
-
-    storage = object()
-    inputs = _FakeInputs(storage_info=storage, target_iso=None)
-
-    with tus_layout.scratch_container(_mock_layout(), inputs):
-        pass
-
-    assert captured['storage_info'] is storage
-    assert captured['scratch_reserve'] == 1234
-    assert captured['mounts_dir'] == '/var/lib/leapp/scratch/mounts'
-    assert captured['scratch_dir'] == '/var/lib/leapp/scratch'
+    assert create_overlay.kwargs == {
+        'mounts_dir': '/var/lib/leapp/scratch/mounts',
+        'scratch_dir': '/var/lib/leapp/scratch',
+        'xfs_info': None,
+        'storage_info': 'STORAGE_INFO',
+        'scratch_reserve': 1234,
+    }
+    assert mount_iso.called_with == ('OVERLAY_TARGET', 'TARGET_ISO')
+    assert mount_iso.exited is True
+    assert scratch.exited is True
+    assert overlay.exited is True

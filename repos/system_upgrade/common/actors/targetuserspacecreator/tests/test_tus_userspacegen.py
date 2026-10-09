@@ -1,117 +1,152 @@
-import contextlib
-
 import pytest
 
 from leapp import reporting
-from leapp.exceptions import StopActorExecutionError
-from leapp.libraries.actor import tus_userspacegen
+from leapp.libraries.actor import (
+    tus_contentaccess,
+    tus_inputdata,
+    tus_layout,
+    tus_targetrepos,
+    tus_userspacebuild,
+    tus_userspacegen
+)
 from leapp.libraries.common import rhsm
+from leapp.libraries.common.testutils import create_report_mocked, produce_mocked
 from leapp.libraries.stdlib import api
-from leapp.models import RepositoriesFactsTarget, TargetUserSpaceInfo, UsedTargetRepositories
 
 
-def _patch_pipeline(monkeypatch, produced, reports, establish=None):
-    userspace_info = TargetUserSpaceInfo(path='/us', scratch='/s', mounts='/m')
-    used_repos = UsedTargetRepositories(repos=[])
-    snapshot = RepositoriesFactsTarget(repositories=[])
+class _Recorder:
+    """Callable spy recording calls and returning a preset value (or raising)."""
 
-    monkeypatch.setattr(tus_userspacegen.tus_inputdata, 'gather', lambda: 'INPUTS')
-    monkeypatch.setattr(tus_userspacegen.tus_layout, 'compute', lambda: 'LAYOUT')
+    def __init__(self, return_value=None, raises=None):
+        self.return_value = return_value
+        self.raises = raises
+        self.calls = []
 
-    @contextlib.contextmanager
-    def fake_scratch(layout, inputs):
-        yield 'SCRATCH'
-
-    monkeypatch.setattr(tus_userspacegen.tus_layout, 'scratch_container', fake_scratch)
-    monkeypatch.setattr(tus_userspacegen.tus_contentaccess, 'establish',
-                        establish or (lambda ctx, inputs: None))
-    monkeypatch.setattr(tus_userspacegen.tus_targetrepos, 'select_target_repositories',
-                        lambda ctx, inputs: used_repos)
-    monkeypatch.setattr(tus_userspacegen.tus_userspacebuild, 'build',
-                        lambda ctx, layout, inputs, used: userspace_info)
-    monkeypatch.setattr(tus_userspacegen.tus_targetrepos, 'build_target_repositories_snapshot',
-                        lambda ctx: snapshot)
-    monkeypatch.setattr(api, 'produce', lambda *msgs: produced.extend(msgs))
-    monkeypatch.setattr(tus_userspacegen.reporting, 'create_report', reports.append)
-    return userspace_info, used_repos, snapshot
+    def __call__(self, *args, **kwargs):
+        self.calls.append((args, kwargs))
+        if self.raises is not None:
+            raise self.raises
+        return self.return_value
 
 
-def _parts_of_type(reports, type_name):
-    return [p for parts in reports for p in parts if type(p).__name__ == type_name]
+class _MockScratchContainer:
+    """Callable returning itself as a context manager yielding a scratch sentinel."""
+
+    def __init__(self, scratch):
+        self._scratch = scratch
+        self.call_args = None
+        self.entered = False
+        self.exited = False
+
+    def __call__(self, layout, inputs):
+        self.call_args = (layout, inputs)
+        return self
+
+    def __enter__(self):
+        self.entered = True
+        return self._scratch
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.exited = True
+        return False
 
 
-def test_perform_happy_path_produces_three_messages_in_order(monkeypatch):
-    produced, reports = [], []
-    userspace_info, used_repos, snapshot = _patch_pipeline(monkeypatch, produced, reports)
+@pytest.mark.parametrize(
+    ('product_type', 'beta_expected'),
+    [
+        ('ga', False),
+        ('beta', True),
+    ]
+)
+def test_report_missing_target_cert(monkeypatch, product_type, beta_expected):
+    created_report = create_report_mocked()
+    monkeypatch.setattr(tus_userspacegen.reporting, 'create_report', created_report)
+    monkeypatch.setattr(tus_userspacegen, 'get_product_type', _Recorder(product_type))
 
-    tus_userspacegen.perform()
+    tus_userspacegen._report_missing_target_cert()
 
-    # exactly the three outputs, in the documented order, same objects
-    assert produced == [userspace_info, used_repos, snapshot]
-    assert not reports
-
-
-def test_perform_no_produce_on_gather_hardstop(monkeypatch):
-    produced, reports = [], []
-    _patch_pipeline(monkeypatch, produced, reports)
-
-    def boom():
-        raise StopActorExecutionError(message='bad input')
-
-    monkeypatch.setattr(tus_userspacegen.tus_inputdata, 'gather', boom)
-
-    with pytest.raises(StopActorExecutionError):
-        tus_userspacegen.perform()
-
-    assert not produced
-
-
-def test_perform_missing_cert_reports_and_no_produce(monkeypatch):
-    produced, reports = [], []
-
-    def establish(ctx, inputs):
-        raise rhsm.MissingTargetProductCertificate(message='no cert')
-
-    _patch_pipeline(monkeypatch, produced, reports, establish=establish)
-    monkeypatch.setattr(tus_userspacegen, 'get_product_type', lambda which: 'ga')
-
-    tus_userspacegen.perform()
-
-    # Inhibitor #1 reported, nothing produced.
-    assert not produced
-    titles = [p.value for p in _parts_of_type(reports, 'Title')]
-    assert titles == ['Missing target system product certificate']
-    # It is an inhibitor and carries the devel-target-release remediation.
-    groups = [g for p in _parts_of_type(reports, 'Groups') for g in p.value]
-    assert reporting.Groups.INHIBITOR in groups
-    assert _parts_of_type(reports, 'Remediation')
+    assert created_report.called == 1
+    fields = created_report.report_fields
+    assert fields['title'] == 'Missing target system product certificate'
+    assert fields['severity'] == reporting.Severity.HIGH
+    assert reporting.Groups.SANITY in fields['groups']
+    assert reporting.Groups.INHIBITOR in fields['groups']
+    assert ('Beta product certificate' in fields['summary']) is beta_expected
+    remediations = fields['detail']['remediations']
+    assert any('LEAPP_DEVEL_TARGET_RELEASE' in rem.get('context', '') for rem in remediations)
 
 
-def test_perform_missing_cert_non_beta_has_no_beta_note(monkeypatch):
-    produced, reports = [], []
+def test_perform_happy_path(monkeypatch):
+    inputs = object()
+    layout = object()
+    scratch = object()
+    used_repos = object()
+    userspace_info = object()
+    snapshot = object()
 
-    def establish(ctx, inputs):
-        raise rhsm.MissingTargetProductCertificate(message='no cert')
+    gather = _Recorder(inputs)
+    compute = _Recorder(layout)
+    scratch_container = _MockScratchContainer(scratch)
+    establish = _Recorder()
+    select = _Recorder(used_repos)
+    build = _Recorder(userspace_info)
+    build_snapshot = _Recorder(snapshot)
+    produce = produce_mocked()
 
-    _patch_pipeline(monkeypatch, produced, reports, establish=establish)
-    monkeypatch.setattr(tus_userspacegen, 'get_product_type', lambda which: 'ga')
-
-    tus_userspacegen.perform()
-
-    summaries = [p.value for p in _parts_of_type(reports, 'Summary')]
-    assert summaries and all('Beta' not in s for s in summaries)
-
-
-def test_perform_missing_cert_beta_note(monkeypatch):
-    produced, reports = [], []
-
-    def establish(ctx, inputs):
-        raise rhsm.MissingTargetProductCertificate(message='no cert')
-
-    _patch_pipeline(monkeypatch, produced, reports, establish=establish)
-    monkeypatch.setattr(tus_userspacegen, 'get_product_type', lambda which: 'beta')
+    monkeypatch.setattr(tus_inputdata, 'gather', gather)
+    monkeypatch.setattr(tus_layout, 'compute', compute)
+    monkeypatch.setattr(tus_layout, 'scratch_container', scratch_container)
+    monkeypatch.setattr(tus_contentaccess, 'establish', establish)
+    monkeypatch.setattr(tus_targetrepos, 'select_target_repositories', select)
+    monkeypatch.setattr(tus_userspacebuild, 'build', build)
+    monkeypatch.setattr(tus_targetrepos, 'build_target_repositories_snapshot', build_snapshot)
+    monkeypatch.setattr(api, 'produce', produce)
 
     tus_userspacegen.perform()
 
-    summaries = [p.value for p in _parts_of_type(reports, 'Summary')]
-    assert any('Beta' in s for s in summaries)
+    assert scratch_container.call_args == (layout, inputs)
+    assert scratch_container.entered
+    assert scratch_container.exited
+    assert establish.calls == [((scratch, inputs), {})]
+    assert select.calls == [((scratch, inputs), {})]
+    assert build.calls == [((scratch, layout, inputs, used_repos), {})]
+    assert build_snapshot.calls == [((scratch,), {})]
+    assert produce.called == 3
+    assert produce.model_instances == [userspace_info, used_repos, snapshot]
+
+
+def test_perform_missing_target_cert_soft_stops(monkeypatch):
+    scratch = object()
+
+    inputs = object()
+    gather = _Recorder(inputs)
+    compute = _Recorder(object())
+    scratch_container = _MockScratchContainer(scratch)
+    establish = _Recorder(raises=rhsm.MissingTargetProductCertificate('missing cert'))
+    select = _Recorder()
+    build = _Recorder()
+    build_snapshot = _Recorder()
+    report_spy = _Recorder()
+    produce = produce_mocked()
+
+    monkeypatch.setattr(tus_inputdata, 'gather', gather)
+    monkeypatch.setattr(tus_layout, 'compute', compute)
+    monkeypatch.setattr(tus_layout, 'scratch_container', scratch_container)
+    monkeypatch.setattr(tus_contentaccess, 'establish', establish)
+    monkeypatch.setattr(tus_targetrepos, 'select_target_repositories', select)
+    monkeypatch.setattr(tus_userspacebuild, 'build', build)
+    monkeypatch.setattr(tus_targetrepos, 'build_target_repositories_snapshot', build_snapshot)
+    monkeypatch.setattr(tus_userspacegen, '_report_missing_target_cert', report_spy)
+    monkeypatch.setattr(api, 'produce', produce)
+
+    result = tus_userspacegen.perform()
+
+    assert result is None
+    assert scratch_container.entered
+    assert scratch_container.exited
+    assert establish.calls == [((scratch, inputs), {})]
+    assert report_spy.calls == [((), {})]
+    assert not select.calls
+    assert not build.calls
+    assert not build_snapshot.calls
+    assert produce.called == 0
