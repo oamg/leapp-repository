@@ -2,9 +2,9 @@ import pytest
 
 from leapp import reporting
 from leapp.libraries.actor import checkstratis
-from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked, logger_mocked
+from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked, logger_mocked, produce_mocked
 from leapp.libraries.stdlib import api
-from leapp.models import FstabEntry, StorageInfo
+from leapp.models import FstabEntry, LiveModeConfig, StorageInfo, TargetUserSpaceUpgradeTasks
 from leapp.utils.report import is_inhibitor
 
 _NON_STRATIS_ENTRY = FstabEntry(
@@ -90,3 +90,106 @@ def test_inhibits_when_stratis_in_fstab(monkeypatch):
     assert '/mnt/stratis_dev' in report['summary']
     assert '/mnt/stratis_uuid' in report['summary']
     assert '/home' not in report['summary']
+
+
+def _livemode_config(is_enabled, setup_network_manager, squashfs_fullpath='/var/lib/leapp/live-upgrade.img'):
+    return LiveModeConfig(
+        is_enabled=is_enabled,
+        setup_network_manager=setup_network_manager,
+        squashfs_fullpath=squashfs_fullpath,
+    )
+
+
+@pytest.mark.parametrize(
+    ('livemode_config', 'expected'),
+    [
+        (None, False),
+        (_livemode_config(is_enabled=False, setup_network_manager=False), False),
+        (_livemode_config(is_enabled=False, setup_network_manager=True), False),
+        (_livemode_config(is_enabled=True, setup_network_manager=False), True),
+        (_livemode_config(is_enabled=True, setup_network_manager=True), True),
+    ]
+)
+def test_is_stratis_supported_by_livemode(monkeypatch, livemode_config, expected):
+    msgs = [livemode_config] if livemode_config else []
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=msgs))
+
+    assert checkstratis._is_stratis_supported_by_livemode() == expected
+
+
+@pytest.mark.parametrize('setup_network_manager', [True, False])
+def test_livemode_installs_packages_instead_of_inhibiting(monkeypatch, setup_network_manager):
+    monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
+    monkeypatch.setattr(api, 'current_logger', logger_mocked())
+    monkeypatch.setattr(api, 'produce', produce_mocked())
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[
+        StorageInfo(fstab=[_NON_STRATIS_ENTRY, _STRATIS_DEVICE_ENTRY]),
+        _livemode_config(is_enabled=True, setup_network_manager=setup_network_manager),
+    ]))
+
+    checkstratis.process()
+
+    assert not reporting.create_report.called
+    assert api.produce.called == 1
+    produced = api.produce.model_instances[0]
+    assert isinstance(produced, TargetUserSpaceUpgradeTasks)
+    assert produced.install_rpms == checkstratis._STRATIS_LIVEMODE_PACKAGES
+
+
+@pytest.mark.parametrize('livemode_config', [
+    None,
+    _livemode_config(is_enabled=False, setup_network_manager=True),
+    _livemode_config(is_enabled=False, setup_network_manager=False),
+])
+def test_without_livemode_still_inhibits(monkeypatch, livemode_config):
+    monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
+    monkeypatch.setattr(api, 'current_logger', logger_mocked())
+    monkeypatch.setattr(api, 'produce', produce_mocked())
+    msgs = [StorageInfo(fstab=[_STRATIS_DEVICE_ENTRY])]
+    if livemode_config:
+        msgs.append(livemode_config)
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=msgs))
+
+    checkstratis.process()
+
+    assert reporting.create_report.called == 1
+    assert is_inhibitor(reporting.create_report.reports[0])
+    assert not api.produce.called
+
+
+@pytest.mark.parametrize(
+    ('path', 'mountpoints', 'expected'),
+    [
+        ('/var/lib/leapp/live-upgrade.img', ['/mnt/stratis_dev'], None),
+        ('/mnt/stratis_dev/live-upgrade.img', ['/mnt/stratis_dev'], '/mnt/stratis_dev'),
+        # image stored several levels under the mount point
+        ('/mnt/stratis_dev/sub/live-upgrade.img', ['/mnt/stratis_dev'], '/mnt/stratis_dev'),
+        # trailing slashes and non-normalized paths
+        ('/mnt/stratis_dev/sub/live-upgrade.img', ['/mnt/stratis_dev/'], '/mnt/stratis_dev'),
+        ('/mnt/stratis_dev/../other/img', ['/mnt/stratis_dev'], None),
+        # a similarly named sibling mount point must not match
+        ('/mnt/stratis_development/img', ['/mnt/stratis_dev'], None),
+        # nested mounts: the most specific one is returned
+        ('/mnt/stratis_dev/nested/img', ['/mnt/stratis_dev', '/mnt/stratis_dev/nested'],
+         '/mnt/stratis_dev/nested'),
+    ]
+)
+def test_find_stratis_mount_for_path(path, mountpoints, expected):
+    assert checkstratis._find_stratis_mount_for_path(path, mountpoints) == expected
+
+
+def test_livemode_image_on_stratis_inhibits(monkeypatch):
+    monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
+    monkeypatch.setattr(api, 'current_logger', logger_mocked())
+    monkeypatch.setattr(api, 'produce', produce_mocked())
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[
+        StorageInfo(fstab=[_NON_STRATIS_ENTRY, _STRATIS_DEVICE_ENTRY]),
+        _livemode_config(is_enabled=True, setup_network_manager=True,
+                         squashfs_fullpath='/mnt/stratis_dev/live-upgrade.img'),
+    ]))
+
+    checkstratis.process()
+
+    assert reporting.create_report.called == 1
+    assert is_inhibitor(reporting.create_report.reports[0])
+    assert not api.produce.called
