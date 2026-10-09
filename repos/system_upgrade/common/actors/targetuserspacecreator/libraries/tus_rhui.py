@@ -118,7 +118,7 @@ def _get_repofiles_paths(context):
     """
     repos_dir = context.full_path(_YUM_REPOS_D)
     if not os.path.isdir(repos_dir):
-        return []
+        return set()
 
     basenames = [name for name in os.listdir(repos_dir) if name.endswith('.repo')]
     return {os.path.join(_YUM_REPOS_D, name) for name in basenames}
