@@ -1,0 +1,276 @@
+# Updated plan: spec-first redesign of `targetuserspacecreator`
+
+_Supersedes `project/battle-plan-for-babies-from-claude`. Incorporates the lessons in `project/refactor-retrospective.md` and the intent in `project/battle-plan-for-babies`._
+
+## Context — why we are doing this again
+
+The first attempt (commits `eb2eec6c`..`89ac43c5`, still checked out on branch
+`post-armageddon-building-site-for-babies`, HEAD `89ac43c5`) **failed the user's intent**. The
+brief asked for a *spec-first redesign* — write a specification of the actor's current behaviour,
+then re-author clean code that still covers every use-case while dropping/replacing deprecated
+content. What was delivered was a *behaviour-preserving file split*: the same spaghetti relocated,
+largely verbatim, into six files (`1442 → 1488` logic LOC [Medium — figures from the retrospective]).
+
+Root cause (retrospective §3/§7): **the failed plan made "the diff looks like a pure move" a
+success criterion** (`git diff -M` must show pure renames). It measured similarity-to-old-code, so
+it got similarity-to-old-code. The execution was faithful; the plan was wrong.
+
+Intended outcome of this redo: the actor's external behaviour is unchanged (same consumed/produced
+messages, same 5 inhibitors, same RHUI invariants), but the code is genuinely redesigned from a
+written contract — god functions decomposed, the #486 duplicate-parse resolved, TODOs fixed not
+relocated, deprecated content actually gone, shared leapp libraries reused. The `/etc/pki`
+symlink-decoupling code is a frozen carve-out.
+
+## The one rule that governs everything
+
+> Write the behavioural contract first and measure the result against **behaviour**, never against
+> similarity to the old code. "The diff looks like a move" is a **failure** signal, not a goal.
+
+## Locked decisions
+
+| # | Decision | Choice |
+|---|---|---|
+| Git base | Where the redesign is authored | **Fresh from baseline `827d1b04`** on a new branch `targetuserspace-redesign`. The failed split (HEAD) and its salvage commits are **read-only reference only**, never the git base. [High] |
+| Carve-out bug | `_copy_certificates` symlink loop never advances (`repoaccess.py:319-336`); multi-hop RPM-owned symlinks under `/etc/pki` are misclassified broken/skipped [High — confirmed in code] | **Freeze + document via `xfail`.** Carve-out stays byte-identical; add a characterization test (marked `xfail`) that captures the current mishandling and surfaces the bug without touching frozen code. |
+| Deprecated model | `TMPTargetRepositoriesFacts` (consumed by `adjustlocalrepos` + `missinggpgkeysinhibitor`, both `TargetTransactionChecksPhaseTag`) | **Keep the produced snapshot, rename off the `TMP` prefix, and write an explicit rationale** in the contract. NOT a silent rename (that was F6). The justification: a single produced snapshot gives both same-phase consumers one *pre-mutation* view regardless of actor order (`adjustlocalrepos` rewrites repofiles in that phase), which on-demand file reads cannot guarantee. |
+| `rhel_repos` | `TargetRepositories.rhel_repos` — cross-actor field, still produced by `checkrhui` + `targetcontentresolver`, asserted in their tests | **Drop it as part of this effort** (cross-actor PR), **gated by a deprecation-window check** (see Risks). |
+| Success criteria | See "Definition of done" | LOC/diff-shape are **non-gating review smells**, not gates. Behaviour + qualitative goals are the gates. |
+| Attribution | AI-authored commits | End with **`Assisted-by: <model>`**, NOT `Co-Authored-By:` — per project memory `commit-attribution-assisted-by.md`, which overrides the harness reminder (retrospective F8 flagged `Co-Authored-By` as a defect). [High] |
+
+## Starting point & branch
+
+```bash
+git checkout post-armageddon-building-site-for-babies
+git switch -c targetuserspace-redesign 827d1b04     # baseline = parent of eb2eec6c
+git diff 827d1b04 -- repos/system_upgrade/common/actors/targetuserspacecreator/libraries/userspacegen.py   # expect empty
+```
+
+Baseline `827d1b04` already contains the two good groundwork commits — `a7b9145` (drop obsolete
+repomap/OS-version entry gate) and `41af766` (`rhsm.switch_certificate` auto-discovers the cert
+path, raising `MissingTargetProductCertificate`). Keep them. [High]
+
+**Consequence of starting from baseline:** several drops the failed attempt already made are *undone*
+at baseline and must be re-authored here: removing the `RequiredTargetUserspacePackages` /
+`LiveModeConfig` consumes, `LEAPP_DEVEL_SKIP_RHSM`, deleting `constants.py`, deleting the actor's own
+product-cert-path logic in favour of `rhsm.switch_certificate` auto-discovery. [High]
+
+Keep the failed plan's **§C behavior inventory (items 1–34)**, **§B message interface**, the **five
+inhibitors**, and the **§C-RHUI checklist (R1–R7)**, plus `refactor-retrospective.md`, as read-only
+inputs while authoring the contract (they are code-derived and ~80% of the contract). They are
+inputs, not shipped artifacts.
+
+## Step 1 — Write the behavioural contract ("the paper"), committed FIRST
+
+Land `repos/system_upgrade/common/actors/targetuserspacecreator/CONTRACT.md` as the first commit
+(commit order is itself the proof the redesign was spec-first). If maintainers object to an in-actor
+`.md`, the fallback is `docs/source/` or the PR body — the load-bearing requirement is that it is
+committed before any logic-redesign commit.
+
+The contract describes outside-observable behaviour (internal names irrelevant), reorganising §C from
+"inventory of old code" into "spec a fresh author implements from". Sections:
+
+1. Purpose & placement (phase `TargetTransactionFactsPhaseTag`; effective order relative to
+   `createisorepofile` → this actor → `swapdistropackagesworkaround`).
+2. Inputs consumed + validation/hard-stop rules (no `RHSMInfo` & not `skip_rhsm`; `skip_rhsm` &
+   `RHSMInfo` present; no `StorageInfo`).
+3. Outputs produced + every downstream consumer and the fields it reads (this section records the
+   renamed-model decision + rationale).
+4. Ordering guarantees other actors may depend on.
+5. Scratch / overlay / nspawn / conditional ISO-mount setup.
+6. Content-access establishment in scratch (RHUI client swap R1–R7; RHSM container-mode + cert
+   switch; CentOS `$stream` var; custom repofile install).
+7. Repository discovery & selection (distro/RHUI/all repoid discovery; base-repo skip conditions).
+8. The five inhibitor conditions (trigger, severity, groups, key/title, remediation): missing
+   product cert; duplicate repos (skip_rhsm only); missing base repos; no enabled repos; missing
+   custom repos.
+9. Userspace build (wipe/recreate, bind-mount, gpg import, dnf install, cert/repo access, copy
+   files, leapp plugin, RHUI post-cleanup, container mode).
+10. dnf install command shape + the **four** failure-hint branches (disk-space→KB; proxy-in-dnf.conf;
+    proxy-in-repo; CentOS→RHEL target-version).
+11. Cert/repo access; **mark `/etc/pki` decoupling as CARVE-OUT (frozen)**.
+12. Env-var switches (`LEAPP_CONTAINER_ROOT`, `LEAPP_DEVEL_USE_PERSISTENT_PACKAGE_CACHE`,
+    `LEAPP_NO_RHSM`, `LEAPP_NOGPGCHECK`, target/product-type overrides).
+13. RHUI invariants R1–R7 (verbatim acceptance gate).
+
+## Step 2 — Behaviour-anchored safety net, committed SECOND (before any rewrite)
+
+The riskiest targets have **no or skipped** coverage today: `bootstrap.prepare_target_userspace`
+and its 4 error-hint branches, `repoaccess._prep_repository_access`, RHUI repoid discovery, and
+`test_gather_target_repositories` is `@pytest.mark.skip`. Lock baseline behaviour first, anchored to
+**observable** surface (not internal function names) so tests survive the reshuffle:
+
+- Assert on produced messages, `reporting.create_report` payloads (title/severity/groups/key), and
+  the command lists a mocked context/`run` records. Use the existing `MockedMountingBase` /
+  `RhuiContextMock` plus `leapp.libraries.common.testutils` (`CurrentActorMocked`, `produce_mocked`,
+  `create_report_mocked`, `logger_mocked`). **`monkeypatch.setattr` only — never `unittest.mock`.**
+- Adapt the salvaged RHUI R1–R7 tests (`fd452c68`) and rhsm cases (`aa81a310`) to baseline public
+  entry points (they reference the failed split's names — treat as behaviour reference, re-target).
+- **Add** the missing coverage and **un-skip** `test_gather_target_repositories` (implement it for
+  real). Turning a skipped test into a passing one is concrete evidence of redesign.
+- Carve-out: `_copy_decouple` and its ~55 symlink cases stay unchanged. Add the `xfail`
+  characterization test for the `_copy_certificates` multi-hop-symlink bug.
+
+## Step 3 — Author new code from the contract (module by module)
+
+Decomposition derived from the contract (not from current files), with an acyclic dependency DAG and
+**no function-local imports**:
+
+| Module | Single responsibility | Public surface |
+|---|---|---|
+| `layout.py` (new; replaces `constants.py`) | Where the userspace lives; provision its dirs | `target_userspace_path()`, `create_target_userspace_directories(path)` |
+| `inputdata.py` | Consume + validate inputs into one typed bundle | `InputData` |
+| `contentaccess.py` (new) | Non-RHUI content access: rhsm container-mode + cert switch (+missing-cert report), CentOS `$stream`, install custom repofiles | `prepare_repository_access(context, indata)` |
+| `rhui.py` (rename of `targetrhui.py`) | All RHUI content access | `setup_target_rhui_access_if_needed`, `get_rhui_available_repoids`, `remove_injected_repofiles` |
+| `targetrepos.py` | **Pure** discovery + selection + inhibitor reports (no side effects) | `select_target_repositories(context, indata)` |
+| `userspacebuild.py` (rename of `bootstrap.py`) | Build the target userspace | `build_target_userspace(context, indata, packages, files, repoids, userspace_path)` |
+| `repoaccess.py` | Cert/repo file access + rpm-ownership primitives; **carve-out lives here, frozen** | `prep_repository_access(context, userspace_path)` + frozen `_copy_*` |
+| `userspacegen.py` | Orchestrator: control flow + scratch (overlay/nspawn/ISO) + message production | `perform()` |
+
+**Resolve the `bootstrap ↔ targetrhui` circular import** (broken today only by a function-local
+import at `bootstrap.py:221`): (a) move `_get_target_userspace` / `_create_target_userspace_directories`
+into leaf `layout.py`; (b) lift the "remove injected RHUI repofiles after build" call and the
+trailing `rhsm.set_container_mode` out of `_create_target_userspace` up into `perform()`. Result:
+`userspacebuild` imports nothing RHUI; `rhui` imports nothing build-side; no local imports.
+
+**God-function decomposition (how each is redesigned, not relocated):**
+- `bootstrap.prepare_target_userspace` (`bootstrap.py:88-172`) → in `userspacebuild.py`:
+  `_assemble_dnf_install_command(...)` (pure list builder, zero I/O), `_run_dnf_install(context, cmd)`
+  (execution), `_diagnose_dnf_install_failure(exc)` (the 4-way hint block, folding in
+  `_handle_transaction_err_msg_size`). Each unit-testable in isolation.
+- `targetrepos.gather_target_repositories` + the awkward `_gather_target_repositories` seam
+  (`targetrepos.py:182-306`, `346-372`) → one public `select_target_repositories`; the two inline
+  inhibitor reports become `_report_no_enabled_target_repos()` / `_report_missing_custom_repos()`;
+  the rhsm/stream/custom **side effects move into `contentaccess.prepare_repository_access`**
+  (command/query separation — discovery stops mutating the container).
+- `targetrhui._get_rhui_available_repoids` (`targetrhui.py:18-91`) → `_compute_foreign_repofiles(...)`
+  (pure set math) + a `@contextmanager _hidden_foreign_repofiles(...)` around rename→repolist→restore,
+  so the "byte-identical on success AND failure" invariant (R2) is structural, not a hand-rolled
+  `try/finally`.
+- `repoaccess._prep_repository_access` (`repoaccess.py:354-395`, untested, **not** carve-out) → named,
+  individually-testable steps: `_copy_certificates_step` (calls frozen `_copy_certificates`),
+  `_refresh_ca_trust`, `_copy_rhsm_config`, `_merge_repos_preserving_rpm_owned`.
+- Product-cert path: delete the actor's own path logic; rely on `rhsm.switch_certificate` (baseline
+  auto-discovery) and catch `rhsm.MissingTargetProductCertificate` to fire the missing-cert inhibitor.
+- Delete the #486 TODO block (`userspacegen.py:17-39`) because **resolved**; fix (don't relocate) the
+  "tmp solution"/"not good solution" TODOs.
+
+**#486 duplicate repofile parse:** attempt to feed a single post-build parse to both the
+`UsedTargetRepositories` cross-check and the produced snapshot. If the original G2 note holds (the two
+parses read the *same container in different states* and cannot be collapsed), keep both but **record
+the written justification** in the contract — the "no duplicate parse unless justified" gate is
+satisfied either by removing it or by justifying it, not by silently keeping it.
+
+## Step 4 — Deprecated content (drop/replace for real)
+
+- **`constants.py`** — deleted; `TARGET_USERSPACE` path → `layout.target_userspace_path()`;
+  `SCRATCH_DIR`/`MOUNTS_DIR` inlined in `perform()` (their only user).
+- **Local deprecated items** re-dropped on the baseline branch: `RequiredTargetUserspacePackages` /
+  `LiveModeConfig` consumes, `LEAPP_DEVEL_SKIP_RHSM`.
+- **Renamed snapshot model** (per locked decision): drop the `TMP` prefix, keep production, migrate
+  the two consumers atomically, document the rationale in the contract + `deprecations-list.md`.
+- **`rhel_repos`** removed cross-actor (see sequencing + Risks gate).
+
+## Commit / PR sequencing (small, reviewable; contract & safety net provably first)
+
+**PR 1 — within-actor redesign** (branch `targetuserspace-redesign` off `827d1b04`; touches only the
+actor + its tests):
+1. `docs: add targetuserspacecreator behavioral contract` (CONTRACT.md only).
+2. `tests: behavior-anchored safety net` (adapt R1–R7 + rhsm cases; add dnf-assembly/diagnosis,
+   `prep_repository_access`, foreign-repofile hide/restore; un-skip the gather test; add the
+   `_copy_certificates` xfail).
+3. `refactor: add layout.py, drop constants.py, break the RHUI↔bootstrap cycle`.
+4. `refactor: extract inputdata`.
+5. `refactor: redesign repository discovery/selection (targetrepos)`.
+6. `refactor: extract content-access establishment (contentaccess)`.
+7. `refactor: redesign RHUI content access (rhui)` — verify R1–R7.
+8. `refactor: redesign userspace build (userspacebuild)` — assemble/run/diagnose split; carve-out
+   untouched; re-drop local deprecated items; delete actor cert-path logic.
+9. `refactor: slim userspacegen to orchestrator` — `perform()` + produce; wire modules; update
+   `actor.py` imports.
+10. `tests: repoint suite to redesigned modules` (safety-net suite stays green).
+
+**PR 2 — cross-actor interface** (separate; changes the message interface, so it must not gate the
+within-actor work — avoids the failed attempt's single-PR scope inflation, F9):
+11. `models: rename & justify <TMP model>` + migrate `targetuserspacecreator`, `adjustlocalrepos`,
+    `missinggpgkeysinhibitor` atomically; update `deprecations-list.md`.
+12. `models: drop TargetRepositories.rhel_repos` across `checkrhui`, `targetcontentresolver`,
+    `checktargetrepos`, the model + tests — **only after the Risks gate below passes.**
+
+## Definition of done (gates) — reframed
+
+**Gates (must pass):**
+1. Behavioural equivalence: CONTRACT.md items pass a documented contract-walk; §B interface unchanged
+   except the deliberate model rename; all five inhibitors + R1–R7 hold; the behaviour-anchored
+   safety-net suite passes unchanged; el8 + el9 containers green.
+2. Spec-first proof: CONTRACT.md committed before any logic-redesign commit (commit order).
+3. Each named god function decomposed into individually-tested units (reviewer checks the Step-3 map).
+4. Structural: cycle resolved with zero function-local imports; `constants.py` gone;
+   renamed-model rationale written; **TODO/FIXME in the actor libs = 0** except explicitly-annotated
+   out-of-scope shared-lib notes (e.g. the rhsm dup-inhibitor).
+5. Coverage rises where it was zero (dnf assembly/diagnosis, `prep_repository_access`, RHUI repoid
+   discovery, the previously-skipped gather test).
+6. Readability: a maintainer can read `perform()` top-to-bottom and see the contract's control flow.
+
+**Non-gating diagnostics (report, don't gate):** per-module `git diff -M` (excluding the carve-out)
+as a review smell — a module that looks like a pure rename is a flag to investigate. Net-LOC as an
+observation in the PR description; note it may *rise* where tests/docstrings/splits were added.
+_Rationale: LOC-falls and diff-not-clean are similarity proxies — the same class of metric that
+caused the first failure, and they contradict the frozen carve-out._
+
+## Out of scope (explicit, so it is not a silent drop)
+
+- Moving inhibitors to the check phase (the #486 "ideal") — a larger multi-actor/phase change;
+  behaviour here stays in `TargetTransactionFactsPhaseTag`.
+- `targetrepos.py:227` feature gap ("report unavailable RHEL repos") — kept as a tracked NOTE, not
+  implemented (behaviour-preserving redesign, not a feature change).
+
+## Risks & things to verify during execution
+
+1. **`rhel_repos` deprecation window [Medium].** Removing a field still produced by other actors can
+   break consumers if the deprecation window is open. Before commit 12: confirm the actual deprecation
+   date + the repo's deprecation-policy window (docs/`deprecations-list.md`), and grep for any
+   out-of-repo/downstream consumers. If the window is not clearly closed, split commit 12 into its own
+   follow-up PR and flag for maintainer sign-off rather than forcing it.
+2. **Salvaged tests reference the failed split's names [High].** Re-target to baseline public surface;
+   do not copy verbatim.
+3. **Baseline actor cert code [Medium].** Confirm the exact baseline shape of the actor's product-cert
+   handling before deleting it, to be sure auto-discovery fully covers it and the inhibitor still fires.
+4. **Carve-out consistency [High].** Any change touching `_copy_*` bodies is a defect; only surrounding
+   references may change.
+5. **Workflow sanity at each commit.** Each commit must leave the leapp workflow importable
+   (`snactor` sanity check) — keep the producer/consumer set consistent within a commit.
+
+## Verification (how to test)
+
+Per `skills/leapp-test-runner` / AGENTS.md Definition of Done:
+```bash
+make lint
+ACTOR=targetuserspacecreator make dev_test_no_lint
+TEST_CONTAINER=el8 make test_container   # common change → run BOTH
+TEST_CONTAINER=el9 make test_container
+```
+For the cross-actor PR, also run the affected actors' unit tests: `adjustlocalrepos`,
+`missinggpgkeysinhibitor` (model rename) and `checkrhui`, `targetcontentresolver`, `checktargetrepos`
+(`rhel_repos`). Report results per Definition of Done.
+
+## Critical files
+
+- `repos/system_upgrade/common/actors/targetuserspacecreator/libraries/userspacegen.py` — orchestrator;
+  `perform()` control flow; delete the #486 TODO block.
+- `.../libraries/bootstrap.py` → `userspacebuild.py` — assemble/run/diagnose split; cycle break.
+- `.../libraries/targetrepos.py` — discovery/selection redesign; inhibitor extraction; parse dedup.
+- `.../libraries/repoaccess.py` — `prep_repository_access` split; **frozen carve-out** `_copy_*`.
+- `.../libraries/targetrhui.py` → `rhui.py`; `.../libraries/inputdata.py`; new `layout.py`,
+  `contentaccess.py`; delete `constants.py`.
+- `.../tests/unit_test_targetuserspacecreator.py`, `.../tests/unit_test_targetrhui.py` — safety net,
+  un-skip, repoint.
+- `repos/system_upgrade/common/models/repositoriesfacts.py` — renamed snapshot model; consumers
+  `adjustlocalrepos/actor.py`, `missinggpgkeysinhibitor/{actor.py,libraries/missinggpgkey.py}`.
+- `rhel_repos`: `repos/system_upgrade/common/models/targetrepositories.py` + `checkrhui`,
+  `targetcontentresolver`, `checktargetrepos` (+ their tests).
+- New: `repos/system_upgrade/common/actors/targetuserspacecreator/CONTRACT.md`.
+
+## Attribution
+
+AI-authored commits end with `Assisted-by: <model>` (NOT `Co-Authored-By:`). Project memory
+`commit-attribution-assisted-by.md`.

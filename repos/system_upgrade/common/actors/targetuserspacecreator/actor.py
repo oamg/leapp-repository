@@ -1,15 +1,11 @@
 from leapp.actors import Actor
-from leapp.libraries.actor import userspacegen
-from leapp.libraries.common.config import get_env, version
-from leapp.models import RequiredTargetUserspacePackages  # deprecated
-from leapp.models import TMPTargetRepositoriesFacts  # deprecated
+from leapp.libraries.actor import tus_userspacegen
 from leapp.models import (
     CustomTargetRepositoryFile,
-    LiveModeConfig,
     PkgManagerInfo,
     Report,
     RepositoriesFacts,
-    RepositoriesMapping,
+    RepositoriesFactsTarget,
     RHSMInfo,
     RHUIInfo,
     StorageInfo,
@@ -18,12 +14,10 @@ from leapp.models import (
     TargetUserSpaceInfo,
     TargetUserSpacePreupgradeTasks,
     UsedTargetRepositories,
-    XFSPresence
 )
 from leapp.tags import IPUWorkflowTag, TargetTransactionFactsPhaseTag
 
 
-# @suppress_deprecation(RequiredTargetUserspacePackages, TMPTargetRepositoriesFacts)
 class TargetUserspaceCreator(Actor):
     """
     Initializes a directory to be populated as a minimal environment to run binaries from the target system.
@@ -38,23 +32,17 @@ class TargetUserspaceCreator(Actor):
     name = 'target_userspace_creator'
     consumes = (
         CustomTargetRepositoryFile,
-        LiveModeConfig,
         RHSMInfo,
         RHUIInfo,
         RepositoriesFacts,
-        RepositoriesMapping,
-        RequiredTargetUserspacePackages,
         StorageInfo,
         TargetOSInstallationImage,
         TargetRepositories,
         TargetUserSpacePreupgradeTasks,
-        XFSPresence,
         PkgManagerInfo,
     )
-    produces = (TargetUserSpaceInfo, UsedTargetRepositories, Report, TMPTargetRepositoriesFacts,)
+    produces = (TargetUserSpaceInfo, UsedTargetRepositories, RepositoriesFactsTarget, Report)
     tags = (IPUWorkflowTag, TargetTransactionFactsPhaseTag)
 
     def process(self):
-        skip_check = get_env('LEAPP_DEVEL_SKIP_CHECK_OS_RELEASE', False)
-        if (skip_check or version.is_supported_version()) and next(self.consume(RepositoriesMapping), None):
-            userspacegen.perform()
+        tus_userspacegen.perform()
