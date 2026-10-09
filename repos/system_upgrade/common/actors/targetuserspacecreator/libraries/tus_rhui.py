@@ -158,7 +158,7 @@ def _dnf_repolist_repoids(context, target_version):
     def extract_repoid_from_line(line):
         return line.split(':', 1)[1].strip()
 
-    repoid_lines = [line for line in stdout.split('\n') if line.startswith('Repo-id')]
+    repoid_lines = [line for line in stdout if line.startswith('Repo-id')]
     repoids.update({extract_repoid_from_line(line) for line in repoid_lines})
     return repoids
 
