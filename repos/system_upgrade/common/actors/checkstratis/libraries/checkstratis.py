@@ -1,6 +1,6 @@
 from leapp import reporting
 from leapp.libraries.stdlib import api, format_list
-from leapp.models import StorageInfo
+from leapp.models import LiveModeConfig, StorageInfo, TargetUserSpaceUpgradeTasks
 
 # Stratis filesystems are exposed as symlinks under /dev/stratis/<pool>/<fs>
 _STRATIS_DEVICE_PREFIX = '/dev/stratis/'
@@ -10,6 +10,12 @@ _STRATIS_DEVICE_PREFIX = '/dev/stratis/'
 # present in the mount options.
 _STRATIS_MNTOPS_MARKERS = ('stratis-fstab-setup', 'stratisd-min.service')
 
+# Packages that have to be present in the target userspace so that Stratis
+# pools can be activated and their filesystems mounted during a live mode
+# upgrade. The fstab entries request the start of stratisd themselves, so it is
+# sufficient to make the daemon available.
+_STRATIS_LIVEMODE_PACKAGES = ['stratisd']
+
 
 def process():
     stratis_entries = []
@@ -18,17 +24,41 @@ def process():
             if _is_stratis_entry(entry):
                 stratis_entries.append(entry.fs_file)
 
-    if stratis_entries:
-        _inhibit_upgrade(stratis_entries)
+    if not stratis_entries:
+        api.current_logger().debug('No Stratis filesystem detected in /etc/fstab.')
         return
 
-    api.current_logger().debug('No Stratis filesystem detected in /etc/fstab.')
+    if _is_stratis_supported_by_livemode():
+        api.current_logger().info(
+            'Stratis filesystems detected in /etc/fstab, but the upgrade is using the live mode'
+            ' with networking enabled. Requesting Stratis packages to be installed into the target'
+            ' userspace instead of inhibiting the upgrade.'
+        )
+        api.produce(TargetUserSpaceUpgradeTasks(install_rpms=_STRATIS_LIVEMODE_PACKAGES))
+        return
+
+    _inhibit_upgrade(stratis_entries)
 
 
 def _is_stratis_entry(entry):
     if entry.fs_spec.startswith(_STRATIS_DEVICE_PREFIX):
         return True
     return any(marker in entry.fs_mntops for marker in _STRATIS_MNTOPS_MARKERS)
+
+
+def _is_stratis_supported_by_livemode():
+    """
+    Can Stratis filesystems be mounted during the upgrade using the live mode?
+
+    Unlike the regular upgrade, the live mode upgrade runs from a full userspace
+    into which stratisd can be installed. Networking has to be set up, though, so
+    that the Stratis packages can be downloaded and installed into the target
+    userspace.
+    """
+    livemode_config = next(api.consume(LiveModeConfig), None)
+    if not livemode_config or not livemode_config.is_enabled:
+        return False
+    return livemode_config.setup_network_manager
 
 
 def _inhibit_upgrade(stratis_entries):
