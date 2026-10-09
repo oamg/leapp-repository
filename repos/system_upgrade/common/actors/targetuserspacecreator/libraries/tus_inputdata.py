@@ -124,10 +124,12 @@ def gather():
         )
 
     raw_copy_files = []
-    packages = _DEFAULT_INSTALL_PKGS
+    # Copy the module-level default set so repeated gather() calls do not
+    # accumulate packages into the shared default.
+    packages = set(_DEFAULT_INSTALL_PKGS)
     for task in preupgrade_tasks:
-        packages |= task.install_rpms
-        raw_copy_files.append(task.copy_files)
+        packages |= set(task.install_rpms)
+        raw_copy_files.extend(task.copy_files)
 
     copy_files = _dedup_copy_files(raw_copy_files)
 

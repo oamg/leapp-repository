@@ -16,7 +16,12 @@ from leapp.exceptions import StopActorExecution, StopActorExecutionError
 from leapp.libraries.actor import tus_rhui
 from leapp.libraries.common import distro, repofileutils
 from leapp.libraries.common.config import get_source_distro_id, get_target_distro_id, is_conversion
-from leapp.libraries.common.config.version import get_source_major_version, get_target_major_version, get_target_version
+from leapp.libraries.common.config.version import (
+    get_major_version,
+    get_source_major_version,
+    get_target_major_version,
+    get_target_version,
+)
 from leapp.libraries.stdlib import api, format_list
 from leapp.models import RepositoriesFactsTarget, RHELTargetRepository, UsedTargetRepositories, UsedTargetRepository
 from leapp.utils.deprecation import suppress_deprecation
@@ -45,6 +50,25 @@ def _all_available_repoids(context):
         for repo in repofile.data:
             repoids.add(repo.repoid)
     return repoids
+
+
+def _duplicate_repoids(context):
+    """
+    Repoids defined more than once across the container's repofiles.
+
+    Unlike :func:`_all_available_repoids` (which collapses repoids into a set),
+    this walks every repo entry so a repoid appearing in two (or more) repofiles -
+    or twice within one - is reported. Used for inhibitor #2 when RHSM is skipped.
+    """
+    seen = set()
+    duplicates = set()
+    for repofile in repofileutils.get_parsed_repofiles(context):
+        for repo in repofile.data:
+            if repo.repoid in seen:
+                duplicates.add(repo.repoid)
+            else:
+                seen.add(repo.repoid)
+    return duplicates
 
 
 def _has_base_repos(repoids):
@@ -210,7 +234,7 @@ def _discover_distro_and_rhui_target_repositories(context, rhui_info, target_ver
             'The following repoids are considered as provided by RHUI cloud provider for RHEL:{}'
             .format(format_list(rhui_repoids))
         )
-    return distro_repoids | rhui_repoids
+    return distro_repoids, rhui_repoids
 
 
 def select_target_repositories(context, inputs):
@@ -263,8 +287,7 @@ def select_target_repositories(context, inputs):
     if inputs.skip_rhsm:
         # only if rhsm is skipped, the duplicate repos are not detected
         # automatically and we need to do it extra
-        seen = set()
-        duplicates = {repoid for repoid in available if repoid in seen or seen.add(repoid)}
+        duplicates = _duplicate_repoids(context)
         if duplicates:
             api.current_logger().warning(
                 'The following repoids are defined multiple times:{}'.format(

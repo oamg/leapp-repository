@@ -158,13 +158,15 @@ def _diagnose_dnf_failure(error, inputs):
         )
 
     # Similarly if a proxy was set specifically for one of the repositories.
-    for repo_facts in inputs.repositories_facts:
-        for repo_file in repo_facts.repositories:
-            if any(repo_data.proxy and repo_data.enabled for repo_data in repo_file.data):
-                hint = (
-                    'DNF failed to install userspace packages, likely due to the proxy '
-                    'configuration detected in a repository configuration file.'
-                )
+    # repositories_facts is a single RepositoriesFacts message (or None).
+    repositories_facts = inputs.repositories_facts
+    repo_files = repositories_facts.repositories if repositories_facts else []
+    for repo_file in repo_files:
+        if any(repo_data.proxy and repo_data.enabled for repo_data in repo_file.data):
+            hint = (
+                'DNF failed to install userspace packages, likely due to the proxy '
+                'configuration detected in a repository configuration file.'
+            )
 
     if get_source_distro_id() == 'centos' and get_target_distro_id() == 'rhel':
         check_rhel_release_hint = (

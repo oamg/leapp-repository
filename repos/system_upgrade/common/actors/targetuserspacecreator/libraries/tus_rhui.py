@@ -188,7 +188,7 @@ def discover_client_exposed_repoids(context, rhui_info, target_version):
     target_access_repofiles = set()
     if setup_info.bootstrap_target_client:
         target_access_repofiles = _find_rhui_client_repofiles(
-            context, rhui_info, get_major_version(target_version)
+            context, rhui_info.target_client_pkg_names, get_major_version(target_version)
         )
 
     # Exclude repofiles used to setup the target rhui access as on some platforms
@@ -203,8 +203,8 @@ def discover_client_exposed_repoids(context, rhui_info, target_version):
 
     api.current_logger().debug(
         'The following repofiles are considered as unknown to'
-        ' the target RHUI content setup and will be ignored: {0}'
-    ).format(' '.join(foreign))
+        ' the target RHUI content setup and will be ignored: {0}'.format(' '.join(foreign))
+    )
 
     # Rename non-client repofiles so they will not be recognized when running dnf repolist
     for repofile in foreign:
