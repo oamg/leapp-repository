@@ -4,7 +4,7 @@ import pytest
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import tus_layout, tus_userspacebuild
-from leapp.libraries.common.testutils import CurrentActorMocked
+from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked
 from leapp.libraries.stdlib import api, CalledProcessError
 from leapp.models import (
     RepositoriesFacts,
@@ -14,6 +14,18 @@ from leapp.models import (
     UsedTargetRepositories,
     UsedTargetRepository
 )
+
+_COMMON_FLAGS_EL9 = [
+    '--setopt=module_platform_id=platform:el9',
+    '--setopt=keepcache=1',
+    '--releasever', '9.6',
+]
+_SM_DISABLE_FLAGS = ['--disableplugin', 'subscription-manager']
+
+
+@pytest.fixture(autouse=True)
+def _mock_logger(monkeypatch):
+    monkeypatch.setattr(api, 'current_logger', logger_mocked())
 
 
 def _cpe(stdout='', stderr=''):
@@ -56,28 +68,29 @@ class _NullCM:
 
 
 # --------------------------------------------------------------------------- #
-# _build_dnf_install_cmd
+# _build_dnf_install_cmd - exact command assembly
 # --------------------------------------------------------------------------- #
-@pytest.mark.parametrize('skip_rhsm,nogpgcheck', [
+@pytest.mark.parametrize(('skip_rhsm', 'nogpgcheck'), [
     (False, False), (True, False), (False, True), (True, True),
 ])
 def test_build_dnf_install_cmd(skip_rhsm, nogpgcheck):
+    expected = ['dnf', 'install', '-y']
+    if nogpgcheck:
+        expected += ['--nogpgcheck']
+    expected += _COMMON_FLAGS_EL9
+    if skip_rhsm:
+        expected += _SM_DISABLE_FLAGS
+    expected += ['--installroot', '/root', '--disablerepo', '*']
+    expected += ['--enablerepo', 'baseos', '--enablerepo', 'appstream']
+    expected += ['dnf', 'util-linux']
+
     cmd = tus_userspacebuild._build_dnf_install_cmd(
         installroot='/root', releasever='9.6',
         repoids=['baseos', 'appstream'], skip_rhsm=skip_rhsm, nogpgcheck=nogpgcheck,
         packages=['dnf', 'util-linux'],
     )
 
-    assert cmd[:3] == ['dnf', 'install', '-y']
-    assert ('--nogpgcheck' in cmd) is nogpgcheck
-    assert ('--disableplugin' in cmd and 'subscription-manager' in cmd) is skip_rhsm
-    assert '--setopt=module_platform_id=platform:el9' in cmd
-    assert cmd[cmd.index('--releasever') + 1] == '9.6'
-    assert cmd[cmd.index('--installroot') + 1] == '/root'
-    assert '--disablerepo' in cmd and '*' in cmd
-    # every repoid enabled, packages last
-    assert cmd.count('--enablerepo') == 2
-    assert cmd[-2:] == ['dnf', 'util-linux']
+    assert cmd == expected
 
 
 # --------------------------------------------------------------------------- #
@@ -168,12 +181,15 @@ def test_import_gpg_keys_sorted(monkeypatch):
 
 def test_import_gpg_keys_missing_dir_is_noop(monkeypatch):
     context = _CallRecorder()
+    logger = logger_mocked()
+    monkeypatch.setattr(api, 'current_logger', logger)
     monkeypatch.setattr(tus_userspacebuild, 'get_path_to_gpg_certs', lambda: '/certs')
     monkeypatch.setattr(tus_userspacebuild.os.path, 'isdir', lambda p: False)
 
     tus_userspacebuild._import_gpg_keys(context, '/installroot')
 
     assert not context.calls
+    assert any('No target GPG keys directory found' in msg for msg in logger.warnmsg)
 
 
 # --------------------------------------------------------------------------- #

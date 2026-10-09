@@ -838,7 +838,11 @@ class _MockContext():
         assert len(cmd) == 3 and cmd[0] == 'rpm' and cmd[1] == '-qf'
         if cmd[2] in self.owned_by_rpms:
             return {'exit_code': 0}
-        raise CalledProcessError("Command failed with exit code 1", cmd, 1)
+        raise CalledProcessError(
+            "Command failed with exit code 1",
+            cmd,
+            {'stdout': '', 'stderr': '', 'exit_code': 1},
+        )
 
 
 def test__get_files_owned_by_rpms(monkeypatch):

@@ -5,10 +5,30 @@ import pytest
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import tus_rhui
-from leapp.libraries.stdlib import CalledProcessError
+from leapp.libraries.common.testutils import logger_mocked
+from leapp.libraries.stdlib import api, CalledProcessError
 from leapp.models import CopyFile, RHUIInfo, TargetRHUIPostInstallTasks, TargetRHUIPreInstallTasks, TargetRHUISetupInfo
 
 _YUM = '/etc/yum.repos.d'
+_SWAP_SCRIPT_PATH = '/leapp-rhui-swap.dnfsh'
+_COMMON_FLAGS_EL9 = [
+    '--setopt=module_platform_id=platform:el9',
+    '--setopt=keepcache=1',
+    '--releasever', '9.6',
+]
+_SM_DISABLE_FLAGS = ['--disableplugin', 'subscription-manager']
+
+
+class _LoggerMocked(logger_mocked):
+    """logger_mocked extended with ``critical`` (used by the client-not-found path)."""
+
+    def critical(self, *args, **kwargs):
+        self.errmsg.extend(args)
+
+
+@pytest.fixture(autouse=True)
+def _mock_logger(monkeypatch):
+    monkeypatch.setattr(api, 'current_logger', _LoggerMocked())
 
 
 def _cpe():
@@ -95,6 +115,12 @@ class FakeContext:
         buf = io.StringIO()
         yield buf
         self.written[path] = buf.getvalue()
+
+    @property
+    def dnf_shell_cmd(self):
+        """The single ``dnf shell`` command recorded, or None."""
+        shell_calls = [c for c in self.calls if c[0] == 'dnf' and 'shell' in c]
+        return shell_calls[0] if shell_calls else None
 
 
 # --------------------------------------------------------------------------- #
@@ -310,7 +336,7 @@ def test_perform_client_swap_early_return_when_not_bootstrapping(monkeypatch):
 
     # pre-install copy happened, but no dnf shell swap
     assert ('/h/a.repo', '/etc/yum.repos.d/a.repo') in context.copied_to
-    assert not any(c[0] == 'dnf' and 'shell' in c for c in context.calls)
+    assert context.dnf_shell_cmd is None
 
 
 def test_perform_client_swap_order_and_flags(monkeypatch):
@@ -326,12 +352,12 @@ def test_perform_client_swap_order_and_flags(monkeypatch):
     lines = [ln for ln in script.splitlines() if ln]
     assert lines == ['remove src-client', 'install tgt-client', 'transaction run']
 
-    dnf_shell = [c for c in context.calls if c[0] == 'dnf' and 'shell' in c][0]
-    assert '--disableplugin' in dnf_shell and 'subscription-manager' in dnf_shell
-    assert '--setopt=module_platform_id=platform:el9' in dnf_shell
-    assert dnf_shell[dnf_shell.index('--releasever') + 1] == '9.6'
+    # exact swap command: dnf shell + shared flags (incl. subscription-manager disabled) + script
+    assert context.dnf_shell_cmd == (
+        ['dnf', 'shell', '-y'] + _COMMON_FLAGS_EL9 + _SM_DISABLE_FLAGS + [_SWAP_SCRIPT_PATH]
+    )
     # swap transaction script is cleaned up afterwards
-    assert '/leapp-rhui-swap.dnfsh' in context.removed
+    assert _SWAP_SCRIPT_PATH in context.removed
 
 
 def test_perform_client_swap_enable_only_repoids(monkeypatch):
@@ -344,10 +370,11 @@ def test_perform_client_swap_enable_only_repoids(monkeypatch):
 
     tus_rhui.perform_client_swap(context, rhui_info, '9.6', False)
 
-    dnf_shell = [c for c in context.calls if c[0] == 'dnf' and 'shell' in c][0]
-    assert '--disablerepo=*' in dnf_shell
-    # repoids enabled in sorted order
-    assert dnf_shell.index('--enablerepo=repo-a') < dnf_shell.index('--enablerepo=repo-b')
+    # exact command: shared flags (RHSM not skipped) then --disablerepo=* then repoids in sorted order
+    assert context.dnf_shell_cmd == (
+        ['dnf', 'shell', '-y'] + _COMMON_FLAGS_EL9
+        + ['--disablerepo=*', '--enablerepo=repo-a', '--enablerepo=repo-b', _SWAP_SCRIPT_PATH]
+    )
 
 
 def test_perform_client_swap_client_not_found_hard_stops(monkeypatch):

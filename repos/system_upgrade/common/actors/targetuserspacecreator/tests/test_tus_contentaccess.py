@@ -6,7 +6,7 @@ import pytest
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import tus_contentaccess
 from leapp.libraries.common import rhsm
-from leapp.libraries.common.testutils import CurrentActorMocked
+from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked
 from leapp.libraries.stdlib import api
 from leapp.models import CustomTargetRepositoryFile, RHSMInfo
 
@@ -72,6 +72,7 @@ def _patch_collaborators(monkeypatch, calls, distro='rhel', captured=None):
     """
     monkeypatch.setattr(api, 'current_actor',
                         CurrentActorMocked(dst_ver='9.6', dst_distro=distro))
+    monkeypatch.setattr(api, 'current_logger', logger_mocked())
 
     def _fake_swap(*args):
         if captured is not None:

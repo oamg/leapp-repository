@@ -3,7 +3,7 @@ import pytest
 from leapp.exceptions import StopActorExecution, StopActorExecutionError
 from leapp.libraries.actor import tus_targetrepos
 from leapp.libraries.common import repofileutils
-from leapp.libraries.common.testutils import CurrentActorMocked
+from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked
 from leapp.libraries.stdlib import api
 from leapp.models import (
     CustomTargetRepository,
@@ -55,6 +55,7 @@ def _patch(monkeypatch, reports, distro_repoids=(), rhui_repoids=(), parsed=None
            parsed_exc=None, src_distro='rhel', src_ver='8.10', dst_distro='rhel', dst_ver='9.6'):
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(
         src_distro=src_distro, dst_distro=dst_distro, src_ver=src_ver, dst_ver=dst_ver))
+    monkeypatch.setattr(api, 'current_logger', logger_mocked())
     monkeypatch.setattr(tus_targetrepos.distro, 'get_target_distro_repoids',
                         lambda ctx: list(distro_repoids))
     monkeypatch.setattr(tus_targetrepos.tus_rhui, 'discover_client_exposed_repoids',
