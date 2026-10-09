@@ -20,7 +20,7 @@ from leapp.libraries.common.config.version import (
     get_major_version,
     get_source_major_version,
     get_target_major_version,
-    get_target_version,
+    get_target_version
 )
 from leapp.libraries.stdlib import api, format_list
 from leapp.models import RepositoriesFactsTarget, RHELTargetRepository, UsedTargetRepositories, UsedTargetRepository

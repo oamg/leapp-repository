@@ -22,7 +22,7 @@ from leapp.models import (
     StorageInfo,
     TargetOSInstallationImage,
     TargetRepositories,
-    TargetUserSpacePreupgradeTasks,
+    TargetUserSpacePreupgradeTasks
 )
 
 # Packages always installed into the target userspace, on top of whatever the

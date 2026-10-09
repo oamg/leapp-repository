@@ -32,8 +32,7 @@ def _patch_pipeline(monkeypatch, produced, reports, establish=None):
     monkeypatch.setattr(tus_userspacegen.tus_targetrepos, 'build_target_repositories_snapshot',
                         lambda ctx: snapshot)
     monkeypatch.setattr(api, 'produce', lambda *msgs: produced.extend(msgs))
-    monkeypatch.setattr(tus_userspacegen.reporting, 'create_report',
-                        lambda parts: reports.append(parts))
+    monkeypatch.setattr(tus_userspacegen.reporting, 'create_report', reports.append)
     return userspace_info, used_repos, snapshot
 
 
@@ -49,7 +48,7 @@ def test_perform_happy_path_produces_three_messages_in_order(monkeypatch):
 
     # exactly the three outputs, in the documented order, same objects
     assert produced == [userspace_info, used_repos, snapshot]
-    assert reports == []
+    assert not reports
 
 
 def test_perform_no_produce_on_gather_hardstop(monkeypatch):
@@ -64,7 +63,7 @@ def test_perform_no_produce_on_gather_hardstop(monkeypatch):
     with pytest.raises(StopActorExecutionError):
         tus_userspacegen.perform()
 
-    assert produced == []
+    assert not produced
 
 
 def test_perform_missing_cert_reports_and_no_produce(monkeypatch):
@@ -79,7 +78,7 @@ def test_perform_missing_cert_reports_and_no_produce(monkeypatch):
     tus_userspacegen.perform()
 
     # Inhibitor #1 reported, nothing produced.
-    assert produced == []
+    assert not produced
     titles = [p.value for p in _parts_of_type(reports, 'Title')]
     assert titles == ['Missing target system product certificate']
     # It is an inhibitor and carries the devel-target-release remediation.

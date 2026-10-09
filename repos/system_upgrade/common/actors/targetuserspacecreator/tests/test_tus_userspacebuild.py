@@ -3,7 +3,7 @@ import contextlib
 import pytest
 
 from leapp.exceptions import StopActorExecutionError
-from leapp.libraries.actor import tus_userspacebuild
+from leapp.libraries.actor import tus_layout, tus_userspacebuild
 from leapp.libraries.common.testutils import CurrentActorMocked
 from leapp.libraries.stdlib import api, CalledProcessError
 from leapp.models import (
@@ -12,7 +12,7 @@ from leapp.models import (
     RepositoryFile,
     TargetUserSpaceInfo,
     UsedTargetRepositories,
-    UsedTargetRepository,
+    UsedTargetRepository
 )
 
 
@@ -20,7 +20,7 @@ def _cpe(stdout='', stderr=''):
     return CalledProcessError('boom', ['dnf'], {'exit_code': 1, 'stdout': stdout, 'stderr': stderr})
 
 
-class _Inputs(object):
+class _Inputs:
     def __init__(self, skip_rhsm=False, nogpgcheck=False, packages=None, copy_files=None,
                  rhui_info=None, pkg_manager_info=None, repositories_facts=None):
         self.skip_rhsm = skip_rhsm
@@ -32,22 +32,22 @@ class _Inputs(object):
         self.repositories_facts = repositories_facts
 
 
-class _PkgManagerInfo(object):
+class _PkgManagerInfo:
     def __init__(self, configured_proxies):
         self.configured_proxies = configured_proxies
 
 
-class _Setup(object):
+class _Setup:
     def __init__(self, bootstrap):
         self.bootstrap_target_client = bootstrap
 
 
-class _RhuiInfo(object):
+class _RhuiInfo:
     def __init__(self, bootstrap):
         self.target_client_setup_info = _Setup(bootstrap)
 
 
-class _NullCM(object):
+class _NullCM:
     def __enter__(self):
         return self
 
@@ -140,7 +140,7 @@ def test_diagnose_no_repositories_facts_does_not_crash(monkeypatch):
 # --------------------------------------------------------------------------- #
 # _import_gpg_keys
 # --------------------------------------------------------------------------- #
-class _CallRecorder(object):
+class _CallRecorder:
     def __init__(self):
         self.calls = []
 
@@ -173,13 +173,13 @@ def test_import_gpg_keys_missing_dir_is_noop(monkeypatch):
 
     tus_userspacebuild._import_gpg_keys(context, '/installroot')
 
-    assert context.calls == []
+    assert not context.calls
 
 
 # --------------------------------------------------------------------------- #
 # build() orchestration
 # --------------------------------------------------------------------------- #
-class _BuildContext(object):
+class _BuildContext:
     def __init__(self):
         self.calls = []
 
@@ -191,7 +191,7 @@ class _BuildContext(object):
         return '/overlay' + path
 
 
-class _UsContext(object):
+class _UsContext:
     def __init__(self, base_dir):
         self.base_dir = base_dir
 
@@ -200,7 +200,6 @@ class _UsContext(object):
 
 
 def _layout():
-    from leapp.libraries.actor import tus_layout
     return tus_layout.Layout(
         container_root='/var/lib/leapp',
         userspace_path='/var/lib/leapp/el9userspace',

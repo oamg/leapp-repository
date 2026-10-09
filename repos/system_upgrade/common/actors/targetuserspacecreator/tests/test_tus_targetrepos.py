@@ -13,26 +13,26 @@ from leapp.models import (
     RepositoryFile,
     RHELTargetRepository,
     TargetRepositories,
-    UsedTargetRepositories,
+    UsedTargetRepositories
 )
 from leapp.utils.deprecation import suppress_deprecation
 
 _BASE = ['baseos', 'appstream']
 
 
-class _Inputs(object):
+class _Inputs:
     def __init__(self, target_repositories, rhui_info=None, skip_rhsm=False):
         self.target_repositories = target_repositories
         self.rhui_info = rhui_info
         self.skip_rhsm = skip_rhsm
 
 
-class _Repo(object):
+class _Repo:
     def __init__(self, repoid):
         self.repoid = repoid
 
 
-class _RepoFile(object):
+class _RepoFile:
     def __init__(self, repoids):
         self.data = [_Repo(repoid) for repoid in repoids]
 
@@ -66,8 +66,7 @@ def _patch(monkeypatch, reports, distro_repoids=(), rhui_repoids=(), parsed=None
         return parsed if parsed is not None else []
 
     monkeypatch.setattr(tus_targetrepos.repofileutils, 'get_parsed_repofiles', _get_parsed)
-    monkeypatch.setattr(tus_targetrepos.reporting, 'create_report',
-                        lambda parts: reports.append(parts))
+    monkeypatch.setattr(tus_targetrepos.reporting, 'create_report', reports.append)
 
 
 def _titles(reports):
@@ -140,7 +139,7 @@ def test_select_happy_path(monkeypatch):
 
     assert isinstance(result, UsedTargetRepositories)
     assert sorted(r.repoid for r in result.repos) == ['appstream', 'baseos']
-    assert reports == []
+    assert not reports
 
 
 def test_select_includes_rhui_repoids(monkeypatch):
@@ -168,7 +167,7 @@ def test_select_custom_repo_selected_from_available(monkeypatch):
     result = tus_targetrepos.select_target_repositories(None, inputs)
 
     assert sorted(r.repoid for r in result.repos) == ['appstream', 'baseos', 'custom1']
-    assert reports == []
+    assert not reports
 
 
 # --------------------------------------------------------------------------- #
@@ -199,7 +198,7 @@ def test_no_duplicate_check_without_skip_rhsm(monkeypatch):
     result = tus_targetrepos.select_target_repositories(None, inputs)
 
     assert sorted(r.repoid for r in result.repos) == ['appstream', 'baseos']
-    assert reports == []
+    assert not reports
 
 
 # --------------------------------------------------------------------------- #
@@ -225,7 +224,7 @@ def test_base_repo_check_skipped_for_conversion(monkeypatch):
 
     result = tus_targetrepos.select_target_repositories(None, inputs)
     assert [r.repoid for r in result.repos] == ['foo']
-    assert reports == []
+    assert not reports
 
 
 # --------------------------------------------------------------------------- #

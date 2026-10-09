@@ -27,7 +27,7 @@ def test_gather_happy_path_with_rhsm(monkeypatch):
     assert inputs.nogpgcheck is False
     # Default packages always present, nothing extra requested.
     assert inputs.packages == _DEFAULTS
-    assert inputs.copy_files == []
+    assert not inputs.copy_files
 
 
 def test_gather_happy_path_skip_rhsm(monkeypatch):

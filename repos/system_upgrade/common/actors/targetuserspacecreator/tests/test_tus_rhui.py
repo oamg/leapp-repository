@@ -6,13 +6,7 @@ import pytest
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import tus_rhui
 from leapp.libraries.stdlib import CalledProcessError
-from leapp.models import (
-    CopyFile,
-    RHUIInfo,
-    TargetRHUIPostInstallTasks,
-    TargetRHUIPreInstallTasks,
-    TargetRHUISetupInfo,
-)
+from leapp.models import CopyFile, RHUIInfo, TargetRHUIPostInstallTasks, TargetRHUIPreInstallTasks, TargetRHUISetupInfo
 
 _YUM = '/etc/yum.repos.d'
 
@@ -43,17 +37,17 @@ def _rhui_info(bootstrap=True, enable_only=True, preinstall_copies=None, files_t
     )
 
 
-class _Repo(object):
+class _Repo:
     def __init__(self, repoid):
         self.repoid = repoid
 
 
-class _RepoFile(object):
+class _RepoFile:
     def __init__(self, repoids):
         self.data = [_Repo(repoid) for repoid in repoids]
 
 
-class FakeContext(object):
+class FakeContext:
     def __init__(self, repolist_stdout='', fail_repolist=False, rpm_ql=None, owned_files=None):
         self.calls = []
         self.removed = []
@@ -109,19 +103,19 @@ class FakeContext(object):
 def test_perform_client_swap_noop_when_falsy():
     context = FakeContext()
     tus_rhui.perform_client_swap(context, None, '9.6', False)
-    assert context.calls == []
+    assert not context.calls
 
 
 def test_discover_noop_when_falsy():
     context = FakeContext()
     assert tus_rhui.discover_client_exposed_repoids(context, None, '9.6') == set()
-    assert context.calls == []
+    assert not context.calls
 
 
 def test_cleanup_noop_when_falsy():
     context = FakeContext()
     tus_rhui.cleanup_injected_repofiles(context, None)
-    assert context.calls == []
+    assert not context.calls
 
 
 # --------------------------------------------------------------------------- #
@@ -194,9 +188,9 @@ def test_run_preinstall_tasks_removes_then_copies(monkeypatch):
 def test_run_preinstall_tasks_noop_when_empty():
     context = FakeContext()
     tus_rhui._run_preinstall_tasks(context, None)
-    assert context.calls == []
-    assert context.removed == []
-    assert context.copied_to == []
+    assert not context.calls
+    assert not context.removed
+    assert not context.copied_to
 
 
 # --------------------------------------------------------------------------- #
@@ -417,4 +411,4 @@ def test_cleanup_skips_non_repo_and_missing_files(monkeypatch):
 
     tus_rhui.cleanup_injected_repofiles(context, rhui_info)
 
-    assert context.removed == []
+    assert not context.removed

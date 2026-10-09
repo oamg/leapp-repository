@@ -18,9 +18,9 @@ import shutil
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import tus_constants, tus_repoaccess, tus_rhui
 from leapp.libraries.common import mounting, rhsm, utils
-from leapp.libraries.common.dnflibs import dnfplugin
 from leapp.libraries.common.config import get_env, get_source_distro_id, get_target_distro_id
 from leapp.libraries.common.config.version import get_target_major_version, get_target_version
+from leapp.libraries.common.dnflibs import dnfplugin
 from leapp.libraries.common.gpg import get_path_to_gpg_certs
 from leapp.libraries.stdlib import api, CalledProcessError, run
 from leapp.models import TargetUserSpaceInfo

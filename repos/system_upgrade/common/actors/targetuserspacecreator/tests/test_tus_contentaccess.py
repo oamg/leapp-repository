@@ -11,7 +11,7 @@ from leapp.libraries.stdlib import api
 from leapp.models import CustomTargetRepositoryFile, RHSMInfo
 
 
-class _Inputs(object):
+class _Inputs:
     """Minimal stand-in for tus_inputdata.InputData holding only what establish() reads."""
 
     def __init__(self, rhui_info=None, rhsm_info=None, skip_rhsm=False, custom_repofiles=None):
@@ -21,7 +21,7 @@ class _Inputs(object):
         self.custom_repofiles = custom_repofiles or []
 
 
-class _FakeContext(object):
+class _FakeContext:
     """Minimal stand-in for the mounting.IsolatedActions scratch context."""
 
     def __init__(self, calls=None):
@@ -42,16 +42,27 @@ class _FakeContext(object):
         self._calls.append('stream')
 
 
-class _FailingContext(object):
-    """Context whose open() raises, to exercise the write error path."""
+class _FailingOpen:
+    """Context manager whose __enter__ raises, to exercise the write error path."""
 
     def __init__(self, exc):
         self._exc = exc
 
-    @contextlib.contextmanager
-    def open(self, path, mode='r'):
+    def __enter__(self):
         raise self._exc
-        yield None  # unreachable; only present to make this a generator
+
+    def __exit__(self, *args):
+        return False
+
+
+class _FailingContext:
+    """Context whose open() raises on enter."""
+
+    def __init__(self, exc):
+        self._exc = exc
+
+    def open(self, path, mode='r'):
+        return _FailingOpen(self._exc)
 
 
 def _patch_collaborators(monkeypatch, calls, distro='rhel', captured=None):

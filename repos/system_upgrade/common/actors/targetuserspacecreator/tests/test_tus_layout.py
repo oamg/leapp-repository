@@ -3,13 +3,13 @@ import contextlib
 from leapp.libraries.actor import tus_layout
 
 
-class _FakeInputs(object):
+class _FakeInputs:
     def __init__(self, storage_info=None, target_iso=None):
         self.storage_info = storage_info
         self.target_iso = target_iso
 
 
-class _FakeOverlay(object):
+class _FakeOverlay:
     def __init__(self, events):
         self.target = '/overlay/target'
         self._events = events
@@ -18,7 +18,7 @@ class _FakeOverlay(object):
         return _FakeNspawn(self._events)
 
 
-class _FakeNspawn(object):
+class _FakeNspawn:
     def __init__(self, events):
         self._events = events
 
@@ -31,7 +31,7 @@ class _FakeNspawn(object):
         return False
 
 
-class _FakeIso(object):
+class _FakeIso:
     def __init__(self, events):
         self._events = events
 
@@ -62,7 +62,7 @@ def test_compute_default_paths(monkeypatch):
 
 def test_compute_honours_container_root_override(monkeypatch):
     envs = {'LEAPP_CONTAINER_ROOT': '/custom/root'}
-    monkeypatch.setattr(tus_layout, 'get_env', lambda name, default: envs.get(name, default))
+    monkeypatch.setattr(tus_layout, 'get_env', envs.get)
     monkeypatch.setattr(tus_layout, 'get_target_major_version', lambda: '10')
     monkeypatch.setattr(tus_layout.overlaygen, 'get_recommended_leapp_free_space', lambda path: 0)
 
