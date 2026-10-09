@@ -30,7 +30,7 @@ _INSTALLROOT_DIRNAME_TEMPLATE = 'el{target_major}target'
 _PERSISTENT_PKG_CACHE_DIRNAME = 'persistent_package_cache'
 
 
-class Layout(object):
+class Layout:
     """Plain value object describing where the actor builds the userspace."""
 
     def __init__(

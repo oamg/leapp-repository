@@ -35,7 +35,7 @@ _DEFAULT_INSTALL_PKGS = {
 }
 
 
-class InputData(object):
+class InputData:
     """Plain value object holding the validated actor inputs."""
 
     def __init__(self, storage_info, target_repositories, custom_repofiles,
