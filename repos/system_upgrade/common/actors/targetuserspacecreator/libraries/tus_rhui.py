@@ -139,9 +139,9 @@ def _repofiles_copied_at_setup(context, files_to_copy_into_overlay):
 
 def _dnf_repolist_repoids(context, target_version):
     """
-    Run ``dnf repolist`` and return the enabled repoids, excluding source/debug
+    Run ``dnf repolist`` and return the list of repoids, excluding source/debug
 
-    :return: List of repoids enabled in the cotext, excluding source/debug
+    :return: List of repoids available in the context, excluding source/debug
     :raises CalledProcessError: When the underlying ``dnf repolist`` call fails
     """
     repoids = set()
