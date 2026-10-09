@@ -48,4 +48,3 @@ class RepositoriesFactsTarget(RepositoriesFacts):
     distinct type from the source-system ``RepositoriesFacts`` (same field
     shape, different subject and lifecycle) to prevent the two being conflated.
     """
-
