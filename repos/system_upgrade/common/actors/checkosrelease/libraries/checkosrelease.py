@@ -3,7 +3,7 @@ import os
 from leapp import reporting
 from leapp.libraries.common.config import version
 from leapp.libraries.common.distro import DISTRO_REPORT_NAMES
-from leapp.libraries.stdlib import format_list
+from leapp.libraries.stdlib import api, format_list
 
 COMMON_REPORT_TAGS = [reporting.Groups.SANITY]
 
@@ -26,14 +26,24 @@ def skip_check():
     return False
 
 
+def _get_supported_source_versions():
+    """Extract supported source versions from the upgrade paths configuration."""
+    supported_upgrade_paths = api.current_actor().configuration.supported_upgrade_paths
+    all_versions = sorted({path.source_version for path in supported_upgrade_paths})
+    if '.' not in version.get_source_version():
+        return all_versions
+    return [v for v in all_versions if '.' in v]
+
+
 def check_os_version():
     """ Check the distro version and inhibit the upgrade if it does not match the supported ones """
     if not version.is_supported_version():
-        supported_releases = []
-        for rel in version.SUPPORTED_VERSIONS:
-            for ver in version.SUPPORTED_VERSIONS[rel]:
-                supported_releases.append(rel.upper() + ' ' + ver)
-        current_release = ' '.join(version.current_version()).upper()
+        supported_source_versions = _get_supported_source_versions()
+        prefix = DISTRO_REPORT_NAMES.source
+        if api.current_actor().configuration.flavour == 'saphana':
+            prefix = '{} (SAP HANA)'.format(prefix)
+        supported_releases = ['{} {}'.format(prefix, v) for v in supported_source_versions]
+        current_release = '{} {}'.format(prefix, version.get_source_version())
         reporting.create_report([
             reporting.Title(
                 'The installed OS version is not supported for the in-place upgrade'
