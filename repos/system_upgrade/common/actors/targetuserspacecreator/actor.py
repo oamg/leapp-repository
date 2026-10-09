@@ -14,7 +14,6 @@ from leapp.models import (
     TargetUserSpaceInfo,
     TargetUserSpacePreupgradeTasks,
     UsedTargetRepositories,
-    XFSPresence
 )
 from leapp.tags import IPUWorkflowTag, TargetTransactionFactsPhaseTag
 
@@ -40,7 +39,6 @@ class TargetUserspaceCreator(Actor):
         TargetOSInstallationImage,
         TargetRepositories,
         TargetUserSpacePreupgradeTasks,
-        XFSPresence,
         PkgManagerInfo,
     )
     produces = (TargetUserSpaceInfo, UsedTargetRepositories, RepositoriesFactsTarget, Report)

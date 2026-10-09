@@ -23,7 +23,6 @@ from leapp.models import (
     TargetOSInstallationImage,
     TargetRepositories,
     TargetUserSpacePreupgradeTasks,
-    XFSPresence,
 )
 
 # Packages always installed into the target userspace, on top of whatever the
@@ -41,8 +40,8 @@ class InputData(object):
 
     def __init__(self, storage_info, target_repositories, custom_repofiles,
                  rhsm_info, rhui_info, target_iso, preupgrade_tasks,
-                 xfs_presence, repositories_facts, pkg_manager_info,
-                 skip_rhsm, nogpgcheck, packages, copy_files):
+                 repositories_facts, pkg_manager_info, skip_rhsm, nogpgcheck,
+                 packages, copy_files):
         self.storage_info = storage_info
         self.target_repositories = target_repositories
         self.custom_repofiles = custom_repofiles
@@ -50,7 +49,6 @@ class InputData(object):
         self.rhui_info = rhui_info
         self.target_iso = target_iso
         self.preupgrade_tasks = preupgrade_tasks
-        self.xfs_presence = xfs_presence
         self.repositories_facts = repositories_facts
         self.pkg_manager_info = pkg_manager_info
         self.skip_rhsm = skip_rhsm
@@ -85,9 +83,6 @@ def gather():
     rhui_info = next(api.consume(RHUIInfo), None)
     target_iso = next(api.consume(TargetOSInstallationImage), None)
     preupgrade_tasks = list(api.consume(TargetUserSpacePreupgradeTasks))
-    ### FIXME: rename to xfs_info to meet with naming in other libs
-    ### FIXME orig code uses XFSPresence() as default
-    xfs_presence = next(api.consume(XFSPresence), None)
     repositories_facts = next(api.consume(RepositoriesFacts), None)
     pkg_manager_info = next(api.consume(PkgManagerInfo), None)
     custom_repofiles = list(api.consume(CustomTargetRepositoryFile))
@@ -147,7 +142,6 @@ def gather():
         rhui_info=rhui_info,
         target_iso=target_iso,
         preupgrade_tasks=preupgrade_tasks,
-        xfs_presence=xfs_presence,
         repositories_facts=repositories_facts,
         pkg_manager_info=pkg_manager_info,
         skip_rhsm=skip_rhsm,

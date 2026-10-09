@@ -94,7 +94,7 @@ def scratch_container(layout, inputs):
     with overlaygen.create_source_overlay(
         mounts_dir=layout.mounts_dir,
         scratch_dir=layout.scratch_dir,
-        xfs_info=inputs.xfs_presence,
+        xfs_info=None,  # the parameter is unused in the function
         storage_info=inputs.storage_info,
         scratch_reserve=layout.scratch_reserve,
     ) as overlay:
