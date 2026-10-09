@@ -3,23 +3,19 @@ import contextlib
 from leapp.libraries.actor import tus_layout
 
 
+class _FakeInputs(object):
+    def __init__(self, storage_info=None, target_iso=None):
+        self.storage_info = storage_info
+        self.target_iso = target_iso
+
+
 class _FakeOverlay(object):
     def __init__(self, events):
         self.target = '/overlay/target'
         self._events = events
 
-
-class _FakeIso(object):
-    def __init__(self, events):
-        self._events = events
-
-    def __enter__(self):
-        self._events.append('iso-enter')
-        return self
-
-    def __exit__(self, *args):
-        self._events.append('iso-exit')
-        return False
+    def nspawn(self):
+        return _FakeNspawn(self._events)
 
 
 class _FakeNspawn(object):
@@ -35,41 +31,17 @@ class _FakeNspawn(object):
         return False
 
 
-class _FakeContext(object):
-    """Minimal IsolatedActions stand-in recording the operations invoked on it."""
+class _FakeIso(object):
+    def __init__(self, events):
+        self._events = events
 
-    def __init__(self):
-        self.copied_to = []
-        self.copied_from = []
-        self.removed_trees = []
-        self.made_dirs = []
-        self._existing_dirs = set()
+    def __enter__(self):
+        self._events.append('iso-enter')
+        return self
 
-    def makedirs(self, path, mode=0o777, exists_ok=True):
-        self.made_dirs.append(path)
-
-    def remove_tree(self, path):
-        self.removed_trees.append(path)
-
-    def copytree_to(self, src, dst):
-        self.copied_to.append((src, dst))
-
-    def copytree_from(self, src, dst):
-        self.copied_from.append((src, dst))
-
-    def full_path(self, path):
-        return '/overlay' + path
-
-
-def _mock_layout():
-    return tus_layout.Layout(
-        container_root='/var/lib/leapp',
-        target_major='9',
-        userspace_path='/var/lib/leapp/el9userspace',
-        scratch_dir='/var/lib/leapp/scratch',
-        mounts_dir='/var/lib/leapp/scratch/mounts',
-        scratch_reserve=1234,
-    )
+    def __exit__(self, *args):
+        self._events.append('iso-exit')
+        return False
 
 
 def test_compute_default_paths(monkeypatch):
@@ -83,6 +55,8 @@ def test_compute_default_paths(monkeypatch):
     assert layout.userspace_path == '/var/lib/leapp/el9userspace'
     assert layout.scratch_dir == '/var/lib/leapp/scratch'
     assert layout.mounts_dir == '/var/lib/leapp/scratch/mounts'
+    assert layout.installroot_overlay_mountpoint == '/el9target'
+    assert layout.persistent_pkg_cache_path == '/var/lib/leapp/persistent_package_cache'
     assert layout.scratch_reserve == 2048
 
 
@@ -97,6 +71,31 @@ def test_compute_honours_container_root_override(monkeypatch):
     assert layout.container_root == '/custom/root'
     assert layout.userspace_path == '/custom/root/el10userspace'
     assert layout.scratch_dir == '/custom/root/scratch'
+    assert layout.installroot_overlay_mountpoint == '/el10target'
+
+
+def test_compute_passes_userspace_path_to_free_space_helper(monkeypatch):
+    captured = {}
+    monkeypatch.setattr(tus_layout, 'get_env', lambda name, default: default)
+    monkeypatch.setattr(tus_layout, 'get_target_major_version', lambda: '9')
+    monkeypatch.setattr(tus_layout.overlaygen, 'get_recommended_leapp_free_space',
+                        lambda path: captured.setdefault('path', path) or 1)
+
+    tus_layout.compute()
+
+    assert captured['path'] == '/var/lib/leapp/el9userspace'
+
+
+def _mock_layout():
+    return tus_layout.Layout(
+        container_root='/var/lib/leapp',
+        userspace_path='/var/lib/leapp/el9userspace',
+        scratch_dir='/var/lib/leapp/scratch',
+        mounts_dir='/var/lib/leapp/scratch/mounts',
+        installroot_overlay_mountpoint='/el9target',
+        persistent_pkg_cache_path='/var/lib/leapp/persistent_package_cache',
+        scratch_reserve=1234,
+    )
 
 
 def test_scratch_container_nesting_and_teardown_order(monkeypatch):
@@ -105,10 +104,8 @@ def test_scratch_container_nesting_and_teardown_order(monkeypatch):
     @contextlib.contextmanager
     def fake_create_source_overlay(**kwargs):
         events.append('overlay-enter')
-        overlay = _FakeOverlay(events)
-        overlay.nspawn = lambda: _FakeNspawn(events)
         try:
-            yield overlay
+            yield _FakeOverlay(events)
         finally:
             events.append('overlay-exit')
 
@@ -118,38 +115,39 @@ def test_scratch_container_nesting_and_teardown_order(monkeypatch):
     monkeypatch.setattr(tus_layout.overlaygen, 'create_source_overlay', fake_create_source_overlay)
     monkeypatch.setattr(tus_layout.mounting, 'mount_upgrade_iso_to_root_dir', fake_mount_iso)
 
-    inputs = type('I', (), {'xfs_presence': None, 'storage_info': None, 'target_iso': None})()
+    inputs = _FakeInputs(storage_info=object(), target_iso=None)
 
     with tus_layout.scratch_container(_mock_layout(), inputs) as scratch:
         assert isinstance(scratch, _FakeNspawn)
         events.append('body')
 
+    # Current nesting: overlay -> nspawn -> iso ; torn down in reverse.
     assert events == [
-        'overlay-enter', 'iso-enter', 'nspawn-enter',
+        'overlay-enter', 'nspawn-enter', 'iso-enter',
         'body',
-        'nspawn-exit', 'iso-exit', 'overlay-exit',
+        'iso-exit', 'nspawn-exit', 'overlay-exit',
     ]
 
 
-def test_persistent_cache_disabled_is_noop(monkeypatch):
-    monkeypatch.setattr(tus_layout, 'get_env', lambda name, default: '0')
-    context = _FakeContext()
+def test_scratch_container_passes_storage_and_reserve_to_overlay(monkeypatch):
+    captured = {}
 
-    tus_layout.persistent_cache_pull(context, _mock_layout(), '/installroot')
-    tus_layout.persistent_cache_push(context, _mock_layout(), '/installroot')
+    @contextlib.contextmanager
+    def fake_create_source_overlay(**kwargs):
+        captured.update(kwargs)
+        yield _FakeOverlay([])
 
-    assert context.copied_to == []
-    assert context.copied_from == []
+    monkeypatch.setattr(tus_layout.overlaygen, 'create_source_overlay', fake_create_source_overlay)
+    monkeypatch.setattr(tus_layout.mounting, 'mount_upgrade_iso_to_root_dir',
+                        lambda root, iso: _FakeIso([]))
 
+    storage = object()
+    inputs = _FakeInputs(storage_info=storage, target_iso=None)
 
-def test_persistent_cache_pull_when_enabled(monkeypatch):
-    monkeypatch.setattr(tus_layout, 'get_env', lambda name, default: '1')
-    monkeypatch.setattr(tus_layout.os.path, 'isdir', lambda p: True)
-    context = _FakeContext()
+    with tus_layout.scratch_container(_mock_layout(), inputs):
+        pass
 
-    tus_layout.persistent_cache_pull(context, _mock_layout(), '/installroot')
-
-    assert context.copied_to == [
-        ('/var/lib/leapp/el9_persistent_package_cache', '/installroot/var/cache/dnf')
-    ]
-    assert context.removed_trees == ['/installroot/var/cache/dnf']
+    assert captured['storage_info'] is storage
+    assert captured['scratch_reserve'] == 1234
+    assert captured['mounts_dir'] == '/var/lib/leapp/scratch/mounts'
+    assert captured['scratch_dir'] == '/var/lib/leapp/scratch'

@@ -1,7 +1,10 @@
 import pytest
 
-from leapp.exceptions import StopActorExecution
-from leapp.libraries.actor import tus_constants, tus_targetrepos
+from leapp.exceptions import StopActorExecution, StopActorExecutionError
+from leapp.libraries.actor import tus_targetrepos
+from leapp.libraries.common import repofileutils
+from leapp.libraries.common.testutils import CurrentActorMocked
+from leapp.libraries.stdlib import api
 from leapp.models import (
     CustomTargetRepository,
     DistroTargetRepository,
@@ -14,6 +17,8 @@ from leapp.models import (
 )
 from leapp.utils.deprecation import suppress_deprecation
 
+_BASE = ['baseos', 'appstream']
+
 
 class _Inputs(object):
     def __init__(self, target_repositories, rhui_info=None, skip_rhsm=False):
@@ -22,10 +27,19 @@ class _Inputs(object):
         self.skip_rhsm = skip_rhsm
 
 
-def _repofiles(repoids):
-    """Build a fake get_parsed_repofiles() result exposing repoids."""
-    repos = [type('R', (), {'repoid': rid})() for rid in repoids]
-    return [type('RF', (), {'data': repos})()]
+class _Repo(object):
+    def __init__(self, repoid):
+        self.repoid = repoid
+
+
+class _RepoFile(object):
+    def __init__(self, repoids):
+        self.data = [_Repo(repoid) for repoid in repoids]
+
+
+def _parsed(*repofiles_repoids):
+    """Build a fake get_parsed_repofiles() result; one _RepoFile per argument."""
+    return [_RepoFile(repoids) for repoids in repofiles_repoids]
 
 
 @suppress_deprecation(RHELTargetRepository)
@@ -37,36 +51,32 @@ def _target_repos(distro=None, rhel=None, custom=None):
     )
 
 
-def _patch(monkeypatch, reports, distro_repoids=None, rhui_repoids=None, available=None,
-           duplicates=None, conversion=False, source_distro='rhel', source_major='9',
-           target_distro='rhel'):
+def _patch(monkeypatch, reports, distro_repoids=(), rhui_repoids=(), parsed=None,
+           parsed_exc=None, src_distro='rhel', src_ver='8.10', dst_distro='rhel', dst_ver='9.6'):
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(
+        src_distro=src_distro, dst_distro=dst_distro, src_ver=src_ver, dst_ver=dst_ver))
     monkeypatch.setattr(tus_targetrepos.distro, 'get_target_distro_repoids',
-                        lambda ctx: list(distro_repoids or []))
+                        lambda ctx: list(distro_repoids))
     monkeypatch.setattr(tus_targetrepos.tus_rhui, 'discover_client_exposed_repoids',
-                        lambda ctx, ri: set(rhui_repoids or []))
-    monkeypatch.setattr(tus_targetrepos.repofileutils, 'get_parsed_repofiles',
-                        lambda ctx: _repofiles(available or []))
-    monkeypatch.setattr(tus_targetrepos.repofileutils, 'get_duplicate_repositories',
-                        lambda repofiles: duplicates or {})
-    monkeypatch.setattr(tus_targetrepos, 'is_conversion', lambda: conversion)
-    monkeypatch.setattr(tus_targetrepos, 'get_source_distro_id', lambda: source_distro)
-    monkeypatch.setattr(tus_targetrepos, 'get_source_major_version', lambda: source_major)
-    monkeypatch.setattr(tus_targetrepos, 'get_target_distro_id', lambda: target_distro)
+                        lambda ctx, ri, tv: set(rhui_repoids))
+
+    def _get_parsed(ctx):
+        if parsed_exc is not None:
+            raise parsed_exc
+        return parsed if parsed is not None else []
+
+    monkeypatch.setattr(tus_targetrepos.repofileutils, 'get_parsed_repofiles', _get_parsed)
     monkeypatch.setattr(tus_targetrepos.reporting, 'create_report',
                         lambda parts: reports.append(parts))
 
 
 def _titles(reports):
-    out = []
-    for parts in reports:
-        for part in parts:
-            if type(part).__name__ == 'Title':
-                out.append(part.value)
-    return out
+    return [part.value for parts in reports for part in parts
+            if type(part).__name__ == 'Title']
 
 
 # --------------------------------------------------------------------------- #
-# Helpers
+# Pure helpers
 # --------------------------------------------------------------------------- #
 def test_requested_distro_repoids_merges_rhel_repos():
     target_repos = _target_repos(distro=['d1'], rhel=['r1'])
@@ -76,36 +86,55 @@ def test_requested_distro_repoids_merges_rhel_repos():
 @pytest.mark.parametrize('repoids,expected', [
     ({'rhel-9-BaseOS', 'rhel-9-AppStream'}, True),
     ({'rhel-9-baseos'}, False),
+    ({'rhel-9-appstream'}, False),
     (set(), False),
 ])
 def test_has_base_repos(repoids, expected):
     assert tus_targetrepos._has_base_repos(repoids) is expected
 
 
-@pytest.mark.parametrize('kwargs,expected', [
-    ({}, True),                                                  # default -> applies
-    ({'conversion': True}, False),                              # conversions
-    ({'source_distro': 'centos', 'source_major': '8'}, False),  # CS8 source
-    ({'target_distro': 'rhel', 'skip_rhsm': True}, False),      # RHEL + no-rhsm
+def test_duplicate_repoids_detects_cross_file_duplicates(monkeypatch):
+    # 'baseos' appears in two repofiles -> duplicate; 'appstream' only once.
+    monkeypatch.setattr(tus_targetrepos.repofileutils, 'get_parsed_repofiles',
+                        lambda ctx: _parsed(['baseos', 'appstream'], ['baseos', 'extra']))
+    assert tus_targetrepos._duplicate_repoids(None) == {'baseos'}
+
+
+def test_duplicate_repoids_none_when_unique(monkeypatch):
+    monkeypatch.setattr(tus_targetrepos.repofileutils, 'get_parsed_repofiles',
+                        lambda ctx: _parsed(['baseos'], ['appstream']))
+    assert tus_targetrepos._duplicate_repoids(None) == set()
+
+
+@pytest.mark.parametrize('kwargs,skip_rhsm,expected', [
+    # default: RHEL->RHEL, not CS8, RHSM active -> applies
+    ({}, False, True),
+    # conversion (source distro != target distro) -> skipped
+    ({'src_distro': 'almalinux', 'dst_distro': 'rhel', 'src_ver': '9.6'}, False, False),
+    # source CentOS Stream 8 -> skipped
+    ({'src_distro': 'centos', 'dst_distro': 'centos', 'src_ver': '8.10'}, False, False),
+    # RHEL target with RHSM skipped -> skipped
+    ({}, True, False),
+    # non-RHEL target with RHSM active -> applies
+    ({'src_distro': 'centos', 'dst_distro': 'centos', 'src_ver': '9.6', 'dst_ver': '10.0'}, False, True),
 ])
-def test_base_repo_check_applies(monkeypatch, kwargs, expected):
-    skip_rhsm = kwargs.pop('skip_rhsm', False)
-    monkeypatch.setattr(tus_targetrepos, 'is_conversion', lambda: kwargs.get('conversion', False))
-    monkeypatch.setattr(tus_targetrepos, 'get_source_distro_id', lambda: kwargs.get('source_distro', 'rhel'))
-    monkeypatch.setattr(tus_targetrepos, 'get_source_major_version', lambda: kwargs.get('source_major', '9'))
-    monkeypatch.setattr(tus_targetrepos, 'get_target_distro_id', lambda: kwargs.get('target_distro', 'rhel'))
+def test_base_repo_check_applies(monkeypatch, kwargs, skip_rhsm, expected):
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(
+        src_distro=kwargs.get('src_distro', 'rhel'),
+        dst_distro=kwargs.get('dst_distro', 'rhel'),
+        src_ver=kwargs.get('src_ver', '8.10'),
+        dst_ver=kwargs.get('dst_ver', '9.6'),
+    ))
     assert tus_targetrepos._base_repo_check_applies(skip_rhsm) is expected
 
 
 # --------------------------------------------------------------------------- #
-# select_target_repositories - happy path
+# select_target_repositories - happy paths
 # --------------------------------------------------------------------------- #
 def test_select_happy_path(monkeypatch):
     reports = []
-    _patch(monkeypatch, reports,
-           distro_repoids=['baseos', 'appstream'],
-           available=['baseos', 'appstream'])
-    inputs = _Inputs(_target_repos(distro=['baseos', 'appstream']))
+    _patch(monkeypatch, reports, distro_repoids=_BASE, parsed=_parsed(_BASE))
+    inputs = _Inputs(_target_repos(distro=_BASE))
 
     result = tus_targetrepos.select_target_repositories(None, inputs)
 
@@ -114,33 +143,61 @@ def test_select_happy_path(monkeypatch):
     assert reports == []
 
 
-# --------------------------------------------------------------------------- #
-# Inhibitor #2 - duplicates, only when skip_rhsm
-# --------------------------------------------------------------------------- #
-def test_inhibit_duplicates_when_skip_rhsm(monkeypatch):
+def test_select_includes_rhui_repoids(monkeypatch):
+    reports = []
+    # skip_rhsm + RHEL target -> base-repo check does not apply.
+    _patch(monkeypatch, reports,
+           distro_repoids=[],
+           rhui_repoids=['rhui-baseos', 'rhui-appstream'],
+           parsed=_parsed(['rhui-baseos', 'rhui-appstream']))
+    inputs = _Inputs(_target_repos(distro=['rhui-baseos', 'rhui-appstream']),
+                     rhui_info=object(), skip_rhsm=True)
+
+    result = tus_targetrepos.select_target_repositories(None, inputs)
+
+    assert sorted(r.repoid for r in result.repos) == ['rhui-appstream', 'rhui-baseos']
+
+
+def test_select_custom_repo_selected_from_available(monkeypatch):
     reports = []
     _patch(monkeypatch, reports,
-           distro_repoids=['baseos', 'appstream'],
-           available=['baseos', 'appstream'],
-           duplicates={'baseos': {'/a.repo', '/b.repo'}})
-    inputs = _Inputs(_target_repos(distro=['baseos', 'appstream']), skip_rhsm=True)
+           distro_repoids=_BASE,
+           parsed=_parsed(_BASE + ['custom1']))
+    inputs = _Inputs(_target_repos(distro=_BASE, custom=['custom1']))
 
-    with pytest.raises(StopActorExecution):
-        tus_targetrepos.select_target_repositories(None, inputs)
+    result = tus_targetrepos.select_target_repositories(None, inputs)
 
-    assert 'A duplicate repository definition was found' in _titles(reports)
+    assert sorted(r.repoid for r in result.repos) == ['appstream', 'baseos', 'custom1']
+    assert reports == []
+
+
+# --------------------------------------------------------------------------- #
+# Inhibitor #2 - duplicates (reports but does NOT stop; only when skip_rhsm)
+# --------------------------------------------------------------------------- #
+def test_inhibit_duplicates_when_skip_rhsm_reports_without_stopping(monkeypatch):
+    reports = []
+    _patch(monkeypatch, reports,
+           distro_repoids=_BASE,
+           parsed=_parsed(_BASE, ['baseos']),   # baseos duplicated across files
+           dst_distro='rhel')
+    inputs = _Inputs(_target_repos(distro=_BASE), skip_rhsm=True)
+
+    result = tus_targetrepos.select_target_repositories(None, inputs)
+
+    # The duplicate inhibitor is raised as a report, but selection still succeeds.
+    assert 'A YUM/DNF repository defined multiple times' in _titles(reports)
+    assert sorted(r.repoid for r in result.repos) == ['appstream', 'baseos']
 
 
 def test_no_duplicate_check_without_skip_rhsm(monkeypatch):
     reports = []
     _patch(monkeypatch, reports,
-           distro_repoids=['baseos', 'appstream'],
-           available=['baseos', 'appstream'],
-           duplicates={'baseos': {'/a.repo', '/b.repo'}})
-    inputs = _Inputs(_target_repos(distro=['baseos', 'appstream']), skip_rhsm=False)
+           distro_repoids=_BASE,
+           parsed=_parsed(_BASE, ['baseos']))   # duplicate present but RHSM active
+    inputs = _Inputs(_target_repos(distro=_BASE), skip_rhsm=False)
 
-    # duplicates present but RHSM active -> not inspected, no inhibitor
     result = tus_targetrepos.select_target_repositories(None, inputs)
+
     assert sorted(r.repoid for r in result.repos) == ['appstream', 'baseos']
     assert reports == []
 
@@ -150,21 +207,22 @@ def test_no_duplicate_check_without_skip_rhsm(monkeypatch):
 # --------------------------------------------------------------------------- #
 def test_inhibit_missing_base_repos(monkeypatch):
     reports = []
-    _patch(monkeypatch, reports, distro_repoids=['foo'], available=['foo'])
+    _patch(monkeypatch, reports, distro_repoids=['foo'], parsed=_parsed(['foo']))
     inputs = _Inputs(_target_repos(distro=['foo']))
 
     with pytest.raises(StopActorExecution):
         tus_targetrepos.select_target_repositories(None, inputs)
 
-    assert 'Cannot find required basic RHEL target repositories' in _titles(reports)
+    assert 'Cannot find required basic target OS repositories.' in _titles(reports)
 
 
 def test_base_repo_check_skipped_for_conversion(monkeypatch):
     reports = []
-    _patch(monkeypatch, reports, distro_repoids=['foo'], available=['foo'], conversion=True)
+    # almalinux -> rhel is a conversion, so the base-repo check is skipped.
+    _patch(monkeypatch, reports, distro_repoids=['foo'], parsed=_parsed(['foo']),
+           src_distro='almalinux', dst_distro='rhel', src_ver='9.6')
     inputs = _Inputs(_target_repos(distro=['foo']))
 
-    # No base repos, but conversion -> #3 skipped; selection non-empty -> ok.
     result = tus_targetrepos.select_target_repositories(None, inputs)
     assert [r.repoid for r in result.repos] == ['foo']
     assert reports == []
@@ -175,8 +233,8 @@ def test_base_repo_check_skipped_for_conversion(monkeypatch):
 # --------------------------------------------------------------------------- #
 def test_inhibit_no_enabled_repos(monkeypatch):
     reports = []
-    # skip_rhsm + target rhel -> base check does not apply; nothing discovered.
-    _patch(monkeypatch, reports, distro_repoids=[], available=[])
+    # skip_rhsm + RHEL target -> base check skipped; nothing discovered/available.
+    _patch(monkeypatch, reports, distro_repoids=[], parsed=[])
     inputs = _Inputs(_target_repos(distro=['foo']), skip_rhsm=True)
 
     with pytest.raises(StopActorExecution):
@@ -190,30 +248,26 @@ def test_inhibit_no_enabled_repos(monkeypatch):
 # --------------------------------------------------------------------------- #
 def test_inhibit_missing_custom_repos(monkeypatch):
     reports = []
-    _patch(monkeypatch, reports,
-           distro_repoids=['baseos', 'appstream'],
-           available=['baseos', 'appstream'])   # custom1 not available
-    inputs = _Inputs(_target_repos(distro=['baseos', 'appstream'], custom=['custom1']))
+    _patch(monkeypatch, reports, distro_repoids=_BASE, parsed=_parsed(_BASE))
+    inputs = _Inputs(_target_repos(distro=_BASE, custom=['custom1']))
 
     with pytest.raises(StopActorExecution):
         tus_targetrepos.select_target_repositories(None, inputs)
 
-    assert 'Some required repositories are not available' in _titles(reports)
+    assert 'Some required custom target repositories have not been found' in _titles(reports)
 
 
 # --------------------------------------------------------------------------- #
-# RHUI-discovered repoids feed the selection
+# Error path - invalid repofile while collecting available repoids
 # --------------------------------------------------------------------------- #
-def test_rhui_repoids_included_in_selection(monkeypatch):
+def test_select_hard_stops_on_invalid_repofile(monkeypatch):
     reports = []
-    _patch(monkeypatch, reports,
-           distro_repoids=[],
-           rhui_repoids=['rhui-baseos', 'rhui-appstream'],
-           available=['rhui-baseos', 'rhui-appstream'])
-    inputs = _Inputs(_target_repos(distro=['rhui-baseos', 'rhui-appstream']), rhui_info=object())
+    exc = repofileutils.InvalidRepoDefinition('bad', repofile='/etc/yum.repos.d/x.repo', repoid='x')
+    _patch(monkeypatch, reports, distro_repoids=_BASE, parsed_exc=exc)
+    inputs = _Inputs(_target_repos(distro=_BASE))
 
-    result = tus_targetrepos.select_target_repositories(None, inputs)
-    assert sorted(r.repoid for r in result.repos) == ['rhui-appstream', 'rhui-baseos']
+    with pytest.raises(StopActorExecutionError):
+        tus_targetrepos.select_target_repositories(None, inputs)
 
 
 # --------------------------------------------------------------------------- #
@@ -231,3 +285,13 @@ def test_build_snapshot(monkeypatch):
     assert [rf.file for rf in snapshot.repositories] == ['/etc/yum.repos.d/redhat.repo']
     # additional_fields (gpg data) preserved for missinggpgkeysinhibitor.
     assert snapshot.repositories[0].data[0].additional_fields == '{"gpgkey": "x"}'
+
+
+def test_build_snapshot_hard_stops_on_invalid_repofile(monkeypatch):
+    def _boom(ctx):
+        raise repofileutils.InvalidRepoDefinition('bad', repofile='/x.repo', repoid='x')
+
+    monkeypatch.setattr(tus_targetrepos.repofileutils, 'get_parsed_repofiles', _boom)
+
+    with pytest.raises(StopActorExecutionError):
+        tus_targetrepos.build_target_repositories_snapshot(None)

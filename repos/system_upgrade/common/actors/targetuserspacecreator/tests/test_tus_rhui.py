@@ -14,6 +14,8 @@ from leapp.models import (
     TargetRHUISetupInfo,
 )
 
+_YUM = '/etc/yum.repos.d'
+
 
 def _cpe():
     return CalledProcessError('boom', ['cmd'], {'exit_code': 1, 'stdout': '', 'stderr': ''})
@@ -41,27 +43,27 @@ def _rhui_info(bootstrap=True, enable_only=True, preinstall_copies=None, files_t
     )
 
 
-class _FakeRepoEntry(object):
+class _Repo(object):
     def __init__(self, repoid):
         self.repoid = repoid
 
 
-class _FakeRepoFile(object):
+class _RepoFile(object):
     def __init__(self, repoids):
-        self.data = [_FakeRepoEntry(repoid) for repoid in repoids]
+        self.data = [_Repo(repoid) for repoid in repoids]
 
 
 class FakeContext(object):
-    def __init__(self, repolist_stdout=None, fail_repolist=False, rpm_ql=None, files_owned=None):
+    def __init__(self, repolist_stdout='', fail_repolist=False, rpm_ql=None, owned_files=None):
         self.calls = []
         self.removed = []
         self.copied_to = []
         self.made_dirs = []
         self.written = {}
-        self._repolist_stdout = repolist_stdout or []
+        self._repolist_stdout = repolist_stdout
         self._fail_repolist = fail_repolist
-        self._rpm_ql = rpm_ql or {}
-        self._files_owned = set(files_owned or [])
+        self._rpm_ql = rpm_ql or {}        # pkg name -> list of owned file paths
+        self._owned_files = set(owned_files or [])  # paths for which `rpm -qf` succeeds
 
     def full_path(self, path):
         return '/container' + path
@@ -73,7 +75,6 @@ class FakeContext(object):
                 raise _cpe()
             return {'stdout': self._repolist_stdout}
         if cmd[:2] == ['rpm', '-ql']:
-            # single `rpm -ql pkg1 pkg2 ...` call: fails if any pkg is missing
             stdout = []
             for pkg in cmd[2:]:
                 if pkg not in self._rpm_ql:
@@ -81,7 +82,7 @@ class FakeContext(object):
                 stdout.extend(self._rpm_ql[pkg])
             return {'stdout': stdout}
         if cmd[:2] == ['rpm', '-qf']:
-            if cmd[2] in self._files_owned:
+            if cmd[2] in self._owned_files:
                 return {'stdout': ['pkg']}
             raise _cpe()
         return {'stdout': []}
@@ -105,10 +106,20 @@ class FakeContext(object):
 # --------------------------------------------------------------------------- #
 # Falsy rhui_info -> every entry point is a no-op
 # --------------------------------------------------------------------------- #
-def test_noop_when_rhui_info_falsy():
+def test_perform_client_swap_noop_when_falsy():
     context = FakeContext()
     tus_rhui.perform_client_swap(context, None, '9.6', False)
-    assert tus_rhui.discover_client_exposed_repoids(context, None) == set()
+    assert context.calls == []
+
+
+def test_discover_noop_when_falsy():
+    context = FakeContext()
+    assert tus_rhui.discover_client_exposed_repoids(context, None, '9.6') == set()
+    assert context.calls == []
+
+
+def test_cleanup_noop_when_falsy():
+    context = FakeContext()
     tus_rhui.cleanup_injected_repofiles(context, None)
     assert context.calls == []
 
@@ -130,12 +141,15 @@ def test_resolve_copy_target_non_dir(monkeypatch):
     assert tus_rhui._resolve_copy_target(context, copy_file) == '/etc/yum.repos.d/target.repo'
 
 
-# --------------------------------------------------------------------------- #
-# _sanitized_copy_files_iter - resolves dst, falls back to src, sorts by dst
-# --------------------------------------------------------------------------- #
+def test_resolve_copy_target_null_dst_falls_back_to_src(monkeypatch):
+    context = FakeContext()
+    monkeypatch.setattr(tus_rhui.os.path, 'isdir', lambda p: False)
+    copy_file = CopyFile(src='/host/my.repo', dst=None)
+    assert tus_rhui._resolve_copy_target(context, copy_file) == '/host/my.repo'
+
+
 def test_sanitized_copy_files_iter_resolves_and_sorts(monkeypatch):
     context = FakeContext()
-    # only /etc/yum.repos.d is an existing dir inside the container
     monkeypatch.setattr(tus_rhui.os.path, 'isdir', lambda p: p == '/container/etc/yum.repos.d')
     copy_files = [
         CopyFile(src='/host/z.repo', dst='/etc/yum.repos.d'),   # -> /etc/yum.repos.d/z.repo
@@ -145,7 +159,6 @@ def test_sanitized_copy_files_iter_resolves_and_sorts(monkeypatch):
 
     result = list(tus_rhui._sanitized_copy_files_iter(context, copy_files))
 
-    # yields (src, resolved_dst) ordered by resolved_dst
     assert result == [
         ('/host/m.repo', '/etc/custom.repo'),
         ('/host/z.repo', '/etc/yum.repos.d/z.repo'),
@@ -170,7 +183,7 @@ def test_run_preinstall_tasks_removes_then_copies(monkeypatch):
     tus_rhui._run_preinstall_tasks(context, preinstall)
 
     assert context.removed == ['/etc/old.repo']
-    # copies are applied sorted by destination, each with its parent dir created
+    # copies applied sorted by destination, each with its parent dir created
     assert context.copied_to == [
         ('/host/a.repo', '/etc/yum.repos.d/a.repo'),
         ('/host/b.repo', '/etc/yum.repos.d/b.repo'),
@@ -187,7 +200,7 @@ def test_run_preinstall_tasks_noop_when_empty():
 
 
 # --------------------------------------------------------------------------- #
-# R4 - postinstall tasks: in-container copies via `cp` (no -a), sorted
+# R4 - postinstall tasks: in-container copies via `cp`, sorted
 # --------------------------------------------------------------------------- #
 def test_run_postinstall_tasks_uses_cp_inside_container(monkeypatch):
     context = FakeContext()
@@ -210,51 +223,56 @@ def test_run_postinstall_tasks_uses_cp_inside_container(monkeypatch):
 # R2 - discovery hides foreign repofiles, runs repolist, restores everything
 # --------------------------------------------------------------------------- #
 def test_discover_hides_and_restores(monkeypatch):
-    context = FakeContext(repolist_stdout=[
-        'repo id       repo name',
-        'client-repo   Client Repo',
-        'client-source Client Source',   # excluded (contains 'source')
-        'client-debug-rpms Debug',       # excluded (contains '-debug-')
-    ])
-    monkeypatch.setattr(tus_rhui, '_list_repofiles', lambda ctx: ['foreign.repo', 'client.repo'])
-    monkeypatch.setattr(tus_rhui, '_client_owned_repofiles', lambda ctx, ri: {'client.repo'})
-    monkeypatch.setattr(tus_rhui, '_setup_copied_repofiles', lambda ctx, ri: set())
+    renames = []
+    monkeypatch.setattr(tus_rhui.os, 'rename', lambda a, b: renames.append((a, b)))
+    monkeypatch.setattr(tus_rhui, '_get_repofiles_paths',
+                        lambda ctx: {_YUM + '/foreign.repo', _YUM + '/client.repo'})
+    monkeypatch.setattr(tus_rhui, '_find_rhui_client_repofiles',
+                        lambda ctx, pkgs, major: {_YUM + '/client.repo'})
+    monkeypatch.setattr(tus_rhui, '_repofiles_copied_at_setup', lambda ctx, files: set())
+    context = FakeContext(repolist_stdout='Repo-id  : client-repo\nRepo-name : Client')
 
-    repoids = tus_rhui.discover_client_exposed_repoids(context, _rhui_info())
+    repoids = tus_rhui.discover_client_exposed_repoids(context, _rhui_info(), '9.6')
 
     assert repoids == {'client-repo'}
-    # foreign.repo hidden then restored; the mv calls bracket the repolist
-    mv_calls = [c for c in context.calls if c[0] == 'mv']
-    assert mv_calls == [
-        ['mv', '/etc/yum.repos.d/foreign.repo', '/etc/yum.repos.d/foreign.repo.leapp-hidden'],
-        ['mv', '/etc/yum.repos.d/foreign.repo.leapp-hidden', '/etc/yum.repos.d/foreign.repo'],
-    ]
+    # foreign hidden with the .path suffix, then restored; client.repo untouched
+    assert (_YUM + '/foreign.repo', _YUM + '/foreign.repo.path') in renames
+    assert (_YUM + '/foreign.repo.path', _YUM + '/foreign.repo') in renames
+    assert all('client.repo' not in a for a, b in renames)
 
 
 def test_discover_restores_even_on_repolist_failure(monkeypatch):
+    renames = []
+    monkeypatch.setattr(tus_rhui.os, 'rename', lambda a, b: renames.append((a, b)))
+    monkeypatch.setattr(tus_rhui, '_get_repofiles_paths', lambda ctx: {_YUM + '/foreign.repo'})
+    monkeypatch.setattr(tus_rhui, '_find_rhui_client_repofiles', lambda ctx, pkgs, major: set())
+    monkeypatch.setattr(tus_rhui, '_repofiles_copied_at_setup', lambda ctx, files: set())
     context = FakeContext(fail_repolist=True)
-    monkeypatch.setattr(tus_rhui, '_list_repofiles', lambda ctx: ['foreign.repo'])
-    monkeypatch.setattr(tus_rhui, '_client_owned_repofiles', lambda ctx, ri: set())
-    monkeypatch.setattr(tus_rhui, '_setup_copied_repofiles', lambda ctx, ri: set())
 
     with pytest.raises(StopActorExecutionError):
-        tus_rhui.discover_client_exposed_repoids(context, _rhui_info())
+        tus_rhui.discover_client_exposed_repoids(context, _rhui_info(), '9.6')
 
     # restore still happened despite the failure
-    assert ['mv', '/etc/yum.repos.d/foreign.repo.leapp-hidden', '/etc/yum.repos.d/foreign.repo'] in context.calls
+    assert (_YUM + '/foreign.repo.path', _YUM + '/foreign.repo') in renames
 
 
-def test_client_owned_empty_when_not_bootstrapping(monkeypatch):
-    context = FakeContext()
-    called = {'n': 0}
+def test_discover_no_client_owned_when_not_bootstrapping(monkeypatch):
+    # When not bootstrapping, no repofile is treated as client-owned, so every
+    # repofile is hidden during the repolist run.
+    renames = []
+    monkeypatch.setattr(tus_rhui.os, 'rename', lambda a, b: renames.append((a, b)))
+    monkeypatch.setattr(tus_rhui, '_get_repofiles_paths', lambda ctx: {_YUM + '/any.repo'})
+    monkeypatch.setattr(tus_rhui, '_repofiles_copied_at_setup', lambda ctx, files: set())
 
-    def fake_owned(ctx, dirpath, pkgs=None):
-        called['n'] += 1
-        return ['x.repo']
+    def _should_not_be_called(*args, **kwargs):
+        raise AssertionError('_find_rhui_client_repofiles must not run when not bootstrapping')
 
-    monkeypatch.setattr(tus_rhui.tus_repoaccess, '_get_files_owned_by_rpms', fake_owned)
-    assert tus_rhui._client_owned_repofiles(context, _rhui_info(bootstrap=False)) == set()
-    assert called['n'] == 0
+    monkeypatch.setattr(tus_rhui, '_find_rhui_client_repofiles', _should_not_be_called)
+    context = FakeContext(repolist_stdout='')
+
+    tus_rhui.discover_client_exposed_repoids(context, _rhui_info(bootstrap=False), '9.6')
+
+    assert (_YUM + '/any.repo', _YUM + '/any.repo.path') in renames
 
 
 # --------------------------------------------------------------------------- #
@@ -262,8 +280,8 @@ def test_client_owned_empty_when_not_bootstrapping(monkeypatch):
 # --------------------------------------------------------------------------- #
 def test_parse_repoids_from_copied_files(monkeypatch):
     repofiles = {
-        '/host/a.repo': _FakeRepoFile(['repo-a1', 'repo-a2']),
-        '/host/b.repo': _FakeRepoFile(['repo-b1']),
+        '/host/a.repo': _RepoFile(['repo-a1', 'repo-a2']),
+        '/host/b.repo': _RepoFile(['repo-b1']),
     }
     monkeypatch.setattr(tus_rhui.repofileutils, 'parse_repofile', lambda path: repofiles[path])
     copy_files = [
@@ -317,7 +335,7 @@ def test_perform_client_swap_order_and_flags(monkeypatch):
     dnf_shell = [c for c in context.calls if c[0] == 'dnf' and 'shell' in c][0]
     assert '--disableplugin' in dnf_shell and 'subscription-manager' in dnf_shell
     assert '--setopt=module_platform_id=platform:el9' in dnf_shell
-    assert '--releasever' in dnf_shell and '9.6' in dnf_shell
+    assert dnf_shell[dnf_shell.index('--releasever') + 1] == '9.6'
     # swap transaction script is cleaned up afterwards
     assert '/leapp-rhui-swap.dnfsh' in context.removed
 
@@ -355,9 +373,9 @@ def test_remove_nonclient_injected_files(monkeypatch):
         bootstrap=True,
         supporting=['/h/support.repo'],
         preinstall_copies=[
-            CopyFile(src='/h/client.repo', dst='/etc/yum.repos.d/client.repo'),   # client-owned -> keep
-            CopyFile(src='/h/support.repo', dst='/etc/yum.repos.d/support.repo'),  # supporting -> keep
-            CopyFile(src='/h/drop.repo', dst='/etc/yum.repos.d/drop.repo'),        # neither -> remove
+            CopyFile(src='/h/client.repo', dst='/etc/yum.repos.d/client.repo'),    # client-owned -> keep
+            CopyFile(src='/h/support.repo', dst='/etc/yum.repos.d/support.repo'),   # supporting -> keep
+            CopyFile(src='/h/drop.repo', dst='/etc/yum.repos.d/drop.repo'),         # neither -> remove
         ],
     )
     client_files = {'/etc/yum.repos.d/client.repo'}
@@ -372,7 +390,7 @@ def test_remove_nonclient_injected_files(monkeypatch):
 # --------------------------------------------------------------------------- #
 def test_cleanup_deletes_unowned_keeps_owned(monkeypatch):
     # a.repo owned by an rpm -> keep; b.repo not owned -> delete
-    context = FakeContext(files_owned={'/etc/yum.repos.d/a.repo'})
+    context = FakeContext(owned_files={'/etc/yum.repos.d/a.repo'})
     monkeypatch.setattr(tus_rhui.os.path, 'isdir', lambda p: False)
     monkeypatch.setattr(tus_rhui.os.path, 'isfile', lambda p: True)
 
@@ -384,3 +402,19 @@ def test_cleanup_deletes_unowned_keeps_owned(monkeypatch):
     tus_rhui.cleanup_injected_repofiles(context, rhui_info)
 
     assert context.removed == ['/etc/yum.repos.d/b.repo']
+
+
+def test_cleanup_skips_non_repo_and_missing_files(monkeypatch):
+    context = FakeContext(owned_files=set())
+    monkeypatch.setattr(tus_rhui.os.path, 'isdir', lambda p: False)
+    # nothing is an existing file -> nothing removed even though b.repo is unowned
+    monkeypatch.setattr(tus_rhui.os.path, 'isfile', lambda p: False)
+
+    rhui_info = _rhui_info(preinstall_copies=[
+        CopyFile(src='/h/b.repo', dst='/etc/yum.repos.d/b.repo'),
+        CopyFile(src='/h/notrepo.conf', dst='/etc/notrepo.conf'),
+    ])
+
+    tus_rhui.cleanup_injected_repofiles(context, rhui_info)
+
+    assert context.removed == []

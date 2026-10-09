@@ -1,10 +1,12 @@
 import pytest
 
 from leapp.exceptions import StopActorExecutionError
-from leapp.libraries.actor import tus_constants, tus_inputdata
+from leapp.libraries.actor import tus_inputdata
 from leapp.libraries.common.testutils import CurrentActorMocked
 from leapp.libraries.stdlib import api
 from leapp.models import CopyFile, RHSMInfo, StorageInfo, TargetUserSpacePreupgradeTasks
+
+_DEFAULTS = tus_inputdata._DEFAULT_INSTALL_PKGS
 
 
 def _setup(monkeypatch, msgs, skip_rhsm=False, nogpgcheck=False):
@@ -24,7 +26,8 @@ def test_gather_happy_path_with_rhsm(monkeypatch):
     assert inputs.skip_rhsm is False
     assert inputs.nogpgcheck is False
     # Default packages always present, nothing extra requested.
-    assert inputs.packages == tus_constants.DEFAULT_INSTALL_PKGS
+    assert inputs.packages == _DEFAULTS
+    assert inputs.copy_files == []
 
 
 def test_gather_happy_path_skip_rhsm(monkeypatch):
@@ -67,7 +70,21 @@ def test_gather_merges_install_rpms(monkeypatch):
 
     inputs = tus_inputdata.gather()
 
-    assert inputs.packages == tus_constants.DEFAULT_INSTALL_PKGS + ['vim', 'git']
+    assert inputs.packages == _DEFAULTS | {'vim', 'git'}
+
+
+def test_gather_merges_multiple_preupgrade_tasks(monkeypatch):
+    # The actor accepts multiple TargetUserSpacePreupgradeTasks messages.
+    tasks_a = TargetUserSpacePreupgradeTasks(install_rpms=['vim'],
+                                             copy_files=[CopyFile(src='/a', dst='/x')])
+    tasks_b = TargetUserSpacePreupgradeTasks(install_rpms=['git'],
+                                             copy_files=[CopyFile(src='/b', dst='/y')])
+    _setup(monkeypatch, [StorageInfo(), tasks_a, tasks_b], skip_rhsm=True)
+
+    inputs = tus_inputdata.gather()
+
+    assert inputs.packages == _DEFAULTS | {'vim', 'git'}
+    assert [(cf.src, cf.dst) for cf in inputs.copy_files] == [('/a', '/x'), ('/b', '/y')]
 
 
 def test_gather_dedups_copy_files(monkeypatch):
@@ -93,3 +110,13 @@ def test_gather_nogpgcheck_flag(monkeypatch):
     inputs = tus_inputdata.gather()
 
     assert inputs.nogpgcheck is True
+
+
+def test_gather_does_not_mutate_default_packages(monkeypatch):
+    # Regression: gather() must not accumulate packages into the shared default.
+    tasks = TargetUserSpacePreupgradeTasks(install_rpms=['extra-pkg'], copy_files=[])
+    _setup(monkeypatch, [StorageInfo(), tasks], skip_rhsm=True)
+
+    tus_inputdata.gather()
+
+    assert 'extra-pkg' not in tus_inputdata._DEFAULT_INSTALL_PKGS
