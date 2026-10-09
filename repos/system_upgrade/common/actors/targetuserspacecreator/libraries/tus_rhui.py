@@ -110,9 +110,9 @@ def _run_postinstall_tasks(context_scratch, postinstall_tasks):
         context_scratch.call(['cp', src, dst])
 
 
-def _list_repofiles(context):
+def _get_repofiles_paths(context):
     """
-    Return the paths of all ``*.repo`` files in /etc/yum.repos.d
+    Return set of paths of all ``*.repo`` files in /etc/yum.repos.d
 
     The paths are relative to ``context.base_dir``
     """
@@ -121,7 +121,7 @@ def _list_repofiles(context):
         return []
 
     basenames = [name for name in os.listdir(repos_dir) if name.endswith('.repo')]
-    return [os.path.join(_YUM_REPOS_D, name) for name in basenames]
+    return {os.path.join(_YUM_REPOS_D, name) for name in basenames}
 
 
 def _repofiles_copied_at_setup(context, files_to_copy_into_overlay):
@@ -180,7 +180,7 @@ def discover_client_exposed_repoids(context, rhui_info, target_version):
 
     setup_info = rhui_info.target_client_setup_info
 
-    all_repofiles = set(_list_repofiles(context))
+    all_repofiles = _get_repofiles_paths(context)
     api.current_logger().debug(
         '(RHUI Setup) All available repofiles: {0}'.format(' '.join(all_repofiles))
     )
