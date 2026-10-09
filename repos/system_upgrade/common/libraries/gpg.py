@@ -66,27 +66,48 @@ def _parse_fp_from_gpg(output):
     Parse the output of 'gpg2 --show-keys --with-colons'.
 
     The output is colon-delimited with one record per line; the record type is
-    the first field. Each key's full 40-character fingerprint is the 10th field
-    of its 'fpr:' record, the only record type this function reads, e.g.:
+    the first field. A primary key opens with a 'pub:' record and its full
+    40-character fingerprint is in the 10th field of the 'fpr:' record that
+    follows it, e.g.:
 
     .. code-block:: text
 
+        pub:-:4096:1:199E2F91FD431D51:1256212795:::-:::scSC::::::23::0:
         fpr:::::::::567E347AD0044ADE55BA8A5F199E2F91FD431D51:
+
+    Only the fingerprint of the primary key is reported. A 'sub:' record opens a
+    subkey section, so any 'fpr:' after it (up to the next 'pub:') is ignored;
+    this also means a primary key with no 'fpr:' of its own is skipped rather
+    than adopting a subkey's fingerprint. The subkeys are part of the primary
+    key as an underlying mechanism, so they don't need to be extracted
+    separately.
 
     :param output: Result of running 'gpg2 --show-keys --with-colons'
     :type output: dict
-    :return: Lowercased 40-character fingerprints of all keys in the output, or
-        an empty list on any error (non-zero exit code, missing or unreadable
-        file, or no OpenPGP data)
+    :return: Lowercased 40-character fingerprints of the primary keys in the
+        output, or an empty list on any error (non-zero exit code, missing or
+        unreadable file, or no OpenPGP data)
     :rtype: list(str)
     """
     if not output or output['exit_code']:
         return []
 
     gpg_fps = []
+    in_primary = False  # True while inside a 'pub:' section
     for line in output['stdout']:
-        if not line or not line.startswith('fpr:'):
+        if not line:
             continue
+        if line.startswith('pub:'):
+            in_primary = True
+            continue
+        if line.startswith('sub:'):
+            in_primary = False
+            continue
+        if not in_primary or not line.startswith('fpr:'):
+            # skip 'uid:'/other records and any 'fpr:' belonging to a subkey
+            continue
+
+        # extract fingerprint from the fpr record
         parts = line.split(':')
         if len(parts) >= 10 and len(parts[9]) == 40:
             gpg_fps.append(parts[9].lower())
@@ -189,10 +210,10 @@ def _parse_public_key_packet_sq(body, key_path):
         error = 'Unexpected key version \'{}\' in the keyfile {}'.format(version, key_path)
         raise GpgParseError(error)
 
-    short_keyid = fields['Fingerprint'].lower()[_SHORT_KEY_ID_SLICE[version]]
+    fingerprint = fields['Fingerprint'].lower()
     return GpgKeyInfo(
-        fingerprint=fields['Fingerprint'],
-        short_keyid=short_keyid,
+        fingerprint=fingerprint,
+        short_keyid=fingerprint[_SHORT_KEY_ID_SLICE[version]],
         is_pqc=version == '6',
     )
 
