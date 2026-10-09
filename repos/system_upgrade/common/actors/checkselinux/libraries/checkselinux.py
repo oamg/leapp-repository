@@ -144,12 +144,14 @@ def process():
             reporting.Summary(
                 'SElinux will be set to permissive mode. Current mode: enforcing. This action is '
                 'required by the upgrade process to make sure the upgraded system can boot without '
-                'beinig blocked by SElinux rules.'
+                'being blocked by SElinux rules. The system stays in permissive mode after the '
+                'upgrade; leapp does not set it back to enforcing.'
             ),
             reporting.Severity(reporting.Severity.LOW),
             reporting.Remediation(hint=(
-                'Make sure there are no SElinux related warnings after the upgrade and enable SElinux '
-                'manually afterwards. Notice: You can ignore the "/root/tmp_leapp_py3" SElinux warnings.'
+                'After the upgrade, make sure there are no SElinux related warnings, then set SElinux '
+                'back to enforcing mode manually by setting SELINUX=enforcing in /etc/selinux/config '
+                'and rebooting. Notice: You can ignore the "/root/tmp_leapp_py3" SElinux warnings.'
                 )
             ),
             reporting.Groups([reporting.Groups.SELINUX, reporting.Groups.SECURITY])
