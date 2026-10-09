@@ -60,7 +60,7 @@ def _sanitized_copy_files_iter(context, copy_files):
     it's better to be a little bit more defensive as we do not know what will be
     in future.
     """
-    src_dst_pairs = [(c.src, _resolve_copy_target(context, c)) for c in copy_files]
+    src_dst_pairs = [(cf.src, _resolve_copy_target(context, cf)) for cf in copy_files]
     yield from sorted(src_dst_pairs, key=lambda p: p[1])
 
 
