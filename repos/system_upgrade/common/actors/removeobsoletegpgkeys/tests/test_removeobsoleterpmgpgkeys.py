@@ -166,11 +166,13 @@ def test_get_obsolete_keys_incomplete_data(
                 "gpg-pubkey-8483c65d-5ccc5b19",
                 "gpg-pubkey-1d997668-621e3cac",
                 "gpg-pubkey-1d997668-61bae63b",
+                "gpg-pubkey-f220bd72-68ed5521",
             ],
         ),
         (
             "rhel",
             [
+                "gpg-pubkey-05707a62-68e6a1f3",
                 "gpg-pubkey-fd431d51-4ae0493b",
                 "gpg-pubkey-37017186-45761324",
                 "gpg-pubkey-f21541eb-4a5233e8",
