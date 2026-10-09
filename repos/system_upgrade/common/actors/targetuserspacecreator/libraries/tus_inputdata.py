@@ -28,12 +28,12 @@ from leapp.models import (
 
 # Packages always installed into the target userspace, on top of whatever the
 # TargetUserSpacePreupgradeTasks.install_rpms list requests
-_DEFAULT_INSTALL_PKGS = [
+_DEFAULT_INSTALL_PKGS = {
     'dnf',
     'dnf-command(config-manager)',
     'dnf-command(download)',
     'util-linux',
-]
+}
 
 
 class InputData(object):
@@ -64,6 +64,7 @@ def _dedup_copy_files(copy_files):
     seen = set()
     result = []
     for copy_file in copy_files:
+        # TODO this does not consider that if dst == None then dst = src
         key = (copy_file.src, copy_file.dst)
         if key in seen:
             continue
@@ -83,8 +84,7 @@ def gather():
     rhsm_info = next(api.consume(RHSMInfo), None)
     rhui_info = next(api.consume(RHUIInfo), None)
     target_iso = next(api.consume(TargetOSInstallationImage), None)
-    # FIXME: this should be list
-    preupgrade_tasks = next(api.consume(TargetUserSpacePreupgradeTasks), None)
+    preupgrade_tasks = list(api.consume(TargetUserSpacePreupgradeTasks))
     ### FIXME: rename to xfs_info to meet with naming in other libs
     ### FIXME orig code uses XFSPresence() as default
     xfs_presence = next(api.consume(XFSPresence), None)
@@ -128,10 +128,12 @@ def gather():
             details={'details': 'No StorageInfo message has been produced.'}
         )
 
-    install_rpms = list(preupgrade_tasks.install_rpms) if preupgrade_tasks else []
-    packages = _DEFAULT_INSTALL_PKGS + install_rpms
+    raw_copy_files = []
+    packages = _DEFAULT_INSTALL_PKGS
+    for task in preupgrade_tasks:
+        packages |= task.install_rpms
+        raw_copy_files.append(task.copy_files)
 
-    raw_copy_files = preupgrade_tasks.copy_files if preupgrade_tasks else []
     copy_files = _dedup_copy_files(raw_copy_files)
 
     # TODO do we want this in the data? makes mocking a little easier maybe
