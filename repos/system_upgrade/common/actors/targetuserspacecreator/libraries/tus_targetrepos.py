@@ -60,12 +60,12 @@ def _requested_custom_repoids(target_repositories):
     return {repo.repoid for repo in custom_repos}
 
 
-def _all_available_repos(context):
+def _all_available_repos(context_scratch):
     """
     Collect every repoid defined in the container's repofiles.
 
-    :param context: Mounting context of the target userspace container.
-    :type context: mounting.IsolatedActions
+    :param context_scratch: Mounting context of the target userspace container.
+    :type context_scratch: mounting.IsolatedActions
     :returns: A tuple of all unique repoids found across the container's
               repofiles and a list of the repofiles
     :rtype: Tuple[Set[str], List[RepositoryFile]]
@@ -73,7 +73,7 @@ def _all_available_repos(context):
     """
     repoids = set()
     try:
-        repofiles = repofileutils.get_parsed_repofiles(context)
+        repofiles = repofileutils.get_parsed_repofiles(context_scratch)
     except repofileutils.InvalidRepoDefinition as e:
         raise StopActorExecutionError(
             message=f'Failed to parse available repoids: {str(e)}',
@@ -293,7 +293,7 @@ def _inhibit_duplicate_repos(duplicates):
     ])
 
 
-def _discover_distro_and_rhui_target_repositories(context, rhui_info, target_version):
+def _discover_distro_and_rhui_target_repositories(context_scratch, rhui_info, target_version):
     """
     Discover the distribution and RHUI repoids available in the container.
 
@@ -301,8 +301,8 @@ def _discover_distro_and_rhui_target_repositories(context, rhui_info, target_ver
     when RHUI information is available, the repoids exposed by the RHUI client.
     Both sets are logged and returned.
 
-    :param context: Mounting context of the target userspace container.
-    :type context: mounting.IsolatedActions
+    :param context_scratch: An entered nspawn scratch container.
+    :type context_scratch: mounting.IsolatedActions
     :param rhui_info: RHUI setup information, or a falsy value when not on RHUI.
     :type rhui_info: RHUIInfo
     :param target_version: Full version of the target system.
@@ -317,14 +317,14 @@ def _discover_distro_and_rhui_target_repositories(context, rhui_info, target_ver
     """
     # TODO: actually, drop this function - load *_repoids in the caller and
     # fold logs into the called functions instead.
-    distro_repoids = set(distro.get_target_distro_repoids(context))
+    distro_repoids = set(distro.get_target_distro_repoids(context_scratch))
     api.current_logger().info(
         "The following repoids are considered as provided by the '{}' distribution:{}".format(
             get_target_distro_id(),
             format_list(distro_repoids),
         )
     )
-    rhui_repoids = tus_rhui.discover_client_exposed_repoids(context, rhui_info, target_version)
+    rhui_repoids = tus_rhui.discover_client_exposed_repoids(context_scratch, rhui_info, target_version)
     if rhui_info:
         api.current_logger().info(
             'The following repoids are considered as provided by RHUI cloud provider for RHEL:{}'
@@ -333,7 +333,7 @@ def _discover_distro_and_rhui_target_repositories(context, rhui_info, target_ver
     return distro_repoids, rhui_repoids
 
 
-def select_target_repositories(context, inputs):
+def select_target_repositories(context_scratch, inputs):
     """
     Discover and select the usable target repositories.
 
@@ -345,8 +345,8 @@ def select_target_repositories(context, inputs):
     skipped), no enabled target repository at all, or requested custom
     repositories that are not available.
 
-    :param context: Mounting context of the target userspace container.
-    :type context: mounting.IsolatedActions
+    :param context_scratch: An entered nspawn scratch container.
+    :type context_scratch: mounting.IsolatedActions
     :param inputs: Collected inputs holding ``rhui_info``, ``skip_rhsm`` and
         ``target_repositories``.
     :type inputs: tus_inputdata.InputData
@@ -359,14 +359,14 @@ def select_target_repositories(context, inputs):
         or when the RHUI client repoids cannot be retrieved.
     """
     distro_repoids, rhui_repoids = _discover_distro_and_rhui_target_repositories(
-        context, inputs.rhui_info, get_target_version()
+        context_scratch, inputs.rhui_info, get_target_version()
     )
     if _base_repo_check_applies(inputs.skip_rhsm) and not _has_base_repos(distro_repoids):
         # NOTE(pstodulk): RHUI is specific case - in case of problems, the root cause
         # is different from this inhibitor; either handled already earlier or later
         _inhibit_no_base_repos(get_target_major_version())
         raise StopActorExecution()
-    available, all_repofiles = _all_available_repos(context)
+    available, all_repofiles = _all_available_repos(context_scratch)
 
     if inputs.skip_rhsm:
         # only if rhsm is skipped, the duplicate repos are not detected
@@ -413,7 +413,7 @@ def select_target_repositories(context, inputs):
         raise StopActorExecution()
 
     selected = sorted(selected_distro | selected_custom)
-    api.current_logger().info('Selected target repositories: {}'.format(', '.join(selected)))
+    api.current_logger().info('Selected target repositories: {}'.format(format_list(selected)))
     return UsedTargetRepositories(
         repos=[UsedTargetRepository(repoid=repoid) for repoid in selected]
     )

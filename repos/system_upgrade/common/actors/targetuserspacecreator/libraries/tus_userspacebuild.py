@@ -83,7 +83,7 @@ def _persistent_cache_push(persistent_cache_path, installroot):
         shutil.move(src, persistent_cache_path)
 
 
-def _import_gpg_keys(context, installroot):
+def _import_gpg_keys(context_scratch, installroot):
     """
     Import the trusted target GPG keys into the installroot rpm database.
 
@@ -91,8 +91,8 @@ def _import_gpg_keys(context, installroot):
     it via ``rpm --import``. If the certificates directory does not exist, logs a
     warning and returns without importing anything.
 
-    :param context: The target userspace context used to run commands.
-    :type context: mounting.IsolatedActions
+    :param context_scratch: The scratch container context used to run commands.
+    :type context_scratch: mounting.IsolatedActions
     :param installroot: Path (relative to the context) of the installroot rpm database.
     :type installroot: str
     :raises CalledProcessError: If an ``rpm --import`` invocation fails.
@@ -104,7 +104,7 @@ def _import_gpg_keys(context, installroot):
 
     for name in sorted(os.listdir(certs_dir)):
         key_path = os.path.join(certs_dir, name)
-        context.call(['rpm', '--root', installroot, '--import', key_path])
+        context_scratch.call(['rpm', '--root', installroot, '--import', key_path])
 
 
 def _build_dnf_install_cmd(installroot, releasever, repoids, skip_rhsm, nogpgcheck, packages):
@@ -260,7 +260,7 @@ def _diagnose_dnf_failure(error, inputs):
     )
 
 
-def _copy_files_to_userspace(context, files):
+def _copy_files_to_userspace(context_tus, files):
     """
     Copy the requested files and directories from the host into the userspace.
 
@@ -269,18 +269,18 @@ def _copy_files_to_userspace(context, files):
     Directories are removed at the destination first and then copied recursively,
     while regular files are copied directly.
 
-    :param context: The target userspace context.
-    :type context: mounting.IsolatedActions
+    :param context_tus: The target userspace context.
+    :type context_tus: mounting.IsolatedActions
     :param files: Files/directories to copy from the host into the context.
     :type files: List[CopyFile]
     """
     for file_task in files:
         # dst is guaranteed populated by tus_inputdata._normalize_copy_files.
         if os.path.isdir(file_task.src):
-            context.remove_tree(file_task.dst)
-            context.copytree_to(file_task.src, file_task.dst)
+            context_tus.remove_tree(file_task.dst)
+            context_tus.copytree_to(file_task.src, file_task.dst)
         else:
-            context.copy_to(file_task.src, file_task.dst)
+            context_tus.copy_to(file_task.src, file_task.dst)
 
 
 def _create_target_userspace_dir(dst_path):
@@ -309,7 +309,7 @@ def _create_target_userspace_dir(dst_path):
         )
 
 
-def build(context, layout, inputs, used_repos):
+def build(context_scratch, layout, inputs, used_repos):
     """
     Build the target userspace and return its :class:`TargetUserSpaceInfo`.
 
@@ -319,8 +319,8 @@ def build(context, layout, inputs, used_repos):
     dnf plugin, optionally cleans up cloud injected repofiles, and switches the
     userspace into container mode.
 
-    :param context: The entered nspawn scratch context.
-    :type context: mounting.IsolatedActions
+    :param context_scratch: The entered nspawn scratch context.
+    :type context_scratch: mounting.IsolatedActions
     :param layout: The :class:`~.tus_layout.Layout`.
     :type layout: tus_layout.Layout
     :param inputs: The :class:`~.tus_inputdata.InputData`.
@@ -357,11 +357,11 @@ def build(context, layout, inputs, used_repos):
 
     _persistent_cache_pull(layout.persistent_pkg_cache_path, layout.userspace_path)
 
-    installroot = context.full_path(layout.installroot_overlay_mountpoint)
+    installroot = context_scratch.full_path(layout.installroot_overlay_mountpoint)
     with mounting.BindMount(source=layout.userspace_path, target=installroot):
         if not inputs.nogpgcheck:
             try:
-                _import_gpg_keys(context, layout.installroot_overlay_mountpoint)
+                _import_gpg_keys(context_scratch, layout.installroot_overlay_mountpoint)
             except CalledProcessError as e:
                 raise StopActorExecutionError(
                     message=(
@@ -379,26 +379,26 @@ def build(context, layout, inputs, used_repos):
             inputs.packages,
         )
         try:
-            context.call(cmd)
+            context_scratch.call(cmd)
         except CalledProcessError as e:
             _diagnose_dnf_failure(e, inputs)
 
     # Prepare certificate / repository-file access inside the built userspace.
-    tus_repoaccess.prep_repository_access(context, layout.userspace_path)
+    tus_repoaccess.prep_repository_access(context_scratch, layout.userspace_path)
 
-    with mounting.NspawnActions(base_dir=layout.userspace_path) as us_ctx:
+    with mounting.NspawnActions(base_dir=layout.userspace_path) as context_tus:
         # Copy the requested files into the userspace.
-        _copy_files_to_userspace(us_ctx, inputs.copy_files)
+        _copy_files_to_userspace(context_tus, inputs.copy_files)
 
         # Install the leapp DNF plugin into the userspace.
-        dnfplugin.install(us_ctx.base_dir)
+        dnfplugin.install(context_tus.base_dir)
 
         # Cloud: injected-repofile cleanup - only when not bootstrapping the
         # target client, after the plugin install and before container mode is set.
         if inputs.rhui_info and not inputs.rhui_info.target_client_setup_info.bootstrap_target_client:
-            tus_rhui.cleanup_injected_repofiles(us_ctx, inputs.rhui_info)
+            tus_rhui.cleanup_injected_repofiles(context_tus, inputs.rhui_info)
 
-        rhsm.set_container_mode(us_ctx)
+        rhsm.set_container_mode(context_tus)
 
     return TargetUserSpaceInfo(
         path=layout.userspace_path,

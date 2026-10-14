@@ -88,6 +88,7 @@ def perform():
             userspace_info = tus_userspacebuild.build(scratch, layout, inputs, used_repos)
 
             # Step 6: parse the build (scratch) container's repofiles for the snapshot.
+            # TODO(pstodulk): actually, this should be TUS! not scratch
             snapshot = tus_targetrepos.build_target_repositories_snapshot(scratch)
     except rhsm.MissingTargetProductCertificate:
         # Inhibitor #1: report + soft stop, no output messages.
