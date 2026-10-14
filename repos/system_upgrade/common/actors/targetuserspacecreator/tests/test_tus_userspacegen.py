@@ -1,6 +1,7 @@
 from unittest import mock
 
 import pytest
+from test_tus_mock_utils import MockNspawnActions
 
 from leapp import reporting
 from leapp.libraries.actor import (
@@ -65,7 +66,7 @@ def test_report_missing_target_cert(monkeypatch, product_type, beta_expected):
 
 def test_perform_happy_path(monkeypatch):
     inputs = object()
-    layout = object()
+    layout = mock.Mock(userspace_path='/container/el9userspace')
     scratch = object()
     used_repos = object()
     userspace_info = object()
@@ -87,6 +88,7 @@ def test_perform_happy_path(monkeypatch):
     monkeypatch.setattr(tus_targetrepos, 'select_target_repositories', select)
     monkeypatch.setattr(tus_userspacebuild, 'build', build)
     monkeypatch.setattr(tus_targetrepos, 'build_target_repositories_snapshot', build_snapshot)
+    monkeypatch.setattr(tus_userspacegen.mounting, 'NspawnActions', MockNspawnActions)
     monkeypatch.setattr(api, 'produce', produce)
 
     tus_userspacegen.perform()
@@ -97,7 +99,11 @@ def test_perform_happy_path(monkeypatch):
     establish.assert_called_once_with(scratch, inputs)
     select.assert_called_once_with(scratch, inputs)
     build.assert_called_once_with(scratch, layout, inputs, used_repos)
-    build_snapshot.assert_called_once_with(scratch)
+    # The snapshot is parsed from the target userspace (TUS) container, not scratch.
+    assert build_snapshot.call_count == 1
+    tus_context = build_snapshot.call_args[0][0]
+    assert isinstance(tus_context, MockNspawnActions)
+    assert tus_context.base_dir == layout.userspace_path
     assert produce.called == 3
     assert produce.model_instances == [userspace_info, used_repos, snapshot]
 

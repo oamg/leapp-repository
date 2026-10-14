@@ -6,8 +6,8 @@ This module provides two entry points:
     the target userspace container, intersects them with the requested distro,
     RHUI and custom repositories, and reports inhibitors when required
     repositories are missing, duplicated, or none are usable;
-  * :func:`build_target_repositories_snapshot` - parses the build (scratch)
-    container's repofiles into the produced snapshot message.
+  * :func:`build_target_repositories_snapshot` - parses the target userspace
+    (TUS) container's repofiles into the produced snapshot message.
 
 This module may import ``tus_rhui``; the reverse direction is not allowed.
 """
@@ -421,13 +421,13 @@ def select_target_repositories(context_scratch, inputs):
 
 def build_target_repositories_snapshot(context):
     """
-    Parse the build (scratch) container's repofiles into a snapshot message.
+    Parse the target userspace (TUS) container's repofiles into a snapshot message.
 
     The parsed repofiles preserve their ``additional_fields`` (where gpg-key
     data lives), which is later consumed by the ``missinggpgkeysinhibitor``
     actor.
 
-    :param context: Mounting context of the build (scratch) container.
+    :param context: Mounting context of the target userspace (TUS) container.
     :type context: mounting.IsolatedActions
     :returns: Snapshot of the container's repositories.
     :rtype: RepositoriesFactsTarget
