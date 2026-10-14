@@ -51,6 +51,9 @@ class AddArmBootloaderWorkaround(Actor):
 
     name = 'add_arm_bootloader_workaround'
     consumes = (TargetUserSpaceInfo, TransactionDryRun,)
+    # NOTE(prjagtap): PrepareLiveImagePostTasks is only declared to ensure the live_image_generator
+    # actor is not executed before this one (ordered by dependency on this model). The message is
+    # not produced by this actor. See RHEL-255594.
     produces = (ArmWorkaroundEFIBootloaderInfo, PrepareLiveImagePostTasks,)
     tags = (IPUWorkflowTag, InterimPreparationPhaseTag)
 
