@@ -147,19 +147,19 @@ def _run_postinstall_tasks(context_scratch, postinstall_tasks):
         )
 
 
-def _get_repofiles_paths(context):
+def _get_repofiles_paths(context_scratch):
     """
     Return the paths of all ``*.repo`` files in ``/etc/yum.repos.d``.
 
     Returns an empty set when the directory does not exist. The returned paths
-    are relative to ``context.base_dir``.
+    are relative to ``context_scratch.base_dir``.
 
-    :param context: Container context whose ``/etc/yum.repos.d`` is inspected.
-    :type context: mounting.IsolatedActions
+    :param context_scratch: Container context whose ``/etc/yum.repos.d`` is inspected.
+    :type context_scratch: mounting.IsolatedActions
     :returns: Set of ``*.repo`` file paths relative to the container base dir.
     :rtype: Set[str]
     """
-    repos_dir = context.full_path(_YUM_REPOS_D)
+    repos_dir = context_scratch.full_path(_YUM_REPOS_D)
     if not os.path.isdir(repos_dir):
         return set()
 
@@ -167,28 +167,28 @@ def _get_repofiles_paths(context):
     return {os.path.join(_YUM_REPOS_D, name) for name in basenames}
 
 
-def _repofiles_copied_at_setup(context, files_to_copy_into_overlay):
+def _repofiles_copied_at_setup(context_scratch, files_to_copy_into_overlay):
     """
     Return the ``*.repo`` destination paths injected by the pre-install copies.
 
     Only destinations ending with ``.repo`` are included. The returned paths are
-    relative to ``context.base_dir``.
+    relative to ``context_scratch.base_dir``.
 
-    :param context: Container context used to resolve destination paths.
-    :type context: mounting.IsolatedActions
+    :param context_scratch: Container context used to resolve destination paths.
+    :type context_scratch: mounting.IsolatedActions
     :param files_to_copy_into_overlay: Pre-install copy tasks to inspect.
     :type files_to_copy_into_overlay: List[CopyFile]
     :returns: Set of injected ``*.repo`` destination paths.
     :rtype: Set[str]
     """
     setup_copied = set()
-    for dummy_src, dst in _sanitized_copy_files_iter(context, files_to_copy_into_overlay):
+    for dummy_src, dst in _sanitized_copy_files_iter(context_scratch, files_to_copy_into_overlay):
         if dst.endswith('.repo'):
             setup_copied.add(dst)
     return setup_copied
 
 
-def _dnf_repolist_repoids(context, target_version):
+def _dnf_repolist_repoids(context_scratch, target_version):
     """
     Run ``dnf repolist`` and return the set of repoids, excluding source/debug.
 
@@ -196,8 +196,8 @@ def _dnf_repolist_repoids(context, target_version):
     are disabled, and the repoids are parsed from the ``Repo-id`` lines of the
     verbose output.
 
-    :param context: Container context the ``dnf repolist`` command runs in.
-    :type context: mounting.IsolatedActions
+    :param context_scratch: Container context the ``dnf repolist`` command runs in.
+    :type context_scratch: mounting.IsolatedActions
     :param target_version: Release version passed to ``dnf`` via ``--releasever``.
     :type target_version: str
     :returns: Set of repoids available in the context, excluding source/debug.
@@ -213,7 +213,7 @@ def _dnf_repolist_repoids(context, target_version):
         '--disablerepo', '*-source-*',
         '--disablerepo', '*-debug-*',
     ]
-    stdout = context.call(cmd, split=True)['stdout']
+    stdout = context_scratch.call(cmd, split=True)['stdout']
 
     def extract_repoid_from_line(line):
         return line.split(':', 1)[1].strip()
@@ -223,7 +223,7 @@ def _dnf_repolist_repoids(context, target_version):
     return repoids
 
 
-def discover_client_exposed_repoids(context, rhui_info, target_version):
+def discover_client_exposed_repoids(context_scratch, rhui_info, target_version):
     """
     Discover the repoids exposed by the RHUI clients, leaving the repo dir intact.
 
@@ -234,8 +234,8 @@ def discover_client_exposed_repoids(context, rhui_info, target_version):
     ``/etc/yum.repos.d`` is left byte-identical whether the repolist succeeds or
     fails. Returns an empty set when ``rhui_info`` is falsy.
 
-    :param context: Container context the discovery is performed in.
-    :type context: mounting.IsolatedActions
+    :param context_scratch: Container context the discovery is performed in.
+    :type context_scratch: mounting.IsolatedActions
     :param rhui_info: RHUI info describing the target client setup.
     :type rhui_info: RHUIInfo
     :param target_version: Release version used for the repolist query.
@@ -253,7 +253,7 @@ def discover_client_exposed_repoids(context, rhui_info, target_version):
 
     setup_info = rhui_info.target_client_setup_info
 
-    all_repofiles = _get_repofiles_paths(context)
+    all_repofiles = _get_repofiles_paths(context_scratch)
     api.current_logger().debug(
         '(RHUI Setup) All available repofiles: {0}'.format(' '.join(all_repofiles))
     )
@@ -261,16 +261,16 @@ def discover_client_exposed_repoids(context, rhui_info, target_version):
     target_access_repofiles = set()
     if setup_info.bootstrap_target_client:
         target_access_repofiles = _find_rhui_client_repofiles(
-            context, rhui_info.target_client_pkg_names, get_major_version(target_version)
+            context_scratch, rhui_info.target_client_pkg_names, get_major_version(target_version)
         )
 
     # Exclude repofiles used to setup the target rhui access as on some platforms
     # the repos provided by the client are not sufficient to install the client
     # into target userspace (GCP)
     copy_tasks = setup_info.preinstall_tasks.files_to_copy_into_overlay
-    repofiles_copied_at_setup = _repofiles_copied_at_setup(context, copy_tasks)
+    repofiles_copied_at_setup = _repofiles_copied_at_setup(context_scratch, copy_tasks)
 
-    # Make sure the path is relative to context.base_dir in all of the sets
+    # Make sure the path is relative to context_scratch.base_dir in all of the sets
     keep_visible = target_access_repofiles | repofiles_copied_at_setup
     foreign = all_repofiles - keep_visible
 
@@ -280,12 +280,12 @@ def discover_client_exposed_repoids(context, rhui_info, target_version):
     )
 
     # Rename non-client repofiles so they will not be recognized when running dnf repolist
-    foreign = [context.full_path(path) for path in foreign]
+    foreign = [context_scratch.full_path(path) for path in foreign]
     for repofile in foreign:
         os.rename(repofile, with_hidden_suffix(repofile))
 
     try:
-        return _dnf_repolist_repoids(context, target_version)
+        return _dnf_repolist_repoids(context_scratch, target_version)
     except CalledProcessError as e:
         raise StopActorExecutionError(
             message='Failed to retrieve repoids provided by target RHUI clients.',
@@ -415,16 +415,16 @@ def _query_rpm_for_pkg_files(context_scratch, pkgs):
     return set(result['stdout'])
 
 
-def _find_rhui_client_repofiles(context, pkgs, target_major_version):
+def _find_rhui_client_repofiles(context_scratch, pkgs, target_major_version):
     """
     Return the ``*.repo`` files in ``/etc/yum.repos.d`` owned by the client rpm(s).
 
     Queries the files owned by the given packages and keeps only those located in
     ``/etc/yum.repos.d`` with a ``.repo`` suffix. The returned paths are relative
-    to ``context.base_dir``.
+    to ``context_scratch.base_dir``.
 
-    :param context: Container context the rpm query runs in.
-    :type context: mounting.IsolatedActions
+    :param context_scratch: Container context the rpm query runs in.
+    :type context_scratch: mounting.IsolatedActions
     :param pkgs: Target client package names to query.
     :type pkgs: List[str]
     :param target_major_version: Target RHEL major version, used in the error msg.
@@ -435,7 +435,7 @@ def _find_rhui_client_repofiles(context, pkgs, target_major_version):
         rpm(s) fails.
     """
     try:
-        owned_files = _query_rpm_for_pkg_files(context, pkgs)
+        owned_files = _query_rpm_for_pkg_files(context_scratch, pkgs)
     except CalledProcessError as err:
         # unclear what might have gone wrong here, the clients should be
         # properly installed here, report a generic failure with stderr
@@ -566,7 +566,7 @@ def perform_client_swap(context_scratch, rhui_info, target_version, skip_rhsm):
     _remove_nonclient_injected_files(context_scratch, rhui_info, client_files)
 
 
-def cleanup_injected_repofiles(context, rhui_info):
+def cleanup_injected_repofiles(context_tus, rhui_info):
     """
     Clean up injected repofiles not owned by any rpm after the build.
 
@@ -577,8 +577,8 @@ def cleanup_injected_repofiles(context, rhui_info):
     ``bootstrap_target_client`` is false, after the leapp dnf plugin is installed
     and before subscription-manager container mode is set.
 
-    :param context: Container context the cleanup is performed in.
-    :type context: mounting.IsolatedActions
+    :param context_tus: Container context the cleanup is performed in.
+    :type context_tus: mounting.IsolatedActions
     :param rhui_info: RHUI info providing the pre-install copy tasks.
     :type rhui_info: RHUIInfo
     """
@@ -589,14 +589,14 @@ def cleanup_injected_repofiles(context, rhui_info):
     if not setup.preinstall_tasks:
         return
 
-    for dummy_src, dst in _sanitized_copy_files_iter(context, setup.preinstall_tasks.files_to_copy_into_overlay):
-        if not dst.endswith('.repo') or not os.path.isfile(context.full_path(dst)):
+    for dummy_src, dst in _sanitized_copy_files_iter(context_tus, setup.preinstall_tasks.files_to_copy_into_overlay):
+        if not dst.endswith('.repo') or not os.path.isfile(context_tus.full_path(dst)):
             continue
         try:
-            context.call(['rpm', '-qf', dst])
+            context_tus.call(['rpm', '-qf', dst])
             owned = True
         except CalledProcessError:
             owned = False
         if not owned:
             api.current_logger().debug('Removing injected RHUI repofile not owned by any rpm: {}'.format(dst))
-            context.remove(dst)
+            context_tus.remove(dst)

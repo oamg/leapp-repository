@@ -32,7 +32,7 @@ class BrokenSymlinkError(Exception):
     """Raised when a broken symlink is encountered where a valid one was expected."""
 
 
-def prep_repository_access(context, target_userspace):
+def prep_repository_access(context_scratch, target_userspace):
     """
     Copy the source system's certificates and repository configuration into the target userspace.
 
@@ -40,8 +40,8 @@ def prep_repository_access(context, target_userspace):
     copies the RHSM configuration and merges ``/etc/yum.repos.d`` while keeping
     the RPM-owned repofiles that already exist in the container.
 
-    :param context: Mounting context giving access to the source system tree.
-    :type context: mounting.IsolatedActions
+    :param context_scratch: Mounting scratch context giving access to the source system tree.
+    :type context_scratch: mounting.IsolatedActions
     :param target_userspace: Filesystem path to the target userspace container.
     :type target_userspace: str
     :raises CalledProcessError: If any of the underlying commands (file copies,
@@ -51,10 +51,10 @@ def prep_repository_access(context, target_userspace):
     :raises RuntimeError: If the internal symlink-copy helper reports an unknown
         action (programming error).
     """
-    _copy_certificates(context, target_userspace)
+    _copy_certificates(context_scratch, target_userspace)
     _refresh_ca_trust(target_userspace)
-    _copy_rhsm_config(context, target_userspace)
-    _merge_repos_preserving_rpm_owned(context, target_userspace)
+    _copy_rhsm_config(context_scratch, target_userspace)
+    _merge_repos_preserving_rpm_owned(context_scratch, target_userspace)
 
 
 def _refresh_ca_trust(target_userspace):
@@ -74,7 +74,7 @@ def _refresh_ca_trust(target_userspace):
     run(["chroot", target_userspace, "/bin/bash", "-c", "su - -c update-ca-trust"])
 
 
-def _copy_rhsm_config(context, target_userspace):
+def _copy_rhsm_config(context_scratch, target_userspace):
     """
     Copy the source system's RHSM configuration into the target userspace.
 
@@ -82,8 +82,8 @@ def _copy_rhsm_config(context, target_userspace):
     existing ``/etc/rhsm`` in the container and replaces it with a copy from the
     source system.
 
-    :param context: Mounting context giving access to the source system tree.
-    :type context: mounting.IsolatedActions
+    :param context_scratch: Mounting context giving access to the source system tree.
+    :type context_scratch: mounting.IsolatedActions
     :param target_userspace: Filesystem path to the target userspace container.
     :type target_userspace: str
     :raises CalledProcessError: If removing the existing ``/etc/rhsm`` directory
@@ -93,10 +93,10 @@ def _copy_rhsm_config(context, target_userspace):
         return
     target_rhsm = os.path.join(target_userspace, 'etc', 'rhsm')
     run(['rm', '-rf', target_rhsm])
-    context.copytree_from('/etc/rhsm', target_rhsm)
+    context_scratch.copytree_from('/etc/rhsm', target_rhsm)
 
 
-def _merge_repos_preserving_rpm_owned(context, target_userspace):
+def _merge_repos_preserving_rpm_owned(context_scratch, target_userspace):
     """
     Replace the container's ``yum.repos.d`` with the scratch one, keeping RPM-owned repofiles.
 
@@ -107,8 +107,8 @@ def _merge_repos_preserving_rpm_owned(context, target_userspace):
     detected before the swap and restored afterwards; in between, the scratch
     ``yum.repos.d`` (carrying the new DNF stack and RHUI client) is copied in.
 
-    :param context: Mounting context giving access to the scratch container tree.
-    :type context: mounting.IsolatedActions
+    :param context_scratch: Mounting context giving access to the scratch container tree.
+    :type context_scratch: mounting.IsolatedActions
     :param target_userspace: Filesystem path to the target userspace container.
     :type target_userspace: str
     :raises CalledProcessError: If moving, copying or removing the repository
@@ -119,8 +119,8 @@ def _merge_repos_preserving_rpm_owned(context, target_userspace):
     backup_yum_repos_d = os.path.join(target_etc, 'yum.repos.d.backup')
 
     # Detect files that are owned by some RPM - these cannot be deleted
-    with mounting.NspawnActions(base_dir=target_userspace) as target_context:
-        files_owned_by_rpms = _get_files_owned_by_rpms(target_context, '/etc/yum.repos.d')
+    with mounting.NspawnActions(base_dir=target_userspace) as context_tus:
+        files_owned_by_rpms = _get_files_owned_by_rpms(context_tus, '/etc/yum.repos.d')
 
     # Backup the target yum.repos.d so we can always copy the files installed by some RPM back into yum.repos.d
     # when we modify it
@@ -128,7 +128,7 @@ def _merge_repos_preserving_rpm_owned(context, target_userspace):
 
     # Copy the yum.repos.d from scratch - preserve any custom repositories. No need to clean-up old RHUI clients,
     # we swap them for the new RHUI client in scratch (so the old one is not installed).
-    context.copytree_from('/etc/yum.repos.d', target_yum_repos_d)
+    context_scratch.copytree_from('/etc/yum.repos.d', target_yum_repos_d)
 
     # Copy back files owned by some RPM
     for fname in files_owned_by_rpms:
@@ -139,7 +139,7 @@ def _merge_repos_preserving_rpm_owned(context, target_userspace):
     run(['rm', '-rf', backup_yum_repos_d])
 
 
-def _get_files_owned_by_rpms(context, dirpath, pkgs=None, recursive=False):
+def _get_files_owned_by_rpms(context_tus, dirpath, pkgs=None, recursive=False):
     """
     Return the names of files inside ``dirpath`` that are owned by an installed RPM.
 
@@ -155,8 +155,8 @@ def _get_files_owned_by_rpms(context, dirpath, pkgs=None, recursive=False):
     performance, as it is not relevant to the upgrade). Otherwise only the
     direct entries of ``dirpath`` are checked.
 
-    :param context: Mounting context used to resolve paths and run ``rpm`` queries.
-    :type context: mounting.NspawnActions
+    :param context_tus: Mounting context used to resolve paths and run ``rpm`` queries.
+    :type context_tus: mounting.NspawnActions
     :param dirpath: Directory to inspect, given as a path inside the context.
     :type dirpath: str
     :param pkgs: Optional iterable of package names used to filter the results.
@@ -170,7 +170,7 @@ def _get_files_owned_by_rpms(context, dirpath, pkgs=None, recursive=False):
     files_owned_by_rpms = []
 
     file_list = []
-    searchdir = context.full_path(dirpath)
+    searchdir = context_tus.full_path(dirpath)
     if recursive:
         for root, _, files in os.walk(searchdir):
             if '/directory-hash' in root:
@@ -191,7 +191,7 @@ def _get_files_owned_by_rpms(context, dirpath, pkgs=None, recursive=False):
 
     for fname in file_list:
         try:
-            result = context.call(['rpm', '-qf', os.path.join(dirpath, fname)])
+            result = context_tus.call(['rpm', '-qf', os.path.join(dirpath, fname)])
         except CalledProcessError:
             api.current_logger().debug('SKIP the {} file: not owned by any rpm'.format(fname))
             continue
@@ -465,12 +465,13 @@ def _copy_certificates(context, target_userspace):
     :raises RuntimeError: If the internal symlink-copy helper returns an unknown
         action (programming error).
     """
+    # TODO(pstodulk): drop unused context parameter
 
     target_pki = os.path.join(target_userspace, 'etc', 'pki')
     backup_pki = os.path.join(target_userspace, 'etc', 'pki.backup')
 
-    with mounting.NspawnActions(base_dir=target_userspace) as target_context:
-        files_owned_by_rpms = _get_files_owned_by_rpms(target_context, '/etc/pki', recursive=True)
+    with mounting.NspawnActions(base_dir=target_userspace) as context_tus:
+        files_owned_by_rpms = _get_files_owned_by_rpms(context_tus, '/etc/pki', recursive=True)
         api.current_logger().debug('Files owned by rpms: {}'.format(' '.join(files_owned_by_rpms)))
 
     # Backup container /etc/pki
