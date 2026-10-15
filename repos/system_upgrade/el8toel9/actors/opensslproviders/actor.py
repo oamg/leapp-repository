@@ -34,7 +34,7 @@ class OpenSslProviders(Actor):
 
     name = 'open_ssl_providers'
     consumes = (OpenSslConfig,)
-    produces = ()
+    produces = (Report,)
     tags = (IPUWorkflowTag, ApplicationsPhaseTag,)
 
     def process(self):
