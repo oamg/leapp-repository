@@ -6,29 +6,23 @@ from collections import namedtuple
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import mounting, utils
-from leapp.libraries.common.config import get_env
-from leapp.libraries.common.config.version import get_target_major_version
+from leapp.libraries.common.config import get_env, get_source_distro_id
+from leapp.libraries.common.config.version import get_source_major_version, get_target_major_version
 from leapp.libraries.stdlib import api, CalledProcessError, run
 
 OVERLAY_DO_NOT_MOUNT = ('tmpfs', 'devtmpfs', 'devpts', 'sysfs', 'proc', 'cramfs', 'sysv', 'vfat', 'hugetlbfs')
 
-# NOTE(pstodulk): what about using more closer values and than just multiply
-# the final result by magical constant?... this number is most likely going to
-# be lowered and affected by XFS vs EXT4 FSs that needs different spaces each
-# of them.
 _MAGICAL_CONSTANT_OVL_SIZE = 128
 """
-Average size of created disk space images.
+Base space estimate in MiB for each sparse disk image, excluding its log/journal.
 
-The size can be lower or higher - usually lower. The value is higher as we want
-to rather prevent future actions in advance instead of resolving later issues
-with the missing space.
+Sparse disk images represent the free space on individual source mount points.
+To ensure enough space on the filesystem hosting these images, we estimate the
+physical space needed for each image as this constant plus the filesystem log
+or journal size returned by _get_fs_log_size().
 
-It's possible that in future we implement better heuristic that will guess
-the needed space based on size of each FS. I have been thinking to lower
-the value, as in my case most of partitions where we do not need to do
-write operations consume just ~ 33MB. However, I decided to keep it as it is
-for now to stay on the safe side.
+This constant covers filesystem metadata and a safety margin; it does not
+represent the apparent size of an image.
 """
 
 _MAGICAL_CONSTANT_MIN_CONTAINER_SIZE_8 = 3200
@@ -293,10 +287,11 @@ def _prepare_required_mounts(scratch_dir, mounts_dir, storage_info, scratch_rese
 
     # TODO(pstodulk): update the calculation for bind mounted mount_points (skip)
     # basic check whether we have enough space at all
-    space_needed = scratch_reserve + _MAGICAL_CONSTANT_OVL_SIZE * len(mount_points)
+    disk_image_overhead = _MAGICAL_CONSTANT_OVL_SIZE + _get_fs_log_size()
+    space_needed = scratch_reserve + disk_image_overhead * len(mount_points)
     _ensure_enough_diskimage_space(space_needed, scratch_dir)
 
-    # free space required on this partition should not be affected by during the
+    # free space required on this partition should not be affected during the
     # upgrade transaction execution by space consumed on creation of disk images
     # as disk images are cleaned in the end of this functions,
     # but we want to reserve some space in advance.
@@ -381,6 +376,35 @@ def cleanup_scratch(scratch_dir, mounts_dir):
     api.current_logger().debug('Recursively removed scratch directory %s.', scratch_dir)
 
 
+def _get_fs_log_size():
+    """
+    Return the log size in MiB for the selected filesystem.
+
+    XFS defaults to 64MiB. The log size depends on the source version:
+      - EL8: 32MiB on all distributions, including Oracle Linux.
+      - EL9: 100MiB on Oracle Linux; 32MiB on other distributions (with deprecation warning).
+      - EL10 and later: 100MiB on Oracle Linux; 64MiB on other distributions.
+
+    Note that _get_min_disk_image_size() sets a 460MiB minimum for Oracle Linux 9
+    and later XFS images so they can consistently use a 100MiB log.
+
+    When the EXT4 format is used (LEAPP_OVL_IMG_FS_EXT4=1), use a 32MiB journal
+    on all distributions.
+    """
+    source_major_version = get_source_major_version()
+    if get_env('LEAPP_OVL_IMG_FS_EXT4', '0') == '1' or source_major_version == '8':
+        return 32
+    if get_source_distro_id() == 'ol':
+        # Expects that the OL minimum FS size is enforced at 460MiB. For images <=400MiB the 100MiB
+        # log size would be too large.
+        return 100
+    if source_major_version == '9':
+        # Non-Oracle EL9 accepts logs smaller than 64MiB but emits a deprecation warning.
+        # Keep 32MiB to limit the space consumed during initialization.
+        return 32
+    return 64
+
+
 def _format_disk_image_ext4(diskimage_path):
     """
     Format the specified disk image with Ext4 filesystem.
@@ -396,7 +420,7 @@ def _format_disk_image_ext4(diskimage_path):
     api.current_logger().debug('Creating ext4 filesystem in disk image at %s', diskimage_path)
     cmd = [
         '/sbin/mkfs.ext4',
-        '-J', 'size=32',
+        '-J', f'size={_get_fs_log_size()}',
         '-E', 'lazy_itable_init=0,lazy_journal_init=0',
         '-F', diskimage_path
     ]
@@ -406,7 +430,7 @@ def _format_disk_image_ext4(diskimage_path):
         # FIXME(pstodulk): taken from original, but %s seems to me invalid here
         api.current_logger().error('Failed to create ext4 filesystem in %s', diskimage_path, exc_info=True)
         raise StopActorExecutionError(
-            message='Cannot create Ext4 filesystem in {}'.format(diskimage_path),
+            message=f'Cannot create Ext4 filesystem in {diskimage_path}',
             details={
                 'error message': str(e),
             }
@@ -414,25 +438,53 @@ def _format_disk_image_ext4(diskimage_path):
 
 
 def _format_disk_image_xfs(diskimage_path):
-    """
-    Format the specified disk image with XFS filesystem.
-
-    Set journal just to 32MiB always as we will not need to do too many operation
-    inside, so 32MiB should enough for us.
-    """
-    api.current_logger().debug('Creating XFS filesystem in disk image at %s', diskimage_path)
-    cmd = ['/sbin/mkfs.xfs', '-l', 'size=32m', '-f', diskimage_path]
+    """Format the specified disk image with XFS filesystem."""
+    log_size = _get_fs_log_size()
+    api.current_logger().debug(
+        'Creating XFS filesystem in disk image at %s with log size %s MiB', diskimage_path, log_size
+    )
+    cmd = ['/sbin/mkfs.xfs', '-l', f'size={log_size}m', '-f', diskimage_path]
     try:
         utils.call_with_oserror_handled(cmd=cmd)
     except CalledProcessError as e:
         # FIXME(pstodulk): taken from original, but %s seems to me invalid here
         api.current_logger().error('Failed to create XFS filesystem %s', diskimage_path, exc_info=True)
         raise StopActorExecutionError(
-            message='Cannot create XFS filesystem in {}'.format(diskimage_path),
+            message=f'Cannot create XFS filesystem in {diskimage_path}',
             details={
                 'error message': str(e),
             }
         )
+
+
+def _get_min_disk_image_size():
+    """
+    Return the minimum apparent image size in MiB for the selected filesystem.
+
+    XFS defaults to 300MiB. The minimum depends on the source version:
+      - EL8: 130MiB on all distributions, including Oracle Linux.
+      - EL9: 460MiB on Oracle Linux; 130MiB on other distributions (with deprecation warning).
+      - EL10 and later: 460MiB on Oracle Linux; 300MiB on other distributions.
+
+    Note that the 460MiB minimum allows all Oracle Linux 9 and later images to use a 100MiB log.
+
+    When the EXT4 format is used (LEAPP_OVL_IMG_FS_EXT4=1) we require 130MiB minimum
+    file system size on all distributions.
+    """
+    source_major_version = get_source_major_version()
+    if get_env('LEAPP_OVL_IMG_FS_EXT4', '0') == '1' or source_major_version == '8':
+        return 130
+    if get_source_distro_id() == 'ol':
+        # Although 300MiB is the real minimum on OL9+, we require 460MiB to make the log
+        # size consistent for all images. Sparse files do not allocate their full
+        # apparent size; formatting consumes space mainly for the log and filesystem
+        # metadata. The larger apparent size still affects the free space reported
+        # by the overlay.
+        return 460
+    if source_major_version == '9':
+        # Non-Oracle EL9 accepts FS smaller than 300MiB with a deprecation warning.
+        return 130
+    return 300
 
 
 def _create_mount_disk_image(disk_images_directory, path, disk_size):
@@ -448,8 +500,10 @@ def _create_mount_disk_image(disk_images_directory, path, disk_size):
     and it's supposed to be used for write directories of an overlayfs built
     above it.
 
-    If the disk_size is lower than 130 MiBs, the disk size is automatically
-    set to 130 MiBs to be able to format it correctly.
+    Images below the minimum size are enlarged before formatting.
+    For XFS, use 460 MiB on Oracle Linux 9 and later, 130 MiB on EL8
+    and non-Oracle EL9, and 300 MiB otherwise.
+    Ext4 images keep the 130 MiB minimum.
 
     The disk image is formatted with Ext4 if (envar) `LEAPP_OVL_IMG_FS_EXT4=1`.
 
@@ -462,12 +516,14 @@ def _create_mount_disk_image(disk_images_directory, path, disk_size):
     :return: Path to the created disk image
     :rtype: str
     """
-    if disk_size < 130:
+    min_disk_size = _get_min_disk_image_size()
+    if disk_size < min_disk_size:
         # NOTE(pstodulk): SEATBELT
-        # min. required size for current params to format a disk img with a FS:
-        #   XFS  -> 130 MiB
-        #   EXT4 -> 70  MiB
-        # so let's stick to 130 always. This is expected to happen when:
+        # minimum image sizes selected for the current formatting params:
+        #   XFS  -> 460 MiB on Oracle Linux 9 and later,
+        #           130 MiB on EL8 and non-Oracle EL9, 300 MiB otherwise
+        #   EXT4 -> 130 MiB (formatting itself requires 70 MiB)
+        # so keep images at least min_disk_size. This is expected to happen when:
         #  * the free space on a system mountpoint is really super small, but if
         #    such a mounpoint contains a content installed by packages, most
         #    likely the msg about not enough free space is raised
@@ -481,19 +537,19 @@ def _create_mount_disk_image(disk_images_directory, path, disk_size):
         # the minimal required size could be different
         api.current_logger().warning(
             'The apparent size for the disk image representing {path} '
-            'is too small ({disk_size} MiBs) for a formatting. Setting 130 MiBs instead.'
-            .format(path=path, disk_size=disk_size)
+            'is too small ({disk_size} MiBs) for a formatting. Setting {min_disk_size} MiBs instead.'
+            .format(path=path, disk_size=disk_size, min_disk_size=min_disk_size)
         )
-        disk_size = 130
+        disk_size = min_disk_size
     diskimage_path = os.path.join(disk_images_directory, _mount_name(path))
     cmd = [
         '/bin/dd',
-        'if=/dev/zero', 'of={}'.format(diskimage_path),
-        'bs=1M', 'count=0', 'seek={}'.format(disk_size),
+        'if=/dev/zero', f'of={diskimage_path}',
+        'bs=1M', 'count=0', f'seek={disk_size}',
     ]
     hint = (
         'Please ensure that there is enough diskspace on the partition hosting'
-        'the {} directory.'.format(disk_images_directory)
+        f'the {disk_images_directory} directory.'
     )
 
     api.current_logger().debug('Attempting to create disk image at %s', diskimage_path)
