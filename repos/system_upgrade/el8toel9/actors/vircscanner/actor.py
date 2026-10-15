@@ -1,6 +1,6 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import vircscanner
-from leapp.models import DistributionSignedRPM, VircConfig
+from leapp.models import DistributionSignedRPM, Report, VircConfig
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
 
@@ -14,7 +14,7 @@ class VircScanner(Actor):
 
     name = 'virc_scanner'
     consumes = (DistributionSignedRPM,)
-    produces = (VircConfig,)
+    produces = (Report, VircConfig,)
     tags = (FactsPhaseTag, IPUWorkflowTag,)
 
     def process(self):
