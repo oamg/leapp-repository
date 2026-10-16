@@ -44,6 +44,7 @@ class logger_mocked:
         self.infomsg = []
         self.warnmsg = []
         self.errmsg = []
+        self.critmsg = []
 
     def debug(self, *args, **kwargs):
         self.dbgmsg.extend(args)
@@ -63,6 +64,9 @@ class logger_mocked:
 
     def error(self, *args, **kwargs):
         self.errmsg.extend(args)
+
+    def critical(self, *args, **kwargs):
+        self.critmsg.extend(args)
 
     def __call__(self):
         return self

@@ -1,15 +1,11 @@
 from leapp.actors import Actor
-from leapp.libraries.actor import userspacegen
-from leapp.libraries.common.config import get_env, version
-from leapp.models import RequiredTargetUserspacePackages  # deprecated
-from leapp.models import TMPTargetRepositoriesFacts  # deprecated
+from leapp.libraries.actor import tus_userspacegen
 from leapp.models import (
     CustomTargetRepositoryFile,
-    LiveModeConfig,
     PkgManagerInfo,
     Report,
     RepositoriesFacts,
-    RepositoriesMapping,
+    RepositoriesFactsTarget,
     RHSMInfo,
     RHUIInfo,
     StorageInfo,
@@ -17,44 +13,37 @@ from leapp.models import (
     TargetRepositories,
     TargetUserSpaceInfo,
     TargetUserSpacePreupgradeTasks,
-    UsedTargetRepositories,
-    XFSPresence
+    UsedTargetRepositories
 )
 from leapp.tags import IPUWorkflowTag, TargetTransactionFactsPhaseTag
 
 
-# @suppress_deprecation(RequiredTargetUserspacePackages, TMPTargetRepositoriesFacts)
 class TargetUserspaceCreator(Actor):
     """
-    Initializes a directory to be populated as a minimal environment to run binaries from the target system.
+    Initialize a directory populated as a minimal environment for running target system binaries.
 
-    The target userspace is set up in a directory so one can run it in a containerized environment to perform tasks
-    as if the system running would be the target system. This allows us to use the target system RPM stack including
-    DNF which gives us the ability to use RPM features from the target system.
-    The userspace environment is also used to generate a initram disk with dracut using the target system binaries
-    such as kernel, systemd etc etc
+    The target userspace is set up in a directory so it can be entered as a containerized environment and used to
+    perform tasks as if the running system were already the target system. This provides access to the target system
+    RPM stack, including DNF, and therefore to RPM features from the target system. The userspace environment is also
+    used later to generate an initramfs with dracut using the target system binaries such as the kernel and systemd.
+
+    The work is delegated to :func:`leapp.libraries.actor.tus_userspacegen.perform`.
     """
 
     name = 'target_userspace_creator'
     consumes = (
         CustomTargetRepositoryFile,
-        LiveModeConfig,
         RHSMInfo,
         RHUIInfo,
         RepositoriesFacts,
-        RepositoriesMapping,
-        RequiredTargetUserspacePackages,
         StorageInfo,
         TargetOSInstallationImage,
         TargetRepositories,
         TargetUserSpacePreupgradeTasks,
-        XFSPresence,
         PkgManagerInfo,
     )
-    produces = (TargetUserSpaceInfo, UsedTargetRepositories, Report, TMPTargetRepositoriesFacts,)
+    produces = (TargetUserSpaceInfo, UsedTargetRepositories, RepositoriesFactsTarget, Report)
     tags = (IPUWorkflowTag, TargetTransactionFactsPhaseTag)
 
     def process(self):
-        skip_check = get_env('LEAPP_DEVEL_SKIP_CHECK_OS_RELEASE', False)
-        if (skip_check or version.is_supported_version()) and next(self.consume(RepositoriesMapping), None):
-            userspacegen.perform()
+        tus_userspacegen.perform()
