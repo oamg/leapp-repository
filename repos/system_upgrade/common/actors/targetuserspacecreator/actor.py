@@ -5,6 +5,8 @@ from leapp.models import RequiredTargetUserspacePackages  # deprecated
 from leapp.models import TMPTargetRepositoriesFacts  # deprecated
 from leapp.models import (
     CustomTargetRepositoryFile,
+    DNFWorkaround,
+    InstalledRPM,
     LiveModeConfig,
     PkgManagerInfo,
     Report,
@@ -38,6 +40,7 @@ class TargetUserspaceCreator(Actor):
     name = 'target_userspace_creator'
     consumes = (
         CustomTargetRepositoryFile,
+        InstalledRPM,
         LiveModeConfig,
         RHSMInfo,
         RHUIInfo,
@@ -51,7 +54,13 @@ class TargetUserspaceCreator(Actor):
         XFSPresence,
         PkgManagerInfo,
     )
-    produces = (TargetUserSpaceInfo, UsedTargetRepositories, Report, TMPTargetRepositoriesFacts,)
+    produces = (
+        DNFWorkaround,
+        TargetUserSpaceInfo,
+        UsedTargetRepositories,
+        Report,
+        TMPTargetRepositoriesFacts,
+    )
     tags = (IPUWorkflowTag, TargetTransactionFactsPhaseTag)
 
     def process(self):

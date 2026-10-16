@@ -8,19 +8,23 @@ from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked
 from leapp.libraries.stdlib import api, CalledProcessError
 from leapp.models import DNFWorkaround, Module
 
+_CONTAINER_SCRIPTS_DIR = '/dnf_workaround_scripts'
+
 
 class MockContext:
-    def __init__(self, should_raise=None):
+    def __init__(self, base_dir=None, should_raise=None, **kwargs):
+        self.base_dir = base_dir
         self.should_raise = should_raise
         self.makedirs_calls = []
         self.open_calls = []
         self.copy_from_calls = []
+        self.copy_to_calls = []
         self.copytree_from_calls = []
         self.call_calls = []
         self._files = {}
 
     def makedirs(self, path, exists_ok=False):
-        self.makedirs_calls.append((path, exists_ok))
+        self.makedirs_calls.append(path)
 
     def open(self, path, mode):
         self.open_calls.append((path, mode))
@@ -30,6 +34,9 @@ class MockContext:
 
     def copy_from(self, src, dst):
         self.copy_from_calls.append((src, dst))
+
+    def copy_to(self, src, dst):
+        self.copy_to_calls.append((src, dst))
 
     def copytree_from(self, src, dst):
         self.copytree_from_calls.append((src, dst))
@@ -160,7 +167,7 @@ def test_create_config(monkeypatch):
     dnfplugin.create_config(context, target_repoids, debug=True, test=False, tasks=tasks, on_aws=False)
 
     assert len(context.makedirs_calls) == 1
-    assert context.makedirs_calls[0][0] == os.path.dirname(dnfplugin.DNF_PLUGIN_DATA_PATH)
+    assert context.makedirs_calls[0] == os.path.dirname(dnfplugin.DNF_PLUGIN_DATA_PATH)
 
     assert len(context.open_calls) == 1
     assert context.open_calls[0][0] == dnfplugin.DNF_PLUGIN_DATA_PATH
@@ -292,3 +299,101 @@ def test_apply_workarounds_script_fails(monkeypatch):
 
     assert 'Failed to execute script' in str(exc_info.value)
     assert 'Failing Workaround' in exc_info.value.details['workaround name']
+
+
+@pytest.mark.parametrize('execution_context', ['host', 'container'])
+def test_apply_workarounds_default_contexts(monkeypatch, execution_context):
+    # with no contexts passed, both host and container fall back to NotIsolatedActions(base_dir='/')
+    contexts_created = []
+
+    def mocked_not_isolated_actions(base_dir):
+        context = MockContext(base_dir=base_dir)
+        contexts_created.append(context)
+        return context
+
+    monkeypatch.setattr(dnfplugin.mounting, 'NotIsolatedActions', mocked_not_isolated_actions)
+    display_name = 'Test Action Handle Yum Config'
+    workaround = DNFWorkaround(
+        display_name=display_name,
+        script_path='/path/to/script',
+        execution_context=execution_context,
+    )
+    show_messages = []
+    monkeypatch.setattr(api, 'consume', lambda model: [workaround])
+    monkeypatch.setattr(api, 'show_message', show_messages.append)
+
+    dnfplugin.apply_workarounds()
+
+    # both contexts are built via the fallback, each with base_dir '/'
+    assert len(contexts_created) == 2
+    host_context = contexts_created[0]
+    container_context = contexts_created[1]
+    assert host_context.base_dir == '/'
+    assert container_context.base_dir == '/'
+
+    # the workaround runs on the context matching its execution_context; the other is untouched
+    active, idle = (host_context, container_context) if execution_context == 'host' \
+        else (container_context, host_context)
+    assert len(active.call_calls) == 1
+    assert os.path.basename(active.call_calls[0][-1]) == 'script'
+    assert not idle.call_calls
+    assert not idle.copy_to_calls and not idle.makedirs_calls
+
+    assert len(show_messages) == 1
+    assert display_name in show_messages[0]
+
+
+def test_apply_workarounds_host_context_runs_on_host(monkeypatch):
+    host = MockContext()
+    container = MockContext()
+    workaround = DNFWorkaround(display_name='host wa', script_path='/path/to/hostscript')
+    monkeypatch.setattr(api, 'consume', lambda model: [workaround])
+    monkeypatch.setattr(api, 'show_message', lambda msg: None)
+
+    dnfplugin.apply_workarounds(host, container)
+
+    # host workaround runs on the host context with its path untouched, nothing copied
+    assert host.call_calls == [['/bin/bash', '-c', '/path/to/hostscript']]
+    assert not container.call_calls
+    assert not host.copy_to_calls and not host.makedirs_calls
+
+
+def test_apply_workarounds_container_context_copies_and_runs_in_container(monkeypatch):
+    host = MockContext()
+    container = MockContext()
+    workaround = DNFWorkaround(
+        display_name='container wa',
+        script_path='/path/to/containerscript',
+        execution_context='container',
+    )
+    monkeypatch.setattr(api, 'consume', lambda model: [workaround])
+    monkeypatch.setattr(api, 'show_message', lambda msg: None)
+
+    dnfplugin.apply_workarounds(host, container)
+
+    # the script is copied into the container scripts dir and executed there,
+    # using the copied path, on the container context - never on the host
+    assert not host.call_calls
+    assert container.makedirs_calls == [_CONTAINER_SCRIPTS_DIR]
+    assert container.copy_to_calls == [('/path/to/containerscript', _CONTAINER_SCRIPTS_DIR)]
+    expected_path = os.path.join(_CONTAINER_SCRIPTS_DIR, 'containerscript')
+    assert container.call_calls == [['/bin/bash', '-c', expected_path]]
+
+
+def test_apply_workarounds_appends_script_args(monkeypatch):
+    host = MockContext()
+    container = MockContext()
+    workaround = DNFWorkaround(
+        display_name='wa with args',
+        script_path='/path/to/script',
+        script_args=['--foo', 'bar'],
+    )
+    monkeypatch.setattr(api, 'consume', lambda model: [workaround])
+    monkeypatch.setattr(api, 'show_message', lambda msg: None)
+
+    dnfplugin.apply_workarounds(host, container)
+
+    assert host.call_calls == [['/bin/bash', '-c', '/path/to/script --foo bar']]
+    # a host workaround leaves the container context untouched
+    assert not container.call_calls
+    assert not container.copy_to_calls and not container.makedirs_calls
