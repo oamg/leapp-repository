@@ -156,16 +156,16 @@ def _get_required_tasks(services_target, desired_states):
     return tasks
 
 
-def _report_kept_enabled(tasks):
+def _report_kept_enabled(explicitly_enabled):
     summary = (
         "Systemd services which were enabled on the system before the upgrade"
         " were kept enabled after the upgrade. "
     )
-    if tasks.to_enable:
+    if explicitly_enabled:
         summary += (
             "The following services were originally disabled by preset on the"
             " upgraded system and Leapp attempted to enable them:{}"
-        ).format(format_list(tasks.to_enable))
+        ).format(format_list(explicitly_enabled))
         # TODO(mmatuska): When post-upgrade reports are implemented in
         # `setsystemdservicesstates actor, add a note here to check the reports
         # if the enabling failed
@@ -181,6 +181,14 @@ def _report_kept_enabled(tasks):
 
 
 def _get_newly_enabled(services_source, desired_states):
+    """
+    Get services that are newly enabled on the target.
+
+    Newly enabled services are those that were disabled on the source and the
+    preset on target is 'enable'.
+    """
+    # Newly can be enabled either by leapp or just by preset/scriptlet etc.
+    # So just check what the desired state is.
     newly_enabled = []
     for service, state in desired_states.items():
         state_source = services_source[service]
@@ -242,7 +250,16 @@ def process():
     tasks = _get_required_tasks(services_target, desired_states)
 
     api.produce(tasks)
-    _report_kept_enabled(tasks)
+
+    # if a task was produced to enable the service it means it was disabled in
+    # target and the desired state was enabled. If the preset was 'disable' then
+    # it should be explicitly mentioned in the report that leapp tried to enable it.
+    kept_enabled = [
+        service
+        for service in tasks.to_enable
+        if presets_target.get(service) == "disable"
+    ]
+    _report_kept_enabled(explicitly_enabled=kept_enabled)
 
     newly_enabled = _get_newly_enabled(services_source, desired_states)
     _report_newly_enabled(newly_enabled)
