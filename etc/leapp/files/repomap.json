@@ -1,5 +1,5 @@
 {
-    "datetime": "202607291231Z",
+    "datetime": "202609092337Z",
     "version_format": "2.0.0",
     "provided_data_streams": [
         "5.0"
@@ -480,6 +480,22 @@
                 },
                 {
                     "major_version": "10",
+                    "repoid": "ol10_baseos_latest",
+                    "arch": "aarch64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "ol"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "ol10_baseos_latest",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "ol"
+                },
+                {
+                    "major_version": "10",
                     "repoid": "rhel-10-baseos-rhui-rpms",
                     "arch": "aarch64",
                     "channel": "ga",
@@ -805,6 +821,22 @@
                     "channel": "ga",
                     "repo_type": "rpm",
                     "distro": "rocky"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "ol10_appstream",
+                    "arch": "aarch64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "ol"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "ol10_appstream",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "ol"
                 },
                 {
                     "major_version": "10",
@@ -1265,6 +1297,22 @@
                     "channel": "ga",
                     "repo_type": "rpm",
                     "distro": "rocky"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "ol10_codeready_builder",
+                    "arch": "aarch64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "ol"
+                },
+                {
+                    "major_version": "10",
+                    "repoid": "ol10_codeready_builder",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "ol"
                 },
                 {
                     "major_version": "10",
@@ -2572,22 +2620,6 @@
                 {
                     "major_version": "8",
                     "repoid": "baseos",
-                    "arch": "ppc64le",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "centos"
-                },
-                {
-                    "major_version": "8",
-                    "repoid": "baseos",
-                    "arch": "s390x",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "centos"
-                },
-                {
-                    "major_version": "8",
-                    "repoid": "baseos",
                     "arch": "x86_64",
                     "channel": "ga",
                     "repo_type": "rpm",
@@ -2604,26 +2636,26 @@
                 {
                     "major_version": "8",
                     "repoid": "baseos",
-                    "arch": "ppc64le",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rocky"
-                },
-                {
-                    "major_version": "8",
-                    "repoid": "baseos",
-                    "arch": "s390x",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rocky"
-                },
-                {
-                    "major_version": "8",
-                    "repoid": "baseos",
                     "arch": "x86_64",
                     "channel": "ga",
                     "repo_type": "rpm",
                     "distro": "rocky"
+                },
+                {
+                    "major_version": "8",
+                    "repoid": "ol8_baseos_latest",
+                    "arch": "aarch64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "ol"
+                },
+                {
+                    "major_version": "8",
+                    "repoid": "ol8_baseos_latest",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "ol"
                 },
                 {
                     "major_version": "8",
@@ -2935,22 +2967,6 @@
                 {
                     "major_version": "8",
                     "repoid": "appstream",
-                    "arch": "ppc64le",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "centos"
-                },
-                {
-                    "major_version": "8",
-                    "repoid": "appstream",
-                    "arch": "s390x",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "centos"
-                },
-                {
-                    "major_version": "8",
-                    "repoid": "appstream",
                     "arch": "x86_64",
                     "channel": "ga",
                     "repo_type": "rpm",
@@ -2967,26 +2983,26 @@
                 {
                     "major_version": "8",
                     "repoid": "appstream",
-                    "arch": "ppc64le",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rocky"
-                },
-                {
-                    "major_version": "8",
-                    "repoid": "appstream",
-                    "arch": "s390x",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rocky"
-                },
-                {
-                    "major_version": "8",
-                    "repoid": "appstream",
                     "arch": "x86_64",
                     "channel": "ga",
                     "repo_type": "rpm",
                     "distro": "rocky"
+                },
+                {
+                    "major_version": "8",
+                    "repoid": "ol8_appstream",
+                    "arch": "aarch64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "ol"
+                },
+                {
+                    "major_version": "8",
+                    "repoid": "ol8_appstream",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "ol"
                 },
                 {
                     "major_version": "8",
@@ -3389,6 +3405,22 @@
                 },
                 {
                     "major_version": "8",
+                    "repoid": "ol8_codeready_builder",
+                    "arch": "aarch64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "ol"
+                },
+                {
+                    "major_version": "8",
+                    "repoid": "ol8_codeready_builder",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "ol"
+                },
+                {
+                    "major_version": "8",
                     "repoid": "powertools",
                     "arch": "aarch64",
                     "channel": "ga",
@@ -3430,22 +3462,6 @@
                 {
                     "major_version": "8",
                     "repoid": "powertools",
-                    "arch": "ppc64le",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "centos"
-                },
-                {
-                    "major_version": "8",
-                    "repoid": "powertools",
-                    "arch": "s390x",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "centos"
-                },
-                {
-                    "major_version": "8",
-                    "repoid": "powertools",
                     "arch": "x86_64",
                     "channel": "ga",
                     "repo_type": "rpm",
@@ -3455,22 +3471,6 @@
                     "major_version": "8",
                     "repoid": "powertools",
                     "arch": "aarch64",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rocky"
-                },
-                {
-                    "major_version": "8",
-                    "repoid": "powertools",
-                    "arch": "ppc64le",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rocky"
-                },
-                {
-                    "major_version": "8",
-                    "repoid": "powertools",
-                    "arch": "s390x",
                     "channel": "ga",
                     "repo_type": "rpm",
                     "distro": "rocky"
@@ -4063,22 +4063,6 @@
                 {
                     "major_version": "8",
                     "repoid": "ha",
-                    "arch": "ppc64le",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "centos"
-                },
-                {
-                    "major_version": "8",
-                    "repoid": "ha",
-                    "arch": "s390x",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "centos"
-                },
-                {
-                    "major_version": "8",
-                    "repoid": "ha",
                     "arch": "x86_64",
                     "channel": "ga",
                     "repo_type": "rpm",
@@ -4088,22 +4072,6 @@
                     "major_version": "8",
                     "repoid": "ha",
                     "arch": "aarch64",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rocky"
-                },
-                {
-                    "major_version": "8",
-                    "repoid": "ha",
-                    "arch": "ppc64le",
-                    "channel": "ga",
-                    "repo_type": "rpm",
-                    "distro": "rocky"
-                },
-                {
-                    "major_version": "8",
-                    "repoid": "ha",
-                    "arch": "s390x",
                     "channel": "ga",
                     "repo_type": "rpm",
                     "distro": "rocky"
@@ -4851,6 +4819,22 @@
                 },
                 {
                     "major_version": "9",
+                    "repoid": "ol9_baseos_latest",
+                    "arch": "aarch64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "ol"
+                },
+                {
+                    "major_version": "9",
+                    "repoid": "ol9_baseos_latest",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "ol"
+                },
+                {
+                    "major_version": "9",
                     "repoid": "rhel-9-baseos-beta-rhui-rpms",
                     "arch": "aarch64",
                     "channel": "beta",
@@ -5193,6 +5177,22 @@
                     "channel": "ga",
                     "repo_type": "rpm",
                     "distro": "rocky"
+                },
+                {
+                    "major_version": "9",
+                    "repoid": "ol9_appstream",
+                    "arch": "aarch64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "ol"
+                },
+                {
+                    "major_version": "9",
+                    "repoid": "ol9_appstream",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "ol"
                 },
                 {
                     "major_version": "9",
@@ -5661,6 +5661,22 @@
                     "channel": "ga",
                     "repo_type": "rpm",
                     "distro": "rocky"
+                },
+                {
+                    "major_version": "9",
+                    "repoid": "ol9_codeready_builder",
+                    "arch": "aarch64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "ol"
+                },
+                {
+                    "major_version": "9",
+                    "repoid": "ol9_codeready_builder",
+                    "arch": "x86_64",
+                    "channel": "ga",
+                    "repo_type": "rpm",
+                    "distro": "ol"
                 },
                 {
                     "major_version": "9",
