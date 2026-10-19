@@ -23,7 +23,7 @@ def _get_packages_to_migrate():
                 preinstall_pkg=preinstall_pkg,
             ))
             api.current_logger().debug(
-                'Package {} is installed and will be migrated to Flatpak via {}'.format(
+                'Package {} is installed and it should be migrated to Flatpak via {}'.format(
                     rpm_name, preinstall_pkg
                 )
             )

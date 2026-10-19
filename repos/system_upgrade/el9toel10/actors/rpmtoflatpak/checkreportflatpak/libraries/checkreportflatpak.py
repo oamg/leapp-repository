@@ -4,10 +4,7 @@ from leapp.libraries.stdlib import api
 from leapp.models import RpmToFlatpakFacts, RpmTransactionTasks
 
 _FLATPAK_PKG = 'flatpak'
-_FLATPAK_DOCS_URL = (
-    'https://docs.redhat.com/documentation/red_hat_enterprise_linux/10/html'
-    '/administering_rhel_by_using_the_gnome_desktop_environment/installing-applications-by-using-flatpak'
-)
+_FLATPAK_DOCS_URL = 'https://red.ht/rhel10-installing-flatpak-applications'
 
 
 def _report_inhibitor(rpm_names):
@@ -25,11 +22,11 @@ def _report_inhibitor(rpm_names):
 
     reporting.create_report([
         reporting.Title(
-            'RPM-to-Flatpak migration is not supported without RHSM'
+            'RPM-to-Flatpak migration is not enabled on this system'
         ),
         reporting.Summary(summary),
-        reporting.Severity(reporting.Severity.HIGH),
-        reporting.Groups([reporting.Groups.INHIBITOR, reporting.Groups.DESKTOP]),
+        reporting.Severity(reporting.Severity.MEDIUM),
+        reporting.Groups([reporting.Groups.DESKTOP]),
         reporting.Remediation(
             hint='After the upgrade, install the applications as Flatpaks manually.'
         ),
@@ -55,7 +52,7 @@ def _report_migration(rpm_names):
 
     reporting.create_report([
         reporting.Title(
-            'RPM packages will be migrated to Flatpak'
+            'Some RPM packages will be migrated to Flatpak'
         ),
         reporting.Summary(summary),
         reporting.Severity(reporting.Severity.INFO),
