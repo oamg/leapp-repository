@@ -18,7 +18,12 @@ from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import tus_constants, tus_repoaccess, tus_rhui
 from leapp.libraries.common import mounting, rhsm, utils
 from leapp.libraries.common.config import get_env, get_source_distro_id, get_target_distro_id
-from leapp.libraries.common.config.version import get_target_major_version, get_target_version, matches_target_version
+from leapp.libraries.common.config.version import (
+    get_target_major_version,
+    get_target_version,
+    matches_source_version,
+    matches_target_version
+)
 from leapp.libraries.common.dnflibs import dnfplugin
 from leapp.libraries.common.gpg import get_path_to_gpg_certs, iter_gpg_keyfiles
 from leapp.libraries.common.rpms import has_package
@@ -115,13 +120,14 @@ def _import_gpg_keys_to_scratch(context_scratch, installroot):
     # On RHEL 9 the system rpm stack doesn't understand PQC (gpg v6) keys,
     # there is a separate stack in /usr/lib/pqrpm that does. The pqc keys
     # need to be imported using /usr/lib/pqrpm/bin/rpmkeys.
-    # This needs to be done if the following applies:
-    # - if 'pqrpm' is not installed, PQC is not enabled on the source system
-    # - if target is 9.X or 10.0 there is no pqc support
-    # Note that this imports to the pqrpmdb -
+    # This should only be done if both source and target support PQC.
+    # Note: On >= 9.7, PQC is supported for signing and verifying packages via
+    # 'pqrpm' and 'dnf-multisig-plugin', however the tool for working with PQC
+    # keys, 'sq', is only available on >= 9.9 so that's what we require here.
+    # Also note that this imports to the pqrpmdb -
     # /usr/lib/pqrpm/lib/sysimage/rpm/ inside the source overlay, not to the
     # "main" rpmdb.
-    source_has_pqc = has_package(InstalledRPM, 'pqrpm')
+    source_has_pqc = has_package(InstalledRPM, 'pqrpm') and matches_source_version('>= 9.9')
     target_has_pqc = matches_target_version('>= 10.1')
     if not source_has_pqc or not target_has_pqc:
         return
@@ -434,8 +440,10 @@ def build(context_scratch, layout, inputs, used_repos):
 
     # The 'rpm' installed in target userspace can import PQC keys on >= 10.1.
     target_has_pqc = matches_target_version('>= 10.1')
+    # Only handle PQC on >= 9.9 where 'sq' is available.
+    source_has_pqc = matches_source_version('>= 9.9')
     # TODO(mmatuska): can this be put into the 'with' below?
-    if not inputs.nogpgcheck and target_has_pqc:
+    if not inputs.nogpgcheck and source_has_pqc and target_has_pqc:
         with mounting.NspawnActions(base_dir=layout.userspace_path) as container:
             container.copytree_to(get_path_to_gpg_certs(), layout.userspace_gpg_keys_dir)
             # TODO(mmatuska): we could move the exception handling into the import

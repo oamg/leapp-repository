@@ -184,20 +184,38 @@ def test_get_pubkeys_skips_keyfile_keys_already_in_rpmdb(monkeypatch):
     }
 
 
-def test_get_pubkeys_merges_pqrpmdb_keys_without_duplicates(monkeypatch):
+@pytest.mark.parametrize('source_version, has_pqrpm, should_include_pqc', [
+    ('9.6', False, False),
+    ('9.8', False, False),
+    ('9.8', True, False),
+    ('9.9', False, False),
+    ('9.9', True, True),
+    ('9.10', True, True),
+    ('10.1', False, False),
+    ('10.4', False, False),
+])
+def test_get_pubkeys_merges_pqrpmdb_keys_without_duplicates(
+    monkeypatch, has_pqrpm, source_version, should_include_pqc
+):
     # 05707a62 is in both the regular rpmdb and the pqrpmdb; b2973cf6 is pqrpmdb-only
     installed_rpms = _get_test_installed_rmps(['9570ff31', '05707a62'])
-    installed_rpms.items.append(_make_rpm('pqrpm'))
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[installed_rpms]))
+    if has_pqrpm:
+        installed_rpms.items.append(_make_rpm('pqrpm'))
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(src_ver=source_version, msgs=[installed_rpms]))
     monkeypatch.setattr(api, 'current_logger', logger_mocked())
     monkeypatch.setattr(trustedgpgkeys, 'run', lambda *args, **kwargs: {'stdout': _PQRPMDB_STDOUT})
 
     pubkeys = trustedgpgkeys._get_pubkeys(installed_rpms, {})
 
     # the pqrpmdb-only key is added, the overlapping one is not duplicated
-    assert len(pubkeys) == 3
-    assert {k.fingerprint for k in pubkeys} == {'9570ff31', '05707a62', 'b2973cf6'}
-    assert all(k.rpmdb for k in pubkeys)
+    if should_include_pqc:
+        assert len(pubkeys) == 3
+        assert {k.fingerprint for k in pubkeys} == {'9570ff31', '05707a62', 'b2973cf6'}
+        assert all(k.rpmdb for k in pubkeys)
+    else:
+        assert len(pubkeys) == 2
+        assert {k.fingerprint for k in pubkeys} == {'9570ff31', '05707a62'}
+        assert all(k.rpmdb for k in pubkeys)
 
 
 @pytest.mark.parametrize('keyfiles, expected_pqc, expected_classic', [

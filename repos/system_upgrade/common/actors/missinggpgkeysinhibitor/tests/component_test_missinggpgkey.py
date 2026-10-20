@@ -34,8 +34,10 @@ from leapp.models import (
     ('9.6', True),
     # 9.7 <= source < 10.0: the source RPM stack cannot import PQC (v6) keys,
     # so a separate workaround runs in the target userspace to import them
-    ('9.7', False),
-    ('9.8', False),
+    # However, full PQc can only be enabled on source >= 9.9, where 'sq' is available.
+    ('9.7', True),
+    ('9.8', True),
+    ('9.9', False),
     ('9.10', False),
 ])
 def test_register_dnfworkaround_source_version_gating(monkeypatch, src_ver, should_register):

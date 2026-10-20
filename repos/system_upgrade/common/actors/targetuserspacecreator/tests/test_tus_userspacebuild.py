@@ -177,26 +177,47 @@ def _installed_rpms(pqrpm_installed):
     return models.InstalledRPM(items=items)
 
 
-def _setup_import_keys(monkeypatch, target_version, keyfiles_by_scope, pqrpm_installed=False):
+def _setup_import_keys(
+    monkeypatch,
+    source_version,
+    target_version,
+    keyfiles_by_scope,
+    pqrpm_installed=False,
+):
     """Stub the version and keyfile discovery used by _import_gpg_keys_to_scratch."""
-    monkeypatch.setattr(
-        tus_userspacebuild.api, 'current_actor',
-        CurrentActorMocked(dst_ver=target_version, msgs=[_installed_rpms(pqrpm_installed)])
+    mocked_actor = CurrentActorMocked(
+        src_ver=source_version,
+        dst_ver=target_version,
+        msgs=[_installed_rpms(pqrpm_installed)],
     )
+    monkeypatch.setattr(tus_userspacebuild.api, 'current_actor', mocked_actor)
     monkeypatch.setattr(
         tus_userspacebuild, 'iter_gpg_keyfiles',
         lambda include_pqc: iter(keyfiles_by_scope[include_pqc])
     )
 
 
-@pytest.mark.parametrize('target_version, expected_pqrpm_imports', [
-    # on 10.0 there is no PQC support in rpm, so pqrpm import must not be attempted
-    ('10.0', []),
-    # newer targets import all (v4 + pqc) keys into the separate pqrpmdb
-    ('10.1', ['/keys/root-key', '/keys/pqc/pqc-key']),
+@pytest.mark.parametrize('source_version, target_version, has_pqrpm, expected_pqrpm_imports', [
+    ('9.6', '10.0', False, []),
+    ('9.7', '10.0', False, []),
+    ('9.7', '10.0', True, []),
+    ('9.9', '10.0', True, []),
+    ('9.9', '10.1', True, ['/keys/root-key', '/keys/pqc/pqc-key']),
+    ('9.7', '10.1', True, []),
+    ('9.8', '10.1', True, []),
+    ('9.9', '10.1', False, []),
+    ('9.9', '10.2', True, ['/keys/root-key', '/keys/pqc/pqc-key']),
 ])
-def test_import_gpg_keys_to_scratch_version_gating(monkeypatch, target_version, expected_pqrpm_imports):
-    _setup_import_keys(monkeypatch, target_version, _IMPORT_KEYFILES, pqrpm_installed=True)
+def test_import_gpg_keys_to_scratch_gating(
+    monkeypatch, source_version, target_version, has_pqrpm, expected_pqrpm_imports
+):
+    """
+    Test that importing GPG keys before installing the target userspace is gated properly
+
+    The importing should only be done if the source system is >= 9.9, has the
+    'pqrpm' package installed and the target is >= 10.1.
+    """
+    _setup_import_keys(monkeypatch, source_version, target_version, _IMPORT_KEYFILES, pqrpm_installed=has_pqrpm)
     context = _ImportKeysContext()
 
     tus_userspacebuild._import_gpg_keys_to_scratch(context, '/instroot')
@@ -213,7 +234,7 @@ def test_import_gpg_keys_to_scratch_skips_pqrpm_when_not_installed(monkeypatch):
     # rpmkeys used for the pqrpmdb import comes from the source system's 'pqrpm'
     # package; without it installed there is no binary to import with, so the
     # pqrpm import is skipped even on a PQC-capable target
-    _setup_import_keys(monkeypatch, '10.1', _IMPORT_KEYFILES, pqrpm_installed=False)
+    _setup_import_keys(monkeypatch, '9.9',  '10.1', _IMPORT_KEYFILES, pqrpm_installed=False)
     context = _ImportKeysContext()
 
     tus_userspacebuild._import_gpg_keys_to_scratch(context, '/instroot')
@@ -229,7 +250,7 @@ def test_import_gpg_keys_to_scratch_skips_pqrpm_when_not_installed(monkeypatch):
     (_PQRPM_RPMKEYS, 'some other rpmkeys failure'),
 ])
 def test_import_gpg_keys_to_scratch_import_error_raises(monkeypatch, fail_on, stderr):
-    _setup_import_keys(monkeypatch, '10.1', _IMPORT_KEYFILES, pqrpm_installed=True)
+    _setup_import_keys(monkeypatch, '9.9', '10.1', _IMPORT_KEYFILES, pqrpm_installed=True)
     context = _ImportKeysContext(fail_on=fail_on, stderr=stderr)
 
     with pytest.raises(CalledProcessError):

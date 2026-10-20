@@ -70,9 +70,10 @@ def _get_pubkeys(installed_rpms, keyfiles_to_fps):
     pubkeys = get_pubkeys_from_rpms(installed_rpms)
     db_pubkeys = {key.fingerprint for key in pubkeys}
 
-    # no need to guard by version, pqrpm is only on >= 9.7 && < 10.0
-    # the pqrpm package owns the pqrmdb
-    if has_package(InstalledRPM, 'pqrpm'):
+    # pqrpm, which owns the pqrpmdb is only available on >= 9.7 && < 10.0,
+    # however 'sq', without which full PQC enablement during the upgrade is not
+    # possible, is only available on >= 9.9.
+    if has_package(InstalledRPM, 'pqrpm') and matches_source_version('>= 9.9'):
         # deduplicate, leapp Models are not hashable
         pqc_pubkeys = [k for k in _get_pubkeys_from_pqrmdb() if k.fingerprint not in db_pubkeys]
         pubkeys += pqc_pubkeys
