@@ -262,7 +262,8 @@ def register_dnfworkaround():
     # which is capable of importing such keys. A different workaround is
     # registered in the targetusersapcecreator actor to do just that.
     # 10.0 is a special case - there is no PQC support at all so no way to import PQC keys
-    if matches_source_version('9.7', '9.8', '9.9', '9.10'):
+    # Despite this, full PQC can only be enabled on >= 9.9 where 'sq' is available.
+    if matches_source_version('9.9', '9.10'):
         return
 
     api.produce(DNFWorkaround(
