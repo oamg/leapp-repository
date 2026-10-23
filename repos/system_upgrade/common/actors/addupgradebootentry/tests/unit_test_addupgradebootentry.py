@@ -400,6 +400,7 @@ def test_modify_grubenv_to_have_separate_blsdir(monkeypatch, has_separate_boot):
 
 def test_collect_undesired_args_includes_upgrade_to_remove(monkeypatch):
     msgs = [
+        KernelCmdline(parameters=[]),
         UpgradeKernelCmdlineArgTasks(to_remove=[
             KernelCmdlineArg(key='rd.luks.uuid', value='luks-aaa'),
             KernelCmdlineArg(key='rd.luks.uuid', value='luks-bbb'),
@@ -414,8 +415,26 @@ def test_collect_undesired_args_includes_upgrade_to_remove(monkeypatch):
 
 
 def test_collect_undesired_args_no_upgrade_to_remove(monkeypatch):
-    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[]))
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[KernelCmdline(parameters=[])]))
 
     undesired = addupgradebootentry.collect_undesired_args(livemode_enabled=False)
 
     assert undesired == set()
+
+
+def test_collect_undesired_args_drops_rd_lvm_lv(monkeypatch):
+    """rd.lvm.lv args from the booted cmdline are removed from the upgrade entry even outside live mode."""
+    msgs = [
+        KernelCmdline(parameters=[
+            KernelCmdlineArg(key='rd.lvm.lv', value='vg00/lv_root'),
+            KernelCmdlineArg(key='rd.md.uuid', value='aaaa:bbbb'),
+            KernelCmdlineArg(key='rd.lvm.lv', value='vg00/lv_swap'),
+        ]),
+    ]
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=msgs))
+
+    undesired = addupgradebootentry.collect_undesired_args(livemode_enabled=False)
+
+    assert undesired == {('rd.lvm.lv', ('vg00/lv_root', 'vg00/lv_swap'))}
+    assert 'rd.lvm.lv=vg00/lv_root rd.lvm.lv=vg00/lv_swap' == \
+        addupgradebootentry.format_grubby_args_from_args_set(undesired)

@@ -48,7 +48,19 @@ def collect_undesired_args(livemode_enabled):
     args = {}
     if livemode_enabled:
         args = dict(zip(('ro', 'rhgb', 'quiet'), itertools.repeat(None)))
-        args['rd.lvm.lv'] = _get_rdlvm_arg_values()
+
+    # rd.lvm.lv=<vg>/<lv> args inherited from the default boot entry via
+    # `grubby --copy-default` make dracut's lvm_scan activate *only* the listed
+    # LVs (typically root and swap) and skip the `vgchange -ay` of whole VGs.
+    # On a regular boot the remaining LVs are activated later by the booted
+    # system, but the upgrade initramfs never switches root - it mounts all
+    # fstab entries under /sysroot inside the initramfs. LVs backing e.g. /var,
+    # /home or /srv would stay inactive, the sysroot-*.mount units time out and
+    # the system drops into the emergency shell. Drop the args so that lvm_scan
+    # activates all volume groups (same as already done for the live mode).
+    rd_lvm_values = _get_rdlvm_arg_values(required=livemode_enabled)
+    if rd_lvm_values:
+        args['rd.lvm.lv'] = rd_lvm_values
 
     undesired = set(args.items())
     undesired |= collect_set_of_kernel_args_from_msgs(UpgradeKernelCmdlineArgTasks, 'to_remove')
@@ -310,16 +322,20 @@ def _get_device_uuid(mount_point):
     return None
 
 
-def _get_rdlvm_arg_values():
+def _get_rdlvm_arg_values(required=True):
     # should we not check args returned by grubby instead?
     cmdline_msg = next(api.consume(KernelCmdline), None)
 
     if not cmdline_msg:
-        raise StopActorExecutionError('Did not receive any KernelCmdline arguments.')
+        if required:
+            raise StopActorExecutionError('Did not receive any KernelCmdline arguments.')
+        api.current_logger().debug('No KernelCmdline message received; no rd.lvm.lv args to drop.')
+        return tuple()
 
     rd_lvm_values = sorted(arg.value for arg in cmdline_msg.parameters if arg.key == 'rd.lvm.lv')
-    api.current_logger().debug('Collected the following rd.lvm.lv args that are undesired for the squashfs: %s',
-                               rd_lvm_values)
+    api.current_logger().debug(
+        'Collected the following rd.lvm.lv args that are undesired for the upgrade boot entry: %s', rd_lvm_values
+    )
 
     return tuple(rd_lvm_values)
 
