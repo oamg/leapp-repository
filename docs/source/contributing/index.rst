@@ -9,6 +9,7 @@ Contributing
     coding-guidelines
     pr-guidelines
     community-upgrades
+    ai-assisted-contribution
 
 .. Indices and tables
 .. ==================
