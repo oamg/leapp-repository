@@ -223,7 +223,7 @@ Requires:   python3-gobject-base
 Requires:   libdb-utils
 # Required for handling post-quantum GPG keys
 # Package is available only on EL 9.9+ or CS 9+, resolving deps in time of installation
-Requires:   (sequoia-sq if (redhat-release >= 9.9 or centos-stream-release))
+Requires:   (sequoia-sq if (system-release >= 9.9 or centos-stream-release))
 %endif
 ##################################################
 # end requirement
