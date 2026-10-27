@@ -1,1 +1,1 @@
-See the [contribution guidelines](https://leapp-repository.readthedocs.io/latest/contrib-and-devel-guidelines.html).
+See the [contribution guidelines](https://leapp-repository.readthedocs.io/latest/contributing/index.html).
