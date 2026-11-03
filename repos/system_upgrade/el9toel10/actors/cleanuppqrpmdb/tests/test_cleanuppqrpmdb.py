@@ -8,7 +8,7 @@ from leapp.libraries.stdlib import api
 
 
 @pytest.mark.parametrize('src_ver', ['9.9', '9.10', '9.11'])
-def test_removes_db_on_matching_version(monkeypatch, src_ver):
+def test_removes_dir_on_matching_version(monkeypatch, src_ver):
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(src_ver=src_ver, dst_ver='10.0'))
     monkeypatch.setattr(api, 'current_logger', logger_mocked())
     monkeypatch.setattr(os.path, 'isdir', lambda path: True)
@@ -18,7 +18,7 @@ def test_removes_db_on_matching_version(monkeypatch, src_ver):
 
     cleanuppqrpmdb.process()
 
-    assert removed == [cleanuppqrpmdb.PQRPM_DB_DIR]
+    assert removed == [cleanuppqrpmdb.PQRPM_USR_DIR]
 
 
 @pytest.mark.parametrize('src_ver', ['9.8', '9.6'])
