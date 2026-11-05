@@ -65,12 +65,13 @@ The alternative to the --channel leapp option. As a parameter accepts a channel 
 
 #### LEAPP_OVL_IMG_FS_EXT4
 During the execution of IPUWorkflow the process requires creation of internal
-disk images for the correct virtualisation of the host storage and creation
-of OverlayFS (OVL) layer. During that time these images are formatted with
-XFS filesystem by default. However for some system setups this could be
-problematic and could lead sometimes to issues. For these uncommon problems
-it is possible to specify `LEAPP_OVL_IMG_FS_EXT4=1` when running leapp to
-instruct the use of the EXT4 file system instead.
+disk images for the correct virtualisation of the host storage and creation of
+OverlayFS (OVL) layer. During that time these images are formatted primarily
+XFS filesystem, while a fallback mechanism uses EXT4 for smaller images that
+would not allow formatting with XFS. However, for some uncommon system setups
+using XFS could cause problems. In case of problems with XFS usage, it is
+possible to specify `LEAPP_OVL_IMG_FS_EXT4=1` when running leapp to instruct
+the use of the EXT4 file system instead.
 
 
 ### Development variables
