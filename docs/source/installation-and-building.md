@@ -9,7 +9,7 @@ upstream and testing builds.
 Containerized builds can be used to build the packages locally.
 To build the RPM e.g. for RHEL 8 systems, execute:
 ```bash
-$ BUILD_CONTAINER=el8 make container_build
+$ BUILD_CONTAINER=el8 make build_container
 ```
 Possible values for BUILD_CONTAINER are `el8`, `el9`.
 
@@ -28,7 +28,7 @@ $ make clean_containers
 If you want to use Docker instead of Podman, just specify `CONTAINER_TOOL=docker`.
 E.g.:
 ```bash
-$ CONTAINER_TOOL=docker BUILD_CONTAINER=el8 make container_build
+$ CONTAINER_TOOL=docker BUILD_CONTAINER=el8 make build_container
 ```
 
 ### Install locally built packages
