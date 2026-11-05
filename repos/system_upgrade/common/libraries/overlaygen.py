@@ -14,15 +14,12 @@ OVERLAY_DO_NOT_MOUNT = ('tmpfs', 'devtmpfs', 'devpts', 'sysfs', 'proc', 'cramfs'
 
 _MAGICAL_CONSTANT_OVL_SIZE = 128
 """
-Base space estimate in MiB for each sparse disk image, excluding its log/journal.
+Base estimate in MiB of the physical space consumed by each disk image, excluding its log.
 
-Sparse disk images represent the free space on individual source mount points.
-To ensure enough space on the filesystem hosting these images, we estimate the
-physical space needed for each image as this constant plus the filesystem log
-or journal size returned by _get_fs_log_size().
-
-This constant covers filesystem metadata and a safety margin; it does not
-represent the apparent size of an image.
+The physical space needed for each image is estimated as this constant plus the
+filesystem log size (see `_estimate_required_space_for_diskimages`). This constant
+covers filesystem metadata and a safety margin. It does not represent the apparent
+size of an image.
 """
 
 _MAGICAL_CONSTANT_MIN_CONTAINER_SIZE_8 = 3200
@@ -81,6 +78,16 @@ Engineering rationale:
    by RPMs that we would need 1TB of the free space on a single FS. Therefore,
    we consider this value as safe while preventing us from exceeding FS
    limits.
+"""
+
+_MIN_DISK_IMAGE_SIZE_MB = 130
+"""
+Minimum apparent size in MiB of any created (sparse) image.
+
+Images representing a smaller free space are enlarged to this size. It equals
+the XFS minimum on EL8 and non-Oracle EL9 with the used formatting parameters
+(see `_get_min_xfs_disk_image_size`). Ext4 formatting itself allows even
+smaller sizes.
 """
 
 
@@ -157,13 +164,11 @@ def get_recommended_leapp_free_space(userspace_path=None):
     return prot_size
 
 
-def _get_fspace(path, convert_to_mibs=False, coefficient=1):
+def _get_fspace(path, convert_to_mibs=False, coefficient=1.0):
     """
     Return the free disk space on given path.
 
     The default is in bytes, but if convert_to_mibs is True, return MiBs instead.
-
-    Raises OSError if nothing exists on the given `path`.
 
     :param path: Path to an existing file or directory
     :type path: str
@@ -171,12 +176,14 @@ def _get_fspace(path, convert_to_mibs=False, coefficient=1):
     :type convert_to_mibs: bool
     :param coefficient: Coefficient to multiply the free space (e.g. 0.9 to have it 10% lower). Max: 1
     :type coefficient: float
+    :returns: Free space available to unprivileged users on the filesystem hosting `path`.
     :rtype: int
+    :raises OSError: When nothing exists on the given `path`.
     """
     stat = os.statvfs(path)
 
     # TODO(pstodulk): discuss the function params
-    coefficient = min(coefficient, 1)
+    coefficient = min(coefficient, 1.0)
     fspace_bytes = int(stat.f_frsize * stat.f_bavail * coefficient)
     if convert_to_mibs:
         return int(fspace_bytes / 1024 / 1024)
@@ -246,25 +253,110 @@ def _get_scratch_mountpoint(mount_points, dir_path):
     return None  # making pylint happy; this is basically dead code
 
 
+def _get_mountpoints_free_space(mount_points, scratch_dir, scratch_reserve):
+    """
+    Return a map of each mountpoint to its free space in MiB.
+
+    The free space is reported 5% lower than the real value, except for the
+    mountpoint hosting `scratch_dir`, which is reduced by `scratch_reserve`
+    instead. All values are capped at `_MAX_DISK_IMAGE_SIZE_MB`.
+
+    :param mount_points: Paths to the mountpoints.
+    :type mount_points: List[str]
+    :param scratch_dir: Path to the scratch directory.
+    :type scratch_dir: str
+    :param scratch_reserve: Number of MiB that should be extra reserved in a partition hosting the scratch_dir.
+    :type scratch_reserve: int
+    :returns: Map of mountpoints to their free space in MiB.
+    :rtype: Dict[str, int]
+    :raises OSError: When the free space of a mountpoint or `scratch_dir` cannot be obtained.
+    """
+    scratch_mp = _get_scratch_mountpoint(mount_points, scratch_dir)
+    free_spaces = {}
+    for mountpoint in mount_points:
+        if mountpoint == scratch_mp:
+            # Free space required on this partition should not be affected during the
+            # upgrade transaction execution by space consumed on creation of disk images
+            # as disk images are removed by `cleanup_scratch` in the end,
+            # but we want to reserve some space in advance.
+            free_space = _get_fspace(scratch_dir, convert_to_mibs=True) - scratch_reserve
+        else:
+            # keep the info about the free space rather 5% lower than the real value
+            free_space = _get_fspace(mountpoint, convert_to_mibs=True, coefficient=0.95)
+        if free_space > _MAX_DISK_IMAGE_SIZE_MB:
+            msg = ('Image for overlayfs corresponding to the disk mounted at %s would ideally have %d MB, '
+                   'but we truncate it to %d MB to avoid bumping to max file limits.')
+            api.current_logger().info(msg, mountpoint, free_space, _MAX_DISK_IMAGE_SIZE_MB)
+            free_space = _MAX_DISK_IMAGE_SIZE_MB
+        free_spaces[mountpoint] = free_space
+    return free_spaces
+
+
+def _use_ext4_for_disk_image(disk_size):
+    """
+    Return True if the disk image of the given apparent size should be formatted with Ext4.
+
+    Ext4 is used for all images when `LEAPP_OVL_IMG_FS_EXT4=1`, otherwise only
+    for images that are below the XFS minimum (see `_get_min_xfs_disk_image_size`)
+    even after their enlargement to `_MIN_DISK_IMAGE_SIZE_MB`.
+
+    :param disk_size: Apparent size of the disk image in MiB.
+    :type disk_size: int
+    :returns: True if Ext4 should be used, False for XFS.
+    :rtype: bool
+    """
+    if get_env('LEAPP_OVL_IMG_FS_EXT4', '0') == '1':
+        return True
+    # Images below the floor are enlarged to it, so compare the final size.
+    return max(disk_size, _MIN_DISK_IMAGE_SIZE_MB) < _get_min_xfs_disk_image_size()
+
+
+def _estimate_required_space_for_diskimages(mount_points_free_space):
+    """
+    Return the estimated physical space in MiB consumed by the disk images.
+
+    To ensure enough space on the filesystem hosting these images, we estimate the
+    physical space needed for each image as `_MAGICAL_CONSTANT_OVL_SIZE` plus the
+    filesystem log. This constant covers filesystem metadata and a safety margin.
+    The filesystem log size depends on the distribution and its versions, and on
+    the filesystem used, which might be different per disk image.
+
+    :param mount_points_free_space: Map of mountpoints to their free space in MiB.
+    :type mount_points_free_space: Dict[str, int]
+    :returns: Estimated physical space in MiB needed for all the disk images.
+    :rtype: int
+    """
+    xfs_estimate = _MAGICAL_CONSTANT_OVL_SIZE + _get_fs_log_size()
+    ext4_estimate = _MAGICAL_CONSTANT_OVL_SIZE + _get_fs_log_size(ext4=True)
+
+    size_estimate = 0
+    for disk_size in mount_points_free_space.values():
+        disk_size_estimate = xfs_estimate
+        if _use_ext4_for_disk_image(disk_size):
+            disk_size_estimate = ext4_estimate
+        size_estimate += disk_size_estimate
+    return size_estimate
+
+
 def _prepare_required_mounts(scratch_dir, mounts_dir, storage_info, scratch_reserve):
     """
     Create disk images and loop mount them.
 
-    Ensure to create disk image for each important mountpoint configured
-    in fstab (excluding fs types noted in `OVERLAY_DO_NOT_MOUNT`).
-    Disk images reflect the free space of related partition/volume. In case
-    of partition hosting /var/lib/leapp/* calculate the free space value
-    taking `scratch_reserve` into account, as during the run of the tooling,
-    we will be consuming the space on the partition and we want to be more
-    sure that we do not consume all the space on the partition during the
-    execution - so we reduce the risk we affect run of other applications
-    due to missing space.
+    Create disk image for each important mountpoint configured in fstab (excluding
+    fs types noted in `OVERLAY_DO_NOT_MOUNT`). Disk images reflect the free space
+    of related partition/volume. Estimates physical size of the disk images and
+    fails if there is not enough space.
+
+    For the partition hosting /var/lib/leapp/*, the free space is reduced by
+    `scratch_reserve`. The tooling consumes space on this partition during its
+    execution, and the reserve lowers the risk of exhausting the partition and
+    affecting other applications.
 
     Note: the partition hosting the scratch dir is expected to be the same
-    partition that is hosting the target userspace container, but it does not
-    have to be true if the code changes. Right now, let's live with that.
+    partition that is hosting the target userspace container. This may not
+    hold if the code changes, which is currently accepted.
 
-    See `_create_mount_disk_image` docstring for additional more details.
+    See `_create_mount_disk_image` docstring for more details.
 
     :param scratch_dir: Path to the scratch directory.
     :type scratch_dir: str
@@ -272,11 +364,17 @@ def _prepare_required_mounts(scratch_dir, mounts_dir, storage_info, scratch_rese
     :type mounts_dir: str
     :param storage_info: The StorageInfo message.
     :type storage_info: leapp.models.StorageInfo
-    :param scratch_reserve: Number of MB that should be extra reserved in a partition hosting the scratch_dir.
-    :type scratch_reserve: Optional[int]
+    :param scratch_reserve: Number of MiB that should be extra reserved in a partition hosting the scratch_dir.
+    :type scratch_reserve: int
+    :returns: Map of mountpoints to (not yet mounted) loop mounts of their disk images.
+    :rtype: Dict[str, mounting.LoopMount]
+    :raises StopActorExecutionError: When the disk images directory cannot be created, there is
+        not enough space for the disk images, or a disk image cannot be created or formatted.
+    :raises OSError: When the free space of a mountpoint cannot be obtained, or the removal
+        of old disk images cannot be executed.
+    :raises CalledProcessError: When the removal of old disk images fails.
     """
     mount_points = sorted([mp.fs_file for mp in _get_mountpoints(storage_info)])
-    scratch_mp = _get_scratch_mountpoint(mount_points, scratch_dir)
     disk_images_directory = os.path.join(scratch_dir, 'diskimages')
 
     # Ensure we cleanup old disk images before we check for space constraints.
@@ -286,30 +384,12 @@ def _prepare_required_mounts(scratch_dir, mounts_dir, storage_info, scratch_rese
     _create_diskimages_dir(scratch_dir, disk_images_directory)
 
     # TODO(pstodulk): update the calculation for bind mounted mount_points (skip)
-    # basic check whether we have enough space at all
-    disk_image_overhead = _MAGICAL_CONSTANT_OVL_SIZE + _get_fs_log_size()
-    space_needed = scratch_reserve + disk_image_overhead * len(mount_points)
+    mount_points_free_space = _get_mountpoints_free_space(mount_points, scratch_dir, scratch_reserve)
+    space_needed = scratch_reserve + _estimate_required_space_for_diskimages(mount_points_free_space)
     _ensure_enough_diskimage_space(space_needed, scratch_dir)
 
-    # free space required on this partition should not be affected during the
-    # upgrade transaction execution by space consumed on creation of disk images
-    # as disk images are cleaned in the end of this functions,
-    # but we want to reserve some space in advance.
-    scratch_disk_size = _get_fspace(scratch_dir, convert_to_mibs=True) - scratch_reserve
-
     result = {}
-    for mountpoint in mount_points:
-        # keep the info about the free space rather 5% lower than the real value
-        disk_size = _get_fspace(mountpoint, convert_to_mibs=True, coefficient=0.95)
-        if mountpoint == scratch_mp:
-            disk_size = scratch_disk_size
-
-        if disk_size > _MAX_DISK_IMAGE_SIZE_MB:
-            msg = ('Image for overlayfs corresponding to the disk mounted at %s would ideally have %d MB, '
-                   'but we truncate it to %d MB to avoid bumping to max file limits.')
-            api.current_logger().info(msg, mountpoint, disk_size, _MAX_DISK_IMAGE_SIZE_MB)
-            disk_size = _MAX_DISK_IMAGE_SIZE_MB
-
+    for mountpoint, disk_size in mount_points_free_space.items():
         image = _create_mount_disk_image(disk_images_directory, mountpoint, disk_size)
         result[mountpoint] = mounting.LoopMount(
             source=image,
@@ -376,27 +456,32 @@ def cleanup_scratch(scratch_dir, mounts_dir):
     api.current_logger().debug('Recursively removed scratch directory %s.', scratch_dir)
 
 
-def _get_fs_log_size():
+def _get_fs_log_size(ext4=False):
     """
     Return the log size in MiB for the selected filesystem.
 
-    XFS defaults to 64MiB. The log size depends on the source version:
+    For XFS defaults to 64MiB log size, however, it depends on the distribution and source version:
       - EL8: 32MiB on all distributions, including Oracle Linux.
       - EL9: 100MiB on Oracle Linux; 32MiB on other distributions (with deprecation warning).
       - EL10 and later: 100MiB on Oracle Linux; 64MiB on other distributions.
 
-    Note that _get_min_disk_image_size() sets a 460MiB minimum for Oracle Linux 9
-    and later XFS images so they can consistently use a 100MiB log.
+    For Ext4 defaults to 32MiB log size on all distributions and source versions.
 
-    When the EXT4 format is used (LEAPP_OVL_IMG_FS_EXT4=1), use a 32MiB journal
-    on all distributions.
+    Note that Oracle Linux 9 and later enforces the 100MiB log size for XFS images starting
+    at 460MiB image size. The `_get_min_xfs_disk_image_size` enforces the 460MiB as the hard
+    minimum for the XFS images on OL9+ so that 100MiB log can be used regardless of the disk size.
+
+    :param ext4: If True, return the Ext4 log size instead of the XFS log size.
+    :type ext4: bool
+    :returns: Log size in MiB.
+    :rtype: int
     """
     source_major_version = get_source_major_version()
-    if get_env('LEAPP_OVL_IMG_FS_EXT4', '0') == '1' or source_major_version == '8':
+    if ext4 or source_major_version == '8':
         return 32
     if get_source_distro_id() == 'ol':
-        # Expects that the OL minimum FS size is enforced at 460MiB. For images <=400MiB the 100MiB
-        # log size would be too large.
+        # Expects that the OL minimum FS size is enforced at 460MiB. For images below ~416MiB
+        # mkfs.xfs rejects the 100MiB log size as too large.
         return 100
     if source_major_version == '9':
         # Non-Oracle EL9 accepts logs smaller than 64MiB but emits a deprecation warning.
@@ -411,16 +496,21 @@ def _format_disk_image_ext4(diskimage_path):
 
     The formatted file system is optimized for operations we want to do and
     mainly for the space it needs to take for the initialisation. So use 32MiB
-    journal (that's enough for us as we do not plan to do too many operations
+    log (that's enough for us as we do not plan to do too many operations
     inside) for any size of the disk image. Also the lazy
     initialisation is disabled. The formatting will be slower, but it helps
     us to estimate better the needed amount of the space for other actions
     done later.
+
+    :param diskimage_path: Path to the disk image to format.
+    :type diskimage_path: str
+    :raises StopActorExecutionError: When mkfs.ext4 cannot be executed or fails.
     """
     api.current_logger().debug('Creating ext4 filesystem in disk image at %s', diskimage_path)
+    log_size = _get_fs_log_size(ext4=True)
     cmd = [
         '/sbin/mkfs.ext4',
-        '-J', f'size={_get_fs_log_size()}',
+        '-J', f'size={log_size}',
         '-E', 'lazy_itable_init=0,lazy_journal_init=0',
         '-F', diskimage_path
     ]
@@ -438,10 +528,20 @@ def _format_disk_image_ext4(diskimage_path):
 
 
 def _format_disk_image_xfs(diskimage_path):
-    """Format the specified disk image with XFS filesystem."""
+    """
+    Format the specified disk image with XFS filesystem.
+
+    The log size for the filesystem is set to one of the smallest possible values. This
+    minimum differs for distributions and their versions. After creating the filesystem,
+    the allocated space in the diskimage corresponds to the log size along with some metadata.
+
+    :param diskimage_path: Path to the disk image to format.
+    :type diskimage_path: str
+    :raises StopActorExecutionError: When mkfs.xfs cannot be executed or fails.
+    """
     log_size = _get_fs_log_size()
     api.current_logger().debug(
-        'Creating XFS filesystem in disk image at %s with log size %s MiB', diskimage_path, log_size
+        'Creating XFS filesystem in disk image at %s with log size %d MiB', diskimage_path, log_size
     )
     cmd = ['/sbin/mkfs.xfs', '-l', f'size={log_size}m', '-f', diskimage_path]
     try:
@@ -457,9 +557,9 @@ def _format_disk_image_xfs(diskimage_path):
         )
 
 
-def _get_min_disk_image_size():
+def _get_min_xfs_disk_image_size():
     """
-    Return the minimum apparent image size in MiB for the selected filesystem.
+    Return the minimum (apparent) image size in MiB for XFS.
 
     XFS defaults to 300MiB. The minimum depends on the source version:
       - EL8: 130MiB on all distributions, including Oracle Linux.
@@ -468,18 +568,15 @@ def _get_min_disk_image_size():
 
     Note that the 460MiB minimum allows all Oracle Linux 9 and later images to use a 100MiB log.
 
-    When the EXT4 format is used (LEAPP_OVL_IMG_FS_EXT4=1) we require 130MiB minimum
-    file system size on all distributions.
+    :returns: Minimum apparent size in MiB of an XFS disk image.
+    :rtype: int
     """
     source_major_version = get_source_major_version()
-    if get_env('LEAPP_OVL_IMG_FS_EXT4', '0') == '1' or source_major_version == '8':
+    if source_major_version == '8':
         return 130
     if get_source_distro_id() == 'ol':
         # Although 300MiB is the real minimum on OL9+, we require 460MiB to make the log
-        # size consistent for all images. Sparse files do not allocate their full
-        # apparent size; formatting consumes space mainly for the log and filesystem
-        # metadata. The larger apparent size still affects the free space reported
-        # by the overlay.
+        # size consistent for all XFS images. Smaller images use Ext4 instead.
         return 460
     if source_major_version == '9':
         # Non-Oracle EL9 accepts FS smaller than 300MiB with a deprecation warning.
@@ -500,10 +597,9 @@ def _create_mount_disk_image(disk_images_directory, path, disk_size):
     and it's supposed to be used for write directories of an overlayfs built
     above it.
 
-    Images below the minimum size are enlarged before formatting.
-    For XFS, use 460 MiB on Oracle Linux 9 and later, 130 MiB on EL8
-    and non-Oracle EL9, and 300 MiB otherwise.
-    Ext4 images keep the 130 MiB minimum.
+    Images below `_MIN_DISK_IMAGE_SIZE_MB` are enlarged to this threshold.
+    Images still below the XFS minimum use Ext4 to avoid overstating the free
+    space reported by the overlay. See `_use_ext4_for_disk_image`.
 
     The disk image is formatted with Ext4 if (envar) `LEAPP_OVL_IMG_FS_EXT4=1`.
 
@@ -513,34 +609,35 @@ def _create_mount_disk_image(disk_images_directory, path, disk_size):
     :type path: str
     :param disk_size: Apparent size of the disk img in MiBs
     :type disk_size: int
-    :return: Path to the created disk image
+    :returns: Path to the created disk image
     :rtype: str
+    :raises StopActorExecutionError: When the disk image file cannot be created, or formatting
+        of the disk image fails.
     """
-    min_disk_size = _get_min_disk_image_size()
-    if disk_size < min_disk_size:
-        # NOTE(pstodulk): SEATBELT
-        # minimum image sizes selected for the current formatting params:
-        #   XFS  -> 460 MiB on Oracle Linux 9 and later,
-        #           130 MiB on EL8 and non-Oracle EL9, 300 MiB otherwise
-        #   EXT4 -> 130 MiB (formatting itself requires 70 MiB)
-        # so keep images at least min_disk_size. This is expected to happen when:
-        #  * the free space on a system mountpoint is really super small, but if
-        #    such a mounpoint contains a content installed by packages, most
-        #    likely the msg about not enough free space is raised
-        #  * the mountpoint is actually no important at all, could be possibly
-        #    read only (e.g. ISO), or it's an FS type that should be covered by
+    use_ext4 = _use_ext4_for_disk_image(disk_size)
+    if use_ext4:
+        api.current_logger().debug(
+            'Using Ext4 for the disk image representing %s (apparent size %d MiB).', path, disk_size
+        )
+
+    if disk_size < _MIN_DISK_IMAGE_SIZE_MB:
+        # Enlarging the image overestimates the free space on this mountpoint. The image uses
+        # Ext4 when the XFS minimum is above this floor, otherwise XFS (its minimum equals the floor).
+        # The overestimation could be fixed by creating a reservation file inside the image
+        # or using FS quotas. In practice this is unlikely to matter:
+        #  * a mountpoint with < 130 MiB free that holds package content will
+        #    already trip the "not enough free space" check elsewhere
+        #  * read-only or non-essential mounts (e.g. ISO) should be filtered by
         #    OVERLAY_DO_NOT_MOUNT
-        #  * most common case important for us here could be /boot, but that's
-        #    covered already in different actors/checks, so it should not be
-        #    problem either
-        # NOTE(pstodulk): In case the formatting params are modified,
-        # the minimal required size could be different
+        #  * /boot is the most common small mountpoint and is validated by
+        #    dedicated actors before we reach this code
         api.current_logger().warning(
             'The apparent size for the disk image representing {path} '
             'is too small ({disk_size} MiBs) for a formatting. Setting {min_disk_size} MiBs instead.'
-            .format(path=path, disk_size=disk_size, min_disk_size=min_disk_size)
+            .format(path=path, disk_size=disk_size, min_disk_size=_MIN_DISK_IMAGE_SIZE_MB)
         )
-        disk_size = min_disk_size
+        disk_size = _MIN_DISK_IMAGE_SIZE_MB
+
     diskimage_path = os.path.join(disk_images_directory, _mount_name(path))
     cmd = [
         '/bin/dd',
@@ -555,10 +652,7 @@ def _create_mount_disk_image(disk_images_directory, path, disk_size):
     api.current_logger().debug('Attempting to create disk image at %s', diskimage_path)
     utils.call_with_failure_hint(cmd=cmd, hint=hint)
 
-    if get_env('LEAPP_OVL_IMG_FS_EXT4', '0') == '1':
-        # This is alternative to XFS in case we find some issues, to be able
-        # to switch simply to Ext4, so we will be able to simple investigate
-        # possible issues between overlay <-> XFS if any happens.
+    if use_ext4:
         _format_disk_image_ext4(diskimage_path)
     else:
         _format_disk_image_xfs(diskimage_path)
@@ -650,9 +744,10 @@ def create_source_overlay(
     in the OVERLAY_DO_NOT_MOUNT set. Such prepared OVL images are then composed
     together to reflect the real host filesystem. In the end everything is cleaned.
 
-    Disk images created for OVL are formatted with XFS by default. In case of
-    problems, it's possible to switch to Ext4 FS using:
-        LEAPP_OVL_IMG_FS_EXT4=1
+    Disk images created for OVL are formatted with XFS by default, falling back
+    to Ext4 for images too small for XFS (see `_use_ext4_for_disk_image`).
+    To use Ext4 for all images, set envar
+    `LEAPP_OVL_IMG_FS_EXT4=1`.
 
     :param mounts_dir: Absolute path to the directory under which all mounts should happen.
     :type mounts_dir: str
@@ -665,9 +760,18 @@ def create_source_overlay(
     :param mount_target: Directory to which whole source OVL layer should be bind mounted.
                          If None (default), mounting.NullMount is created instead
     :type mount_target: Optional[str]
-    :param scratch_reserve: Number of MB that should be extra reserved in a partition hosting the scratch_dir.
-    :type scratch_reserve: Optional[int]
-    :rtype: mounting.BindMount or mounting.NullMount
+    :param scratch_reserve: Number of MiB that should be extra reserved in a partition hosting the scratch_dir.
+    :type scratch_reserve: int
+    :returns: Context manager yielding the overlay mount of the source system root.
+    :rtype: ContextManager[mounting.OverlayMount]
+    :raises StopActorExecutionError: When the mounts or disk images directories cannot be created,
+        there is not enough space for the disk images, or a disk image cannot be created or formatted.
+    :raises OSError: When the free space of a mountpoint cannot be obtained, or the removal
+        of old disk images cannot be executed.
+    :raises CalledProcessError: When the removal of old disk images fails.
+
+    .. seealso::
+        :class:`mounting.MountingBase` for the `MountError` raised when a mount operation fails.
     """
     # noqa: W0135; pylint: disable=bad-option-value,contextmanager-generator-missing-cleanup
     # NOTE(pstodulk): the pylint check is not valid in this case - finally is covered
