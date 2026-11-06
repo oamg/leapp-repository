@@ -6,6 +6,7 @@ from leapp.libraries.common.gpg import (
     get_path_to_gpg_certs,
     get_pubkeys_from_rpms,
     GPG_PQC_CERTS_SUBFOLDER,
+    GpgReadError,
     iter_gpg_keyfiles,
     parse_gpg_key_from_file
 )
@@ -59,7 +60,13 @@ def _parse_trusted_keyfiles(include_pqc):
     """
     file_to_fps = {}
     for key_file in iter_gpg_keyfiles(include_pqc=include_pqc):
-        file_to_fps[key_file] = parse_gpg_key_from_file(key_file)
+        try:
+            file_to_fps[key_file] = parse_gpg_key_from_file(key_file)
+        except GpgReadError as err:
+            # NOTE(mmatuska): the actor never handled gpg parsing errors, keeping that
+            # behaviour, but it could be changed now
+            api.current_logger().error(str(err))
+
     return file_to_fps
 
 
