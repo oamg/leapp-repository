@@ -4,7 +4,7 @@ import pytest
 
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import trustedgpgkeys
-from leapp.libraries.common.gpg import GpgKeyInfo
+from leapp.libraries.common.gpg import GpgKeyInfo, GpgReadError
 from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked, produce_mocked
 from leapp.libraries.stdlib import api, CalledProcessError
 from leapp.models import GpgKey, InstalledRPM, MisplacedTrustedGpgKeys, RPM, TrustedGpgKeys
@@ -136,6 +136,27 @@ def test_parse_trusted_keyfiles(monkeypatch, include_pqc):
 
     expected = dict(keyfiles) if include_pqc else {os.path.join(_TRUSTED_DIR, 'v4key'): [_v4('fd431d51')]}
     assert keyfiles_to_infos == expected
+
+
+def test_parse_trusted_keyfiles_skips_and_logs_unreadable_keyfile(monkeypatch):
+    """
+    One unreadable keyfile does not stop the scan of the rest of the directory.
+    """
+    logger = logger_mocked()
+    monkeypatch.setattr(api, 'current_logger', logger)
+    good = os.path.join(_TRUSTED_DIR, 'v4key')
+    broken = os.path.join(_TRUSTED_DIR, 'not-a-key')
+    _mock_trusted_dir(monkeypatch, {good: [_v4('fd431d51')], broken: None})
+
+    def mocked_parse_gpg_key_from_file(keyfile):
+        if keyfile == broken:
+            raise GpgReadError('no valid OpenPGP data found')
+        return [_v4('fd431d51')]
+
+    monkeypatch.setattr(trustedgpgkeys, 'parse_gpg_key_from_file', mocked_parse_gpg_key_from_file)
+
+    assert trustedgpgkeys._parse_trusted_keyfiles(include_pqc=False) == {good: [_v4('fd431d51')]}
+    assert len(logger.errmsg) == 1
 
 
 def test_get_pubkeys(monkeypatch):
