@@ -151,7 +151,7 @@ def process():
             reporting.Remediation(hint=(
                 'After the upgrade, make sure there are no SElinux related warnings, then set SElinux '
                 'back to enforcing mode manually by setting SELINUX=enforcing in /etc/selinux/config '
-                'and rebooting. Notice: You can ignore the "/root/tmp_leapp_py3" SElinux warnings.'
+                'and rebooting.'
                 )
             ),
             reporting.Groups([reporting.Groups.SELINUX, reporting.Groups.SECURITY])
