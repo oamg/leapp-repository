@@ -14,8 +14,12 @@ Only the versions in which a deprecation has been made are listed.
 
 ## Next release <span style="font-size:0.5em; font-weight:normal">(till TODO date)</span>
 - Models:
-- **`rhel_version`** field in the `TargetOSInstallationImage` model is replaced by the
-`os_version` field.
+  - **`TargetOSInstallationImage.rhel_version`** - The field is replaced by the `TargetOSInstallationImage.os_version` field.
+  - **`GpgKey`** - the model contains only the short key ID although the field is misleadingly named `fingerprint`, not the full fingerprint. Superseded by `GpgPubKey` which contains both in properly named fields.
+  - **`TrustedGpgKeys.items`** - The field is superseded by the `TrustedGpgKeys.keys` field which is a list of the new `GpgPubKey` model type.
+- Shared libraries
+  - **`leapp.libraries.common.gpg.get_pubkeys_from_rpms`** - Only returns short key IDs, use `get_gpg_ascii_from_rpmdb()` with `parse_gpg_key_from_ascii()`, which returns the full fingerprint as well as the short key ID, instead.
+  - **`leapp.libraries.common.gpg.get_gpg_fp_from_file`** - Misleadingly returns short key IDs instead of fingerprints. Use `parse_gpg_key_from_file()`, which returns the full fingerprint as well as the short key ID, instead.
 
 ## v0.25.0 <span style="font-size:0.5em; font-weight:normal">(till January 2027)</span>
 - Environment variables
@@ -89,4 +93,3 @@ Only the versions in which a deprecation has been made are listed.
 ## v0.11.0 <span style="font-size:0.5em; font-weight:normal">(till April  2021)</span>
 - Models
    - **`TMPTargetRepositoriesFacts`** - Deprecated because this model was not intended for customer use.
-

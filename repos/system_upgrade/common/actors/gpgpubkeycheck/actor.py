@@ -1,10 +1,12 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import gpgpubkeycheck
-from leapp.models import TrustedGpgKeys
+from leapp.models import GpgKey, TrustedGpgKeys
 from leapp.reporting import Report
 from leapp.tags import ApplicationsPhaseTag, IPUWorkflowTag
+from leapp.utils.deprecation import suppress_deprecation
 
 
+@suppress_deprecation(GpgKey)  # member of TrustedGpgKeys
 class GpgPubkeyCheck(Actor):
     """
     Checks no unexpected GPG keys were installed during the upgrade.
