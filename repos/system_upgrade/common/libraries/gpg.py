@@ -8,6 +8,7 @@ from leapp.libraries.common import config
 from leapp.libraries.common.config.version import get_target_major_version, matches_source_version
 from leapp.libraries.stdlib import api, CalledProcessError, run
 from leapp.models import GpgKey
+from leapp.utils.deprecation import deprecated
 
 GPG_CERTS_FOLDER = 'rpm-gpg'
 GPG_PQC_CERTS_SUBFOLDER = 'pqc'
@@ -65,6 +66,10 @@ def get_gpg_ascii_from_rpmdb(query_name, db_path=None):
     return [hdr[rpm.RPMTAG_DESCRIPTION] for hdr in matched]
 
 
+@deprecated(since='2026-11-09', message=(
+    'The Model returned by this function has been deprecated.'
+    ' Use `get_gpg_ascii_from_rpmdb()` and `parse_gpg_key_from_ascii()` instead.'
+))
 def get_pubkeys_from_rpms(installed_rpms):
     """
     Return the list of fingerprints of GPG keys in RPM DB
@@ -345,6 +350,7 @@ def parse_gpg_key_from_file(key_path):
         return _parse_gpg_key(fp.fileno())
 
 
+@deprecated(since='2026-11-09', message='Replaced by parse_gpg_key_from_file()')
 def get_gpg_fp_from_file(key_path):
     """
     Return the list of public key fingerprints from the given file
