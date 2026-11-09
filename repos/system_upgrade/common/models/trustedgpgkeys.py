@@ -1,7 +1,43 @@
 from leapp.models import fields, Model
 from leapp.topics import SystemFactsTopic
+from leapp.utils.deprecation import deprecated
 
 
+class GpgPubKey(Model):
+    """
+    OpenPGP Public key
+
+    It is represented by a record in the rpmdb (or pqrpmdb) or by a file in
+    directory with trusted keys (or both).
+    """
+    topic = SystemFactsTopic
+
+    fingerprint = fields.String()
+    """
+    The full fingerprint of the key
+
+    Note that the length of fingerprint is variable, depending on version/used algorithm.
+    """
+
+    short_keyid = fields.String()
+    """
+    The short key ID of the fingerprint
+    """
+
+    rpmdb = fields.Boolean()
+    """
+    True if the key is imported in the rpmdb (or pqrpmdb), False if it only comes from a trusted keys file
+    """
+
+    path = fields.Nullable(fields.String())
+    """
+    Path to the trusted keys file the key was read from and None if rpmdb is True
+    """
+
+
+@deprecated(since='2026-11-09', message=(
+    'Deprecated, use GpgPubKey which contains the full fingerprint instead of just short key IDs.'
+))
 class GpgKey(Model):
     """
     GPG Public key
@@ -35,6 +71,14 @@ class TrustedGpgKeys(Model):
     items = fields.List(fields.Model(GpgKey), default=[])
     """
     The trusted GPG keys gathered from the rpmdb (or pqrpmdb) and the trusted keys directory
+
+    DEPRECATED: Use `keys`, which is a list of GpgPubKey models which contain
+                the full fingerprints instead of just short key IDs.
+    """
+
+    keys = fields.List(fields.Model(GpgPubKey), default=[])
+    """
+    The trusted GPG keys gathered from the rpmdb (or pqrpmdb) and the trusted keys directory
     """
 
 
@@ -52,12 +96,12 @@ class MisplacedTrustedGpgKeys(Model):
     """
     topic = SystemFactsTopic
 
-    pqc_keys = fields.List(fields.Model(GpgKey), default=[])
+    pqc_keys = fields.List(fields.Model(GpgPubKey), default=[])
     """
     Post-quantum GGP keys placed in an incorrect directory - the top-level of the trusted keys directory
     """
 
-    classic_keys = fields.List(fields.Model(GpgKey), default=[])
+    classic_keys = fields.List(fields.Model(GpgPubKey), default=[])
     """
     "Classic" GGP keys placed in an incorrect directory - the pqc subdirectory of the trusted keys directory
     """

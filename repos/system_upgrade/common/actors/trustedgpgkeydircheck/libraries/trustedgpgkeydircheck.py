@@ -18,7 +18,7 @@ def _format_section(header, misplaced_keys):
 def _report_misplaced_keys(misplaced_pqc_keys, misplaced_non_pqc_keys, root_dir, pqc_dir):
     summary = (
         f"Found GPG keys in an incorrect location under the trusted RPM GPG keys directory '{root_dir}'."
-        'Keys need to be placed in the appropriate directory depending on their type:\n'
+        ' Keys need to be placed in the appropriate directory depending on their type:\n'
         f'  - Post-quantum (OpenPGP v6) keys: {pqc_dir}/\n'
         f'  - Standard (non-PQC) keys:        {root_dir}/\n'
         'This separation is required because some of the tooling used during the'
@@ -85,7 +85,7 @@ def process():
     def map_by_keyfile(keys):
         by_keyfile = defaultdict(list)
         for key in keys:
-            by_keyfile[key.filename].append(key.fingerprint)
+            by_keyfile[key.path].append(key.short_keyid)
         return by_keyfile
 
     misplaced_pqc = map_by_keyfile(misplaced_pqc)

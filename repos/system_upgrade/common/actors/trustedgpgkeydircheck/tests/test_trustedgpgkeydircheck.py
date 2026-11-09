@@ -4,7 +4,7 @@ from leapp import reporting
 from leapp.libraries.actor import trustedgpgkeydircheck
 from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked, logger_mocked
 from leapp.libraries.stdlib import api
-from leapp.models import GpgKey, MisplacedTrustedGpgKeys
+from leapp.models import GpgPubKey, MisplacedTrustedGpgKeys
 
 _TRUSTED_DIR = '/etc/leapp/files/distro/rhel/rpm-gpg/10'
 _PQC_DIR = _TRUSTED_DIR + '/pqc'
@@ -15,7 +15,9 @@ _CLASSIC_SECTION = 'Standard keys found in'
 
 
 def _key(filename, short_keyid):
-    return GpgKey(fingerprint=short_keyid, rpmdb=False, filename=filename)
+    # fingerprint doesn't matter currently, let's just repeat the same 8 bytes
+    # of short_keyid 5 times = 40 bytes fingerprint (fp length for v4)
+    return GpgPubKey(fingerprint=short_keyid * 5, short_keyid=short_keyid, rpmdb=False, path=filename)
 
 
 _MISPLACED_PQC = _key(_TRUSTED_DIR + '/RPM-GPG-KEY-pqc-redhat-release', '05707a62')
@@ -95,7 +97,7 @@ def test_misplaced_keys_inhibit(monkeypatch, pqc_keys, classic_keys, expected_se
     # the keyfiles are referenced by their basename, together with the key IDs they contain
     for key in pqc_keys + classic_keys:
         assert 'RPM-GPG-KEY' in summary
-        assert key.fingerprint in summary
+        assert key.short_keyid in summary
 
     # the user is told where each of the key types belongs and how to fix the layout
     assert _TRUSTED_DIR in summary

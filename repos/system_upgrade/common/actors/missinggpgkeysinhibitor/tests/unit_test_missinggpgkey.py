@@ -18,7 +18,6 @@ from leapp.models import InstalledRPM, RepositoryData, RPM, TargetUserSpaceInfo
     ('path/with/$basearch/something', 'path/with/x86_64/something'),
     ('path/with/$releasever/something', 'path/with/9/something'),
     ('path/with/$releasever/$basearch', 'path/with/9/x86_64'),
-    ('path/with/$releasever/$basearch', 'path/with/9/x86_64'),
 ])
 def test_expand_vars(monkeypatch, data, exp):
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(dst_ver='9.1'))  # x86_64 arch is default
@@ -63,9 +62,7 @@ def test_get_repo_gpgkey_urls(monkeypatch, repo, exp):
 ])
 def test_get_abs_file_path(monkeypatch, target_userspace, file_url, exists_in_container, exp):
     def os_path_exists_mocked(path):
-        if path == os.path.join(target_userspace.path, file_url[8:]) and exists_in_container:
-            return True
-        return False
+        return path == os.path.join(target_userspace.path, file_url[8:]) and exists_in_container
 
     monkeypatch.setattr('os.path.exists', os_path_exists_mocked)
     path = _get_abs_file_path(target_userspace, file_url)

@@ -419,6 +419,7 @@ def test_parse_gpg_key_sq_skips_unparseable_key(monkeypatch):
     ('9.9', True),
     ('10.0', True),
 ])
+@suppress_deprecation(gpg.get_gpg_fp_from_file)
 def test_key_parsing_dispatches_on_source_version(monkeypatch, leapp_tmpdir, src_ver, uses_sq):
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(src_ver=src_ver))
 
