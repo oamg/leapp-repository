@@ -4,6 +4,7 @@ import tempfile
 
 import distro
 import pytest
+import rpm
 
 from leapp.libraries.common import gpg
 from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked
@@ -427,7 +428,7 @@ def test_key_parsing_dispatches_on_source_version(monkeypatch, src_ver, uses_sq)
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(src_ver=src_ver))
 
     def unexpected(*args, **kwargs):
-        raise AssertionError('wrong parser used for source version {}'.format(src_ver))
+        raise AssertionError(f'wrong parser used for source version {src_ver}')
 
     key_infos = [_V6_KEY_INFO] if uses_sq else _GPG2_KEY_INFOS
     monkeypatch.setattr(gpg, '_parse_gpg_key_sq', (lambda key_path: key_infos) if uses_sq else unexpected)
@@ -437,3 +438,70 @@ def test_key_parsing_dispatches_on_source_version(monkeypatch, src_ver, uses_sq)
     assert gpg.parse_gpg_key_from_file('/some/key') == key_infos
     # get_gpg_fp_from_file is a thin wrapper reducing those to the short key ids
     assert gpg.get_gpg_fp_from_file('/some/key') == [info.short_keyid for info in key_infos]
+
+
+class _FakeTransactionSet:
+    def __init__(self, headers, error=None):
+        self._headers = headers
+        self._error = error
+        self.opened_db = False
+
+    def openDB(self):  # noqa: N802; mirrors the name of the rpm binding's method
+        self.opened_db = True
+
+    def dbMatch(self, tag, value):  # noqa: N802; mirrors the name of the rpm binding's method
+        assert (tag, value) == ('name', 'gpg-pubkey')
+        if self._error is not None:
+            raise self._error
+        return self._headers
+
+
+def _mock_rpm_ts(monkeypatch, headers, error=None):
+    """
+    Make rpm.TransactionSet() yield the given headers and record the macro calls.
+    """
+    macros = []
+    ts = _FakeTransactionSet(headers, error)
+    monkeypatch.setattr(gpg.rpm, 'TransactionSet', lambda: ts)
+    monkeypatch.setattr(gpg.rpm, 'addMacro', lambda name, value: macros.append(('add', name, value)))
+    monkeypatch.setattr(gpg.rpm, 'delMacro', lambda name: macros.append(('del', name)))
+    return ts, macros
+
+
+def test_get_gpg_ascii_from_rpmdb_rejects_other_packages():
+    with pytest.raises(ValueError):
+        gpg.get_gpg_ascii_from_rpmdb('kernel')
+
+
+def test_get_gpg_ascii_from_rpmdb_returns_descriptions(monkeypatch):
+    # a gpg-pubkey name matches one rpm per imported key
+    headers = [{rpm.RPMTAG_DESCRIPTION: 'armor-1'}, {rpm.RPMTAG_DESCRIPTION: 'armor-2'}]
+    _mock_rpm_ts(monkeypatch, headers)
+
+    assert gpg.get_gpg_ascii_from_rpmdb('gpg-pubkey') == ['armor-1', 'armor-2']
+
+
+def test_get_gpg_ascii_from_rpmdb_no_keys_returns_empty(monkeypatch):
+    # the match iterator of a query with no match yields nothing
+    _mock_rpm_ts(monkeypatch, [])
+
+    assert gpg.get_gpg_ascii_from_rpmdb('gpg-pubkey') == []
+
+
+def test_get_gpg_ascii_from_rpmdb_custom_dbpath_unsets_macro(monkeypatch):
+    ts, macros = _mock_rpm_ts(monkeypatch, [{rpm.RPMTAG_DESCRIPTION: 'armor-1'}])
+
+    assert gpg.get_gpg_ascii_from_rpmdb('gpg-pubkey', '/some/dbpath') == ['armor-1']
+    # the macro is global, it has to be unset again once the iterator is built
+    assert macros == [('add', '_dbpath', '/some/dbpath'), ('del', '_dbpath')]
+    assert ts.opened_db
+
+
+def test_get_gpg_ascii_from_rpmdb_unsets_macro_on_error(monkeypatch):
+    dummy_ts, macros = _mock_rpm_ts(monkeypatch, [], error=rpm.error('no such dbpath'))
+
+    # the rpm error is propagated, but the global macro must still be unset
+    with pytest.raises(rpm.error):
+        gpg.get_gpg_ascii_from_rpmdb('gpg-pubkey', '/some/dbpath')
+
+    assert ('del', '_dbpath') in macros
