@@ -16,6 +16,7 @@ from leapp.models import (
 DOC_URL = 'https://red.ht/rhel9-disabling-selinux'
 
 _ENFORCING_ONE_ARG = KernelCmdlineArg(key='enforcing', value='1')
+_ENFORCING_ZERO_ARG = KernelCmdlineArg(key='enforcing', value='0')
 
 
 def _proc_cmdline_has_enforcing_one(kernel_cmdline):
@@ -28,6 +29,19 @@ def _proc_cmdline_has_enforcing_one(kernel_cmdline):
         if param.key == 'enforcing' and param.value == '1':
             return True
     return False
+
+
+def _zipl_note():
+    """
+    Return the extra remediation sentence needed on s390x, where zipl must be run.
+    """
+    if api.current_actor().configuration.architecture == architecture.ARCH_S390X:
+        return ' Then make sure to run zipl to update the boot menu.'
+    return ''
+
+
+def _kernel_cmdline_doc_url():
+    return 'https://red.ht/rhel-{}-configure-kernel-cmdline'.format(get_target_major_version())
 
 
 def _request_removal_of_enforcing_one():
@@ -48,9 +62,8 @@ def _request_removal_of_enforcing_one():
     ``SELinuxFacts.enforcing_via_any_cmdline`` is populated earlier by the
     ``systemfacts`` actor.
     """
-    arch = api.current_actor().configuration.architecture
-    arch_msg = ' Then make sure to run zipl to update the boot menu.' if arch == architecture.ARCH_S390X else ''
-    doc_url = 'https://red.ht/rhel-{}-configure-kernel-cmdline'.format(get_target_major_version())
+    arch_msg = _zipl_note()
+    doc_url = _kernel_cmdline_doc_url()
     hint = (
         'After the upgrade, add the `enforcing=1` kernel command line argument back if it is wanted.'
         ' Run "grubby --update-kernel=ALL --args=enforcing=1" to enable enforcing on all boot entries'
@@ -79,6 +92,24 @@ def _request_removal_of_enforcing_one():
         ]),
         reporting.ExternalLink(url=doc_url, title='Configuring kernel command line parameters'),
     ])
+
+
+def _request_enforcing_zero():
+    """
+    Schedule adding enforcing=0 to the upgrade and target boot entries.
+
+    Setting SELINUX=permissive in /etc/selinux/config can fail, for example when the
+    file is immutable. The enforcing=0 kernel argument keeps SELinux permissive
+    regardless of the configuration file. We produce:
+
+    * ``UpgradeKernelCmdlineArgTasks`` so the interim upgrade boot entry has enforcing=0
+      (consumed by ``addupgradebootentry``).
+    * ``TargetKernelCmdlineArgTasks`` so the target kernel entry and the default kernel
+      command line configuration get enforcing=0 during finalization (consumed by
+      ``kernelcmdlineconfig``). It stays there after the upgrade until the user removes it.
+    """
+    api.produce(UpgradeKernelCmdlineArgTasks(to_add=[_ENFORCING_ZERO_ARG]))
+    api.produce(TargetKernelCmdlineArgTasks(to_add=[_ENFORCING_ZERO_ARG]))
 
 
 def process():
@@ -139,20 +170,34 @@ def process():
     if conf_status == 'enforcing':
         api.produce(SelinuxPermissiveDecision(
             set_permissive=True))
+        _request_enforcing_zero()
         reporting.create_report([
             reporting.Title('SElinux will be set to permissive mode'),
             reporting.Summary(
                 'SElinux will be set to permissive mode. Current mode: enforcing. This action is '
                 'required by the upgrade process to make sure the upgraded system can boot without '
-                'being blocked by SElinux rules. The system stays in permissive mode after the '
+                'being blocked by SElinux rules. Leapp sets SELINUX=permissive in /etc/selinux/config '
+                'and adds the enforcing=0 kernel argument to the upgrade and target kernel boot entries '
+                'and to the default kernel command line, so SElinux stays permissive even if the '
+                'configuration file cannot be modified. The system stays in permissive mode after the '
                 'upgrade; leapp does not set it back to enforcing.'
             ),
             reporting.Severity(reporting.Severity.LOW),
             reporting.Remediation(hint=(
                 'After the upgrade, make sure there are no SElinux related warnings, then set SElinux '
-                'back to enforcing mode manually by setting SELINUX=enforcing in /etc/selinux/config '
-                'and rebooting.'
+                'back to enforcing mode manually: set SELINUX=enforcing in /etc/selinux/config and run '
+                '"grubby --update-kernel=ALL --remove-args=enforcing" to remove the enforcing=0 kernel '
+                f'argument from all boot entries and from the default kernel command line.{_zipl_note()}'
+                ' Finally, reboot the system.'
                 )
             ),
-            reporting.Groups([reporting.Groups.SELINUX, reporting.Groups.SECURITY])
+            reporting.Groups([
+                reporting.Groups.SELINUX,
+                reporting.Groups.SECURITY,
+                reporting.Groups.POST,
+            ]),
+            reporting.ExternalLink(
+                url=_kernel_cmdline_doc_url(),
+                title='Configuring kernel command line parameters'
+            ),
         ])
