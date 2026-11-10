@@ -14,6 +14,9 @@ from leapp.models import (
     UpgradeKernelCmdlineArgTasks
 )
 
+_ENFORCING_ONE = KernelCmdlineArg(key='enforcing', value='1')
+_ENFORCING_ZERO = KernelCmdlineArg(key='enforcing', value='0')
+
 
 def create_selinuxfacts(
     static_mode,
@@ -121,3 +124,57 @@ def test_enforcing_one_only_in_bootloader_schedules_removal(monkeypatch):
     target_produced = [m for m in api.produce.model_instances if isinstance(m, TargetKernelCmdlineArgTasks)]
     assert target_produced
     assert target_produced[0].to_remove == [KernelCmdlineArg(key='enforcing', value='1')]
+
+
+def _produced_args(model_class, field):
+    return [
+        arg
+        for msg in api.produce.model_instances if isinstance(msg, model_class)
+        for arg in getattr(msg, field)
+    ]
+
+
+def test_enforcing_mode_adds_enforcing_zero(monkeypatch):
+    fact = create_selinuxfacts(static_mode='enforcing', enabled=True)
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[fact, KernelCmdline(parameters=[])]))
+    monkeypatch.setattr(api, 'produce', produce_mocked())
+    monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
+
+    checkselinux.process()
+
+    assert _produced_args(UpgradeKernelCmdlineArgTasks, 'to_add') == [_ENFORCING_ZERO]
+    assert _produced_args(TargetKernelCmdlineArgTasks, 'to_add') == [_ENFORCING_ZERO]
+    assert not _produced_args(TargetKernelCmdlineArgTasks, 'to_remove')
+
+    permissive_report = [r for r in reporting.create_report.reports
+                         if r['title'] == 'SElinux will be set to permissive mode']
+    assert len(permissive_report) == 1
+    assert reporting.Groups.POST in permissive_report[0]['groups']
+    assert '--remove-args=enforcing' in permissive_report[0]['detail']['remediations'][0]['context']
+
+
+def test_permissive_mode_does_not_add_enforcing_zero(monkeypatch):
+    fact = create_selinuxfacts(static_mode='permissive', enabled=True)
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[fact, KernelCmdline(parameters=[])]))
+    monkeypatch.setattr(api, 'produce', produce_mocked())
+    monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
+
+    checkselinux.process()
+
+    assert not _produced_args(UpgradeKernelCmdlineArgTasks, 'to_add')
+    assert not _produced_args(TargetKernelCmdlineArgTasks, 'to_add')
+
+
+def test_enforcing_mode_with_enforcing_one_removes_one_and_adds_zero(monkeypatch):
+    fact = create_selinuxfacts(static_mode='enforcing', enabled=True)
+    kcmd = KernelCmdline(parameters=[_ENFORCING_ONE])
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[fact, kcmd]))
+    monkeypatch.setattr(api, 'produce', produce_mocked())
+    monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
+
+    checkselinux.process()
+
+    assert _produced_args(TargetKernelCmdlineArgTasks, 'to_remove') == [_ENFORCING_ONE]
+    assert _produced_args(TargetKernelCmdlineArgTasks, 'to_add') == [_ENFORCING_ZERO]
+    assert _produced_args(UpgradeKernelCmdlineArgTasks, 'to_remove') == [_ENFORCING_ONE]
+    assert _produced_args(UpgradeKernelCmdlineArgTasks, 'to_add') == [_ENFORCING_ZERO]
