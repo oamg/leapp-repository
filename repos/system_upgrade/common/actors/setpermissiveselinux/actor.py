@@ -27,7 +27,18 @@ class SetPermissiveSelinux(Actor):
                     # FIXME: add an "action required" flag later
                     create_report([
                         reporting.Title('Could not set SElinux into permissive mode'),
-                        reporting.Summary('{}'.format(err_msg)),
+                        reporting.Summary(
+                            'Leapp could not set SELINUX=permissive in /etc/selinux/config: {}. '
+                            'The upgraded system still boots with SElinux in permissive mode because '
+                            'leapp adds the enforcing=0 kernel argument.'.format(err_msg)
+                        ),
+                        reporting.Remediation(hint=(
+                            'Check why /etc/selinux/config could not be modified, for example whether '
+                            'the file is immutable ("lsattr /etc/selinux/config"). The configuration file '
+                            'still sets SELINUX=enforcing, so SElinux will be in enforcing mode as soon as '
+                            'the enforcing=0 kernel argument is removed. Remove it only after checking that '
+                            'there are no SElinux related warnings on the upgraded system.'
+                        )),
                         reporting.Severity(reporting.Severity.HIGH),
                         reporting.Groups([reporting.Groups.SELINUX, reporting.Groups.SECURITY]),
                         reporting.Groups([reporting.Groups.FAILURE]),

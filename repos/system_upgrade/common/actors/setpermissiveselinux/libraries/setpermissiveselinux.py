@@ -7,5 +7,5 @@ def selinux_set_permissive():
     try:
         run(cmd)
     except CalledProcessError as e:
-        return False, e.output
+        return False, e.stderr
     return True, None
