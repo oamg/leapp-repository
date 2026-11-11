@@ -15,8 +15,8 @@ def _report_migration_not_enabled(rpm_names):
     pkg_list = ', '.join(rpm_names)
 
     summary = (
-        'The following packages are installed as RPMs but are no longer shipped as RPMs '
-        'starting with RHEL 10.2: {packages}. These packages are available as Flatpaks '
+        'The following packages are installed as RPMs but their default deliverable method '
+        'changed starting with RHEL 10.2: {packages}. These packages are available as Flatpaks '
         'on RHEL 10.\n\n'
         'Automatic RPM-to-Flatpak migration is currently only supported on systems '
         'using Red Hat Subscription Manager (RHSM).'
@@ -43,8 +43,8 @@ def _report_migration(rpm_names):
     pkg_list = ', '.join(rpm_names)
 
     summary = (
-        'The following packages are installed as RPMs but are no longer shipped as RPMs '
-        'starting with RHEL 10.2. They will be migrated to their Flatpak equivalents '
+        'The following packages are installed as RPMs but their default deliverable method '
+        'changed starting with RHEL 10.2. They will be migrated to their Flatpak equivalents '
         'during the first boot of the upgraded system: {packages}.\n\n'
         'The corresponding redhat-flatpak-preinstall-* packages and the flatpak package '
         'itself are installed on the target system as part of the upgrade transaction. '
