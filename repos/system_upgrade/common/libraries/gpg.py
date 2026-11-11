@@ -228,7 +228,8 @@ def _parse_gpg_key_sq(key_path):
     :rtype: list(str)
     """
     try:
-        cmd = ['sq', 'packet', 'dump', key_path]
+        # cli version must be first arg
+        cmd = ['sq', '--cli-version', '1.4.0', 'packet', 'dump', key_path]
         output = run(cmd, split=True)
     except (OSError, CalledProcessError) as err:
         error = 'Failed to read fingerprint from GPG key {}: {}'.format(key_path, str(err))
