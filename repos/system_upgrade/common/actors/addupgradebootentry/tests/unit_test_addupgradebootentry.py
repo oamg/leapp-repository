@@ -7,8 +7,8 @@ import pytest
 from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import addupgradebootentry
 from leapp.libraries.common.config.architecture import ARCH_S390X, ARCH_X86_64
-from leapp.libraries.common.testutils import CurrentActorMocked, produce_mocked
-from leapp.libraries.stdlib import api
+from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked, produce_mocked
+from leapp.libraries.stdlib import api, CalledProcessError
 from leapp.models import (
     ArmWorkaroundEFIBootloaderInfo,
     BootContent,
@@ -25,12 +25,35 @@ from leapp.models import (
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
+_UPGRADE_ENTRY_ID = '4a9c76478b98444fb5e0fbf533950edf-upgrade.x86_64'
+_UPGRADE_ENTRY_INFO = [
+    'index=3',
+    'kernel="/abc"',
+    'args="ro enforcing=0"',
+    'root="/dev/mapper/rhel-root"',
+    'initrd="/def"',
+    'title="RHEL-Upgrade-Initramfs"',
+    'id="{}"'.format(_UPGRADE_ENTRY_ID),
+]
+
+
 class run_mocked:
-    def __init__(self):
+    def __init__(self, entry_info=None, failing_cmds=()):
         self.args = []
+        self.entry_info = _UPGRADE_ENTRY_INFO if entry_info is None else entry_info
+        self.failing_cmds = failing_cmds
 
     def __call__(self, args, split=False):
         self.args.append(args)
+        if args[0] in self.failing_cmds:
+            raise CalledProcessError(
+                message='A Leapp Command Error occurred.',
+                command=args,
+                result={'signal': None, 'exit_code': 1, 'pid': 0, 'stdout': '', 'stderr': 'fake'}
+            )
+        if args[:2] == ['/usr/sbin/grubby', '--info']:
+            return {'stdout': self.entry_info}
+        return {'stdout': []}
 
 
 class write_to_file_mocked:
@@ -63,14 +86,18 @@ run_args_add = [
 
 run_args_zipl = ['/usr/sbin/zipl']
 
+run_args_info = ['/usr/sbin/grubby', '--info', '/abc']
+
+run_args_next_entry = ['grub2-editenv', '-', 'set', 'next_entry={}'.format(_UPGRADE_ENTRY_ID)]
+
 
 @pytest.mark.parametrize('run_args, arch', [
     # non s390x
-    (RunArgs(run_args_remove, run_args_add, None, 2), ARCH_X86_64),
+    (RunArgs(run_args_remove, run_args_add, None, 4), ARCH_X86_64),
     # s390x
     (RunArgs(run_args_remove, run_args_add, run_args_zipl, 3), ARCH_S390X),
     # config file specified
-    (RunArgs(run_args_remove, run_args_add, None, 2), ARCH_X86_64),
+    (RunArgs(run_args_remove, run_args_add, None, 4), ARCH_X86_64),
 ])
 def test_add_boot_entry(monkeypatch, run_args, arch):
     def get_boot_file_paths_mocked():
@@ -95,6 +122,10 @@ def test_add_boot_entry(monkeypatch, run_args, arch):
 
     if run_args.args_zipl:
         assert addupgradebootentry.run.args[2] == run_args.args_zipl
+    else:
+        # the upgrade boot entry is set to be booted on the next boot (GRUB only)
+        assert addupgradebootentry.run.args[2] == run_args_info
+        assert addupgradebootentry.run.args[3] == run_args_next_entry
 
 
 @pytest.mark.parametrize('is_leapp_invoked_with_debug', [True, False])
@@ -133,17 +164,78 @@ def test_add_boot_entry_configs(monkeypatch):
 
     addupgradebootentry.add_boot_entry(CONFIGS)
 
-    assert len(addupgradebootentry.run.args) == 4
+    assert len(addupgradebootentry.run.args) == 6
     assert addupgradebootentry.run.args[0] == run_args_remove + ['-c', CONFIGS[0]]
     assert addupgradebootentry.run.args[1] == run_args_remove + ['-c', CONFIGS[1]]
     assert addupgradebootentry.run.args[2] == run_args_add + ['-c', CONFIGS[0]]
     assert addupgradebootentry.run.args[3] == run_args_add + ['-c', CONFIGS[1]]
+    assert addupgradebootentry.run.args[4] == run_args_info
+    assert addupgradebootentry.run.args[5] == run_args_next_entry
     assert api.produce.model_instances == [
         LateTargetKernelCmdlineArgTasks(to_remove=[KernelCmdlineArg(key='debug'),
                                                    KernelCmdlineArg(key='enforcing', value='0'),
                                                    KernelCmdlineArg(key='plymouth.enable', value='0'),
                                                    KernelCmdlineArg(key='rd.plymouth', value='0')])
     ]
+
+
+def test_set_upgrade_boot_entry_for_next_boot(monkeypatch):
+    monkeypatch.setattr(addupgradebootentry, 'run', run_mocked())
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked())
+    monkeypatch.setattr(api, 'current_logger', logger_mocked())
+
+    addupgradebootentry.set_upgrade_boot_entry_for_next_boot('/abc')
+
+    assert addupgradebootentry.run.args == [run_args_info, run_args_next_entry]
+    assert not api.current_logger.warnmsg
+
+
+def test_set_upgrade_boot_entry_for_next_boot_skipped_on_s390x(monkeypatch):
+    monkeypatch.setattr(addupgradebootentry, 'run', run_mocked())
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(ARCH_S390X))
+
+    addupgradebootentry.set_upgrade_boot_entry_for_next_boot('/abc')
+
+    assert not addupgradebootentry.run.args
+
+
+def test_set_upgrade_boot_entry_for_next_boot_skipped_with_separate_efi_entry(monkeypatch):
+    some_efi_entry = EFIBootEntry(boot_number='0001', label='entry', active=True, efi_bin_source='')
+    workaround_info = ArmWorkaroundEFIBootloaderInfo(
+        original_entry=some_efi_entry,
+        upgrade_entry=some_efi_entry,
+        upgrade_bls_dir='/boot/upgrade-loader/entries',
+        upgrade_entry_efi_path='/boot/efi/EFI/leapp/'
+    )
+    monkeypatch.setattr(addupgradebootentry, 'run', run_mocked())
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[workaround_info]))
+    monkeypatch.setattr(api, 'current_logger', logger_mocked())
+
+    addupgradebootentry.set_upgrade_boot_entry_for_next_boot('/abc')
+
+    assert not addupgradebootentry.run.args
+
+
+@pytest.mark.parametrize('entry_info, failing_cmds, expected_cmds', [
+    # the output of grubby does not contain the ID of the boot entry
+    (['index=3', 'kernel="/abc"', 'title="RHEL-Upgrade-Initramfs"'], (), [run_args_info]),
+    (['id=""'], (), [run_args_info]),
+    ([], (), [run_args_info]),
+    # grubby fails
+    (None, ('/usr/sbin/grubby',), [run_args_info]),
+    # grub2-editenv fails
+    (None, ('grub2-editenv',), [run_args_info, run_args_next_entry]),
+])
+def test_set_upgrade_boot_entry_for_next_boot_failures_not_fatal(monkeypatch, entry_info, failing_cmds,
+                                                                 expected_cmds):
+    monkeypatch.setattr(addupgradebootentry, 'run', run_mocked(entry_info=entry_info, failing_cmds=failing_cmds))
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked())
+    monkeypatch.setattr(api, 'current_logger', logger_mocked())
+
+    addupgradebootentry.set_upgrade_boot_entry_for_next_boot('/abc')
+
+    assert addupgradebootentry.run.args == expected_cmds
+    assert api.current_logger.warnmsg
 
 
 def test_get_boot_file_paths(monkeypatch):

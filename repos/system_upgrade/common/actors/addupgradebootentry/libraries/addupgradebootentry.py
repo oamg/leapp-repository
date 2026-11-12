@@ -201,7 +201,79 @@ def add_boot_entry(configs=None):
            details={'details': '{}: {}'.format(str(e), e.stderr)}
         )
 
+    set_upgrade_boot_entry_for_next_boot(kernel_dst_path)
+
     apply_arm_specific_modifications()
+
+
+def _get_boot_entry_id(kernel_path):
+    """
+    Get the ID of the boot entry that uses the given kernel.
+
+    :returns: The ID of the boot entry or None if it cannot be determined.
+    """
+    try:
+        output_lines = run(['/usr/sbin/grubby', '--info', kernel_path], split=True)['stdout']
+    except CalledProcessError as err:
+        api.current_logger().warning('Failed to obtain info about the {} boot entry: {}'.format(kernel_path, err))
+        return None
+
+    for line in output_lines:
+        key, dummy_sep, value = line.partition('=')
+        if key.strip() == 'id':
+            return value.strip().strip('"') or None
+    return None
+
+
+def set_upgrade_boot_entry_for_next_boot(kernel_path):
+    """
+    Make GRUB boot the upgrade boot entry on the next boot regardless of GRUB_DEFAULT.
+
+    The `--make-default` option of grubby stores the upgrade boot entry as
+    `saved_entry` in the GRUB environment block. However, GRUB uses the saved
+    entry only when grub.cfg has been generated with `GRUB_DEFAULT=saved` set
+    in /etc/default/grub. With any other value (e.g. `GRUB_DEFAULT=0`) the
+    generated grub.cfg contains a fixed default entry, the saved entry is
+    ignored, and the system boots the original kernel instead of the upgrade
+    boot entry, so the upgrade never starts.
+
+    The `next_entry` variable of the GRUB environment block (the one set by
+    grub2-reboot) is always evaluated before the default entry, so use it to
+    boot the upgrade boot entry. The variable is one-shot: GRUB unsets it
+    during the boot. As GRUB is not able to write to the environment block on
+    some storage (e.g. LVM or MD RAID), the variable is unset also when the
+    upgrade boot entry is removed.
+
+    Failures are not fatal here, as the upgrade boot entry has been already
+    set as the default one, which is sufficient for the default configuration.
+    """
+    if architecture.matches_architecture(architecture.ARCH_S390X):
+        # ZIPL is used instead of GRUB on s390x
+        return
+
+    if next(api.consume(ArmWorkaroundEFIBootloaderInfo), None):
+        # The upgrade is booted via a separate EFI entry using its own grubenv
+        # and BLS directory that contains just the upgrade boot entry.
+        api.current_logger().debug('Skipping setting of next_entry: a separate EFI boot entry is used.')
+        return
+
+    entry_id = _get_boot_entry_id(kernel_path)
+    if not entry_id:
+        api.current_logger().warning(
+            'Could not determine the ID of the upgrade boot entry. The system might not boot into the upgrade'
+            ' environment automatically if GRUB is not configured to boot the saved default entry.'
+        )
+        return
+
+    try:
+        run(['grub2-editenv', '-', 'set', 'next_entry={}'.format(entry_id)])
+    except CalledProcessError as err:
+        api.current_logger().warning(
+            'Failed to set the upgrade boot entry ({}) to be booted on the next boot: {}'.format(entry_id, err)
+        )
+        return
+
+    api.current_logger().debug('The {} boot entry is set to be booted on the next boot.'.format(entry_id))
 
 
 def _remove_old_upgrade_boot_entry(kernel_dst_path, configs=None):
