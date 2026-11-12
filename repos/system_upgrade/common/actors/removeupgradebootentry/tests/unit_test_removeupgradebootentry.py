@@ -4,16 +4,23 @@ from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.actor import removeupgradebootentry
 from leapp.libraries.common.config import architecture
 from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked
-from leapp.libraries.stdlib import api
+from leapp.libraries.stdlib import api, CalledProcessError
 from leapp.models import ArmWorkaroundEFIBootloaderInfo, BootContent, EFIBootEntry, FirmwareFacts
 
 
 class run_mocked:
-    def __init__(self):
+    def __init__(self, failing_cmds=()):
         self.args = []
+        self.failing_cmds = failing_cmds
 
     def __call__(self, args, split=True):
         self.args.append(args)
+        if args[0] in self.failing_cmds:
+            raise CalledProcessError(
+                message='A Leapp Command Error occurred.',
+                command=args,
+                result={'signal': None, 'exit_code': 1, 'pid': 0, 'stdout': '', 'stderr': 'fake'}
+            )
 
 
 @pytest.mark.parametrize('firmware', ['bios', 'efi'])
@@ -51,9 +58,29 @@ def test_remove_boot_entry(firmware, arch, has_separate_bls_dir, monkeypatch):
         calls += [['/usr/sbin/grubby', '--remove-kernel=/abc']]
         if arch == architecture.ARCH_S390X:
             calls.append(['/usr/sbin/zipl'])
+        else:
+            # GRUB must not be instructed to boot the removed upgrade boot entry again
+            calls.append(['grub2-editenv', '-', 'unset', 'next_entry'])
         calls.append(['/bin/mount', '-a'])
 
     assert removeupgradebootentry.run.args == calls
+
+
+def test_remove_boot_entry_unset_next_entry_failure_not_fatal(monkeypatch):
+    monkeypatch.setattr(removeupgradebootentry, 'get_upgrade_kernel_filepath', lambda: '/abc')
+    monkeypatch.setattr(removeupgradebootentry, 'run', run_mocked(failing_cmds=('grub2-editenv',)))
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[FirmwareFacts(firmware='bios')]))
+    monkeypatch.setattr(api, 'current_logger', logger_mocked())
+
+    removeupgradebootentry.remove_boot_entry()
+
+    assert removeupgradebootentry.run.args == [
+        ['/bin/mount', '/boot'],
+        ['/usr/sbin/grubby', '--remove-kernel=/abc'],
+        ['grub2-editenv', '-', 'unset', 'next_entry'],
+        ['/bin/mount', '-a'],
+    ]
+    assert api.current_logger.warnmsg
 
 
 def test_get_upgrade_kernel_filepath(monkeypatch):
