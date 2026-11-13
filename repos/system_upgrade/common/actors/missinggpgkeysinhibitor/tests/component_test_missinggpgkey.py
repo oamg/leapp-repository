@@ -2,20 +2,18 @@ import pytest
 from six.moves.urllib.error import URLError
 
 from leapp import reporting
-from leapp.exceptions import StopActorExecution, StopActorExecutionError
+from leapp.exceptions import StopActorExecution
+from leapp.libraries.actor import missinggpgkey
 from leapp.libraries.actor.missinggpgkey import process, register_dnfworkaround
-from leapp.libraries.common.gpg import get_pubkeys_from_rpms
+from leapp.libraries.common.gpg import GpgKeyInfo, GpgReadError
 from leapp.libraries.common.testutils import create_report_mocked, CurrentActorMocked, logger_mocked, produce_mocked
 from leapp.libraries.stdlib import api
 from leapp.models import (
     DNFWorkaround,
-    GpgKey,
-    Report,
-    RepositoriesFacts,
+    GpgPubKey,
     RepositoriesFactsTarget,
     RepositoryData,
     RepositoryFile,
-    RPM,
     TargetUserSpaceInfo,
     TrustedGpgKeys,
     UsedTargetRepositories,
@@ -56,8 +54,10 @@ def _get_test_gpgkeys_missing():
     Return list of Trusted GPG keys without the epel9 key we look for
     """
     return [
-        GpgKey(fingerprint='fd431d51', rpmdb=True),
-        GpgKey(fingerprint='5a6340b3', rpmdb=True),
+        # Red Hat release key 2
+        GpgPubKey(short_keyid='fd431d51', fingerprint='567e347ad0044ade55ba8a5f199e2f91fd431d51', rpmdb=True),
+        # Red Hat aux key 3
+        GpgPubKey(short_keyid='5a6340b3', fingerprint='7e4624258c406535d56d6f135054e4a45a6340b3', rpmdb=True),
     ]
 
 
@@ -65,7 +65,12 @@ def _get_test_gpgkeys():
     """
     Return all the Trusted GPG keys for a test
     """
-    return TrustedGpgKeys(items=[GpgKey(fingerprint='3228467c', rpmdb=True)] + _get_test_gpgkeys_missing())
+    epel_9_key = GpgPubKey(
+        short_keyid='3228467c',
+        fingerprint='ff8ad1344597106ece813b918a3872bf3228467c',
+        rpmdb=True,
+    )
+    return TrustedGpgKeys(keys=[epel_9_key] + _get_test_gpgkeys_missing())
 
 
 def _get_test_targuserspaceinfo(path='/'):
@@ -235,56 +240,35 @@ def _get_test_tmptargetrepositoriesfacts_partial():
     ]
 
 
-def _gpg_show_keys_mocked(key_path):
-    """
-    Get faked output from gpg reading keys.
-
-    This is needed to get away from dependency on the filesystem
-    """
+def parse_gpg_key_from_file_mocked(key_path):
     if key_path == '/etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release':
-        return {
-            'stdout': [
-                'pub:-:4096:1:199E2F91FD431D51:1256212795:::-:::scSC::::::23::0:',
-                'fpr:::::::::567E347AD0044ADE55BA8A5F199E2F91FD431D51:',
-                ('uid:-::::1256212795::DC1CAEC7997B3575101BB0FCAAC6191792660D8F::'
-                 'Red Hat, Inc. (release key 2) <security@redhat.com>::::::::::0:'),
-                'pub:-:4096:1:5054E4A45A6340B3:1646863006:::-:::scSC::::::23::0:',
-                'fpr:::::::::7E4624258C406535D56D6F135054E4A45A6340B3:',
-                ('uid:-::::1646863006::DA7F68E3872D6E7BDCE05225E7EB5F3ACDD9699F::'
-                 'Red Hat, Inc. (auxiliary key 3) <security@redhat.com>::::::::::0:'),
-            ],
-            'stderr': (),
-            'exit_code': 0,
-        }
-    if key_path == '/etc/pki/rpm-gpg/RPM-GPG-KEY-my-release':  # actually epel9 key
-        return {
-            'stdout': [
-                'pub:-:4096:1:8A3872BF3228467C:1631033579:::-:::escESC::::::23::0:',
-                'fpr:::::::::FF8AD1344597106ECE813B918A3872BF3228467C:',
-                ('uid:-::::1631033579::3EED52B2BDE50880047DB883C87B0FCAE458D111::'
-                 'Fedora (epel9) <epel@fedoraproject.org>::::::::::0:'),
-            ],
-            'stderr': (),
-            'exit_code': 0,
-        }
-
-    return {
-        'stdout': [
-            'pub:-:4096:1:F55AD3FB5323552A:1628617948:::-:::escESC::::::23::0:',
-            'fpr:::::::::ACB5EE4E831C74BB7C168D27F55AD3FB5323552A:',
-            ('uid:-::::1628617948::4830BB019772421B89ABD0BBE245B89C73BF053F::'
-             'Fedora (37) <fedora-37-primary@fedoraproject.org>::::::::::0:'),
-        ],
-        'stderr': (),
-        'exit_code': 0,
-    }
-
-
-def _get_pubkeys_mocked(installed_rpms):
-    """
-    This skips getting fps from files in container for simplification
-    """
-    return get_pubkeys_from_rpms(installed_rpms)
+        return [
+            GpgKeyInfo(
+                fingerprint='567e347ad0044ade55ba8a5f199e2f91fd431d51',
+                short_keyid='fd431d51',
+                is_pqc=False,
+            ),
+            GpgKeyInfo(
+                fingerprint='7e4624258c406535d56d6f135054e4a45a6340b3',
+                short_keyid='5a6340b3',
+                is_pqc=False,
+            ),
+        ]
+    if key_path == '/etc/pki/rpm-gpg/RPM-GPG-KEY-my-release':
+        return [
+            GpgKeyInfo(
+                fingerprint='ff8ad1344597106ece813b918a3872bf3228467c',
+                short_keyid='3228467c',
+                is_pqc=False,
+            ),
+        ]
+    return [
+        GpgKeyInfo(
+            fingerprint='acb5ee4e831c74bb7c168d27f55ad3fb5323552a',
+            short_keyid='5323552a',
+            is_pqc=False,
+        ),
+    ]
 
 
 def test_perform_missing_some_repo_facts(monkeypatch):
@@ -300,7 +284,7 @@ def test_perform_missing_some_repo_facts(monkeypatch):
     monkeypatch.setattr(api, 'produce', produce_mocked())
     monkeypatch.setattr(api, 'current_logger', logger_mocked())
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
-    monkeypatch.setattr('leapp.libraries.common.gpg._gpg_show_keys', _gpg_show_keys_mocked)
+    monkeypatch.setattr(missinggpgkey, 'parse_gpg_key_from_file', parse_gpg_key_from_file_mocked)
 
     with pytest.raises(StopActorExecution):
         process()
@@ -347,7 +331,7 @@ def test_perform_https_gpgkey_unused(monkeypatch):
     monkeypatch.setattr(api, 'produce', produce_mocked())
     monkeypatch.setattr(api, 'current_logger', logger_mocked())
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
-    monkeypatch.setattr('leapp.libraries.common.gpg._gpg_show_keys', _gpg_show_keys_mocked)
+    monkeypatch.setattr(missinggpgkey, 'parse_gpg_key_from_file', parse_gpg_key_from_file_mocked)
 
     process()
     assert not api.current_logger.warnmsg
@@ -436,7 +420,7 @@ def test_perform_https_gpgkey(monkeypatch):
     monkeypatch.setattr(api, 'produce', produce_mocked())
     monkeypatch.setattr(api, 'current_logger', logger_mocked())
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
-    monkeypatch.setattr('leapp.libraries.common.gpg._gpg_show_keys', _gpg_show_keys_mocked)
+    monkeypatch.setattr(missinggpgkey, 'parse_gpg_key_from_file', parse_gpg_key_from_file_mocked)
     monkeypatch.setattr('six.moves.urllib.request.urlretrieve', _urlretrive_mocked)
 
     process()
@@ -463,7 +447,7 @@ def test_perform_https_gpgkey_urlerror(monkeypatch):
     monkeypatch.setattr(api, 'produce', produce_mocked())
     monkeypatch.setattr(api, 'current_logger', logger_mocked())
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
-    monkeypatch.setattr('leapp.libraries.common.gpg._gpg_show_keys', _gpg_show_keys_mocked)
+    monkeypatch.setattr(missinggpgkey, 'parse_gpg_key_from_file', parse_gpg_key_from_file_mocked)
     monkeypatch.setattr('six.moves.urllib.request.urlretrieve', _urlretrive_mocked_urlerror)
 
     process()
@@ -488,7 +472,7 @@ def test_perform_ftp_gpgkey(monkeypatch):
     monkeypatch.setattr(api, 'produce', produce_mocked())
     monkeypatch.setattr(api, 'current_logger', logger_mocked())
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
-    monkeypatch.setattr('leapp.libraries.common.gpg._gpg_show_keys', _gpg_show_keys_mocked)
+    monkeypatch.setattr(missinggpgkey, 'parse_gpg_key_from_file', parse_gpg_key_from_file_mocked)
 
     process()
     assert len(api.current_logger.errmsg) == 1
@@ -503,7 +487,7 @@ def test_perform_ftp_gpgkey(monkeypatch):
 def get_test_data_missing_key():
     return [
         _get_test_targuserspaceinfo(),
-        TrustedGpgKeys(items=_get_test_gpgkeys_missing()),
+        TrustedGpgKeys(keys=_get_test_gpgkeys_missing()),
         _get_test_usedtargetrepositories(),
         _get_test_tmptargetrepositoriesfacts(),
     ]
@@ -521,7 +505,7 @@ def test_perform_report(monkeypatch):
     monkeypatch.setattr(api, 'produce', produce_mocked())
     monkeypatch.setattr(api, 'current_logger', logger_mocked())
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
-    monkeypatch.setattr('leapp.libraries.common.gpg._gpg_show_keys', _gpg_show_keys_mocked)
+    monkeypatch.setattr(missinggpgkey, 'parse_gpg_key_from_file', parse_gpg_key_from_file_mocked)
 
     process()
     assert not api.current_logger.warnmsg
@@ -541,22 +525,6 @@ def get_test_data_no_gpg_data():
     ]
 
 
-def _gpg_show_keys_mocked_my_empty(key_path):
-    """
-    Get faked output from gpg reading keys.
-
-    This is needed to get away from dependency on the filesystem. This time, the key
-    /etc/pki/rpm-gpg/RPM-GPG-KEY-my-release does not return any GPG data
-    """
-    if key_path == '/etc/pki/rpm-gpg/RPM-GPG-KEY-my-release':
-        return {
-            'stdout': (),
-            'stderr': ('gpg: no valid OpenPGP data found.\n'),
-            'exit_code': 2,
-        }
-    return _gpg_show_keys_mocked(key_path)
-
-
 def test_perform_invalid_key(monkeypatch):
     """
     Executes the "main" function with a gpgkey not containing any GPG data
@@ -569,11 +537,49 @@ def test_perform_invalid_key(monkeypatch):
     monkeypatch.setattr(api, 'produce', produce_mocked())
     monkeypatch.setattr(api, 'current_logger', logger_mocked())
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
-    monkeypatch.setattr('leapp.libraries.common.gpg._gpg_show_keys', _gpg_show_keys_mocked_my_empty)
+
+    def parse_gpg_key_from_file_error(key_path):
+        # the part after : is sq specific
+        raise GpgReadError('Failed to read fingerprint from GPG key: Error EOF')
+
+    monkeypatch.setattr(missinggpgkey, 'parse_gpg_key_from_file', parse_gpg_key_from_file_error)
 
     process()
     assert len(api.current_logger.warnmsg) == 2, api.current_logger.warnmsg
-    assert 'Cannot get any gpg key from the file' in api.current_logger.warnmsg[1]
+    # the tool failed, so the warning carries the error it reported
+    assert 'Error EOF' in api.current_logger.warnmsg[0]
+    assert api.produce.called == 1
+    assert isinstance(api.produce.model_instances[0], DNFWorkaround)
+    assert reporting.create_report.called == 1
+    assert 'Failed to read GPG keys from provided key files' in reporting.create_report.reports[0]['title']
+    assert 'file:///etc/pki/rpm-gpg/RPM-GPG-KEY-my-release' in reporting.create_report.reports[0]['summary']
+
+
+def test_perform_key_file_without_keys(monkeypatch):
+    """
+    Executes the "main" function with a readable gpgkey file holding no keys
+
+    The tool succeeds but finds no OpenPGP data, so it returns an empty list
+    instead of raising. That is a distinct path from the tool failing, and it
+    is the common case of a key file that got truncated or replaced by HTML.
+    """
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(
+        msgs=get_test_data_no_gpg_data())
+    )
+    monkeypatch.setattr(api, 'produce', produce_mocked())
+    monkeypatch.setattr(api, 'current_logger', logger_mocked())
+    monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
+
+    def parse_gpg_key_from_file_empty(key_path):
+        return []
+
+    monkeypatch.setattr(missinggpgkey, 'parse_gpg_key_from_file', parse_gpg_key_from_file_empty)
+
+    process()
+    assert len(api.current_logger.warnmsg) == 2, api.current_logger.warnmsg
+    # no tool error to report here, unlike the raising path above
+    assert all('Error EOF' not in msg for msg in api.current_logger.warnmsg)
+    assert all('Cannot get any gpg key from the file' in msg for msg in api.current_logger.warnmsg)
     assert api.produce.called == 1
     assert isinstance(api.produce.model_instances[0], DNFWorkaround)
     assert reporting.create_report.called == 1
@@ -625,7 +631,7 @@ def test_perform_gpgcheck_without_gpgkey(monkeypatch):
     monkeypatch.setattr(api, 'produce', produce_mocked())
     monkeypatch.setattr(api, 'current_logger', logger_mocked())
     monkeypatch.setattr(reporting, 'create_report', create_report_mocked())
-    monkeypatch.setattr('leapp.libraries.common.gpg._gpg_show_keys', _gpg_show_keys_mocked)
+    monkeypatch.setattr(missinggpgkey, 'parse_gpg_key_from_file', parse_gpg_key_from_file_mocked)
 
     process()
     assert len(api.current_logger.warnmsg) == 1

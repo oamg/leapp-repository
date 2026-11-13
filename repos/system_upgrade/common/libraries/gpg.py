@@ -1,10 +1,14 @@
 import os
 from collections import namedtuple
 
+import rpm
+
+from leapp.exceptions import StopActorExecutionError
 from leapp.libraries.common import config
 from leapp.libraries.common.config.version import get_target_major_version, matches_source_version
 from leapp.libraries.stdlib import api, CalledProcessError, run
 from leapp.models import GpgKey
+from leapp.utils.deprecation import deprecated
 
 GPG_CERTS_FOLDER = 'rpm-gpg'
 GPG_PQC_CERTS_SUBFOLDER = 'pqc'
@@ -22,10 +26,50 @@ _SHORT_KEY_ID_SLICE = {
 }
 
 
+class GpgReadError(StopActorExecutionError):
+    pass
+
+
 class GpgParseError(Exception):
     pass
 
 
+# TODO when (if) some generic way to query rpmdb is added, deprecate this or
+# make it a wrapper
+def get_gpg_ascii_from_rpmdb(query_name, db_path=None):
+    """
+    Get the ascii armor of GPG key(s) imported in rpm DB
+
+    :return: List of ascii armors for the matched packages matching `query_name`
+    :rtype: List[str]
+    :raises ValueError: If `query_name` does not begin with gpg-pubkey
+    :raises rpm.error: Propagates any rpm errors
+    """
+    if not query_name.startswith('gpg-pubkey'):
+        raise ValueError('Only gpg-pubkey packages are allowed')
+
+    # this branching db_path is not nice, but it's the cleanest way to use the
+    # default db without hardocoding it or getting it through
+    # rpm.expandMacro('%{_dbpath}')
+    if db_path:
+        rpm.addMacro('_dbpath', db_path)
+    try:
+        ts = rpm.TransactionSet()
+        if db_path:  # TODO
+            ts.openDB()
+        matched = ts.dbMatch('name', query_name)
+    finally:
+        # this is global, make sure we unset it
+        if db_path:
+            rpm.delMacro('_dbpath')
+
+    return [hdr[rpm.RPMTAG_DESCRIPTION] for hdr in matched]
+
+
+@deprecated(since='2026-11-09', message=(
+    'The Model returned by this function has been deprecated.'
+    ' Use `get_gpg_ascii_from_rpmdb()` and `parse_gpg_key_from_ascii()` instead.'
+))
 def get_pubkeys_from_rpms(installed_rpms):
     """
     Return the list of fingerprints of GPG keys in RPM DB
@@ -42,26 +86,7 @@ def get_pubkeys_from_rpms(installed_rpms):
     return [GpgKey(fingerprint=pkg.version, rpmdb=True) for pkg in installed_rpms.items if pkg.name == 'gpg-pubkey']
 
 
-def _gpg_show_keys(key_path):
-    """
-    Show keys in given file in version-agnostic manner
-
-    This runs gpg --show-keys to verify the given file exists, is readable and
-    contains valid OpenPGP key data, which is printed in parsable format (--with-colons).
-    """
-    try:
-        cmd = ['gpg2', '--show-keys', '--with-colons', key_path]
-        # TODO: discussed, most likely the checked=False will be dropped
-        # and error will be handled in other functions
-        return run(cmd, split=True, checked=False)
-    except OSError as err:
-        # NOTE: this is hypothetic; gnupg2 has to be installed on RHEL 7+
-        error = 'Failed to read fingerprint from GPG key {}: {}'.format(key_path, str(err))
-        api.current_logger().error(error)
-        return {}
-
-
-def _parse_fp_from_gpg(output):
+def _parse_fps_from_gpg(stdout):
     """
     Parse the output of 'gpg2 --show-keys --with-colons'.
 
@@ -85,16 +110,16 @@ def _parse_fp_from_gpg(output):
     :param output: Result of running 'gpg2 --show-keys --with-colons'
     :type output: dict
     :return: Lowercased 40-character fingerprints of the primary keys in the
-        output, or an empty list on any error (non-zero exit code, missing or
-        unreadable file, or no OpenPGP data)
+        output, or an empty list when the output is empty or holds no parseable
+        fingerprint of a primary key
     :rtype: list(str)
     """
-    if not output or output['exit_code']:
+    if not stdout:
         return []
 
     gpg_fps = []
     in_primary = False  # True while inside a 'pub:' section
-    for line in output['stdout']:
+    for line in stdout:
         if not line:
             continue
         if line.startswith('pub:'):
@@ -112,9 +137,8 @@ def _parse_fp_from_gpg(output):
         if len(parts) >= 10 and len(parts[9]) == 40:
             gpg_fps.append(parts[9].lower())
         else:
-            api.current_logger().warning(
-                'Cannot parse the gpg2 output. Line: "{}"'
-                .format(line)
+            api.current_logger().error(
+                'Cannot parse the gpg2 output. Line: "{}"'.format(line)
             )
 
     return gpg_fps
@@ -123,19 +147,26 @@ def _parse_fp_from_gpg(output):
 GpgKeyInfo = namedtuple('GpgKeyInfo', ('fingerprint', 'short_keyid', 'is_pqc'))
 
 
-def _parse_gpg_key_gpg2(key_path):
+def _parse_gpg_key_gpg2(stdin):
     """
-    Return the list of public keys stored in the given file using 'gpg2'
+    Return the list of public keys read from the given stdin using 'gpg2'
 
     All the keys are reported as v4 keys. gpg2 cannot read v6 (PQC) keys at
     all, so such keys are skipped with a warning instead of being reported.
 
-    :param key_path: Path to the file with GPG key(s)
-    :type key_path: str
-    :return: List of the public keys from the given file
-    :rtype: list(dict)
+    :param stdin: Open file descriptor of a file with GPG key(s), or their ascii armor
+    :type stdin: int or str
+    :return: List of the public keys read from the given stdin
+    :rtype: List[GpgKeyInfo]
+    :raises GpgReadError: When gpg2 cannot be executed or exits with an error
     """
-    output = _gpg_show_keys(key_path)
+    try:
+        cmd = ['gpg2', '--show-keys', '--with-colons']
+        output = run(cmd, split=True, stdin=stdin)
+    except (OSError, CalledProcessError) as err:
+        # NOTE: OSError this is hypothetic; gnupg2 has to be installed on RHEL 7+
+        error = f'Failed to read fingerprint from GPG key: {str(err)}'
+        raise GpgReadError(error) from err
 
     # hardcode is_pqc=False because gpg2 cannot parse v6 keys so no pqc
     keys = [
@@ -144,12 +175,12 @@ def _parse_gpg_key_gpg2(key_path):
             short_keyid=fp[_SHORT_KEY_ID_SLICE['4']],
             is_pqc=False
         )
-        for fp in _parse_fp_from_gpg(output)
+        for fp in _parse_fps_from_gpg(output['stdout'])
     ]
 
     if not keys:
         api.current_logger().warning(
-            'Unable to read OpenPGP keys from {}: {}'.format(key_path, output.get('stderr', ''))
+            'Unable to parse OpenPGP keys: {}'.format(output.get('stderr', ''))
         )
     return keys
 
@@ -182,16 +213,14 @@ def _iter_sq_packets(dump):
         yield header, body
 
 
-def _parse_public_key_packet_sq(body, key_path):
+def _parse_public_key_packet_sq(body):
     """
     Return the key described by the body of a single Public-Key Packet
 
     :param body: Lines of the packet without its header
     :type body: list(str)
-    :param key_path: Path to the file the packet comes from (used in error messages only)
-    :type key_path: str
-    :return: The fingerprint of the key cut to the short key ID
-    :rtype: str
+    :return: The key described by the packet
+    :rtype: GpgKeyInfo
     :raises GpgParseError: The packet lacks a required field or has an unexpected version.
     """
     fields = {}
@@ -202,12 +231,12 @@ def _parse_public_key_packet_sq(body, key_path):
 
     missing = {'Version', 'Fingerprint'} - set(fields)
     if missing:
-        error = 'Missing fields {} of a key in the keyfile {}'.format(sorted(missing), key_path)
+        error = f'Missing fields {sorted(missing)}'
         raise GpgParseError(error)
 
     version = fields['Version']
     if version not in _SHORT_KEY_ID_SLICE:
-        error = 'Unexpected key version \'{}\' in the keyfile {}'.format(version, key_path)
+        error = f'Unexpected key version \'{version}\''
         raise GpgParseError(error)
 
     fingerprint = fields['Fingerprint'].lower()
@@ -218,59 +247,110 @@ def _parse_public_key_packet_sq(body, key_path):
     )
 
 
-def _parse_gpg_key_sq(key_path):
+def _parse_gpg_key_sq(stdin):
     """
-    Return the list of public keys stored in the given file using 'sq'
+    Return the list of public keys read from the given stdin using 'sq'
 
-    :param key_path: Path to the file with GPG key(s)
-    :type key_path: str
-    :return: List of the public keys from the given file
-    :rtype: list(str)
+    Public-Key Packets that cannot be parsed are logged and skipped, the
+    remaining keys are still returned.
+
+    :param stdin: Open file descriptor of a file with GPG key(s), or their ascii armor
+    :type stdin: int or str
+    :return: List of the public keys read from the given stdin
+    :rtype: List[GpgKeyInfo]
+    :raises GpgReadError: When sq cannot be executed or exits with an error
     """
     try:
-        cmd = ['sq', 'packet', 'dump', key_path]
-        output = run(cmd, split=True)
+        # cli version must be first arg
+        cmd = ['sq', '--cli-version', '1.4.0', 'packet', 'dump']
+        output = run(cmd, split=True, stdin=stdin)
     except (OSError, CalledProcessError) as err:
-        error = 'Failed to read fingerprint from GPG key {}: {}'.format(key_path, str(err))
-        api.current_logger().error(error)
-        # if can't be read, return empty, same as _parse_fp_from_gpg()
-        return []
+        error = f'Failed to read fingerprint from GPG key: {str(err)}'
+        raise GpgReadError(error) from err
 
     gpg_infos = []
     for header, body in _iter_sq_packets(output['stdout']):
         if header.startswith('Public-Key Packet'):
             try:
-                gpg_infos.append(_parse_public_key_packet_sq(body, key_path))
+                gpg_infos.append(_parse_public_key_packet_sq(body))
             except GpgParseError as err:
                 # just log the exception, same as _parse_fp_from_gpg() does
-                error = 'Failed to parse GPG key {}: {}'.format(key_path, str(err))
+                error = f'Failed to parse fingerprint from Public-Key packet {body}: {str(err)}'
                 api.current_logger().error(error)
 
+    if not gpg_infos:
+        api.current_logger().warning(
+            'Unable to parse OpenPGP keys: {}'.format(output.get('stderr', ''))
+        )
     return gpg_infos
+
+
+def _parse_gpg_key(stdin):
+    # The sequoia-sq package providing the sq command is available only since RHEL 9.9
+    if matches_source_version('< 9.9'):
+        return _parse_gpg_key_gpg2(stdin)
+
+    return _parse_gpg_key_sq(stdin)
+
+
+def parse_gpg_key_from_ascii(ascii_armors):
+    """
+    Return the list of public keys parsed from the given ascii armor(s)
+
+    The `ascii_armors` string can contain multiple armors (keys). The returned
+    list contains a `GpgKeyInfo` for every successfully parsed keys. Failures
+    during parsing are logged at the error level and ignored.
+
+    Note that for source systems older than 9.9, where 'sq' is not available,
+    the keys are read by gpg2 and so all of them are reported as v4 keys (non pqc).
+
+    :param ascii_armor: Ascii armor with GPG key(s)
+    :type ascii_armor: str
+    :return: List of the public keys from the given ascii armor
+    :rtype: List[GpgKeyInfo]
+
+    :raises GpgReadError: when failed to read the keys using the underlying tool (gpg2 or sq)
+    :raise ValueError: when `None` is passed as `ascii_armor`
+    """
+    if ascii_armors is None:
+        # run() does not redirect the stdin of the child when it is None, so gpg2/sq
+        # would read the stdin inherited from leapp
+        raise ValueError('Expected a string but got None')
+
+    return _parse_gpg_key(ascii_armors)
 
 
 def parse_gpg_key_from_file(key_path):
     """
-    Return the list of public keys stored in the given file
+    Return the list of public keys parsed from the given file
 
-    Every key is described by its 'version' and 'fingerprint' cut to the short
-    key ID, i.e. the same value as used in the version of the gpg-pubkey RPMs.
+    The file at `key_path` can contain multiple armors (keys). The returned
+    list contains a `GpgKeyInfo` for every successfully parsed keys. Failures
+    during parsing are logged at the error level and ignored.
 
     Note that for source systems older than 9.9, where 'sq' is not available,
-    the keys are read by gpg2 and so all of them are reported as v4 keys.
+    the keys are read by gpg2 and so all of them are reported as v4 keys (non pqc).
 
     :param key_path: Path to the file with GPG key(s)
     :type key_path: str
     :return: List of the public keys from the given file
     :rtype: list(GpgKeyInfo)
+
+    :raises GpgReadError: When the file cannot be opened, or when failed to read the
+        keys using the underlying tool (gpg2 or sq)
     """
-    # The sequoia-sq package providing the sq command is available only since RHEL 9.9
-    if matches_source_version('< 9.9'):
-        return _parse_gpg_key_gpg2(key_path)
+    try:
+        key_file = open(key_path, 'rb')
+    except OSError as err:
+        raise GpgReadError(
+            f'Failed to open GPG key file {key_path}: {str(err)}'
+        ) from err
 
-    return _parse_gpg_key_sq(key_path)
+    with key_file as fp:
+        return _parse_gpg_key(fp.fileno())
 
 
+@deprecated(since='2026-11-09', message='Replaced by parse_gpg_key_from_file()')
 def get_gpg_fp_from_file(key_path):
     """
     Return the list of public key fingerprints from the given file
@@ -286,7 +366,13 @@ def get_gpg_fp_from_file(key_path):
     :return: List of public key fingerprints from the given file
     :rtype: list(str)
     """
-    fps = parse_gpg_key_from_file(key_path)
+    try:
+        fps = parse_gpg_key_from_file(key_path)
+    except GpgReadError as err:
+        # this could now be propagated, but we need to preserve the api
+        api.current_logger().error(err)
+        return []
+
     return [fp.short_keyid for fp in fps]
 
 

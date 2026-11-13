@@ -2,6 +2,7 @@ from leapp.actors import Actor
 from leapp.libraries.actor import missinggpgkey
 from leapp.models import (
     DNFWorkaround,
+    GpgKey,
     RepositoriesFactsTarget,
     TargetUserSpaceInfo,
     TrustedGpgKeys,
@@ -9,8 +10,10 @@ from leapp.models import (
 )
 from leapp.reporting import Report
 from leapp.tags import IPUWorkflowTag, TargetTransactionChecksPhaseTag
+from leapp.utils.deprecation import suppress_deprecation
 
 
+@suppress_deprecation(GpgKey)  # member of TrustedGpgKeys
 class MissingGpgKeysInhibitor(Actor):
     """
     Check if all used target repositories have signing gpg keys
