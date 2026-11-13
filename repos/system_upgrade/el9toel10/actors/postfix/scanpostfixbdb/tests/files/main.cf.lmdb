@@ -1,0 +1,4 @@
+default_database_type = lmdb
+alias_maps = lmdb:/etc/aliases
+alias_database = lmdb:/etc/aliases
+# leftover comment: hash:/etc/aliases
