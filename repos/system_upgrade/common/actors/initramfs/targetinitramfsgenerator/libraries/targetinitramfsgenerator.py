@@ -9,6 +9,7 @@ from leapp.models import InstalledTargetKernelInfo, TargetInitramfsTasks
 from leapp.utils.deprecation import suppress_deprecation
 
 DRACUT_DIR = '/usr/lib/dracut/modules.d/'
+DRACUT_STDERR_TAIL_LINES = 20
 
 
 def _get_target_kernel_modules_dir(kernel_version):
@@ -139,5 +140,10 @@ def process():
 
         run(cmd)
     except CalledProcessError as e:
-        # just hypothetic check, it should not die
-        raise StopActorExecutionError('Cannot regenerate dracut image.', details={'details': str(e)})
+        # The exit code alone does not say why dracut failed (e.g. /boot is full),
+        # so include the end of its stderr in the report as well.
+        stderr_tail = '\n'.join((e.stderr or '').splitlines()[-DRACUT_STDERR_TAIL_LINES:])
+        raise StopActorExecutionError(
+            'Cannot regenerate dracut image.',
+            details={'details': str(e), 'stderr': stderr_tail}
+        )
