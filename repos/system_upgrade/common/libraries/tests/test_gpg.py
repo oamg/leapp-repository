@@ -4,11 +4,13 @@ import tempfile
 
 import distro
 import pytest
+import rpm
 
 from leapp.libraries.common import gpg
 from leapp.libraries.common.testutils import CurrentActorMocked, logger_mocked
 from leapp.libraries.stdlib import api, CalledProcessError
 from leapp.models import GpgKey, InstalledRPM, RPM
+from leapp.utils.deprecation import suppress_deprecation
 
 # (header, body) example packets from `sq packet dump` output
 _SQ_V4_PUBKEY = (
@@ -71,6 +73,9 @@ _GPG2_KEY_INFOS = [
         is_pqc=False,
     ),
 ]
+# stand-in for the data handed to the parsers as stdin; the content is irrelevant
+# wherever run() is mocked, it only has to be a non-empty string
+_ARMOR = '-----BEGIN PGP PUBLIC KEY BLOCK-----\nmQINBE==\n-----END PGP PUBLIC KEY BLOCK-----\n'
 _SQ_USER_ID = (
     'User ID Packet, old CTB, 51 bytes',
     ['    Value: Red Hat, Inc. (release key 2) <security@redhat.com>', ''],
@@ -135,9 +140,15 @@ def test_get_path_to_gpg_certs(monkeypatch, target, product_type, distro, exp):
 
 
 @pytest.mark.skipif(distro.id() not in ("rhel", "centos"), reason="Requires RHEL or CentOS for valid results.")
-def test_gpg_show_keys(loaded_leapp_repository, monkeypatch):
+def test_parse_gpg_key_from_file_runs_gpg2(loaded_leapp_repository, monkeypatch):
+    """
+    The only test executing the real gpg2; everything else mocks run().
+
+    Source < 9.9 has no 'sq', so the gpg2 branch is taken here.
+    """
     current_actor = CurrentActorMocked(src_ver='8.10', release_id='rhel')
     monkeypatch.setattr(api, 'current_actor', current_actor)
+    monkeypatch.setattr(api, 'current_logger', logger_mocked())
 
     # python2 compatibility :/
     dirpath = tempfile.mkdtemp()
@@ -146,29 +157,18 @@ def test_gpg_show_keys(loaded_leapp_repository, monkeypatch):
     os.environ['GNUPGHOME'] = dirpath
 
     try:
-        # non-existing file
+        # a non-existing file fails on the open(), gpg2 is never executed
         non_existent_path = os.path.join(dirpath, 'nonexistent')
-        res = gpg._gpg_show_keys(non_existent_path)
-        assert not res['stdout']
-        err_msg = "gpg: can't open '{}': No such file or directory\n".format(non_existent_path)
-        assert err_msg in res['stderr']
-        assert res['exit_code'] == 2
+        with pytest.raises(gpg.GpgReadError):
+            gpg.parse_gpg_key_from_file(non_existent_path)
 
-        fp = gpg._parse_fp_from_gpg(res)
-        assert fp == []
-
-        # no gpg data found
+        # no gpg data found - gpg2 exits with an error
         no_key_path = os.path.join(dirpath, "no_key")
         with open(no_key_path, "w") as f:
             f.write('test')
 
-        res = gpg._gpg_show_keys(no_key_path)
-        assert not res['stdout']
-        assert res['stderr'] == 'gpg: no valid OpenPGP data found.\n'
-        assert res['exit_code'] == 2
-
-        fp = gpg._parse_fp_from_gpg(res)
-        assert fp == []
+        with pytest.raises(gpg.GpgReadError):
+            gpg.parse_gpg_key_from_file(no_key_path)
 
         # with some test data now -- rhel9 release key
         # rhel9_key_path = os.path.join(api.get_common_folder_path('rpm-gpg'), '9')
@@ -176,111 +176,110 @@ def test_gpg_show_keys(loaded_leapp_repository, monkeypatch):
         rhel9_key_path = os.path.join(cur_dir, '..', '..', 'files',
                                       'distro', 'rhel', 'rpm-gpg', '9',
                                       'RPM-GPG-KEY-redhat-release')
-        res = gpg._gpg_show_keys(rhel9_key_path)
+        key_infos = gpg.parse_gpg_key_from_file(rhel9_key_path)
     finally:
         shutil.rmtree(dirpath)
 
-    assert len(res['stdout']) == 6
-    assert res['stdout'][0] == 'pub:-:4096:1:199E2F91FD431D51:1256212795:::-:::scSC::::::23::0:'
-    assert res['stdout'][1] == 'fpr:::::::::567E347AD0044ADE55BA8A5F199E2F91FD431D51:'
-    assert res['stdout'][2] == ('uid:-::::1256212795::DC1CAEC7997B3575101BB0FCAAC6191792660D8F::'
-                                'Red Hat, Inc. (release key 2) <security@redhat.com>::::::::::0:')
-    assert res['stdout'][3] == 'pub:-:4096:1:5054E4A45A6340B3:1646863006:::-:::scSC::::::23::0:'
-    assert res['stdout'][4] == 'fpr:::::::::7E4624258C406535D56D6F135054E4A45A6340B3:'
-    assert res['stdout'][5] == ('uid:-::::1646863006::DA7F68E3872D6E7BDCE05225E7EB5F3ACDD9699F::'
-                                'Red Hat, Inc. (auxiliary key 3) <security@redhat.com>::::::::::0:')
-
-    err = '{}/trustdb.gpg: trustdb created'.format(dirpath)
-    assert err in res['stderr']
-    assert res['exit_code'] == 0
-
-    # now, parse the output too
-    fp = gpg._parse_fp_from_gpg(res)
-    assert fp == ['567e347ad0044ade55ba8a5f199e2f91fd431d51', '7e4624258c406535d56d6f135054e4a45a6340b3']
+    # the release key 2 and the auxiliary key 3, both v4
+    assert key_infos == _GPG2_KEY_INFOS
 
 
 @pytest.mark.parametrize('res, exp', [
-    ({'exit_code': 2, 'stdout': '', 'stderr': ''}, []),
-    ({'exit_code': 2, 'stdout': '', 'stderr': 'bash: gpg2: command not found...'}, []),
-    ({'exit_code': 0, 'stdout': 'Some other output', 'stderr': ''}, []),
-    ({'exit_code': 0, 'stdout': ['Some other output', 'other line'], 'stderr': ''}, []),
+    ([], []),
+    ([''], []),
+    ('Some other output', []),
+    (['Some other output', 'other line'], []),
     # fpr line not preceded by a pub record is ignored
-    ({'exit_code': 0, 'stdout': ['fpr:::::::::7E4624258C406535D56D6F135054E4A45A6340B3:'], 'stderr': ''}, []),
+    (['fpr:::::::::7E4624258C406535D56D6F135054E4A45A6340B3:'], []),
     # fpr line with a fingerprint that is not 40 characters long is skipped
-    ({'exit_code': 0, 'stdout': ['pub:-:4096:1:5054E4A45A6340B3:::', 'fpr:::::::::7E4624258C406535:'],
-      'stderr': ''}, []),
-    ({'exit_code': 0,
-      'stdout': ['pub:-:4096:1:5054E4A45A6340B3:::', 'fpr:::::::::7E4624258C406535D56D6F135054E4A45A6340B3:'],
-      'stderr': ''},
-     ['7e4624258c406535d56d6f135054e4a45a6340b3']),
+    (['pub:-:4096:1:5054E4A45A6340B3:::', 'fpr:::::::::7E4624258C406535:'], []),
+    (
+        ['pub:-:4096:1:5054E4A45A6340B3:::', 'fpr:::::::::7E4624258C406535D56D6F135054E4A45A6340B3:'],
+        ['7e4624258c406535d56d6f135054e4a45a6340b3']
+    ),
     # only the primary key's fpr is collected; the subkey's fpr (after 'sub:') is ignored
-    ({'exit_code': 0,
-      'stdout': [
-          'pub:-:4096:1:199E2F91FD431D51:::',
-          'fpr:::::::::567E347AD0044ADE55BA8A5F199E2F91FD431D51:',
-          'uid:-::::::::Red Hat, Inc.::::::::::0:',
-          'sub:-:4096:1:0000000000000000:::',
-          'fpr:::::::::7E4624258C406535D56D6F135054E4A45A6340B3:',
-      ],
-      'stderr': ''},
-     ['567e347ad0044ade55ba8a5f199e2f91fd431d51']),
+    (
+        [
+            'pub:-:4096:1:199E2F91FD431D51:::',
+            'fpr:::::::::567E347AD0044ADE55BA8A5F199E2F91FD431D51:',
+            'uid:-::::::::Red Hat, Inc.::::::::::0:',
+            'sub:-:4096:1:0000000000000000:::',
+            'fpr:::::::::7E4624258C406535D56D6F135054E4A45A6340B3:',
+        ],
+        ['567e347ad0044ade55ba8a5f199e2f91fd431d51']
+    ),
     # a primary key with no fpr of its own is skipped, not given the subkey's fpr
-    ({'exit_code': 0,
-      'stdout': [
-          'pub:-:4096:1:199E2F91FD431D51:::',
-          'sub:-:4096:1:0000000000000000:::',
-          'fpr:::::::::7E4624258C406535D56D6F135054E4A45A6340B3:',
-      ],
-      'stderr': ''},
-     []),
+    (
+        [
+            'pub:-:4096:1:199E2F91FD431D51:::',
+            'sub:-:4096:1:0000000000000000:::',
+            'fpr:::::::::7E4624258C406535D56D6F135054E4A45A6340B3:',
+        ],
+        []
+    ),
     # realistic v4 key with three subkeys: only the primary fpr is collected
-    ({'exit_code': 0,
-      'stdout': [
-          'pub:u:4096:1:8EFF1D27F5FF5276:1791547301:::u:::cESCA::::::23::0:',
-          'fpr:::::::::0510D4A5B26CA885A6C4FFC58EFF1D27F5FF5276:',
-          'uid:u::::1791547301::7232916A570414102067E0244C5B3DAD1E681389::Test V4 Multi::::::::::0:',
-          'sub:u:4096:1:664BF4DA20BE399D:1791547319::::::s::::::23:',
-          'fpr:::::::::6DA2598F8B8894E6DE746520664BF4DA20BE399D:',
-          'sub:u:4096:1:2404CFF451EFF777:1791547324::::::e::::::23:',
-          'fpr:::::::::4767BE4752CB8A0B6E92A76F2404CFF451EFF777:',
-          'sub:u:4096:1:49F1C54ED85AECEF:1791547328::::::a::::::23:',
-          'fpr:::::::::EBE6DCF8C3B92478D734BAF549F1C54ED85AECEF:',
-      ],
-      'stderr': ''},
-     ['0510d4a5b26ca885a6c4ffc58eff1d27f5ff5276']),
+    (
+        [
+            'pub:u:4096:1:8EFF1D27F5FF5276:1791547301:::u:::cESCA::::::23::0:',
+            'fpr:::::::::0510D4A5B26CA885A6C4FFC58EFF1D27F5FF5276:',
+            'uid:u::::1791547301::7232916A570414102067E0244C5B3DAD1E681389::Test V4 Multi::::::::::0:',
+            'sub:u:4096:1:664BF4DA20BE399D:1791547319::::::s::::::23:',
+            'fpr:::::::::6DA2598F8B8894E6DE746520664BF4DA20BE399D:',
+            'sub:u:4096:1:2404CFF451EFF777:1791547324::::::e::::::23:',
+            'fpr:::::::::4767BE4752CB8A0B6E92A76F2404CFF451EFF777:',
+            'sub:u:4096:1:49F1C54ED85AECEF:1791547328::::::a::::::23:',
+            'fpr:::::::::EBE6DCF8C3B92478D734BAF549F1C54ED85AECEF:',
+        ],
+        ['0510d4a5b26ca885a6c4ffc58eff1d27f5ff5276']
+    ),
     # multiple primary keys: each pub's own fpr is collected, subkey fprs ignored
-    ({'exit_code': 0,
-      'stdout': [
-          'pub:-:4096:1:199E2F91FD431D51:::',
-          'fpr:::::::::567E347AD0044ADE55BA8A5F199E2F91FD431D51:',
-          'sub:-:4096:1:0000000000000000:::',
-          'fpr:::::::::0000000000000000000000000000000000000000:',
-          'pub:-:4096:1:5054E4A45A6340B3:::',
-          'fpr:::::::::7E4624258C406535D56D6F135054E4A45A6340B3:',
-      ],
-      'stderr': ''},
-     ['567e347ad0044ade55ba8a5f199e2f91fd431d51', '7e4624258c406535d56d6f135054e4a45a6340b3']),
+    (
+        [
+            'pub:-:4096:1:199E2F91FD431D51:::',
+            'fpr:::::::::567E347AD0044ADE55BA8A5F199E2F91FD431D51:',
+            'sub:-:4096:1:0000000000000000:::',
+            'fpr:::::::::0000000000000000000000000000000000000000:',
+            'pub:-:4096:1:5054E4A45A6340B3:::',
+            'fpr:::::::::7E4624258C406535D56D6F135054E4A45A6340B3:',
+        ],
+        ['567e347ad0044ade55ba8a5f199e2f91fd431d51', '7e4624258c406535d56d6f135054e4a45a6340b3']
+    ),
 ])
-def test_parse_fp_from_gpg(res, exp):
-    fp = gpg._parse_fp_from_gpg(res)
+def test_parse_fps_from_gpg(res, exp):
+    fp = gpg._parse_fps_from_gpg(res)
     assert fp == exp
 
 
 def test_parse_gpg_key_gpg2_returns_v4_key_infos(monkeypatch):
-    monkeypatch.setattr(gpg, '_gpg_show_keys', lambda key_path: _GPG2_SHOW_KEYS_OUTPUT)
-    assert gpg._parse_gpg_key_gpg2('/some/key') == _GPG2_KEY_INFOS
+    monkeypatch.setattr(gpg, 'run', lambda *args, **kwargs: _GPG2_SHOW_KEYS_OUTPUT)
+    assert gpg._parse_gpg_key_gpg2(_ARMOR) == _GPG2_KEY_INFOS
 
 
 def test_parse_gpg_key_gpg2_no_keys_warns(monkeypatch):
     logger = logger_mocked()
     monkeypatch.setattr(api, 'current_logger', logger)
-    monkeypatch.setattr(gpg, '_gpg_show_keys', lambda key_path: {'exit_code': 2, 'stdout': [], 'stderr': 'boom'})
+    monkeypatch.setattr(gpg, 'run', lambda *args, **kwargs: {'stdout': [], 'stderr': 'boom'})
 
-    # an unreadable or keyless file yields nothing and is logged
-    assert gpg._parse_gpg_key_gpg2('/some/key') == []
+    # input holding no OpenPGP data yields nothing and is logged
+    assert gpg._parse_gpg_key_gpg2(_ARMOR) == []
     assert logger.warnmsg
 
 
+@pytest.mark.parametrize('error', [
+    OSError('gpg2 is not installed'),
+    CalledProcessError('failed', ['gpg2'], {'stdout': '', 'stderr': 'boom', 'exit_code': 2}),
+])
+def test_parse_gpg_key_gpg2_run_error_raises(monkeypatch, error):
+    def failing_run(*args, **kwargs):
+        raise error
+
+    monkeypatch.setattr(gpg, 'run', failing_run)
+
+    with pytest.raises(gpg.GpgReadError):
+        gpg._parse_gpg_key_gpg2(_ARMOR)
+
+
+@suppress_deprecation(GpgKey, gpg.get_pubkeys_from_rpms)
 def test_pubkeys_from_rpms():
     installed_rpms = InstalledRPM(
         items=[
@@ -355,7 +354,7 @@ def test_iter_sq_packets_drops_body_before_first_header():
 def test_parse_public_key_packet_sq_returns_key_info(pubkey, expected_info):
     # the short key id and is_pqc flag are derived from the fingerprint and version
     _header, body = pubkey
-    assert gpg._parse_public_key_packet_sq(body, '/some/key') == expected_info
+    assert gpg._parse_public_key_packet_sq(body) == expected_info
 
 
 @pytest.mark.parametrize('body', [
@@ -365,7 +364,7 @@ def test_parse_public_key_packet_sq_returns_key_info(pubkey, expected_info):
 ])
 def test_parse_public_key_packet_sq_missing_field_raises(body):
     with pytest.raises(gpg.GpgParseError):
-        gpg._parse_public_key_packet_sq(body, '/some/key')
+        gpg._parse_public_key_packet_sq(body)
 
 
 def test_parse_public_key_packet_sq_unexpected_version_raises():
@@ -373,7 +372,7 @@ def test_parse_public_key_packet_sq_unexpected_version_raises():
     body = _packet_body_with_version(_SQ_V4_PUBKEY[1], '5')
 
     with pytest.raises(gpg.GpgParseError):
-        gpg._parse_public_key_packet_sq(body, '/some/key')
+        gpg._parse_public_key_packet_sq(body)
 
 
 def test_parse_gpg_key_sq_returns_pubkey_infos(monkeypatch):
@@ -382,25 +381,22 @@ def test_parse_gpg_key_sq_returns_pubkey_infos(monkeypatch):
 
     # only Public-Key Packets are collected; user id and signature packets - the
     # latter also carrying a Version line - are ignored
-    assert gpg._parse_gpg_key_sq('/some/key') == [_V4_KEY_INFO, _V6_KEY_INFO]
+    assert gpg._parse_gpg_key_sq(_ARMOR) == [_V4_KEY_INFO, _V6_KEY_INFO]
 
 
 @pytest.mark.parametrize('error', [
     OSError('sq is not installed'),
     CalledProcessError('failed', ['sq'], {'stdout': '', 'stderr': 'boom', 'exit_code': 1}),
 ])
-def test_parse_gpg_key_sq_run_error_returns_empty(monkeypatch, error):
-    logger = logger_mocked()
-    monkeypatch.setattr(api, 'current_logger', logger)
-
+def test_parse_gpg_key_sq_run_error_raises(monkeypatch, error):
     def failing_run(*args, **kwargs):
         raise error
 
     monkeypatch.setattr(gpg, 'run', failing_run)
 
-    # a failure to run sq is logged and yields no keys, same as the gpg2 path
-    assert gpg._parse_gpg_key_sq('/some/key') == []
-    assert logger.errmsg
+    # a failure to run sq is propagated, same as the gpg2 path
+    with pytest.raises(gpg.GpgReadError):
+        gpg._parse_gpg_key_sq(_ARMOR)
 
 
 def test_parse_gpg_key_sq_skips_unparseable_key(monkeypatch):
@@ -412,7 +408,7 @@ def test_parse_gpg_key_sq_skips_unparseable_key(monkeypatch):
     dump = _packets_to_dump([broken, _SQ_V6_PUBKEY])
     monkeypatch.setattr(gpg, 'run', lambda *args, **kwargs: {'stdout': dump})
 
-    assert gpg._parse_gpg_key_sq('/some/key') == [_V6_KEY_INFO]
+    assert gpg._parse_gpg_key_sq(_ARMOR) == [_V6_KEY_INFO]
     assert logger.errmsg
 
 
@@ -423,17 +419,91 @@ def test_parse_gpg_key_sq_skips_unparseable_key(monkeypatch):
     ('9.9', True),
     ('10.0', True),
 ])
-def test_key_parsing_dispatches_on_source_version(monkeypatch, src_ver, uses_sq):
+@suppress_deprecation(gpg.get_gpg_fp_from_file)
+def test_key_parsing_dispatches_on_source_version(monkeypatch, leapp_tmpdir, src_ver, uses_sq):
     monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(src_ver=src_ver))
 
     def unexpected(*args, **kwargs):
-        raise AssertionError('wrong parser used for source version {}'.format(src_ver))
+        raise AssertionError(f'wrong parser used for source version {src_ver}')
 
     key_infos = [_V6_KEY_INFO] if uses_sq else _GPG2_KEY_INFOS
-    monkeypatch.setattr(gpg, '_parse_gpg_key_sq', (lambda key_path: key_infos) if uses_sq else unexpected)
-    monkeypatch.setattr(gpg, '_parse_gpg_key_gpg2', unexpected if uses_sq else (lambda key_path: key_infos))
+    monkeypatch.setattr(gpg, '_parse_gpg_key_sq', (lambda stdin: key_infos) if uses_sq else unexpected)
+    monkeypatch.setattr(gpg, '_parse_gpg_key_gpg2', unexpected if uses_sq else (lambda stdin: key_infos))
+
+    # parse_gpg_key_from_file opens the path before dispatching, so it has to exist
+    key_path = os.path.join(leapp_tmpdir, 'key')
+    _touch(key_path)
 
     # the chosen parser's GpgKeyInfo list is returned unchanged, incl. the is_pqc flag
-    assert gpg.parse_gpg_key_from_file('/some/key') == key_infos
+    assert gpg.parse_gpg_key_from_file(key_path) == key_infos
+    # the ascii armor entry point dispatches on the same condition
+    assert gpg.parse_gpg_key_from_ascii(_ARMOR) == key_infos
     # get_gpg_fp_from_file is a thin wrapper reducing those to the short key ids
-    assert gpg.get_gpg_fp_from_file('/some/key') == [info.short_keyid for info in key_infos]
+    assert gpg.get_gpg_fp_from_file(key_path) == [info.short_keyid for info in key_infos]
+
+
+class _FakeTransactionSet:
+    def __init__(self, headers, error=None):
+        self._headers = headers
+        self._error = error
+        self.opened_db = False
+
+    def openDB(self):  # noqa: N802; mirrors the name of the rpm binding's method
+        self.opened_db = True
+
+    def dbMatch(self, tag, value):  # noqa: N802; mirrors the name of the rpm binding's method
+        assert (tag, value) == ('name', 'gpg-pubkey')
+        if self._error is not None:
+            raise self._error
+        return self._headers
+
+
+def _mock_rpm_ts(monkeypatch, headers, error=None):
+    """
+    Make rpm.TransactionSet() yield the given headers and record the macro calls.
+    """
+    macros = []
+    ts = _FakeTransactionSet(headers, error)
+    monkeypatch.setattr(gpg.rpm, 'TransactionSet', lambda: ts)
+    monkeypatch.setattr(gpg.rpm, 'addMacro', lambda name, value: macros.append(('add', name, value)))
+    monkeypatch.setattr(gpg.rpm, 'delMacro', lambda name: macros.append(('del', name)))
+    return ts, macros
+
+
+def test_get_gpg_ascii_from_rpmdb_rejects_other_packages():
+    with pytest.raises(ValueError):
+        gpg.get_gpg_ascii_from_rpmdb('kernel')
+
+
+def test_get_gpg_ascii_from_rpmdb_returns_descriptions(monkeypatch):
+    # a gpg-pubkey name matches one rpm per imported key
+    headers = [{rpm.RPMTAG_DESCRIPTION: 'armor-1'}, {rpm.RPMTAG_DESCRIPTION: 'armor-2'}]
+    _mock_rpm_ts(monkeypatch, headers)
+
+    assert gpg.get_gpg_ascii_from_rpmdb('gpg-pubkey') == ['armor-1', 'armor-2']
+
+
+def test_get_gpg_ascii_from_rpmdb_no_keys_returns_empty(monkeypatch):
+    # the match iterator of a query with no match yields nothing
+    _mock_rpm_ts(monkeypatch, [])
+
+    assert gpg.get_gpg_ascii_from_rpmdb('gpg-pubkey') == []
+
+
+def test_get_gpg_ascii_from_rpmdb_custom_dbpath_unsets_macro(monkeypatch):
+    ts, macros = _mock_rpm_ts(monkeypatch, [{rpm.RPMTAG_DESCRIPTION: 'armor-1'}])
+
+    assert gpg.get_gpg_ascii_from_rpmdb('gpg-pubkey', '/some/dbpath') == ['armor-1']
+    # the macro is global, it has to be unset again once the iterator is built
+    assert macros == [('add', '_dbpath', '/some/dbpath'), ('del', '_dbpath')]
+    assert ts.opened_db
+
+
+def test_get_gpg_ascii_from_rpmdb_unsets_macro_on_error(monkeypatch):
+    dummy_ts, macros = _mock_rpm_ts(monkeypatch, [], error=rpm.error('no such dbpath'))
+
+    # the rpm error is propagated, but the global macro must still be unset
+    with pytest.raises(rpm.error):
+        gpg.get_gpg_ascii_from_rpmdb('gpg-pubkey', '/some/dbpath')
+
+    assert ('del', '_dbpath') in macros
