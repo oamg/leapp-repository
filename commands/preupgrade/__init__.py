@@ -33,7 +33,7 @@ from leapp.utils.output import beautify_actor_exception, report_errors, report_i
              help='Enable specified repository. Can be used multiple times.')
 @command_opt('channel',
              help='Set preferred channel for the IPU target.',
-             choices=['ga', 'e4s', 'eus', 'aus'],
+             choices=['ga', 'e4s', 'eus', 'aus', 'e6s'],
              value_type=str.lower)  # This allows the choices to be case insensitive
 @command_opt('iso', help='Use provided target RHEL installation image to perform the in-place upgrade.')
 @command_opt(

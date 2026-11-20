@@ -3,7 +3,7 @@ from leapp.libraries.stdlib import api
 from leapp.utils.deprecation import deprecated
 
 # The devel variable for target product channel can also contain 'beta'
-SUPPORTED_TARGET_CHANNELS = {'ga', 'e4s', 'eus', 'aus'}
+SUPPORTED_TARGET_CHANNELS = {'ga', 'e4s', 'eus', 'aus', 'e6s'}
 CONSUMED_DATA_STREAM_ID = '5.0'
 
 
