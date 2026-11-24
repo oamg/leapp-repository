@@ -20,6 +20,7 @@ class ContentChannel:
     E4S = 'e4s'
     EUS = 'eus'
     AUS = 'aus'
+    E6S = 'e6s'
     BETA = 'beta'
 
 
