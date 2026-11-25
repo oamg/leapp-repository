@@ -42,6 +42,8 @@ def remove_boot_entry():
         # otherwise the new boot entry will not be set as default
         # See https://bugzilla.redhat.com/show_bug.cgi?id=1764306
         run(['/usr/sbin/zipl'])
+    else:
+        _unset_next_boot_entry()
 
     # TODO: Move calling `mount -a` to a separate actor as it is not really related to removing the upgrade boot entry.
     #       It's worth to call it after removing the boot entry to avoid boot loop in case mounting fails.
@@ -55,6 +57,21 @@ def remove_boot_entry():
         # so it does not contain anything important for the upgrade.
         api.current_logger().warning('Failed to execute `mount -a` with the following error: {}.'.format(err))
         pass
+
+
+def _unset_next_boot_entry():
+    """
+    Make sure GRUB is not instructed to boot the upgrade boot entry again.
+
+    The upgrade boot entry is set to be booted using the one-shot `next_entry`
+    variable of the GRUB environment block. GRUB unsets it during the boot,
+    unless it is not able to write to the environment block (e.g. when it is
+    located on LVM or MD RAID).
+    """
+    try:
+        run(['grub2-editenv', '-', 'unset', 'next_entry'])
+    except CalledProcessError as err:
+        api.current_logger().warning('Failed to unset next_entry in the GRUB environment block: {}'.format(err))
 
 
 def get_upgrade_kernel_filepath():
