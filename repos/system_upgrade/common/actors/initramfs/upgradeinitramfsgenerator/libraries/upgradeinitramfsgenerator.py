@@ -30,6 +30,13 @@ DRACUT_DIR = '/dracut'
 LEAPP_CMDLINE_CONF_PATH = '/etc/cmdline.d/50-leapp.conf'
 DEDICATED_LEAPP_PART_URL = 'https://access.redhat.com/solutions/7011704'
 
+# The udev rule that the enable_lvm_autoactivation actor pulls into the upgrade
+# initramfs in order to enable LVM autoactivation.
+LVM_AUTOACTIVATION_UDEV_RULE = '/usr/lib/udev/rules.d/69-dm-lvm.rules'
+# The 64-lvm.rules shipped by the 90lvm dracut module. Its rules conflict with
+# the LVM autoactivation enabled via LVM_AUTOACTIVATION_UDEV_RULE.
+LVM_DRACUT_RULES_FILE = '/usr/lib/dracut/modules.d/90lvm/64-lvm.rules'
+
 
 def _get_target_kernel_version(context):
     """
@@ -371,6 +378,42 @@ def collect_initramfs_includes():
                              kernel_modules=list(kernel_modules))
 
 
+def handle_lvm_autoactivation_dracut_rules(context, initramfs_includes):
+    """
+    Empty the 90lvm dracut module's 64-lvm.rules when LVM autoactivation is enabled.
+
+    When LVM autoactivation is enabled in the upgrade initramfs (the
+    enable_lvm_autoactivation actor pulls LVM_AUTOACTIVATION_UDEV_RULE into the
+    initramfs), the rules shipped by the 90lvm dracut module's 64-lvm.rules
+    conflict with it. In particular, 64-lvm.rules sets the LVM_MD_PV_ACTIVATED variable,
+    which is also used by LVM_AUTOACTIVATION_UDEV_RULE. This causes autoactivation not
+    work on MD devices as the LVM_AUTOACTIVATION_UDEV_RULE sees the device already
+    activated. Therefore, we replace the dracut's udev rules with an empty file
+    (so we do not have to touch dracut lvm module's includes and such).
+
+    :param context: An instance of a mounting.IsolatedActions class
+    :param initramfs_includes: The collected initramfs includes
+    :type initramfs_includes: InitramfsIncludes
+    """
+    if LVM_AUTOACTIVATION_UDEV_RULE not in initramfs_includes.files:
+        return
+
+    rules_file = context.full_path(LVM_DRACUT_RULES_FILE)
+    if not os.path.exists(rules_file):
+        api.current_logger().debug(
+            'The {} file is not present in the upgrade container, nothing to empty.'
+            .format(LVM_DRACUT_RULES_FILE)
+        )
+        return
+
+    api.current_logger().debug(
+        'Emptying {} in the upgrade container to avoid conflicting LVM udev rules '
+        'in the upgrade initramfs.'.format(LVM_DRACUT_RULES_FILE)
+    )
+    with context.open(LVM_DRACUT_RULES_FILE, mode='w') as rules_fp:
+        rules_fp.write('')
+
+
 def generate_initram_disk(context):
     """
     Function to actually execute the init ramdisk creation.
@@ -391,6 +434,8 @@ def generate_initram_disk(context):
 
     copy_dracut_modules(context, initramfs_includes.dracut_modules)
     copy_kernel_modules(context, initramfs_includes.kernel_modules, kernel_version)
+
+    handle_lvm_autoactivation_dracut_rules(context, initramfs_includes)
 
     def fmt_module_list(module_list):
         return ','.join(mod.name for mod in module_list)
@@ -475,6 +520,8 @@ def _generate_livemode_initramfs(context, userspace_initramfs_dest, target_kerne
 
     copy_dracut_modules(context, initramfs_includes.dracut_modules)
     copy_kernel_modules(context, initramfs_includes.kernel_modules, target_kernel_ver)
+
+    handle_lvm_autoactivation_dracut_rules(context, initramfs_includes)
 
     md_cmdline_conf = write_md_uuid_cmdline_conf(context)
     if md_cmdline_conf:

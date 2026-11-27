@@ -652,3 +652,52 @@ def test_get_target_kernel_version_empty_uname_r(monkeypatch):
 
     with pytest.raises(StopActorExecutionError, match='Cannot get version of the installed kernel'):
         upgradeinitramfsgenerator._get_target_kernel_version(context)
+
+
+def _make_initramfs_includes(files):
+    return upgradeinitramfsgenerator.InitramfsIncludes(
+        files=files, dracut_modules=[], kernel_modules=[]
+    )
+
+
+def test_handle_lvm_autoactivation_dracut_rules_not_enabled(monkeypatch):
+    """The dracut rules file is left intact when LVM autoactivation is not requested."""
+    context = MockedContext()
+    monkeypatch.setattr(upgradeinitramfsgenerator.api, 'current_logger', logger_mocked())
+    # os.path.exists must not even be consulted when autoactivation is not enabled
+    monkeypatch.setattr(upgradeinitramfsgenerator.os.path, 'exists',
+                        lambda _: pytest.fail('os.path.exists should not be called'))
+
+    includes = _make_initramfs_includes(files=['/some/other/file'])
+    upgradeinitramfsgenerator.handle_lvm_autoactivation_dracut_rules(context, includes)
+
+    assert not context.written_files
+
+
+def test_handle_lvm_autoactivation_dracut_rules_file_missing(monkeypatch):
+    """Nothing is written when the 90lvm dracut rules file is not in the container."""
+    context = MockedContext()
+    monkeypatch.setattr(upgradeinitramfsgenerator.api, 'current_logger', logger_mocked())
+    monkeypatch.setattr(upgradeinitramfsgenerator.os.path, 'exists', lambda _: False)
+
+    includes = _make_initramfs_includes(
+        files=[upgradeinitramfsgenerator.LVM_AUTOACTIVATION_UDEV_RULE]
+    )
+    upgradeinitramfsgenerator.handle_lvm_autoactivation_dracut_rules(context, includes)
+
+    assert not context.written_files
+
+
+def test_handle_lvm_autoactivation_dracut_rules_emptied(monkeypatch):
+    """The 90lvm dracut rules file is replaced with an empty string when enabled."""
+    context = MockedContext()
+    monkeypatch.setattr(upgradeinitramfsgenerator.api, 'current_logger', logger_mocked())
+    monkeypatch.setattr(upgradeinitramfsgenerator.os.path, 'exists', lambda _: True)
+
+    includes = _make_initramfs_includes(
+        files=[upgradeinitramfsgenerator.LVM_AUTOACTIVATION_UDEV_RULE]
+    )
+    upgradeinitramfsgenerator.handle_lvm_autoactivation_dracut_rules(context, includes)
+
+    rules_file = upgradeinitramfsgenerator.LVM_DRACUT_RULES_FILE
+    assert context.written_files == {rules_file: ''}
