@@ -99,7 +99,9 @@ REQUEST=`if test -n "$$PR"; then echo ".PR$${PR}"; elif test -n "$$MR"; then ech
 #    0.201810080027Z.4078402.packaging
 #    0.201810080027Z.4078402.main.MR2
 #    1.201810080027Z.4078402.main
-RELEASE="$(N_REL).$(TIMESTAMP).$(SHORT_SHA).$(BRANCH)$(REQUEST)$(_SUFFIX)"
+# Use ?= so a RELEASE passed in the environment (e.g. by build_container into the
+# container, which has no git to compute it) takes precedence over this default.
+RELEASE ?= "$(N_REL).$(TIMESTAMP).$(SHORT_SHA).$(BRANCH)$(REQUEST)$(_SUFFIX)"
 
 all: help
 
@@ -196,8 +198,12 @@ source: prepare
 	@echo "--- Create source tarball ---"
 	@echo git archive --prefix "$(PKGNAME)-$(VERSION)/" -o "packaging/sources/$(PKGNAME)-$(VERSION).tar.gz" HEAD
 	@git archive --prefix "$(PKGNAME)-$(VERSION)/" -o "packaging/sources/$(PKGNAME)-$(VERSION).tar.gz" HEAD
+	@__TIMESTAMP=$(TIMESTAMP) $(MAKE) _build_deps_pkgs
+
+_build_deps_pkgs:
 	@echo "--- PREPARE DEPS PKGS ---"
 	mkdir -p packaging/tmp/
+	# preserve timestamp from the main package build
 	@__TIMESTAMP=$(TIMESTAMP) $(MAKE) DIST_VERSION=8 _build_subpkg
 	@__TIMESTAMP=$(TIMESTAMP) $(MAKE) DIST_VERSION=9 _build_subpkg
 	@tar -czf packaging/sources/deps-pkgs.tar.gz -C packaging/RPMS/noarch `ls -1 packaging/RPMS/noarch | grep -o "[^/]*rpm$$"`
@@ -242,7 +248,14 @@ _build_subpkg:
 		--define "_rpmfilename %%{ARCH}/%%{NAME}-%%{VERSION}-%%{RELEASE}.%%{ARCH}.rpm" || FAILED=1
 	@rm -f packaging/$(DEPS_PKGNAME).spec
 
-_build_local: source
+# Used in containerized builds - the host has already run clean and prepare and
+# placed the Source0 tarball in packaging/sources (see build_container); this
+# builds the deps subpackages and then the main RPM using the pre-prepared
+# source. This way the may the containerized part of the build doesn't depend
+# on git and therefore doesn't break when using worktrees
+#
+# NOTE: Source0 must already be in packaging/sources.
+_container_build: _build_deps_pkgs
 	@echo "--- Build RPM: $(PKGNAME)-$(VERSION)-$(RELEASE).. ---"
 	@cp packaging/$(PKGNAME).spec packaging/$(PKGNAME).spec.bak
 	@sed -i "s/1%{?dist}/$(RELEASE)%{?dist}/g" packaging/$(PKGNAME).spec
@@ -257,7 +270,12 @@ _build_local: source
 		--define "el$(DIST_VERSION) 1" || FAILED=1
 	@mv packaging/$(PKGNAME).spec.bak packaging/$(PKGNAME).spec
 
-build_container:
+# Containerized build path: _build_local_container: _rpmbuild
+
+# clean+prepare run on the host (git works here even in a worktree) so that the
+# source tarball can be created on the host and dropped straight into
+# packaging/sources; the container then builds without needing git at all.
+build_container: prepare
 	echo "--- Build RPM ${PKGNAME}-${VERSION}-${RELEASE}.el$(DIST_VERSION).rpm in container ---";
 	case "$(BUILD_CONTAINER)" in \
 		el8) \
@@ -276,9 +294,11 @@ build_container:
 			;; \
 	esac && \
 	IMAGE="leapp-repo-build-$(BUILD_CONTAINER)"; \
-	$(_CONTAINER_TOOL) image inspect $$IMAGE > /dev/null 2>&1 || \
-	$(_CONTAINER_TOOL) build -f $$CONT_FILE --tag $$IMAGE . && \
-	$(_CONTAINER_TOOL) run --rm --name "$${IMAGE}-cont" -v $$PWD:/repo:Z $$IMAGE
+	{ $(_CONTAINER_TOOL) image inspect $$IMAGE > /dev/null 2>&1 || \
+	$(_CONTAINER_TOOL) build -f $$CONT_FILE --tag $$IMAGE .; } && \
+	git archive --prefix "$(PKGNAME)-$(VERSION)/" -o "packaging/sources/$(PKGNAME)-$(VERSION).tar.gz" HEAD && \
+	$(_CONTAINER_TOOL) run --rm --name "$${IMAGE}-cont" -v $$PWD:/repo:Z \
+		-e RELEASE="$(RELEASE)" $$IMAGE
 
 copr_build: srpm
 	@echo "--- Build RPM ${PKGNAME}-${VERSION}-${RELEASE}.el$(DIST_VERSION).rpm in COPR ---"
@@ -556,5 +576,5 @@ _warn_misssing_repos_if_using_actor:
 stubgen:
 	./utils/stubgen/build_stubs.sh .stubs_tmp typings
 
-.PHONY: help build clean prepare source srpm copr_build _build_local build_container print_release register install-deps install-deps-fedora  lint test_no_lint test dashboard_data fast_lint _warn_missing_repos_if_using_actor stubgen
+.PHONY: help build clean prepare source _build_deps_pkgs srpm copr_build _container_build build_container print_release register install-deps install-deps-fedora  lint test_no_lint test dashboard_data fast_lint _warn_missing_repos_if_using_actor stubgen
 .PHONY: test_container test_container_no_lint test_container_all test_container_all_no_lint clean_containers _build_container_image _test_container_ipu dev_test_no_lint
