@@ -178,9 +178,9 @@ def _get_lsblk_info_for_devpath(dev_path):
 @aslist
 def _get_lsblk_info():
     """ Collect storage info from lsblk command """
-    cmd = ['lsblk', '-pbnr', '--output', 'NAME,MAJ:MIN,RM,SIZE,RO,TYPE,MOUNTPOINT,PKNAME']
-    for entry in _get_cmd_output(cmd, ' ', 8):
-        dev_path, maj_min, rm, bsize, ro, tp, mountpoint, parent_path = entry
+    cmd = ['lsblk', '-pbnr', '--output', 'NAME,MAJ:MIN,RM,SIZE,RO,TYPE,MOUNTPOINT,PKNAME,UUID']
+    for entry in _get_cmd_output(cmd, ' ', 9):
+        dev_path, maj_min, rm, bsize, ro, tp, mountpoint, parent_path, uuid = entry
 
         lsblk_info_for_devpath = _get_lsblk_info_for_devpath(dev_path)
         if not lsblk_info_for_devpath:
@@ -204,7 +204,8 @@ def _get_lsblk_info():
             tp=tp,
             mountpoint=mountpoint,
             parent_name=parent_name,
-            parent_path=parent_path)
+            parent_path=parent_path,
+            uuid=uuid)
 
 
 @aslist

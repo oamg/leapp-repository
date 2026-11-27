@@ -18,6 +18,8 @@ from leapp.models import (
     LateTargetKernelCmdlineArgTasks,
     LiveModeArtifacts,
     LiveModeConfig,
+    LsblkEntry,
+    StorageInfo,
     TargetKernelCmdlineArgTasks,
     UpgradeKernelCmdlineArgTasks
 )
@@ -302,37 +304,19 @@ def test_split_path_on_mount_point(monkeypatch, path, mount_point, suffix):
 
 def test_get_device_uuid(monkeypatch):
     """
-    The file in question is /var/lib/file
-    Underlying partition /var is a device /dev/sda1 (dev_id=10) linked to from /dev/disk/by-uuid/MY_UUID1
+    The partition mounted at /var has the UUID MY_UUID1 as reported in the StorageInfo message.
     """
-    StatResult = namedtuple('StatResult', ('st_dev', 'st_rdev'))
+    def _lsblk_entry(mountpoint, uuid):
+        return LsblkEntry(name='', kname='', maj_min='', rm='', size='', bsize=0, ro='', tp='',
+                          mountpoint=mountpoint, parent_name='', parent_path='', uuid=uuid)
 
-    def stat_mock(path):
-        known_paths_table = {
-            '/var': StatResult(st_dev=1, st_rdev=None),
-            '/dev/sda1': StatResult(st_dev=0, st_rdev=1),
-            '/dev/sda2': StatResult(st_dev=0, st_rdev=2),
-            '/dev/vda0': StatResult(st_dev=0, st_rdev=3),
-        }
-        return known_paths_table[path]
-
-    monkeypatch.setattr(addupgradebootentry, 'local_os_stat', stat_mock)
-
-    def listdir_mock(path):
-        assert path == '/dev/disk/by-uuid'
-        return ['MY_UUID0', 'MY_UUID1', 'MY_UUID2']
-
-    monkeypatch.setattr(os, 'listdir', listdir_mock)
-
-    def readlink_mock(path):
-        known_links = {
-            '/dev/disk/by-uuid/MY_UUID0': '/dev/vda0',
-            '/dev/disk/by-uuid/MY_UUID1': '../../sda1',
-            '/dev/disk/by-uuid/MY_UUID2': '../../sda2',
-        }
-        return known_links[path]
-
-    monkeypatch.setattr(os, 'readlink', readlink_mock)
+    lsblk = [
+        _lsblk_entry('', 'MY_UUID0'),
+        _lsblk_entry('/boot', 'MY_UUID_BOOT'),
+        _lsblk_entry('/var', 'MY_UUID1'),
+    ]
+    messages = [StorageInfo(lsblk=lsblk)]
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=messages))
 
     mount_point = '/var'
     uuid = addupgradebootentry._get_device_uuid(mount_point)

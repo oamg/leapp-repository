@@ -15,6 +15,7 @@ from leapp.models import (
     LiveImagePreparationInfo,
     LiveModeArtifacts,
     LiveModeConfig,
+    StorageInfo,
     TargetKernelCmdlineArgTasks,
     UpgradeKernelCmdlineArgTasks
 )
@@ -267,11 +268,6 @@ def fix_grub_config_error(conf_file, error_type):
         write_to_file(conf_file, config + '\n')
 
 
-def local_os_stat(path):
-    """ Local wrapper around os.stat so we can safely mock it in tests. """
-    return os.stat(path)
-
-
 def _split_path_on_mount_point(path):
     """ Split a given path into a prefix where a device is mounted and suffix relative to the device root. """
     mount_point = path
@@ -291,21 +287,13 @@ def _get_device_uuid(mount_point):
     """
     Find the UUID of a device mounted at a given mount point.
     """
-    needle_dev_id = local_os_stat(mount_point).st_dev
+    storage_info = next(api.consume(StorageInfo), None)
+    if not storage_info:
+        raise StopActorExecutionError('Did not receive any StorageInfo message.')
 
-    for uuid in os.listdir('/dev/disk/by-uuid'):
-        uuid_fullpath = os.path.join('/dev/disk/by-uuid/', uuid)
-        dev_path = os.readlink(uuid_fullpath)
-
-        # The link target is likely relative to the UUID_fullpath, e.g., ../../dm-1.
-        # Joining it will '/dev/disk/by-uuid' will resolve the relative path.
-        # If dev_path is absolute it returns dev_path.
-        dev_path = os.path.join('/dev/disk/by-uuid', dev_path)
-        dev_path = os.path.abspath(dev_path)
-
-        dev_id = local_os_stat(dev_path).st_rdev
-        if dev_id == needle_dev_id:
-            return uuid
+    for blk_dev in storage_info.lsblk:
+        if blk_dev.mountpoint == mount_point:
+            return blk_dev.uuid
 
     return None
 

@@ -45,6 +45,7 @@ class LsblkEntry(Model):
     mountpoint = fields.String()
     parent_name = fields.String()
     parent_path = fields.String()
+    uuid = fields.String(default='')
 
 
 class PvsEntry(Model):

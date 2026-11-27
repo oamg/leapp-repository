@@ -255,18 +255,18 @@ def test_get_lsblk_info(monkeypatch):
     bytes_per_gb = 1 << 30
 
     def get_cmd_output_mocked(cmd, delim, expected_len):
-        if cmd == ['lsblk', '-pbnr', '--output', 'NAME,MAJ:MIN,RM,SIZE,RO,TYPE,MOUNTPOINT,PKNAME']:
+        if cmd == ['lsblk', '-pbnr', '--output', 'NAME,MAJ:MIN,RM,SIZE,RO,TYPE,MOUNTPOINT,PKNAME,UUID']:
             output_lines_split_on_whitespace = [
-                ['/dev/vda', '252:0', '0', str(40 * bytes_per_gb), '0', 'disk', '', ''],
-                ['/dev/vda1', '252:1', '0', str(1 * bytes_per_gb), '0', 'part', '/boot', ''],
-                ['/dev/vda2', '252:2', '0', str(39 * bytes_per_gb), '0', 'part', '', ''],
+                ['/dev/vda', '252:0', '0', str(40 * bytes_per_gb), '0', 'disk', '', '', ''],
+                ['/dev/vda1', '252:1', '0', str(1 * bytes_per_gb), '0', 'part', '/boot', '', 'uuid-vda1'],
+                ['/dev/vda2', '252:2', '0', str(39 * bytes_per_gb), '0', 'part', '', '', 'uuid-vda2'],
                 ['/dev/mapper/rhel_ibm--p8--kvm--03--guest--02-root', '253:0', '0', str(38 * bytes_per_gb), '0', 'lvm',
-                    '/', ''],
+                    '/', '', 'uuid-root'],
                 ['/dev/mapper/rhel_ibm--p8--kvm--03--guest--02-swap', '253:1', '0', str(1 * bytes_per_gb), '0', 'lvm',
-                    '[SWAP]', ''],
+                    '[SWAP]', '', 'uuid-swap'],
                 ['/dev/mapper/luks-01b60fff-a2a8-4c03-893f-056bfc3f06f6', '254:0', '0', str(38 * bytes_per_gb), '0',
-                    'crypt', '', '/dev/nvme0n1p1'],
-                ['/dev/nvme0n1p1', '259:1', '0', str(39 * bytes_per_gb), '0', 'part', '', '/dev/nvme0n1'],
+                    'crypt', '', '/dev/nvme0n1p1', 'uuid-luks'],
+                ['/dev/nvme0n1p1', '259:1', '0', str(39 * bytes_per_gb), '0', 'part', '', '/dev/nvme0n1', ''],
             ]
             yield from output_lines_split_on_whitespace
         elif len(cmd) == 5 and cmd[:4] == ['lsblk', '-nr', '--output', 'NAME,KNAME,SIZE']:
@@ -306,7 +306,8 @@ def test_get_lsblk_info(monkeypatch):
             tp='disk',
             mountpoint='',
             parent_name='',
-            parent_path=''),
+            parent_path='',
+            uuid=''),
         LsblkEntry(
             name='vda1',
             kname='vda1',
@@ -318,7 +319,8 @@ def test_get_lsblk_info(monkeypatch):
             tp='part',
             mountpoint='/boot',
             parent_name='',
-            parent_path=''),
+            parent_path='',
+            uuid='uuid-vda1'),
         LsblkEntry(
             name='vda2',
             kname='vda2',
@@ -330,7 +332,8 @@ def test_get_lsblk_info(monkeypatch):
             tp='part',
             mountpoint='',
             parent_name='',
-            parent_path=''),
+            parent_path='',
+            uuid='uuid-vda2'),
         LsblkEntry(
             name='rhel_ibm--p8--kvm--03--guest--02-root',
             kname='kname1',
@@ -342,7 +345,8 @@ def test_get_lsblk_info(monkeypatch):
             tp='lvm',
             mountpoint='/',
             parent_name='',
-            parent_path=''),
+            parent_path='',
+            uuid='uuid-root'),
         LsblkEntry(
             name='rhel_ibm--p8--kvm--03--guest--02-swap',
             kname='kname2',
@@ -354,7 +358,8 @@ def test_get_lsblk_info(monkeypatch):
             tp='lvm',
             mountpoint='[SWAP]',
             parent_name='',
-            parent_path=''),
+            parent_path='',
+            uuid='uuid-swap'),
         LsblkEntry(
             name='luks-01b60fff-a2a8-4c03-893f-056bfc3f06f6',
             kname='dm-0',
@@ -366,7 +371,8 @@ def test_get_lsblk_info(monkeypatch):
             tp='crypt',
             mountpoint='',
             parent_name='nvme0n1p1',
-            parent_path='/dev/nvme0n1p1'),
+            parent_path='/dev/nvme0n1p1',
+            uuid='uuid-luks'),
         LsblkEntry(
             name='nvme0n1p1',
             kname='nvme0n1p1',
@@ -378,7 +384,8 @@ def test_get_lsblk_info(monkeypatch):
             tp='part',
             mountpoint='',
             parent_name='nvme0n1',
-            parent_path='/dev/nvme0n1'),
+            parent_path='/dev/nvme0n1',
+            uuid=''),
         ]
 
     actual = storagescanner._get_lsblk_info()

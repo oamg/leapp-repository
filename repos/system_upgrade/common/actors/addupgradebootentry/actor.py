@@ -13,6 +13,7 @@ from leapp.models import (
     LiveImagePreparationInfo,
     LiveModeArtifacts,
     LiveModeConfig,
+    StorageInfo,
     TargetKernelCmdlineArgTasks,
     TransactionDryRun,
     UpgradeKernelCmdlineArgTasks
@@ -37,6 +38,7 @@ class AddUpgradeBootEntry(Actor):
         LiveModeArtifacts,
         LiveModeConfig,
         KernelCmdline,
+        StorageInfo,
         TransactionDryRun,
         TargetKernelCmdlineArgTasks,
         UpgradeKernelCmdlineArgTasks
