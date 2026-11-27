@@ -133,6 +133,37 @@ def test_dracut_fail(monkeypatch, msgs):
     assert run_mocked.called
 
 
+def test_dracut_fail_reports_stderr_tail(monkeypatch):
+    warnings = ['dracut-install: Failed to find module \'mod{}\''.format(i) for i in range(30)]
+    error = [
+        "cp: error writing '/boot/initramfs-{}.img.tmp': No space left on device".format(KERNEL_VERSION),
+        'dracut[F]: Creation of /boot/initramfs-{}.img failed'.format(KERNEL_VERSION),
+    ]
+
+    def run_dracut_fails(args):
+        raise CalledProcessError(message='A Leapp Command Error occurred.',
+                                 command=args,
+                                 result={
+                                     'signal': None,
+                                     'exit_code': 1,
+                                     'pid': 0,
+                                     'stdout': '',
+                                     'stderr': '\n'.join(warnings + error) + '\n',
+                                 })
+
+    monkeypatch.setattr(api, 'current_actor', CurrentActorMocked(msgs=[mk_kernel_info(KERNEL_VERSION)]))
+    monkeypatch.setattr(targetinitramfsgenerator, 'run', run_dracut_fails)
+    monkeypatch.setattr(targetinitramfsgenerator, '_copy_modules', lambda *_: None)
+
+    with pytest.raises(StopActorExecutionError) as e:
+        targetinitramfsgenerator.process()
+
+    stderr = e.value.details['stderr'].splitlines()
+    assert stderr[-2:] == error
+    assert len(stderr) == targetinitramfsgenerator.DRACUT_STDERR_TAIL_LINES
+    assert warnings[0] not in stderr
+
+
 @pytest.mark.parametrize(
     'msgs,files,dracut_modules,kernel_modules',
     [
